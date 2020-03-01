@@ -26,6 +26,35 @@
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.39 or later
 
+## Goals
+
+- [ ] Types
+    - [X] Scalar
+        - [X] Integer
+        - [X] Float
+        - [X] String
+        - [X] Bool
+        - [X] DateTime
+        - [X] UUID
+    - Complex Types
+        - [X] List
+        - [X] Non-Null
+    - [ ] Object
+    - [X] Enum
+    - [ ] InputObject
+    - [ ] Interface
+    - [ ] Union
+- [ ] Query
+    - [X] Fields
+    - [X] Arguments
+    - [ ] Alias
+    - [ ] Fragments
+    - [ ] Inline fragments
+    - [X] Operation name
+    - [ ] Variables
+    - [ ] Directives
+    - [ ] Schema
+
 ## References
 
 * [GraphQL](https://graphql.org)
