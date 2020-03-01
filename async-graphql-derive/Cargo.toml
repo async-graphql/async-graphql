@@ -3,6 +3,15 @@ name = "async-graphql-derive"
 version = "0.1.0"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
+description = "The GraphQL server library implemented by rust"
+publish = true
+license = "MIT/Apache-2.0"
+documentation = "https://docs.rs/async-graphql/"
+homepage = "https://github.com/sunli829/async-graphql"
+repository = "https://github.com/sunli829/async-graphql"
+keywords = ["futures", "async", "graphql"]
+categories = ["network-programming", "asynchronous", "framework"]
+readme = "README.md"
 
 [lib]
 proc-macro = true
