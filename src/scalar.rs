@@ -1,6 +1,5 @@
 use crate::r#type::{GQLInputValue, GQLOutputValue, GQLType};
 use crate::{ContextSelectionSet, QueryError, Result};
-use anyhow::Error;
 use graphql_parser::query::Value;
 
 pub trait Scalar: Sized + Send {

@@ -34,6 +34,7 @@
         - [X] Float
         - [X] String
         - [X] Bool
+        - [X] ID
         - [X] DateTime
         - [X] UUID
     - Complex Types

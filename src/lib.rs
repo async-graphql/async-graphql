@@ -36,6 +36,7 @@ extern crate thiserror;
 mod context;
 mod r#enum;
 mod error;
+mod id;
 mod query;
 mod scalar;
 mod r#type;
@@ -54,6 +55,7 @@ pub use async_graphql_derive::{Enum, InputObject, Object};
 pub use context::{Context, ContextField, ContextSelectionSet, Data, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
+pub use id::ID;
 pub use query::QueryBuilder;
 pub use scalar::Scalar;
 

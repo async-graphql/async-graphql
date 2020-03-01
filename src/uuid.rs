@@ -1,5 +1,4 @@
 use crate::{QueryError, Result, Scalar, Value};
-use anyhow::Error;
 use uuid::Uuid;
 
 impl Scalar for Uuid {

@@ -1,5 +1,4 @@
 use crate::{ContextSelectionSet, ErrorWithPosition, QueryError, Result};
-use anyhow::Error;
 use graphql_parser::query::Value;
 
 #[doc(hidden)]
