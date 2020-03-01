@@ -46,13 +46,17 @@ mod datetime;
 #[cfg(feature = "uuid")]
 mod uuid;
 
+#[doc(hidden)]
 pub use anyhow;
+#[doc(hidden)]
 pub use async_trait;
+#[doc(hidden)]
 pub use graphql_parser;
+#[doc(hidden)]
 pub use serde_json;
 
 pub use async_graphql_derive::{Enum, InputObject, Object};
-pub use context::{Context, ContextField, ContextSelectionSet, Data, Variables};
+pub use context::{Context, ContextField, Data, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use id::ID;
@@ -60,7 +64,11 @@ pub use query::QueryBuilder;
 pub use scalar::Scalar;
 
 // internal types
+#[doc(hidden)]
+pub use context::ContextSelectionSet;
+#[doc(hidden)]
 pub use r#enum::{GQLEnum, GQLEnumItem};
+#[doc(hidden)]
 pub use r#type::{
     GQLEmptyMutation, GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType,
 };

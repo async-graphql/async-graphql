@@ -54,6 +54,7 @@ impl<'a, T> Deref for Context<'a, T> {
 }
 
 impl<'a, T> Context<'a, T> {
+    #[doc(hidden)]
     pub fn with_item<R>(&self, item: R) -> Context<'a, R> {
         Context {
             item,
@@ -72,6 +73,7 @@ impl<'a, T> Context<'a, T> {
 }
 
 impl<'a> Context<'a, &'a Field> {
+    #[doc(hidden)]
     pub fn param_value<T: GQLInputValue>(&self, name: &str) -> Result<T> {
         let value = self
             .arguments
