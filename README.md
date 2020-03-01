@@ -47,7 +47,7 @@
 - [ ] Query
     - [X] Fields
     - [X] Arguments
-    - [ ] Alias
+    - [X] Alias
     - [ ] Fragments
     - [ ] Inline fragments
     - [X] Operation name
