@@ -54,6 +54,10 @@
     - [X] Operation name
     - [X] Variables
     - [ ] Directives
+        - [ ] @include
+        - [ ] @skip
+        - [ ] @deprecated
+        - [ ] Custom Directive
     - [ ] Schema
 
 ## References
