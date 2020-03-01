@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default)]
 pub struct Variables(HashMap<String, serde_json::Value>);
 
 impl Deref for Variables {
@@ -78,28 +78,25 @@ impl<'a> Context<'a, &'a Field> {
             .iter()
             .find(|(n, _)| n == name)
             .map(|(_, v)| v)
-            .cloned()
-            .unwrap_or(Value::Null);
-        let value = match (value, &self.variables) {
-            (Value::Variable(name), Some(vars)) => match vars.get(&name).cloned() {
-                Some(value) => value,
-                None => {
-                    return Err(QueryError::VarNotDefined {
-                        var_name: name.clone(),
-                    }
-                    .into());
+            .cloned();
+
+        if let Some(Value::Variable(var_name)) = &value {
+            if let Some(vars) = &self.variables {
+                if let Some(var_value) = vars.get(&*var_name).cloned() {
+                    let res = GQLInputValue::parse_from_json(var_value)
+                        .map_err(|err| err.with_position(self.item.position))?;
+                    return Ok(res);
                 }
-            },
-            (Value::Variable(name), None) => {
-                return Err(QueryError::VarNotDefined {
-                    var_name: name.clone(),
-                }
-                .into());
             }
-            (value, _) => value,
+
+            return Err(QueryError::VarNotDefined {
+                var_name: var_name.clone(),
+            }
+            .into());
         };
-        let res =
-            GQLInputValue::parse(value).map_err(|err| err.with_position(self.item.position))?;
+
+        let res = GQLInputValue::parse(value.unwrap_or(Value::Null))
+            .map_err(|err| err.with_position(self.item.position))?;
         Ok(res)
     }
 }

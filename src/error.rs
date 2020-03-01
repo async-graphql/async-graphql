@@ -15,6 +15,12 @@ pub enum QueryError {
     #[error("Expected type \"{expect}\", found {actual}.")]
     ExpectedType { expect: String, actual: Value },
 
+    #[error("Expected type \"{expect}\", found {actual}.")]
+    ExpectedJsonType {
+        expect: String,
+        actual: serde_json::Value,
+    },
+
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
     FieldNotFound {
         field_name: String,

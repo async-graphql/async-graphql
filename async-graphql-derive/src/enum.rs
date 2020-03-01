@@ -67,8 +67,12 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         impl async_graphql::GQLInputValue for #ident {
-            fn parse(value: graphql_parser::query::Value) -> Result<Self> {
+            fn parse(value: async_graphql::Value) -> Result<Self> {
                 Self::parse_enum(value)
+            }
+
+            fn parse_from_json(value: async_graphql::serde_json::Value) -> Result<Self> {
+                Self::parse_json_enum(value)
             }
         }
 

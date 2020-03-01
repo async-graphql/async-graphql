@@ -1,4 +1,5 @@
 use crate::{ContextSelectionSet, ErrorWithPosition, QueryError, Result};
+use anyhow::Error;
 use graphql_parser::query::Value;
 
 #[doc(hidden)]
@@ -9,6 +10,7 @@ pub trait GQLType {
 #[doc(hidden)]
 pub trait GQLInputValue: GQLType + Sized {
     fn parse(value: Value) -> Result<Self>;
+    fn parse_from_json(value: serde_json::Value) -> Result<Self>;
 }
 
 #[doc(hidden)]
@@ -42,6 +44,25 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
             }
         }
     }
+
+    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+        match value {
+            serde_json::Value::Array(values) => {
+                let mut result = Vec::new();
+                for value in values {
+                    result.push(GQLInputValue::parse_from_json(value)?);
+                }
+                Ok(result)
+            }
+            _ => {
+                return Err(QueryError::ExpectedJsonType {
+                    expect: Self::type_name(),
+                    actual: value,
+                }
+                .into())
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -66,6 +87,13 @@ impl<T: GQLInputValue> GQLInputValue for Option<T> {
         match value {
             Value::Null => Ok(None),
             _ => Ok(Some(GQLInputValue::parse(value)?)),
+        }
+    }
+
+    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+        match value {
+            serde_json::Value::Null => Ok(None),
+            _ => Ok(Some(GQLInputValue::parse_from_json(value)?)),
         }
     }
 }

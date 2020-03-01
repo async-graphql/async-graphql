@@ -32,8 +32,6 @@
 
 #[macro_use]
 extern crate thiserror;
-#[macro_use]
-extern crate serde_derive;
 
 mod context;
 mod r#enum;

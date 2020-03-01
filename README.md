@@ -51,7 +51,7 @@
     - [ ] Fragments
     - [ ] Inline fragments
     - [X] Operation name
-    - [ ] Variables
+    - [X] Variables
     - [ ] Directives
     - [ ] Schema
 

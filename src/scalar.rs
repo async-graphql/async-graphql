@@ -1,10 +1,12 @@
 use crate::r#type::{GQLInputValue, GQLOutputValue, GQLType};
 use crate::{ContextSelectionSet, QueryError, Result};
+use anyhow::Error;
 use graphql_parser::query::Value;
 
 pub trait Scalar: Sized + Send {
     fn type_name() -> &'static str;
     fn parse(value: Value) -> Result<Self>;
+    fn parse_from_json(value: serde_json::Value) -> Result<Self>;
     fn into_json(self) -> Result<serde_json::Value>;
 }
 
@@ -17,6 +19,10 @@ impl<T: Scalar> GQLType for T {
 impl<T: Scalar> GQLInputValue for T {
     fn parse(value: Value) -> Result<Self> {
         T::parse(value)
+    }
+
+    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+        T::parse_from_json(value)
     }
 }
 
@@ -41,6 +47,20 @@ macro_rules! impl_integer_scalars {
                     _ => {
                         return Err(QueryError::ExpectedType {
                             expect: <Self as Scalar>::type_name().to_string(),
+                            actual: value,
+                        }
+                        .into())
+                    }
+                }
+            }
+
+            fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+                match value {
+                    serde_json::Value::Number(n) if n.is_i64() => Ok(n.as_i64().unwrap() as Self),
+                    serde_json::Value::Number(n) => Ok(n.as_f64().unwrap() as Self),
+                    _ => {
+                        return Err(QueryError::ExpectedJsonType {
+                            expect: <Self as GQLType>::type_name().to_string(),
                             actual: value,
                         }
                         .into())
@@ -80,6 +100,19 @@ macro_rules! impl_float_scalars {
                 }
             }
 
+            fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+                match value {
+                    serde_json::Value::Number(n) => Ok(n.as_f64().unwrap() as Self),
+                    _ => {
+                        return Err(QueryError::ExpectedJsonType {
+                            expect: <Self as GQLType>::type_name().to_string(),
+                            actual: value,
+                        }
+                        .into())
+                    }
+                }
+            }
+
             fn into_json(self) -> Result<serde_json::Value> {
                 Ok(self.into())
             }
@@ -100,7 +133,20 @@ impl Scalar for String {
             Value::String(s) => Ok(s),
             _ => {
                 return Err(QueryError::ExpectedType {
-                    expect: <Self as Scalar>::type_name().to_string(),
+                    expect: <Self as GQLType>::type_name().to_string(),
+                    actual: value,
+                }
+                .into())
+            }
+        }
+    }
+
+    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+        match value {
+            serde_json::Value::String(s) => Ok(s),
+            _ => {
+                return Err(QueryError::ExpectedJsonType {
+                    expect: <Self as GQLType>::type_name().to_string(),
                     actual: value,
                 }
                 .into())
@@ -123,7 +169,20 @@ impl Scalar for bool {
             Value::Boolean(n) => Ok(n),
             _ => {
                 return Err(QueryError::ExpectedType {
-                    expect: <Self as Scalar>::type_name().to_string(),
+                    expect: <Self as GQLType>::type_name().to_string(),
+                    actual: value,
+                }
+                .into())
+            }
+        }
+    }
+
+    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+        match value {
+            serde_json::Value::Bool(n) => Ok(n),
+            _ => {
+                return Err(QueryError::ExpectedJsonType {
+                    expect: <Self as GQLType>::type_name().to_string(),
                     actual: value,
                 }
                 .into())

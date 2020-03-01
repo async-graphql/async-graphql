@@ -62,7 +62,8 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     let ctx_obj = ctx_field.with_item(&field.selection_set);
                     let value = obj.resolve(&ctx_obj).await.
                         map_err(|err| err.with_position(field.position))?;
-                    result.insert(#field_name.to_string(), value.into());
+                    let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
+                    result.insert(name, value.into());
                     continue;
                 }
             });
@@ -105,7 +106,8 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                         async_graphql::graphql_parser::query::Selection::Field(field) => {
                             let ctx_field = ctx.with_item(field);
                             if field.name.as_str() == "__typename" {
-                                result.insert("__typename".to_string(), #gql_typename.into());
+                                let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
+                                result.insert(name, #gql_typename.into());
                                 continue;
                             }
                             #(#resolvers)*

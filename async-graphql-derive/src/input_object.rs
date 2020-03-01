@@ -16,7 +16,9 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         .unwrap_or_else(|| ident.to_string());
 
     let mut get_fields = Vec::new();
+    let mut get_json_fields = Vec::new();
     let mut fields = Vec::new();
+
     for field in &s.fields {
         let field_args = args::InputField::parse(&field.attrs)?;
         let ident = field.ident.as_ref().unwrap();
@@ -24,6 +26,9 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         let name = field_args.name.unwrap_or_else(|| ident.to_string());
         get_fields.push(quote! {
             let #ident:#ty = async_graphql::GQLInputValue::parse(obj.remove(#name).unwrap_or(async_graphql::Value::Null))?;
+        });
+        get_json_fields.push(quote! {
+            let #ident:#ty = async_graphql::GQLInputValue::parse_from_json(obj.remove(#name).unwrap_or(async_graphql::serde_json::Value::Null))?;
         });
         fields.push(ident);
     }
@@ -44,6 +49,18 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     Ok(Self { #(#fields),* })
                 } else {
                     Err(async_graphql::QueryError::ExpectedType {
+                        expect: Self::type_name(),
+                        actual: value,
+                    }.into())
+                }
+            }
+
+            fn parse_from_json(value: async_graphql::serde_json::Value) -> async_graphql::Result<Self> {
+                if let async_graphql::serde_json::Value::Object(mut obj) = value {
+                    #(#get_json_fields)*
+                    Ok(Self { #(#fields),* })
+                } else {
+                    Err(async_graphql::QueryError::ExpectedJsonType {
                         expect: Self::type_name(),
                         actual: value,
                     }.into())
