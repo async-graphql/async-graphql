@@ -11,7 +11,6 @@ homepage = "https://github.com/sunli829/async-graphql"
 repository = "https://github.com/sunli829/async-graphql"
 keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous", "framework"]
-readme = "README.md"
 
 [lib]
 proc-macro = true

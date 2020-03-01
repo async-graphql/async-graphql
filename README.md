@@ -40,9 +40,9 @@
     - Complex Types
         - [X] List
         - [X] Non-Null
-    - [ ] Object
+    - [X] Object
     - [X] Enum
-    - [ ] InputObject
+    - [X] InputObject
     - [ ] Interface
     - [ ] Union
 - [ ] Query
