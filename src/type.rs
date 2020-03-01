@@ -1,4 +1,4 @@
-use crate::{ContextSelectionSet, GQLErrorWithPosition, GQLQueryError, Result};
+use crate::{ContextSelectionSet, ErrorWithPosition, QueryError, Result};
 use graphql_parser::query::Value;
 
 #[doc(hidden)]
@@ -34,7 +34,7 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
                 Ok(result)
             }
             _ => {
-                return Err(GQLQueryError::ExpectedType {
+                return Err(QueryError::ExpectedType {
                     expect: Self::type_name(),
                     actual: value,
                 }
@@ -82,7 +82,7 @@ impl<T: GQLOutputValue + Send> GQLOutputValue for Option<T> {
 }
 
 #[doc(hidden)]
-pub trait GQLObject: GQLType + GQLOutputValue {}
+pub trait GQLObject: GQLOutputValue {}
 
 pub struct GQLEmptyMutation;
 
@@ -95,11 +95,11 @@ impl GQLType for GQLEmptyMutation {
 #[async_trait::async_trait]
 impl GQLOutputValue for GQLEmptyMutation {
     async fn resolve(self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        anyhow::bail!(GQLQueryError::NotConfiguredMutations.with_position(ctx.item.span.0));
+        anyhow::bail!(QueryError::NotConfiguredMutations.with_position(ctx.item.span.0));
     }
 }
 
 impl GQLObject for GQLEmptyMutation {}
 
 #[doc(hidden)]
-pub trait GQLInputObject: GQLType + GQLInputValue {}
+pub trait GQLInputObject: GQLInputValue {}

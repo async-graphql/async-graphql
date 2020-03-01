@@ -22,14 +22,16 @@ pub use serde_json;
 
 pub use async_graphql_derive::{Enum, InputObject, Object};
 pub use context::{Context, ContextField, ContextSelectionSet, Data, Variables};
-pub use error::{GQLErrorWithPosition, GQLPositionError, GQLQueryError, GQLQueryParseError};
+pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
-pub use query::GQLQueryBuilder;
+pub use query::QueryBuilder;
+pub use scalar::Scalar;
+
+// internal types
 pub use r#enum::{GQLEnum, GQLEnumItem};
 pub use r#type::{
     GQLEmptyMutation, GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType,
 };
-pub use scalar::GQLScalar;
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Error = anyhow::Error;

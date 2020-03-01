@@ -1,7 +1,7 @@
-use crate::{GQLQueryError, GQLScalar, Result, Value};
+use crate::{QueryError, Scalar, Result, Value};
 use uuid::Uuid;
 
-impl GQLScalar for Uuid {
+impl Scalar for Uuid {
     fn type_name() -> &'static str {
         "UUID"
     }
@@ -10,7 +10,7 @@ impl GQLScalar for Uuid {
         match value {
             Value::String(s) => Ok(Uuid::parse_str(&s)?),
             _ => {
-                return Err(GQLQueryError::ExpectedType {
+                return Err(QueryError::ExpectedType {
                     expect: Self::type_name().to_string(),
                     actual: value,
                 }

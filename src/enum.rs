@@ -1,4 +1,4 @@
-use crate::{GQLQueryError, GQLType, Result};
+use crate::{QueryError, GQLType, Result};
 use graphql_parser::query::Value;
 
 #[doc(hidden)]
@@ -22,14 +22,14 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
                         return Ok(item.value);
                     }
                 }
-                Err(GQLQueryError::InvalidEnumValue {
+                Err(QueryError::InvalidEnumValue {
                     enum_type: Self::type_name(),
                     value: s,
                 }
                 .into())
             }
             _ => {
-                return Err(GQLQueryError::ExpectedType {
+                return Err(QueryError::ExpectedType {
                     expect: Self::type_name(),
                     actual: value,
                 }

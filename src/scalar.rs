@@ -1,27 +1,27 @@
 use crate::r#type::{GQLInputValue, GQLOutputValue, GQLType};
-use crate::{ContextSelectionSet, GQLQueryError, Result};
+use crate::{ContextSelectionSet, QueryError, Result};
 use graphql_parser::query::Value;
 
-pub trait GQLScalar: Sized + Send {
+pub trait Scalar: Sized + Send {
     fn type_name() -> &'static str;
     fn parse(value: Value) -> Result<Self>;
     fn into_json(self) -> Result<serde_json::Value>;
 }
 
-impl<T: GQLScalar> GQLType for T {
+impl<T: Scalar> GQLType for T {
     fn type_name() -> String {
         T::type_name().to_string()
     }
 }
 
-impl<T: GQLScalar> GQLInputValue for T {
+impl<T: Scalar> GQLInputValue for T {
     fn parse(value: Value) -> Result<Self> {
         T::parse(value)
     }
 }
 
 #[async_trait::async_trait]
-impl<T: GQLScalar> GQLOutputValue for T {
+impl<T: Scalar> GQLOutputValue for T {
     async fn resolve(self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         T::into_json(self)
     }
@@ -30,7 +30,7 @@ impl<T: GQLScalar> GQLOutputValue for T {
 macro_rules! impl_integer_scalars {
     ($($ty:ty),*) => {
         $(
-        impl GQLScalar for $ty {
+        impl Scalar for $ty {
             fn type_name() -> &'static str {
                 "Int!"
             }
@@ -39,8 +39,8 @@ macro_rules! impl_integer_scalars {
                 match value {
                     Value::Int(n) => Ok(n.as_i64().unwrap() as Self),
                     _ => {
-                        return Err(GQLQueryError::ExpectedType {
-                            expect: <Self as GQLScalar>::type_name().to_string(),
+                        return Err(QueryError::ExpectedType {
+                            expect: <Self as Scalar>::type_name().to_string(),
                             actual: value,
                         }
                         .into())
@@ -61,7 +61,7 @@ impl_integer_scalars!(i8, i16, i32, i64, u8, u16, u32, u64);
 macro_rules! impl_float_scalars {
     ($($ty:ty),*) => {
         $(
-        impl GQLScalar for $ty {
+        impl Scalar for $ty {
             fn type_name() -> &'static str {
                 "Float!"
             }
@@ -71,8 +71,8 @@ macro_rules! impl_float_scalars {
                     Value::Int(n) => Ok(n.as_i64().unwrap() as Self),
                     Value::Float(n) => Ok(n as Self),
                     _ => {
-                        return Err(GQLQueryError::ExpectedType {
-                            expect: <Self as GQLScalar>::type_name().to_string(),
+                        return Err(QueryError::ExpectedType {
+                            expect: <Self as Scalar>::type_name().to_string(),
                             actual: value,
                         }
                         .into())
@@ -90,7 +90,7 @@ macro_rules! impl_float_scalars {
 
 impl_float_scalars!(f32, f64);
 
-impl GQLScalar for String {
+impl Scalar for String {
     fn type_name() -> &'static str {
         "String!"
     }
@@ -99,8 +99,8 @@ impl GQLScalar for String {
         match value {
             Value::String(s) => Ok(s),
             _ => {
-                return Err(GQLQueryError::ExpectedType {
-                    expect: <Self as GQLScalar>::type_name().to_string(),
+                return Err(QueryError::ExpectedType {
+                    expect: <Self as Scalar>::type_name().to_string(),
                     actual: value,
                 }
                 .into())
@@ -113,7 +113,7 @@ impl GQLScalar for String {
     }
 }
 
-impl GQLScalar for bool {
+impl Scalar for bool {
     fn type_name() -> &'static str {
         "Boolean!"
     }
@@ -122,8 +122,8 @@ impl GQLScalar for bool {
         match value {
             Value::Boolean(n) => Ok(n),
             _ => {
-                return Err(GQLQueryError::ExpectedType {
-                    expect: <Self as GQLScalar>::type_name().to_string(),
+                return Err(QueryError::ExpectedType {
+                    expect: <Self as Scalar>::type_name().to_string(),
                     actual: value,
                 }
                 .into())

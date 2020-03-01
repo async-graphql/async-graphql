@@ -5,10 +5,10 @@ use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug, Error)]
 #[error("{0}")]
-pub struct GQLQueryParseError(pub(crate) String);
+pub struct QueryParseError(pub(crate) String);
 
 #[derive(Debug, Error)]
-pub enum GQLQueryError {
+pub enum QueryError {
     #[error("Not supported.")]
     NotSupported,
 
@@ -30,20 +30,29 @@ pub enum GQLQueryError {
     #[error("Schema is not configured for mutations.")]
     NotConfiguredMutations,
 
-    #[error("Invalid value for enum \"{enum_type}\"")]
+    #[error("Invalid value for enum \"{enum_type}\".")]
     InvalidEnumValue { enum_type: String, value: String },
+
+    #[error("Required field \"{field_name}\" for InputObject \"{object}\" does not exist.")]
+    RequiredField {
+        field_name: String,
+        object: &'static str,
+    },
+
+    #[error("Variable \"${var_name}\" is not defined")]
+    VarNotDefined { var_name: String },
 }
 
-pub trait GQLErrorWithPosition {
+pub trait ErrorWithPosition {
     type Result;
-    fn with_position(self, position: Pos) -> GQLPositionError;
+    fn with_position(self, position: Pos) -> PositionError;
 }
 
-impl<T: Into<Error>> GQLErrorWithPosition for T {
-    type Result = GQLPositionError;
+impl<T: Into<Error>> ErrorWithPosition for T {
+    type Result = PositionError;
 
-    fn with_position(self, position: Pos) -> GQLPositionError {
-        GQLPositionError {
+    fn with_position(self, position: Pos) -> PositionError {
+        PositionError {
             position,
             inner: self.into(),
         }
@@ -51,12 +60,12 @@ impl<T: Into<Error>> GQLErrorWithPosition for T {
 }
 
 #[derive(Debug, Error)]
-pub struct GQLPositionError {
+pub struct PositionError {
     pub position: Pos,
     pub inner: Error,
 }
 
-impl GQLPositionError {
+impl PositionError {
     pub fn new(position: Pos, inner: Error) -> Self {
         Self { position, inner }
     }
@@ -66,7 +75,7 @@ impl GQLPositionError {
     }
 }
 
-impl Display for GQLPositionError {
+impl Display for PositionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

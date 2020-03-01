@@ -1,4 +1,4 @@
-use crate::{GQLInputValue, Result};
+use crate::{ErrorWithPosition, GQLInputValue, QueryError, Result};
 use fnv::FnvHasher;
 use graphql_parser::query::{Field, SelectionSet, Value};
 use std::any::{Any, TypeId};
@@ -80,6 +80,26 @@ impl<'a> Context<'a, &'a Field> {
             .map(|(_, v)| v)
             .cloned()
             .unwrap_or(Value::Null);
-        GQLInputValue::parse(value)
+        let value = match (value, &self.variables) {
+            (Value::Variable(name), Some(vars)) => match vars.get(&name).cloned() {
+                Some(value) => value,
+                None => {
+                    return Err(QueryError::VarNotDefined {
+                        var_name: name.clone(),
+                    }
+                    .into());
+                }
+            },
+            (Value::Variable(name), None) => {
+                return Err(QueryError::VarNotDefined {
+                    var_name: name.clone(),
+                }
+                .into());
+            }
+            (value, _) => value,
+        };
+        let res =
+            GQLInputValue::parse(value).map_err(|err| err.with_position(self.item.position))?;
+        Ok(res)
     }
 }

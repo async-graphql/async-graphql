@@ -1,11 +1,11 @@
 use crate::{
-    Context, Data, GQLErrorWithPosition, GQLObject, GQLQueryError, GQLQueryParseError, Result,
+    Context, Data, ErrorWithPosition, GQLObject, QueryError, QueryParseError, Result,
     Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
 
-pub struct GQLQueryBuilder<'a, Query, Mutation> {
+pub struct QueryBuilder<'a, Query, Mutation> {
     query: Query,
     mutation: Mutation,
     query_source: &'a str,
@@ -14,7 +14,7 @@ pub struct GQLQueryBuilder<'a, Query, Mutation> {
     data: Option<&'a Data>,
 }
 
-impl<'a, Query, Mutation> GQLQueryBuilder<'a, Query, Mutation> {
+impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     pub fn new(query: Query, mutation: Mutation, query_source: &'a str) -> Self {
         Self {
             query,
@@ -27,21 +27,21 @@ impl<'a, Query, Mutation> GQLQueryBuilder<'a, Query, Mutation> {
     }
 
     pub fn operator_name(self, name: &'a str) -> Self {
-        GQLQueryBuilder {
+        QueryBuilder {
             operation_name: Some(name),
             ..self
         }
     }
 
     pub fn variables(self, vars: &'a Variables) -> Self {
-        GQLQueryBuilder {
+        QueryBuilder {
             variables: Some(vars),
             ..self
         }
     }
 
     pub fn data(self, data: &'a Data) -> Self {
-        GQLQueryBuilder {
+        QueryBuilder {
             data: Some(data),
             ..self
         }
@@ -53,7 +53,7 @@ impl<'a, Query, Mutation> GQLQueryBuilder<'a, Query, Mutation> {
         Mutation: GQLObject,
     {
         let document =
-            parse_query(self.query_source).map_err(|err| GQLQueryParseError(err.to_string()))?;
+            parse_query(self.query_source).map_err(|err| QueryParseError(err.to_string()))?;
 
         for definition in &document.definitions {
             match definition {
@@ -92,16 +92,16 @@ impl<'a, Query, Mutation> GQLQueryBuilder<'a, Query, Mutation> {
                     }
                 }
                 Definition::Operation(OperationDefinition::Subscription(subscription)) => {
-                    anyhow::bail!(GQLQueryError::NotSupported.with_position(subscription.position));
+                    anyhow::bail!(QueryError::NotSupported.with_position(subscription.position));
                 }
                 Definition::Fragment(fragment) => {
-                    anyhow::bail!(GQLQueryError::NotSupported.with_position(fragment.position));
+                    anyhow::bail!(QueryError::NotSupported.with_position(fragment.position));
                 }
             }
         }
 
         if let Some(operation_name) = self.operation_name {
-            anyhow::bail!(GQLQueryError::UnknownOperationNamed {
+            anyhow::bail!(QueryError::UnknownOperationNamed {
                 name: operation_name.to_string()
             });
         }

@@ -6,6 +6,12 @@ enum MyEnum {
     B,
 }
 
+#[async_graphql::InputObject]
+struct MyInputObj {
+    a: i32,
+    b: i32,
+}
+
 #[async_graphql::Object(name = "haha", desc = "hehe")]
 struct MyObj {
     #[field(
@@ -21,6 +27,9 @@ struct MyObj {
 
     #[field(arg(name = "input", type = "MyEnum"))]
     c: MyEnum,
+
+    #[field(arg(name = "input", type = "MyInputObj"))]
+    d: i32,
 
     #[field]
     child: ChildObj,
@@ -46,6 +55,10 @@ impl MyObjFields for MyObj {
         Ok(input)
     }
 
+    async fn d(&self, ctx: &ContextField<'_>, input: MyInputObj) -> Result<i32> {
+        Ok(input.a + input.b)
+    }
+
     async fn child(&self, ctx: &ContextField<'_>) -> async_graphql::Result<ChildObj> {
         Ok(ChildObj { value: 10.0 })
     }
@@ -60,9 +73,13 @@ impl ChildObjFields for ChildObj {
 
 #[async_std::main]
 async fn main() {
-    let res = GQLQueryBuilder::new(MyObj { a: 10 }, GQLEmptyMutation, "{ b c(input:B) }")
-        .execute()
-        .await
-        .unwrap();
+    let res = QueryBuilder::new(
+        MyObj { a: 10 },
+        GQLEmptyMutation,
+        "{ b c(input:B) d(input:{a:10 b:20}) }",
+    )
+    .execute()
+    .await
+    .unwrap();
     serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
 }

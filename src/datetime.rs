@@ -1,7 +1,7 @@
-use crate::{GQLQueryError, GQLScalar, Result, Value};
+use crate::{QueryError, Scalar, Result, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
-impl GQLScalar for DateTime<Utc> {
+impl Scalar for DateTime<Utc> {
     fn type_name() -> &'static str {
         "DateTime"
     }
@@ -10,7 +10,7 @@ impl GQLScalar for DateTime<Utc> {
         match value {
             Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
             _ => {
-                return Err(GQLQueryError::ExpectedType {
+                return Err(QueryError::ExpectedType {
                     expect: Self::type_name().to_string(),
                     actual: value,
                 }

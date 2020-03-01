@@ -91,10 +91,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         #[async_graphql::async_trait::async_trait]
         impl async_graphql::GQLOutputValue for #ident {
             async fn resolve(self, ctx: &async_graphql::ContextSelectionSet<'_>) -> async_graphql::Result<async_graphql::serde_json::Value> {
-                use async_graphql::GQLErrorWithPosition;
+                use async_graphql::ErrorWithPosition;
 
                 if ctx.items.is_empty() {
-                    async_graphql::anyhow::bail!(async_graphql::GQLQueryError::MustHaveSubFields {
+                    async_graphql::anyhow::bail!(async_graphql::QueryError::MustHaveSubFields {
                         object: #gql_typename,
                     }.with_position(ctx.span.0));
                 }
@@ -109,7 +109,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                                 continue;
                             }
                             #(#resolvers)*
-                            async_graphql::anyhow::bail!(async_graphql::GQLQueryError::FieldNotFound {
+                            async_graphql::anyhow::bail!(async_graphql::QueryError::FieldNotFound {
                                 field_name: field.name.clone(),
                                 object: #gql_typename,
                             }.with_position(field.position));
