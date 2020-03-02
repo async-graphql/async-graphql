@@ -1,18 +1,32 @@
 use crate::schema::__Type;
-use crate::Value;
+use crate::{ContextField, Result};
 use async_graphql_derive::Object;
 
-#[Object(internal)]
-pub struct __InputValue {
-    #[field(attr)]
-    name: &'static str,
+#[Object(
+    internal,
+    desc = "Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.",
+    field(name = "name", type = "String", owned),
+    field(name = "description", type = "Option<String>", owned),
+    field(name = "type", resolver = "ty", type = "__Type", owned),
+    field(name = "defaultValue", type = "String", owned)
+)]
+pub struct __InputValue {}
 
-    #[field(attr)]
-    description: Option<&'static str>,
+#[async_trait::async_trait]
+impl __InputValueFields for __InputValue {
+    async fn name(&self, _: &ContextField<'_>) -> Result<String> {
+        todo!()
+    }
 
-    #[field(attr, name = "type")]
-    ty: &'static __Type,
+    async fn description(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+        todo!()
+    }
 
-    #[field(attr, attr_type = "Value", name = "defaultValue")]
-    default_value: String,
+    async fn ty(&self, _: &ContextField<'_>) -> Result<__Type> {
+        todo!()
+    }
+
+    async fn default_value(&self, _: &ContextField<'_>) -> Result<String> {
+        todo!()
+    }
 }

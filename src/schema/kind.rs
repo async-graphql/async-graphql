@@ -1,6 +1,9 @@
 use async_graphql_derive::Enum;
 
-#[Enum(internal)]
+#[Enum(
+    internal,
+    desc = "An enum describing what kind of type a given `__Type` is."
+)]
 #[allow(non_camel_case_types)]
 pub enum __TypeKind {
     #[item(desc = "Indicates this type is a scalar.")]

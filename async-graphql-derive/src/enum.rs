@@ -81,7 +81,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::GQLOutputValue for #ident {
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<serde_json::Value> {
-                self.resolve_enum()
+                #crate_name::GQLEnum::resolve_enum(self)
             }
         }
     };

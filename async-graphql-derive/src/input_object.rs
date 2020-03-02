@@ -46,6 +46,8 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
 
         impl #crate_name::GQLInputValue for #ident {
             fn parse(value: #crate_name::Value) -> #crate_name::Result<Self> {
+                use #crate_name::GQLType;
+
                 if let #crate_name::Value::Object(mut obj) = value {
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })
@@ -58,6 +60,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
 
             fn parse_from_json(value: #crate_name::serde_json::Value) -> #crate_name::Result<Self> {
+                use #crate_name::GQLType;
                 if let #crate_name::serde_json::Value::Object(mut obj) = value {
                     #(#get_json_fields)*
                     Ok(Self { #(#fields),* })

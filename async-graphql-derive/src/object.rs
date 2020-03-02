@@ -1,5 +1,6 @@
 use crate::args;
 use crate::utils::get_crate_name;
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
@@ -7,11 +8,10 @@ use syn::{Data, DeriveInput, Error, Ident, Result};
 
 pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
-    let attrs = &input.attrs;
     let vis = &input.vis;
     let ident = &input.ident;
-    let s = match &input.data {
-        Data::Struct(s) => s,
+    match &input.data {
+        Data::Struct(_) => {}
         _ => return Err(Error::new_spanned(input, "It should be a struct.")),
     };
 
@@ -20,94 +20,63 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         .clone()
         .unwrap_or_else(|| ident.to_string());
     let trait_ident = Ident::new(&format!("{}Fields", ident.to_string()), Span::call_site());
-    let mut obj_attrs = Vec::new();
-    let mut obj_fields = Vec::new();
     let mut trait_fns = Vec::new();
     let mut resolvers = Vec::new();
-    let mut all_is_simple_attr = true;
 
-    for field in &s.fields {
-        if let Some(field_args) = args::Field::parse(&field.attrs)? {
-            // is field
-            let vis = &field.vis;
-            let ty = &field.ty;
-            let ident = field.ident.as_ref().unwrap();
-            let field_name = ident.to_string();
+    for field in &object_args.fields {
+        let ty = &field.ty;
+        let field_name = &field.name;
+        let mut decl_params = Vec::new();
+        let mut get_params = Vec::new();
+        let mut use_params = Vec::new();
 
-            obj_fields.push(field);
-            if field_args.is_attr {
-                let ty = field_args.attr_type.as_ref().unwrap_or(ty);
-                obj_attrs.push(quote! { #vis #ident: #ty });
-                if !field_args.arguments.is_empty() || field_args.attr_type.is_some() {
-                    all_is_simple_attr = false;
-                }
-            } else {
-                all_is_simple_attr = false;
-            }
+        for arg in &field.arguments {
+            let name = Ident::new(&arg.name, Span::call_site());
+            let ty = &arg.ty;
+            let name_str = name.to_string();
+            let snake_case_name = Ident::new(&name.to_string().to_snake_case(), ident.span());
 
-            let mut decl_params = Vec::new();
-            let mut get_params = Vec::new();
-            let mut use_params = Vec::new();
+            decl_params.push(quote! { #snake_case_name: #ty });
+            get_params.push(quote! {
+                let #snake_case_name: #ty = ctx_field.param_value(#name_str)?;
+            });
+            use_params.push(quote! { #snake_case_name });
+        }
 
-            for arg in &field_args.arguments {
-                let name = Ident::new(&arg.name, Span::call_site());
-                let ty = &arg.ty;
-                let name_str = name.to_string();
-
-                decl_params.push(quote! { #name: #ty });
-                get_params.push(quote! {
-                    let #name: #ty = ctx_field.param_value(#name_str)?;
-                });
-                use_params.push(quote! { #name });
-            }
-
+        let resolver = Ident::new(
+            &field
+                .resolver
+                .as_ref()
+                .unwrap_or(&field.name.to_snake_case()),
+            Span::call_site(),
+        );
+        if field.is_owned {
             trait_fns.push(quote! {
-                async fn #ident(&self, ctx: &#crate_name::ContextField<'_>, #(#decl_params),*) -> #crate_name::Result<#ty>;
-            });
-
-            resolvers.push(quote! {
-                if field.name.as_str() == #field_name {
-                    #(#get_params)*
-                    let obj = #trait_ident::#ident(self, &ctx_field, #(#use_params),*).await.
-                        map_err(|err| err.with_position(field.position))?;
-                    let ctx_obj = ctx_field.with_item(&field.selection_set);
-                    let value = obj.resolve(&ctx_obj).await.
-                        map_err(|err| err.with_position(field.position))?;
-                    let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
-                    result.insert(name, value.into());
-                    continue;
-                }
-            });
+                    async fn #resolver(&self, ctx: &#crate_name::ContextField<'_>, #(#decl_params),*) -> #crate_name::Result<#ty>;
+                });
         } else {
-            obj_attrs.push(quote! { #field });
+            trait_fns.push(quote! {
+                    async fn #resolver<'a>(&'a self, ctx: &#crate_name::ContextField<'_>, #(#decl_params),*) -> #crate_name::Result<&'a #ty>;
+                });
         }
-    }
 
-    let mut impl_fields = quote! {};
-    if object_args.auto_impl && all_is_simple_attr {
-        let mut impl_fns = Vec::new();
-        for field in obj_fields {
-            let ident = &field.ident;
-            let ty = &field.ty;
-            impl_fns.push(quote! {
-                async fn #ident(&self, _: &#crate_name::ContextField<'_>) -> #crate_name::Result<#ty> {
-                    Ok(self.#ident.clone())
-                }
-            });
-        }
-        impl_fields = quote! {
-            #[#crate_name::async_trait::async_trait]
-            impl #trait_ident for #ident {
-                #(#impl_fns)*
+        resolvers.push(quote! {
+            if field.name.as_str() == #field_name {
+                #(#get_params)*
+                let obj = #trait_ident::#resolver(self, &ctx_field, #(#use_params),*).await.
+                    map_err(|err| err.with_position(field.position))?;
+                let ctx_obj = ctx_field.with_item(&field.selection_set);
+                let value = obj.resolve(&ctx_obj).await.
+                    map_err(|err| err.with_position(field.position))?;
+                let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
+                result.insert(name, value.into());
+                continue;
             }
-        };
+        });
     }
 
     let expanded = quote! {
-        #(#attrs)*
-        #vis struct #ident {
-            #(#obj_attrs),*
-        }
+        #input
 
         #[#crate_name::async_trait::async_trait]
         #vis trait #trait_ident {
@@ -156,8 +125,6 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         }
 
         impl #crate_name::GQLObject for #ident {}
-
-        #impl_fields
     };
     Ok(expanded.into())
 }

@@ -3,7 +3,8 @@ use std::borrow::Cow;
 
 impl<T: GQLType> GQLType for Option<T> {
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}", T::type_name().trim_end_matches("!")))
+        let name = T::type_name();
+        Cow::Owned(format!("{}", &name[..name.len() - 1]))
     }
 }
 
@@ -24,8 +25,8 @@ impl<T: GQLInputValue> GQLInputValue for Option<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for Option<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+impl<T: GQLOutputValue + Sync> GQLOutputValue for Option<T> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where {
         if let Some(inner) = self {
             inner.resolve(ctx).await
         } else {
