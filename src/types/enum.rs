@@ -23,7 +23,7 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
                     }
                 }
                 Err(QueryError::InvalidEnumValue {
-                    enum_type: Self::type_name(),
+                    ty: Self::type_name(),
                     value: s,
                 }
                 .into())
@@ -48,7 +48,7 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
                     }
                 }
                 Err(QueryError::InvalidEnumValue {
-                    enum_type: Self::type_name(),
+                    ty: Self::type_name(),
                     value: s,
                 }
                 .into())
@@ -63,10 +63,10 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
         }
     }
 
-    fn resolve_enum(self) -> Result<serde_json::Value> {
+    fn resolve_enum(&self) -> Result<serde_json::Value> {
         let items = Self::items();
         for item in items {
-            if item.value == self {
+            if item.value == *self {
                 return Ok(item.name.clone().into());
             }
         }

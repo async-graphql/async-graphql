@@ -1,9 +1,11 @@
 use crate::args;
+use crate::utils::get_crate_name;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
 
 pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStream> {
+    let crate_name = get_crate_name(enum_args.internal);
     let attrs = &input.attrs;
     let vis = &input.vis;
     let ident = &input.ident;
@@ -33,13 +35,13 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .name
             .take()
             .unwrap_or_else(|| variant.ident.to_string());
-        enum_items.push(variant);
+        enum_items.push(&variant.ident);
         let desc = match item_args.desc.take() {
             Some(desc) => quote! { Some(#desc) },
             None => quote! { None },
         };
         items.push(quote! {
-            async_graphql::GQLEnumItem {
+            #crate_name::GQLEnumItem {
                 name: #gql_item_name,
                 desc: #desc,
                 value: #ident::#item_ident,
@@ -49,36 +51,36 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
     let expanded = quote! {
         #(#attrs)*
-        #[derive(Copy, Clone, Eq, PartialEq)]
+        #[derive(Copy, Clone, Eq, PartialEq, Debug)]
         #vis enum #ident {
             #(#enum_items),*
         }
 
-        impl async_graphql::GQLEnum for #ident {
-            fn items() -> &'static [async_graphql::GQLEnumItem<#ident>] {
+        impl #crate_name::GQLEnum for #ident {
+            fn items() -> &'static [#crate_name::GQLEnumItem<#ident>] {
                 &[#(#items),*]
             }
         }
 
-        impl async_graphql::GQLType for #ident {
-            fn type_name() -> String {
-                #gql_typename.to_string()
+        impl #crate_name::GQLType for #ident {
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(#gql_typename)
             }
         }
 
-        impl async_graphql::GQLInputValue for #ident {
-            fn parse(value: async_graphql::Value) -> Result<Self> {
-                Self::parse_enum(value)
+        impl #crate_name::GQLInputValue for #ident {
+            fn parse(value: #crate_name::Value) -> #crate_name::Result<Self> {
+                #crate_name::GQLEnum::parse_enum(value)
             }
 
-            fn parse_from_json(value: async_graphql::serde_json::Value) -> Result<Self> {
-                Self::parse_json_enum(value)
+            fn parse_from_json(value: #crate_name::serde_json::Value) -> #crate_name::Result<Self> {
+                #crate_name::GQLEnum::parse_json_enum(value)
             }
         }
 
-        #[async_graphql::async_trait::async_trait]
-        impl async_graphql::GQLOutputValue for #ident {
-            async fn resolve(self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        #[#crate_name::async_trait::async_trait]
+        impl #crate_name::GQLOutputValue for #ident {
+            async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<serde_json::Value> {
                 self.resolve_enum()
             }
         }

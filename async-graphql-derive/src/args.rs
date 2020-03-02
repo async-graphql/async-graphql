@@ -2,17 +2,27 @@ use syn::{Attribute, AttributeArgs, Error, Meta, NestedMeta, Result, Type};
 
 #[derive(Debug)]
 pub struct Object {
+    pub internal: bool,
+    pub auto_impl: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
 }
 
 impl Object {
     pub fn parse(args: AttributeArgs) -> Result<Self> {
+        let mut internal = false;
+        let mut auto_impl = false;
         let mut name = None;
         let mut desc = None;
 
         for arg in args {
             match arg {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("auto_impl") => {
+                    auto_impl = true;
+                }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
                         if let syn::Lit::Str(lit) = nv.lit {
@@ -38,7 +48,12 @@ impl Object {
             }
         }
 
-        Ok(Self { name, desc })
+        Ok(Self {
+            internal,
+            auto_impl,
+            name,
+            desc,
+        })
     }
 }
 
@@ -54,6 +69,7 @@ pub struct Field {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub is_attr: bool,
+    pub attr_type: Option<Type>,
     pub arguments: Vec<Argument>,
 }
 
@@ -63,6 +79,7 @@ impl Field {
         let mut name = None;
         let mut desc = None;
         let mut is_attr = false;
+        let mut attr_type = None;
         let mut arguments = Vec::new();
 
         for attr in attrs {
@@ -91,6 +108,19 @@ impl Field {
                                         return Err(Error::new_spanned(
                                             &nv.lit,
                                             "Attribute 'desc' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("attr_type") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        if let Ok(ty) = syn::parse_str::<syn::Type>(&lit.value()) {
+                                            attr_type = Some(ty);
+                                        } else {
+                                            return Err(Error::new_spanned(&lit, "expect type"));
+                                        }
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'attr_type' should be a string.",
                                         ));
                                     }
                                 }
@@ -170,6 +200,7 @@ impl Field {
                 name,
                 desc,
                 is_attr,
+                attr_type,
                 arguments,
             }))
         } else {
@@ -180,17 +211,22 @@ impl Field {
 
 #[derive(Debug)]
 pub struct Enum {
+    pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
 }
 
 impl Enum {
     pub fn parse(args: AttributeArgs) -> Result<Self> {
+        let mut internal = false;
         let mut name = None;
         let mut desc = None;
 
         for arg in args {
             match arg {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
                         if let syn::Lit::Str(lit) = nv.lit {
@@ -216,7 +252,11 @@ impl Enum {
             }
         }
 
-        Ok(Self { name, desc })
+        Ok(Self {
+            internal,
+            name,
+            desc,
+        })
     }
 }
 
@@ -270,12 +310,14 @@ impl EnumItem {
 
 #[derive(Debug)]
 pub struct InputField {
+    pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
 }
 
 impl InputField {
     pub fn parse(attrs: &[Attribute]) -> Result<Self> {
+        let mut internal = false;
         let mut name = None;
         let mut desc = None;
 
@@ -284,6 +326,9 @@ impl InputField {
                 if let Ok(Meta::List(args)) = attr.parse_meta() {
                     for meta in args.nested {
                         match meta {
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                                internal = true;
+                            }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
                                     if let syn::Lit::Str(lit) = nv.lit {
@@ -312,6 +357,10 @@ impl InputField {
             }
         }
 
-        Ok(Self { name, desc })
+        Ok(Self {
+            internal,
+            name,
+            desc,
+        })
     }
 }

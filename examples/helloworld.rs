@@ -12,6 +12,15 @@ struct MyInputObj {
     b: i32,
 }
 
+#[async_graphql::Object(auto_impl)]
+struct MyObj2 {
+    #[field(attr)]
+    a: i32,
+
+    #[field(attr)]
+    b: i32,
+}
+
 #[async_graphql::Object(name = "haha", desc = "hehe")]
 struct MyObj {
     #[field(
@@ -30,6 +39,15 @@ struct MyObj {
 
     #[field(arg(name = "input", type = "MyInputObj"))]
     d: i32,
+
+    #[field]
+    e: &'static str,
+
+    #[field]
+    f: &'static [i32],
+
+    #[field]
+    g: &'static MyObj2,
 
     #[field]
     child: ChildObj,
@@ -59,6 +77,18 @@ impl MyObjFields for MyObj {
         Ok(input.a + input.b)
     }
 
+    async fn e(&self, ctx: &ContextField<'_>) -> Result<&'static str> {
+        Ok("hehehe")
+    }
+
+    async fn f(&self, ctx: &ContextField<'_>) -> Result<&'static [i32]> {
+        Ok(&[1, 2, 3, 4, 5])
+    }
+
+    async fn g(&self, ctx: &ContextField<'_>) -> Result<&'static MyObj2> {
+        Ok(&MyObj2 { a: 10, b: 20 })
+    }
+
     async fn child(&self, ctx: &ContextField<'_>) -> async_graphql::Result<ChildObj> {
         Ok(ChildObj { value: 10.0 })
     }
@@ -76,7 +106,7 @@ async fn main() {
     let res = QueryBuilder::new(
         MyObj { a: 10 },
         GQLEmptyMutation,
-        "{ b c(input:B) d(input:{a:10 b:20}) }",
+        "{ b c(input:B) d(input:{a:10 b:20}) e f g { a b } }",
     )
     .execute()
     .await

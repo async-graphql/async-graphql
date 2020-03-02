@@ -1,9 +1,11 @@
 use crate::args;
+use crate::utils::get_crate_name;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
 
 pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
+    let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
     let s = match &input.data {
         Data::Struct(s) => s,
@@ -25,10 +27,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         let ty = &field.ty;
         let name = field_args.name.unwrap_or_else(|| ident.to_string());
         get_fields.push(quote! {
-            let #ident:#ty = async_graphql::GQLInputValue::parse(obj.remove(#name).unwrap_or(async_graphql::Value::Null))?;
+            let #ident:#ty = #crate_name::GQLInputValue::parse(obj.remove(#name).unwrap_or(#crate_name::Value::Null))?;
         });
         get_json_fields.push(quote! {
-            let #ident:#ty = async_graphql::GQLInputValue::parse_from_json(obj.remove(#name).unwrap_or(async_graphql::serde_json::Value::Null))?;
+            let #ident:#ty = #crate_name::GQLInputValue::parse_from_json(obj.remove(#name).unwrap_or(#crate_name::serde_json::Value::Null))?;
         });
         fields.push(ident);
     }
@@ -36,31 +38,31 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     let expanded = quote! {
         #input
 
-        impl async_graphql::GQLType for #ident {
-            fn type_name() -> String {
-                #gql_typename.to_string()
+        impl #crate_name::GQLType for #ident {
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(#gql_typename)
             }
         }
 
-        impl async_graphql::GQLInputValue for #ident {
-            fn parse(value: async_graphql::Value) -> async_graphql::Result<Self> {
-                if let async_graphql::Value::Object(mut obj) = value {
+        impl #crate_name::GQLInputValue for #ident {
+            fn parse(value: #crate_name::Value) -> #crate_name::Result<Self> {
+                if let #crate_name::Value::Object(mut obj) = value {
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })
                 } else {
-                    Err(async_graphql::QueryError::ExpectedType {
+                    Err(#crate_name::QueryError::ExpectedType {
                         expect: Self::type_name(),
                         actual: value,
                     }.into())
                 }
             }
 
-            fn parse_from_json(value: async_graphql::serde_json::Value) -> async_graphql::Result<Self> {
-                if let async_graphql::serde_json::Value::Object(mut obj) = value {
+            fn parse_from_json(value: #crate_name::serde_json::Value) -> #crate_name::Result<Self> {
+                if let #crate_name::serde_json::Value::Object(mut obj) = value {
                     #(#get_json_fields)*
                     Ok(Self { #(#fields),* })
                 } else {
-                    Err(async_graphql::QueryError::ExpectedJsonType {
+                    Err(#crate_name::QueryError::ExpectedJsonType {
                         expect: Self::type_name(),
                         actual: value,
                     }.into())
@@ -68,8 +70,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
         }
 
-        impl async_graphql::GQLInputObject for #ident {}
+        impl #crate_name::GQLInputObject for #ident {}
     };
-    println!("{}", expanded.to_string());
     Ok(expanded.into())
 }

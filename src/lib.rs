@@ -34,17 +34,13 @@
 extern crate thiserror;
 
 mod context;
-mod r#enum;
 mod error;
-mod id;
 mod query;
 mod scalar;
+mod scalars;
+mod schema;
 mod r#type;
-
-#[cfg(feature = "chrono")]
-mod datetime;
-#[cfg(feature = "uuid")]
-mod uuid;
+mod types;
 
 #[doc(hidden)]
 pub use anyhow;
@@ -59,19 +55,18 @@ pub use async_graphql_derive::{Enum, InputObject, Object};
 pub use context::{Context, ContextField, Data, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
-pub use id::ID;
 pub use query::QueryBuilder;
 pub use scalar::Scalar;
+pub use scalars::ID;
+pub use types::GQLEmptyMutation;
+
+pub type Result<T> = anyhow::Result<T>;
+pub type Error = anyhow::Error;
 
 // internal types
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
-pub use r#enum::{GQLEnum, GQLEnumItem};
+pub use r#type::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
 #[doc(hidden)]
-pub use r#type::{
-    GQLEmptyMutation, GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType,
-};
-
-pub type Result<T> = anyhow::Result<T>;
-pub type Error = anyhow::Error;
+pub use types::{GQLEnum, GQLEnumItem};

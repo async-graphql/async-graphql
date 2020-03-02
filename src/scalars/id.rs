@@ -1,4 +1,5 @@
 use crate::{QueryError, Result, Scalar, Value};
+use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -29,7 +30,7 @@ impl Scalar for ID {
             Value::String(s) => Ok(ID(s)),
             _ => {
                 return Err(QueryError::ExpectedType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -43,7 +44,7 @@ impl Scalar for ID {
             serde_json::Value::String(s) => Ok(ID(s)),
             _ => {
                 return Err(QueryError::ExpectedJsonType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -51,7 +52,7 @@ impl Scalar for ID {
         }
     }
 
-    fn into_json(self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.0.clone().into())
     }
 }

@@ -1,4 +1,5 @@
 use crate::{QueryError, Result, Scalar, Value};
+use std::borrow::Cow;
 use uuid::Uuid;
 
 impl Scalar for Uuid {
@@ -11,7 +12,7 @@ impl Scalar for Uuid {
             Value::String(s) => Ok(Uuid::parse_str(&s)?),
             _ => {
                 return Err(QueryError::ExpectedType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -24,7 +25,7 @@ impl Scalar for Uuid {
             serde_json::Value::String(s) => Ok(Uuid::parse_str(&s)?),
             _ => {
                 return Err(QueryError::ExpectedJsonType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -32,7 +33,7 @@ impl Scalar for Uuid {
         }
     }
 
-    fn into_json(self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.to_string().into())
     }
 }

@@ -1,5 +1,6 @@
 use crate::{QueryError, Result, Scalar, Value};
 use chrono::{DateTime, TimeZone, Utc};
+use std::borrow::Cow;
 
 impl Scalar for DateTime<Utc> {
     fn type_name() -> &'static str {
@@ -11,7 +12,7 @@ impl Scalar for DateTime<Utc> {
             Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
             _ => {
                 return Err(QueryError::ExpectedType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -24,7 +25,7 @@ impl Scalar for DateTime<Utc> {
             serde_json::Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
             _ => {
                 return Err(QueryError::ExpectedJsonType {
-                    expect: Self::type_name().to_string(),
+                    expect: Cow::Borrowed(Self::type_name()),
                     actual: value,
                 }
                 .into())
@@ -32,7 +33,7 @@ impl Scalar for DateTime<Utc> {
         }
     }
 
-    fn into_json(self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.to_rfc3339().into())
     }
 }

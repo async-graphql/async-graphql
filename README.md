@@ -26,6 +26,15 @@
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.39 or later
 
+## Features
+
+* Fully support async/await.
+* Type safety.
+* Rustfmt friendly (Procedural Macro).
+* Custom scalar.
+* Minimal overhead.
+* Easy integration (hyper, actix_web, tide, rocket ...).
+
 ## Goals
 
 - [ ] Types
@@ -37,7 +46,7 @@
         - [X] ID
         - [X] DateTime
         - [X] UUID
-    - Complex Types
+    - [X] Complex Types
         - [X] List
         - [X] Non-Null
     - [X] Object
@@ -45,6 +54,7 @@
     - [X] InputObject
     - [ ] Interface
     - [ ] Union
+    - [ ] Generic Types
 - [ ] Query
     - [X] Fields
     - [X] Arguments

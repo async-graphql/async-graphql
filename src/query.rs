@@ -1,6 +1,5 @@
 use crate::{
-    Context, Data, ErrorWithPosition, GQLObject, QueryError, QueryParseError, Result,
-    Variables,
+    Context, Data, ErrorWithPosition, GQLObject, QueryError, QueryParseError, Result, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};

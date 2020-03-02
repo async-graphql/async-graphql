@@ -4,6 +4,7 @@ mod args;
 mod r#enum;
 mod input_object;
 mod object;
+mod utils;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
