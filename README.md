@@ -35,7 +35,7 @@
 * Rustfmt friendly (Procedural Macro).
 * Custom scalar.
 * Minimal overhead.
-* Easy integration (hyper, actix_web, tide, rocket ...).
+* Easy integration (hyper, actix_web, tide ...).
 
 ## Goals
 
@@ -79,6 +79,10 @@
         - [ ] Custom Directive
     - [X] Schema
     - [ ] Validation rules
+- [ ] 
+    - [ ] Actix-web
+    - [ ] Hyper
+    - [ ] Tide
 
 ## License
 
