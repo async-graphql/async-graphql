@@ -10,7 +10,7 @@ documentation = "https://docs.rs/async-graphql/"
 homepage = "https://github.com/sunli829/async-graphql"
 repository = "https://github.com/sunli829/async-graphql"
 keywords = ["futures", "async", "graphql"]
-categories = ["network-programming", "asynchronous", "framework"]
+categories = ["network-programming", "asynchronous"]
 readme = "README.md"
 
 [features]
