@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "0.1.0"
+version = "0.5.0"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "The GraphQL server library implemented by rust"

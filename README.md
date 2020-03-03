@@ -48,7 +48,7 @@
         - [X] ID
         - [X] DateTime
         - [X] UUID
-    - [X] Complex Types
+    - [X] Containers 
         - [X] List
         - [X] Non-Null
     - [ ] Object
@@ -77,7 +77,7 @@
         - [ ] @skip
         - [ ] @deprecated
         - [ ] Custom Directive
-    - [ ] Schema
+    - [X] Schema
     - [ ] Validation rules
 
 ## License
