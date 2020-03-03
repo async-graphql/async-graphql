@@ -15,6 +15,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     };
 
     let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
+    let desc = enum_args
+        .desc
+        .as_ref()
+        .map(|s| quote! { Some(#s) })
+        .unwrap_or_else(|| quote! {None});
 
     let mut enum_items = Vec::new();
     let mut items = Vec::new();
@@ -51,12 +56,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         items.push(quote! {
             #crate_name::GQLEnumItem {
                 name: #gql_item_name,
-                desc: #item_desc,
                 value: #ident::#item_ident,
             }
         });
         schema_enum_items.push(quote! {
-            #crate_name::schema::EnumValue {
+            #crate_name::registry::EnumValue {
                 name: #gql_item_name,
                 description: #item_desc,
                 deprecation: #item_deprecation,
@@ -82,9 +86,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type(&Self::type_name(), |registry| {
-                    #crate_name::schema::Type::Enum {
+                    #crate_name::registry::Type::Enum {
+                        name: #gql_typename,
+                        description: #desc,
                         enum_values: vec![#(#schema_enum_items),*],
                     }
                 })
@@ -92,11 +98,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         impl #crate_name::GQLInputValue for #ident {
-            fn parse(value: #crate_name::Value) -> #crate_name::Result<Self> {
+            fn parse(value: #crate_name::Value) -> Option<Self> {
                 #crate_name::GQLEnum::parse_enum(value)
             }
 
-            fn parse_from_json(value: #crate_name::serde_json::Value) -> #crate_name::Result<Self> {
+            fn parse_from_json(value: #crate_name::serde_json::Value) -> Option<Self> {
                 #crate_name::GQLEnum::parse_json_enum(value)
             }
         }

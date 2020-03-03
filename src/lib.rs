@@ -36,9 +36,9 @@ extern crate thiserror;
 mod base;
 mod context;
 mod error;
-mod query;
-mod query_schema;
+mod model;
 mod scalars;
+mod schema;
 mod types;
 
 #[doc(hidden)]
@@ -55,8 +55,8 @@ pub use base::Scalar;
 pub use context::{Context, ContextBase, Data, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
-pub use query::QueryBuilder;
 pub use scalars::ID;
+pub use schema::{QueryBuilder, Schema};
 pub use types::GQLEmptyMutation;
 
 pub type Result<T> = anyhow::Result<T>;
@@ -68,6 +68,6 @@ pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
-pub mod schema;
+pub mod registry;
 #[doc(hidden)]
 pub use types::{GQLEnum, GQLEnumItem};

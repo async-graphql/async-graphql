@@ -10,6 +10,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     let crate_name = get_crate_name(object_args.internal);
     let vis = &input.vis;
     let ident = &input.ident;
+    let generics = &input.generics;
     match &input.data {
         Data::Struct(_) => {}
         _ => return Err(Error::new_spanned(input, "It should be a struct.")),
@@ -19,6 +20,11 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
+    let desc = object_args
+        .desc
+        .as_ref()
+        .map(|s| quote! {Some(#s)})
+        .unwrap_or_else(|| quote! {None});
     let trait_ident = Ident::new(&format!("{}Fields", ident.to_string()), Span::call_site());
     let mut trait_fns = Vec::new();
     let mut resolvers = Vec::new();
@@ -68,7 +74,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             });
             use_params.push(quote! { #snake_case_name });
             schema_args.push(quote! {
-                #crate_name::schema::InputValue {
+                #crate_name::registry::InputValue {
                     name: #name_str,
                     description: #desc,
                     ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
@@ -109,7 +115,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         });
 
         schema_fields.push(quote! {
-            #crate_name::schema::Field {
+            #crate_name::registry::Field {
                 name: #field_name,
                 description: #desc,
                 args: vec![#(#schema_args),*],
@@ -127,20 +133,22 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             #(#trait_fns)*
         }
 
-        impl #crate_name::GQLType for #ident {
+        impl#generics #crate_name::GQLType for #ident#generics {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
-                registry.create_type(&Self::type_name(), |registry| #crate_name::schema::Type::Object {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+                registry.create_type(&Self::type_name(), |registry| #crate_name::registry::Type::Object {
+                    name: #gql_typename,
+                    description: #desc,
                    fields: vec![#(#schema_fields),*]
                 })
             }
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::GQLOutputValue for #ident {
+        impl#generics #crate_name::GQLOutputValue for #ident#generics {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 use #crate_name::ErrorWithPosition;
 
@@ -160,6 +168,9 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                                 result.insert(name, #gql_typename.into());
                                 continue;
                             }
+                            if field.name.as_str() == "__schema" {
+                                continue;
+                            }
                             #(#resolvers)*
                             #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
                                 field_name: field.name.clone(),
@@ -174,7 +185,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
         }
 
-        impl #crate_name::GQLObject for #ident {}
+        impl#generics #crate_name::GQLObject for #ident#generics {}
     };
     Ok(expanded.into())
 }

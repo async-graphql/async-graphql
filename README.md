@@ -1,3 +1,5 @@
+# <div style="color: red">WARNING: Some features are not yet implemented. Please do not use in a production environment.</div>
+
 # The GraphQL server library implemented by rust 
 
 <div align="center">
@@ -49,14 +51,15 @@
     - [X] Complex Types
         - [X] List
         - [X] Non-Null
-    - [X] Object
+    - [ ] Object
+        - [ ] Generic Types
+        - [X] Lifetime cycle    
     - [X] Enum
     - [X] InputObject
         - [ ] Field default value
         - [X] Deprecated flag
     - [ ] Interface
     - [ ] Union
-    - [ ] Generic Types
 - [ ] Query
     - [X] Fields
     - [X] Arguments
@@ -67,6 +70,8 @@
     - [ ] Inline fragments
     - [X] Operation name
     - [X] Variables
+        - [X] Parse value
+        - [ ] Check type
     - [ ] Directives
         - [ ] @include
         - [ ] @skip

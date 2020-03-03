@@ -1,4 +1,4 @@
-use crate::{schema, ContextSelectionSet, Result};
+use crate::{registry, ContextSelectionSet, Result};
 use graphql_parser::query::Value;
 use std::borrow::Cow;
 
@@ -6,13 +6,17 @@ use std::borrow::Cow;
 pub trait GQLType {
     fn type_name() -> Cow<'static, str>;
 
-    fn create_type_info(registry: &mut schema::Registry) -> String;
+    fn qualified_type_name() -> String {
+        format!("{}!", Self::type_name())
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String;
 }
 
 #[doc(hidden)]
 pub trait GQLInputValue: GQLType + Sized {
-    fn parse(value: Value) -> Result<Self>;
-    fn parse_from_json(value: serde_json::Value) -> Result<Self>;
+    fn parse(value: Value) -> Option<Self>;
+    fn parse_from_json(value: serde_json::Value) -> Option<Self>;
 }
 
 #[doc(hidden)]
@@ -29,8 +33,11 @@ pub trait GQLInputObject: GQLInputValue {}
 
 pub trait Scalar: Sized + Send {
     fn type_name() -> &'static str;
-    fn parse(value: Value) -> Result<Self>;
-    fn parse_from_json(value: serde_json::Value) -> Result<Self>;
+    fn description() -> Option<&'static str> {
+        None
+    }
+    fn parse(value: Value) -> Option<Self>;
+    fn parse_from_json(value: serde_json::Value) -> Option<Self>;
     fn to_json(&self) -> Result<serde_json::Value>;
 }
 
@@ -39,17 +46,20 @@ impl<T: Scalar> GQLType for T {
         Cow::Borrowed(T::type_name())
     }
 
-    fn create_type_info(registry: &mut schema::Registry) -> String {
-        registry.create_type(T::type_name(), |_| schema::Type::Scalar)
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        registry.create_type(&T::type_name(), |_| registry::Type::Scalar {
+            name: T::type_name().to_string(),
+            description: T::description(),
+        })
     }
 }
 
 impl<T: Scalar> GQLInputValue for T {
-    fn parse(value: Value) -> Result<Self> {
+    fn parse(value: Value) -> Option<Self> {
         T::parse(value)
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
         T::parse_from_json(value)
     }
 }

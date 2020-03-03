@@ -20,21 +20,34 @@ pub struct EnumValue {
 }
 
 pub enum Type {
-    Scalar,
+    Scalar {
+        name: String,
+        description: Option<&'static str>,
+    },
     Object {
+        name: &'static str,
+        description: Option<&'static str>,
         fields: Vec<Field>,
     },
     Interface {
+        name: &'static str,
+        description: Option<&'static str>,
         fields: Vec<Field>,
         possible_types: Vec<usize>,
     },
     Union {
+        name: &'static str,
+        description: Option<&'static str>,
         possible_types: Vec<usize>,
     },
     Enum {
+        name: &'static str,
+        description: Option<&'static str>,
         enum_values: Vec<EnumValue>,
     },
     InputObject {
+        name: &'static str,
+        description: Option<&'static str>,
         input_fields: Vec<InputValue>,
     },
     List {

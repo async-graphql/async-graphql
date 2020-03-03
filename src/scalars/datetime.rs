@@ -1,35 +1,22 @@
-use crate::{QueryError, Result, Scalar, Value};
+use crate::{Result, Scalar, Value};
 use chrono::{DateTime, TimeZone, Utc};
-use std::borrow::Cow;
 
 impl Scalar for DateTime<Utc> {
     fn type_name() -> &'static str {
         "DateTime"
     }
 
-    fn parse(value: Value) -> Result<Self> {
+    fn parse(value: Value) -> Option<Self> {
         match value {
-            Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
-            _ => {
-                return Err(QueryError::ExpectedType {
-                    expect: Cow::Borrowed(Self::type_name()),
-                    actual: value,
-                }
-                .into())
-            }
+            Value::String(s) => Some(Utc.datetime_from_str(&s, "%+").ok()?),
+            _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
         match value {
-            serde_json::Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
-            _ => {
-                return Err(QueryError::ExpectedJsonType {
-                    expect: Cow::Borrowed(Self::type_name()),
-                    actual: value,
-                }
-                .into())
-            }
+            serde_json::Value::String(s) => Some(Utc.datetime_from_str(&s, "%+").ok()?),
+            _ => None,
         }
     }
 

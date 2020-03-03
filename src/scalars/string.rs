@@ -1,35 +1,29 @@
-use crate::schema;
-use crate::{ContextSelectionSet, GQLOutputValue, GQLType, QueryError, Result, Scalar, Value};
+use crate::registry;
+use crate::{ContextSelectionSet, GQLOutputValue, GQLType, Result, Scalar, Value};
 use std::borrow::Cow;
+
+const STRING_DESC:&'static str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
 
 impl Scalar for String {
     fn type_name() -> &'static str {
-        "String!"
+        "String"
     }
 
-    fn parse(value: Value) -> Result<Self> {
+    fn description() -> Option<&'static str> {
+        Some(STRING_DESC)
+    }
+
+    fn parse(value: Value) -> Option<Self> {
         match value {
-            Value::String(s) => Ok(s),
-            _ => {
-                return Err(QueryError::ExpectedType {
-                    expect: <Self as GQLType>::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            Value::String(s) => Some(s),
+            _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
         match value {
-            serde_json::Value::String(s) => Ok(s),
-            _ => {
-                return Err(QueryError::ExpectedJsonType {
-                    expect: <Self as GQLType>::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            serde_json::Value::String(s) => Some(s),
+            _ => None,
         }
     }
 
@@ -40,11 +34,14 @@ impl Scalar for String {
 
 impl<'a> GQLType for &'a str {
     fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("String!")
+        Cow::Borrowed("String")
     }
 
-    fn create_type_info(registry: &mut schema::Registry) -> String {
-        registry.create_type(&Self::type_name(), |_| schema::Type::Scalar)
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        registry.create_type(&Self::type_name(), |_| registry::Type::Scalar {
+            name: Self::type_name().to_string(),
+            description: Some(STRING_DESC),
+        })
     }
 }
 

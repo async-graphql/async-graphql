@@ -1,15 +1,20 @@
-use crate::{schema, ContextSelectionSet, GQLOutputValue, GQLType, Result};
+use crate::model::__Schema;
+use crate::{registry, ContextSelectionSet, GQLOutputValue, GQLType, Result};
 use graphql_parser::query::Selection;
 use std::borrow::Cow;
 
-struct QueryRoot<T>(T);
+pub struct QueryRoot<T> {
+    pub inner: T,
+    pub query_type: String,
+    pub mutation_type: String,
+}
 
 impl<T: GQLType> GQLType for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
 
-    fn create_type_info(registry: &mut schema::Registry) -> String {
+    fn create_type_info(registry: &mut registry::Registry) -> String {
         T::create_type_info(registry)
     }
 }
@@ -17,16 +22,28 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for QueryRoot<T> {
     async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut value = self.0.resolve(ctx).await?;
-        if let serde_json::Value::Object(obj) = &mut value {
+        let mut res = self.inner.resolve(ctx).await?;
+
+        if let serde_json::Value::Object(obj) = &mut res {
             for item in &ctx.item.items {
                 if let Selection::Field(field) = item {
                     if field.name == "__schema" {
-                        todo!()
+                        let ctx_obj = ctx.with_item(&field.selection_set);
+                        obj.insert(
+                            "__schema".to_string(),
+                            __Schema {
+                                registry: &ctx.registry,
+                                query_type: &self.query_type,
+                                mutation_type: &self.mutation_type,
+                            }
+                            .resolve(&ctx_obj)
+                            .await?,
+                        );
                     }
                 }
             }
         }
-        Ok(value)
+
+        Ok(res)
     }
 }

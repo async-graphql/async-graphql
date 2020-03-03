@@ -1,33 +1,25 @@
-use crate::{GQLType, QueryError, Result, Scalar, Value};
+use crate::{Result, Scalar, Value};
 
 impl Scalar for bool {
     fn type_name() -> &'static str {
-        "Boolean!"
+        "Boolean"
     }
 
-    fn parse(value: Value) -> Result<Self> {
+    fn description() -> Option<&'static str> {
+        Some("The `Boolean` scalar type represents `true` or `false`.")
+    }
+
+    fn parse(value: Value) -> Option<Self> {
         match value {
-            Value::Boolean(n) => Ok(n),
-            _ => {
-                return Err(QueryError::ExpectedType {
-                    expect: <Self as GQLType>::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            Value::Boolean(n) => Some(n),
+            _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
         match value {
-            serde_json::Value::Bool(n) => Ok(n),
-            _ => {
-                return Err(QueryError::ExpectedJsonType {
-                    expect: <Self as GQLType>::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            serde_json::Value::Bool(n) => Some(n),
+            _ => None,
         }
     }
 

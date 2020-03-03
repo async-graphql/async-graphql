@@ -1,7 +1,6 @@
 use crate::Error;
 use graphql_parser::query::Value;
 use graphql_parser::Pos;
-use std::borrow::Cow;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug, Error)]
@@ -14,14 +13,11 @@ pub enum QueryError {
     NotSupported,
 
     #[error("Expected type \"{expect}\", found {actual}.")]
-    ExpectedType {
-        expect: Cow<'static, str>,
-        actual: Value,
-    },
+    ExpectedType { expect: String, actual: Value },
 
     #[error("Expected type \"{expect}\", found {actual}.")]
     ExpectedJsonType {
-        expect: Cow<'static, str>,
+        expect: String,
         actual: serde_json::Value,
     },
 
@@ -41,10 +37,7 @@ pub enum QueryError {
     NotConfiguredMutations,
 
     #[error("Invalid value for enum \"{ty}\".")]
-    InvalidEnumValue {
-        ty: Cow<'static, str>,
-        value: String,
-    },
+    InvalidEnumValue { ty: String, value: String },
 
     #[error("Required field \"{field_name}\" for InputObject \"{object}\" does not exist.")]
     RequiredField {

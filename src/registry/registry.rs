@@ -1,10 +1,18 @@
-use crate::schema::Type;
-use std::cell::RefCell;
+use crate::registry::Type;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Default)]
 pub struct Registry {
     types: HashMap<String, Type>,
+}
+
+impl Deref for Registry {
+    type Target = HashMap<String, Type>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.types
+    }
 }
 
 impl Registry {
@@ -14,9 +22,5 @@ impl Registry {
             self.types.insert(name.to_string(), ty);
         }
         name.to_string()
-    }
-
-    pub fn get_type(&self, name: &str) -> Option<&Type> {
-        self.types.get(name)
     }
 }

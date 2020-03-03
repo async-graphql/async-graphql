@@ -34,6 +34,11 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
+    let desc = object_args
+        .desc
+        .as_ref()
+        .map(|s| quote! {Some(#s)})
+        .unwrap_or_else(|| quote! {None});
 
     let mut get_fields = Vec::new();
     let mut get_json_fields = Vec::new();
@@ -66,7 +71,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         });
         fields.push(ident);
         schema_fields.push(quote! {
-            #crate_name::schema::InputValue {
+            #crate_name::registry::InputValue {
                 name: #name,
                 description: #desc,
                 ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
@@ -83,38 +88,34 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
-                registry.create_type(&Self::type_name(), |registry| #crate_name::schema::Type::InputObject {
-                   input_fields: vec![#(#schema_fields),*]
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+                registry.create_type(&Self::type_name(), |registry| #crate_name::registry::Type::InputObject {
+                    name: #gql_typename,
+                    description: #desc,
+                    input_fields: vec![#(#schema_fields),*]
                 })
             }
         }
 
         impl #crate_name::GQLInputValue for #ident {
-            fn parse(value: #crate_name::Value) -> #crate_name::Result<Self> {
+            fn parse(value: #crate_name::Value) -> Option<Self> {
                 use #crate_name::GQLType;
 
                 if let #crate_name::Value::Object(mut obj) = value {
                     #(#get_fields)*
-                    Ok(Self { #(#fields),* })
+                    Some(Self { #(#fields),* })
                 } else {
-                    Err(#crate_name::QueryError::ExpectedType {
-                        expect: Self::type_name(),
-                        actual: value,
-                    }.into())
+                    None
                 }
             }
 
-            fn parse_from_json(value: #crate_name::serde_json::Value) -> #crate_name::Result<Self> {
+            fn parse_from_json(value: #crate_name::serde_json::Value) -> Option<Self> {
                 use #crate_name::GQLType;
                 if let #crate_name::serde_json::Value::Object(mut obj) = value {
                     #(#get_json_fields)*
-                    Ok(Self { #(#fields),* })
+                    Some(Self { #(#fields),* })
                 } else {
-                    Err(#crate_name::QueryError::ExpectedJsonType {
-                        expect: Self::type_name(),
-                        actual: value,
-                    }.into())
+                    None
                 }
             }
         }

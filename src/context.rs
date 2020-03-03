@@ -1,3 +1,4 @@
+use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, QueryError, Result};
 use fnv::FnvHasher;
 use graphql_parser::query::{Field, SelectionSet, Value};
@@ -43,6 +44,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) item: T,
     pub(crate) data: Option<&'a Data>,
     pub(crate) variables: Option<&'a Variables>,
+    pub(crate) registry: &'a Registry,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -60,6 +62,7 @@ impl<'a, T> ContextBase<'a, T> {
             item,
             data: self.data,
             variables: self.variables,
+            registry: self.registry.clone(),
         }
     }
 
@@ -85,8 +88,14 @@ impl<'a> ContextBase<'a, &'a Field> {
         if let Some(Value::Variable(var_name)) = &value {
             if let Some(vars) = &self.variables {
                 if let Some(var_value) = vars.get(&*var_name).cloned() {
-                    let res = GQLInputValue::parse_from_json(var_value)
-                        .map_err(|err| err.with_position(self.item.position))?;
+                    let res =
+                        GQLInputValue::parse_from_json(var_value.clone()).ok_or_else(|| {
+                            QueryError::ExpectedJsonType {
+                                expect: T::qualified_type_name(),
+                                actual: var_value,
+                            }
+                            .with_position(self.item.position)
+                        })?;
                     return Ok(res);
                 }
             }
@@ -97,8 +106,14 @@ impl<'a> ContextBase<'a, &'a Field> {
             .into());
         };
 
-        let res = GQLInputValue::parse(value.unwrap_or(Value::Null))
-            .map_err(|err| err.with_position(self.item.position))?;
+        let value = value.unwrap_or(Value::Null);
+        let res = GQLInputValue::parse(value.clone()).ok_or_else(|| {
+            QueryError::ExpectedType {
+                expect: T::qualified_type_name(),
+                actual: value,
+            }
+            .with_position(self.item.position)
+        })?;
         Ok(res)
     }
 }

@@ -1,10 +1,9 @@
-use crate::{GQLType, QueryError, Result};
+use crate::{GQLType, Result};
 use graphql_parser::query::Value;
 
 #[doc(hidden)]
 pub struct GQLEnumItem<T> {
     pub name: &'static str,
-    pub desc: Option<&'static str>,
     pub value: T,
 }
 
@@ -13,54 +12,34 @@ pub struct GQLEnumItem<T> {
 pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [GQLEnumItem<Self>];
 
-    fn parse_enum(value: Value) -> Result<Self> {
+    fn parse_enum(value: Value) -> Option<Self> {
         match value {
             Value::Enum(s) => {
                 let items = Self::items();
                 for item in items {
                     if item.name == s {
-                        return Ok(item.value);
+                        return Some(item.value);
                     }
                 }
-                Err(QueryError::InvalidEnumValue {
-                    ty: Self::type_name(),
-                    value: s,
-                }
-                .into())
             }
-            _ => {
-                return Err(QueryError::ExpectedType {
-                    expect: Self::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            _ => {}
         }
+        None
     }
 
-    fn parse_json_enum(value: serde_json::Value) -> Result<Self> {
+    fn parse_json_enum(value: serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::String(s) => {
                 let items = Self::items();
                 for item in items {
                     if item.name == s {
-                        return Ok(item.value);
+                        return Some(item.value);
                     }
                 }
-                Err(QueryError::InvalidEnumValue {
-                    ty: Self::type_name(),
-                    value: s,
-                }
-                .into())
             }
-            _ => {
-                return Err(QueryError::ExpectedJsonType {
-                    expect: Self::type_name(),
-                    actual: value,
-                }
-                .into())
-            }
+            _ => {}
         }
+        None
     }
 
     fn resolve_enum(&self) -> Result<serde_json::Value> {

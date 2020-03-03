@@ -1,6 +1,6 @@
 use crate::{
-    schema, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, QueryError,
-    Result,
+    registry, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType,
+    QueryError, Result,
 };
 use std::borrow::Cow;
 
@@ -11,8 +11,10 @@ impl GQLType for GQLEmptyMutation {
         Cow::Borrowed("EmptyMutation")
     }
 
-    fn create_type_info(registry: &mut schema::Registry) -> String {
-        registry.create_type(&Self::type_name(), |_| schema::Type::Object {
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        registry.create_type(&Self::type_name(), |_| registry::Type::Object {
+            name: "EmptyMutation",
+            description: None,
             fields: Vec::new(),
         })
     }

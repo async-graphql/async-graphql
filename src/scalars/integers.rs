@@ -1,38 +1,29 @@
-use crate::{GQLType, QueryError, Result, Scalar, Value};
-use std::borrow::Cow;
+use crate::{Result, Scalar, Value};
 
 macro_rules! impl_integer_scalars {
     ($($ty:ty),*) => {
         $(
         impl Scalar for $ty {
             fn type_name() -> &'static str {
-                "Int!"
+                "Int"
             }
 
-            fn parse(value: Value) -> Result<Self> {
+            fn description() -> Option<&'static str> {
+                Some("The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.")
+            }
+
+            fn parse(value: Value) -> Option<Self> {
                 match value {
-                    Value::Int(n) => Ok(n.as_i64().unwrap() as Self),
-                    _ => {
-                        return Err(QueryError::ExpectedType {
-                            expect: Cow::Borrowed(<Self as Scalar>::type_name()),
-                            actual: value,
-                        }
-                        .into())
-                    }
+                    Value::Int(n) => Some(n.as_i64().unwrap() as Self),
+                    _ => None
                 }
             }
 
-            fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+            fn parse_from_json(value: serde_json::Value) -> Option<Self> {
                 match value {
-                    serde_json::Value::Number(n) if n.is_i64() => Ok(n.as_i64().unwrap() as Self),
-                    serde_json::Value::Number(n) => Ok(n.as_f64().unwrap() as Self),
-                    _ => {
-                        return Err(QueryError::ExpectedJsonType {
-                            expect: <Self as GQLType>::type_name(),
-                            actual: value,
-                        }
-                        .into())
-                    }
+                    serde_json::Value::Number(n) if n.is_i64() => Some(n.as_i64().unwrap() as Self),
+                    serde_json::Value::Number(n) => Some(n.as_f64().unwrap() as Self),
+                    _ => None,
                 }
             }
 

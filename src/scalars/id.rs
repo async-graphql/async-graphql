@@ -1,5 +1,4 @@
-use crate::{QueryError, Result, Scalar, Value};
-use std::borrow::Cow;
+use crate::{Result, Scalar, Value};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -24,31 +23,19 @@ impl Scalar for ID {
         "ID"
     }
 
-    fn parse(value: Value) -> Result<Self> {
+    fn parse(value: Value) -> Option<Self> {
         match value {
-            Value::Int(n) => Ok(ID(n.as_i64().unwrap().to_string())),
-            Value::String(s) => Ok(ID(s)),
-            _ => {
-                return Err(QueryError::ExpectedType {
-                    expect: Cow::Borrowed(Self::type_name()),
-                    actual: value,
-                }
-                .into())
-            }
+            Value::Int(n) => Some(ID(n.as_i64().unwrap().to_string())),
+            Value::String(s) => Some(ID(s)),
+            _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
         match value {
-            serde_json::Value::Number(n) if n.is_i64() => Ok(ID(n.as_i64().unwrap().to_string())),
-            serde_json::Value::String(s) => Ok(ID(s)),
-            _ => {
-                return Err(QueryError::ExpectedJsonType {
-                    expect: Cow::Borrowed(Self::type_name()),
-                    actual: value,
-                }
-                .into())
-            }
+            serde_json::Value::Number(n) if n.is_i64() => Some(ID(n.as_i64().unwrap().to_string())),
+            serde_json::Value::String(s) => Some(ID(s)),
+            _ => None,
         }
     }
 

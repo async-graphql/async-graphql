@@ -36,13 +36,15 @@ impl MyObjFields for MyObj {
 
 #[async_std::main]
 async fn main() {
-    let res = async_graphql::QueryBuilder::new(
-        MyObj { value: 100 },
-        async_graphql::GQLEmptyMutation,
-        "{ a b c }",
-    )
-    .execute()
-    .await
-    .unwrap();
+    let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
+    let res = schema
+        .query(
+            MyObj { value: 100 },
+            async_graphql::GQLEmptyMutation,
+            "{ a b c __schema { types { kind name description } } }",
+        )
+        .execute()
+        .await
+        .unwrap();
     serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
 }
