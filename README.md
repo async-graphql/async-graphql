@@ -1,4 +1,4 @@
-# <div style="color: red">WARNING: Some features are not yet implemented. Please do not use in a production environment.</div>
+<font color="red">WARNING: Some features are not yet implemented. Please do not use in a production environment.</font>
 
 # The GraphQL server library implemented by rust 
 
