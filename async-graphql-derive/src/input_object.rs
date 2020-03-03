@@ -4,12 +4,30 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
 
-pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
+    let attrs = &input.attrs;
+    let vis = &input.vis;
     let s = match &input.data {
         Data::Struct(s) => s,
         _ => return Err(Error::new_spanned(input, "It should be a struct.")),
+    };
+
+    let mut struct_fields = Vec::new();
+    for field in &s.fields {
+        let vis = &field.vis;
+        let ty = &field.ty;
+        let ident = &field.ident;
+        struct_fields.push(quote! {
+            #vis #ident: #ty
+        });
+    }
+    let new_struct = quote! {
+        #(#attrs)*
+        #vis struct #ident {
+            #(#struct_fields),*
+        }
     };
 
     let gql_typename = object_args
@@ -20,12 +38,26 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     let mut get_fields = Vec::new();
     let mut get_json_fields = Vec::new();
     let mut fields = Vec::new();
+    let mut schema_fields = Vec::new();
 
     for field in &s.fields {
         let field_args = args::InputField::parse(&field.attrs)?;
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
         let name = field_args.name.unwrap_or_else(|| ident.to_string());
+        let desc = field_args
+            .desc
+            .as_ref()
+            .map(|s| quote! {Some(#s)})
+            .unwrap_or_else(|| quote! {None});
+        let default = field_args
+            .default
+            .as_ref()
+            .map(|v| {
+                let s = v.to_string();
+                quote! {Some(#s)}
+            })
+            .unwrap_or_else(|| quote! {None});
         get_fields.push(quote! {
             let #ident:#ty = #crate_name::GQLInputValue::parse(obj.remove(#name).unwrap_or(#crate_name::Value::Null))?;
         });
@@ -33,14 +65,28 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             let #ident:#ty = #crate_name::GQLInputValue::parse_from_json(obj.remove(#name).unwrap_or(#crate_name::serde_json::Value::Null))?;
         });
         fields.push(ident);
+        schema_fields.push(quote! {
+            #crate_name::schema::InputValue {
+                name: #name,
+                description: #desc,
+                ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                default_value: #default,
+            }
+        })
     }
 
     let expanded = quote! {
-        #input
+        #new_struct
 
         impl #crate_name::GQLType for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
+                registry.create_type(&Self::type_name(), |registry| #crate_name::schema::Type::InputObject {
+                   input_fields: vec![#(#schema_fields),*]
+                })
             }
         }
 

@@ -1,4 +1,4 @@
-use crate::{ContextField, Result};
+use crate::{Context, Result};
 use async_graphql_derive::Object;
 
 #[Object(
@@ -13,19 +13,19 @@ pub struct __EnumValue {}
 
 #[async_trait::async_trait]
 impl __EnumValueFields for __EnumValue {
-    async fn name(&self, _: &ContextField<'_>) -> Result<String> {
+    async fn name(&self, _: &Context<'_>) -> Result<String> {
         todo!()
     }
 
-    async fn description(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+    async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
         todo!()
     }
 
-    async fn is_deprecated(&self, _: &ContextField<'_>) -> Result<bool> {
+    async fn is_deprecated(&self, _: &Context<'_>) -> Result<bool> {
         todo!()
     }
 
-    async fn deprecation_reason(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+    async fn deprecation_reason(&self, _: &Context<'_>) -> Result<Option<String>> {
         todo!()
     }
 }

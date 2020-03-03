@@ -41,7 +41,7 @@ pub fn Enum(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
 pub fn InputObject(args: TokenStream, input: TokenStream) -> TokenStream {
-    let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
+    let object_args = match args::InputObject::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(enum_args) => enum_args,
         Err(err) => return err.to_compile_error().into(),
     };

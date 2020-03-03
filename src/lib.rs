@@ -33,13 +33,12 @@
 #[macro_use]
 extern crate thiserror;
 
+mod base;
 mod context;
 mod error;
 mod query;
-mod scalar;
+mod query_schema;
 mod scalars;
-mod schema;
-mod r#type;
 mod types;
 
 #[doc(hidden)]
@@ -52,11 +51,11 @@ pub use graphql_parser;
 pub use serde_json;
 
 pub use async_graphql_derive::{Enum, InputObject, Object};
-pub use context::{Context, ContextField, Data, Variables};
+pub use base::Scalar;
+pub use context::{Context, ContextBase, Data, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use query::QueryBuilder;
-pub use scalar::Scalar;
 pub use scalars::ID;
 pub use types::GQLEmptyMutation;
 
@@ -65,8 +64,10 @@ pub type Error = anyhow::Error;
 
 // internal types
 #[doc(hidden)]
+pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
+#[doc(hidden)]
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
-pub use r#type::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
+pub mod schema;
 #[doc(hidden)]
 pub use types::{GQLEnum, GQLEnumItem};

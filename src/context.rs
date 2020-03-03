@@ -36,16 +36,16 @@ impl Data {
     }
 }
 
-pub type ContextSelectionSet<'a> = Context<'a, &'a SelectionSet>;
-pub type ContextField<'a> = Context<'a, &'a Field>;
+pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
+pub type Context<'a> = ContextBase<'a, &'a Field>;
 
-pub struct Context<'a, T> {
+pub struct ContextBase<'a, T> {
     pub(crate) item: T,
     pub(crate) data: Option<&'a Data>,
     pub(crate) variables: Option<&'a Variables>,
 }
 
-impl<'a, T> Deref for Context<'a, T> {
+impl<'a, T> Deref for ContextBase<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -53,10 +53,10 @@ impl<'a, T> Deref for Context<'a, T> {
     }
 }
 
-impl<'a, T> Context<'a, T> {
+impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
-    pub fn with_item<R>(&self, item: R) -> Context<'a, R> {
-        Context {
+    pub fn with_item<R>(&self, item: R) -> ContextBase<'a, R> {
+        ContextBase {
             item,
             data: self.data,
             variables: self.variables,
@@ -72,7 +72,7 @@ impl<'a, T> Context<'a, T> {
     }
 }
 
-impl<'a> Context<'a, &'a Field> {
+impl<'a> ContextBase<'a, &'a Field> {
     #[doc(hidden)]
     pub fn param_value<T: GQLInputValue>(&self, name: &str) -> Result<T> {
         let value = self

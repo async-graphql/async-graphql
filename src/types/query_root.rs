@@ -1,12 +1,16 @@
-use crate::{ContextSelectionSet, GQLOutputValue, GQLType, Result};
+use crate::{schema, ContextSelectionSet, GQLOutputValue, GQLType, Result};
 use graphql_parser::query::Selection;
 use std::borrow::Cow;
 
 struct QueryRoot<T>(T);
 
-impl<T> GQLType for QueryRoot<T> {
+impl<T: GQLType> GQLType for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("Root")
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut schema::Registry) -> String {
+        T::create_type_info(registry)
     }
 }
 

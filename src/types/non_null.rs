@@ -1,10 +1,14 @@
-use crate::{ContextSelectionSet, GQLInputValue, GQLOutputValue, GQLType, Result, Value};
+use crate::{schema, ContextSelectionSet, GQLInputValue, GQLOutputValue, GQLType, Result, Value};
 use std::borrow::Cow;
 
 impl<T: GQLType> GQLType for Option<T> {
     fn type_name() -> Cow<'static, str> {
         let name = T::type_name();
         Cow::Owned(format!("{}", &name[..name.len() - 1]))
+    }
+
+    fn create_type_info(registry: &mut schema::Registry) -> String {
+        T::create_type_info(registry)
     }
 }
 

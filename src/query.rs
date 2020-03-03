@@ -1,5 +1,5 @@
 use crate::{
-    Context, Data, ErrorWithPosition, GQLObject, QueryError, QueryParseError, Result, Variables,
+    ContextBase, Data, ErrorWithPosition, GQLObject, QueryError, QueryParseError, Result, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
@@ -58,7 +58,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
             match definition {
                 Definition::Operation(OperationDefinition::SelectionSet(selection_set)) => {
                     if self.operation_name.is_none() {
-                        let ctx = Context {
+                        let ctx = ContextBase {
                             item: selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
@@ -70,7 +70,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     if self.operation_name.is_none()
                         || self.operation_name == query.name.as_ref().map(|s| s.as_str())
                     {
-                        let ctx = Context {
+                        let ctx = ContextBase {
                             item: &query.selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
@@ -82,7 +82,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     if self.operation_name.is_none()
                         || self.operation_name == mutation.name.as_ref().map(|s| s.as_str())
                     {
-                        let ctx = Context {
+                        let ctx = ContextBase {
                             item: &mutation.selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),

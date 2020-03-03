@@ -1,5 +1,5 @@
-use crate::schema::__Type;
-use crate::{ContextField, Result};
+use crate::query_schema::__Type;
+use crate::{Context, Result};
 use async_graphql_derive::Object;
 
 #[Object(
@@ -14,19 +14,19 @@ pub struct __InputValue {}
 
 #[async_trait::async_trait]
 impl __InputValueFields for __InputValue {
-    async fn name(&self, _: &ContextField<'_>) -> Result<String> {
+    async fn name(&self, _: &Context<'_>) -> Result<String> {
         todo!()
     }
 
-    async fn description(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+    async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
         todo!()
     }
 
-    async fn ty(&self, _: &ContextField<'_>) -> Result<__Type> {
+    async fn ty(&self, _: &Context<'_>) -> Result<__Type> {
         todo!()
     }
 
-    async fn default_value(&self, _: &ContextField<'_>) -> Result<String> {
+    async fn default_value(&self, _: &Context<'_>) -> Result<String> {
         todo!()
     }
 }

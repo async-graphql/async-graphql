@@ -1,3 +1,5 @@
+use crate::utils::parse_value;
+use graphql_parser::query::Value;
 use syn::{Attribute, AttributeArgs, Error, Meta, MetaList, NestedMeta, Result, Type};
 
 #[derive(Debug)]
@@ -62,6 +64,7 @@ pub struct Argument {
     pub name: String,
     pub desc: Option<String>,
     pub ty: Type,
+    pub default: Option<Value>,
 }
 
 #[derive(Debug)]
@@ -72,6 +75,7 @@ pub struct Field {
     pub ty: Type,
     pub is_owned: bool,
     pub arguments: Vec<Argument>,
+    pub deprecation: Option<String>,
 }
 
 impl Field {
@@ -82,6 +86,7 @@ impl Field {
         let mut ty = None;
         let mut is_owned = false;
         let mut arguments = Vec::new();
+        let mut deprecation = None;
 
         for meta in &ls.nested {
             match meta {
@@ -130,6 +135,15 @@ impl Field {
                                 "Attribute 'type' should be a string.",
                             ));
                         }
+                    } else if nv.path.is_ident("deprecation") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            deprecation = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'deprecation' should be a string.",
+                            ));
+                        }
                     }
                 }
                 NestedMeta::Meta(Meta::List(ls)) => {
@@ -137,6 +151,7 @@ impl Field {
                         let mut name = None;
                         let mut desc = None;
                         let mut ty = None;
+                        let mut default = None;
 
                         for meta in &ls.nested {
                             if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
@@ -156,6 +171,23 @@ impl Field {
                                         return Err(Error::new_spanned(
                                             &nv.lit,
                                             "Attribute 'desc' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("default") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        match parse_value(&lit.value()) {
+                                            Ok(value) => default = Some(value),
+                                            Err(err) => {
+                                                return Err(Error::new_spanned(
+                                                    &nv.lit,
+                                                    format!("Invalid value: {}", err),
+                                                ));
+                                            }
+                                        }
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'default' should be a string.",
                                         ));
                                     }
                                 } else if nv.path.is_ident("type") {
@@ -187,6 +219,7 @@ impl Field {
                             name: name.unwrap(),
                             desc,
                             ty: ty.unwrap(),
+                            default,
                         });
                     }
                 }
@@ -209,6 +242,7 @@ impl Field {
             ty: ty.unwrap(),
             is_owned,
             arguments,
+            deprecation,
         })
     }
 }
@@ -268,12 +302,14 @@ impl Enum {
 pub struct EnumItem {
     pub name: Option<String>,
     pub desc: Option<String>,
+    pub deprecation: Option<String>,
 }
 
 impl EnumItem {
     pub fn parse(attrs: &[Attribute]) -> Result<Self> {
         let mut name = None;
         let mut desc = None;
+        let mut deprecation = None;
 
         for attr in attrs {
             if attr.path.is_ident("item") {
@@ -299,6 +335,15 @@ impl EnumItem {
                                             "Attribute 'desc' should be a string.",
                                         ));
                                     }
+                                } else if nv.path.is_ident("deprecation") {
+                                    if let syn::Lit::Str(lit) = nv.lit {
+                                        deprecation = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'deprecation' should be a string.",
+                                        ));
+                                    }
                                 }
                             }
                             _ => {}
@@ -308,7 +353,11 @@ impl EnumItem {
             }
         }
 
-        Ok(Self { name, desc })
+        Ok(Self {
+            name,
+            desc,
+            deprecation,
+        })
     }
 }
 
@@ -317,6 +366,7 @@ pub struct InputField {
     pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
+    pub default: Option<Value>,
 }
 
 impl InputField {
@@ -324,6 +374,7 @@ impl InputField {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
+        let mut default = None;
 
         for attr in attrs {
             if attr.path.is_ident("field") {
@@ -352,12 +403,81 @@ impl InputField {
                                             "Attribute 'desc' should be a string.",
                                         ));
                                     }
+                                } else if nv.path.is_ident("default") {
+                                    if let syn::Lit::Str(lit) = nv.lit {
+                                        match parse_value(&lit.value()) {
+                                            Ok(value) => default = Some(value),
+                                            Err(err) => {
+                                                return Err(Error::new_spanned(
+                                                    &lit,
+                                                    format!("Invalid value: {}", err),
+                                                ));
+                                            }
+                                        }
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'default' should be a string.",
+                                        ));
+                                    }
                                 }
                             }
                             _ => {}
                         }
                     }
                 }
+            }
+        }
+
+        Ok(Self {
+            internal,
+            name,
+            desc,
+            default,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct InputObject {
+    pub internal: bool,
+    pub name: Option<String>,
+    pub desc: Option<String>,
+}
+
+impl InputObject {
+    pub fn parse(args: AttributeArgs) -> Result<Self> {
+        let mut internal = false;
+        let mut name = None;
+        let mut desc = None;
+
+        for arg in args {
+            match arg {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("name") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            name = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'name' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("desc") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            desc = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'desc' should be a string.",
+                            ));
+                        }
+                    }
+                }
+                _ => {}
             }
         }
 

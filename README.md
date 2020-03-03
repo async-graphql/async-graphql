@@ -52,12 +52,16 @@
     - [X] Object
     - [X] Enum
     - [X] InputObject
+        - [ ] Field default value
+        - [X] Deprecated flag
     - [ ] Interface
     - [ ] Union
     - [ ] Generic Types
 - [ ] Query
     - [X] Fields
     - [X] Arguments
+        - [ ] Default value
+        - [X] Deprecated flag
     - [X] Alias
     - [ ] Fragments
     - [ ] Inline fragments
@@ -69,6 +73,16 @@
         - [ ] @deprecated
         - [ ] Custom Directive
     - [ ] Schema
+    - [ ] Validation rules
+
+## License
+
+Licensed under either of
+
+* Apache License, Version 2.0,
+  (./LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+* MIT license (./LICENSE-MIT or http://opensource.org/licenses/MIT)
+  at your option.
 
 ## References
 

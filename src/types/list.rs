@@ -1,11 +1,15 @@
 use crate::{
-    ContextSelectionSet, GQLInputValue, GQLOutputValue, GQLType, QueryError, Result, Value,
+    schema, ContextSelectionSet, GQLInputValue, GQLOutputValue, GQLType, QueryError, Result, Value,
 };
 use std::borrow::Cow;
 
 impl<T: GQLType> GQLType for Vec<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]!", T::type_name()))
+    }
+
+    fn create_type_info(registry: &mut schema::Registry) -> String {
+        T::create_type_info(registry)
     }
 }
 
@@ -63,6 +67,10 @@ impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for Vec<T> {
 impl<T: GQLType> GQLType for &[T] {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]!", T::type_name()))
+    }
+
+    fn create_type_info(registry: &mut schema::Registry) -> String {
+        T::create_type_info(registry)
     }
 }
 

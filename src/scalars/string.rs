@@ -1,3 +1,4 @@
+use crate::schema;
 use crate::{ContextSelectionSet, GQLOutputValue, GQLType, QueryError, Result, Scalar, Value};
 use std::borrow::Cow;
 
@@ -40,6 +41,10 @@ impl Scalar for String {
 impl<'a> GQLType for &'a str {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("String!")
+    }
+
+    fn create_type_info(registry: &mut schema::Registry) -> String {
+        registry.create_type(&Self::type_name(), |_| schema::Type::Scalar)
     }
 }
 

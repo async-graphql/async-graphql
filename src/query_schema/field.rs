@@ -1,5 +1,5 @@
-use crate::schema::__Type;
-use crate::{ContextField, Result};
+use crate::query_schema::__Type;
+use crate::{Context, Result};
 use async_graphql_derive::Object;
 
 #[Object(
@@ -16,23 +16,23 @@ pub struct __Field {}
 #[async_trait::async_trait]
 #[allow()]
 impl __FieldFields for __Field {
-    async fn name(&self, _: &ContextField<'_>) -> Result<String> {
+    async fn name(&self, _: &Context<'_>) -> Result<String> {
         todo!()
     }
 
-    async fn description(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+    async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
         todo!()
     }
 
-    async fn ty(&self, _: &ContextField<'_>) -> Result<__Type> {
+    async fn ty(&self, _: &Context<'_>) -> Result<__Type> {
         todo!()
     }
 
-    async fn is_deprecated(&self, _: &ContextField<'_>) -> Result<bool> {
+    async fn is_deprecated(&self, _: &Context<'_>) -> Result<bool> {
         todo!()
     }
 
-    async fn deprecation_reason(&self, _: &ContextField<'_>) -> Result<Option<String>> {
+    async fn deprecation_reason(&self, _: &Context<'_>) -> Result<Option<String>> {
         todo!()
     }
 }

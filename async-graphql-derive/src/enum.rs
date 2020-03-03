@@ -18,6 +18,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
     let mut enum_items = Vec::new();
     let mut items = Vec::new();
+    let mut schema_enum_items = Vec::new();
+
     for variant in &e.variants {
         if !variant.fields.is_empty() {
             return Err(Error::new_spanned(
@@ -35,16 +37,29 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .name
             .take()
             .unwrap_or_else(|| variant.ident.to_string());
+        let item_deprecation = item_args
+            .deprecation
+            .as_ref()
+            .map(|s| quote! { Some(#s) })
+            .unwrap_or_else(|| quote! {None});
+        let item_desc = item_args
+            .desc
+            .as_ref()
+            .map(|s| quote! { Some(#s) })
+            .unwrap_or_else(|| quote! {None});
         enum_items.push(&variant.ident);
-        let desc = match item_args.desc.take() {
-            Some(desc) => quote! { Some(#desc) },
-            None => quote! { None },
-        };
         items.push(quote! {
             #crate_name::GQLEnumItem {
                 name: #gql_item_name,
-                desc: #desc,
+                desc: #item_desc,
                 value: #ident::#item_ident,
+            }
+        });
+        schema_enum_items.push(quote! {
+            #crate_name::schema::EnumValue {
+                name: #gql_item_name,
+                description: #item_desc,
+                deprecation: #item_deprecation,
             }
         });
     }
@@ -65,6 +80,14 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         impl #crate_name::GQLType for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
+                registry.create_type(&Self::type_name(), |registry| {
+                    #crate_name::schema::Type::Enum {
+                        enum_values: vec![#(#schema_enum_items),*],
+                    }
+                })
             }
         }
 

@@ -11,3 +11,23 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         }
     }
 }
+
+pub fn parse_value(
+    s: &str,
+) -> Result<graphql_parser::query::Value, graphql_parser::query::ParseError> {
+    let mut doc =
+        graphql_parser::query::parse_query(&format!("query ($a:Int!={}) {{ dummy }}", s))?;
+    let definition = doc.definitions.remove(0);
+    if let graphql_parser::query::Definition::Operation(
+        graphql_parser::query::OperationDefinition::Query(graphql_parser::query::Query {
+            mut variable_definitions,
+            ..
+        }),
+    ) = definition
+    {
+        let var = variable_definitions.remove(0);
+        Ok(var.default_value.unwrap())
+    } else {
+        unreachable!()
+    }
+}

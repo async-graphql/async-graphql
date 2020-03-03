@@ -22,25 +22,59 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     let trait_ident = Ident::new(&format!("{}Fields", ident.to_string()), Span::call_site());
     let mut trait_fns = Vec::new();
     let mut resolvers = Vec::new();
+    let mut schema_fields = Vec::new();
 
     for field in &object_args.fields {
         let ty = &field.ty;
         let field_name = &field.name;
+        let desc = field
+            .desc
+            .as_ref()
+            .map(|s| quote! {Some(#s)})
+            .unwrap_or_else(|| quote! {None});
+        let deprecation = field
+            .deprecation
+            .as_ref()
+            .map(|s| quote! { Some(#s) })
+            .unwrap_or_else(|| quote! {None});
+
         let mut decl_params = Vec::new();
         let mut get_params = Vec::new();
         let mut use_params = Vec::new();
+        let mut schema_args = Vec::new();
 
         for arg in &field.arguments {
             let name = Ident::new(&arg.name, Span::call_site());
             let ty = &arg.ty;
             let name_str = name.to_string();
             let snake_case_name = Ident::new(&name.to_string().to_snake_case(), ident.span());
+            let desc = arg
+                .desc
+                .as_ref()
+                .map(|s| quote! { Some(#s) })
+                .unwrap_or_else(|| quote! {None});
+            let default = arg
+                .default
+                .as_ref()
+                .map(|v| {
+                    let s = v.to_string();
+                    quote! {Some(#s)}
+                })
+                .unwrap_or_else(|| quote! {None});
 
             decl_params.push(quote! { #snake_case_name: #ty });
             get_params.push(quote! {
                 let #snake_case_name: #ty = ctx_field.param_value(#name_str)?;
             });
             use_params.push(quote! { #snake_case_name });
+            schema_args.push(quote! {
+                #crate_name::schema::InputValue {
+                    name: #name_str,
+                    description: #desc,
+                    ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                    default_value: #default,
+                }
+            });
         }
 
         let resolver = Ident::new(
@@ -52,11 +86,11 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         );
         if field.is_owned {
             trait_fns.push(quote! {
-                    async fn #resolver(&self, ctx: &#crate_name::ContextField<'_>, #(#decl_params),*) -> #crate_name::Result<#ty>;
+                    async fn #resolver(&self, ctx: &#crate_name::Context<'_>, #(#decl_params),*) -> #crate_name::Result<#ty>;
                 });
         } else {
             trait_fns.push(quote! {
-                    async fn #resolver<'a>(&'a self, ctx: &#crate_name::ContextField<'_>, #(#decl_params),*) -> #crate_name::Result<&'a #ty>;
+                    async fn #resolver<'a>(&'a self, ctx: &#crate_name::Context<'_>, #(#decl_params),*) -> #crate_name::Result<&'a #ty>;
                 });
         }
 
@@ -73,6 +107,16 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 continue;
             }
         });
+
+        schema_fields.push(quote! {
+            #crate_name::schema::Field {
+                name: #field_name,
+                description: #desc,
+                args: vec![#(#schema_args),*],
+                ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                deprecation: #deprecation,
+            }
+        });
     }
 
     let expanded = quote! {
@@ -86,6 +130,12 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         impl #crate_name::GQLType for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn create_type_info(registry: &mut #crate_name::schema::Registry) -> String {
+                registry.create_type(&Self::type_name(), |registry| #crate_name::schema::Type::Object {
+                   fields: vec![#(#schema_fields),*]
+                })
             }
         }
 
