@@ -96,6 +96,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             item: selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
+                            variable_definitions: None,
                             registry: &self.registry,
                         };
                         return self.query.resolve(&ctx).await;
@@ -109,6 +110,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             item: &query.selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
+                            variable_definitions: Some(&query.variable_definitions),
                             registry: self.registry.clone(),
                         };
                         return self.query.resolve(&ctx).await;
@@ -122,6 +124,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             item: &mutation.selection_set,
                             data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
+                            variable_definitions: Some(&mutation.variable_definitions),
                             registry: self.registry.clone(),
                         };
                         return self.mutation.resolve(&ctx).await;

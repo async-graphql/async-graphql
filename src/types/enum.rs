@@ -13,33 +13,21 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [GQLEnumItem<Self>];
 
     fn parse_enum(value: &Value) -> Option<Self> {
-        match value {
-            Value::Enum(s) => {
-                let items = Self::items();
-                for item in items {
-                    if item.name == s {
-                        return Some(item.value);
-                    }
-                }
-            }
-            _ => {}
-        }
-        None
-    }
+        let value = match value {
+            Value::Enum(s) => Some(s.as_str()),
+            Value::String(s) => Some(s.as_str()),
+            _ => None,
+        };
 
-    fn parse_json_enum(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::String(s) => {
-                let items = Self::items();
-                for item in items {
-                    if item.name == s {
-                        return Some(item.value);
-                    }
+        value.and_then(|value| {
+            let items = Self::items();
+            for item in items {
+                if item.name == value {
+                    return Some(item.value);
                 }
             }
-            _ => {}
-        }
-        None
+            None
+        })
     }
 
     fn resolve_enum(&self) -> Result<serde_json::Value> {

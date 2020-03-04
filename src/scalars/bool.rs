@@ -16,13 +16,6 @@ impl Scalar for bool {
         }
     }
 
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::Bool(n) => Some(*n),
-            _ => None,
-        }
-    }
-
     fn to_json(&self) -> Result<serde_json::Value> {
         Ok((*self).into())
     }

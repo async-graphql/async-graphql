@@ -20,13 +20,6 @@ impl Scalar for String {
         }
     }
 
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::String(s) => Some(s.clone()),
-            _ => None,
-        }
-    }
-
     fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.clone().into())
     }

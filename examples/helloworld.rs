@@ -43,16 +43,16 @@ impl MyObjFields for MyObj {
 #[async_std::main]
 async fn main() {
     let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
-    for _ in 0..1000 {
-        let res = schema
-            .query(
-                MyObj { value: 100 },
-                async_graphql::GQLEmptyMutation,
-                "{ a b c __schema { types { kind name description fields(includeDeprecated: false) { name args { name defaultValue } } } } }",
-            )
-            .execute()
-            .await
-            .unwrap();
-    }
-    // serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
+    let vars = async_graphql::Variables::parse_from_json(b"{\"myvar\": 999}").unwrap();
+    let res = schema
+        .query(
+            MyObj { value: 100 },
+            async_graphql::GQLEmptyMutation,
+            "query($myvar:Int) { a b(v:$myvar) }",
+        )
+        .variables(&vars)
+        .execute()
+        .await
+        .unwrap();
+    serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
 }

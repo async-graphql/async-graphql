@@ -101,10 +101,6 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             fn parse(value: &#crate_name::Value) -> Option<Self> {
                 #crate_name::GQLEnum::parse_enum(value)
             }
-
-            fn parse_from_json(value: &#crate_name::serde_json::Value) -> Option<Self> {
-                #crate_name::GQLEnum::parse_json_enum(value)
-            }
         }
 
         #[#crate_name::async_trait::async_trait]

@@ -24,19 +24,6 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
             _ => None,
         }
     }
-
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::Array(values) => {
-                let mut result = Vec::new();
-                for value in values {
-                    result.push(GQLInputValue::parse_from_json(value)?);
-                }
-                Some(result)
-            }
-            _ => None,
-        }
-    }
 }
 
 #[async_trait::async_trait]

@@ -1,20 +1,52 @@
 use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, QueryError, Result};
 use fnv::FnvHasher;
-use graphql_parser::query::{Field, SelectionSet, Value};
+use graphql_parser::query::{Field, SelectionSet, Value, VariableDefinition};
 use std::any::{Any, TypeId};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Default)]
-pub struct Variables(HashMap<String, serde_json::Value>);
+pub struct Variables(BTreeMap<String, Value>);
 
 impl Deref for Variables {
-    type Target = HashMap<String, serde_json::Value>;
+    type Target = BTreeMap<String, Value>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Variables {
+    pub fn parse_from_json(data: &[u8]) -> Result<Self> {
+        let value = serde_json::from_slice(data)?;
+        let gql_value = json_value_to_gql_value(value);
+        if let Value::Object(obj) = gql_value {
+            Ok(Variables(obj))
+        } else {
+            Ok(Default::default())
+        }
+    }
+}
+
+fn json_value_to_gql_value(value: serde_json::Value) -> Value {
+    match value {
+        serde_json::Value::Null => Value::Null,
+        serde_json::Value::Bool(n) => Value::Boolean(n),
+        serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
+        serde_json::Value::Number(n) => Value::Int((n.as_i64().unwrap() as i32).into()),
+        serde_json::Value::String(s) => Value::String(s),
+        serde_json::Value::Array(ls) => Value::List(
+            ls.into_iter()
+                .map(|value| json_value_to_gql_value(value))
+                .collect(),
+        ),
+        serde_json::Value::Object(obj) => Value::Object(
+            obj.into_iter()
+                .map(|(name, value)| (name, json_value_to_gql_value(value)))
+                .collect(),
+        ),
     }
 }
 
@@ -44,6 +76,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) item: T,
     pub(crate) data: Option<&'a Data>,
     pub(crate) variables: Option<&'a Variables>,
+    pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
 }
 
@@ -62,6 +95,7 @@ impl<'a, T> ContextBase<'a, T> {
             item,
             data: self.data,
             variables: self.variables,
+            variable_definitions: self.variable_definitions,
             registry: self.registry.clone(),
         }
     }
@@ -76,35 +110,40 @@ impl<'a, T> ContextBase<'a, T> {
 }
 
 impl<'a> ContextBase<'a, &'a Field> {
+    fn resolve_input_value(&self, value: Value) -> Result<Value> {
+        if let Value::Variable(var_name) = value {
+            let def = self
+                .variable_definitions
+                .and_then(|defs| defs.iter().find(|def| def.name == var_name.as_str()));
+            if let Some(def) = def {
+                if let Some(var_value) = self.variables.map(|vars| vars.get(&def.name)).flatten() {
+                    return Ok(var_value.clone());
+                }
+            }
+            return Err(QueryError::VarNotDefined {
+                var_name: var_name.clone(),
+            }
+            .into());
+        } else {
+            Ok(value)
+        }
+    }
+
     #[doc(hidden)]
     pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
         &self,
         name: &str,
         default: Option<F>,
     ) -> Result<T> {
-        let value = self
+        match self
             .arguments
             .iter()
             .find(|(n, _)| n == name)
             .map(|(_, v)| v)
-            .cloned();
-
-        if let Some(Value::Variable(var_name)) = &value {
-            if let Some(vars) = &self.variables {
-                if let Some(var_value) = vars.get(&*var_name).cloned() {
-                    let res = GQLInputValue::parse_from_json(&var_value).ok_or_else(|| {
-                        QueryError::ExpectedJsonType {
-                            expect: T::qualified_type_name(),
-                            actual: var_value,
-                        }
-                        .with_position(self.item.position)
-                    })?;
-                    return Ok(res);
-                }
-            }
-
-            if let Some(default) = default {
-                let value = default();
+            .cloned()
+        {
+            Some(value) => {
+                let value = self.resolve_input_value(value)?;
                 let res = GQLInputValue::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
@@ -112,28 +151,30 @@ impl<'a> ContextBase<'a, &'a Field> {
                     }
                     .with_position(self.item.position)
                 })?;
-                return Ok(res);
+                Ok(res)
             }
-
-            return Err(QueryError::VarNotDefined {
-                var_name: var_name.clone(),
+            None if default.is_some() => {
+                let default = default.unwrap();
+                let value = default();
+                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: value.clone(),
+                    }
+                    .with_position(self.item.position)
+                })?;
+                Ok(res)
             }
-            .into());
-        };
-
-        let value = if let (Some(default), None) = (default, &value) {
-            default()
-        } else {
-            value.unwrap_or(Value::Null)
-        };
-
-        let res = GQLInputValue::parse(&value).ok_or_else(|| {
-            QueryError::ExpectedType {
-                expect: T::qualified_type_name(),
-                actual: value,
+            None => {
+                let res = GQLInputValue::parse(&Value::Null).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: Value::Null,
+                    }
+                    .with_position(self.item.position)
+                })?;
+                Ok(res)
             }
-            .with_position(self.item.position)
-        })?;
-        Ok(res)
+        }
     }
 }

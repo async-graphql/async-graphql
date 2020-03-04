@@ -41,7 +41,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .unwrap_or_else(|| quote! {None});
 
     let mut get_fields = Vec::new();
-    let mut get_json_fields = Vec::new();
     let mut fields = Vec::new();
     let mut schema_fields = Vec::new();
 
@@ -83,25 +82,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             });
         }
 
-        if let Some(default) = &field_args.default {
-            let default_repr = build_value_repr(&crate_name, default);
-            get_json_fields.push(quote! {
-                let #ident:#ty = match obj.get(#name) {
-                    None => {
-                        let default_value = #default_repr;
-                        #crate_name::GQLInputValue::parse(&default_value)?
-                    }
-                    Some(value) => {
-                        #crate_name::GQLInputValue::parse_from_json(&value)?
-                    }
-                };
-            });
-        } else {
-            get_json_fields.push(quote! {
-                let #ident:#ty = #crate_name::GQLInputValue::parse_from_json(&obj.get(#name).unwrap_or(&#crate_name::serde_json::Value::Null))?;
-            });
-        }
-
         fields.push(ident);
         schema_fields.push(quote! {
             #crate_name::registry::InputValue {
@@ -136,16 +116,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
                 if let #crate_name::Value::Object(obj) = value {
                     #(#get_fields)*
-                    Some(Self { #(#fields),* })
-                } else {
-                    None
-                }
-            }
-
-            fn parse_from_json(value: &#crate_name::serde_json::Value) -> Option<Self> {
-                use #crate_name::GQLType;
-                if let #crate_name::serde_json::Value::Object(obj) = value {
-                    #(#get_json_fields)*
                     Some(Self { #(#fields),* })
                 } else {
                     None

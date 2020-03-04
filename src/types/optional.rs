@@ -22,13 +22,6 @@ impl<T: GQLInputValue> GQLInputValue for Option<T> {
             _ => Some(GQLInputValue::parse(value)?),
         }
     }
-
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::Null => Some(None),
-            _ => Some(GQLInputValue::parse_from_json(value)?),
-        }
-    }
 }
 
 #[async_trait::async_trait]

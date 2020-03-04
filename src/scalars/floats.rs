@@ -20,13 +20,6 @@ macro_rules! impl_float_scalars {
                 }
             }
 
-            fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-                match value {
-                    serde_json::Value::Number(n) => Some(n.as_f64().unwrap() as Self),
-                    _ => None
-                }
-            }
-
             fn to_json(&self) -> Result<serde_json::Value> {
                 Ok((*self).into())
             }

@@ -31,14 +31,6 @@ impl Scalar for ID {
         }
     }
 
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        match value {
-            serde_json::Value::Number(n) if n.is_i64() => Some(ID(n.as_i64().unwrap().to_string())),
-            serde_json::Value::String(s) => Some(ID(s.clone())),
-            _ => None,
-        }
-    }
-
     fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.0.clone().into())
     }

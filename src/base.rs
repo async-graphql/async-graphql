@@ -16,7 +16,6 @@ pub trait GQLType {
 #[doc(hidden)]
 pub trait GQLInputValue: GQLType + Sized {
     fn parse(value: &Value) -> Option<Self>;
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self>;
 }
 
 #[doc(hidden)]
@@ -37,7 +36,6 @@ pub trait Scalar: Sized + Send {
         None
     }
     fn parse(value: &Value) -> Option<Self>;
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self>;
     fn to_json(&self) -> Result<serde_json::Value>;
 }
 
@@ -57,10 +55,6 @@ impl<T: Scalar> GQLType for T {
 impl<T: Scalar> GQLInputValue for T {
     fn parse(value: &Value) -> Option<Self> {
         T::parse(value)
-    }
-
-    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
-        T::parse_from_json(value)
     }
 }
 
