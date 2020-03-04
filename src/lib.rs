@@ -26,6 +26,24 @@
 //! * [Cargo package](https://crates.io/crates/async-graphql)
 //! * Minimum supported Rust version: 1.39 or later
 //!
+//! ## Features
+//!
+//! * Fully support async/await.
+//! * Type safety.
+//! * Rustfmt friendly (Procedural Macro).
+//! * Custom scalar.
+//! * Minimal overhead.
+//! * Easy integration (hyper, actix_web, tide ...).
+//!
+//! ## License
+//!
+//! Licensed under either of
+//!
+//! * Apache License, Version 2.0,
+//! (./LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+//! * MIT license (./LICENSE-MIT or http://opensource.org/licenses/MIT)
+//! at your option.
+//!
 //! ## References
 //!
 //! * [GraphQL](https://graphql.org)
