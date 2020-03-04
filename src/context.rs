@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{ErrorWithPosition, GQLInputValue, QueryError, Result};
+use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
 use fnv::FnvHasher;
 use graphql_parser::query::{Field, SelectionSet, Value, VariableDefinition};
 use std::any::{Any, TypeId};
@@ -118,6 +118,8 @@ impl<'a> ContextBase<'a, &'a Field> {
             if let Some(def) = def {
                 if let Some(var_value) = self.variables.map(|vars| vars.get(&def.name)).flatten() {
                     return Ok(var_value.clone());
+                } else if let Some(default) = &def.default_value {
+                    return Ok(default.clone());
                 }
             }
             return Err(QueryError::VarNotDefined {
@@ -176,5 +178,74 @@ impl<'a> ContextBase<'a, &'a Field> {
                 Ok(res)
             }
         }
+    }
+
+    #[doc(hidden)]
+    pub fn is_skip_this(&self) -> Result<bool> {
+        for directive in &self.directives {
+            if directive.name == "skip" {
+                if let Some(value) = directive
+                    .arguments
+                    .iter()
+                    .find(|(name, _)| name == "if")
+                    .map(|(_, value)| value)
+                {
+                    let value = self.resolve_input_value(value.clone())?;
+                    let res: bool = GQLInputValue::parse(&value).ok_or_else(|| {
+                        QueryError::ExpectedType {
+                            expect: bool::qualified_type_name(),
+                            actual: value,
+                        }
+                        .with_position(directive.position)
+                    })?;
+                    if res {
+                        return Ok(true);
+                    }
+                } else {
+                    return Err(QueryError::RequiredDirectiveArgs {
+                        directive: "@skip",
+                        arg_name: "if",
+                        arg_type: "Boolean!",
+                    }
+                    .with_position(directive.position)
+                    .into());
+                }
+            } else if directive.name == "include" {
+                if let Some(value) = directive
+                    .arguments
+                    .iter()
+                    .find(|(name, _)| name == "if")
+                    .map(|(_, value)| value)
+                {
+                    let value = self.resolve_input_value(value.clone())?;
+                    let res: bool = GQLInputValue::parse(&value).ok_or_else(|| {
+                        QueryError::ExpectedType {
+                            expect: bool::qualified_type_name(),
+                            actual: value,
+                        }
+                        .with_position(directive.position)
+                    })?;
+                    if !res {
+                        return Ok(true);
+                    }
+                } else {
+                    return Err(QueryError::RequiredDirectiveArgs {
+                        directive: "@include",
+                        arg_name: "if",
+                        arg_type: "Boolean!",
+                    }
+                    .with_position(directive.position)
+                    .into());
+                }
+            } else {
+                return Err(QueryError::UnknownDirective {
+                    name: directive.name.clone(),
+                }
+                .with_position(directive.position)
+                .into());
+            }
+        }
+
+        Ok(false)
     }
 }

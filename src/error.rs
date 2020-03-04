@@ -47,6 +47,18 @@ pub enum QueryError {
 
     #[error("Variable \"${var_name}\" is not defined")]
     VarNotDefined { var_name: String },
+
+    #[error(
+        "Directive \"{directive}\" argument \"{arg_name}\" of type \"{arg_type}\" is required, but it was not provided."
+    )]
+    RequiredDirectiveArgs {
+        directive: &'static str,
+        arg_name: &'static str,
+        arg_type: &'static str,
+    },
+
+    #[error("Unknown directive \"{name}\".")]
+    UnknownDirective { name: String },
 }
 
 pub trait ErrorWithPosition {

@@ -1,3 +1,6 @@
+use crate::{model, GQLType};
+use std::collections::HashMap;
+
 pub struct InputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -50,10 +53,32 @@ pub enum Type {
         description: Option<&'static str>,
         input_fields: Vec<InputValue>,
     },
-    List {
-        of_type: usize,
-    },
-    NonNull {
-        of_type: usize,
-    },
+}
+
+pub struct Directive {
+    pub name: &'static str,
+    pub description: Option<&'static str>,
+    pub locations: Vec<model::__DirectiveLocation>,
+    pub args: Vec<InputValue>,
+}
+
+#[derive(Default)]
+pub struct Registry {
+    pub types: HashMap<String, Type>,
+    pub directives: Vec<Directive>,
+}
+
+impl Registry {
+    pub fn create_type<T: GQLType, F: FnMut(&mut Registry) -> Type>(&mut self, mut f: F) -> String {
+        let name = T::type_name();
+        if !self.types.contains_key(name.as_ref()) {
+            let ty = f(self);
+            self.types.insert(name.to_string(), ty);
+        }
+        T::qualified_type_name()
+    }
+
+    pub fn add_directive(&mut self, directive: Directive) {
+        self.directives.push(directive);
+    }
 }

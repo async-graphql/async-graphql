@@ -41,10 +41,7 @@ impl<'a> __FieldFields for __Field<'a> {
     }
 
     async fn ty<'b>(&'b self, _: &Context<'_>) -> Result<__Type<'b>> {
-        Ok(__Type {
-            registry: self.registry,
-            ty: &self.registry[&self.field.ty],
-        })
+        Ok(__Type::new(self.registry, &self.field.ty))
     }
 
     async fn is_deprecated(&self, _: &Context<'_>) -> Result<bool> {

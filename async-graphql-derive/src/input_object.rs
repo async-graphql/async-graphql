@@ -102,7 +102,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type(&Self::type_name(), |registry| #crate_name::registry::Type::InputObject {
+                registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::InputObject {
                     name: #gql_typename,
                     description: #desc,
                     input_fields: vec![#(#schema_fields),*]

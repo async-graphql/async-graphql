@@ -45,7 +45,7 @@ impl<T: Scalar> GQLType for T {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type(&T::type_name(), |_| registry::Type::Scalar {
+        registry.create_type::<T, _>(|_| registry::Type::Scalar {
             name: T::type_name().to_string(),
             description: T::description(),
         })

@@ -87,7 +87,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type(&Self::type_name(), |registry| {
+                registry.create_type::<Self, _>(|registry| {
                     #crate_name::registry::Type::Enum {
                         name: #gql_typename,
                         description: #desc,

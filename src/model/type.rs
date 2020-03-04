@@ -3,6 +3,12 @@ use crate::registry::Type;
 use crate::{registry, Context, Result};
 use async_graphql_derive::Object;
 
+enum TypeDetail<'a> {
+    Simple(&'a registry::Type),
+    NonNull(&'a registry::Type),
+    List(&'a registry::Type),
+}
+
 #[Object(
     internal,
     desc = r#"
@@ -17,7 +23,7 @@ Depending on the kind of a type, certain fields describe information about that 
         name = "fields",
         type = "Option<Vec<__Field>>",
         owned,
-        arg(name = "includeDeprecated", type = "bool", default="false")
+        arg(name = "includeDeprecated", type = "bool", default = "false")
     ),
     field(name = "interfaces", type = "Option<Vec<__Type>>", owned),
     field(name = "possibleTypes", type = "Option<Vec<__Type>>", owned),
@@ -25,55 +31,91 @@ Depending on the kind of a type, certain fields describe information about that 
         name = "enumValues",
         type = "Option<Vec<__EnumValue>>",
         owned,
-        arg(name = "includeDeprecated", type = "bool", default="false")
+        arg(name = "includeDeprecated", type = "bool", default = "false")
     ),
     field(name = "inputFields", type = "Option<Vec<__InputValue>>", owned),
     field(name = "ofType", type = "Option<__Type>", owned)
 )]
 pub struct __Type<'a> {
-    pub registry: &'a registry::Registry,
-    pub ty: &'a registry::Type,
+    registry: &'a registry::Registry,
+    detail: TypeDetail<'a>,
+}
+
+impl<'a> __Type<'a> {
+    pub fn new_simple(registry: &'a registry::Registry, ty: &'a registry::Type) -> __Type<'a> {
+        __Type {
+            registry,
+            detail: TypeDetail::Simple(ty),
+        }
+    }
+
+    pub fn new(registry: &'a registry::Registry, type_name: &str) -> __Type<'a> {
+        if let Some(type_name) = parse_non_null(type_name) {
+            __Type {
+                registry,
+                detail: TypeDetail::NonNull(&registry.types[type_name]),
+            }
+        } else if let Some(type_name) = parse_list(type_name) {
+            __Type {
+                registry,
+                detail: TypeDetail::List(&registry.types[type_name]),
+            }
+        } else {
+            __Type {
+                registry,
+                detail: TypeDetail::Simple(&registry.types[type_name]),
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait]
 impl<'a> __TypeFields for __Type<'a> {
     async fn kind(&self, _: &Context<'_>) -> Result<__TypeKind> {
-        Ok(match self.ty {
-            registry::Type::Scalar { .. } => __TypeKind::SCALAR,
-            registry::Type::Object { .. } => __TypeKind::OBJECT,
-            registry::Type::Interface { .. } => __TypeKind::INTERFACE,
-            registry::Type::Union { .. } => __TypeKind::UNION,
-            registry::Type::Enum { .. } => __TypeKind::ENUM,
-            registry::Type::InputObject { .. } => __TypeKind::INPUT_OBJECT,
-            registry::Type::List { .. } => __TypeKind::LIST,
-            registry::Type::NonNull { .. } => __TypeKind::NON_NULL,
-        })
+        match &self.detail {
+            TypeDetail::Simple(ty) => Ok(match ty {
+                registry::Type::Scalar { .. } => __TypeKind::SCALAR,
+                registry::Type::Object { .. } => __TypeKind::OBJECT,
+                registry::Type::Interface { .. } => __TypeKind::INTERFACE,
+                registry::Type::Union { .. } => __TypeKind::UNION,
+                registry::Type::Enum { .. } => __TypeKind::ENUM,
+                registry::Type::InputObject { .. } => __TypeKind::INPUT_OBJECT,
+            }),
+            TypeDetail::NonNull(_) => Ok(__TypeKind::NON_NULL),
+            TypeDetail::List(_) => Ok(__TypeKind::LIST),
+        }
     }
 
     async fn name(&self, _: &Context<'_>) -> Result<Option<String>> {
-        Ok(match self.ty {
-            registry::Type::Scalar { name, .. } => Some(name.clone()),
-            registry::Type::Object { name, .. } => Some(name.to_string()),
-            registry::Type::Interface { name, .. } => Some(name.to_string()),
-            registry::Type::Union { name, .. } => Some(name.to_string()),
-            registry::Type::Enum { name, .. } => Some(name.to_string()),
-            registry::Type::InputObject { name, .. } => Some(name.to_string()),
-            registry::Type::List { .. } => None,
-            registry::Type::NonNull { .. } => None,
-        })
+        match &self.detail {
+            TypeDetail::Simple(ty) => Ok(match ty {
+                registry::Type::Scalar { name, .. } => Some(name.clone()),
+                registry::Type::Object { name, .. } => Some(name.to_string()),
+                registry::Type::Interface { name, .. } => Some(name.to_string()),
+                registry::Type::Union { name, .. } => Some(name.to_string()),
+                registry::Type::Enum { name, .. } => Some(name.to_string()),
+                registry::Type::InputObject { name, .. } => Some(name.to_string()),
+            }),
+            TypeDetail::NonNull(_) => Ok(None),
+            TypeDetail::List(_) => Ok(None),
+        }
     }
 
     async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
-        Ok(match self.ty {
-            registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::Object { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::Interface { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::Union { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::Enum { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::InputObject { description, .. } => description.map(|s| s.to_string()),
-            registry::Type::List { .. } => None,
-            registry::Type::NonNull { .. } => None,
-        })
+        match &self.detail {
+            TypeDetail::Simple(ty) => Ok(match ty {
+                registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
+                registry::Type::Object { description, .. } => description.map(|s| s.to_string()),
+                registry::Type::Interface { description, .. } => description.map(|s| s.to_string()),
+                registry::Type::Union { description, .. } => description.map(|s| s.to_string()),
+                registry::Type::Enum { description, .. } => description.map(|s| s.to_string()),
+                registry::Type::InputObject { description, .. } => {
+                    description.map(|s| s.to_string())
+                }
+            }),
+            TypeDetail::NonNull(_) => Ok(None),
+            TypeDetail::List(_) => Ok(None),
+        }
     }
 
     async fn fields<'b>(
@@ -81,7 +123,7 @@ impl<'a> __TypeFields for __Type<'a> {
         _: &Context<'_>,
         include_deprecated: bool,
     ) -> Result<Option<Vec<__Field<'b>>>> {
-        if let Type::Object { fields, .. } = self.ty {
+        if let TypeDetail::Simple(Type::Object { fields, .. }) = &self.detail {
             Ok(Some(
                 fields
                     .iter()
@@ -116,7 +158,7 @@ impl<'a> __TypeFields for __Type<'a> {
         _: &Context<'_>,
         include_deprecated: bool,
     ) -> Result<Option<Vec<__EnumValue<'b>>>> {
-        if let Type::Enum { enum_values, .. } = self.ty {
+        if let TypeDetail::Simple(Type::Enum { enum_values, .. }) = &self.detail {
             Ok(Some(
                 enum_values
                     .iter()
@@ -139,7 +181,7 @@ impl<'a> __TypeFields for __Type<'a> {
     }
 
     async fn input_fields<'b>(&'b self, _: &Context<'_>) -> Result<Option<Vec<__InputValue<'b>>>> {
-        if let Type::InputObject { input_fields, .. } = self.ty {
+        if let TypeDetail::Simple(Type::InputObject { input_fields, .. }) = &self.detail {
             Ok(Some(
                 input_fields
                     .iter()
@@ -155,6 +197,34 @@ impl<'a> __TypeFields for __Type<'a> {
     }
 
     async fn of_type<'b>(&'b self, _: &Context<'_>) -> Result<Option<__Type<'b>>> {
-        Ok(None)
+        if let TypeDetail::List(ty) = &self.detail {
+            Ok(Some(__Type {
+                registry: self.registry,
+                detail: TypeDetail::Simple(ty),
+            }))
+        } else if let TypeDetail::NonNull(ty) = &self.detail {
+            Ok(Some(__Type {
+                registry: self.registry,
+                detail: TypeDetail::Simple(ty),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+fn parse_non_null(type_name: &str) -> Option<&str> {
+    if type_name.ends_with("!") {
+        Some(&type_name[..type_name.len() - 1])
+    } else {
+        None
+    }
+}
+
+fn parse_list(type_name: &str) -> Option<&str> {
+    if type_name.starts_with("[") {
+        Some(&type_name[1..type_name.len() - 1])
+    } else {
+        None
     }
 }

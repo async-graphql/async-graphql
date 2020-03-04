@@ -26,10 +26,7 @@ impl<'a> __InputValueFields for __InputValue<'a> {
     }
 
     async fn ty<'b>(&'b self, _: &Context<'_>) -> Result<__Type<'b>> {
-        Ok(__Type {
-            registry: self.registry,
-            ty: &self.registry[&self.input_value.ty],
-        })
+        Ok(__Type::new(self.registry, &self.input_value.ty))
     }
 
     async fn default_value(&self, _: &Context<'_>) -> Result<Option<String>> {

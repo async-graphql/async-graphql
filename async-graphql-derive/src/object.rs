@@ -149,10 +149,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type(&Self::type_name(), |registry| #crate_name::registry::Type::Object {
+                registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
                     name: #gql_typename,
                     description: #desc,
-                   fields: vec![#(#schema_fields),*]
+                    fields: vec![#(#schema_fields),*]
                 })
             }
         }
@@ -173,6 +173,9 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     match selection {
                         #crate_name::graphql_parser::query::Selection::Field(field) => {
                             let ctx_field = ctx.with_item(field);
+                            if ctx_field.is_skip_this()? {
+                                continue;
+                            }
                             if field.name.as_str() == "__typename" {
                                 let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
                                 result.insert(name, #gql_typename.into());

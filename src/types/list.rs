@@ -3,7 +3,11 @@ use std::borrow::Cow;
 
 impl<T: GQLType> GQLType for Vec<T> {
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+        T::type_name()
+    }
+
+    fn qualified_type_name() -> String {
+        format!("[{}]", T::qualified_type_name())
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

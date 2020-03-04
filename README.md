@@ -74,9 +74,14 @@
         - [X] Parse value
         - [ ] Check type
     - [ ] Directives
-        - [ ] @include
-        - [ ] @skip
-        - [ ] @deprecated
+        - [X] @include
+            - [X] FIELD
+            - [ ] FRAGMENT_SPREAD
+            - [ ] INLINE_FRAGMENT
+        - [X] @skip
+            - [X] FIELD
+            - [ ] FRAGMENT_SPREAD
+            - [ ] INLINE_FRAGMENT
         - [ ] Custom Directive
     - [X] Schema
     - [ ] Validation rules

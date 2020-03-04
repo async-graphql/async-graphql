@@ -1,8 +1,9 @@
-use crate::registry::Registry;
+use crate::model::__DirectiveLocation;
+use crate::registry::{Directive, InputValue, Registry};
 use crate::types::QueryRoot;
 use crate::{
-    ContextBase, Data, ErrorWithPosition, GQLObject, GQLOutputValue, QueryError, QueryParseError,
-    Result, Variables,
+    ContextBase, Data, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, QueryError,
+    QueryParseError, Result, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
@@ -16,9 +17,41 @@ pub struct Schema<Query, Mutation> {
 
 impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
     pub fn new() -> Self {
-        let mut registry = Default::default();
+        let mut registry = Registry::default();
+
+        registry.add_directive(Directive {
+            name: "include",
+            description: Some("Directs the executor to include this field or fragment only when the `if` argument is true."),
+            locations: vec![__DirectiveLocation::FIELD],
+            args: vec![InputValue{
+                name: "if",
+                description: Some("Included when true."),
+                ty: "Boolean!".to_string(),
+                default_value: None
+            }]
+        });
+
+        registry.add_directive(Directive {
+            name: "skip",
+            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true."),
+            locations: vec![__DirectiveLocation::FIELD],
+            args: vec![InputValue{
+                name: "if",
+                description: Some("Skipped when true."),
+                ty: "Boolean!".to_string(),
+                default_value: None
+            }]
+        });
+
+        // register scalars
+        bool::create_type_info(&mut registry);
+        i32::create_type_info(&mut registry);
+        f32::create_type_info(&mut registry);
+        String::create_type_info(&mut registry);
+
         Query::create_type_info(&mut registry);
         Mutation::create_type_info(&mut registry);
+
         Self {
             mark_query: PhantomData,
             mark_mutation: PhantomData,

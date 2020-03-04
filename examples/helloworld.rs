@@ -43,12 +43,33 @@ impl MyObjFields for MyObj {
 #[async_std::main]
 async fn main() {
     let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
-    let vars = async_graphql::Variables::parse_from_json(b"{\"myvar\": 999}").unwrap();
+    let vars = async_graphql::Variables::parse_from_json(b"{\"myvar1\": 999}").unwrap();
     let res = schema
         .query(
             MyObj { value: 100 },
             async_graphql::GQLEmptyMutation,
-            "query($myvar:Int) { a b(v:$myvar) }",
+            r#"
+            {
+                __schema {
+                    directives @skip(if: true) {
+                      name
+                      description
+                      locations
+                      args {
+                        name description type {
+                          name
+                          description
+                          kind
+                          ofType {
+                            name
+                            description
+                          }
+                        } defaultValue
+                      }
+                    }
+                  }
+            }
+"#,
         )
         .variables(&vars)
         .execute()

@@ -12,7 +12,7 @@ impl GQLType for GQLEmptyMutation {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type(&Self::type_name(), |_| registry::Type::Object {
+        registry.create_type::<Self, _>(|_| registry::Type::Object {
             name: "EmptyMutation",
             description: None,
             fields: Vec::new(),
