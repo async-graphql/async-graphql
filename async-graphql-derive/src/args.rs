@@ -176,6 +176,12 @@ impl Field {
                                 } else if nv.path.is_ident("default") {
                                     if let syn::Lit::Str(lit) = &nv.lit {
                                         match parse_value(&lit.value()) {
+                                            Ok(Value::Variable(_)) => {
+                                                return Err(Error::new_spanned(
+                                                    &nv.lit,
+                                                    "The default cannot be a variable",
+                                                ))
+                                            }
                                             Ok(value) => default = Some(value),
                                             Err(err) => {
                                                 return Err(Error::new_spanned(
@@ -406,6 +412,12 @@ impl InputField {
                                 } else if nv.path.is_ident("default") {
                                     if let syn::Lit::Str(lit) = nv.lit {
                                         match parse_value(&lit.value()) {
+                                            Ok(Value::Variable(_)) => {
+                                                return Err(Error::new_spanned(
+                                                    &lit,
+                                                    "The default cannot be a variable",
+                                                ))
+                                            }
                                             Ok(value) => default = Some(value),
                                             Err(err) => {
                                                 return Err(Error::new_spanned(

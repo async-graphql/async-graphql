@@ -98,11 +98,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         impl #crate_name::GQLInputValue for #ident {
-            fn parse(value: #crate_name::Value) -> Option<Self> {
+            fn parse(value: &#crate_name::Value) -> Option<Self> {
                 #crate_name::GQLEnum::parse_enum(value)
             }
 
-            fn parse_from_json(value: #crate_name::serde_json::Value) -> Option<Self> {
+            fn parse_from_json(value: &#crate_name::serde_json::Value) -> Option<Self> {
                 #crate_name::GQLEnum::parse_json_enum(value)
             }
         }

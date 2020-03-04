@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::get_crate_name;
+use crate::utils::{build_value_repr, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
@@ -59,7 +59,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 .as_ref()
                 .map(|s| quote! { Some(#s) })
                 .unwrap_or_else(|| quote! {None});
-            let default = arg
+            let schema_default = arg
                 .default
                 .as_ref()
                 .map(|v| {
@@ -69,16 +69,26 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 .unwrap_or_else(|| quote! {None});
 
             decl_params.push(quote! { #snake_case_name: #ty });
+
+            let default = match &arg.default {
+                Some(default) => {
+                    let repr = build_value_repr(&crate_name, &default);
+                    quote! {Some(|| #repr)}
+                }
+                None => quote! { None },
+            };
             get_params.push(quote! {
-                let #snake_case_name: #ty = ctx_field.param_value(#name_str)?;
+                let #snake_case_name: #ty = ctx_field.param_value(#name_str, #default)?;
             });
+
             use_params.push(quote! { #snake_case_name });
+
             schema_args.push(quote! {
                 #crate_name::registry::InputValue {
                     name: #name_str,
                     description: #desc,
                     ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
-                    default_value: #default,
+                    default_value: #schema_default,
                 }
             });
         }

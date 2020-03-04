@@ -17,7 +17,7 @@ Depending on the kind of a type, certain fields describe information about that 
         name = "fields",
         type = "Option<Vec<__Field>>",
         owned,
-        arg(name = "includeDeprecated", type = "bool")
+        arg(name = "includeDeprecated", type = "bool", default="false")
     ),
     field(name = "interfaces", type = "Option<Vec<__Type>>", owned),
     field(name = "possibleTypes", type = "Option<Vec<__Type>>", owned),
@@ -25,7 +25,7 @@ Depending on the kind of a type, certain fields describe information about that 
         name = "enumValues",
         type = "Option<Vec<__EnumValue>>",
         owned,
-        arg(name = "includeDeprecated", type = "bool")
+        arg(name = "includeDeprecated", type = "bool", default="false")
     ),
     field(name = "inputFields", type = "Option<Vec<__InputValue>>", owned),
     field(name = "ofType", type = "Option<__Type>", owned)

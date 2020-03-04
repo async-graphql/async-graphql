@@ -77,7 +77,11 @@ impl<'a, T> ContextBase<'a, T> {
 
 impl<'a> ContextBase<'a, &'a Field> {
     #[doc(hidden)]
-    pub fn param_value<T: GQLInputValue>(&self, name: &str) -> Result<T> {
+    pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
+        &self,
+        name: &str,
+        default: Option<F>,
+    ) -> Result<T> {
         let value = self
             .arguments
             .iter()
@@ -88,16 +92,27 @@ impl<'a> ContextBase<'a, &'a Field> {
         if let Some(Value::Variable(var_name)) = &value {
             if let Some(vars) = &self.variables {
                 if let Some(var_value) = vars.get(&*var_name).cloned() {
-                    let res =
-                        GQLInputValue::parse_from_json(var_value.clone()).ok_or_else(|| {
-                            QueryError::ExpectedJsonType {
-                                expect: T::qualified_type_name(),
-                                actual: var_value,
-                            }
-                            .with_position(self.item.position)
-                        })?;
+                    let res = GQLInputValue::parse_from_json(&var_value).ok_or_else(|| {
+                        QueryError::ExpectedJsonType {
+                            expect: T::qualified_type_name(),
+                            actual: var_value,
+                        }
+                        .with_position(self.item.position)
+                    })?;
                     return Ok(res);
                 }
+            }
+
+            if let Some(default) = default {
+                let value = default();
+                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: value,
+                    }
+                    .with_position(self.item.position)
+                })?;
+                return Ok(res);
             }
 
             return Err(QueryError::VarNotDefined {
@@ -106,8 +121,13 @@ impl<'a> ContextBase<'a, &'a Field> {
             .into());
         };
 
-        let value = value.unwrap_or(Value::Null);
-        let res = GQLInputValue::parse(value.clone()).ok_or_else(|| {
+        let value = if let (Some(default), None) = (default, &value) {
+            default()
+        } else {
+            value.unwrap_or(Value::Null)
+        };
+
+        let res = GQLInputValue::parse(&value).ok_or_else(|| {
             QueryError::ExpectedType {
                 expect: T::qualified_type_name(),
                 actual: value,

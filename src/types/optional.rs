@@ -16,14 +16,14 @@ impl<T: GQLType> GQLType for Option<T> {
 }
 
 impl<T: GQLInputValue> GQLInputValue for Option<T> {
-    fn parse(value: Value) -> Option<Self> {
+    fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::Null => Some(None),
             _ => Some(GQLInputValue::parse(value)?),
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::Null => Some(None),
             _ => Some(GQLInputValue::parse_from_json(value)?),

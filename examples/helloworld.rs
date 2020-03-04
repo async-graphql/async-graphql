@@ -10,9 +10,15 @@ struct MyInputObj {
     a: i32,
     b: i32,
 }
+
 #[async_graphql::Object(
     field(name = "a", type = "i32"),
-    field(owned, name = "b", type = "i32"),
+    field(
+        owned,
+        name = "b",
+        type = "i32",
+        arg(name = "v", type = "i32", default = "123")
+    ),
     field(owned, name = "c", type = "Option<String>")
 )]
 struct MyObj {
@@ -25,8 +31,8 @@ impl MyObjFields for MyObj {
         Ok(&self.value)
     }
 
-    async fn b(&self, ctx: &async_graphql::Context<'_>) -> async_graphql::Result<i32> {
-        Ok(999)
+    async fn b(&self, ctx: &async_graphql::Context<'_>, v: i32) -> async_graphql::Result<i32> {
+        Ok(v)
     }
 
     async fn c(&self, ctx: &async_graphql::Context<'_>) -> async_graphql::Result<Option<String>> {
@@ -37,14 +43,16 @@ impl MyObjFields for MyObj {
 #[async_std::main]
 async fn main() {
     let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
-    let res = schema
-        .query(
-            MyObj { value: 100 },
-            async_graphql::GQLEmptyMutation,
-            "{ a b c __schema { types { kind name description } } }",
-        )
-        .execute()
-        .await
-        .unwrap();
-    serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
+    for _ in 0..1000 {
+        let res = schema
+            .query(
+                MyObj { value: 100 },
+                async_graphql::GQLEmptyMutation,
+                "{ a b c __schema { types { kind name description fields(includeDeprecated: false) { name args { name defaultValue } } } } }",
+            )
+            .execute()
+            .await
+            .unwrap();
+    }
+    // serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
 }

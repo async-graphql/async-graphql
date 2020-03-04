@@ -12,7 +12,7 @@ pub struct GQLEnumItem<T> {
 pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [GQLEnumItem<Self>];
 
-    fn parse_enum(value: Value) -> Option<Self> {
+    fn parse_enum(value: &Value) -> Option<Self> {
         match value {
             Value::Enum(s) => {
                 let items = Self::items();
@@ -27,7 +27,7 @@ pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
         None
     }
 
-    fn parse_json_enum(value: serde_json::Value) -> Option<Self> {
+    fn parse_json_enum(value: &serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::String(s) => {
                 let items = Self::items();

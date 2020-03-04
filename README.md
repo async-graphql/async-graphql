@@ -53,23 +53,24 @@
         - [X] Non-Null
     - [ ] Object
         - [ ] Generic Types
-        - [X] Lifetime cycle    
+        - [X] Lifetime cycle   
     - [X] Enum
     - [X] InputObject
-        - [ ] Field default value
+        - [X] Field default value
         - [X] Deprecated flag
     - [ ] Interface
     - [ ] Union
 - [ ] Query
     - [X] Fields
     - [X] Arguments
-        - [ ] Default value
+        - [X] Default value
         - [X] Deprecated flag
     - [X] Alias
     - [ ] Fragments
     - [ ] Inline fragments
     - [X] Operation name
     - [X] Variables
+        - [X] Default value
         - [X] Parse value
         - [ ] Check type
     - [ ] Directives

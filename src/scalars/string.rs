@@ -13,16 +13,16 @@ impl Scalar for String {
         Some(STRING_DESC)
     }
 
-    fn parse(value: Value) -> Option<Self> {
+    fn parse(value: &Value) -> Option<Self> {
         match value {
-            Value::String(s) => Some(s),
+            Value::String(s) => Some(s.clone()),
             _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
         match value {
-            serde_json::Value::String(s) => Some(s),
+            serde_json::Value::String(s) => Some(s.clone()),
             _ => None,
         }
     }

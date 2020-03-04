@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::get_crate_name;
+use crate::utils::{build_value_repr, get_crate_name};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
@@ -63,12 +63,45 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 quote! {Some(#s)}
             })
             .unwrap_or_else(|| quote! {None});
-        get_fields.push(quote! {
-            let #ident:#ty = #crate_name::GQLInputValue::parse(obj.remove(#name).unwrap_or(#crate_name::Value::Null))?;
-        });
-        get_json_fields.push(quote! {
-            let #ident:#ty = #crate_name::GQLInputValue::parse_from_json(obj.remove(#name).unwrap_or(#crate_name::serde_json::Value::Null))?;
-        });
+
+        if let Some(default) = &field_args.default {
+            let default_repr = build_value_repr(&crate_name, default);
+            get_fields.push(quote! {
+                let #ident:#ty = {
+                    match obj.get(#name) {
+                        Some(value) => #crate_name::GQLInputValue::parse(value)?,
+                        None => {
+                            let default = #default_repr;
+                            #crate_name::GQLInputValue::parse(&value)?
+                        }
+                    }
+                };
+            });
+        } else {
+            get_fields.push(quote! {
+                let #ident:#ty = #crate_name::GQLInputValue::parse(obj.get(#name).unwrap_or(&#crate_name::Value::Null))?;
+            });
+        }
+
+        if let Some(default) = &field_args.default {
+            let default_repr = build_value_repr(&crate_name, default);
+            get_json_fields.push(quote! {
+                let #ident:#ty = match obj.get(#name) {
+                    None => {
+                        let default_value = #default_repr;
+                        #crate_name::GQLInputValue::parse(&default_value)?
+                    }
+                    Some(value) => {
+                        #crate_name::GQLInputValue::parse_from_json(&value)?
+                    }
+                };
+            });
+        } else {
+            get_json_fields.push(quote! {
+                let #ident:#ty = #crate_name::GQLInputValue::parse_from_json(&obj.get(#name).unwrap_or(&#crate_name::serde_json::Value::Null))?;
+            });
+        }
+
         fields.push(ident);
         schema_fields.push(quote! {
             #crate_name::registry::InputValue {
@@ -98,10 +131,10 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         }
 
         impl #crate_name::GQLInputValue for #ident {
-            fn parse(value: #crate_name::Value) -> Option<Self> {
+            fn parse(value: &#crate_name::Value) -> Option<Self> {
                 use #crate_name::GQLType;
 
-                if let #crate_name::Value::Object(mut obj) = value {
+                if let #crate_name::Value::Object(obj) = value {
                     #(#get_fields)*
                     Some(Self { #(#fields),* })
                 } else {
@@ -109,9 +142,9 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 }
             }
 
-            fn parse_from_json(value: #crate_name::serde_json::Value) -> Option<Self> {
+            fn parse_from_json(value: &#crate_name::serde_json::Value) -> Option<Self> {
                 use #crate_name::GQLType;
-                if let #crate_name::serde_json::Value::Object(mut obj) = value {
+                if let #crate_name::serde_json::Value::Object(obj) = value {
                     #(#get_json_fields)*
                     Some(Self { #(#fields),* })
                 } else {

@@ -1,4 +1,4 @@
-use crate::model::__Type;
+use crate::model::{__InputValue, __Type};
 use crate::{registry, Context, Result};
 use async_graphql_derive::Object;
 
@@ -7,6 +7,7 @@ use async_graphql_derive::Object;
     desc = "Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.",
     field(name = "name", type = "String", owned),
     field(name = "description", type = "Option<String>", owned),
+    field(name = "args", type = "Vec<__InputValue>", owned),
     field(name = "type", resolver = "ty", type = "__Type", owned),
     field(name = "isDeprecated", type = "bool", owned),
     field(name = "deprecationReason", type = "Option<String>", owned)
@@ -25,6 +26,18 @@ impl<'a> __FieldFields for __Field<'a> {
 
     async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
         Ok(self.field.description.map(|s| s.to_string()))
+    }
+
+    async fn args<'b>(&'b self, _: &Context<'_>) -> Result<Vec<__InputValue<'b>>> {
+        Ok(self
+            .field
+            .args
+            .iter()
+            .map(|input_value| __InputValue {
+                registry: self.registry,
+                input_value,
+            })
+            .collect())
     }
 
     async fn ty<'b>(&'b self, _: &Context<'_>) -> Result<__Type<'b>> {

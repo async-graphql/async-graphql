@@ -6,14 +6,14 @@ impl Scalar for DateTime<Utc> {
         "DateTime"
     }
 
-    fn parse(value: Value) -> Option<Self> {
+    fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::String(s) => Some(Utc.datetime_from_str(&s, "%+").ok()?),
             _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::String(s) => Some(Utc.datetime_from_str(&s, "%+").ok()?),
             _ => None,

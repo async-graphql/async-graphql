@@ -12,14 +12,14 @@ macro_rules! impl_integer_scalars {
                 Some("The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.")
             }
 
-            fn parse(value: Value) -> Option<Self> {
+            fn parse(value: &Value) -> Option<Self> {
                 match value {
                     Value::Int(n) => Some(n.as_i64().unwrap() as Self),
                     _ => None
                 }
             }
 
-            fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+            fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
                 match value {
                     serde_json::Value::Number(n) if n.is_i64() => Some(n.as_i64().unwrap() as Self),
                     serde_json::Value::Number(n) => Some(n.as_f64().unwrap() as Self),

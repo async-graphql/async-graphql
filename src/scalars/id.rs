@@ -23,18 +23,18 @@ impl Scalar for ID {
         "ID"
     }
 
-    fn parse(value: Value) -> Option<Self> {
+    fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::Int(n) => Some(ID(n.as_i64().unwrap().to_string())),
-            Value::String(s) => Some(ID(s)),
+            Value::String(s) => Some(ID(s.clone())),
             _ => None,
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::Number(n) if n.is_i64() => Some(ID(n.as_i64().unwrap().to_string())),
-            serde_json::Value::String(s) => Some(ID(s)),
+            serde_json::Value::String(s) => Some(ID(s.clone())),
             _ => None,
         }
     }

@@ -12,7 +12,7 @@ impl<T: GQLType> GQLType for Vec<T> {
 }
 
 impl<T: GQLInputValue> GQLInputValue for Vec<T> {
-    fn parse(value: Value) -> Option<Self> {
+    fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::List(values) => {
                 let mut result = Vec::new();
@@ -25,7 +25,7 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
         }
     }
 
-    fn parse_from_json(value: serde_json::Value) -> Option<Self> {
+    fn parse_from_json(value: &serde_json::Value) -> Option<Self> {
         match value {
             serde_json::Value::Array(values) => {
                 let mut result = Vec::new();
