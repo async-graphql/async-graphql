@@ -86,7 +86,7 @@
     - [X] Schema
     - [ ] Validation rules
 - [ ] 
-    - [X] Actix-web (https://crates.io/crates/async-graphql-actix-web)
+    - [X] Actix-web
     - [ ] Hyper
     - [ ] Tide
 
