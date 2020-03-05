@@ -17,7 +17,7 @@ readme = "README.md"
 default = ["chrono", "uuid"]
 
 [dependencies]
-async-graphql-derive = { path = "async-graphql-derive", version = "0.8.0" }
+async-graphql-derive = { path = "async-graphql-derive", version = "0.8.1" }
 graphql-parser = "0.2.3"
 anyhow = "1.0.26"
 thiserror = "1.0.11"
