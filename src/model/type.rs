@@ -1,6 +1,6 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
+use crate::registry;
 use crate::registry::Type;
-use crate::{registry, Context, Result};
 use async_graphql_derive::Object;
 
 enum TypeDetail<'a> {
@@ -9,33 +9,6 @@ enum TypeDetail<'a> {
     List(&'a registry::Type),
 }
 
-#[Object(
-    internal,
-    desc = r#"
-The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
-
-Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name and description, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
-"#,
-    field(name = "kind", type = "__TypeKind", owned),
-    field(name = "name", type = "Option<String>", owned),
-    field(name = "description", type = "Option<String>", owned),
-    field(
-        name = "fields",
-        type = "Option<Vec<__Field>>",
-        owned,
-        arg(name = "includeDeprecated", type = "bool", default = "false")
-    ),
-    field(name = "interfaces", type = "Option<Vec<__Type>>", owned),
-    field(name = "possibleTypes", type = "Option<Vec<__Type>>", owned),
-    field(
-        name = "enumValues",
-        type = "Option<Vec<__EnumValue>>",
-        owned,
-        arg(name = "includeDeprecated", type = "bool", default = "false")
-    ),
-    field(name = "inputFields", type = "Option<Vec<__InputValue>>", owned),
-    field(name = "ofType", type = "Option<__Type>", owned)
-)]
 pub struct __Type<'a> {
     registry: &'a registry::Registry,
     detail: TypeDetail<'a>,
@@ -69,41 +42,51 @@ impl<'a> __Type<'a> {
     }
 }
 
-#[async_trait::async_trait]
-impl<'a> __TypeFields for __Type<'a> {
-    async fn kind(&self, _: &Context<'_>) -> Result<__TypeKind> {
+#[Object(
+    internal,
+    desc = r#"
+The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
+
+Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name and description, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
+"#
+)]
+impl<'a> __Type<'a> {
+    #[field]
+    async fn kind(&self) -> __TypeKind {
         match &self.detail {
-            TypeDetail::Simple(ty) => Ok(match ty {
+            TypeDetail::Simple(ty) => match ty {
                 registry::Type::Scalar { .. } => __TypeKind::SCALAR,
                 registry::Type::Object { .. } => __TypeKind::OBJECT,
                 registry::Type::Interface { .. } => __TypeKind::INTERFACE,
                 registry::Type::Union { .. } => __TypeKind::UNION,
                 registry::Type::Enum { .. } => __TypeKind::ENUM,
                 registry::Type::InputObject { .. } => __TypeKind::INPUT_OBJECT,
-            }),
-            TypeDetail::NonNull(_) => Ok(__TypeKind::NON_NULL),
-            TypeDetail::List(_) => Ok(__TypeKind::LIST),
+            },
+            TypeDetail::NonNull(_) => __TypeKind::NON_NULL,
+            TypeDetail::List(_) => __TypeKind::LIST,
         }
     }
 
-    async fn name(&self, _: &Context<'_>) -> Result<Option<String>> {
+    #[field]
+    async fn name(&self) -> Option<String> {
         match &self.detail {
-            TypeDetail::Simple(ty) => Ok(match ty {
+            TypeDetail::Simple(ty) => match ty {
                 registry::Type::Scalar { name, .. } => Some(name.clone()),
                 registry::Type::Object { name, .. } => Some(name.to_string()),
                 registry::Type::Interface { name, .. } => Some(name.to_string()),
                 registry::Type::Union { name, .. } => Some(name.to_string()),
                 registry::Type::Enum { name, .. } => Some(name.to_string()),
                 registry::Type::InputObject { name, .. } => Some(name.to_string()),
-            }),
-            TypeDetail::NonNull(_) => Ok(None),
-            TypeDetail::List(_) => Ok(None),
+            },
+            TypeDetail::NonNull(_) => None,
+            TypeDetail::List(_) => None,
         }
     }
 
-    async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
+    #[field]
+    async fn description(&self) -> Option<String> {
         match &self.detail {
-            TypeDetail::Simple(ty) => Ok(match ty {
+            TypeDetail::Simple(ty) => match ty {
                 registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
                 registry::Type::Object { description, .. } => description.map(|s| s.to_string()),
                 registry::Type::Interface { description, .. } => description.map(|s| s.to_string()),
@@ -112,19 +95,19 @@ impl<'a> __TypeFields for __Type<'a> {
                 registry::Type::InputObject { description, .. } => {
                     description.map(|s| s.to_string())
                 }
-            }),
-            TypeDetail::NonNull(_) => Ok(None),
-            TypeDetail::List(_) => Ok(None),
+            },
+            TypeDetail::NonNull(_) => None,
+            TypeDetail::List(_) => None,
         }
     }
 
-    async fn fields<'b>(
-        &'b self,
-        _: &Context<'_>,
-        include_deprecated: bool,
-    ) -> Result<Option<Vec<__Field<'b>>>> {
+    #[field]
+    async fn fields(
+        &self,
+        #[arg(name = "includeDeprecated", default = "false")] include_deprecated: bool,
+    ) -> Option<Vec<__Field<'a>>> {
         if let TypeDetail::Simple(Type::Object { fields, .. }) = &self.detail {
-            Ok(Some(
+            Some(
                 fields
                     .iter()
                     .filter(|field| {
@@ -139,27 +122,29 @@ impl<'a> __TypeFields for __Type<'a> {
                         field,
                     })
                     .collect(),
-            ))
+            )
         } else {
-            Ok(None)
+            None
         }
     }
 
-    async fn interfaces<'b>(&'b self, _: &Context<'_>) -> Result<Option<Vec<__Type<'b>>>> {
-        Ok(None)
+    #[field]
+    async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
+        None
     }
 
-    async fn possible_types<'b>(&'b self, _: &Context<'_>) -> Result<Option<Vec<__Type<'b>>>> {
-        Ok(None)
+    #[field]
+    async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
+        None
     }
 
-    async fn enum_values<'b>(
-        &'b self,
-        _: &Context<'_>,
-        include_deprecated: bool,
-    ) -> Result<Option<Vec<__EnumValue<'b>>>> {
+    #[field(name = "enumValues")]
+    async fn enum_values(
+        &self,
+        #[arg(name = "includeDeprecated", default = "false")] include_deprecated: bool,
+    ) -> Option<Vec<__EnumValue<'a>>> {
         if let TypeDetail::Simple(Type::Enum { enum_values, .. }) = &self.detail {
-            Ok(Some(
+            Some(
                 enum_values
                     .iter()
                     .filter(|field| {
@@ -174,15 +159,16 @@ impl<'a> __TypeFields for __Type<'a> {
                         value,
                     })
                     .collect(),
-            ))
+            )
         } else {
-            Ok(None)
+            None
         }
     }
 
-    async fn input_fields<'b>(&'b self, _: &Context<'_>) -> Result<Option<Vec<__InputValue<'b>>>> {
+    #[field(name = "inputFields")]
+    async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Simple(Type::InputObject { input_fields, .. }) = &self.detail {
-            Ok(Some(
+            Some(
                 input_fields
                     .iter()
                     .map(|input_value| __InputValue {
@@ -190,25 +176,26 @@ impl<'a> __TypeFields for __Type<'a> {
                         input_value,
                     })
                     .collect(),
-            ))
+            )
         } else {
-            Ok(None)
+            None
         }
     }
 
-    async fn of_type<'b>(&'b self, _: &Context<'_>) -> Result<Option<__Type<'b>>> {
+    #[field(name = "ofType")]
+    async fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
-            Ok(Some(__Type {
+            Some(__Type {
                 registry: self.registry,
                 detail: TypeDetail::Simple(ty),
-            }))
+            })
         } else if let TypeDetail::NonNull(ty) = &self.detail {
-            Ok(Some(__Type {
+            Some(__Type {
                 registry: self.registry,
                 detail: TypeDetail::Simple(ty),
-            }))
+            })
         } else {
-            Ok(None)
+            None
         }
     }
 }

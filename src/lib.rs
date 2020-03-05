@@ -73,8 +73,7 @@ pub use serde_json;
 pub mod http;
 
 pub use async_graphql_derive::{Enum, InputObject, Object};
-pub use base::Scalar;
-pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
+pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLScalar, GQLType};
 pub use context::{Context, ContextBase, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;

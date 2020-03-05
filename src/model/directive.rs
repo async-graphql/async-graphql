@@ -1,5 +1,5 @@
 use crate::model::__InputValue;
-use crate::{registry, Context, Result};
+use crate::registry;
 use async_graphql_derive::{Enum, Object};
 
 #[Enum(
@@ -66,44 +66,42 @@ pub enum __DirectiveLocation {
     INPUT_FIELD_DEFINITION,
 }
 
-#[Object(
-    internal,
-    desc = r#"A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
-
-In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor."#,
-    field(name = "name", type = "String", owned),
-    field(name = "description", type = "Option<String>", owned),
-    field(name = "locations", type = "Vec<__DirectiveLocation>"),
-    field(name = "args", type = "Vec<__InputValue>", owned)
-)]
 pub struct __Directive<'a> {
     pub registry: &'a registry::Registry,
     pub directive: &'a registry::Directive,
 }
 
-#[async_trait::async_trait]
-impl<'a> __DirectiveFields for __Directive<'a> {
-    async fn name(&self, _: &Context<'_>) -> Result<String> {
-        Ok(self.directive.name.to_string())
+#[Object(
+    internal,
+    desc = r#"A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
+
+In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor."#
+)]
+impl<'a> __Directive<'a> {
+    #[field]
+    async fn name(&self) -> String {
+        self.directive.name.to_string()
     }
 
-    async fn description(&self, _: &Context<'_>) -> Result<Option<String>> {
-        Ok(self.directive.description.map(|s| s.to_string()))
+    #[field]
+    async fn description(&self) -> Option<String> {
+        self.directive.description.map(|s| s.to_string())
     }
 
-    async fn locations<'b>(&'b self, _: &Context<'_>) -> Result<&'b Vec<__DirectiveLocation>> {
-        Ok(&self.directive.locations)
+    #[field]
+    async fn locations(&self) -> &Vec<__DirectiveLocation> {
+        &self.directive.locations
     }
 
-    async fn args<'b>(&'b self, _: &Context<'_>) -> Result<Vec<__InputValue<'b>>> {
-        Ok(self
-            .directive
+    #[field]
+    async fn args(&self) -> Vec<__InputValue<'a>> {
+        self.directive
             .args
             .iter()
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 input_value,
             })
-            .collect())
+            .collect()
     }
 }

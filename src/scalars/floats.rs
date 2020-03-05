@@ -1,9 +1,9 @@
-use crate::{Result, Scalar, Value};
+use crate::{Result, GQLScalar, Value};
 
 macro_rules! impl_float_scalars {
     ($($ty:ty),*) => {
         $(
-        impl Scalar for $ty {
+        impl GQLScalar for $ty {
             fn type_name() -> &'static str {
                 "Float"
             }

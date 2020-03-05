@@ -8,7 +8,7 @@ mod utils;
 
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
-use syn::{AttributeArgs, DeriveInput};
+use syn::{AttributeArgs, DeriveInput, ItemImpl};
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
@@ -17,8 +17,8 @@ pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
     };
-    let input = parse_macro_input!(input as DeriveInput);
-    match object::generate(&object_args, &input) {
+    let mut item_impl = parse_macro_input!(input as ItemImpl);
+    match object::generate(&object_args, &mut item_impl) {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }

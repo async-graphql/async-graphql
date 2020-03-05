@@ -30,7 +30,11 @@ async fn main() -> std::io::Result<()> {
             .data(Schema::new(MyObj { value: 10 }, GQLEmptyMutation))
             .service(web::resource("/").guard(guard::Post()).to(index))
             .service(web::resource("/").guard(guard::Get()).to(gql_playgound))
-            .service(web::resource("/graphiql").guard(guard::Get()).to(gql_graphiql))
+            .service(
+                web::resource("/graphiql")
+                    .guard(guard::Get())
+                    .to(gql_graphiql),
+            )
     })
     .bind("127.0.0.1:8000")?
     .run()

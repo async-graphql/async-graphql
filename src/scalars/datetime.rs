@@ -1,7 +1,7 @@
-use crate::{Result, Scalar, Value};
+use crate::{Result, GQLScalar, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
-impl Scalar for DateTime<Utc> {
+impl GQLScalar for DateTime<Utc> {
     fn type_name() -> &'static str {
         "DateTime"
     }

@@ -30,7 +30,7 @@ pub trait GQLObject: GQLOutputValue {}
 #[doc(hidden)]
 pub trait GQLInputObject: GQLInputValue {}
 
-pub trait Scalar: Sized + Send {
+pub trait GQLScalar: Sized + Send {
     fn type_name() -> &'static str;
     fn description() -> Option<&'static str> {
         None
@@ -39,7 +39,7 @@ pub trait Scalar: Sized + Send {
     fn to_json(&self) -> Result<serde_json::Value>;
 }
 
-impl<T: Scalar> GQLType for T {
+impl<T: GQLScalar> GQLType for T {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed(T::type_name())
     }
@@ -52,14 +52,14 @@ impl<T: Scalar> GQLType for T {
     }
 }
 
-impl<T: Scalar> GQLInputValue for T {
+impl<T: GQLScalar> GQLInputValue for T {
     fn parse(value: &Value) -> Option<Self> {
         T::parse(value)
     }
 }
 
 #[async_trait::async_trait]
-impl<T: Scalar + Sync> GQLOutputValue for T {
+impl<T: GQLScalar + Sync> GQLOutputValue for T {
     async fn resolve(&self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         T::to_json(self)
     }

@@ -1,13 +1,12 @@
 use crate::utils::parse_value;
 use graphql_parser::query::Value;
-use syn::{Attribute, AttributeArgs, Error, Meta, MetaList, NestedMeta, Result, Type};
+use syn::{Attribute, AttributeArgs, Error, Meta, NestedMeta, Result};
 
 #[derive(Debug)]
 pub struct Object {
     pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
-    pub fields: Vec<Field>,
 }
 
 impl Object {
@@ -15,7 +14,6 @@ impl Object {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
-        let mut fields = Vec::new();
 
         for arg in args {
             match arg {
@@ -43,9 +41,6 @@ impl Object {
                         }
                     }
                 }
-                NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("field") => {
-                    fields.push(Field::parse(&ls)?);
-                }
                 _ => {}
             }
         }
@@ -54,107 +49,29 @@ impl Object {
             internal,
             name,
             desc,
-            fields,
         })
     }
 }
 
 #[derive(Debug)]
 pub struct Argument {
-    pub name: String,
+    pub name: Option<String>,
     pub desc: Option<String>,
-    pub ty: Type,
     pub default: Option<Value>,
 }
 
-#[derive(Debug)]
-pub struct Field {
-    pub name: String,
-    pub resolver: Option<String>,
-    pub desc: Option<String>,
-    pub ty: Type,
-    pub is_owned: bool,
-    pub arguments: Vec<Argument>,
-    pub deprecation: Option<String>,
-}
-
-impl Field {
-    fn parse(ls: &MetaList) -> Result<Self> {
+impl Argument {
+    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
         let mut name = None;
-        let mut resolver = None;
         let mut desc = None;
-        let mut ty = None;
-        let mut is_owned = false;
-        let mut arguments = Vec::new();
-        let mut deprecation = None;
+        let mut default = None;
 
-        for meta in &ls.nested {
-            match meta {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("owned") => {
-                    is_owned = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("resolver") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            resolver = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'resolver' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("type") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
-                                ty = Some(ty2);
-                            } else {
-                                return Err(Error::new_spanned(&lit, "Expect type"));
-                            }
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'type' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("deprecation") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            deprecation = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'deprecation' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                NestedMeta::Meta(Meta::List(ls)) => {
-                    if ls.path.is_ident("arg") {
-                        let mut name = None;
-                        let mut desc = None;
-                        let mut ty = None;
-                        let mut default = None;
-
-                        for meta in &ls.nested {
-                            if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
+        for attr in attrs {
+            match attr.parse_meta() {
+                Ok(Meta::List(ls)) if ls.path.is_ident("arg") => {
+                    for meta in &ls.nested {
+                        match meta {
+                            NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
                                     if let syn::Lit::Str(lit) = &nv.lit {
                                         name = Some(lit.value());
@@ -193,63 +110,97 @@ impl Field {
                                     } else {
                                         return Err(Error::new_spanned(
                                             &nv.lit,
-                                            "Attribute 'default' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("type") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
-                                            ty = Some(ty2);
-                                        } else {
-                                            return Err(Error::new_spanned(&lit, "expect type"));
-                                        }
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'type' should be a string.",
+                                            "Attribute 'deprecation' should be a string.",
                                         ));
                                     }
                                 }
                             }
+                            _ => {}
                         }
-
-                        if name.is_none() {
-                            return Err(Error::new_spanned(ls, "missing name."));
-                        }
-
-                        if ty.is_none() {
-                            return Err(Error::new_spanned(ls, "missing type."));
-                        }
-
-                        arguments.push(Argument {
-                            name: name.unwrap(),
-                            desc,
-                            ty: ty.unwrap(),
-                            default,
-                        });
                     }
                 }
                 _ => {}
             }
         }
 
-        if name.is_none() {
-            return Err(Error::new_spanned(ls, "missing name."));
-        }
-
-        if ty.is_none() {
-            return Err(Error::new_spanned(ls, "missing type."));
-        }
-
         Ok(Self {
-            name: name.unwrap(),
-            resolver,
+            name,
             desc,
-            ty: ty.unwrap(),
-            is_owned,
-            arguments,
-            deprecation,
+            default,
         })
+    }
+}
+
+#[derive(Debug)]
+pub struct Field {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub deprecation: Option<String>,
+}
+
+impl Field {
+    pub fn parse(attrs: &[Attribute]) -> Result<Option<Self>> {
+        let mut is_field = false;
+        let mut name = None;
+        let mut desc = None;
+        let mut deprecation = None;
+
+        for attr in attrs {
+            match attr.parse_meta() {
+                Ok(Meta::Path(p)) if p.is_ident("field") => {
+                    is_field = true;
+                }
+                Ok(Meta::List(ls)) if ls.path.is_ident("field") => {
+                    is_field = true;
+                    for meta in &ls.nested {
+                        match meta {
+                            NestedMeta::Meta(Meta::NameValue(nv)) => {
+                                if nv.path.is_ident("name") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        name = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'name' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("desc") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        desc = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'desc' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("deprecation") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        deprecation = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'deprecation' should be a string.",
+                                        ));
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if is_field {
+            Ok(Some(Self {
+                name,
+                desc,
+                deprecation,
+            }))
+        } else {
+            Ok(None)
+        }
     }
 }
 

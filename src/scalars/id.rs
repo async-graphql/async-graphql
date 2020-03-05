@@ -1,4 +1,4 @@
-use crate::{Result, Scalar, Value};
+use crate::{Result, GQLScalar, Value};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -18,7 +18,7 @@ impl DerefMut for ID {
     }
 }
 
-impl Scalar for ID {
+impl GQLScalar for ID {
     fn type_name() -> &'static str {
         "ID"
     }
