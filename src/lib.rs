@@ -50,6 +50,8 @@
 
 #[macro_use]
 extern crate thiserror;
+#[macro_use]
+extern crate serde_derive;
 
 mod base;
 mod context;
@@ -68,24 +70,24 @@ pub use graphql_parser;
 #[doc(hidden)]
 pub use serde_json;
 
+pub mod http;
+
 pub use async_graphql_derive::{Enum, InputObject, Object};
 pub use base::Scalar;
-pub use context::{Context, ContextBase, Data, Variables};
+pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
+pub use context::{Context, ContextBase, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use scalars::ID;
 pub use schema::{QueryBuilder, Schema};
 pub use types::GQLEmptyMutation;
+pub use types::{GQLEnum, GQLEnumItem};
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Error = anyhow::Error;
 
 // internal types
 #[doc(hidden)]
-pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
-#[doc(hidden)]
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
-#[doc(hidden)]
-pub use types::{GQLEnum, GQLEnumItem};

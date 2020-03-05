@@ -95,10 +95,6 @@ impl PositionError {
 
 impl Display for PositionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}:{}: {}",
-            self.position.line, self.position.column, self.inner
-        )
+        write!(f, "{}", self.inner)
     }
 }

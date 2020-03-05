@@ -42,38 +42,38 @@ impl MyObjFields for MyObj {
 
 #[async_std::main]
 async fn main() {
-    let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
-    let vars = async_graphql::Variables::parse_from_json(b"{\"myvar1\": 999}").unwrap();
-    let res = schema
-        .query(
-            MyObj { value: 100 },
-            async_graphql::GQLEmptyMutation,
-            r#"
-            {
-                __schema {
-                    directives @skip(if: true) {
-                      name
-                      description
-                      locations
-                      args {
-                        name description type {
-                          name
-                          description
-                          kind
-                          ofType {
-                            name
-                            description
-                          }
-                        } defaultValue
-                      }
-                    }
-                  }
-            }
-"#,
-        )
-        .variables(&vars)
-        .execute()
-        .await
-        .unwrap();
-    serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
+//     let schema = async_graphql::Schema::<MyObj, async_graphql::GQLEmptyMutation>::new();
+//     let vars = async_graphql::Variables::parse_from_json(b"{\"myvar1\": 999}").unwrap();
+//     let res = schema
+//         .query(
+//             MyObj { value: 100 },
+//             async_graphql::GQLEmptyMutation,
+//             r#"
+//             {
+//                 __schema {
+//                     directives @skip(if: true) {
+//                       name
+//                       description
+//                       locations
+//                       args {
+//                         name description type {
+//                           name
+//                           description
+//                           kind
+//                           ofType {
+//                             name
+//                             description
+//                           }
+//                         } defaultValue
+//                       }
+//                     }
+//                   }
+//             }
+// "#,
+//         )
+//         .variables(&vars)
+//         .execute()
+//         .await
+//         .unwrap();
+//     serde_json::to_writer_pretty(std::io::stdout(), &res).unwrap();
 }

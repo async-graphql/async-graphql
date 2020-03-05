@@ -1,22 +1,24 @@
+use crate::context::Data;
 use crate::model::__DirectiveLocation;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::types::QueryRoot;
 use crate::{
-    ContextBase, Data, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, QueryError,
+    ContextBase, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, QueryError,
     QueryParseError, Result, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
-use serde::export::PhantomData;
+use std::any::Any;
 
 pub struct Schema<Query, Mutation> {
-    mark_query: PhantomData<Query>,
-    mark_mutation: PhantomData<Mutation>,
+    query: QueryRoot<Query>,
+    mutation: Mutation,
     registry: Registry,
+    data: Data,
 }
 
 impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
-    pub fn new() -> Self {
+    pub fn new(query: Query, mutation: Mutation) -> Self {
         let mut registry = Registry::default();
 
         registry.add_directive(Directive {
@@ -53,42 +55,43 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
         Mutation::create_type_info(&mut registry);
 
         Self {
-            mark_query: PhantomData,
-            mark_mutation: PhantomData,
-            registry,
-        }
-    }
-
-    pub fn query<'a>(
-        &'a self,
-        query: Query,
-        mutation: Mutation,
-        query_source: &'a str,
-    ) -> QueryBuilder<'a, Query, Mutation> {
-        QueryBuilder {
             query: QueryRoot {
                 inner: query,
                 query_type: Query::type_name().to_string(),
                 mutation_type: Mutation::type_name().to_string(),
             },
             mutation,
+            registry,
+            data: Default::default(),
+        }
+    }
+
+    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+        self.data.insert(Box::new(data));
+        self
+    }
+
+    pub fn query<'a>(&'a self, query_source: &'a str) -> QueryBuilder<'a, Query, Mutation> {
+        QueryBuilder {
+            query: &self.query,
+            mutation: &self.mutation,
             registry: &self.registry,
             query_source,
             operation_name: None,
             variables: None,
-            data: None,
+            data: &self.data,
         }
     }
 }
 
 pub struct QueryBuilder<'a, Query, Mutation> {
-    query: QueryRoot<Query>,
-    mutation: Mutation,
+    query: &'a QueryRoot<Query>,
+    mutation: &'a Mutation,
     registry: &'a Registry,
     query_source: &'a str,
     operation_name: Option<&'a str>,
     variables: Option<&'a Variables>,
-    data: Option<&'a Data>,
+    data: &'a Data,
 }
 
 impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
@@ -102,13 +105,6 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     pub fn variables(self, vars: &'a Variables) -> Self {
         QueryBuilder {
             variables: Some(vars),
-            ..self
-        }
-    }
-
-    pub fn data(self, data: &'a Data) -> Self {
-        QueryBuilder {
-            data: Some(data),
             ..self
         }
     }
@@ -127,10 +123,10 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     if self.operation_name.is_none() {
                         let ctx = ContextBase {
                             item: selection_set,
-                            data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
                             variable_definitions: None,
                             registry: &self.registry,
+                            data: self.data,
                         };
                         return self.query.resolve(&ctx).await;
                     }
@@ -141,10 +137,10 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     {
                         let ctx = ContextBase {
                             item: &query.selection_set,
-                            data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
                             variable_definitions: Some(&query.variable_definitions),
                             registry: self.registry.clone(),
+                            data: self.data,
                         };
                         return self.query.resolve(&ctx).await;
                     }
@@ -155,10 +151,10 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     {
                         let ctx = ContextBase {
                             item: &mutation.selection_set,
-                            data: self.data.as_deref(),
                             variables: self.variables.as_deref(),
                             variable_definitions: Some(&mutation.variable_definitions),
                             registry: self.registry.clone(),
+                            data: self.data,
                         };
                         return self.mutation.resolve(&ctx).await;
                     }

@@ -31,6 +31,8 @@ uuid = { version = "0.8.1", optional = true }
 
 [dev-dependencies]
 async-std = { version = "1.5.0", features = ["attributes"] }
+actix-web = "2.0.0"
+actix-rt = "1.0.0"
 
 [workspace]
 members = [

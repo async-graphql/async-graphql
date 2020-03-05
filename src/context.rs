@@ -18,9 +18,14 @@ impl Deref for Variables {
     }
 }
 
+impl DerefMut for Variables {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl Variables {
-    pub fn parse_from_json(data: &[u8]) -> Result<Self> {
-        let value = serde_json::from_slice(data)?;
+    pub(crate) fn parse_from_json(value: serde_json::Value) -> Result<Self> {
         let gql_value = json_value_to_gql_value(value);
         if let Value::Object(obj) = gql_value {
             Ok(Variables(obj))
@@ -50,22 +55,12 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
     }
 }
 
-impl DerefMut for Variables {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 #[derive(Default)]
 pub struct Data(HashMap<TypeId, Box<dyn Any + Sync + Send>, BuildHasherDefault<FnvHasher>>);
 
 impl Data {
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
         self.0.insert(TypeId::of::<D>(), Box::new(data));
-    }
-
-    pub fn remove<D: Any + Send + Sync>(&mut self) {
-        self.0.remove(&TypeId::of::<D>());
     }
 }
 
@@ -74,10 +69,10 @@ pub type Context<'a> = ContextBase<'a, &'a Field>;
 
 pub struct ContextBase<'a, T> {
     pub(crate) item: T,
-    pub(crate) data: Option<&'a Data>,
     pub(crate) variables: Option<&'a Variables>,
     pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
+    pub(crate) data: &'a Data,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -93,19 +88,18 @@ impl<'a, T> ContextBase<'a, T> {
     pub fn with_item<R>(&self, item: R) -> ContextBase<'a, R> {
         ContextBase {
             item,
-            data: self.data,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
             registry: self.registry.clone(),
+            data: self.data,
         }
     }
 
     pub fn data<D: Any + Send + Sync>(&self) -> Option<&D> {
-        self.data.and_then(|data| {
-            data.0
-                .get(&TypeId::of::<D>())
-                .and_then(|d| d.downcast_ref::<D>())
-        })
+        self.data
+            .0
+            .get(&TypeId::of::<D>())
+            .and_then(|d| d.downcast_ref::<D>())
     }
 }
 

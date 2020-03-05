@@ -21,7 +21,13 @@ use async_graphql_derive::Object;
     field(
         name = "mutationType",
         desc = "If this server supports mutation, the type that mutation operations will be rooted at.",
-        type = "__Type",
+        type = "Option<__Type>",
+        owned
+    ),
+    field(
+        name = "subscriptionType",
+        desc = "If this server support subscription, the type that subscription operations will be rooted at.",
+        type = "Option<__Type>",
         owned
     ),
     field(
@@ -55,11 +61,15 @@ impl<'a> __SchemaFields for __Schema<'a> {
         ))
     }
 
-    async fn mutation_type<'b>(&'b self, _: &Context<'_>) -> Result<__Type<'b>> {
-        Ok(__Type::new_simple(
+    async fn mutation_type<'b>(&'b self, _: &Context<'_>) -> Result<Option<__Type<'b>>> {
+        Ok(Some(__Type::new_simple(
             self.registry,
             &self.registry.types[self.mutation_type],
-        ))
+        )))
+    }
+
+    async fn subscription_type<'b>(&'b self, _: &Context<'_>) -> Result<Option<__Type<'b>>> {
+        Ok(None)
     }
 
     async fn directives<'b>(&'b self, _: &Context<'_>) -> Result<Vec<__Directive<'b>>> {
