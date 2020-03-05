@@ -33,6 +33,7 @@ uuid = { version = "0.8.1", optional = true }
 async-std = { version = "1.5.0", features = ["attributes"] }
 actix-web = "2.0.0"
 actix-rt = "1.0.0"
+slab = "0.4.2"
 
 [workspace]
 members = [

@@ -1,5 +1,5 @@
 use crate::registry;
-use crate::{ContextSelectionSet, GQLOutputValue, GQLType, Result, GQLScalar, Value};
+use crate::{ContextSelectionSet, GQLOutputValue, GQLScalar, GQLType, Result, Value};
 use std::borrow::Cow;
 
 const STRING_DESC:&'static str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";

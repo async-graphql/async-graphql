@@ -5,8 +5,8 @@ use async_graphql_derive::Object;
 
 enum TypeDetail<'a> {
     Simple(&'a registry::Type),
-    NonNull(&'a registry::Type),
-    List(&'a registry::Type),
+    NonNull(String),
+    List(String),
 }
 
 pub struct __Type<'a> {
@@ -26,12 +26,12 @@ impl<'a> __Type<'a> {
         if let Some(type_name) = parse_non_null(type_name) {
             __Type {
                 registry,
-                detail: TypeDetail::NonNull(&registry.types[type_name]),
+                detail: TypeDetail::NonNull(type_name.to_string()),
             }
         } else if let Some(type_name) = parse_list(type_name) {
             __Type {
                 registry,
-                detail: TypeDetail::List(&registry.types[type_name]),
+                detail: TypeDetail::List(type_name.to_string()),
             }
         } else {
             __Type {
@@ -189,15 +189,9 @@ impl<'a> __Type<'a> {
     #[field(name = "ofType")]
     async fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
-            Some(__Type {
-                registry: self.registry,
-                detail: TypeDetail::Simple(ty),
-            })
+            Some(__Type::new(self.registry, &ty))
         } else if let TypeDetail::NonNull(ty) = &self.detail {
-            Some(__Type {
-                registry: self.registry,
-                detail: TypeDetail::Simple(ty),
-            })
+            Some(__Type::new(self.registry, &ty))
         } else {
             None
         }

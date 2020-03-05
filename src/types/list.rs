@@ -11,7 +11,8 @@ impl<T: GQLType> GQLType for Vec<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry)
+        T::create_type_info(registry);
+        Self::qualified_type_name()
     }
 }
 
@@ -53,6 +54,27 @@ impl<T: GQLType> GQLType for &[T] {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &[T] {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        let mut res = Vec::new();
+        for item in self.iter() {
+            res.push(item.resolve(&ctx).await?);
+        }
+        Ok(res.into())
+    }
+}
+
+impl<T: GQLType> GQLType for &Vec<T> {
+    fn type_name() -> Cow<'static, str> {
+        Cow::Owned(format!("[{}]", T::type_name()))
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &Vec<T> {
     async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
         for item in self.iter() {

@@ -9,7 +9,6 @@ use syn::{
 
 enum OutputType<'a> {
     Value(&'a Type),
-    ValueRef(&'a TypeReference),
     Result(&'a Type, &'a Type),
 }
 
@@ -94,8 +93,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             } else {
                                 OutputType::Value(ty)
                             }
-                        } else if let Type::Reference(ty) = ty.as_ref() {
-                            OutputType::ValueRef(ty)
+                        } else if let Type::Reference(_) = ty.as_ref() {
+                            OutputType::Value(ty)
                         } else {
                             return Err(Error::new_spanned(&method.sig.output, "Invalid type"));
                         }
@@ -190,9 +189,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     let default = match &default {
                         Some(default) => {
                             let repr = build_value_repr(&crate_name, &default);
-                            quote! {Some(|| #repr) }
+                            quote! {|| #repr }
                         }
-                        None => quote! { None },
+                        None => quote! { || #crate_name::Value::Null },
                     };
                     get_params.push(quote! {
                         let #ident: #ty = ctx_field.param_value(#name, #default)?;
@@ -202,7 +201,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let schema_ty = match &ty {
                     OutputType::Result(_, value_ty) => value_ty,
                     OutputType::Value(value_ty) => value_ty,
-                    OutputType::ValueRef(r) => r.elem.as_ref(),
                 };
                 schema_fields.push(quote! {
                     #crate_name::registry::Field {
@@ -221,7 +219,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let field_ident = &method.sig.ident;
                 let resolve_obj = match &ty {
-                    OutputType::Value(_) | OutputType::ValueRef(_) => quote! {
+                    OutputType::Value(_) => quote! {
                         self.#field_ident(#ctx_field #(#use_params),*).await
                     },
                     OutputType::Result(_, _) => {

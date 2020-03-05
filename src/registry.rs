@@ -72,6 +72,13 @@ impl Registry {
     pub fn create_type<T: GQLType, F: FnMut(&mut Registry) -> Type>(&mut self, mut f: F) -> String {
         let name = T::type_name();
         if !self.types.contains_key(name.as_ref()) {
+            self.types.insert(
+                name.to_string(),
+                Type::Scalar {
+                    name: String::new(),
+                    description: None,
+                },
+            );
             let ty = f(self);
             self.types.insert(name.to_string(), ty);
         }

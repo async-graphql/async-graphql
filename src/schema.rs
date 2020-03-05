@@ -24,7 +24,11 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
         registry.add_directive(Directive {
             name: "include",
             description: Some("Directs the executor to include this field or fragment only when the `if` argument is true."),
-            locations: vec![__DirectiveLocation::FIELD],
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT
+            ],
             args: vec![InputValue{
                 name: "if",
                 description: Some("Included when true."),
@@ -36,7 +40,11 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
         registry.add_directive(Directive {
             name: "skip",
             description: Some("Directs the executor to skip this field or fragment when the `if` argument is true."),
-            locations: vec![__DirectiveLocation::FIELD],
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT
+            ],
             args: vec![InputValue{
                 name: "if",
                 description: Some("Skipped when true."),

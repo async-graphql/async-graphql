@@ -32,7 +32,7 @@ pub enum __DirectiveLocation {
     #[item(desc = "Location adjacent to a variable definition.")]
     VARIABLE_DEFINITION,
 
-    #[item(desc = "Location adjacent to a schema definition.")]
+    #[item(desc = "Location adjacent to a starwars definition.")]
     SCHEMA,
 
     #[item(desc = "Location adjacent to a scalar definition.")]

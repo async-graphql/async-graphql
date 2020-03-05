@@ -254,7 +254,7 @@ impl<'a> ContextBase<'a, &'a Field> {
     pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
         &self,
         name: &str,
-        default: Option<F>,
+        default: F,
     ) -> Result<T> {
         match self
             .arguments
@@ -274,23 +274,12 @@ impl<'a> ContextBase<'a, &'a Field> {
                 })?;
                 Ok(res)
             }
-            None if default.is_some() => {
-                let default = default.unwrap();
+            None => {
                 let value = default();
                 let res = GQLInputValue::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
                         actual: value.clone(),
-                    }
-                    .with_position(self.item.position)
-                })?;
-                Ok(res)
-            }
-            None => {
-                let res = GQLInputValue::parse(&Value::Null).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: Value::Null,
                     }
                     .with_position(self.item.position)
                 })?;
