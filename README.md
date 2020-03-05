@@ -60,32 +60,30 @@
         - [X] Deprecated flag
     - [ ] Interface
     - [ ] Union
-- [ ] Query
+- [X] Query
     - [X] Fields
     - [X] Arguments
         - [X] Default value
         - [X] Deprecated flag
     - [X] Alias
-    - [ ] Fragments
-    - [ ] Inline fragments
+    - [X] Fragments
+    - [X] Inline fragments
     - [X] Operation name
     - [X] Variables
         - [X] Default value
         - [X] Parse value
-        - [ ] Check type
-    - [ ] Directives
+    - [X] Directives
         - [X] @include
             - [X] FIELD
-            - [ ] FRAGMENT_SPREAD
-            - [ ] INLINE_FRAGMENT
+            - [X] FRAGMENT_SPREAD
+            - [X] INLINE_FRAGMENT
         - [X] @skip
             - [X] FIELD
-            - [ ] FRAGMENT_SPREAD
-            - [ ] INLINE_FRAGMENT
-        - [ ] Custom Directive
+            - [X] FRAGMENT_SPREAD
+            - [X] INLINE_FRAGMENT
     - [X] Schema
-    - [ ] Validation rules
-- [ ] 
+- [ ] Validation rules
+- [ ] Integration examples
     - [X] Actix-web
     - [ ] Hyper
     - [ ] Tide

@@ -130,7 +130,11 @@ impl<'a> __Type<'a> {
 
     #[field]
     async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        None
+        if let TypeDetail::Simple(Type::Object { .. }) = &self.detail {
+            Some(vec![])
+        } else {
+            None
+        }
     }
 
     #[field(name = "possibleTypes")]

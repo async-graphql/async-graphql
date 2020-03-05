@@ -2,7 +2,7 @@ use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
 use fnv::FnvHasher;
 use graphql_parser::query::{
-    Field, FragmentDefinition, Selection, SelectionSet, Value, VariableDefinition,
+    Directive, Field, FragmentDefinition, Selection, SelectionSet, Value, VariableDefinition,
 };
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
@@ -86,12 +86,12 @@ impl<'a, T> Deref for ContextBase<'a, T> {
     }
 }
 
-pub struct FieldIter<'a> {
-    fragments: &'a HashMap<String, &'a FragmentDefinition>,
+pub struct FieldIter<'a, T> {
+    ctx: &'a ContextBase<'a, T>,
     stack: Vec<std::slice::Iter<'a, Selection>>,
 }
 
-impl<'a> Iterator for FieldIter<'a> {
+impl<'a, T> Iterator for FieldIter<'a, T> {
     type Item = Result<&'a Field>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -102,7 +102,16 @@ impl<'a> Iterator for FieldIter<'a> {
                         return Some(Ok(field));
                     }
                     Selection::FragmentSpread(fragment_spread) => {
-                        if let Some(fragment) = self.fragments.get(&fragment_spread.fragment_name) {
+                        let skip = match self.ctx.is_skip(&fragment_spread.directives) {
+                            Ok(skip) => skip,
+                            Err(err) => return Some(Err(err)),
+                        };
+                        if skip {
+                            continue;
+                        }
+                        if let Some(fragment) =
+                            self.ctx.fragments.get(&fragment_spread.fragment_name)
+                        {
                             self.stack.push(fragment.selection_set.items.iter());
                         } else {
                             return Some(Err(QueryError::UnknownFragment {
@@ -141,16 +150,6 @@ impl<'a, T> ContextBase<'a, T> {
             .and_then(|d| d.downcast_ref::<D>())
     }
 
-    #[doc(hidden)]
-    pub fn fields(&self, selection_set: &'a SelectionSet) -> FieldIter {
-        FieldIter {
-            fragments: self.fragments,
-            stack: vec![selection_set.items.iter()],
-        }
-    }
-}
-
-impl<'a> ContextBase<'a, &'a Field> {
     fn resolve_input_value(&self, value: Value) -> Result<Value> {
         if let Value::Variable(var_name) = value {
             let def = self
@@ -173,57 +172,16 @@ impl<'a> ContextBase<'a, &'a Field> {
     }
 
     #[doc(hidden)]
-    pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
-        &self,
-        name: &str,
-        default: Option<F>,
-    ) -> Result<T> {
-        match self
-            .arguments
-            .iter()
-            .find(|(n, _)| n == name)
-            .map(|(_, v)| v)
-            .cloned()
-        {
-            Some(value) => {
-                let value = self.resolve_input_value(value)?;
-                let res = GQLInputValue::parse(&value).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: value,
-                    }
-                    .with_position(self.item.position)
-                })?;
-                Ok(res)
-            }
-            None if default.is_some() => {
-                let default = default.unwrap();
-                let value = default();
-                let res = GQLInputValue::parse(&value).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: value.clone(),
-                    }
-                    .with_position(self.item.position)
-                })?;
-                Ok(res)
-            }
-            None => {
-                let res = GQLInputValue::parse(&Value::Null).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: Value::Null,
-                    }
-                    .with_position(self.item.position)
-                })?;
-                Ok(res)
-            }
+    pub fn fields(&'a self, selection_set: &'a SelectionSet) -> FieldIter<'a, T> {
+        FieldIter {
+            ctx: self,
+            stack: vec![selection_set.items.iter()],
         }
     }
 
     #[doc(hidden)]
-    pub fn is_skip_this(&self) -> Result<bool> {
-        for directive in &self.directives {
+    pub fn is_skip(&self, directives: &[Directive]) -> Result<bool> {
+        for directive in directives {
             if directive.name == "skip" {
                 if let Some(value) = directive
                     .arguments
@@ -288,5 +246,56 @@ impl<'a> ContextBase<'a, &'a Field> {
         }
 
         Ok(false)
+    }
+}
+
+impl<'a> ContextBase<'a, &'a Field> {
+    #[doc(hidden)]
+    pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
+        &self,
+        name: &str,
+        default: Option<F>,
+    ) -> Result<T> {
+        match self
+            .arguments
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v)
+            .cloned()
+        {
+            Some(value) => {
+                let value = self.resolve_input_value(value)?;
+                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: value,
+                    }
+                    .with_position(self.item.position)
+                })?;
+                Ok(res)
+            }
+            None if default.is_some() => {
+                let default = default.unwrap();
+                let value = default();
+                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: value.clone(),
+                    }
+                    .with_position(self.item.position)
+                })?;
+                Ok(res)
+            }
+            None => {
+                let res = GQLInputValue::parse(&Value::Null).ok_or_else(|| {
+                    QueryError::ExpectedType {
+                        expect: T::qualified_type_name(),
+                        actual: Value::Null,
+                    }
+                    .with_position(self.item.position)
+                })?;
+                Ok(res)
+            }
+        }
     }
 }

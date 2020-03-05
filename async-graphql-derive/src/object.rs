@@ -279,7 +279,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 for field in ctx.fields(&*ctx) {
                     let field = field?;
                     let ctx_field = ctx.with_item(field);
-                    if ctx_field.is_skip_this()? {
+                    if ctx_field.is_skip(&field.directives)? {
                         continue;
                     }
                     if field.name.as_str() == "__typename" {

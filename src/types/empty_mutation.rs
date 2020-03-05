@@ -27,4 +27,8 @@ impl GQLOutputValue for GQLEmptyMutation {
     }
 }
 
-impl GQLObject for GQLEmptyMutation {}
+impl GQLObject for GQLEmptyMutation {
+    fn is_empty() -> bool {
+        return true;
+    }
+}

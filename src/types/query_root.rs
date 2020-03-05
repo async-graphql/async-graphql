@@ -6,7 +6,7 @@ use std::borrow::Cow;
 pub struct QueryRoot<T> {
     pub inner: T,
     pub query_type: String,
-    pub mutation_type: String,
+    pub mutation_type: Option<String>,
 }
 
 impl<T: GQLType> GQLType for QueryRoot<T> {
@@ -34,7 +34,7 @@ impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for QueryRoot<T> {
                             __Schema {
                                 registry: &ctx.registry,
                                 query_type: &self.query_type,
-                                mutation_type: &self.mutation_type,
+                                mutation_type: self.mutation_type.as_deref(),
                             }
                             .resolve(&ctx_obj)
                             .await?,

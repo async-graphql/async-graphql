@@ -5,7 +5,7 @@ use async_graphql_derive::Object;
 pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
     pub query_type: &'a str,
-    pub mutation_type: &'a str,
+    pub mutation_type: Option<&'a str>,
 }
 
 #[Object(
@@ -35,10 +35,11 @@ impl<'a> __Schema<'a> {
         desc = "If this server supports mutation, the type that mutation operations will be rooted at."
     )]
     async fn mutation_type(&self) -> Option<__Type<'a>> {
-        Some(__Type::new_simple(
-            self.registry,
-            &self.registry.types[self.mutation_type],
-        ))
+        if let Some(ty) = self.mutation_type {
+            Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
+        } else {
+            None
+        }
     }
 
     #[field(

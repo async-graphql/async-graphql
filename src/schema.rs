@@ -52,13 +52,19 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
         String::create_type_info(&mut registry);
 
         Query::create_type_info(&mut registry);
-        Mutation::create_type_info(&mut registry);
+        if !Mutation::is_empty() {
+            Mutation::create_type_info(&mut registry);
+        }
 
         Self {
             query: QueryRoot {
                 inner: query,
                 query_type: Query::type_name().to_string(),
-                mutation_type: Mutation::type_name().to_string(),
+                mutation_type: if !Mutation::is_empty() {
+                    Some(Mutation::type_name().to_string())
+                } else {
+                    None
+                },
             },
             mutation,
             registry,

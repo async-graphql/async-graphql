@@ -25,7 +25,11 @@ pub trait GQLOutputValue: GQLType {
 }
 
 #[doc(hidden)]
-pub trait GQLObject: GQLOutputValue {}
+pub trait GQLObject: GQLOutputValue {
+    fn is_empty() -> bool {
+        return false;
+    }
+}
 
 #[doc(hidden)]
 pub trait GQLInputObject: GQLInputValue {}
