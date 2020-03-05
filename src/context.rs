@@ -1,7 +1,9 @@
 use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
 use fnv::FnvHasher;
-use graphql_parser::query::{Field, SelectionSet, Value, VariableDefinition};
+use graphql_parser::query::{
+    Field, FragmentDefinition, Selection, SelectionSet, Value, VariableDefinition,
+};
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasherDefault;
@@ -73,6 +75,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
+    pub(crate) fragments: &'a HashMap<String, &'a FragmentDefinition>,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -80,6 +83,41 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 
     fn deref(&self) -> &Self::Target {
         &self.item
+    }
+}
+
+pub struct FieldIter<'a> {
+    fragments: &'a HashMap<String, &'a FragmentDefinition>,
+    stack: Vec<std::slice::Iter<'a, Selection>>,
+}
+
+impl<'a> Iterator for FieldIter<'a> {
+    type Item = Result<&'a Field>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(it) = self.stack.last_mut() {
+            if let Some(selection) = it.next() {
+                match selection {
+                    Selection::Field(field) => {
+                        return Some(Ok(field));
+                    }
+                    Selection::FragmentSpread(fragment_spread) => {
+                        if let Some(fragment) = self.fragments.get(&fragment_spread.fragment_name) {
+                            self.stack.push(fragment.selection_set.items.iter());
+                        } else {
+                            return Some(Err(QueryError::UnknownFragment {
+                                name: fragment_spread.fragment_name.clone(),
+                            }
+                            .into()));
+                        }
+                    }
+                    Selection::InlineFragment(_) => {}
+                }
+            } else {
+                self.stack.pop();
+            }
+        }
+        None
     }
 }
 
@@ -92,6 +130,7 @@ impl<'a, T> ContextBase<'a, T> {
             variable_definitions: self.variable_definitions,
             registry: self.registry.clone(),
             data: self.data,
+            fragments: self.fragments,
         }
     }
 
@@ -100,6 +139,14 @@ impl<'a, T> ContextBase<'a, T> {
             .0
             .get(&TypeId::of::<D>())
             .and_then(|d| d.downcast_ref::<D>())
+    }
+
+    #[doc(hidden)]
+    pub fn fields(&self, selection_set: &'a SelectionSet) -> FieldIter {
+        FieldIter {
+            fragments: self.fragments,
+            stack: vec![selection_set.items.iter()],
+        }
     }
 }
 

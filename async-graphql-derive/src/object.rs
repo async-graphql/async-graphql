@@ -235,12 +235,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 resolvers.push(quote! {
                     if field.name.as_str() == #field_name {
                         #(#get_params)*
-                        let obj = #resolve_obj;
                         let ctx_obj = ctx_field.with_item(&field.selection_set);
-                        let value = obj.resolve(&ctx_obj).await.
-                            map_err(|err| err.with_position(field.position))?;
-                        let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
-                        result.insert(name, value.into());
+                        let value = #resolve_obj.resolve(&ctx_obj).await.map_err(|err| err.with_position(field.position))?;
+                        result.insert(field.alias.clone().unwrap_or_else(|| field.name.clone()), value.into());
                         continue;
                     }
                 });
@@ -279,29 +276,25 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 let mut result = #crate_name::serde_json::Map::<String, #crate_name::serde_json::Value>::new();
-                for selection in &ctx.items {
-                    match selection {
-                        #crate_name::graphql_parser::query::Selection::Field(field) => {
-                            let ctx_field = ctx.with_item(field);
-                            if ctx_field.is_skip_this()? {
-                                continue;
-                            }
-                            if field.name.as_str() == "__typename" {
-                                let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
-                                result.insert(name, #gql_typename.into());
-                                continue;
-                            }
-                            if field.name.as_str() == "__schema" {
-                                continue;
-                            }
-                            #(#resolvers)*
-                            #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
-                                field_name: field.name.clone(),
-                                object: #gql_typename,
-                            }.with_position(field.position));
-                        }
-                        _ => {}
+                for field in ctx.fields(&*ctx) {
+                    let field = field?;
+                    let ctx_field = ctx.with_item(field);
+                    if ctx_field.is_skip_this()? {
+                        continue;
                     }
+                    if field.name.as_str() == "__typename" {
+                        let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
+                        result.insert(name, #gql_typename.into());
+                        continue;
+                    }
+                    if field.name.as_str() == "__schema" {
+                        continue;
+                    }
+                    #(#resolvers)*
+                    #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                        field_name: field.name.clone(),
+                        object: #gql_typename,
+                    }.with_position(field.position));
                 }
 
                 Ok(#crate_name::serde_json::Value::Object(result))

@@ -133,7 +133,7 @@ impl<'a> __Type<'a> {
         None
     }
 
-    #[field]
+    #[field(name = "possibleTypes")]
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
         None
     }

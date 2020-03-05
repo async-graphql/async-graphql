@@ -59,6 +59,9 @@ pub enum QueryError {
 
     #[error("Unknown directive \"{name}\".")]
     UnknownDirective { name: String },
+
+    #[error("Unknown fragment \"{name}\".")]
+    UnknownFragment { name: String },
 }
 
 pub trait ErrorWithPosition {

@@ -3,12 +3,12 @@ use crate::model::__DirectiveLocation;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::types::QueryRoot;
 use crate::{
-    ContextBase, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, QueryError,
-    QueryParseError, Result, Variables,
+    ContextBase, GQLObject, GQLOutputValue, GQLType, QueryError, QueryParseError, Result, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
 use std::any::Any;
+use std::collections::HashMap;
 
 pub struct Schema<Query, Mutation> {
     query: QueryRoot<Query>,
@@ -116,6 +116,13 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     {
         let document =
             parse_query(self.query_source).map_err(|err| QueryParseError(err.to_string()))?;
+        let mut fragments = HashMap::new();
+
+        for definition in &document.definitions {
+            if let Definition::Fragment(fragment) = definition {
+                fragments.insert(fragment.name.clone(), fragment);
+            }
+        }
 
         for definition in &document.definitions {
             match definition {
@@ -127,6 +134,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             variable_definitions: None,
                             registry: &self.registry,
                             data: self.data,
+                            fragments: &fragments,
                         };
                         return self.query.resolve(&ctx).await;
                     }
@@ -141,6 +149,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             variable_definitions: Some(&query.variable_definitions),
                             registry: self.registry.clone(),
                             data: self.data,
+                            fragments: &fragments,
                         };
                         return self.query.resolve(&ctx).await;
                     }
@@ -155,16 +164,12 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             variable_definitions: Some(&mutation.variable_definitions),
                             registry: self.registry.clone(),
                             data: self.data,
+                            fragments: &fragments,
                         };
                         return self.mutation.resolve(&ctx).await;
                     }
                 }
-                Definition::Operation(OperationDefinition::Subscription(subscription)) => {
-                    anyhow::bail!(QueryError::NotSupported.with_position(subscription.position));
-                }
-                Definition::Fragment(fragment) => {
-                    anyhow::bail!(QueryError::NotSupported.with_position(fragment.position));
-                }
+                _ => {}
             }
         }
 
