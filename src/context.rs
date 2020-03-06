@@ -2,7 +2,7 @@ use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
 use fnv::FnvHasher;
 use graphql_parser::query::{
-    Directive, Field, FragmentDefinition, Selection, SelectionSet, Value, VariableDefinition,
+    Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
@@ -86,60 +86,6 @@ impl<'a, T> Deref for ContextBase<'a, T> {
     }
 }
 
-pub struct FieldIter<'a, T> {
-    ctx: &'a ContextBase<'a, T>,
-    stack: Vec<std::slice::Iter<'a, Selection>>,
-}
-
-impl<'a, T> Iterator for FieldIter<'a, T> {
-    type Item = Result<&'a Field>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some(it) = self.stack.last_mut() {
-            if let Some(selection) = it.next() {
-                match selection {
-                    Selection::Field(field) => {
-                        return Some(Ok(field));
-                    }
-                    Selection::FragmentSpread(fragment_spread) => {
-                        let skip = match self.ctx.is_skip(&fragment_spread.directives) {
-                            Ok(skip) => skip,
-                            Err(err) => return Some(Err(err)),
-                        };
-                        if skip {
-                            continue;
-                        }
-                        if let Some(fragment) =
-                            self.ctx.fragments.get(&fragment_spread.fragment_name)
-                        {
-                            self.stack.push(fragment.selection_set.items.iter());
-                        } else {
-                            return Some(Err(QueryError::UnknownFragment {
-                                name: fragment_spread.fragment_name.clone(),
-                            }
-                            .into()));
-                        }
-                    }
-                    Selection::InlineFragment(inline_fragment) => {
-                        let skip = match self.ctx.is_skip(&inline_fragment.directives) {
-                            Ok(skip) => skip,
-                            Err(err) => return Some(Err(err)),
-                        };
-                        if skip {
-                            continue;
-                        }
-                        // todo: check type
-                        self.stack.push(inline_fragment.selection_set.items.iter());
-                    }
-                }
-            } else {
-                self.stack.pop();
-            }
-        }
-        None
-    }
-}
-
 impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
     pub fn with_item<R>(&self, item: R) -> ContextBase<'a, R> {
@@ -178,14 +124,6 @@ impl<'a, T> ContextBase<'a, T> {
             .into());
         } else {
             Ok(value)
-        }
-    }
-
-    #[doc(hidden)]
-    pub fn fields(&'a self, selection_set: &'a SelectionSet) -> FieldIter<'a, T> {
-        FieldIter {
-            ctx: self,
-            stack: vec![selection_set.items.iter()],
         }
     }
 
