@@ -1,7 +1,5 @@
-use crate::{
-    registry, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType,
-    QueryError, Result,
-};
+use crate::{registry, Context, GQLObject, GQLType, QueryError, Result};
+use graphql_parser::query::Field;
 use std::borrow::Cow;
 
 pub struct GQLEmptyMutation;
@@ -21,14 +19,12 @@ impl GQLType for GQLEmptyMutation {
 }
 
 #[async_trait::async_trait]
-impl GQLOutputValue for GQLEmptyMutation {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        anyhow::bail!(QueryError::NotConfiguredMutations.with_position(ctx.item.span.0));
-    }
-}
-
 impl GQLObject for GQLEmptyMutation {
     fn is_empty() -> bool {
         return true;
+    }
+
+    async fn resolve_field(&self, _ctx: &Context<'_>, _name: &Field) -> Result<serde_json::Value> {
+        return Err(QueryError::NotConfiguredMutations.into());
     }
 }

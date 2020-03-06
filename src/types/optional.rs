@@ -27,9 +27,10 @@ impl<T: GQLInputValue> GQLInputValue for Option<T> {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Sync> GQLOutputValue for Option<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where {
-        if let Some(inner) = self {
-            inner.resolve(ctx).await
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where
+    {
+        if let Some(inner) = value {
+            GQLOutputValue::resolve(inner, ctx).await
         } else {
             Ok(serde_json::Value::Null)
         }
@@ -53,9 +54,10 @@ impl<T: GQLType> GQLType for &Option<T> {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Sync> GQLOutputValue for &Option<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where {
-        if let Some(inner) = self {
-            inner.resolve(ctx).await
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where
+    {
+        if let Some(inner) = value {
+            GQLOutputValue::resolve(inner, ctx).await
         } else {
             Ok(serde_json::Value::Null)
         }

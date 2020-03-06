@@ -1,4 +1,6 @@
 use super::StarWars;
+use async_graphql::GQLType;
+use std::borrow::Cow;
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
 #[allow(non_camel_case_types)]
@@ -31,13 +33,16 @@ impl<'a> Human<'a> {
     }
 
     #[field(desc = "The friends of the human, or an empty list if they have none.")]
-    async fn friends(&self) -> Vec<Human<'a>> {
+    async fn friends(&self) -> Vec<Character<'a>> {
         self.starwars.chars[self.id]
             .friends
             .iter()
-            .map(|id| Human {
-                id: *id,
-                starwars: self.starwars,
+            .map(|id| {
+                Human {
+                    id: *id,
+                    starwars: self.starwars,
+                }
+                .into()
             })
             .collect()
     }
@@ -74,13 +79,16 @@ impl<'a> Droid<'a> {
     }
 
     #[field(desc = "The friends of the droid, or an empty list if they have none.")]
-    async fn friends(&self) -> Vec<Droid<'a>> {
+    async fn friends(&self) -> Vec<Character<'a>> {
         self.starwars.chars[self.id]
             .friends
             .iter()
-            .map(|id| Droid {
-                id: *id,
-                starwars: self.starwars,
+            .map(|id| {
+                Droid {
+                    id: *id,
+                    starwars: self.starwars,
+                }
+                .into()
             })
             .collect()
     }
@@ -107,10 +115,19 @@ impl QueryRoot {
             desc = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
         )]
         episode: Episode,
-    ) -> Human<'_> {
-        Human {
-            id: self.0.hero(episode),
-            starwars: &self.0,
+    ) -> Character<'_> {
+        if episode == Episode::EMPIRE {
+            Human {
+                id: self.0.luke,
+                starwars: &self.0,
+            }
+            .into()
+        } else {
+            Droid {
+                id: self.0.artoo,
+                starwars: &self.0,
+            }
+            .into()
         }
     }
 
@@ -130,3 +147,13 @@ impl QueryRoot {
         })
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[async_graphql::Interface(
+    field(name = "id", type = "&str"),
+    field(name = "name", type = "&str"),
+    field(name = "friends", type = "Vec<Character<'a>>"),
+    field(name = "appearsIn", method = "appears_in", type = "&[Episode]")
+)]
+pub struct Character<'a>(Human<'a>, Droid<'a>);

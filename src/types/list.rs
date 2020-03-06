@@ -33,10 +33,10 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for Vec<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
-        for item in self {
-            res.push(item.resolve(&ctx).await?);
+        for item in value {
+            res.push(GQLOutputValue::resolve(item, &ctx).await?);
         }
         Ok(res.into())
     }
@@ -54,10 +54,10 @@ impl<T: GQLType> GQLType for &[T] {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &[T] {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
-        for item in self.iter() {
-            res.push(item.resolve(&ctx).await?);
+        for item in value.iter() {
+            res.push(GQLOutputValue::resolve(item, &ctx).await?);
         }
         Ok(res.into())
     }
@@ -75,10 +75,10 @@ impl<T: GQLType> GQLType for &Vec<T> {
 
 #[async_trait::async_trait]
 impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &Vec<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
-        for item in self.iter() {
-            res.push(item.resolve(&ctx).await?);
+        for item in value.iter() {
+            res.push(GQLOutputValue::resolve(item, &ctx).await?);
         }
         Ok(res.into())
     }

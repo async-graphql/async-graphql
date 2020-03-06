@@ -117,14 +117,6 @@ impl StarWars {
         }
     }
 
-    pub fn hero(&self, episode: Episode) -> usize {
-        if episode == Episode::EMPIRE {
-            self.luke
-        } else {
-            self.artoo
-        }
-    }
-
     pub fn human(&self, id: &str) -> Option<usize> {
         self.human_data.get(id).cloned()
     }

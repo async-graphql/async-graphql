@@ -1,4 +1,4 @@
-use crate::{Result, GQLScalar, Value};
+use crate::{impl_scalar, GQLScalar, Result, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
 impl GQLScalar for DateTime<Utc> {
@@ -17,3 +17,5 @@ impl GQLScalar for DateTime<Utc> {
         Ok(self.to_rfc3339().into())
     }
 }
+
+impl_scalar!(DateTime<Utc>);

@@ -1,4 +1,4 @@
-use crate::{Result, GQLScalar, Value};
+use crate::{impl_scalar, GQLScalar, Result, Value};
 use uuid::Uuid;
 
 impl GQLScalar for Uuid {
@@ -17,3 +17,5 @@ impl GQLScalar for Uuid {
         Ok(self.to_string().into())
     }
 }
+
+impl_scalar!(Uuid);

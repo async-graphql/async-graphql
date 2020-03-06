@@ -123,6 +123,23 @@ impl<'a> __Type<'a> {
                     })
                     .collect(),
             )
+        } else if let TypeDetail::Simple(Type::Interface { fields, .. }) = &self.detail {
+            Some(
+                fields
+                    .iter()
+                    .filter(|field| {
+                        if include_deprecated {
+                            true
+                        } else {
+                            field.deprecation.is_none()
+                        }
+                    })
+                    .map(|field| __Field {
+                        registry: self.registry,
+                        field,
+                    })
+                    .collect(),
+            )
         } else {
             None
         }
@@ -130,8 +147,16 @@ impl<'a> __Type<'a> {
 
     #[field]
     async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Simple(Type::Object { .. }) = &self.detail {
-            Some(vec![])
+        if let TypeDetail::Simple(Type::Object { name, .. }) = &self.detail {
+            Some(
+                self.registry
+                    .implements
+                    .get(*name)
+                    .unwrap_or(&Default::default())
+                    .iter()
+                    .map(|ty| __Type::new(self.registry, ty))
+                    .collect(),
+            )
         } else {
             None
         }
@@ -139,7 +164,16 @@ impl<'a> __Type<'a> {
 
     #[field(name = "possibleTypes")]
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
-        None
+        if let TypeDetail::Simple(Type::Interface { possible_types, .. }) = &self.detail {
+            Some(
+                possible_types
+                    .iter()
+                    .map(|ty| __Type::new(self.registry, ty))
+                    .collect(),
+            )
+        } else {
+            None
+        }
     }
 
     #[field(name = "enumValues")]

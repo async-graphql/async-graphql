@@ -1,6 +1,6 @@
 use crate::utils::parse_value;
 use graphql_parser::query::Value;
-use syn::{Attribute, AttributeArgs, Error, Meta, NestedMeta, Result};
+use syn::{Attribute, AttributeArgs, Error, Meta, MetaList, NestedMeta, Result, Type};
 
 #[derive(Debug)]
 pub struct Object {
@@ -110,7 +110,7 @@ impl Argument {
                                     } else {
                                         return Err(Error::new_spanned(
                                             &nv.lit,
-                                            "Attribute 'deprecation' should be a string.",
+                                            "Attribute 'default' should be a string.",
                                         ));
                                     }
                                 }
@@ -448,6 +448,260 @@ impl InputObject {
             internal,
             name,
             desc,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct InterfaceFieldArgument {
+    pub name: String,
+    pub desc: Option<String>,
+    pub ty: Type,
+    pub default: Option<Value>,
+}
+
+impl InterfaceFieldArgument {
+    pub fn parse(ls: &MetaList) -> Result<Self> {
+        let mut name = None;
+        let mut desc = None;
+        let mut ty = None;
+        let mut default = None;
+
+        for meta in &ls.nested {
+            match meta {
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("name") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            name = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'name' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("desc") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            desc = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'desc' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("type") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
+                                ty = Some(ty2);
+                            } else {
+                                return Err(Error::new_spanned(&lit, "Expect type"));
+                            }
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'type' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("default") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            match parse_value(&lit.value()) {
+                                Ok(Value::Variable(_)) => {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "The default cannot be a variable",
+                                    ))
+                                }
+                                Ok(value) => default = Some(value),
+                                Err(err) => {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        format!("Invalid value: {}", err),
+                                    ));
+                                }
+                            }
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'default' should be a string.",
+                            ));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if name.is_none() {
+            return Err(Error::new_spanned(ls, "Missing name"));
+        }
+
+        if ty.is_none() {
+            return Err(Error::new_spanned(ls, "Missing type"));
+        }
+
+        Ok(Self {
+            name: name.unwrap(),
+            desc,
+            ty: ty.unwrap(),
+            default,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct InterfaceField {
+    pub name: String,
+    pub method: Option<String>,
+    pub desc: Option<String>,
+    pub ty: Type,
+    pub args: Vec<InterfaceFieldArgument>,
+    pub deprecation: Option<String>,
+}
+
+impl InterfaceField {
+    pub fn parse(ls: &MetaList) -> Result<Self> {
+        let mut name = None;
+        let mut method = None;
+        let mut desc = None;
+        let mut ty = None;
+        let mut args = Vec::new();
+        let mut deprecation = None;
+
+        for meta in &ls.nested {
+            match meta {
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("name") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            name = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'name' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("desc") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            desc = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'desc' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("method") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            method = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'method' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("type") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
+                                ty = Some(ty2);
+                            } else {
+                                return Err(Error::new_spanned(&lit, "Expect type"));
+                            }
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'type' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("deprecation") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            deprecation = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'deprecation' should be a string.",
+                            ));
+                        }
+                    }
+                }
+                NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("arg") => {
+                    args.push(InterfaceFieldArgument::parse(ls)?);
+                }
+                _ => {}
+            }
+        }
+
+        if name.is_none() {
+            return Err(Error::new_spanned(ls, "Missing name"));
+        }
+
+        if ty.is_none() {
+            return Err(Error::new_spanned(ls, "Missing type"));
+        }
+
+        Ok(Self {
+            name: name.unwrap(),
+            method,
+            desc,
+            ty: ty.unwrap(),
+            args,
+            deprecation,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct Interface {
+    pub internal: bool,
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub fields: Vec<InterfaceField>,
+}
+
+impl Interface {
+    pub fn parse(args: AttributeArgs) -> Result<Self> {
+        let mut internal = false;
+        let mut name = None;
+        let mut desc = None;
+        let mut fields = Vec::new();
+
+        for arg in args {
+            match arg {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("name") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            name = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'name' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("desc") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            desc = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'desc' should be a string.",
+                            ));
+                        }
+                    }
+                }
+                NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("field") => {
+                    fields.push(InterfaceField::parse(&ls)?);
+                }
+                _ => {}
+            }
+        }
+
+        Ok(Self {
+            internal,
+            name,
+            desc,
+            fields,
         })
     }
 }

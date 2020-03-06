@@ -1,16 +1,9 @@
 use crate::args;
+use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, get_crate_name};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    Error, FnArg, GenericArgument, ImplItem, ItemImpl, Pat, PathArguments, Result, ReturnType,
-    Type, TypeReference,
-};
-
-enum OutputType<'a> {
-    Value(&'a Type),
-    Result(&'a Type, &'a Type),
-}
+use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -58,49 +51,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
                 let ty = match &method.sig.output {
-                    ReturnType::Type(_, ty) => {
-                        if let Type::Path(p) = ty.as_ref() {
-                            if p.path.is_ident("Result") {
-                                if let PathArguments::AngleBracketed(args) =
-                                    &p.path.segments[0].arguments
-                                {
-                                    if args.args.len() == 0 {
-                                        return Err(Error::new_spanned(
-                                            &method.sig.output,
-                                            "Invalid type",
-                                        ));
-                                    }
-                                    let mut res = None;
-                                    for arg in &args.args {
-                                        if let GenericArgument::Type(value_ty) = arg {
-                                            res = Some(OutputType::Result(ty, value_ty));
-                                            break;
-                                        }
-                                    }
-                                    if res.is_none() {
-                                        return Err(Error::new_spanned(
-                                            &method.sig.output,
-                                            "Invalid type",
-                                        ));
-                                    }
-                                    res.unwrap()
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &method.sig.output,
-                                        "Invalid type",
-                                    ));
-                                }
-                            } else {
-                                OutputType::Value(ty)
-                            }
-                        } else if let Type::Reference(_) = ty.as_ref() {
-                            OutputType::Value(ty)
-                        } else {
-                            return Err(Error::new_spanned(&method.sig.output, "Invalid type"));
-                        }
-                    }
+                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type"));
+                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
                     }
                 };
 
@@ -194,7 +147,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         None => quote! { || #crate_name::Value::Null },
                     };
                     get_params.push(quote! {
-                        let #ident: #ty = ctx_field.param_value(#name, #default)?;
+                        let #ident: #ty = ctx.param_value(#name, #default)?;
                     });
                 }
 
@@ -213,7 +166,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 });
 
                 let ctx_field = match arg_ctx {
-                    true => quote! { &ctx_field, },
+                    true => quote! { &ctx, },
                     false => quote! {},
                 };
 
@@ -233,10 +186,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 resolvers.push(quote! {
                     if field.name.as_str() == #field_name {
                         #(#get_params)*
-                        let ctx_obj = ctx_field.with_item(&field.selection_set);
-                        let value = #resolve_obj.resolve(&ctx_obj).await.map_err(|err| err.with_position(field.position))?;
-                        result.insert(field.alias.clone().unwrap_or_else(|| field.name.clone()), value.into());
-                        continue;
+                        let ctx_obj = ctx.with_item(&field.selection_set);
+                        return #crate_name::GQLOutputValue::resolve(&#resolve_obj, &ctx_obj).await.
+                            map_err(|err| err.with_position(field.position).into());
                     }
                 });
 
@@ -257,49 +209,25 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
                     name: #gql_typename,
                     description: #desc,
-                    fields: vec![#(#schema_fields),*]
+                    fields: vec![#(#schema_fields),*],
                 })
             }
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::GQLOutputValue for #self_ty {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+        impl#generics #crate_name::GQLObject for #self_ty {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 use #crate_name::ErrorWithPosition;
 
-                if ctx.items.is_empty() {
-                    #crate_name::anyhow::bail!(#crate_name::QueryError::MustHaveSubFields {
-                        object: #gql_typename,
-                    }.with_position(ctx.span.0));
-                }
+                #(#resolvers)*
 
-                let mut result = #crate_name::serde_json::Map::<String, #crate_name::serde_json::Value>::new();
-                for field in ctx.fields(&*ctx) {
-                    let field = field?;
-                    let ctx_field = ctx.with_item(field);
-                    if ctx_field.is_skip(&field.directives)? {
-                        continue;
-                    }
-                    if field.name.as_str() == "__typename" {
-                        let name = field.alias.clone().unwrap_or_else(|| field.name.clone());
-                        result.insert(name, #gql_typename.into());
-                        continue;
-                    }
-                    if field.name.as_str() == "__schema" {
-                        continue;
-                    }
-                    #(#resolvers)*
-                    #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
-                        field_name: field.name.clone(),
-                        object: #gql_typename,
-                    }.with_position(field.position));
+                anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                    field_name: field.name.clone(),
+                    object: #gql_typename.to_string(),
                 }
-
-                Ok(#crate_name::serde_json::Value::Object(result))
+                .with_position(field.position));
             }
         }
-
-        impl#generics #crate_name::GQLObject for #self_ty {}
     };
     Ok(expanded.into())
 }

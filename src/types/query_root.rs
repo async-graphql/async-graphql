@@ -1,6 +1,8 @@
-use crate::model::__Schema;
-use crate::{registry, ContextSelectionSet, GQLOutputValue, GQLType, Result};
-use graphql_parser::query::Selection;
+use crate::model::{__Schema, __Type};
+use crate::{
+    registry, Context, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, Result, Value,
+};
+use graphql_parser::query::Field;
 use std::borrow::Cow;
 
 pub struct QueryRoot<T> {
@@ -20,30 +22,34 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for QueryRoot<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut res = self.inner.resolve(ctx).await?;
-
-        if let serde_json::Value::Object(obj) = &mut res {
-            for item in &ctx.item.items {
-                if let Selection::Field(field) = item {
-                    if field.name == "__schema" {
-                        let ctx_obj = ctx.with_item(&field.selection_set);
-                        obj.insert(
-                            "__schema".to_string(),
-                            __Schema {
-                                registry: &ctx.registry,
-                                query_type: &self.query_type,
-                                mutation_type: self.mutation_type.as_deref(),
-                            }
-                            .resolve(&ctx_obj)
-                            .await?,
-                        );
-                    }
-                }
-            }
+impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
+    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
+        if field.name.as_str() == "__schema" {
+            let ctx_obj = ctx.with_item(&field.selection_set);
+            return GQLOutputValue::resolve(
+                &__Schema {
+                    registry: &ctx.registry,
+                    query_type: &self.query_type,
+                    mutation_type: self.mutation_type.as_deref(),
+                },
+                &ctx_obj,
+            )
+            .await
+            .map_err(|err| err.with_position(field.position).into());
+        } else if field.name.as_str() == "__type" {
+            let type_name: String = ctx.param_value("name", || Value::Null)?;
+            let ctx_obj = ctx.with_item(&field.selection_set);
+            return GQLOutputValue::resolve(
+                &ctx.registry
+                    .types
+                    .get(&type_name)
+                    .map(|ty| __Type::new_simple(ctx.registry, ty)),
+                &ctx_obj,
+            )
+            .await
+            .map_err(|err| err.with_position(field.position).into());
         }
 
-        Ok(res)
+        return self.inner.resolve_field(ctx, field).await;
     }
 }

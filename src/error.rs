@@ -22,16 +22,13 @@ pub enum QueryError {
     },
 
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
-    FieldNotFound {
-        field_name: String,
-        object: &'static str,
-    },
+    FieldNotFound { field_name: String, object: String },
 
     #[error("Unknown operation named \"{name}\"")]
     UnknownOperationNamed { name: String },
 
     #[error("Type \"{object}\" must have a selection of subfields.")]
-    MustHaveSubFields { object: &'static str },
+    MustHaveSubFields { object: String },
 
     #[error("Schema is not configured for mutations.")]
     NotConfiguredMutations,

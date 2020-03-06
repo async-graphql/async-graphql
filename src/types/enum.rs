@@ -1,13 +1,11 @@
 use crate::{GQLType, Result};
 use graphql_parser::query::Value;
 
-#[doc(hidden)]
 pub struct GQLEnumItem<T> {
     pub name: &'static str,
     pub value: T,
 }
 
-#[doc(hidden)]
 #[async_trait::async_trait]
 pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [GQLEnumItem<Self>];

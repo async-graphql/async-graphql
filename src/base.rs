@@ -1,8 +1,7 @@
-use crate::{registry, ContextSelectionSet, Result};
-use graphql_parser::query::Value;
+use crate::{registry, Context, ContextSelectionSet, Result};
+use graphql_parser::query::{Field, Value};
 use std::borrow::Cow;
 
-#[doc(hidden)]
 pub trait GQLType {
     fn type_name() -> Cow<'static, str>;
 
@@ -13,25 +12,24 @@ pub trait GQLType {
     fn create_type_info(registry: &mut registry::Registry) -> String;
 }
 
-#[doc(hidden)]
 pub trait GQLInputValue: GQLType + Sized {
     fn parse(value: &Value) -> Option<Self>;
 }
 
-#[doc(hidden)]
 #[async_trait::async_trait]
 pub trait GQLOutputValue: GQLType {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
 }
 
-#[doc(hidden)]
+#[async_trait::async_trait]
 pub trait GQLObject: GQLOutputValue {
     fn is_empty() -> bool {
         return false;
     }
+
+    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value>;
 }
 
-#[doc(hidden)]
 pub trait GQLInputObject: GQLInputValue {}
 
 pub trait GQLScalar: Sized + Send {
@@ -43,28 +41,43 @@ pub trait GQLScalar: Sized + Send {
     fn to_json(&self) -> Result<serde_json::Value>;
 }
 
-impl<T: GQLScalar> GQLType for T {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed(T::type_name())
-    }
+#[macro_export]
+macro_rules! impl_scalar {
+    ($ty:ty) => {
+        impl crate::GQLType for $ty {
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(<$ty as crate::GQLScalar>::type_name())
+            }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<T, _>(|_| registry::Type::Scalar {
-            name: T::type_name().to_string(),
-            description: T::description(),
-        })
-    }
-}
+            fn create_type_info(registry: &mut crate::registry::Registry) -> String {
+                registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
+                    name: <$ty as crate::GQLScalar>::type_name().to_string(),
+                    description: <$ty>::description(),
+                })
+            }
+        }
 
-impl<T: GQLScalar> GQLInputValue for T {
-    fn parse(value: &Value) -> Option<Self> {
-        T::parse(value)
-    }
+        impl crate::GQLInputValue for $ty {
+            fn parse(value: &crate::Value) -> Option<Self> {
+                <$ty as crate::GQLScalar>::parse(value)
+            }
+        }
+
+        #[async_trait::async_trait]
+        impl crate::GQLOutputValue for $ty {
+            async fn resolve(
+                value: &Self,
+                _: &crate::ContextSelectionSet<'_>,
+            ) -> crate::Result<serde_json::Value> {
+                value.to_json()
+            }
+        }
+    };
 }
 
 #[async_trait::async_trait]
-impl<T: GQLScalar + Sync> GQLOutputValue for T {
-    async fn resolve(&self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        T::to_json(self)
+impl<T: GQLObject + Send + Sync> GQLOutputValue for T {
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        crate::resolver::do_resolve(ctx, value).await
     }
 }

@@ -1,4 +1,4 @@
-use crate::{Result, GQLScalar, Value};
+use crate::{impl_scalar, GQLScalar, Result, Value};
 
 macro_rules! impl_integer_scalars {
     ($($ty:ty),*) => {
@@ -23,6 +23,8 @@ macro_rules! impl_integer_scalars {
                 Ok((*self).into())
             }
         }
+
+        impl_scalar!($ty);
         )*
     };
 }

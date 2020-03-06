@@ -57,6 +57,7 @@ mod base;
 mod context;
 mod error;
 mod model;
+mod resolver;
 mod scalars;
 mod schema;
 mod types;
@@ -72,7 +73,7 @@ pub use serde_json;
 
 pub mod http;
 
-pub use async_graphql_derive::{Enum, InputObject, Object};
+pub use async_graphql_derive::{Enum, InputObject, Interface, Object};
 pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLScalar, GQLType};
 pub use context::{Context, ContextBase, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};

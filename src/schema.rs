@@ -150,7 +150,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             data: self.data,
                             fragments: &fragments,
                         };
-                        return self.query.resolve(&ctx).await;
+                        return GQLOutputValue::resolve(self.query, &ctx).await;
                     }
                 }
                 Definition::Operation(OperationDefinition::Query(query)) => {
@@ -165,7 +165,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             data: self.data,
                             fragments: &fragments,
                         };
-                        return self.query.resolve(&ctx).await;
+                        return GQLOutputValue::resolve(self.query, &ctx).await;
                     }
                 }
                 Definition::Operation(OperationDefinition::Mutation(mutation)) => {
@@ -180,7 +180,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                             data: self.data,
                             fragments: &fragments,
                         };
-                        return self.mutation.resolve(&ctx).await;
+                        return GQLOutputValue::resolve(self.mutation, &ctx).await;
                     }
                 }
                 _ => {}

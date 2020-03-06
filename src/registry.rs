@@ -1,5 +1,5 @@
 use crate::{model, GQLType};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct InputValue {
     pub name: &'static str,
@@ -36,7 +36,7 @@ pub enum Type {
         name: &'static str,
         description: Option<&'static str>,
         fields: Vec<Field>,
-        possible_types: Vec<usize>,
+        possible_types: Vec<String>,
     },
     Union {
         name: &'static str,
@@ -66,6 +66,7 @@ pub struct Directive {
 pub struct Registry {
     pub types: HashMap<String, Type>,
     pub directives: Vec<Directive>,
+    pub implements: HashMap<String, HashSet<String>>,
 }
 
 impl Registry {
@@ -87,5 +88,18 @@ impl Registry {
 
     pub fn add_directive(&mut self, directive: Directive) {
         self.directives.push(directive);
+    }
+
+    pub fn add_implements(&mut self, ty: &str, interface: &str) {
+        self.implements
+            .entry(ty.to_string())
+            .and_modify(|interfaces| {
+                interfaces.insert(interface.to_string());
+            })
+            .or_insert({
+                let mut interfaces = HashSet::new();
+                interfaces.insert(interface.to_string());
+                interfaces
+            });
     }
 }

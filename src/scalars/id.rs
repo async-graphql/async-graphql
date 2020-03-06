@@ -1,4 +1,4 @@
-use crate::{Result, GQLScalar, Value};
+use crate::{impl_scalar, GQLScalar, Result, Value};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -35,3 +35,5 @@ impl GQLScalar for ID {
         Ok(self.0.clone().into())
     }
 }
+
+impl_scalar!(ID);

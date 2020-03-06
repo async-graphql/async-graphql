@@ -120,7 +120,17 @@ impl<'a, T> Iterator for FieldIter<'a, T> {
                             .into()));
                         }
                     }
-                    Selection::InlineFragment(_) => {}
+                    Selection::InlineFragment(inline_fragment) => {
+                        let skip = match self.ctx.is_skip(&inline_fragment.directives) {
+                            Ok(skip) => skip,
+                            Err(err) => return Some(Err(err)),
+                        };
+                        if skip {
+                            continue;
+                        }
+                        // todo: check type
+                        self.stack.push(inline_fragment.selection_set.items.iter());
+                    }
                 }
             } else {
                 self.stack.pop();
@@ -286,5 +296,9 @@ impl<'a> ContextBase<'a, &'a Field> {
                 Ok(res)
             }
         }
+    }
+
+    pub fn result_name(&self) -> String {
+        self.item.alias.clone().unwrap_or_else(|| self.name.clone())
     }
 }
