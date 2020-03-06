@@ -86,7 +86,7 @@
 - [ ] Integration examples
     - [X] Actix-web
     - [ ] Hyper
-    - [ ] Tide
+    - [X] Tide
 
 ## License
 

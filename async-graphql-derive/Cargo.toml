@@ -18,5 +18,5 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0.6"
 syn = { version = "1.0.13", features = ["full"] }
-quote = "=1.0.2"
+quote = "=1.0.3"
 graphql-parser = "0.2.3"
