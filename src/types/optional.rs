@@ -11,7 +11,8 @@ impl<T: GQLType> GQLType for Option<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry)
+        T::create_type_info(registry);
+        T::type_name().to_string()
     }
 }
 
@@ -45,7 +46,8 @@ impl<T: GQLType> GQLType for &Option<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry)
+        T::create_type_info(registry);
+        T::type_name().to_string()
     }
 }
 
@@ -68,5 +70,7 @@ mod tests {
     fn test_optional_type() {
         assert_eq!(Option::<i32>::type_name(), "Int");
         assert_eq!(Option::<i32>::qualified_type_name(), "Int");
+        assert_eq!(&Option::<i32>::type_name(), "Int");
+        assert_eq!(&Option::<i32>::qualified_type_name(), "Int");
     }
 }
