@@ -20,7 +20,7 @@ impl<T: GQLInputValue> GQLInputValue for Option<T> {
     fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::Null => Some(None),
-            _ => Some(GQLInputValue::parse(value)?),
+            _ => Some(Some(T::parse(value)?)),
         }
     }
 }
