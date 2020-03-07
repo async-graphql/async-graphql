@@ -58,7 +58,7 @@
     - [X] InputObject
         - [X] Field default value
         - [X] Deprecated flag
-    - [ ] Interface
+    - [X] Interface
     - [ ] Union
 - [X] Query
     - [X] Fields
