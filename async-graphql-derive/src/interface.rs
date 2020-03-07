@@ -37,6 +37,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .unwrap_or_else(|| quote! {None});
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
+    let mut inline_fragment_resolvers = Vec::new();
 
     for field in &fields.unnamed {
         if let Type::Path(p) = &field.ty {
@@ -56,6 +57,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             });
             possible_types.push(quote! {
                 <#p as async_graphql::GQLType>::type_name().to_string()
+            });
+            inline_fragment_resolvers.push(quote! {
+                if name == <#p as async_graphql::GQLType>::type_name() {
+                    if let #ident::#enum_name(obj) = self {
+                        #crate_name::do_resolve(ctx, obj, result).await?;
+                    }
+                    return Ok(());
+                }
             });
         } else {
             return Err(Error::new_spanned(field, "Invalid type"));
@@ -227,6 +236,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     object: #gql_typename.to_string(),
                 }
                 .with_position(field.position));
+            }
+
+            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, serde_json::Value>) -> #crate_name::Result<()> {
+                #(#inline_fragment_resolvers)*
+                anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
+                    object: #gql_typename.to_string(),
+                    name: name.to_string(),
+                });
             }
         }
     };

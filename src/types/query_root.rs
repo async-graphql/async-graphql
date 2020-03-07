@@ -1,6 +1,7 @@
 use crate::model::{__Schema, __Type};
 use crate::{
-    registry, Context, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType, Result, Value,
+    registry, Context, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType,
+    QueryError, Result, Value,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -51,5 +52,17 @@ impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
         }
 
         return self.inner.resolve_field(ctx, field).await;
+    }
+
+    async fn resolve_inline_fragment(
+        &self,
+        name: &str,
+        _ctx: &ContextSelectionSet<'_>,
+        _result: &mut serde_json::Map<String, serde_json::Value>,
+    ) -> Result<()> {
+        anyhow::bail!(QueryError::UnrecognizedInlineFragment {
+            object: T::type_name().to_string(),
+            name: name.to_string(),
+        });
     }
 }

@@ -91,3 +91,5 @@ pub type Error = anyhow::Error;
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
+#[doc(hidden)]
+pub use resolver::do_resolve;

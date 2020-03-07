@@ -1,5 +1,6 @@
-use crate::{registry, Context, GQLObject, GQLType, QueryError, Result};
+use crate::{registry, Context, ContextSelectionSet, GQLObject, GQLType, QueryError, Result};
 use graphql_parser::query::Field;
+use serde_json::{Map, Value};
 use std::borrow::Cow;
 
 pub struct GQLEmptyMutation;
@@ -25,6 +26,15 @@ impl GQLObject for GQLEmptyMutation {
     }
 
     async fn resolve_field(&self, _ctx: &Context<'_>, _name: &Field) -> Result<serde_json::Value> {
+        return Err(QueryError::NotConfiguredMutations.into());
+    }
+
+    async fn resolve_inline_fragment(
+        &self,
+        _name: &str,
+        _ctx: &ContextSelectionSet<'_>,
+        _result: &mut Map<String, Value>,
+    ) -> Result<()> {
         return Err(QueryError::NotConfiguredMutations.into());
     }
 }

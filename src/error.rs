@@ -59,6 +59,12 @@ pub enum QueryError {
 
     #[error("Unknown fragment \"{name}\".")]
     UnknownFragment { name: String },
+
+    #[error("Object \"{object}\" does not implement interface \"{interface}\"")]
+    NotImplementedInterface { object: String, interface: String },
+
+    #[error("Unrecognized inline fragment \"{name}\" on type \"{object}\"")]
+    UnrecognizedInlineFragment { object: String, name: String },
 }
 
 pub trait ErrorWithPosition {

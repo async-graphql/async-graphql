@@ -1,5 +1,5 @@
 use crate::{ContextSelectionSet, ErrorWithPosition, GQLObject, QueryError, Result};
-use graphql_parser::query::Selection;
+use graphql_parser::query::{Selection, TypeCondition};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -22,11 +22,11 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
             for selection in &self.ctx.item.items {
                 match selection {
                     Selection::Field(field) => {
-                        let ctx_field = self.ctx.with_item(field);
-                        if ctx_field.is_skip(&field.directives)? {
+                        if self.ctx.is_skip(&field.directives)? {
                             continue;
                         }
 
+                        let ctx_field = self.ctx.with_item(field);
                         if field.name.as_str() == "__typename" {
                             self.result
                                 .insert(ctx_field.result_name(), T::type_name().to_string().into());
@@ -39,6 +39,10 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
                         );
                     }
                     Selection::FragmentSpread(fragment_spread) => {
+                        if self.ctx.is_skip(&fragment_spread.directives)? {
+                            continue;
+                        }
+
                         if let Some(fragment) =
                             self.ctx.fragments.get(&fragment_spread.fragment_name)
                         {
@@ -56,7 +60,23 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
                             .into());
                         }
                     }
-                    Selection::InlineFragment(_) => {}
+                    Selection::InlineFragment(inline_fragment) => {
+                        if self.ctx.is_skip(&inline_fragment.directives)? {
+                            continue;
+                        }
+
+                        if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
+                            self.obj
+                                .resolve_inline_fragment(
+                                    &name,
+                                    &self.ctx.with_item(&inline_fragment.selection_set),
+                                    self.result,
+                                )
+                                .await?;
+                        } else {
+                            todo!()
+                        }
+                    }
                 }
             }
 
@@ -68,16 +88,14 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
 pub async fn do_resolve<'a, T: GQLObject + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
-    let mut result = serde_json::Map::<String, serde_json::Value>::new();
-
+    result: &mut serde_json::Map<String, serde_json::Value>,
+) -> Result<()> {
     Resolver {
         ctx,
         obj: root,
-        result: &mut result,
+        result,
     }
     .resolve()
     .await?;
-
-    Ok(serde_json::Value::Object(result))
+    Ok(())
 }

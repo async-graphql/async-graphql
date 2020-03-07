@@ -28,6 +28,13 @@ pub trait GQLObject: GQLOutputValue {
     }
 
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value>;
+
+    async fn resolve_inline_fragment(
+        &self,
+        name: &str,
+        ctx: &ContextSelectionSet<'_>,
+        result: &mut serde_json::Map<String, serde_json::Value>,
+    ) -> Result<()>;
 }
 
 pub trait GQLInputObject: GQLInputValue {}
@@ -78,6 +85,8 @@ macro_rules! impl_scalar {
 #[async_trait::async_trait]
 impl<T: GQLObject + Send + Sync> GQLOutputValue for T {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        crate::resolver::do_resolve(ctx, value).await
+        let mut result = serde_json::Map::<String, serde_json::Value>::new();
+        crate::resolver::do_resolve(ctx, value, &mut result).await?;
+        Ok(result.into())
     }
 }
