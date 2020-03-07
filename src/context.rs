@@ -99,11 +99,12 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
-    pub fn data<D: Any + Send + Sync>(&self) -> Option<&D> {
+    pub fn data<D: Any + Send + Sync>(&self) -> &D {
         self.data
             .0
             .get(&TypeId::of::<D>())
             .and_then(|d| d.downcast_ref::<D>())
+            .expect("The specified data type does not exist.")
     }
 
     fn resolve_input_value(&self, value: Value) -> Result<Value> {

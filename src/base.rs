@@ -64,6 +64,19 @@ macro_rules! impl_scalar {
             }
         }
 
+        impl crate::GQLType for &$ty {
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(<$ty as crate::GQLScalar>::type_name())
+            }
+
+            fn create_type_info(registry: &mut crate::registry::Registry) -> String {
+                registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
+                    name: <$ty as crate::GQLScalar>::type_name().to_string(),
+                    description: <$ty>::description(),
+                })
+            }
+        }
+
         impl crate::GQLInputValue for $ty {
             fn parse(value: &crate::Value) -> Option<Self> {
                 <$ty as crate::GQLScalar>::parse(value)
@@ -72,6 +85,16 @@ macro_rules! impl_scalar {
 
         #[async_trait::async_trait]
         impl crate::GQLOutputValue for $ty {
+            async fn resolve(
+                value: &Self,
+                _: &crate::ContextSelectionSet<'_>,
+            ) -> crate::Result<serde_json::Value> {
+                value.to_json()
+            }
+        }
+
+        #[async_trait::async_trait]
+        impl crate::GQLOutputValue for &$ty {
             async fn resolve(
                 value: &Self,
                 _: &crate::ContextSelectionSet<'_>,

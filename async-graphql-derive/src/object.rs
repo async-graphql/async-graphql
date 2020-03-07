@@ -151,10 +151,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 }
 
-                let schema_ty = match &ty {
-                    OutputType::Result(_, value_ty) => value_ty,
-                    OutputType::Value(value_ty) => value_ty,
-                };
+                let schema_ty = ty.value_type();
                 schema_fields.push(quote! {
                     #crate_name::registry::Field {
                         name: #field_name,

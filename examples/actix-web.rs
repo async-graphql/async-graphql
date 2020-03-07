@@ -26,10 +26,9 @@ async fn gql_graphiql() -> HttpResponse {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
-            .data(Schema::new(
-                starwars::QueryRoot(starwars::StarWars::new()),
-                GQLEmptyMutation,
-            ))
+            .data(
+                Schema::new(starwars::QueryRoot, GQLEmptyMutation).data(starwars::StarWars::new()),
+            )
             .service(web::resource("/").guard(guard::Post()).to(index))
             .service(web::resource("/").guard(guard::Get()).to(gql_playgound))
             .service(

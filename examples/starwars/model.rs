@@ -1,4 +1,5 @@
 use super::StarWars;
+use async_graphql::Context;
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
 #[allow(non_camel_case_types)]
@@ -13,143 +14,125 @@ pub enum Episode {
     JEDI,
 }
 
-pub struct Human<'a> {
-    starwars: &'a StarWars,
-    id: usize,
-}
+pub struct Human(usize);
 
 #[async_graphql::Object(desc = "A humanoid creature in the Star Wars universe.")]
-impl<'a> Human<'a> {
+impl Human {
     #[field(desc = "The id of the human.")]
-    async fn id(&self) -> &str {
-        self.starwars.chars[self.id].id
+    async fn id<'a>(&self, ctx: &Context<'_>) -> &str {
+        ctx.data::<StarWars>().chars[self.0].id
     }
 
     #[field(desc = "The name of the human.")]
-    async fn name(&self) -> &str {
-        self.starwars.chars[self.id].name
+    async fn name(&self, ctx: &Context<'_>) -> &str {
+        ctx.data::<StarWars>().chars[self.0].name
     }
 
     #[field(desc = "The friends of the human, or an empty list if they have none.")]
-    async fn friends(&self) -> Vec<Character<'a>> {
-        self.starwars.chars[self.id]
+    async fn friends(&self, ctx: &Context<'_>) -> Vec<Character> {
+        ctx.data::<StarWars>().chars[self.0]
             .friends
             .iter()
-            .map(|id| {
-                Human {
-                    id: *id,
-                    starwars: self.starwars,
-                }
-                .into()
-            })
+            .map(|id| Human(*id).into())
             .collect()
     }
 
     #[field(name = "appearsIn", desc = "Which movies they appear in.")]
-    async fn appears_in(&self) -> &[Episode] {
-        &self.starwars.chars[self.id].appears_in
+    async fn appears_in<'a>(&self, ctx: &'a Context<'_>) -> &'a [Episode] {
+        &ctx.data::<StarWars>().chars[self.0].appears_in
     }
 
     #[field(
         name = "homePlanet",
         desc = "The home planet of the human, or null if unknown."
     )]
-    async fn home_planet(&self) -> &Option<&str> {
-        &self.starwars.chars[self.id].home_planet
+    async fn home_planet<'a>(&self, ctx: &'a Context<'_>) -> &'a Option<&'a str> {
+        &ctx.data::<StarWars>().chars[self.0].home_planet
     }
 }
 
-pub struct Droid<'a> {
-    starwars: &'a StarWars,
-    id: usize,
-}
+pub struct Droid(usize);
 
 #[async_graphql::Object(desc = "A mechanical creature in the Star Wars universe.")]
-impl<'a> Droid<'a> {
+impl Droid {
     #[field(desc = "The id of the droid.")]
-    async fn id(&self) -> &str {
-        self.starwars.chars[self.id].id
+    async fn id(&self, ctx: &Context<'_>) -> &str {
+        ctx.data::<StarWars>().chars[self.0].id
     }
 
     #[field(desc = "The name of the droid.")]
-    async fn name(&self) -> &str {
-        self.starwars.chars[self.id].name
+    async fn name(&self, ctx: &Context<'_>) -> &str {
+        ctx.data::<StarWars>().chars[self.0].name
     }
 
     #[field(desc = "The friends of the droid, or an empty list if they have none.")]
-    async fn friends(&self) -> Vec<Character<'a>> {
-        self.starwars.chars[self.id]
+    async fn friends(&self, ctx: &Context<'_>) -> Vec<Character> {
+        ctx.data::<StarWars>().chars[self.0]
             .friends
             .iter()
-            .map(|id| {
-                Droid {
-                    id: *id,
-                    starwars: self.starwars,
-                }
-                .into()
-            })
+            .map(|id| Droid(*id).into())
             .collect()
     }
 
     #[field(name = "appearsIn", desc = "Which movies they appear in.")]
-    async fn appears_in(&self) -> &[Episode] {
-        &self.starwars.chars[self.id].appears_in
+    async fn appears_in<'a>(&self, ctx: &'a Context<'_>) -> &'a [Episode] {
+        &ctx.data::<StarWars>().chars[self.0].appears_in
     }
 
     #[field(name = "primaryFunction", desc = "The primary function of the droid.")]
-    async fn primary_function(&self) -> &Option<&str> {
-        &self.starwars.chars[self.id].primary_function
+    async fn primary_function<'a>(&self, ctx: &'a Context<'_>) -> &'a Option<&'a str> {
+        &ctx.data::<StarWars>().chars[self.0].primary_function
     }
 }
 
-pub struct QueryRoot(pub StarWars);
+pub struct QueryRoot;
 
 #[async_graphql::Object]
 impl QueryRoot {
     #[field]
     async fn hero(
         &self,
+        ctx: &Context<'_>,
         #[arg(
             desc = "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
         )]
         episode: Episode,
-    ) -> Character<'_> {
+    ) -> Character {
         if episode == Episode::EMPIRE {
-            Human {
-                id: self.0.luke,
-                starwars: &self.0,
-            }
-            .into()
+            Human(ctx.data::<StarWars>().luke).into()
         } else {
-            Droid {
-                id: self.0.artoo,
-                starwars: &self.0,
-            }
-            .into()
+            Droid(ctx.data::<StarWars>().artoo).into()
         }
     }
 
     #[field]
-    async fn human(&self, #[arg(desc = "id of the human")] id: String) -> Option<Human<'_>> {
-        self.0.human(&id).map(|id| Human {
-            id,
-            starwars: &self.0,
-        })
+    async fn human(
+        &self,
+        ctx: &Context<'_>,
+        #[arg(desc = "id of the human")] id: String,
+    ) -> Option<Human> {
+        ctx.data::<StarWars>().human(&id).map(|id| Human(id))
     }
 
     #[field]
-    async fn droid(&self, #[arg(desc = "id of the droid")] id: String) -> Option<Droid<'_>> {
-        self.0.droid(&id).map(|id| Droid {
-            id,
-            starwars: &self.0,
-        })
+    async fn droid(
+        &self,
+        ctx: &Context<'_>,
+        #[arg(desc = "id of the droid")] id: String,
+    ) -> Option<Droid> {
+        ctx.data::<StarWars>().droid(&id).map(|id| Droid(id))
     }
 }
 
 #[async_graphql::Interface(
-    field(name = "id", type = "&str"),
-    field(name = "name", type = "&str"),
-    field(name = "friends", type = "Vec<Character<'a>>"),
-    field(name = "appearsIn", method = "appears_in", type = "&[Episode]")
+    field(name = "id", type = "&str", context),
+    field(name = "name", type = "&str", context),
+    field(name = "friends", type = "Vec<Character>", context),
+    field(
+        name = "appearsIn",
+        method = "appears_in",
+        type = "&'ctx [Episode]",
+        context
+    )
 )]
-pub struct Character<'a>(Human<'a>, Droid<'a>);
+pub struct Character(Human, Droid);

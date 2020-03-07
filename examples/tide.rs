@@ -27,10 +27,9 @@ async fn gql_graphiql(_request: Request<StarWarsSchema>) -> Response {
 
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
-    let mut app = tide::with_state(Schema::new(
-        starwars::QueryRoot(starwars::StarWars::new()),
-        GQLEmptyMutation,
-    ));
+    let mut app = tide::with_state(
+        Schema::new(starwars::QueryRoot, GQLEmptyMutation).data(starwars::StarWars::new()),
+    );
     app.at("/").post(index);
     app.at("/").get(gql_playground);
     app.at("/graphiql").get(gql_graphiql);

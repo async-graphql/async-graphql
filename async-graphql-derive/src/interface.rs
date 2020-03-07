@@ -94,7 +94,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         let mut schema_args = Vec::new();
 
         if *context {
-            decl_params.push(quote! { ctx: &#crate_name::Context<'_> });
+            decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
             use_params.push(quote! { ctx });
         }
 
@@ -147,8 +147,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             });
         }
 
+        let ctx_lifetime = if *context {
+            quote! { <'ctx> }
+        } else {
+            quote! {}
+        };
+
         methods.push(quote! {
-            async fn #method_name(&self, #(#decl_params),*) -> #ty {
+            async fn #method_name #ctx_lifetime(&self, #(#decl_params),*) -> #ty {
                 match self {
                     #(#calls,)*
                 }
@@ -165,14 +171,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             .unwrap_or_else(|| quote! {None});
 
         let ty = OutputType::parse(ty)?;
-        let value_ty = ty.value_type();
+        let schema_ty = ty.value_type();
 
         schema_fields.push(quote! {
             #crate_name::registry::Field {
                 name: #name,
                 description: #desc,
                 args: vec![#(#schema_args),*],
-                ty: <#value_ty as #crate_name::GQLType>::create_type_info(registry),
+                ty: <#schema_ty as #crate_name::GQLType>::create_type_info(registry),
                 deprecation: #deprecation,
             }
         });
