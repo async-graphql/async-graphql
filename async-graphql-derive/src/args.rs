@@ -555,6 +555,7 @@ pub struct InterfaceField {
     pub ty: Type,
     pub args: Vec<InterfaceFieldArgument>,
     pub deprecation: Option<String>,
+    pub context: bool,
 }
 
 impl InterfaceField {
@@ -565,9 +566,13 @@ impl InterfaceField {
         let mut ty = None;
         let mut args = Vec::new();
         let mut deprecation = None;
+        let mut context = false;
 
         for meta in &ls.nested {
             match meta {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("context") => {
+                    context = true;
+                }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
                         if let syn::Lit::Str(lit) = &nv.lit {
@@ -642,6 +647,7 @@ impl InterfaceField {
             ty: ty.unwrap(),
             args,
             deprecation,
+            context,
         })
     }
 }

@@ -1,6 +1,4 @@
 use super::StarWars;
-use async_graphql::GQLType;
-use std::borrow::Cow;
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
 #[allow(non_camel_case_types)]
@@ -147,8 +145,6 @@ impl QueryRoot {
         })
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[async_graphql::Interface(
     field(name = "id", type = "&str"),

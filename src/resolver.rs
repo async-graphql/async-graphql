@@ -73,8 +73,6 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
                                     self.result,
                                 )
                                 .await?;
-                        } else {
-                            todo!()
                         }
                     }
                 }

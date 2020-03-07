@@ -7,8 +7,6 @@ use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Fields, Result, Type};
 
-// todo: Context params
-
 pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
     let ident = &input.ident;
@@ -52,14 +50,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 }
             });
             registry_types.push(quote! {
-                <#p as async_graphql::GQLType>::create_type_info(registry);
-                registry.add_implements(&<#p as GQLType>::type_name(), #gql_typename);
+                <#p as #crate_name::GQLType>::create_type_info(registry);
+                registry.add_implements(&<#p as #crate_name::GQLType>::type_name(), #gql_typename);
             });
             possible_types.push(quote! {
-                <#p as async_graphql::GQLType>::type_name().to_string()
+                <#p as #crate_name::GQLType>::type_name().to_string()
             });
             inline_fragment_resolvers.push(quote! {
-                if name == <#p as async_graphql::GQLType>::type_name() {
+                if name == <#p as #crate_name::GQLType>::type_name() {
                     if let #ident::#enum_name(obj) = self {
                         #crate_name::do_resolve(ctx, obj, result).await?;
                     }
@@ -82,6 +80,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         ty,
         args,
         deprecation,
+        context,
     } in &interface_args.fields
     {
         let method_name = Ident::new(
@@ -94,6 +93,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         let mut get_params = Vec::new();
         let mut schema_args = Vec::new();
 
+        if *context {
+            decl_params.push(quote! { ctx: &#crate_name::Context<'_> });
+            use_params.push(quote! { ctx });
+        }
+
         for InterfaceFieldArgument {
             name,
             desc,
@@ -103,7 +107,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         {
             let ident = Ident::new(name, Span::call_site());
             decl_params.push(quote! { #ident: #ty });
-            use_params.push(ident.clone());
+            use_params.push(quote! { #ident });
 
             let param_default = match &default {
                 Some(default) => {
@@ -206,15 +210,15 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         }
 
         impl #generics #crate_name::GQLType for #ident #generics {
-            fn type_name() -> Cow<'static, str> {
-                Cow::Borrowed(#gql_typename)
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
-                    async_graphql::registry::Type::Interface {
+                    #crate_name::registry::Type::Interface {
                         name: #gql_typename,
                         description: #desc,
                         fields: vec![#(#schema_fields),*],
