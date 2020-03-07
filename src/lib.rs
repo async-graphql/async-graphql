@@ -75,7 +75,7 @@ pub mod http;
 
 pub use async_graphql_derive::{Enum, InputObject, Interface, Object};
 pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLScalar, GQLType};
-pub use context::{Context, ContextBase, Variables};
+pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use scalars::ID;
@@ -91,5 +91,7 @@ pub type Error = anyhow::Error;
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
+#[doc(hidden)]
+pub use context::ContextBase;
 #[doc(hidden)]
 pub use resolver::do_resolve;
