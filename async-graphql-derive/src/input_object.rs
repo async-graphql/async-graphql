@@ -71,7 +71,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                         Some(value) => #crate_name::GQLInputValue::parse(value)?,
                         None => {
                             let default = #default_repr;
-                            #crate_name::GQLInputValue::parse(&value)?
+                            #crate_name::GQLInputValue::parse(&default)?
                         }
                     }
                 };
