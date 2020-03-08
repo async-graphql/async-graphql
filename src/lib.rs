@@ -61,6 +61,7 @@ mod resolver;
 mod scalars;
 mod schema;
 mod types;
+mod validation;
 
 #[doc(hidden)]
 pub use anyhow;

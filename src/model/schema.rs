@@ -4,8 +4,6 @@ use async_graphql_derive::Object;
 
 pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
-    pub query_type: &'a str,
-    pub mutation_type: Option<&'a str>,
 }
 
 #[Object(
@@ -27,7 +25,10 @@ impl<'a> __Schema<'a> {
         desc = "The type that query operations will be rooted at."
     )]
     async fn query_type(&self) -> __Type<'a> {
-        __Type::new_simple(self.registry, &self.registry.types[self.query_type])
+        __Type::new_simple(
+            self.registry,
+            &self.registry.types[&self.registry.query_type],
+        )
     }
 
     #[field(
@@ -35,7 +36,7 @@ impl<'a> __Schema<'a> {
         desc = "If this server supports mutation, the type that mutation operations will be rooted at."
     )]
     async fn mutation_type(&self) -> Option<__Type<'a>> {
-        if let Some(ty) = self.mutation_type {
+        if let Some(ty) = &self.registry.mutation_type {
             Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
         } else {
             None
@@ -54,7 +55,7 @@ impl<'a> __Schema<'a> {
     async fn directives(&self) -> Vec<__Directive<'a>> {
         self.registry
             .directives
-            .iter()
+            .values()
             .map(|directive| __Directive {
                 registry: &self.registry,
                 directive,

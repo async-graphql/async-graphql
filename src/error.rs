@@ -104,3 +104,23 @@ impl Display for PositionError {
         write!(f, "{}", self.inner)
     }
 }
+
+#[derive(Debug)]
+pub struct RuleError {
+    pub locations: Vec<Pos>,
+    pub message: String,
+}
+
+#[derive(Debug, Error)]
+pub struct RuleErrors {
+    pub errors: Vec<RuleError>,
+}
+
+impl Display for RuleErrors {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for error in &self.errors {
+            writeln!(f, "{}", error.message)?;
+        }
+        Ok(())
+    }
+}

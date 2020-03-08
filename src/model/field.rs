@@ -26,7 +26,7 @@ impl<'a> __Field<'a> {
     async fn args(&self) -> Vec<__InputValue<'a>> {
         self.field
             .args
-            .iter()
+            .values()
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 input_value,

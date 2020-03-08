@@ -41,10 +41,17 @@ pub trait GQLInputObject: GQLInputValue {}
 
 pub trait GQLScalar: Sized + Send {
     fn type_name() -> &'static str;
+
     fn description() -> Option<&'static str> {
         None
     }
+
     fn parse(value: &Value) -> Option<Self>;
+
+    fn is_valid(value: &Value) -> bool {
+        Self::parse(value).is_some()
+    }
+
     fn to_json(&self) -> Result<serde_json::Value>;
 }
 
@@ -60,6 +67,7 @@ macro_rules! impl_scalar {
                 registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
                     name: <$ty as crate::GQLScalar>::type_name().to_string(),
                     description: <$ty>::description(),
+                    is_valid: |value| <$ty as crate::GQLScalar>::is_valid(value),
                 })
             }
         }
@@ -73,6 +81,7 @@ macro_rules! impl_scalar {
                 registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
                     name: <$ty as crate::GQLScalar>::type_name().to_string(),
                     description: <$ty>::description(),
+                    is_valid: |value| <$ty as crate::GQLScalar>::is_valid(value),
                 })
             }
         }

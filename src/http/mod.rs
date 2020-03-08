@@ -4,8 +4,10 @@ mod playground_source;
 pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
+use crate::error::{RuleError, RuleErrors};
 use crate::{GQLObject, PositionError, Result, Schema, Variables};
-use serde::ser::SerializeMap;
+use graphql_parser::Pos;
+use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 use std::ops::Deref;
 
@@ -57,7 +59,7 @@ impl Serialize for GQLResponse {
             Err(err) => {
                 let mut map = serializer.serialize_map(None)?;
                 map.serialize_key("errors")?;
-                map.serialize_value(&[GQLError(err)])?;
+                map.serialize_value(&GQLError(err))?;
                 map.end()
             }
         }
@@ -79,25 +81,75 @@ impl<'a> Serialize for GQLError<'a> {
     where
         S: Serializer,
     {
-        let mut map = serializer.serialize_map(None)?;
-
-        match self.0.downcast_ref::<PositionError>() {
-            Some(err) => {
-                map.serialize_key("message")?;
-                map.serialize_value(&err.to_string())?;
-
-                map.serialize_key("locations")?;
-                map.serialize_value(&[serde_json::json! ({
-                    "line": err.position.line,
-                    "column": err.position.column,
-                })])?;
+        if let Some(err) = self.0.downcast_ref::<PositionError>() {
+            let mut seq = serializer.serialize_seq(Some(1))?;
+            seq.serialize_element(&GQLPositionError(err))?;
+            seq.end()
+        } else if let Some(err) = self.0.downcast_ref::<RuleErrors>() {
+            let mut seq = serializer.serialize_seq(Some(err.errors.len()))?;
+            for err in &err.errors {
+                seq.serialize_element(&GQLRuleError(err))?;
             }
-            None => {
-                map.serialize_key("message")?;
-                map.serialize_value(&self.0.to_string())?;
-            }
+            seq.end()
+        } else {
+            let mut seq = serializer.serialize_seq(None)?;
+            seq.serialize_element(&serde_json::json!({
+                "message": self.0.to_string(),
+            }))?;
+            seq.end()
         }
+    }
+}
 
+struct GQLErrorPos<'a>(&'a Pos);
+
+impl<'a> Serialize for GQLErrorPos<'a> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(2))?;
+        map.serialize_entry("line", &self.0.line)?;
+        map.serialize_entry("column", &self.0.column)?;
+        map.end()
+    }
+}
+
+struct GQLPositionError<'a>(&'a PositionError);
+
+impl<'a> Serialize for GQLPositionError<'a> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("message", &self.0.inner.to_string())?;
+        map.serialize_entry(
+            "locations",
+            std::slice::from_ref(&GQLErrorPos(&self.0.position)),
+        )?;
+        map.end()
+    }
+}
+
+struct GQLRuleError<'a>(&'a RuleError);
+
+impl<'a> Serialize for GQLRuleError<'a> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("message", &self.0.message)?;
+        map.serialize_entry(
+            "locations",
+            &self
+                .0
+                .locations
+                .iter()
+                .map(|pos| GQLErrorPos(pos))
+                .collect::<Vec<_>>(),
+        )?;
         map.end()
     }
 }

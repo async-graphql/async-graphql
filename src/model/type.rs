@@ -1,6 +1,6 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
 use crate::registry;
-use crate::registry::Type;
+use crate::registry::{Type, TypeInfo};
 use async_graphql_derive::Object;
 
 enum TypeDetail<'a> {
@@ -23,21 +23,19 @@ impl<'a> __Type<'a> {
     }
 
     pub fn new(registry: &'a registry::Registry, type_name: &str) -> __Type<'a> {
-        if let Some(type_name) = parse_non_null(type_name) {
-            __Type {
+        match TypeInfo::create(type_name) {
+            TypeInfo::NonNull(ty) => __Type {
                 registry,
-                detail: TypeDetail::NonNull(type_name.to_string()),
-            }
-        } else if let Some(type_name) = parse_list(type_name) {
-            __Type {
+                detail: TypeDetail::NonNull(ty.to_string()),
+            },
+            TypeInfo::List(ty) => __Type {
                 registry,
-                detail: TypeDetail::List(type_name.to_string()),
-            }
-        } else {
-            __Type {
+                detail: TypeDetail::List(ty.to_string()),
+            },
+            TypeInfo::Type(ty) => __Type {
                 registry,
-                detail: TypeDetail::Simple(&registry.types[type_name]),
-            }
+                detail: TypeDetail::Simple(&registry.types[ty]),
+            },
         }
     }
 }
@@ -70,14 +68,7 @@ impl<'a> __Type<'a> {
     #[field]
     async fn name(&self) -> Option<String> {
         match &self.detail {
-            TypeDetail::Simple(ty) => match ty {
-                registry::Type::Scalar { name, .. } => Some(name.clone()),
-                registry::Type::Object { name, .. } => Some(name.to_string()),
-                registry::Type::Interface { name, .. } => Some(name.to_string()),
-                registry::Type::Union { name, .. } => Some(name.to_string()),
-                registry::Type::Enum { name, .. } => Some(name.to_string()),
-                registry::Type::InputObject { name, .. } => Some(name.to_string()),
-            },
+            TypeDetail::Simple(ty) => Some(ty.name().to_string()),
             TypeDetail::NonNull(_) => None,
             TypeDetail::List(_) => None,
         }
@@ -106,40 +97,22 @@ impl<'a> __Type<'a> {
         &self,
         #[arg(name = "includeDeprecated", default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
-        if let TypeDetail::Simple(Type::Object { fields, .. }) = &self.detail {
-            Some(
-                fields
-                    .iter()
-                    .filter(|field| {
-                        if include_deprecated {
-                            true
-                        } else {
-                            field.deprecation.is_none()
-                        }
-                    })
-                    .map(|field| __Field {
-                        registry: self.registry,
-                        field,
-                    })
-                    .collect(),
-            )
-        } else if let TypeDetail::Simple(Type::Interface { fields, .. }) = &self.detail {
-            Some(
-                fields
-                    .iter()
-                    .filter(|field| {
-                        if include_deprecated {
-                            true
-                        } else {
-                            field.deprecation.is_none()
-                        }
-                    })
-                    .map(|field| __Field {
-                        registry: self.registry,
-                        field,
-                    })
-                    .collect(),
-            )
+        if let TypeDetail::Simple(ty) = &self.detail {
+            ty.fields().and_then(|fields| {
+                Some(
+                    fields
+                        .values()
+                        .filter(|field| {
+                            (include_deprecated || field.deprecation.is_none())
+                                && !field.name.starts_with("__")
+                        })
+                        .map(|field| __Field {
+                            registry: self.registry,
+                            field,
+                        })
+                        .collect(),
+                )
+            })
         } else {
             None
         }
@@ -191,14 +164,8 @@ impl<'a> __Type<'a> {
         if let TypeDetail::Simple(Type::Enum { enum_values, .. }) = &self.detail {
             Some(
                 enum_values
-                    .iter()
-                    .filter(|field| {
-                        if include_deprecated {
-                            true
-                        } else {
-                            field.deprecation.is_none()
-                        }
-                    })
+                    .values()
+                    .filter(|field| include_deprecated || field.deprecation.is_none())
                     .map(|value| __EnumValue {
                         registry: self.registry,
                         value,
@@ -236,21 +203,5 @@ impl<'a> __Type<'a> {
         } else {
             None
         }
-    }
-}
-
-fn parse_non_null(type_name: &str) -> Option<&str> {
-    if type_name.ends_with("!") {
-        Some(&type_name[..type_name.len() - 1])
-    } else {
-        None
-    }
-}
-
-fn parse_list(type_name: &str) -> Option<&str> {
-    if type_name.starts_with("[") {
-        Some(&type_name[1..type_name.len() - 1])
-    } else {
-        None
     }
 }

@@ -132,12 +132,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 })
                 .unwrap_or_else(|| quote! {None});
             schema_args.push(quote! {
-                #crate_name::registry::InputValue {
+                args.insert(#name, #crate_name::registry::InputValue {
                     name: #name,
                     description: #desc,
                     ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
                     default_value: #schema_default,
-                }
+                });
             });
         }
 
@@ -174,13 +174,17 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         let schema_ty = ty.value_type();
 
         schema_fields.push(quote! {
-            #crate_name::registry::Field {
+            fields.insert(#name, #crate_name::registry::Field {
                 name: #name,
                 description: #desc,
-                args: vec![#(#schema_args),*],
+                args: {
+                    let mut args = std::collections::HashMap::new();
+                    #(#schema_args)*
+                    args
+                },
                 ty: <#schema_ty as #crate_name::GQLType>::create_type_info(registry),
                 deprecation: #deprecation,
-            }
+            });
         });
 
         let resolve_obj = match &ty {
@@ -227,7 +231,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     #crate_name::registry::Type::Interface {
                         name: #gql_typename,
                         description: #desc,
-                        fields: vec![#(#schema_fields),*],
+                        fields: {
+                            let mut fields = std::collections::HashMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
                         possible_types: vec![#(#possible_types),*],
                     }
                 })
@@ -241,7 +249,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
                 #(#resolvers)*
 
-                anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
                 }
@@ -250,7 +258,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
             async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, serde_json::Value>) -> #crate_name::Result<()> {
                 #(#inline_fragment_resolvers)*
-                anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
+                #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
                 });

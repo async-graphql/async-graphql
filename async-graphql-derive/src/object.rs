@@ -129,12 +129,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         .unwrap_or_else(|| quote! {None});
 
                     schema_args.push(quote! {
-                        #crate_name::registry::InputValue {
+                        args.insert(#name, #crate_name::registry::InputValue {
                             name: #name,
                             description: #desc,
                             ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
                             default_value: #schema_default,
-                        }
+                        });
                     });
 
                     use_params.push(quote! { #ident });
@@ -153,13 +153,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let schema_ty = ty.value_type();
                 schema_fields.push(quote! {
-                    #crate_name::registry::Field {
+                    fields.insert(#field_name, #crate_name::registry::Field {
                         name: #field_name,
                         description: #field_desc,
-                        args: vec![#(#schema_args),*],
+                        args: {
+                            let mut args = std::collections::HashMap::new();
+                            #(#schema_args)*
+                            args
+                        },
                         ty: <#schema_ty as #crate_name::GQLType>::create_type_info(registry),
                         deprecation: #field_deprecation,
-                    }
+                    });
                 });
 
                 let ctx_field = match arg_ctx {
@@ -206,7 +210,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
                     name: #gql_typename,
                     description: #desc,
-                    fields: vec![#(#schema_fields),*],
+                    fields: {
+                        let mut fields = std::collections::HashMap::new();
+                        #(#schema_fields)*
+                        fields
+                    },
                 })
             }
         }
@@ -218,7 +226,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 #(#resolvers)*
 
-                anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
                 }
@@ -226,7 +234,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             }
 
             async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, serde_json::Value>) -> #crate_name::Result<()> {
-                anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
+                #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
                 });

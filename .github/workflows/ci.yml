@@ -13,5 +13,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build
         run: cargo build --all --verbose
+      - name: Check format
+        run: cargo fmt --all -- --check
       - name: Run tests
         run: cargo test --all --verbose

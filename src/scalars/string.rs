@@ -21,6 +21,13 @@ impl GQLScalar for String {
         }
     }
 
+    fn is_valid(value: &Value) -> bool {
+        match value {
+            Value::String(_) => true,
+            _ => false,
+        }
+    }
+
     fn to_json(&self) -> Result<serde_json::Value> {
         Ok(self.clone().into())
     }
@@ -37,6 +44,10 @@ impl<'a> GQLType for &'a str {
         registry.create_type::<Self, _>(|_| registry::Type::Scalar {
             name: Self::type_name().to_string(),
             description: Some(STRING_DESC),
+            is_valid: |value| match value {
+                Value::String(_) => true,
+                _ => false,
+            },
         })
     }
 }

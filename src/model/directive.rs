@@ -97,7 +97,7 @@ impl<'a> __Directive<'a> {
     async fn args(&self) -> Vec<__InputValue<'a>> {
         self.directive
             .args
-            .iter()
+            .values()
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 input_value,

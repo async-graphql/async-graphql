@@ -14,7 +14,7 @@ impl GQLType for GQLEmptyMutation {
         registry.create_type::<Self, _>(|_| registry::Type::Object {
             name: "EmptyMutation",
             description: None,
-            fields: Vec::new(),
+            fields: Default::default(),
         })
     }
 }

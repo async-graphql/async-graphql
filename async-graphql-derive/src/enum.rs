@@ -60,11 +60,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             }
         });
         schema_enum_items.push(quote! {
-            #crate_name::registry::EnumValue {
+            enum_items.insert(#gql_item_name, #crate_name::registry::EnumValue {
                 name: #gql_item_name,
                 description: #item_desc,
                 deprecation: #item_deprecation,
-            }
+            });
         });
     }
 
@@ -91,7 +91,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                     #crate_name::registry::Type::Enum {
                         name: #gql_typename,
                         description: #desc,
-                        enum_values: vec![#(#schema_enum_items),*],
+                        enum_values: {
+                            let mut enum_items = std::collections::HashMap::new();
+                            #(#schema_enum_items)*
+                            enum_items
+                        },
                     }
                 })
             }

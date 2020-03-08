@@ -1,15 +1,15 @@
 use crate::model::{__Schema, __Type};
+use crate::registry::Type;
 use crate::{
     registry, Context, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType,
     QueryError, Result, Value,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 pub struct QueryRoot<T> {
     pub inner: T,
-    pub query_type: String,
-    pub mutation_type: Option<String>,
 }
 
 impl<T: GQLType> GQLType for QueryRoot<T> {
@@ -18,7 +18,44 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry)
+        let schema_type = __Schema::create_type_info(registry);
+        let root = T::create_type_info(registry);
+        if let Some(Type::Object { fields, .. }) = registry.types.get_mut(T::type_name().as_ref()) {
+            fields.insert(
+                "__schema",
+                registry::Field {
+                    name: "__schema",
+                    description: Some("Access the current type schema of this server."),
+                    args: Default::default(),
+                    ty: schema_type,
+                    deprecation: None,
+                },
+            );
+
+            fields.insert(
+                "__type",
+                registry::Field {
+                    name: "__type",
+                    description: Some("Request the type information of a single type."),
+                    args: {
+                        let mut args = HashMap::new();
+                        args.insert(
+                            "name",
+                            registry::InputValue {
+                                name: "name",
+                                description: None,
+                                ty: "String!".to_string(),
+                                default_value: None,
+                            },
+                        );
+                        args
+                    },
+                    ty: "__Type".to_string(),
+                    deprecation: None,
+                },
+            );
+        }
+        root
     }
 }
 
@@ -30,8 +67,6 @@ impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
             return GQLOutputValue::resolve(
                 &__Schema {
                     registry: &ctx.registry,
-                    query_type: &self.query_type,
-                    mutation_type: self.mutation_type.as_deref(),
                 },
                 &ctx_obj,
             )

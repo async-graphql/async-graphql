@@ -1,5 +1,39 @@
-use crate::{model, GQLType};
+use crate::{model, GQLType, Value};
 use std::collections::{HashMap, HashSet};
+
+fn parse_non_null(type_name: &str) -> Option<&str> {
+    if type_name.ends_with("!") {
+        Some(&type_name[..type_name.len() - 1])
+    } else {
+        None
+    }
+}
+
+fn parse_list(type_name: &str) -> Option<&str> {
+    if type_name.starts_with("[") {
+        Some(&type_name[1..type_name.len() - 1])
+    } else {
+        None
+    }
+}
+
+pub enum TypeInfo<'a> {
+    List(&'a str),
+    NonNull(&'a str),
+    Type(&'a str),
+}
+
+impl<'a> TypeInfo<'a> {
+    pub fn create(type_name: &str) -> TypeInfo {
+        if let Some(type_name) = parse_non_null(type_name) {
+            TypeInfo::NonNull(type_name)
+        } else if let Some(type_name) = parse_list(type_name) {
+            TypeInfo::List(type_name)
+        } else {
+            TypeInfo::Type(type_name)
+        }
+    }
+}
 
 pub struct InputValue {
     pub name: &'static str,
@@ -11,7 +45,7 @@ pub struct InputValue {
 pub struct Field {
     pub name: &'static str,
     pub description: Option<&'static str>,
-    pub args: Vec<InputValue>,
+    pub args: HashMap<&'static str, InputValue>,
     pub ty: String,
     pub deprecation: Option<&'static str>,
 }
@@ -26,16 +60,17 @@ pub enum Type {
     Scalar {
         name: String,
         description: Option<&'static str>,
+        is_valid: fn(value: &Value) -> bool,
     },
     Object {
         name: &'static str,
         description: Option<&'static str>,
-        fields: Vec<Field>,
+        fields: HashMap<&'static str, Field>,
     },
     Interface {
         name: &'static str,
         description: Option<&'static str>,
-        fields: Vec<Field>,
+        fields: HashMap<&'static str, Field>,
         possible_types: Vec<String>,
     },
     Union {
@@ -46,7 +81,7 @@ pub enum Type {
     Enum {
         name: &'static str,
         description: Option<&'static str>,
-        enum_values: Vec<EnumValue>,
+        enum_values: HashMap<&'static str, EnumValue>,
     },
     InputObject {
         name: &'static str,
@@ -55,18 +90,44 @@ pub enum Type {
     },
 }
 
+impl Type {
+    pub fn field_by_name(&self, name: &str) -> Option<&Field> {
+        self.fields().and_then(|fields| fields.get(name))
+    }
+
+    pub fn fields(&self) -> Option<&HashMap<&'static str, Field>> {
+        match self {
+            Type::Object { fields, .. } => Some(&fields),
+            Type::Interface { fields, .. } => Some(&fields),
+            _ => None,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        match self {
+            Type::Scalar { name, .. } => &name,
+            Type::Object { name, .. } => name,
+            Type::Interface { name, .. } => name,
+            Type::Union { name, .. } => name,
+            Type::Enum { name, .. } => name,
+            Type::InputObject { name, .. } => name,
+        }
+    }
+}
+
 pub struct Directive {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub locations: Vec<model::__DirectiveLocation>,
-    pub args: Vec<InputValue>,
+    pub args: HashMap<&'static str, InputValue>,
 }
 
-#[derive(Default)]
 pub struct Registry {
     pub types: HashMap<String, Type>,
-    pub directives: Vec<Directive>,
+    pub directives: HashMap<String, Directive>,
     pub implements: HashMap<String, HashSet<String>>,
+    pub query_type: String,
+    pub mutation_type: Option<String>,
 }
 
 impl Registry {
@@ -75,19 +136,33 @@ impl Registry {
         if !self.types.contains_key(name.as_ref()) {
             self.types.insert(
                 name.to_string(),
-                Type::Scalar {
-                    name: String::new(),
+                Type::Object {
+                    name: "",
                     description: None,
+                    fields: Default::default(),
                 },
             );
-            let ty = f(self);
+            let mut ty = f(self);
+            if let Type::Object { fields, .. } = &mut ty {
+                fields.insert(
+                    "__typename",
+                    Field {
+                        name: "",
+                        description: None,
+                        args: Default::default(),
+                        ty: "String!".to_string(),
+                        deprecation: None,
+                    },
+                );
+            }
             self.types.insert(name.to_string(), ty);
         }
         T::qualified_type_name()
     }
 
     pub fn add_directive(&mut self, directive: Directive) {
-        self.directives.push(directive);
+        self.directives
+            .insert(directive.name.to_string(), directive);
     }
 
     pub fn add_implements(&mut self, ty: &str, interface: &str) {
@@ -101,5 +176,13 @@ impl Registry {
                 interfaces.insert(interface.to_string());
                 interfaces
             });
+    }
+
+    pub fn get_basic_type(&self, type_name: &str) -> Option<&Type> {
+        match TypeInfo::create(type_name) {
+            TypeInfo::Type(type_name) => self.types.get(type_name),
+            TypeInfo::List(type_name) => self.get_basic_type(type_name),
+            TypeInfo::NonNull(type_name) => self.get_basic_type(type_name),
+        }
     }
 }
