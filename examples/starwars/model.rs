@@ -87,9 +87,6 @@ impl Droid {
 
 pub struct QueryRoot;
 
-#[async_graphql::Union]
-struct HumanDroid(Human, Droid);
-
 #[async_graphql::Object]
 impl QueryRoot {
     #[field]
@@ -106,11 +103,6 @@ impl QueryRoot {
         } else {
             Droid(ctx.data::<StarWars>().artoo).into()
         }
-    }
-
-    #[field]
-    async fn test(&self, ctx: &Context<'_>) -> HumanDroid {
-        Human(ctx.data::<StarWars>().luke).into()
     }
 
     #[field]
