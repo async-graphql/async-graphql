@@ -59,7 +59,7 @@
         - [X] Field default value
         - [X] Deprecated flag
     - [X] Interface
-    - [ ] Union
+    - [X] Union
 - [X] Query
     - [X] Fields
     - [X] Arguments

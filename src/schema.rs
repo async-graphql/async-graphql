@@ -81,7 +81,7 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
     }
 
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
-        self.data.insert(Box::new(data));
+        self.data.insert(data);
         self
     }
 

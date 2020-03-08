@@ -6,6 +6,7 @@ mod input_object;
 mod interface;
 mod object;
 mod output_type;
+mod union;
 mod utils;
 
 use proc_macro::TokenStream;
@@ -63,6 +64,20 @@ pub fn Interface(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     let input = parse_macro_input!(input as DeriveInput);
     match interface::generate(&interface_args, &input) {
+        Ok(expanded) => expanded,
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn Union(args: TokenStream, input: TokenStream) -> TokenStream {
+    let interface_args = match args::Interface::parse(parse_macro_input!(args as AttributeArgs)) {
+        Ok(interface_args) => interface_args,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    let input = parse_macro_input!(input as DeriveInput);
+    match union::generate(&interface_args, &input) {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }

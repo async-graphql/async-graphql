@@ -41,7 +41,7 @@ pub enum Type {
     Union {
         name: &'static str,
         description: Option<&'static str>,
-        possible_types: Vec<usize>,
+        possible_types: Vec<String>,
     },
     Enum {
         name: &'static str,

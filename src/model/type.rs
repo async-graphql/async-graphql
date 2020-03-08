@@ -171,6 +171,13 @@ impl<'a> __Type<'a> {
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
+        } else if let TypeDetail::Simple(Type::Union { possible_types, .. }) = &self.detail {
+            Some(
+                possible_types
+                    .iter()
+                    .map(|ty| __Type::new(self.registry, ty))
+                    .collect(),
+            )
         } else {
             None
         }
