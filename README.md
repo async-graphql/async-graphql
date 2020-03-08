@@ -83,6 +83,29 @@
             - [X] INLINE_FRAGMENT
     - [X] Schema
 - [ ] Validation rules
+    - [X] ArgumentsOfCorrectType
+    - [X] DefaultValuesOfCorrectType
+    - [ ] FieldsOnCorrectType
+    - [ ] FragmentsOnCompositeTypes
+    - [ ] KnownArgumentNames
+    - [ ] KnownDirectives
+    - [ ] KnownFragmentNames
+    - [ ] KnownTypeNames
+    - [ ] LoneAnonymousOperation
+    - [ ] NoFragmentCycles
+    - [ ] NoUndefinedVariables
+    - [ ] NoUnusedFragments
+    - [ ] NoUnusedVariables
+    - [ ] OverlappingFieldsCanBeMerged
+    - [ ] PossibleFragmentSpreads
+    - [ ] ProvidedNonNullArguments
+    - [ ] ScalarLeafs
+    - [ ] UniqueArgumentNames
+    - [ ] UniqueFragmentNames
+    - [ ] UniqueInputFieldNames
+    - [ ] UniqueOperationNames
+    - [ ] UniqueVariableNames
+    - [ ] VariableInAllowedPosition
 - [ ] Integration examples
     - [X] Actix-web
     - [ ] Hyper

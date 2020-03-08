@@ -12,7 +12,9 @@ mod visitor;
 
 pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
     let mut ctx = ValidatorContext::new(registry);
-    let mut visitor = VisitorNil.with(rules::ArgumentsOfCorrectType::default());
+    let mut visitor = VisitorNil
+        .with(rules::ArgumentsOfCorrectType::default())
+        .with(rules::DefaultValuesOfCorrectType);
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {
