@@ -85,14 +85,14 @@
 - [ ] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType
-    - [ ] FieldsOnCorrectType
-    - [ ] FragmentsOnCompositeTypes
-    - [ ] KnownArgumentNames
+    - [X] FieldsOnCorrectType
+    - [X] FragmentsOnCompositeTypes
+    - [X] KnownArgumentNames
     - [ ] KnownDirectives
-    - [ ] KnownFragmentNames
+    - [X] KnownFragmentNames
     - [ ] KnownTypeNames
     - [ ] LoneAnonymousOperation
-    - [ ] NoFragmentCycles
+    - [X] NoFragmentCycles
     - [ ] NoUndefinedVariables
     - [ ] NoUnusedFragments
     - [ ] NoUnusedVariables

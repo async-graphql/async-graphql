@@ -1,6 +1,6 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
 use crate::registry;
-use crate::registry::{Type, TypeInfo};
+use crate::registry::{Type, TypeName};
 use async_graphql_derive::Object;
 
 enum TypeDetail<'a> {
@@ -23,16 +23,16 @@ impl<'a> __Type<'a> {
     }
 
     pub fn new(registry: &'a registry::Registry, type_name: &str) -> __Type<'a> {
-        match TypeInfo::create(type_name) {
-            TypeInfo::NonNull(ty) => __Type {
+        match TypeName::create(type_name) {
+            TypeName::NonNull(ty) => __Type {
                 registry,
                 detail: TypeDetail::NonNull(ty.to_string()),
             },
-            TypeInfo::List(ty) => __Type {
+            TypeName::List(ty) => __Type {
                 registry,
                 detail: TypeDetail::List(ty.to_string()),
             },
-            TypeInfo::Type(ty) => __Type {
+            TypeName::Name(ty) => __Type {
                 registry,
                 detail: TypeDetail::Simple(&registry.types[ty]),
             },

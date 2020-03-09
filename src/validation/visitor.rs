@@ -341,12 +341,39 @@ fn visit_selection<'a, V: Visitor<'a>>(
 ) {
     v.enter_selection(ctx, selection);
     match selection {
-        Selection::Field(field) => visit_field(v, ctx, field),
+        Selection::Field(field) => {
+            if let Some(schema_field) = ctx.current_type().field_by_name(&field.name) {
+                ctx.with_type(
+                    ctx.registry.get_basic_type(&schema_field.ty).unwrap(),
+                    |ctx| {
+                        visit_field(v, ctx, field);
+                    },
+                );
+            } else {
+                ctx.report_error(
+                    vec![field.position],
+                    format!(
+                        "Cannot query field \"{}\" on type \"{}\".",
+                        field.name,
+                        ctx.current_type().name()
+                    ),
+                );
+            }
+        }
         Selection::FragmentSpread(fragment_spread) => {
             visit_fragment_spread(v, ctx, fragment_spread)
         }
         Selection::InlineFragment(inline_fragment) => {
-            visit_inline_fragment(v, ctx, inline_fragment)
+            if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
+                if let Some(ty) = ctx.registry.types.get(name) {
+                    ctx.with_type(ty, |ctx| visit_inline_fragment(v, ctx, inline_fragment));
+                } else {
+                    ctx.report_error(
+                        vec![inline_fragment.position],
+                        format!("Unknown type \"{}\".", name),
+                    );
+                }
+            }
         }
     }
     v.exit_selection(ctx, selection);
@@ -356,25 +383,7 @@ fn visit_field<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, fi
     v.enter_field(ctx, field);
     visit_arguments(v, ctx, &field.arguments);
     visit_directives(v, ctx, &field.directives);
-
-    if let Some(schema_field) = ctx.parent_type().field_by_name(&field.name) {
-        ctx.with_type(
-            ctx.registry.get_basic_type(&schema_field.ty).unwrap(),
-            |ctx| {
-                visit_selection_set(v, ctx, &field.selection_set);
-            },
-        );
-    } else {
-        ctx.report_error(
-            vec![field.position],
-            format!(
-                "Cannot query field \"{}\" on type \"{}\".",
-                field.name,
-                ctx.parent_type().name()
-            ),
-        );
-    }
-
+    visit_selection_set(v, ctx, &field.selection_set);
     v.exit_field(ctx, field);
 }
 

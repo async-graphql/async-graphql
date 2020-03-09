@@ -17,20 +17,20 @@ fn parse_list(type_name: &str) -> Option<&str> {
     }
 }
 
-pub enum TypeInfo<'a> {
+pub enum TypeName<'a> {
     List(&'a str),
     NonNull(&'a str),
-    Type(&'a str),
+    Name(&'a str),
 }
 
-impl<'a> TypeInfo<'a> {
-    pub fn create(type_name: &str) -> TypeInfo {
+impl<'a> TypeName<'a> {
+    pub fn create(type_name: &str) -> TypeName {
         if let Some(type_name) = parse_non_null(type_name) {
-            TypeInfo::NonNull(type_name)
+            TypeName::NonNull(type_name)
         } else if let Some(type_name) = parse_list(type_name) {
-            TypeInfo::List(type_name)
+            TypeName::List(type_name)
         } else {
-            TypeInfo::Type(type_name)
+            TypeName::Name(type_name)
         }
     }
 }
@@ -113,6 +113,23 @@ impl Type {
             Type::InputObject { name, .. } => name,
         }
     }
+
+    pub fn is_composite(&self) -> bool {
+        match self {
+            Type::Object { .. } => true,
+            Type::Interface { .. } => true,
+            Type::Union { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        match self {
+            Type::Enum { .. } => true,
+            Type::Scalar { .. } => true,
+            _ => false,
+        }
+    }
 }
 
 pub struct Directive {
@@ -147,7 +164,7 @@ impl Registry {
                 fields.insert(
                     "__typename",
                     Field {
-                        name: "",
+                        name: "__typename",
                         description: None,
                         args: Default::default(),
                         ty: "String!".to_string(),
@@ -179,10 +196,10 @@ impl Registry {
     }
 
     pub fn get_basic_type(&self, type_name: &str) -> Option<&Type> {
-        match TypeInfo::create(type_name) {
-            TypeInfo::Type(type_name) => self.types.get(type_name),
-            TypeInfo::List(type_name) => self.get_basic_type(type_name),
-            TypeInfo::NonNull(type_name) => self.get_basic_type(type_name),
+        match TypeName::create(type_name) {
+            TypeName::Name(type_name) => self.types.get(type_name),
+            TypeName::List(type_name) => self.get_basic_type(type_name),
+            TypeName::NonNull(type_name) => self.get_basic_type(type_name),
         }
     }
 }

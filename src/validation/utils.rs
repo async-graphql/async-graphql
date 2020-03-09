@@ -1,19 +1,19 @@
-use crate::registry::{Registry, Type, TypeInfo};
+use crate::registry::{Registry, Type, TypeName};
 use crate::Value;
 
 pub fn is_valid_input_value(registry: &Registry, type_name: &str, value: &Value) -> bool {
-    match TypeInfo::create(type_name) {
-        TypeInfo::NonNull(type_name) => match value {
+    match TypeName::create(type_name) {
+        TypeName::NonNull(type_name) => match value {
             Value::Null => false,
             _ => is_valid_input_value(registry, type_name, value),
         },
-        TypeInfo::List(type_name) => match value {
+        TypeName::List(type_name) => match value {
             Value::List(elems) => elems
                 .iter()
                 .all(|elem| is_valid_input_value(registry, type_name, elem)),
             _ => false,
         },
-        TypeInfo::Type(type_name) => {
+        TypeName::Name(type_name) => {
             if let Value::Null = value {
                 return true;
             }

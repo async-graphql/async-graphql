@@ -45,7 +45,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Field) {
         self.current_args = ctx
             .parent_type()
-            .field_by_name(&field.name)
+            .and_then(|p| p.field_by_name(&field.name))
             .map(|f| (&f.args, field.position));
     }
 
