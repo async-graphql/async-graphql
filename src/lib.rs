@@ -420,7 +420,7 @@ pub use async_graphql_derive::InputObject;
 /// ```
 pub use async_graphql_derive::Interface;
 
-/// Define a GraphQL interface
+/// Define a GraphQL union
 ///
 /// It's similar to Interface, but it doesn't have fields.
 pub use async_graphql_derive::Union;
