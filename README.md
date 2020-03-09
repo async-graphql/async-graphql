@@ -32,7 +32,7 @@
 cargo run --example actix-web
 ```
 
-Open in http://localhost:8000 in browser
+Open `http://localhost:8000` in browser
 
 ## Features
 
