@@ -1,6 +1,9 @@
-use crate::{impl_scalar, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, GQLScalar, Result, Value};
 use std::ops::{Deref, DerefMut};
 
+/// ID scalar
+///
+/// The input is a string or integer, and the output is a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct ID(String);
 
@@ -36,4 +39,4 @@ impl GQLScalar for ID {
     }
 }
 
-impl_scalar!(ID);
+impl_scalar_internal!(ID);

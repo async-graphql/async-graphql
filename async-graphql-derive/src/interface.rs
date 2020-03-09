@@ -117,7 +117,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 None => quote! { || #crate_name::Value::Null },
             };
             get_params.push(quote! {
-                let #ident: #ty = ctx_field.param_value(#name, #param_default)?;
+                let #ident: #ty = ctx.param_value(#name, #param_default)?;
             });
 
             let desc = desc

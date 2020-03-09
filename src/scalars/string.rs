@@ -1,5 +1,6 @@
 use crate::{
-    impl_scalar, registry, ContextSelectionSet, GQLOutputValue, GQLScalar, GQLType, Result, Value,
+    impl_scalar_internal, registry, ContextSelectionSet, GQLOutputValue, GQLScalar, GQLType,
+    Result, Value,
 };
 use std::borrow::Cow;
 
@@ -33,7 +34,7 @@ impl GQLScalar for String {
     }
 }
 
-impl_scalar!(String);
+impl_scalar_internal!(String);
 
 impl<'a> GQLType for &'a str {
     fn type_name() -> Cow<'static, str> {

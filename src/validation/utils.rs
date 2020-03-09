@@ -2,6 +2,10 @@ use crate::registry::{Registry, Type, TypeName};
 use crate::Value;
 
 pub fn is_valid_input_value(registry: &Registry, type_name: &str, value: &Value) -> bool {
+    if let Value::Variable(_) = value {
+        return true;
+    }
+
     match TypeName::create(type_name) {
         TypeName::NonNull(type_name) => match value {
             Value::Null => false,

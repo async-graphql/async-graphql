@@ -9,6 +9,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 
+/// Variables of query
 #[derive(Default)]
 pub struct Variables(BTreeMap<String, Value>);
 
@@ -67,6 +68,8 @@ impl Data {
 }
 
 pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
+
+/// Context object for resolve field.
 pub type Context<'a> = ContextBase<'a, &'a Field>;
 
 pub struct ContextBase<'a, T> {
@@ -99,6 +102,7 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
+    /// Gets the global data defined in the `Schema`.
     pub fn data<D: Any + Send + Sync>(&self) -> &D {
         self.data
             .0

@@ -1,4 +1,4 @@
-use crate::{impl_scalar, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, GQLScalar, Result, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
 impl GQLScalar for DateTime<Utc> {
@@ -18,4 +18,4 @@ impl GQLScalar for DateTime<Utc> {
     }
 }
 
-impl_scalar!(DateTime<Utc>);
+impl_scalar_internal!(DateTime<Utc>);

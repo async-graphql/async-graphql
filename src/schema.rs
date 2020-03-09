@@ -11,6 +11,7 @@ use graphql_parser::query::{Definition, OperationDefinition};
 use std::any::Any;
 use std::collections::HashMap;
 
+/// GraphQL schema
 pub struct Schema<Query, Mutation> {
     query: QueryRoot<Query>,
     mutation: Mutation,
@@ -19,6 +20,10 @@ pub struct Schema<Query, Mutation> {
 }
 
 impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
+    /// Create a schema.
+    ///
+    /// The root object for the query and Mutation needs to be specified.
+    /// If there is no mutation, you can use `GQLEmptyMutation`.
     pub fn new(query: Query, mutation: Mutation) -> Self {
         let mut registry = Registry {
             types: Default::default(),
@@ -91,11 +96,13 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
         }
     }
 
+    /// Add a global data that can be accessed in the `Context`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
     }
 
+    /// Start a query and return `QueryBuilder`.
     pub fn query<'a>(&'a self, query_source: &'a str) -> QueryBuilder<'a, Query, Mutation> {
         QueryBuilder {
             query: &self.query,
@@ -109,6 +116,7 @@ impl<Query: GQLObject, Mutation: GQLObject> Schema<Query, Mutation> {
     }
 }
 
+/// Query builder
 pub struct QueryBuilder<'a, Query, Mutation> {
     query: &'a QueryRoot<Query>,
     mutation: &'a Mutation,
@@ -120,6 +128,7 @@ pub struct QueryBuilder<'a, Query, Mutation> {
 }
 
 impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
+    /// Specify the operation name.
     pub fn operator_name(self, name: &'a str) -> Self {
         QueryBuilder {
             operation_name: Some(name),
@@ -127,6 +136,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
         }
     }
 
+    /// Specify the variables.
     pub fn variables(self, vars: &'a Variables) -> Self {
         QueryBuilder {
             variables: Some(vars),
@@ -134,6 +144,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
         }
     }
 
+    /// Execute the query.
     pub async fn execute(self) -> Result<serde_json::Value>
     where
         Query: GQLObject + Send + Sync,

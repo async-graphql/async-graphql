@@ -49,7 +49,7 @@
     - [X] Containers 
         - [X] List
         - [X] Non-Null
-    - [ ] Object
+    - [X] Object
         - [X] Lifetime cycle   
     - [X] Enum
     - [X] InputObject
@@ -87,11 +87,11 @@
     - [X] KnownArgumentNames
     - [ ] KnownDirectives
     - [X] KnownFragmentNames
-    - [ ] KnownTypeNames
-    - [ ] LoneAnonymousOperation
+    - [X] KnownTypeNames
+    - [X] LoneAnonymousOperation
     - [X] NoFragmentCycles
-    - [ ] NoUndefinedVariables
-    - [ ] NoUnusedFragments
+    - [X] NoUndefinedVariables
+    - [X] NoUnusedFragments
     - [ ] NoUnusedVariables
     - [ ] OverlappingFieldsCanBeMerged
     - [ ] PossibleFragmentSpreads

@@ -19,7 +19,11 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::FragmentsOnCompositeTypes)
         .with(rules::KnownArgumentNames::default())
         .with(rules::NoFragmentCycles::default())
-        .with(rules::KnownFragmentNames);
+        .with(rules::KnownFragmentNames)
+        .with(rules::KnownTypeNames)
+        .with(rules::LoneAnonymousOperation::default())
+        .with(rules::NoUndefinedVariables::default())
+        .with(rules::NoUnusedFragments::default());
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

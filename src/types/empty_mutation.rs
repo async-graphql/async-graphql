@@ -3,6 +3,24 @@ use graphql_parser::query::Field;
 use serde_json::{Map, Value};
 use std::borrow::Cow;
 
+/// Empty mutation
+///
+/// Only the parameters used to construct the Schema, representing an unconfigured mutation.
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {}
+///
+/// fn main() {
+///     let schema = Schema::new(QueryRoot, GQLEmptyMutation);
+/// }
+/// ```
 pub struct GQLEmptyMutation;
 
 impl GQLType for GQLEmptyMutation {

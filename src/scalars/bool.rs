@@ -1,4 +1,4 @@
-use crate::{impl_scalar, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, GQLScalar, Result, Value};
 
 impl GQLScalar for bool {
     fn type_name() -> &'static str {
@@ -21,4 +21,4 @@ impl GQLScalar for bool {
     }
 }
 
-impl_scalar!(bool);
+impl_scalar_internal!(bool);

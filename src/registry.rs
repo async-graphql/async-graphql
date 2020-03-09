@@ -33,6 +33,14 @@ impl<'a> TypeName<'a> {
             TypeName::Name(type_name)
         }
     }
+
+    pub fn get_basic_typename(type_name: &str) -> &str {
+        match TypeName::create(type_name) {
+            TypeName::List(type_name) => Self::get_basic_typename(type_name),
+            TypeName::NonNull(type_name) => Self::get_basic_typename(type_name),
+            TypeName::Name(type_name) => type_name,
+        }
+    }
 }
 
 pub struct InputValue {
@@ -196,10 +204,6 @@ impl Registry {
     }
 
     pub fn get_basic_type(&self, type_name: &str) -> Option<&Type> {
-        match TypeName::create(type_name) {
-            TypeName::Name(type_name) => self.types.get(type_name),
-            TypeName::List(type_name) => self.get_basic_type(type_name),
-            TypeName::NonNull(type_name) => self.get_basic_type(type_name),
-        }
+        self.types.get(TypeName::get_basic_typename(type_name))
     }
 }
