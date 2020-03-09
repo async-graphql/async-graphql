@@ -59,9 +59,9 @@ pub async fn test_optional_type() {
             value2
             value2_ref
             test_arg1: test_arg(input: 10)
-            test_arg2: test_arg(input: null)
+            test_arg2: test_arg
             test_input1: test_input(input: {{value: 10}})
-            test_input2: test_input(input: {{value: null}})
+            test_input2: test_input(input: {{}})
             }}"#
     );
     assert_eq!(

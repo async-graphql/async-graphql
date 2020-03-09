@@ -75,7 +75,7 @@ pub async fn test_input_object_default_value() {
     let schema = Schema::new(Root, GQLEmptyMutation);
     let query = format!(
         r#"{{
-            a(input:{{e:null}}) {{
+            a(input:{{e:777}}) {{
                 a b c d e
             }}
         }}"#
@@ -88,7 +88,7 @@ pub async fn test_input_object_default_value() {
                 "b": [1, 2, 3],
                 "c": "abc",
                 "d": 999,
-                "e": null,
+                "e": 777,
             }
         })
     );
