@@ -19,7 +19,7 @@ pub struct Human(usize);
 #[async_graphql::Object(desc = "A humanoid creature in the Star Wars universe.")]
 impl Human {
     #[field(desc = "The id of the human.")]
-    async fn id<'a>(&self, ctx: &Context<'_>) -> &str {
+    async fn id(&self, ctx: &Context<'_>) -> &str {
         ctx.data::<StarWars>().chars[self.0].id
     }
 
