@@ -26,6 +26,14 @@
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.39 or later
 
+## Example
+
+```shell script
+cargo run --example actix-web
+```
+
+Open in http://localhost:8000 in browser
+
 ## Features
 
 * Fully support async/await.
