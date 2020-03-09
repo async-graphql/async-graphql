@@ -27,7 +27,7 @@ impl<'a> __InputValue<'a> {
         __Type::new(self.registry, &self.input_value.ty)
     }
 
-    #[field(name = "defaultValue")]
+    #[field]
     async fn default_value(&self) -> Option<String> {
         self.input_value.default_value.map(|s| s.to_string())
     }

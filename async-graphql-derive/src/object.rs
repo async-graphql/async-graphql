@@ -1,6 +1,7 @@
 use crate::args;
 use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, get_crate_name};
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
@@ -39,7 +40,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_name = field
                     .name
                     .clone()
-                    .unwrap_or_else(|| method.sig.ident.to_string());
+                    .unwrap_or_else(|| method.sig.ident.to_string().to_camel_case());
                 let field_desc = field
                     .desc
                     .as_ref()
@@ -115,7 +116,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     },
                 ) in args
                 {
-                    let name = name.clone().unwrap_or_else(|| ident.ident.to_string());
+                    let name = name
+                        .clone()
+                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
                     let desc = desc
                         .as_ref()
                         .map(|s| quote! {Some(#s)})

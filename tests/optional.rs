@@ -55,26 +55,26 @@ pub async fn test_optional_type() {
     let query = format!(
         r#"{{
             value1
-            value1_ref
+            value1Ref
             value2
-            value2_ref
-            test_arg1: test_arg(input: 10)
-            test_arg2: test_arg
-            test_input1: test_input(input: {{value: 10}})
-            test_input2: test_input(input: {{}})
+            value2Ref
+            testArg1: testArg(input: 10)
+            testArg2: testArg
+            testInput1: testInput(input: {{value: 10}})
+            testInput2: testInput(input: {{}})
             }}"#
     );
     assert_eq!(
         schema.query(&query).execute().await.unwrap(),
         serde_json::json!({
             "value1": 10,
-            "value1_ref": 10,
+            "value1Ref": 10,
             "value2": null,
-            "value2_ref": null,
-            "test_arg1": 10,
-            "test_arg2": null,
-            "test_input1": 10,
-            "test_input2": null,
+            "value2Ref": null,
+            "testArg1": 10,
+            "testArg2": null,
+            "testInput1": 10,
+            "testInput2": null,
         })
     );
 }

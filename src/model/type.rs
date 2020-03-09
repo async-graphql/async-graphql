@@ -53,15 +53,15 @@ impl<'a> __Type<'a> {
     async fn kind(&self) -> __TypeKind {
         match &self.detail {
             TypeDetail::Simple(ty) => match ty {
-                registry::Type::Scalar { .. } => __TypeKind::SCALAR,
-                registry::Type::Object { .. } => __TypeKind::OBJECT,
-                registry::Type::Interface { .. } => __TypeKind::INTERFACE,
-                registry::Type::Union { .. } => __TypeKind::UNION,
-                registry::Type::Enum { .. } => __TypeKind::ENUM,
-                registry::Type::InputObject { .. } => __TypeKind::INPUT_OBJECT,
+                registry::Type::Scalar { .. } => __TypeKind::Scalar,
+                registry::Type::Object { .. } => __TypeKind::Object,
+                registry::Type::Interface { .. } => __TypeKind::Interface,
+                registry::Type::Union { .. } => __TypeKind::Union,
+                registry::Type::Enum { .. } => __TypeKind::Enum,
+                registry::Type::InputObject { .. } => __TypeKind::InputObject,
             },
-            TypeDetail::NonNull(_) => __TypeKind::NON_NULL,
-            TypeDetail::List(_) => __TypeKind::LIST,
+            TypeDetail::NonNull(_) => __TypeKind::NonNull,
+            TypeDetail::List(_) => __TypeKind::List,
         }
     }
 
@@ -95,7 +95,7 @@ impl<'a> __Type<'a> {
     #[field]
     async fn fields(
         &self,
-        #[arg(name = "includeDeprecated", default = "false")] include_deprecated: bool,
+        #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
         if let TypeDetail::Simple(ty) = &self.detail {
             ty.fields().and_then(|fields| {
@@ -135,7 +135,7 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field(name = "possibleTypes")]
+    #[field]
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Simple(Type::Interface { possible_types, .. }) = &self.detail {
             Some(
@@ -156,10 +156,10 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field(name = "enumValues")]
+    #[field]
     async fn enum_values(
         &self,
-        #[arg(name = "includeDeprecated", default = "false")] include_deprecated: bool,
+        #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
         if let TypeDetail::Simple(Type::Enum { enum_values, .. }) = &self.detail {
             Some(
@@ -177,7 +177,7 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field(name = "inputFields")]
+    #[field]
     async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Simple(Type::InputObject { input_fields, .. }) = &self.detail {
             Some(
@@ -194,7 +194,7 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field(name = "ofType")]
+    #[field]
     async fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
             Some(__Type::new(self.registry, &ty))

@@ -39,12 +39,12 @@ impl<'a> __Field<'a> {
         __Type::new(self.registry, &self.field.ty)
     }
 
-    #[field(name = "isDeprecated")]
+    #[field]
     async fn is_deprecated(&self) -> bool {
         self.field.deprecation.is_some()
     }
 
-    #[field(name = "deprecationReason")]
+    #[field]
     async fn deprecation_reason(&self) -> Option<String> {
         self.field.deprecation.map(|s| s.to_string())
     }

@@ -2,6 +2,7 @@ use crate::args;
 use crate::args::{InterfaceField, InterfaceFieldArgument};
 use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, get_crate_name};
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
@@ -75,7 +76,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
     for InterfaceField {
         name,
-        method: method_name,
         desc,
         ty,
         args,
@@ -83,10 +83,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         context,
     } in &interface_args.fields
     {
-        let method_name = Ident::new(
-            method_name.as_ref().unwrap_or_else(|| &name),
-            Span::call_site(),
-        );
+        let method_name = Ident::new(name, Span::call_site());
+        let name = name.to_camel_case();
         let mut calls = Vec::new();
         let mut use_params = Vec::new();
         let mut decl_params = Vec::new();
@@ -106,6 +104,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         } in args
         {
             let ident = Ident::new(name, Span::call_site());
+            let name = name.to_camel_case();
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
 

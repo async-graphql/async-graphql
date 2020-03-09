@@ -20,10 +20,7 @@ impl<'a> __Schema<'a> {
             .collect()
     }
 
-    #[field(
-        name = "queryType",
-        desc = "The type that query operations will be rooted at."
-    )]
+    #[field(desc = "The type that query operations will be rooted at.")]
     async fn query_type(&self) -> __Type<'a> {
         __Type::new_simple(
             self.registry,
@@ -32,7 +29,6 @@ impl<'a> __Schema<'a> {
     }
 
     #[field(
-        name = "mutationType",
         desc = "If this server supports mutation, the type that mutation operations will be rooted at."
     )]
     async fn mutation_type(&self) -> Option<__Type<'a>> {
@@ -44,7 +40,6 @@ impl<'a> __Schema<'a> {
     }
 
     #[field(
-        name = "subscriptionType",
         desc = "If this server support subscription, the type that subscription operations will be rooted at."
     )]
     async fn subscription_type(&self) -> Option<__Type<'a>> {

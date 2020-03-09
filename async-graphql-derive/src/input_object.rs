@@ -1,5 +1,6 @@
 use crate::args;
 use crate::utils::{build_value_repr, get_crate_name};
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
@@ -48,7 +49,9 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         let field_args = args::InputField::parse(&field.attrs)?;
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
-        let name = field_args.name.unwrap_or_else(|| ident.to_string());
+        let name = field_args
+            .name
+            .unwrap_or_else(|| ident.to_string().to_camel_case());
         let desc = field_args
             .desc
             .as_ref()

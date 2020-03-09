@@ -1,5 +1,6 @@
 use crate::args;
 use crate::utils::get_crate_name;
+use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Result};
@@ -41,7 +42,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         let gql_item_name = item_args
             .name
             .take()
-            .unwrap_or_else(|| variant.ident.to_string());
+            .unwrap_or_else(|| variant.ident.to_string().to_screaming_snake_case());
         let item_deprecation = item_args
             .deprecation
             .as_ref()

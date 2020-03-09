@@ -39,16 +39,16 @@ pub async fn test_enum_type() {
     let query = format!(
         r#"{{
             value
-            test_arg(input: A)
-            test_input(input: {{value: B}}) }}
+            testArg(input: A)
+            testInput(input: {{value: B}}) }}
             "#
     );
     assert_eq!(
         schema.query(&query).execute().await.unwrap(),
         serde_json::json!({
             "value": "A",
-            "test_arg": "A",
-            "test_input": "B",
+            "testArg": "A",
+            "testInput": "B",
         })
     );
 }

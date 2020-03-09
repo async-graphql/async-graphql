@@ -2,16 +2,15 @@ use super::StarWars;
 use async_graphql::Context;
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
-#[allow(non_camel_case_types)]
 pub enum Episode {
     #[item(desc = "Released in 1977.")]
-    NEWHOPE,
+    NewHope,
 
     #[item(desc = "Released in 1980.")]
-    EMPIRE,
+    Empire,
 
     #[item(desc = "Released in 1983.")]
-    JEDI,
+    Jedi,
 }
 
 pub struct Human(usize);
@@ -37,15 +36,12 @@ impl Human {
             .collect()
     }
 
-    #[field(name = "appearsIn", desc = "Which movies they appear in.")]
+    #[field(desc = "Which movies they appear in.")]
     async fn appears_in<'a>(&self, ctx: &'a Context<'_>) -> &'a [Episode] {
         &ctx.data::<StarWars>().chars[self.0].appears_in
     }
 
-    #[field(
-        name = "homePlanet",
-        desc = "The home planet of the human, or null if unknown."
-    )]
+    #[field(desc = "The home planet of the human, or null if unknown.")]
     async fn home_planet<'a>(&self, ctx: &'a Context<'_>) -> &'a Option<&'a str> {
         &ctx.data::<StarWars>().chars[self.0].home_planet
     }
@@ -74,12 +70,12 @@ impl Droid {
             .collect()
     }
 
-    #[field(name = "appearsIn", desc = "Which movies they appear in.")]
+    #[field(desc = "Which movies they appear in.")]
     async fn appears_in<'a>(&self, ctx: &'a Context<'_>) -> &'a [Episode] {
         &ctx.data::<StarWars>().chars[self.0].appears_in
     }
 
-    #[field(name = "primaryFunction", desc = "The primary function of the droid.")]
+    #[field(desc = "The primary function of the droid.")]
     async fn primary_function<'a>(&self, ctx: &'a Context<'_>) -> &'a Option<&'a str> {
         &ctx.data::<StarWars>().chars[self.0].primary_function
     }
@@ -98,7 +94,7 @@ impl QueryRoot {
         )]
         episode: Episode,
     ) -> Character {
-        if episode == Episode::EMPIRE {
+        if episode == Episode::Empire {
             Human(ctx.data::<StarWars>().luke).into()
         } else {
             Droid(ctx.data::<StarWars>().artoo).into()
@@ -128,11 +124,6 @@ impl QueryRoot {
     field(name = "id", type = "&str", context),
     field(name = "name", type = "&str", context),
     field(name = "friends", type = "Vec<Character>", context),
-    field(
-        name = "appearsIn",
-        method = "appears_in",
-        type = "&'ctx [Episode]",
-        context
-    )
+    field(name = "appears_in", type = "&'ctx [Episode]", context)
 )]
 pub struct Character(Human, Droid);

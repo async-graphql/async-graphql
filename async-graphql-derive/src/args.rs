@@ -550,7 +550,6 @@ impl InterfaceFieldArgument {
 #[derive(Debug)]
 pub struct InterfaceField {
     pub name: String,
-    pub method: Option<String>,
     pub desc: Option<String>,
     pub ty: Type,
     pub args: Vec<InterfaceFieldArgument>,
@@ -561,7 +560,6 @@ pub struct InterfaceField {
 impl InterfaceField {
     pub fn parse(ls: &MetaList) -> Result<Self> {
         let mut name = None;
-        let mut method = None;
         let mut desc = None;
         let mut ty = None;
         let mut args = Vec::new();
@@ -590,15 +588,6 @@ impl InterfaceField {
                             return Err(Error::new_spanned(
                                 &nv.lit,
                                 "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("method") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            method = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'method' should be a string.",
                             ));
                         }
                     } else if nv.path.is_ident("type") {
@@ -642,7 +631,6 @@ impl InterfaceField {
 
         Ok(Self {
             name: name.unwrap(),
-            method,
             desc,
             ty: ty.unwrap(),
             args,

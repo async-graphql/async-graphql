@@ -43,20 +43,20 @@ pub async fn test_list_type() {
     let json_value: serde_json::Value = vec![1, 2, 3, 4, 5].into();
     let query = format!(
         r#"{{
-            value_vec
-            value_slice
-            test_arg(input: {0})
-            test_input(input: {{value: {0}}}) }}
+            valueVec
+            valueSlice
+            testArg(input: {0})
+            testInput(input: {{value: {0}}}) }}
             "#,
         json_value
     );
     assert_eq!(
         schema.query(&query).execute().await.unwrap(),
         serde_json::json!({
-            "value_vec": vec![1, 2, 3, 4, 5],
-            "value_slice": vec![1, 2, 3, 4, 5],
-            "test_arg": vec![1, 2, 3, 4, 5],
-            "test_input": vec![1, 2, 3, 4, 5],
+            "valueVec": vec![1, 2, 3, 4, 5],
+            "valueSlice": vec![1, 2, 3, 4, 5],
+            "testArg": vec![1, 2, 3, 4, 5],
+            "testInput": vec![1, 2, 3, 4, 5],
         })
     );
 }

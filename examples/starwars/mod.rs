@@ -48,7 +48,7 @@ impl StarWars {
             id: "1002",
             name: "Han Solo",
             friends: vec![],
-            appears_in: vec![Episode::EMPIRE, Episode::NEWHOPE, Episode::JEDI],
+            appears_in: vec![Episode::Empire, Episode::NewHope, Episode::Jedi],
             home_planet: None,
             primary_function: None,
         });
@@ -57,7 +57,7 @@ impl StarWars {
             id: "1003",
             name: "Leia Organa",
             friends: vec![],
-            appears_in: vec![Episode::EMPIRE, Episode::NEWHOPE, Episode::JEDI],
+            appears_in: vec![Episode::Empire, Episode::NewHope, Episode::Jedi],
             home_planet: Some("Alderaa"),
             primary_function: None,
         });
@@ -66,7 +66,7 @@ impl StarWars {
             id: "1004",
             name: "Wilhuff Tarkin",
             friends: vec![],
-            appears_in: vec![Episode::EMPIRE, Episode::NEWHOPE, Episode::JEDI],
+            appears_in: vec![Episode::Empire, Episode::NewHope, Episode::Jedi],
             home_planet: None,
             primary_function: None,
         });
@@ -75,7 +75,7 @@ impl StarWars {
             id: "2000",
             name: "C-3PO",
             friends: vec![],
-            appears_in: vec![Episode::EMPIRE, Episode::NEWHOPE, Episode::JEDI],
+            appears_in: vec![Episode::Empire, Episode::NewHope, Episode::Jedi],
             home_planet: None,
             primary_function: Some("Protocol"),
         });
@@ -84,7 +84,7 @@ impl StarWars {
             id: "2001",
             name: "R2-D2",
             friends: vec![],
-            appears_in: vec![Episode::EMPIRE, Episode::NEWHOPE, Episode::JEDI],
+            appears_in: vec![Episode::Empire, Episode::NewHope, Episode::Jedi],
             home_planet: None,
             primary_function: Some("Astromech"),
         });

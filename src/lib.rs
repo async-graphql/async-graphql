@@ -323,7 +323,6 @@ pub use async_graphql_derive::InputObject;
 /// | name        | Field name                | string   | N        |
 /// | type        | Field type                | string   | N        |
 /// | desc        | Field description         | string   | Y        |
-/// | method      | Field method name         | string   | Y        |
 /// | context     | Method with the context   | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | args        | Field arguments           | [Arg]    | Y        |
@@ -405,17 +404,17 @@ pub use async_graphql_derive::InputObject;
 ///     let schema = Schema::new(QueryRoot, GQLEmptyMutation).data("hello".to_string());
 ///     let res = schema.query(r#"
 ///     {
-///         type_a {
-///             value_a
-///             value_b
-///             value_c(a: 3, b: 2)
+///         typeA {
+///             valueA
+///             valueB
+///             valueC(a: 3, b: 2)
 ///         }
 ///     }"#).execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({
-///         "type_a": {
-///             "value_a": "hello",
-///             "value_b": 10,
-///             "value_c": 5
+///         "typeA": {
+///             "valueA": "hello",
+///             "valueB": 10,
+///             "valueC": 5
 ///         }
 ///     }));
 /// }

@@ -33,10 +33,10 @@ macro_rules! test_scalars {
 
             let schema = Schema::new(Root { value: $value }, GQLEmptyMutation);
             let json_value: serde_json::Value = $value.into();
-            let query = format!("{{ value test_arg(input: {0}) test_input(input: {{value: {0}}}) }}", json_value);
+            let query = format!("{{ value testArg(input: {0}) testInput(input: {{value: {0}}}) }}", json_value);
             assert_eq!(
                 schema.query(&query).execute().await.unwrap(),
-                serde_json::json!({ "value": $value, "test_arg": $value, "test_input": $value })
+                serde_json::json!({ "value": $value, "testArg": $value, "testInput": $value })
             );
         }
     };
