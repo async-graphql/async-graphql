@@ -16,26 +16,30 @@ enum ArgsType<'a> {
 
 #[derive(Default)]
 pub struct KnownArgumentNames<'a> {
-    current_args: Option<(&'a HashMap<&'static str, InputValue>, ArgsType<'a>, Pos)>,
+    current_args: Option<(&'a HashMap<&'static str, InputValue>, ArgsType<'a>)>,
 }
 
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_directive(&mut self, ctx: &mut ValidatorContext<'a>, directive: &'a Directive) {
-        self.current_args = ctx.registry.directives.get(&directive.name).map(|d| {
-            (
-                &d.args,
-                ArgsType::Directive(&directive.name),
-                directive.position,
-            )
-        });
+        self.current_args = ctx
+            .registry
+            .directives
+            .get(&directive.name)
+            .map(|d| (&d.args, ArgsType::Directive(&directive.name)));
     }
 
     fn exit_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {
         self.current_args = None;
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, name: &str, _value: &'a Value) {
-        if let Some((args, arg_type, pos)) = &self.current_args {
+    fn enter_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        pos: Pos,
+        name: &str,
+        _value: &'a Value,
+    ) {
+        if let Some((args, arg_type)) = &self.current_args {
             if !args.contains_key(name) {
                 match arg_type {
                     ArgsType::Field {
@@ -43,7 +47,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                         type_name,
                     } => {
                         ctx.report_error(
-                            vec![*pos],
+                            vec![pos],
                             format!(
                                 "Unknown argument \"{}\" on field \"{}\" of type \"{}\"",
                                 name, field_name, type_name,
@@ -52,7 +56,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                     }
                     ArgsType::Directive(directive_name) => {
                         ctx.report_error(
-                            vec![*pos],
+                            vec![pos],
                             format!(
                                 "Unknown argument \"{}\" on directive \"{}\"",
                                 name, directive_name
@@ -75,7 +79,6 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                         field_name: &field.name,
                         type_name: ctx.parent_type().unwrap().name(),
                     },
-                    field.position,
                 )
             });
     }

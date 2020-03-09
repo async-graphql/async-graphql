@@ -26,7 +26,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     ) {
         validate_type(
             ctx,
-            TypeName::get_basic_typename(&variable_definition.name),
+            TypeName::get_basic_typename(&variable_definition.var_type.to_string()),
             variable_definition.position,
         );
     }

@@ -92,13 +92,13 @@
     - [X] NoFragmentCycles
     - [X] NoUndefinedVariables
     - [X] NoUnusedFragments
-    - [ ] NoUnusedVariables
+    - [X] NoUnusedVariables
     - [ ] OverlappingFieldsCanBeMerged
     - [ ] PossibleFragmentSpreads
     - [ ] ProvidedNonNullArguments
     - [ ] ScalarLeafs
-    - [ ] UniqueArgumentNames
-    - [ ] UniqueFragmentNames
+    - [X] UniqueArgumentNames
+    - [X] UniqueFragmentNames
     - [ ] UniqueInputFieldNames
     - [ ] UniqueOperationNames
     - [ ] UniqueVariableNames

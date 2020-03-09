@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
-    current_args: Option<(&'a HashMap<&'static str, InputValue>, Pos)>,
+    current_args: Option<&'a HashMap<&'static str, InputValue>>,
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
@@ -18,17 +18,23 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
             .registry
             .directives
             .get(&directive.name)
-            .map(|d| (&d.args, directive.position));
+            .map(|d| &d.args);
     }
 
     fn exit_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {
         self.current_args = None;
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, name: &str, value: &'a Value) {
-        if let Some((arg, pos)) = self
+    fn enter_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        pos: Pos,
+        name: &str,
+        value: &'a Value,
+    ) {
+        if let Some(arg) = self
             .current_args
-            .and_then(|(args, pos)| args.get(name).map(|input| (input, pos)))
+            .and_then(|args| args.get(name).map(|input| input))
         {
             if !is_valid_input_value(ctx.registry, &arg.ty, value) {
                 ctx.report_error(
@@ -46,7 +52,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         self.current_args = ctx
             .parent_type()
             .and_then(|p| p.field_by_name(&field.name))
-            .map(|f| (&f.args, field.position));
+            .map(|f| &f.args);
     }
 
     fn exit_field(&mut self, _ctx: &mut ValidatorContext<'a>, _field: &'a Field) {

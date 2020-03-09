@@ -23,7 +23,10 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::KnownTypeNames)
         .with(rules::LoneAnonymousOperation::default())
         .with(rules::NoUndefinedVariables::default())
-        .with(rules::NoUnusedFragments::default());
+        .with(rules::NoUnusedFragments::default())
+        .with(rules::NoUnusedVariables::default())
+        .with(rules::UniqueArgumentNames::default())
+        .with(rules::UniqueFragmentNames::default());
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

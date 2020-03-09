@@ -14,7 +14,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
         if let Some(value) = &variable_definition.default_value {
             if let Type::NonNullType(_) = variable_definition.var_type {
                 ctx.report_error(vec![variable_definition.position],format!(
-                    "Argument \"#{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
+                    "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
                     variable_definition.name, variable_definition.var_type,
                 ));
             } else {

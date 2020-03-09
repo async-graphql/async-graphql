@@ -9,6 +9,9 @@ mod lone_anonymous_operation;
 mod no_fragment_cycles;
 mod no_undefined_variables;
 mod no_unused_fragments;
+mod no_unused_variables;
+mod unique_argument_names;
+mod unique_fragment_names;
 
 pub use arguments_of_correct_type::ArgumentsOfCorrectType;
 pub use default_values_of_correct_type::DefaultValuesOfCorrectType;
@@ -21,3 +24,6 @@ pub use lone_anonymous_operation::LoneAnonymousOperation;
 pub use no_fragment_cycles::NoFragmentCycles;
 pub use no_undefined_variables::NoUndefinedVariables;
 pub use no_unused_fragments::NoUnusedFragments;
+pub use no_unused_variables::NoUnusedVariables;
+pub use unique_argument_names::UniqueArgumentNames;
+pub use unique_fragment_names::UniqueFragmentNames;

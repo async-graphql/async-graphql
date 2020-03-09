@@ -3,6 +3,7 @@ use graphql_parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     Name, OperationDefinition, Selection, SelectionSet, TypeCondition, Value, VariableDefinition,
 };
+use graphql_parser::Pos;
 
 pub trait Visitor<'a> {
     fn enter_document(&mut self, _ctx: &mut ValidatorContext<'a>, _doc: &'a Document) {}
@@ -50,8 +51,22 @@ pub trait Visitor<'a> {
     fn enter_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {}
     fn exit_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {}
 
-    fn enter_argument(&mut self, _ctx: &mut ValidatorContext<'a>, _name: &str, _value: &'a Value) {}
-    fn exit_argument(&mut self, _ctx: &mut ValidatorContext<'a>, _name: &str, _value: &'a Value) {}
+    fn enter_argument(
+        &mut self,
+        _ctx: &mut ValidatorContext<'a>,
+        _pos: Pos,
+        _name: &'a str,
+        _value: &'a Value,
+    ) {
+    }
+    fn exit_argument(
+        &mut self,
+        _ctx: &mut ValidatorContext<'a>,
+        _pos: Pos,
+        _name: &'a str,
+        _value: &'a Value,
+    ) {
+    }
 
     fn enter_selection(&mut self, _ctx: &mut ValidatorContext<'a>, _selection: &'a Selection) {}
     fn exit_selection(&mut self, _ctx: &mut ValidatorContext<'a>, _selection: &'a Selection) {}
@@ -183,14 +198,26 @@ where
         self.1.exit_directive(ctx, directive);
     }
 
-    fn enter_argument(&mut self, ctx: &mut ValidatorContext<'a>, name: &str, value: &'a Value) {
-        self.0.enter_argument(ctx, name, value);
-        self.1.enter_argument(ctx, name, value);
+    fn enter_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        pos: Pos,
+        name: &'a str,
+        value: &'a Value,
+    ) {
+        self.0.enter_argument(ctx, pos, name, value);
+        self.1.enter_argument(ctx, pos, name, value);
     }
 
-    fn exit_argument(&mut self, ctx: &mut ValidatorContext<'a>, name: &str, value: &'a Value) {
-        self.0.exit_argument(ctx, name, value);
-        self.1.exit_argument(ctx, name, value);
+    fn exit_argument(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        pos: Pos,
+        name: &'a str,
+        value: &'a Value,
+    ) {
+        self.0.exit_argument(ctx, pos, name, value);
+        self.1.exit_argument(ctx, pos, name, value);
     }
 
     fn enter_selection(&mut self, ctx: &mut ValidatorContext<'a>, selection: &'a Selection) {
@@ -381,7 +408,7 @@ fn visit_selection<'a, V: Visitor<'a>>(
 
 fn visit_field<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, field: &'a Field) {
     v.enter_field(ctx, field);
-    visit_arguments(v, ctx, &field.arguments);
+    visit_arguments(v, ctx, field.position, &field.arguments);
     visit_directives(v, ctx, &field.directives);
     visit_selection_set(v, ctx, &field.selection_set);
     v.exit_field(ctx, field);
@@ -390,11 +417,12 @@ fn visit_field<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut ValidatorContext<'a>, fi
 fn visit_arguments<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a>,
+    pos: Pos,
     arguments: &'a Vec<(Name, Value)>,
 ) {
     for (name, value) in arguments {
-        v.enter_argument(ctx, name, value);
-        v.exit_argument(ctx, name, value);
+        v.enter_argument(ctx, pos, name, value);
+        v.exit_argument(ctx, pos, name, value);
     }
 }
 
@@ -416,7 +444,7 @@ fn visit_directives<'a, V: Visitor<'a>>(
 ) {
     for d in directives {
         v.enter_directive(ctx, d);
-        visit_arguments(v, ctx, &d.arguments);
+        visit_arguments(v, ctx, d.position, &d.arguments);
         v.exit_directive(ctx, d);
     }
 }
