@@ -1,5 +1,3 @@
-# ⚠️ Some features are not yet implemented. Please do not use in a production environment.
-
 # The GraphQL server library implemented by rust 
 
 <div align="center">
