@@ -74,7 +74,6 @@ pub use serde_json;
 
 pub mod http;
 
-pub use async_graphql_derive::Union;
 pub use base::GQLScalar;
 pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
@@ -420,3 +419,8 @@ pub use async_graphql_derive::InputObject;
 /// }
 /// ```
 pub use async_graphql_derive::Interface;
+
+/// Define a GraphQL interface
+///
+/// It's similar to Interface, but it doesn't have fields.
+pub use async_graphql_derive::Union;
