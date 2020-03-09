@@ -39,7 +39,7 @@
 
 ## Goals
 
-- [ ] Types
+- [X] Types
     - [X] Scalar
         - [X] Integer
         - [X] Float
@@ -52,7 +52,6 @@
         - [X] List
         - [X] Non-Null
     - [ ] Object
-        - [ ] Generic Types
         - [X] Lifetime cycle   
     - [X] Enum
     - [X] InputObject
