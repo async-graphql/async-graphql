@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-derive"
-version = "0.10.5"
+version = "0.10.6"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "The GraphQL server library implemented by rust"
