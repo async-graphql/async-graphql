@@ -103,7 +103,7 @@ Open `http://localhost:8000` in browser
     - [X] NoUnusedVariables
     - [ ] OverlappingFieldsCanBeMerged
     - [X] PossibleFragmentSpreads
-    - [ ] ProvidedNonNullArguments
+    - [X] ProvidedNonNullArguments
     - [X] ScalarLeafs
     - [X] UniqueArgumentNames
     - [X] UniqueFragmentNames

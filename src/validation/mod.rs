@@ -32,7 +32,8 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::VariablesAreInputTypes)
         .with(rules::VariableInAllowedPosition::default())
         .with(rules::ScalarLeafs)
-        .with(rules::PossibleFragmentSpreads::default());
+        .with(rules::PossibleFragmentSpreads::default())
+        .with(rules::ProvidedNonNullArguments);
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

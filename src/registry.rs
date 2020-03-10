@@ -41,6 +41,14 @@ impl<'a> TypeName<'a> {
             TypeName::Named(type_name) => type_name,
         }
     }
+
+    pub fn is_non_null(&self) -> bool {
+        if let TypeName::NonNull(_) = self {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 pub struct InputValue {
