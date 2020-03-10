@@ -11,6 +11,27 @@ pub struct NoUnusedVariables<'a> {
     used_vars: HashSet<&'a str>,
 }
 
+impl<'a> NoUnusedVariables<'a> {
+    fn travel_value(&mut self, value: &'a Value) {
+        match value {
+            Value::Variable(var_name) => {
+                self.used_vars.insert(var_name.as_str());
+            }
+            Value::List(values) => {
+                for value in values {
+                    self.travel_value(value);
+                }
+            }
+            Value::Object(obj) => {
+                for value in obj.values() {
+                    self.travel_value(value);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
@@ -49,8 +70,6 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         _name: &'a str,
         value: &'a Value,
     ) {
-        if let Value::Variable(var) = value {
-            self.used_vars.insert(var);
-        }
+        self.travel_value(value);
     }
 }

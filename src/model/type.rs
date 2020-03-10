@@ -32,7 +32,7 @@ impl<'a> __Type<'a> {
                 registry,
                 detail: TypeDetail::List(ty.to_string()),
             },
-            TypeName::Name(ty) => __Type {
+            TypeName::Named(ty) => __Type {
                 registry,
                 detail: TypeDetail::Simple(&registry.types[ty]),
             },

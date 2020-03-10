@@ -20,7 +20,7 @@ fn parse_list(type_name: &str) -> Option<&str> {
 pub enum TypeName<'a> {
     List(&'a str),
     NonNull(&'a str),
-    Name(&'a str),
+    Named(&'a str),
 }
 
 impl<'a> TypeName<'a> {
@@ -30,7 +30,7 @@ impl<'a> TypeName<'a> {
         } else if let Some(type_name) = parse_list(type_name) {
             TypeName::List(type_name)
         } else {
-            TypeName::Name(type_name)
+            TypeName::Named(type_name)
         }
     }
 
@@ -38,7 +38,7 @@ impl<'a> TypeName<'a> {
         match TypeName::create(type_name) {
             TypeName::List(type_name) => Self::get_basic_typename(type_name),
             TypeName::NonNull(type_name) => Self::get_basic_typename(type_name),
-            TypeName::Name(type_name) => type_name,
+            TypeName::Named(type_name) => type_name,
         }
     }
 }
@@ -135,6 +135,15 @@ impl Type {
         match self {
             Type::Enum { .. } => true,
             Type::Scalar { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_input(&self) -> bool {
+        match self {
+            Type::Enum { .. } => true,
+            Type::Scalar { .. } => true,
+            Type::InputObject { .. } => true,
             _ => false,
         }
     }

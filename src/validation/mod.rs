@@ -26,7 +26,12 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::NoUnusedFragments::default())
         .with(rules::NoUnusedVariables::default())
         .with(rules::UniqueArgumentNames::default())
-        .with(rules::UniqueFragmentNames::default());
+        .with(rules::UniqueFragmentNames::default())
+        .with(rules::UniqueOperationNames::default())
+        .with(rules::UniqueVariableNames::default())
+        .with(rules::VariablesAreInputTypes)
+        .with(rules::VariableInAllowedPosition::default())
+        .with(rules::ScalarLeafs);
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

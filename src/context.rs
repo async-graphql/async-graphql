@@ -111,24 +111,43 @@ impl<'a, T> ContextBase<'a, T> {
             .expect("The specified data type does not exist.")
     }
 
-    fn resolve_input_value(&self, value: Value) -> Result<Value> {
-        if let Value::Variable(var_name) = value {
-            let def = self
-                .variable_definitions
-                .and_then(|defs| defs.iter().find(|def| def.name == var_name.as_str()));
-            if let Some(def) = def {
-                if let Some(var_value) = self.variables.map(|vars| vars.get(&def.name)).flatten() {
-                    return Ok(var_value.clone());
-                } else if let Some(default) = &def.default_value {
-                    return Ok(default.clone());
+    fn var_value(&self, name: &str) -> Result<Value> {
+        let def = self
+            .variable_definitions
+            .and_then(|defs| defs.iter().find(|def| def.name == name));
+        if let Some(def) = def {
+            if let Some(var_value) = self.variables.map(|vars| vars.get(&def.name)).flatten() {
+                return Ok(var_value.clone());
+            } else if let Some(default) = &def.default_value {
+                return Ok(default.clone());
+            }
+        }
+        return Err(QueryError::VarNotDefined {
+            var_name: name.to_string(),
+        }
+        .into());
+    }
+
+    fn resolve_input_value(&self, mut value: Value) -> Result<Value> {
+        match value {
+            Value::Variable(var_name) => self.var_value(&var_name),
+            Value::List(ref mut ls) => {
+                for value in ls {
+                    if let Value::Variable(var_name) = value {
+                        *value = self.var_value(&var_name)?;
+                    }
                 }
+                Ok(value)
             }
-            return Err(QueryError::VarNotDefined {
-                var_name: var_name.clone(),
+            Value::Object(ref mut obj) => {
+                for (_, value) in obj {
+                    if let Value::Variable(var_name) = value {
+                        *value = self.var_value(&var_name)?;
+                    }
+                }
+                Ok(value)
             }
-            .into());
-        } else {
-            Ok(value)
+            _ => Ok(value),
         }
     }
 

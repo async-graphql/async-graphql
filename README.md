@@ -104,13 +104,13 @@ Open `http://localhost:8000` in browser
     - [ ] OverlappingFieldsCanBeMerged
     - [ ] PossibleFragmentSpreads
     - [ ] ProvidedNonNullArguments
-    - [ ] ScalarLeafs
+    - [X] ScalarLeafs
     - [X] UniqueArgumentNames
     - [X] UniqueFragmentNames
-    - [ ] UniqueInputFieldNames
-    - [ ] UniqueOperationNames
-    - [ ] UniqueVariableNames
-    - [ ] VariableInAllowedPosition
+    - [X] UniqueOperationNames
+    - [X] UniqueVariableNames
+    - [X] VariablesAreInputTypes
+    - [X] VariableInAllowedPosition
 - [ ] Integration examples
     - [X] Actix-web
     - [ ] Hyper

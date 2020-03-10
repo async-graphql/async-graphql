@@ -17,7 +17,7 @@ pub fn is_valid_input_value(registry: &Registry, type_name: &str, value: &Value)
                 .all(|elem| is_valid_input_value(registry, type_name, elem)),
             _ => false,
         },
-        TypeName::Name(type_name) => {
+        TypeName::Named(type_name) => {
             if let Value::Null = value {
                 return true;
             }

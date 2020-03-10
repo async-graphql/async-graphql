@@ -162,17 +162,17 @@ pub use types::{GQLEnum, GQLEnumItem};
 ///         self.value
 ///     }
 ///
-///     #[field(name = "valueRef", desc = "reference value")]
+///     #[field(desc = "reference value")]
 ///     async fn value_ref(&self) -> &i32 {
 ///         &self.value
 ///     }
 ///
-///     #[field(name = "valueWithError", desc = "value with error")]
+///     #[field(desc = "value with error")]
 ///     async fn value_with_error(&self) -> Result<i32> {
 ///         Ok(self.value)
 ///     }
 ///
-///     #[field(name = "valueWithArg")]
+///     #[field]
 ///     async fn value_with_arg(&self, #[arg(default = "1")] a: i32) -> i32 {
 ///         a
 ///     }

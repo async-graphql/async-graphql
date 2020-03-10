@@ -18,7 +18,7 @@ impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
             ctx.report_error(
                 vec![fragment_definition.position],
                 format!(
-                    "There can only be one fragment named {}",
+                    "There can only be one fragment named \"{}\"",
                     fragment_definition.name
                 ),
             )

@@ -376,15 +376,6 @@ fn visit_selection<'a, V: Visitor<'a>>(
                         visit_field(v, ctx, field);
                     },
                 );
-            } else {
-                ctx.report_error(
-                    vec![field.position],
-                    format!(
-                        "Cannot query field \"{}\" on type \"{}\".",
-                        field.name,
-                        ctx.current_type().name()
-                    ),
-                );
             }
         }
         Selection::FragmentSpread(fragment_spread) => {
