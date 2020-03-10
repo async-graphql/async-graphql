@@ -24,7 +24,7 @@
 
 * [GitHub repository](https://github.com/sunli829/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
-* Minimum supported Rust version: 1.39 or later
+* Minimum supported Rust version: 1.40 or later
 
 ## Example
 
