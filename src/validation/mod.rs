@@ -31,7 +31,8 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::UniqueVariableNames::default())
         .with(rules::VariablesAreInputTypes)
         .with(rules::VariableInAllowedPosition::default())
-        .with(rules::ScalarLeafs);
+        .with(rules::ScalarLeafs)
+        .with(rules::PossibleFragmentSpreads::default());
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

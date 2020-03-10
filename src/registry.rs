@@ -79,12 +79,12 @@ pub enum Type {
         name: &'static str,
         description: Option<&'static str>,
         fields: HashMap<&'static str, Field>,
-        possible_types: Vec<String>,
+        possible_types: HashSet<String>,
     },
     Union {
         name: &'static str,
         description: Option<&'static str>,
-        possible_types: Vec<String>,
+        possible_types: HashSet<String>,
     },
     Enum {
         name: &'static str,
@@ -144,6 +144,14 @@ impl Type {
             Type::Enum { .. } => true,
             Type::Scalar { .. } => true,
             Type::InputObject { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_possible_type(&self, type_name: &str) -> bool {
+        match self {
+            Type::Interface { possible_types, .. } => possible_types.contains(type_name),
+            Type::Union { possible_types, .. } => possible_types.contains(type_name),
             _ => false,
         }
     }

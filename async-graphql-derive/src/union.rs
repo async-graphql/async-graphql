@@ -50,7 +50,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 <#p as #crate_name::GQLType>::create_type_info(registry);
             });
             possible_types.push(quote! {
-                <#p as #crate_name::GQLType>::type_name().to_string()
+                possible_types.insert(<#p as #crate_name::GQLType>::type_name().to_string());
             });
             inline_fragment_resolvers.push(quote! {
                 if name == <#p as #crate_name::GQLType>::type_name() {
@@ -83,7 +83,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     #crate_name::registry::Type::Union {
                         name: #gql_typename,
                         description: #desc,
-                        possible_types: vec![#(#possible_types),*],
+                        possible_types: {
+                            let mut possible_types = std::collections::HashSet::new();
+                            #(#possible_types)*
+                            possible_types
+                        }
                     }
                 })
             }
