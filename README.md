@@ -93,7 +93,7 @@ Open `http://localhost:8000` in browser
     - [X] FieldsOnCorrectType
     - [X] FragmentsOnCompositeTypes
     - [X] KnownArgumentNames
-    - [ ] KnownDirectives
+    - [X] KnownDirectives
     - [X] KnownFragmentNames
     - [X] KnownTypeNames
     - [X] LoneAnonymousOperation
