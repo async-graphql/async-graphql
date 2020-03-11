@@ -11,7 +11,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
     fn enter_directive(&mut self, ctx: &mut ValidatorContext<'a>, directive: &'a Directive) {
         if let Some(schema_directive) = ctx.registry.directives.get(&directive.name) {
             for arg in schema_directive.args.values() {
-                if TypeName::create(&arg.ty).is_non_null() {
+                if TypeName::create(&arg.ty).is_non_null() && arg.default_value.is_none() {
                     if directive
                         .arguments
                         .iter()
@@ -33,7 +33,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(schema_field) = parent_type.field_by_name(&field.name) {
                 for arg in schema_field.args.values() {
-                    if TypeName::create(&arg.ty).is_non_null() {
+                    if TypeName::create(&arg.ty).is_non_null() && arg.default_value.is_none() {
                         if field
                             .arguments
                             .iter()
