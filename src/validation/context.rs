@@ -1,14 +1,14 @@
 use crate::error::RuleError;
 use crate::registry::{Registry, Type};
-use graphql_parser::query::{Definition, Document};
+use graphql_parser::query::{Definition, Document, FragmentDefinition};
 use graphql_parser::Pos;
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 pub struct ValidatorContext<'a> {
     pub registry: &'a Registry,
     pub errors: Vec<RuleError>,
     type_stack: Vec<&'a Type>,
-    fragments_names: HashSet<&'a str>,
+    fragments: HashMap<&'a str, &'a FragmentDefinition>,
 }
 
 impl<'a> ValidatorContext<'a> {
@@ -17,11 +17,11 @@ impl<'a> ValidatorContext<'a> {
             registry,
             errors: Default::default(),
             type_stack: Default::default(),
-            fragments_names: doc
+            fragments: doc
                 .definitions
                 .iter()
                 .filter_map(|d| match d {
-                    Definition::Fragment(fragment) => Some(fragment.name.as_str()),
+                    Definition::Fragment(fragment) => Some((fragment.name.as_str(), fragment)),
                     _ => None,
                 })
                 .collect(),
@@ -54,6 +54,10 @@ impl<'a> ValidatorContext<'a> {
     }
 
     pub fn is_known_fragment(&self, name: &str) -> bool {
-        self.fragments_names.contains(name)
+        self.fragments.contains_key(name)
+    }
+
+    pub fn fragment(&self, name: &str) -> Option<&'a FragmentDefinition> {
+        self.fragments.get(name).map(|f| *f)
     }
 }

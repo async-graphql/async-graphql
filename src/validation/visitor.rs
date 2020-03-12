@@ -68,6 +68,19 @@ pub trait Visitor<'a> {
     ) {
     }
 
+    fn enter_selection_set(
+        &mut self,
+        _ctx: &mut ValidatorContext<'a>,
+        _selection_set: &'a SelectionSet,
+    ) {
+    }
+    fn exit_selection_set(
+        &mut self,
+        _ctx: &mut ValidatorContext<'a>,
+        _selection_set: &'a SelectionSet,
+    ) {
+    }
+
     fn enter_selection(&mut self, _ctx: &mut ValidatorContext<'a>, _selection: &'a Selection) {}
     fn exit_selection(&mut self, _ctx: &mut ValidatorContext<'a>, _selection: &'a Selection) {}
 
@@ -220,6 +233,24 @@ where
         self.1.exit_argument(ctx, pos, name, value);
     }
 
+    fn enter_selection_set(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        selection_set: &'a SelectionSet,
+    ) {
+        self.0.enter_selection_set(ctx, selection_set);
+        self.1.enter_selection_set(ctx, selection_set);
+    }
+
+    fn exit_selection_set(
+        &mut self,
+        ctx: &mut ValidatorContext<'a>,
+        selection_set: &'a SelectionSet,
+    ) {
+        self.0.exit_selection_set(ctx, selection_set);
+        self.1.exit_selection_set(ctx, selection_set);
+    }
+
     fn enter_selection(&mut self, ctx: &mut ValidatorContext<'a>, selection: &'a Selection) {
         self.0.enter_selection(ctx, selection);
         self.1.enter_selection(ctx, selection);
@@ -356,9 +387,11 @@ fn visit_selection_set<'a, V: Visitor<'a>>(
     ctx: &mut ValidatorContext<'a>,
     selection_set: &'a SelectionSet,
 ) {
+    v.enter_selection_set(ctx, selection_set);
     for selection in &selection_set.items {
         visit_selection(v, ctx, selection);
     }
+    v.exit_selection_set(ctx, selection_set);
 }
 
 fn visit_selection<'a, V: Visitor<'a>>(

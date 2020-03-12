@@ -87,7 +87,7 @@ Open `http://localhost:8000` in browser
             - [X] FRAGMENT_SPREAD
             - [X] INLINE_FRAGMENT
     - [X] Schema
-- [ ] Validation rules
+- [X] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType
     - [X] FieldsOnCorrectType
@@ -101,7 +101,7 @@ Open `http://localhost:8000` in browser
     - [X] NoUndefinedVariables
     - [X] NoUnusedFragments
     - [X] NoUnusedVariables
-    - [ ] OverlappingFieldsCanBeMerged
+    - [X] OverlappingFieldsCanBeMerged
     - [X] PossibleFragmentSpreads
     - [X] ProvidedNonNullArguments
     - [X] ScalarLeafs
