@@ -20,6 +20,10 @@
   </a>
 </div>
 
+`async-graphql` is a GraphQL server library that fully supports async/await and is easy to use.
+
+It supports all of the GraphQL specifications and is easy to integrate into existing web servers.
+
 ## Documentation
 
 * [GitHub repository](https://github.com/sunli829/async-graphql)
