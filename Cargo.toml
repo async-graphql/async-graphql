@@ -36,7 +36,6 @@ actix-rt = "1.0.0"
 slab = "0.4.2"
 tide = "0.6.0"
 mime = "0.3.16"
-async-graphql-actix-web = { path = "async-graphql-actix-web", version = "0.1.0" }
 
 [workspace]
 members = [
