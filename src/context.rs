@@ -10,31 +10,103 @@ use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 
 /// Variables of query
-#[derive(Default)]
-pub struct Variables(BTreeMap<String, Value>);
+#[derive(Debug)]
+pub struct Variables(Value);
+
+impl Default for Variables {
+    fn default() -> Self {
+        Self(Value::Object(Default::default()))
+    }
+}
 
 impl Deref for Variables {
     type Target = BTreeMap<String, Value>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        if let Value::Object(obj) = &self.0 {
+            obj
+        } else {
+            unreachable!()
+        }
     }
 }
 
 impl DerefMut for Variables {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        if let Value::Object(obj) = &mut self.0 {
+            obj
+        } else {
+            unreachable!()
+        }
     }
 }
 
 impl Variables {
     pub(crate) fn parse_from_json(value: serde_json::Value) -> Result<Self> {
         let gql_value = json_value_to_gql_value(value);
-        if let Value::Object(obj) = gql_value {
-            Ok(Variables(obj))
+        if let Value::Object(_) = gql_value {
+            Ok(Variables(gql_value))
         } else {
             Ok(Default::default())
         }
+    }
+
+    pub(crate) fn set_upload(
+        &mut self,
+        var_path: &str,
+        filename: &str,
+        content_type: Option<&str>,
+        content: Vec<u8>,
+    ) {
+        let mut it = var_path.split(".").peekable();
+
+        if let Some(first) = it.next() {
+            if first != "variables" {
+                return;
+            }
+        }
+
+        let mut current = &mut self.0;
+        while let Some(s) = it.next() {
+            let has_next = it.peek().is_some();
+
+            if let Ok(idx) = s.parse::<i32>() {
+                if let Value::List(ls) = current {
+                    if let Some(value) = ls.get_mut(idx as usize) {
+                        if !has_next {
+                            *value = Value::String(file_string(filename, content_type, &content));
+                            return;
+                        } else {
+                            current = value;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+            } else {
+                if let Value::Object(obj) = current {
+                    if let Some(value) = obj.get_mut(s) {
+                        if !has_next {
+                            *value = Value::String(file_string(filename, content_type, &content));
+                            return;
+                        } else {
+                            current = value;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn file_string(filename: &str, content_type: Option<&str>, content: &[u8]) -> String {
+    if let Some(content_type) = content_type {
+        format!("file:{}:{}|", filename, content_type)
+            + unsafe { std::str::from_utf8_unchecked(content) }
+    } else {
+        format!("file:{}|", filename) + unsafe { std::str::from_utf8_unchecked(content) }
     }
 }
 
@@ -74,11 +146,11 @@ pub type Context<'a> = ContextBase<'a, &'a Field>;
 
 pub struct ContextBase<'a, T> {
     pub(crate) item: T,
-    pub(crate) variables: Option<&'a Variables>,
+    pub(crate) variables: &'a Variables,
     pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
-    pub(crate) fragments: &'a HashMap<String, &'a FragmentDefinition>,
+    pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -116,7 +188,7 @@ impl<'a, T> ContextBase<'a, T> {
             .variable_definitions
             .and_then(|defs| defs.iter().find(|def| def.name == name));
         if let Some(def) = def {
-            if let Some(var_value) = self.variables.map(|vars| vars.get(&def.name)).flatten() {
+            if let Some(var_value) = self.variables.get(&def.name) {
                 return Ok(var_value.clone());
             } else if let Some(default) = &def.default_value {
                 return Ok(default.clone());

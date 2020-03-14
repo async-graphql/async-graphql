@@ -404,7 +404,9 @@ fn visit_selection<'a, V: Visitor<'a>>(
         Selection::Field(field) => {
             if let Some(schema_field) = ctx.current_type().field_by_name(&field.name) {
                 ctx.with_type(
-                    ctx.registry.get_basic_type(&schema_field.ty).unwrap(),
+                    ctx.registry
+                        .basic_type_by_typename(&schema_field.ty)
+                        .unwrap(),
                     |ctx| {
                         visit_field(v, ctx, field);
                     },

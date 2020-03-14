@@ -35,7 +35,8 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::PossibleFragmentSpreads::default())
         .with(rules::ProvidedNonNullArguments)
         .with(rules::KnownDirectives::default())
-        .with(rules::OverlappingFieldsCanBeMerged);
+        .with(rules::OverlappingFieldsCanBeMerged)
+        .with(rules::UploadFile);
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

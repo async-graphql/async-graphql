@@ -24,6 +24,9 @@ pub enum QueryError {
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
     FieldNotFound { field_name: String, object: String },
 
+    #[error("Missing operation")]
+    MissingOperation,
+
     #[error("Unknown operation named \"{name}\"")]
     UnknownOperationNamed { name: String },
 

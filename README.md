@@ -91,6 +91,8 @@ Open `http://localhost:8000` in browser
             - [X] FRAGMENT_SPREAD
             - [X] INLINE_FRAGMENT
     - [X] Schema
+    - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
+        - [X] Actix-web
 - [X] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType

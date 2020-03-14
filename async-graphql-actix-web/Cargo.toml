@@ -1,0 +1,21 @@
+[package]
+name = "async-graphql-actix-web"
+version = "0.1.0"
+authors = ["sunli <scott_s829@163.com>"]
+edition = "2018"
+description = "The GraphQL server library implemented by rust"
+publish = true
+license = "MIT/Apache-2.0"
+documentation = "https://docs.rs/async-graphql/"
+homepage = "https://github.com/sunli829/async-graphql"
+repository = "https://github.com/sunli829/async-graphql"
+keywords = ["futures", "async", "graphql"]
+categories = ["network-programming", "asynchronous"]
+
+[dependencies]
+async-graphql = { path = "..", version = "1.0.0" }
+actix-web = "2.0.0"
+actix-multipart = "0.2.0"
+futures = "0.3.0"
+serde_json = "1.0.48"
+mime = "0.3.16"

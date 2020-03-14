@@ -13,7 +13,7 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
     ) {
         if let Some(ty) = ctx
             .registry
-            .get_basic_type(&variable_definition.var_type.to_string())
+            .basic_type_by_parsed_type(&variable_definition.var_type)
         {
             if !ty.is_input() {
                 ctx.report_error(

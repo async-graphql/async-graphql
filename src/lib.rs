@@ -80,7 +80,7 @@ pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use scalars::ID;
 pub use schema::{QueryBuilder, Schema};
-pub use types::GQLEmptyMutation;
+pub use types::{GQLEmptyMutation, Upload};
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Error = anyhow::Error;

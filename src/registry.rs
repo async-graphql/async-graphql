@@ -1,4 +1,5 @@
 use crate::{model, GQLType, Value};
+use graphql_parser::query::Type as ParsedType;
 use std::collections::{HashMap, HashSet};
 
 fn parse_non_null(type_name: &str) -> Option<&str> {
@@ -228,7 +229,15 @@ impl Registry {
             });
     }
 
-    pub fn get_basic_type(&self, type_name: &str) -> Option<&Type> {
+    pub fn basic_type_by_typename(&self, type_name: &str) -> Option<&Type> {
         self.types.get(TypeName::get_basic_typename(type_name))
+    }
+
+    pub fn basic_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&Type> {
+        match query_type {
+            ParsedType::NonNullType(ty) => self.basic_type_by_parsed_type(ty),
+            ParsedType::ListType(ty) => self.basic_type_by_parsed_type(ty),
+            ParsedType::NamedType(name) => self.types.get(name.as_str()),
+        }
     }
 }

@@ -5,6 +5,7 @@ pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
 use crate::error::{RuleError, RuleErrors};
+use crate::schema::PreparedQuery;
 use crate::{GQLObject, PositionError, Result, Schema, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -20,32 +21,46 @@ pub struct GQLRequest {
 }
 
 impl GQLRequest {
-    pub async fn execute<Query, Mutation>(self, schema: &Schema<Query, Mutation>) -> GQLResponse
+    pub async fn execute<Query, Mutation>(mut self, schema: &Schema<Query, Mutation>) -> GQLResponse
     where
         Query: GQLObject + Send + Sync,
         Mutation: GQLObject + Send + Sync,
     {
-        let vars = match self.variables {
+        match self.prepare(schema) {
+            Ok(query) => GQLResponse(query.execute().await),
+            Err(err) => GQLResponse(Err(err)),
+        }
+    }
+
+    pub fn prepare<'a, Query, Mutation>(
+        &'a mut self,
+        schema: &'a Schema<Query, Mutation>,
+    ) -> Result<PreparedQuery<'a, Query, Mutation>>
+    where
+        Query: GQLObject + Send + Sync,
+        Mutation: GQLObject + Send + Sync,
+    {
+        let vars = match self.variables.take() {
             Some(value) => match Variables::parse_from_json(value) {
                 Ok(vars) => Some(vars),
-                Err(err) => return GQLResponse(Err(err)),
+                Err(err) => return Err(err),
             },
             None => None,
         };
         let query = schema.query(&self.query);
-        let query = match &vars {
+        let query = match vars {
             Some(vars) => query.variables(vars),
             None => query,
         };
         let query = match &self.operation_name {
-            Some(operation_name) => query.operator_name(operation_name),
+            Some(name) => query.operator_name(name),
             None => query,
         };
-        GQLResponse(query.execute().await)
+        query.prepare()
     }
 }
 
-pub struct GQLResponse(Result<serde_json::Value>);
+pub struct GQLResponse(pub Result<serde_json::Value>);
 
 impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
