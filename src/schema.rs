@@ -169,7 +169,6 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     OperationDefinition::SelectionSet(s) => {
                         selection_set = Some(s);
                         root = Some(Root::Query(self.query));
-                        break;
                     }
                     OperationDefinition::Query(query)
                         if query.name.is_none() || query.name.as_deref() == self.operation_name =>
@@ -177,7 +176,6 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                         selection_set = Some(query.selection_set);
                         variable_definitions = Some(query.variable_definitions);
                         root = Some(Root::Query(self.query));
-                        break;
                     }
                     OperationDefinition::Mutation(mutation)
                         if mutation.name.is_none()
@@ -186,7 +184,6 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                         selection_set = Some(mutation.selection_set);
                         variable_definitions = Some(mutation.variable_definitions);
                         root = Some(Root::Mutation(self.mutation));
-                        break;
                     }
                     OperationDefinition::Subscription(subscription)
                         if subscription.name.is_none()
