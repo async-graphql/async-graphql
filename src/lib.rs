@@ -57,9 +57,11 @@ mod base;
 mod context;
 mod error;
 mod model;
+mod query;
 mod resolver;
 mod scalars;
 mod schema;
+mod subscription;
 mod types;
 mod validation;
 
@@ -78,9 +80,11 @@ pub use base::GQLScalar;
 pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
+pub use query::{PreparedQuery, QueryBuilder};
 pub use scalars::ID;
-pub use schema::{QueryBuilder, Schema};
-pub use types::{GQLEmptyMutation, Upload};
+pub use schema::Schema;
+pub use subscription::SubscribeBuilder;
+pub use types::{GQLEmptyMutation, GQLEmptySubscription, Upload};
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Error = anyhow::Error;
@@ -96,6 +100,8 @@ pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType
 pub use context::ContextBase;
 #[doc(hidden)]
 pub use resolver::do_resolve;
+#[doc(hidden)]
+pub use subscription::{GQLSubscription, Subscribe};
 #[doc(hidden)]
 pub use types::{GQLEnum, GQLEnumItem};
 
@@ -424,3 +430,5 @@ pub use async_graphql_derive::Interface;
 ///
 /// It's similar to Interface, but it doesn't have fields.
 pub use async_graphql_derive::Union;
+
+pub use async_graphql_derive::Subscription;

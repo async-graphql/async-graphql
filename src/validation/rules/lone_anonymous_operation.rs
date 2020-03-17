@@ -26,13 +26,27 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
         operation_definition: &'a OperationDefinition,
     ) {
         if let Some(operation_count) = self.operation_count {
-            if let OperationDefinition::SelectionSet(s) = operation_definition {
-                if operation_count > 1 {
-                    ctx.report_error(
-                        vec![s.span.0, s.span.1],
-                        "This anonymous operation must be the only defined operation",
-                    );
+            let (err, pos) = match operation_definition {
+                OperationDefinition::SelectionSet(s) => (operation_count > 1, s.span.0),
+                OperationDefinition::Query(query) if query.name.is_none() => {
+                    (operation_count > 1, query.position)
                 }
+                OperationDefinition::Mutation(mutation) if mutation.name.is_none() => {
+                    (operation_count > 1, mutation.position)
+                }
+                OperationDefinition::Subscription(subscription) if subscription.name.is_none() => {
+                    (operation_count > 1, subscription.position)
+                }
+                _ => {
+                    return;
+                }
+            };
+
+            if err {
+                ctx.report_error(
+                    vec![pos],
+                    "This anonymous operation must be the only defined operation",
+                );
             }
         }
     }

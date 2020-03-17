@@ -1,4 +1,7 @@
-pub fn playground_source(graphql_endpoint_url: &str) -> String {
+pub fn playground_source(
+    graphql_endpoint_url: &str,
+    subscription_endpoint: Option<&str>,
+) -> String {
     r##"
 <!DOCTYPE html>
 
@@ -533,10 +536,14 @@ pub fn playground_source(graphql_endpoint_url: &str) -> String {
       const root = document.getElementById('root');
       root.classList.add('playgroundIn');
 
-      GraphQLPlayground.init(root, { endpoint: 'GRAPHQL_URL' })
+      GraphQLPlayground.init(root, { endpoint: GRAPHQL_URL, subscriptionEndpoint: GRAPHQL_SUBSCRIPTION_URL })
     })
   </script>
 </body>
 </html>
-  "##.replace("GRAPHQL_URL", graphql_endpoint_url)
+  "##.replace("GRAPHQL_URL", &format!("'{}'", graphql_endpoint_url))
+        .replace("GRAPHQL_SUBSCRIPTION_URL", &match subscription_endpoint {
+            Some(url) => format!("'{}'", url),
+            None => "null".to_string()
+        })
 }

@@ -114,6 +114,33 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                 #crate_name::GQLEnum::resolve_enum(value)
             }
         }
+
+        impl #crate_name::GQLType for &#ident {
+            fn type_name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+                registry.create_type::<Self, _>(|registry| {
+                    #crate_name::registry::Type::Enum {
+                        name: #gql_typename,
+                        description: #desc,
+                        enum_values: {
+                            let mut enum_items = std::collections::HashMap::new();
+                            #(#schema_enum_items)*
+                            enum_items
+                        },
+                    }
+                })
+            }
+        }
+
+        #[#crate_name::async_trait::async_trait]
+        impl #crate_name::GQLOutputValue for &#ident {
+            async fn resolve(value: &Self, _: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<serde_json::Value> {
+                #crate_name::GQLEnum::resolve_enum(*value)
+            }
+        }
     };
     Ok(expanded.into())
 }

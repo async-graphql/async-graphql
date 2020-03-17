@@ -1,10 +1,9 @@
 use crate::args;
-use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
+use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -31,12 +30,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         .map(|s| quote! {Some(#s)})
         .unwrap_or_else(|| quote! {None});
 
-    let mut resolvers = Vec::new();
+    let mut create_types = Vec::new();
+    let mut filters = Vec::new();
     let mut schema_fields = Vec::new();
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
             if let Some(field) = args::Field::parse(&method.attrs)? {
+                let ident = &method.sig.ident;
                 let field_name = field
                     .name
                     .clone()
@@ -51,53 +52,75 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .as_ref()
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
-                let ty = match &method.sig.output {
-                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
-                    ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
+
+                if method.sig.inputs.len() < 2 {
+                    return Err(Error::new_spanned(
+                        &method.sig.inputs,
+                        "The filter function needs at least two arguments",
+                    ));
+                }
+
+                if method.sig.asyncness.is_some() {
+                    return Err(Error::new_spanned(
+                        &method.sig.inputs,
+                        "The filter function must be synchronous",
+                    ));
+                }
+
+                let mut res_typ_ok = false;
+                if let ReturnType::Type(_, res_ty) = &method.sig.output {
+                    if let Type::Path(p) = res_ty.as_ref() {
+                        if p.path.is_ident("bool") {
+                            res_typ_ok = true;
+                        }
                     }
+                }
+                if !res_typ_ok {
+                    return Err(Error::new_spanned(
+                        &method.sig.output,
+                        "The filter function must return a boolean value",
+                    ));
+                }
+
+                match &method.sig.inputs[0] {
+                    FnArg::Receiver(_) => {}
+                    _ => {
+                        return Err(Error::new_spanned(
+                            &method.sig.inputs[0],
+                            "The first argument must be self receiver",
+                        ));
+                    }
+                }
+
+                let ty = if let FnArg::Typed(ty) = &method.sig.inputs[1] {
+                    match ty.ty.as_ref() {
+                        Type::Reference(r) => r.elem.as_ref().clone(),
+                        _ => {
+                            return Err(Error::new_spanned(ty, "Incorrect object type"));
+                        }
+                    }
+                } else {
+                    return Err(Error::new_spanned(
+                        &method.sig.inputs[1],
+                        "Incorrect object type",
+                    ));
                 };
 
-                let mut arg_ctx = false;
                 let mut args = Vec::new();
 
-                for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
-                    if let FnArg::Receiver(receiver) = arg {
-                        if idx != 0 {
-                            return Err(Error::new_spanned(
-                                receiver,
-                                "The self receiver must be the first parameter.",
-                            ));
-                        }
-                    } else if let FnArg::Typed(pat) = arg {
-                        if idx == 0 {
-                            return Err(Error::new_spanned(
-                                pat,
-                                "The self receiver must be the first parameter.",
-                            ));
-                        }
-
+                for arg in method.sig.inputs.iter_mut().skip(2) {
+                    if let FnArg::Typed(pat) = arg {
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
                                 args.push((arg_ident, arg_ty, args::Argument::parse(&pat.attrs)?));
                                 pat.attrs.clear();
                             }
-                            (_, Type::Reference(TypeReference { elem, .. })) => {
-                                if let Type::Path(path) = elem.as_ref() {
-                                    if idx != 1
-                                        || path.path.segments.last().unwrap().ident.to_string()
-                                            != "Context"
-                                    {
-                                        return Err(Error::new_spanned(
-                                            arg,
-                                            "The Context must be the second argument.",
-                                        ));
-                                    }
-                                    arg_ctx = true;
-                                }
+                            _ => {
+                                return Err(Error::new_spanned(arg, "Incorrect argument type"));
                             }
-                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
                         }
+                    } else {
+                        return Err(Error::new_spanned(arg, "Incorrect argument type"));
                     }
                 }
 
@@ -150,11 +173,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
 
                     get_params.push(quote! {
-                        let #ident: #ty = ctx.param_value(#name, #default)?;
+                        let #ident: #ty = ctx_field.param_value(#name, #default)?;
                     });
                 }
 
-                let schema_ty = ty.value_type();
                 schema_fields.push(quote! {
                     fields.insert(#field_name, #crate_name::registry::Field {
                         name: #field_name,
@@ -164,35 +186,27 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             #(#schema_args)*
                             args
                         },
-                        ty: <#schema_ty as #crate_name::GQLType>::create_type_info(registry),
+                        ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
                         deprecation: #field_deprecation,
                     });
                 });
 
-                let ctx_field = match arg_ctx {
-                    true => quote! { &ctx, },
-                    false => quote! {},
-                };
-
-                let field_ident = &method.sig.ident;
-                let resolve_obj = match &ty {
-                    OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_field #(#use_params),*).await
-                    },
-                    OutputType::Result(_, _) => {
-                        quote! {
-                            self.#field_ident(#ctx_field #(#use_params),*).await.
-                                map_err(|err| err.with_position(field.position))?
-                        }
-                    }
-                };
-
-                resolvers.push(quote! {
+                create_types.push(quote! {
                     if field.name.as_str() == #field_name {
+                        types.insert(std::any::TypeId::of::<#ty>(), field);
+                        continue;
+                    }
+                });
+
+                filters.push(quote! {
+                    if let Some(msg) = msg.downcast_ref::<#ty>() {
                         #(#get_params)*
-                        let ctx_obj = ctx.with_item(&field.selection_set);
-                        return #crate_name::GQLOutputValue::resolve(&#resolve_obj, &ctx_obj).await.
-                            map_err(|err| err.with_position(field.position).into());
+                        if self.#ident(msg, #(#use_params)*) {
+                            let ctx_selection_set = ctx_field.with_item(&field.selection_set);
+                            let value =
+                                #crate_name::GQLOutputValue::resolve(msg, &ctx_selection_set).await?;
+                            return Ok(Some(value));
+                        }
                     }
                 });
 
@@ -223,24 +237,41 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl#generics #crate_name::GQLObject for #self_ty {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
+        impl #crate_name::GQLSubscription for SubscriptionRoot {
+            fn create_types(
+                selection_set: #crate_name::graphql_parser::query::SelectionSet,
+            ) -> #crate_name::Result<std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>> {
                 use #crate_name::ErrorWithPosition;
 
-                #(#resolvers)*
-
-                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
-                    object: #gql_typename.to_string(),
+                let mut types = std::collections::HashMap::new();
+                for selection in selection_set.items {
+                    match selection {
+                        #crate_name::graphql_parser::query::Selection::Field(field) => {
+                            #(#create_types)*
+                            #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                                field_name: field.name.clone(),
+                                object: #gql_typename.to_string(),
+                            }
+                            .with_position(field.position));
+                        }
+                        _ => {}
+                    }
                 }
-                .with_position(field.position));
+                Ok(types)
             }
 
-            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, serde_json::Value>) -> #crate_name::Result<()> {
-                #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
-                    object: #gql_typename.to_string(),
-                    name: name.to_string(),
-                });
+            async fn resolve(
+                &self,
+                ctx: &#crate_name::ContextBase<'_, ()>,
+                types: &std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>,
+                msg: &(dyn std::any::Any + Send + Sync),
+            ) -> #crate_name::Result<Option<serde_json::Value>> {
+                let tid = msg.type_id();
+                if let Some(field) = types.get(&tid) {
+                    let ctx_field = ctx.with_item(field);
+                    #(#filters)*
+                }
+                Ok(None)
             }
         }
     };

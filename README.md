@@ -46,6 +46,7 @@ Open `http://localhost:8000` in browser
 * Custom scalar.
 * Minimal overhead.
 * Easy integration (hyper, actix_web, tide ...).
+* Upload files && Subscription (async-graphql-actix-web)
 
 ## Goals
 
@@ -93,6 +94,9 @@ Open `http://localhost:8000` in browser
     - [X] Schema
     - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
         - [X] Actix-web
+- [X] Subscription
+    - [X] Filter
+    - [X] WebSocket transport
 - [X] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType

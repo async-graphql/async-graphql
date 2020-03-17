@@ -179,6 +179,7 @@ pub struct Registry {
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
+    pub subscription_type: Option<String>,
 }
 
 impl Registry {

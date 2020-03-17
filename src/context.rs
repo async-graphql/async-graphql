@@ -1,5 +1,6 @@
 use crate::registry::Registry;
 use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
+use bytes::Bytes;
 use fnv::FnvHasher;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
@@ -10,7 +11,7 @@ use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 
 /// Variables of query
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variables(Value);
 
 impl Default for Variables {
@@ -42,7 +43,7 @@ impl DerefMut for Variables {
 }
 
 impl Variables {
-    pub(crate) fn parse_from_json(value: serde_json::Value) -> Result<Self> {
+    pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
         let gql_value = json_value_to_gql_value(value);
         if let Value::Object(_) = gql_value {
             Ok(Variables(gql_value))
@@ -56,7 +57,7 @@ impl Variables {
         var_path: &str,
         filename: &str,
         content_type: Option<&str>,
-        content: Vec<u8>,
+        content: Bytes,
     ) {
         let mut it = var_path.split(".").peekable();
 

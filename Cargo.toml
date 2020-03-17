@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "1.1.1"
+version = "1.2.0"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "The GraphQL server library implemented by rust"
@@ -17,7 +17,7 @@ readme = "README.md"
 default = ["chrono", "uuid"]
 
 [dependencies]
-async-graphql-derive = { path = "async-graphql-derive", version = "1.0.0" }
+async-graphql-derive = { path = "async-graphql-derive", version = "1.2.0" }
 graphql-parser = "0.2.3"
 anyhow = "1.0.26"
 thiserror = "1.0.11"
@@ -26,6 +26,7 @@ serde = "1.0.104"
 serde_derive = "1.0.104"
 serde_json = "1.0.48"
 fnv = "1.0.6"
+bytes = "0.5.4"
 chrono = { version = "0.4.10", optional = true }
 uuid = { version = "0.8.1", optional = true }
 

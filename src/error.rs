@@ -36,6 +36,9 @@ pub enum QueryError {
     #[error("Schema is not configured for mutations.")]
     NotConfiguredMutations,
 
+    #[error("Schema is not configured for subscriptions.")]
+    NotConfiguredSubscriptions,
+
     #[error("Invalid value for enum \"{ty}\".")]
     InvalidEnumValue { ty: String, value: String },
 

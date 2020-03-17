@@ -32,6 +32,7 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
         .with(rules::VariablesAreInputTypes)
         .with(rules::VariableInAllowedPosition::default())
         .with(rules::ScalarLeafs)
+        .with(rules::NoComposeLeafs)
         .with(rules::PossibleFragmentSpreads::default())
         .with(rules::ProvidedNonNullArguments)
         .with(rules::KnownDirectives::default())

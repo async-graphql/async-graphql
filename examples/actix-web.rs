@@ -2,9 +2,9 @@ mod starwars;
 
 use actix_web::{guard, web, App, HttpResponse, HttpServer};
 use async_graphql::http::{graphiql_source, playground_source, GQLRequest, GQLResponse};
-use async_graphql::{GQLEmptyMutation, Schema};
+use async_graphql::{GQLEmptyMutation, GQLEmptySubscription, Schema};
 
-type StarWarsSchema = Schema<starwars::QueryRoot, GQLEmptyMutation>;
+type StarWarsSchema = Schema<starwars::QueryRoot, GQLEmptyMutation, GQLEmptySubscription>;
 
 async fn index(s: web::Data<StarWarsSchema>, req: web::Json<GQLRequest>) -> web::Json<GQLResponse> {
     web::Json(req.into_inner().execute(&s).await)
@@ -13,7 +13,7 @@ async fn index(s: web::Data<StarWarsSchema>, req: web::Json<GQLRequest>) -> web:
 async fn gql_playgound() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(playground_source("/"))
+        .body(playground_source("/", None))
 }
 
 async fn gql_graphiql() -> HttpResponse {
@@ -27,7 +27,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(
-                Schema::new(starwars::QueryRoot, GQLEmptyMutation).data(starwars::StarWars::new()),
+                Schema::new(starwars::QueryRoot, GQLEmptyMutation, GQLEmptySubscription)
+                    .data(starwars::StarWars::new()),
             )
             .service(web::resource("/").guard(guard::Post()).to(index))
             .service(web::resource("/").guard(guard::Get()).to(gql_playgound))

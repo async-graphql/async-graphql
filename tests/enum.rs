@@ -35,7 +35,11 @@ pub async fn test_enum_type() {
         }
     }
 
-    let schema = Schema::new(Root { value: MyEnum::A }, GQLEmptyMutation);
+    let schema = Schema::new(
+        Root { value: MyEnum::A },
+        GQLEmptyMutation,
+        GQLEmptySubscription,
+    );
     let query = format!(
         r#"{{
             value

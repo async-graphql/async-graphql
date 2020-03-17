@@ -373,10 +373,18 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
             }
         }
         OperationDefinition::Subscription(subscription) => {
-            ctx.report_error(vec![subscription.position], "Not supported.");
-            // visit_variable_definitions(v, ctx, &subscription.variable_definitions);
-            // visit_directives(v, ctx, &subscription.directives);
-            // visit_selection_set(v, ctx, &subscription.selection_set);
+            if let Some(subscription_type) = &ctx.registry.subscription_type {
+                ctx.with_type(&ctx.registry.types[subscription_type], |ctx| {
+                    visit_variable_definitions(v, ctx, &subscription.variable_definitions);
+                    visit_directives(v, ctx, &subscription.directives);
+                    visit_selection_set(v, ctx, &subscription.selection_set);
+                });
+            } else {
+                ctx.report_error(
+                    vec![subscription.position],
+                    "Schema is not configured for subscriptions.",
+                );
+            }
         }
     }
     v.exit_operation_definition(ctx, operation);

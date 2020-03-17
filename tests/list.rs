@@ -39,6 +39,7 @@ pub async fn test_list_type() {
             value: vec![1, 2, 3, 4, 5],
         },
         GQLEmptyMutation,
+        GQLEmptySubscription,
     );
     let json_value: serde_json::Value = vec![1, 2, 3, 4, 5].into();
     let query = format!(

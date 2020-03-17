@@ -5,8 +5,8 @@ pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
 use crate::error::{RuleError, RuleErrors};
-use crate::schema::PreparedQuery;
-use crate::{GQLObject, PositionError, Result, Schema, Variables};
+use crate::query::PreparedQuery;
+use crate::{GQLObject, GQLSubscription, PositionError, Result, Schema, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -21,10 +21,14 @@ pub struct GQLRequest {
 }
 
 impl GQLRequest {
-    pub async fn execute<Query, Mutation>(mut self, schema: &Schema<Query, Mutation>) -> GQLResponse
+    pub async fn execute<Query, Mutation, Subscription>(
+        mut self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> GQLResponse
     where
         Query: GQLObject + Send + Sync,
         Mutation: GQLObject + Send + Sync,
+        Subscription: GQLSubscription + Send + Sync,
     {
         match self.prepare(schema) {
             Ok(query) => GQLResponse(query.execute().await),
@@ -32,13 +36,14 @@ impl GQLRequest {
         }
     }
 
-    pub fn prepare<'a, Query, Mutation>(
+    pub fn prepare<'a, Query, Mutation, Subscription>(
         &'a mut self,
-        schema: &'a Schema<Query, Mutation>,
+        schema: &'a Schema<Query, Mutation, Subscription>,
     ) -> Result<PreparedQuery<'a, Query, Mutation>>
     where
         Query: GQLObject + Send + Sync,
         Mutation: GQLObject + Send + Sync,
+        Subscription: GQLSubscription + Send + Sync,
     {
         let vars = match self.variables.take() {
             Some(value) => match Variables::parse_from_json(value) {
@@ -81,7 +86,7 @@ impl Serialize for GQLResponse {
     }
 }
 
-struct GQLError<'a>(&'a anyhow::Error);
+pub struct GQLError<'a>(pub &'a anyhow::Error);
 
 impl<'a> Deref for GQLError<'a> {
     type Target = anyhow::Error;

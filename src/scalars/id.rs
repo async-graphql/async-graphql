@@ -21,6 +21,24 @@ impl DerefMut for ID {
     }
 }
 
+impl From<String> for ID {
+    fn from(value: String) -> Self {
+        ID(value)
+    }
+}
+
+impl<'a> From<&'a str> for ID {
+    fn from(value: &'a str) -> Self {
+        ID(value.to_string())
+    }
+}
+
+impl From<usize> for ID {
+    fn from(value: usize) -> Self {
+        ID(value.to_string())
+    }
+}
+
 impl GQLScalar for ID {
     fn type_name() -> &'static str {
         "ID"

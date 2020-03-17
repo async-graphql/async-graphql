@@ -43,7 +43,11 @@ impl<'a> __Schema<'a> {
         desc = "If this server support subscription, the type that subscription operations will be rooted at."
     )]
     async fn subscription_type(&self) -> Option<__Type<'a>> {
-        None
+        if let Some(ty) = &self.registry.subscription_type {
+            Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
+        } else {
+            None
+        }
     }
 
     #[field(desc = "A list of all directives supported by this server.")]
