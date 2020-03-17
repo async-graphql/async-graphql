@@ -28,12 +28,14 @@
 //!
 //! ## Features
 //!
-//! * Fully support async/await.
-//! * Type safety.
-//! * Rustfmt friendly (Procedural Macro).
-//! * Custom scalar.
-//! * Minimal overhead.
-//! * Easy integration (hyper, actix_web, tide ...).
+//! * Fully support async/await
+//! * Type safety
+//! * Rustfmt friendly (Procedural Macro)
+//! * Custom scalar
+//! * Minimal overhead
+//! * Easy integration (hyper, actix_web, tide ...)
+//! * Upload files (Multipart request)
+//! * Subscription (WebSocket transport)
 //!
 //! ## License
 //!
@@ -186,7 +188,7 @@ pub use types::{GQLEnum, GQLEnumItem};
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value: 10 }, GQLEmptyMutation);
+///     let schema = Schema::new(MyObject{ value: 10 }, GQLEmptyMutation, GQLEmptySubscription);
 ///     let res = schema.query(r#"{
 ///         value
 ///         valueRef
@@ -253,7 +255,7 @@ pub use async_graphql_derive::Object;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, GQLEmptyMutation);
+///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, GQLEmptyMutation, GQLEmptySubscription);
 ///     let res = schema.query("{ value1 value2 }").execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
@@ -301,7 +303,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject, GQLEmptyMutation);
+///     let schema = Schema::new(MyObject, GQLEmptyMutation, GQLEmptySubscription);
 ///     let res = schema.query(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})
@@ -406,7 +408,7 @@ pub use async_graphql_derive::InputObject;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, GQLEmptyMutation).data("hello".to_string());
+///     let schema = Schema::new(QueryRoot, GQLEmptyMutation, GQLEmptySubscription).data("hello".to_string());
 ///     let res = schema.query(r#"
 ///     {
 ///         typeA {
@@ -431,4 +433,55 @@ pub use async_graphql_derive::Interface;
 /// It's similar to Interface, but it doesn't have fields.
 pub use async_graphql_derive::Union;
 
+/// Define a GraphQL subscription
+///
+/// The field function is a synchronization function that performs filtering. When true is returned, the message is pushed to the client.
+/// The second parameter is the type of the field.
+/// Starting with the third parameter is one or more filtering conditions, The filter condition is the parameter of the field.
+/// The filter function should be synchronous.
+///
+/// # Macro parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | Object name               | string   | Y        |
+/// | desc        | Object description        | string   | Y        |
+///
+/// # Field parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | Field name                | string   | Y        |
+/// | desc        | Field description         | string   | Y        |
+/// | deprecation | Field deprecation reason  | string   | Y        |
+///
+/// # Field argument parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | Argument name             | string   | Y        |
+/// | desc        | Argument description      | string   | Y        |
+/// | default     | Argument default value    | string   | Y        |
+///
+/// # Examples
+///
+/// ```ignore
+/// use async_graphql::*;
+///
+/// #[Object]
+/// struct Event {
+///     value: i32,
+/// }
+///
+/// struct SubscriptionRoot;
+///
+/// #[Subscription]
+/// impl SubscriptionRoot {
+///     #[field]
+///     async fn value(&self, event: &Event, condition: i32) -> bool {
+///         // Push when value is greater than condition
+///         event.value > condition
+///     }
+/// }
+/// ```
 pub use async_graphql_derive::Subscription;

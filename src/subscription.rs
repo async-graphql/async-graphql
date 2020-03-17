@@ -9,10 +9,10 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
 pub struct Subscribe {
-    pub types: HashMap<TypeId, Field>,
-    pub variables: Variables,
-    pub variable_definitions: Vec<VariableDefinition>,
-    pub fragments: HashMap<String, FragmentDefinition>,
+    types: HashMap<TypeId, Field>,
+    variables: Variables,
+    variable_definitions: Vec<VariableDefinition>,
+    fragments: HashMap<String, FragmentDefinition>,
 }
 
 impl Subscribe {
@@ -29,7 +29,7 @@ impl Subscribe {
             variables: &self.variables,
             variable_definitions: Some(&self.variable_definitions),
             registry: &schema.registry,
-            data: &Default::default(),
+            data: &schema.data,
             fragments: &self.fragments,
         };
         schema.subscription.resolve(&ctx, &self.types, msg).await

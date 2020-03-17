@@ -52,11 +52,12 @@ impl MutationRoot {
         let mut books = ctx.data::<Storage>().lock().await;
         let entry = books.vacant_entry();
         let id: ID = entry.key().into();
-        entry.insert(Book {
+        let book = Book {
             id: id.clone(),
             name,
             author,
-        });
+        };
+        entry.insert(book);
         publish_message(BookChanged {
             mutation_type: MutationType::Created,
             id: id.clone(),
@@ -110,7 +111,10 @@ struct SubscriptionRoot;
 #[async_graphql::Subscription]
 impl SubscriptionRoot {
     #[field]
-    fn books(&self, changed: &BookChanged, name: Option<String>) -> bool {
+    fn books(&self, changed: &BookChanged, mutation_type: Option<MutationType>) -> bool {
+        if let Some(mutation_type) = mutation_type {
+            return changed.mutation_type == mutation_type;
+        }
         true
     }
 }

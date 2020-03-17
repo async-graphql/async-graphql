@@ -6,6 +6,9 @@ use std::borrow::Cow;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
+/// Empty subscription
+///
+/// Only the parameters used to construct the Schema, representing an unconfigured subscription.
 pub struct GQLEmptySubscription;
 
 impl GQLType for GQLEmptySubscription {

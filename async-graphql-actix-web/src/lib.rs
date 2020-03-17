@@ -24,6 +24,7 @@ use std::sync::Arc;
 
 pub use pubsub::publish_message;
 
+/// Actix-web handler builder
 pub struct HandlerBuilder<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     max_file_size: Option<usize>,

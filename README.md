@@ -40,13 +40,14 @@ Open `http://localhost:8000` in browser
 
 ## Features
 
-* Fully support async/await.
-* Type safety.
-* Rustfmt friendly (Procedural Macro).
-* Custom scalar.
-* Minimal overhead.
-* Easy integration (hyper, actix_web, tide ...).
-* Upload files && Subscription (async-graphql-actix-web)
+* Fully support async/await
+* Type safety
+* Rustfmt friendly (Procedural Macro)
+* Custom scalar
+* Minimal overhead
+* Easy integration (hyper, actix_web, tide ...)
+* Upload files (Multipart request)
+* Subscription (WebSocket transport)
 
 ## Goals
 
