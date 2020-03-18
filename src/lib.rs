@@ -37,6 +37,10 @@
 //! * Upload files (Multipart request)
 //! * Subscription (WebSocket transport)
 //!
+//! ## Integrations
+//!
+//! * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
+//!
 //! ## License
 //!
 //! Licensed under either of
