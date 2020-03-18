@@ -1,5 +1,5 @@
 use crate::{registry, ContextBase, GQLSubscription, GQLType, QueryError, Result};
-use graphql_parser::query::{Field, SelectionSet};
+use graphql_parser::query::Field;
 use serde_json::Value;
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
@@ -27,7 +27,7 @@ impl GQLType for GQLEmptySubscription {
 
 #[async_trait::async_trait]
 impl GQLSubscription for GQLEmptySubscription {
-    fn create_types(_selection_set: SelectionSet) -> Result<HashMap<TypeId, Field, RandomState>> {
+    fn create_type(_field: &Field, _types: &mut HashMap<TypeId, Field>) -> Result<()> {
         return Err(QueryError::NotConfiguredSubscriptions.into());
     }
 

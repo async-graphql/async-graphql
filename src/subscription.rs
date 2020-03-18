@@ -1,9 +1,13 @@
 use crate::registry::Registry;
 use crate::validation::check_rules;
-use crate::{ContextBase, GQLType, QueryError, QueryParseError, Result, Schema, Variables};
+use crate::{
+    ContextBase, ContextSelectionSet, GQLType, QueryError, QueryParseError, Result, Schema,
+    Variables,
+};
 use graphql_parser::parse_query;
 use graphql_parser::query::{
-    Definition, Field, FragmentDefinition, OperationDefinition, SelectionSet, VariableDefinition,
+    Definition, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
+    VariableDefinition,
 };
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
@@ -45,17 +49,31 @@ pub trait GQLSubscription: GQLType {
         return false;
     }
 
-    fn create_types(selection_set: SelectionSet) -> Result<HashMap<TypeId, Field>>;
+    fn create_type(field: &Field, types: &mut HashMap<TypeId, Field>) -> Result<()>;
 
     fn create_subscribe(
         &self,
+        registry: &Registry,
         selection_set: SelectionSet,
         variables: Variables,
         variable_definitions: Vec<VariableDefinition>,
         fragments: HashMap<String, FragmentDefinition>,
-    ) -> Result<Subscribe> {
+    ) -> Result<Subscribe>
+    where
+        Self: Sized,
+    {
+        let mut types = HashMap::new();
+        let ctx = ContextSelectionSet {
+            item: &selection_set,
+            variables: &variables,
+            variable_definitions: Some(&variable_definitions),
+            registry,
+            data: &Default::default(),
+            fragments: &fragments,
+        };
+        create_types::<Self>(&ctx, &fragments, &mut types)?;
         Ok(Subscribe {
-            types: Self::create_types(selection_set)?,
+            types,
             variables,
             variable_definitions,
             fragments,
@@ -69,6 +87,48 @@ pub trait GQLSubscription: GQLType {
         types: &HashMap<TypeId, Field>,
         msg: &(dyn Any + Send + Sync),
     ) -> Result<Option<serde_json::Value>>;
+}
+
+fn create_types<T: GQLSubscription>(
+    ctx: &ContextSelectionSet<'_>,
+    fragments: &HashMap<String, FragmentDefinition>,
+    types: &mut HashMap<TypeId, Field>,
+) -> Result<()> {
+    for selection in &ctx.items {
+        match selection {
+            Selection::Field(field) => {
+                if ctx.is_skip(&field.directives)? {
+                    continue;
+                }
+                T::create_type(field, types)?;
+            }
+            Selection::FragmentSpread(fragment_spread) => {
+                if ctx.is_skip(&fragment_spread.directives)? {
+                    continue;
+                }
+
+                if let Some(fragment) = fragments.get(&fragment_spread.fragment_name) {
+                    create_types::<T>(&ctx.with_item(&fragment.selection_set), fragments, types)?;
+                } else {
+                    return Err(QueryError::UnknownFragment {
+                        name: fragment_spread.fragment_name.clone(),
+                    }
+                    .into());
+                }
+            }
+            Selection::InlineFragment(inline_fragment) => {
+                if ctx.is_skip(&inline_fragment.directives)? {
+                    continue;
+                }
+                create_types::<T>(
+                    &ctx.with_item(&inline_fragment.selection_set),
+                    fragments,
+                    types,
+                )?;
+            }
+        }
+    }
+    Ok(())
 }
 
 pub struct SubscribeBuilder<'a, Subscription> {
@@ -130,6 +190,7 @@ where
         })?;
 
         self.subscription.create_subscribe(
+            self.registry,
             subscription.selection_set,
             self.variables.unwrap_or_default(),
             subscription.variable_definitions,

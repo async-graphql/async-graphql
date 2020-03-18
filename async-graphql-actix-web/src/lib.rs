@@ -27,7 +27,8 @@ pub use pubsub::publish_message;
 /// Actix-web handler builder
 pub struct HandlerBuilder<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
-    max_file_size: Option<usize>,
+    max_file_size: usize,
+    max_file_count: usize,
     enable_subscription: bool,
     enable_ui: Option<(String, Option<String>)>,
 }
@@ -42,16 +43,25 @@ where
     pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
         Self {
             schema,
-            max_file_size: Some(1024 * 1024 * 2),
+            max_file_size: 1024 * 1024 * 2,
+            max_file_count: 9,
             enable_subscription: false,
             enable_ui: None,
         }
     }
 
-    /// Set the maximum file size for upload, no limit by default.
+    /// Set the maximum file size for upload, default 2M bytes.
     pub fn max_file_size(self, size: usize) -> Self {
         Self {
-            max_file_size: Some(size),
+            max_file_size: size,
+            ..self
+        }
+    }
+
+    /// Set the maximum files count for upload, default 9.
+    pub fn max_files(self, count: usize) -> Self {
+        Self {
+            max_file_count: count,
             ..self
         }
     }
@@ -89,6 +99,7 @@ where
            + Clone {
         let schema = Arc::new(self.schema);
         let max_file_size = self.max_file_size;
+        let max_file_count = self.max_file_count;
         let enable_ui = self.enable_ui;
         let enable_subscription = self.enable_subscription;
 
@@ -124,7 +135,7 @@ where
                 }
 
                 if req.method() == Method::POST {
-                    handle_request(&schema, max_file_size, req, payload).await
+                    handle_request(&schema, max_file_size, max_file_count, req, payload).await
                 } else {
                     Ok(HttpResponse::MethodNotAllowed().finish())
                 }
@@ -135,7 +146,8 @@ where
 
 async fn handle_request<Query, Mutation, Subscription>(
     schema: &Schema<Query, Mutation, Subscription>,
-    max_file_size: Option<usize>,
+    max_file_size: usize,
+    max_file_count: usize,
     req: HttpRequest,
     mut payload: Payload,
 ) -> actix_web::Result<HttpResponse>
@@ -174,6 +186,7 @@ where
             }
 
             // read files
+            let mut file_count = 0;
             while let Some(field) = multipart.next().await {
                 let mut field = field?;
                 if let Some(content_disposition) = field.content_disposition() {
@@ -189,12 +202,10 @@ where
                                     part.map_err(|err| actix_web::error::ErrorBadRequest(err))?;
                                 data.extend(&part);
 
-                                if let Some(max_file_size) = max_file_size {
-                                    if data.len() > max_file_size {
-                                        return Err(actix_web::error::ErrorPayloadTooLarge(
-                                            "payload to large",
-                                        ));
-                                    }
+                                if data.len() > max_file_size {
+                                    return Err(actix_web::error::ErrorPayloadTooLarge(
+                                        "payload to large",
+                                    ));
                                 }
                             }
 
@@ -207,6 +218,12 @@ where
                                     Some(&content_type),
                                     data.clone(),
                                 );
+                            }
+                            file_count += 1;
+                            if file_count > max_file_count {
+                                return Err(actix_web::error::ErrorPayloadTooLarge(
+                                    "payload to large",
+                                ));
                             }
                         } else {
                             return Err(actix_web::error::ErrorBadRequest("bad request"));

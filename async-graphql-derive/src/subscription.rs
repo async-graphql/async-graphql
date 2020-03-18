@@ -193,8 +193,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 create_types.push(quote! {
                     if field.name.as_str() == #field_name {
-                        types.insert(std::any::TypeId::of::<#ty>(), field);
-                        continue;
+                        types.insert(std::any::TypeId::of::<#ty>(), field.clone());
+                        return Ok(());
                     }
                 });
 
@@ -238,26 +238,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::GQLSubscription for SubscriptionRoot {
-            fn create_types(
-                selection_set: #crate_name::graphql_parser::query::SelectionSet,
-            ) -> #crate_name::Result<std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>> {
+            fn create_type(field: &#crate_name::graphql_parser::query::Field, types: &mut std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>) -> #crate_name::Result<()> {
                 use #crate_name::ErrorWithPosition;
-
-                let mut types = std::collections::HashMap::new();
-                for selection in selection_set.items {
-                    match selection {
-                        #crate_name::graphql_parser::query::Selection::Field(field) => {
-                            #(#create_types)*
-                            #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
-                                field_name: field.name.clone(),
-                                object: #gql_typename.to_string(),
-                            }
-                            .with_position(field.position));
-                        }
-                        _ => {}
-                    }
+                #(#create_types)*
+                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                    field_name: field.name.clone(),
+                    object: #gql_typename.to_string(),
                 }
-                Ok(types)
+                .with_position(field.position));
             }
 
             async fn resolve(

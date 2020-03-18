@@ -51,7 +51,7 @@ Open `http://localhost:8000` in browser
 
 ## Integrations
 
-* async-graphql-actix-web (Actix-web)
+* Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 
 ## Goals
 
