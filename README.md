@@ -49,6 +49,10 @@ Open `http://localhost:8000` in browser
 * Upload files (Multipart request)
 * Subscription (WebSocket transport)
 
+## Integrations
+
+* async-graphql-actix-web (Actix-web)
+
 ## Goals
 
 - [X] Types
