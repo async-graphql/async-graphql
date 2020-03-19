@@ -149,7 +149,7 @@ impl QueryRoot {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> Result<Connection<Human, EmptyEdgeFields>> {
+    ) -> Result<Connection<Droid, EmptyEdgeFields>> {
         let droids = ctx
             .data::<StarWars>()
             .droids()
@@ -160,7 +160,7 @@ impl QueryRoot {
             .as_slice()
             .query(ctx, after, before, first, last)
             .await
-            .map(|connection| connection.map(|id| Human(*id)))
+            .map(|connection| connection.map(|id| Droid(*id)))
     }
 }
 
