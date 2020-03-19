@@ -72,7 +72,7 @@ pub async fn test_input_object_default_value() {
         }
     }
 
-    let schema = Schema::new(Root, GQLEmptyMutation, GQLEmptySubscription);
+    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
     let query = format!(
         r#"{{
             a(input:{{e:777}}) {{

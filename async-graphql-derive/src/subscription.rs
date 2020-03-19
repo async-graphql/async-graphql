@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{build_value_repr, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -24,6 +24,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| self_name.clone());
+    check_reserved_name(&gql_typename, object_args.internal)?;
+
     let desc = object_args
         .desc
         .as_ref()
@@ -157,7 +159,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         args.insert(#name, #crate_name::registry::InputValue {
                             name: #name,
                             description: #desc,
-                            ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                            ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
                         });
                     });
@@ -178,15 +180,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 schema_fields.push(quote! {
-                    fields.insert(#field_name, #crate_name::registry::Field {
-                        name: #field_name,
+                    fields.insert(#field_name.to_string(), #crate_name::registry::Field {
+                        name: #field_name.to_string(),
                         description: #field_desc,
                         args: {
                             let mut args = std::collections::HashMap::new();
                             #(#schema_args)*
                             args
                         },
-                        ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                        ty: <#ty as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
                     });
                 });
@@ -204,7 +206,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         if self.#ident(msg, #(#use_params)*) {
                             let ctx_selection_set = ctx_field.with_item(&field.selection_set);
                             let value =
-                                #crate_name::GQLOutputValue::resolve(msg, &ctx_selection_set).await?;
+                                #crate_name::OutputValueType::resolve(msg, &ctx_selection_set).await?;
                             return Ok(Some(value));
                         }
                     }
@@ -218,14 +220,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
-        impl #generics #crate_name::GQLType for #self_ty {
+        impl #generics #crate_name::Type for #self_ty {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
-                    name: #gql_typename,
+                    name: #gql_typename.to_string(),
                     description: #desc,
                     fields: {
                         let mut fields = std::collections::HashMap::new();
@@ -237,7 +239,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::GQLSubscription for SubscriptionRoot {
+        impl #crate_name::SubscriptionType for SubscriptionRoot {
             fn create_type(field: &#crate_name::graphql_parser::query::Field, types: &mut std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>) -> #crate_name::Result<()> {
                 use #crate_name::ErrorWithPosition;
                 #(#create_types)*

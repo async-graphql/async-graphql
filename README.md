@@ -47,8 +47,7 @@ Open `http://localhost:8000` in browser
 * Minimal overhead
 * Easy integration (hyper, actix_web, tide ...)
 * Upload files (Multipart request)
-* Subscription (WebSocket transport)
-
+* Subscription (WebSocket transport
 ## Integrations
 
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
@@ -68,7 +67,6 @@ Open `http://localhost:8000` in browser
         - [X] List
         - [X] Non-Null
     - [X] Object
-        - [X] Lifetime cycle   
     - [X] Enum
     - [X] InputObject
         - [X] Field default value
@@ -99,6 +97,7 @@ Open `http://localhost:8000` in browser
     - [X] Schema
     - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
         - [X] Actix-web
+    - [X] Cursor Connections
 - [X] Subscription
     - [X] Filter
     - [X] WebSocket transport
@@ -143,3 +142,6 @@ Licensed under either of
 ## References
 
 * [GraphQL](https://graphql.org)
+* [GraphQL Multipart Request](https://github.com/jaydenseric/graphql-multipart-request-spec)
+* [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
+* [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)

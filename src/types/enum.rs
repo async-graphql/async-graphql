@@ -1,14 +1,14 @@
-use crate::{GQLType, Result};
+use crate::{Result, Type};
 use graphql_parser::query::Value;
 
-pub struct GQLEnumItem<T> {
+pub struct EnumItem<T> {
     pub name: &'static str,
     pub value: T,
 }
 
 #[async_trait::async_trait]
-pub trait GQLEnum: GQLType + Sized + Eq + Send + Copy + Sized + 'static {
-    fn items() -> &'static [GQLEnumItem<Self>];
+pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
+    fn items() -> &'static [EnumItem<Self>];
 
     fn parse_enum(value: &Value) -> Option<Self> {
         let value = match value {

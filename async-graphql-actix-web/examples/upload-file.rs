@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use async_graphql::{GQLEmptySubscription, Schema, Upload};
+use async_graphql::{EmptySubscription, Schema, Upload};
 
 struct QueryRoot;
 
@@ -36,7 +36,7 @@ impl MutationRoot {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
-        let schema = Schema::new(QueryRoot, MutationRoot, GQLEmptySubscription);
+        let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
         let handler = async_graphql_actix_web::HandlerBuilder::new(schema)
             .enable_subscription()
             .build();

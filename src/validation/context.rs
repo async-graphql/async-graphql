@@ -1,18 +1,18 @@
 use crate::error::RuleError;
-use crate::registry::{Registry, Type};
+use crate::registry;
 use graphql_parser::query::{Definition, Document, FragmentDefinition};
 use graphql_parser::Pos;
 use std::collections::HashMap;
 
 pub struct ValidatorContext<'a> {
-    pub registry: &'a Registry,
+    pub registry: &'a registry::Registry,
     pub errors: Vec<RuleError>,
-    type_stack: Vec<&'a Type>,
+    type_stack: Vec<&'a registry::Type>,
     fragments: HashMap<&'a str, &'a FragmentDefinition>,
 }
 
 impl<'a> ValidatorContext<'a> {
-    pub fn new(registry: &'a Registry, doc: &'a Document) -> Self {
+    pub fn new(registry: &'a registry::Registry, doc: &'a Document) -> Self {
         Self {
             registry,
             errors: Default::default(),
@@ -39,17 +39,21 @@ impl<'a> ValidatorContext<'a> {
         self.errors.extend(errors);
     }
 
-    pub fn with_type<F: FnMut(&mut ValidatorContext<'a>)>(&mut self, ty: &'a Type, mut f: F) {
+    pub fn with_type<F: FnMut(&mut ValidatorContext<'a>)>(
+        &mut self,
+        ty: &'a registry::Type,
+        mut f: F,
+    ) {
         self.type_stack.push(ty);
         f(self);
         self.type_stack.pop();
     }
 
-    pub fn parent_type(&self) -> Option<&'a Type> {
+    pub fn parent_type(&self) -> Option<&'a registry::Type> {
         self.type_stack.get(self.type_stack.len() - 2).map(|t| *t)
     }
 
-    pub fn current_type(&self) -> &'a Type {
+    pub fn current_type(&self) -> &'a registry::Type {
         self.type_stack.last().unwrap()
     }
 

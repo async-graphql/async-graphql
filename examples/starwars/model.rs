@@ -1,5 +1,5 @@
 use super::StarWars;
-use async_graphql::Context;
+use async_graphql::{Connection, Context, DataSource, EmptyEdgeFields, Result};
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
 pub enum Episode {
@@ -111,12 +111,56 @@ impl QueryRoot {
     }
 
     #[field]
+    async fn humans(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<Connection<Human, EmptyEdgeFields>> {
+        let humans = ctx
+            .data::<StarWars>()
+            .humans()
+            .iter()
+            .map(|id| *id)
+            .collect::<Vec<_>>();
+        humans
+            .as_slice()
+            .query(ctx, after, before, first, last)
+            .await
+            .map(|connection| connection.map(|id| Human(*id)))
+    }
+
+    #[field]
     async fn droid(
         &self,
         ctx: &Context<'_>,
         #[arg(desc = "id of the droid")] id: String,
     ) -> Option<Droid> {
         ctx.data::<StarWars>().droid(&id).map(|id| Droid(id))
+    }
+
+    #[field]
+    async fn droids(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> Result<Connection<Human, EmptyEdgeFields>> {
+        let droids = ctx
+            .data::<StarWars>()
+            .droids()
+            .iter()
+            .map(|id| *id)
+            .collect::<Vec<_>>();
+        droids
+            .as_slice()
+            .query(ctx, after, before, first, last)
+            .await
+            .map(|connection| connection.map(|id| Human(*id)))
     }
 }
 

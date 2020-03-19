@@ -1,9 +1,10 @@
+use crate::registry::Registry;
 use crate::{registry, Context, ContextSelectionSet, Result};
 use graphql_parser::query::{Field, Value};
 use std::borrow::Cow;
 
 /// Represents a GraphQL type
-pub trait GQLType {
+pub trait Type {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
 
@@ -17,23 +18,23 @@ pub trait GQLType {
 }
 
 /// Represents a GraphQL input value
-pub trait GQLInputValue: GQLType + Sized {
+pub trait InputValueType: Type + Sized {
     fn parse(value: &Value) -> Option<Self>;
 }
 
 /// Represents a GraphQL output value
 #[async_trait::async_trait]
-pub trait GQLOutputValue: GQLType {
+pub trait OutputValueType: Type {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
 }
 
 /// Represents a GraphQL object
 #[async_trait::async_trait]
-pub trait GQLObject: GQLOutputValue {
-    /// This function returns true of type `GQLEmptyMutation` only
+pub trait ObjectType: OutputValueType {
+    /// This function returns true of type `EmptyMutation` only
     #[doc(hidden)]
     fn is_empty() -> bool {
-        return false;
+        false
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
@@ -49,7 +50,7 @@ pub trait GQLObject: GQLOutputValue {
 }
 
 /// Represents a GraphQL input object
-pub trait GQLInputObject: GQLInputValue {}
+pub trait InputObjectType: InputValueType {}
 
 /// Represents a GraphQL scalar
 ///
@@ -62,7 +63,7 @@ pub trait GQLInputObject: GQLInputValue {}
 ///
 /// struct MyInt(i32);
 ///
-/// impl GQLScalar for MyInt {
+/// impl Scalar for MyInt {
 ///     fn type_name() -> &'static str {
 ///         "MyInt"
 ///     }
@@ -82,7 +83,7 @@ pub trait GQLInputObject: GQLInputValue {}
 ///
 /// impl_scalar!(MyInt); // // Don't forget this one
 /// ```
-pub trait GQLScalar: Sized + Send {
+pub trait Scalar: Sized + Send {
     /// The type name of a scalar.
     fn type_name() -> &'static str;
 
@@ -109,52 +110,28 @@ pub trait GQLScalar: Sized + Send {
 #[doc(hidden)]
 macro_rules! impl_scalar_internal {
     ($ty:ty) => {
-        impl crate::GQLType for $ty {
+        impl crate::Type for $ty {
             fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as crate::GQLScalar>::type_name())
+                std::borrow::Cow::Borrowed(<$ty as crate::Scalar>::type_name())
             }
 
             fn create_type_info(registry: &mut crate::registry::Registry) -> String {
                 registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
-                    name: <$ty as crate::GQLScalar>::type_name().to_string(),
+                    name: <$ty as crate::Scalar>::type_name().to_string(),
                     description: <$ty>::description(),
-                    is_valid: |value| <$ty as crate::GQLScalar>::is_valid(value),
+                    is_valid: |value| <$ty as crate::Scalar>::is_valid(value),
                 })
             }
         }
 
-        impl crate::GQLType for &$ty {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as crate::GQLScalar>::type_name())
-            }
-
-            fn create_type_info(registry: &mut crate::registry::Registry) -> String {
-                registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
-                    name: <$ty as crate::GQLScalar>::type_name().to_string(),
-                    description: <$ty>::description(),
-                    is_valid: |value| <$ty as crate::GQLScalar>::is_valid(value),
-                })
-            }
-        }
-
-        impl crate::GQLInputValue for $ty {
+        impl crate::InputValueType for $ty {
             fn parse(value: &crate::Value) -> Option<Self> {
-                <$ty as crate::GQLScalar>::parse(value)
+                <$ty as crate::Scalar>::parse(value)
             }
         }
 
         #[async_trait::async_trait]
-        impl crate::GQLOutputValue for $ty {
-            async fn resolve(
-                value: &Self,
-                _: &crate::ContextSelectionSet<'_>,
-            ) -> crate::Result<serde_json::Value> {
-                value.to_json()
-            }
-        }
-
-        #[async_trait::async_trait]
-        impl crate::GQLOutputValue for &$ty {
+        impl crate::OutputValueType for $ty {
             async fn resolve(
                 value: &Self,
                 _: &crate::ContextSelectionSet<'_>,
@@ -168,52 +145,28 @@ macro_rules! impl_scalar_internal {
 #[macro_export]
 macro_rules! impl_scalar {
     ($ty:ty) => {
-        impl async_graphql::GQLType for $ty {
+        impl async_graphql::Type for $ty {
             fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as async_graphql::GQLScalar>::type_name())
+                std::borrow::Cow::Borrowed(<$ty as async_graphql::Scalar>::type_name())
             }
 
             fn create_type_info(registry: &mut async_graphql::registry::Registry) -> String {
                 registry.create_type::<$ty, _>(|_| async_graphql::registry::Type::Scalar {
-                    name: <$ty as async_graphql::GQLScalar>::type_name().to_string(),
+                    name: <$ty as async_graphql::Scalar>::type_name().to_string(),
                     description: <$ty>::description(),
-                    is_valid: |value| <$ty as async_graphql::GQLScalar>::is_valid(value),
+                    is_valid: |value| <$ty as async_graphql::Scalar>::is_valid(value),
                 })
             }
         }
 
-        impl async_graphql::GQLType for &$ty {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as async_graphql::GQLScalar>::type_name())
-            }
-
-            fn create_type_info(registry: &mut async_graphql::registry::Registry) -> String {
-                registry.create_type::<$ty, _>(|_| async_graphql::registry::Type::Scalar {
-                    name: <$ty as async_graphql::GQLScalar>::type_name().to_string(),
-                    description: <$ty>::description(),
-                    is_valid: |value| <$ty as async_graphql::GQLScalar>::is_valid(value),
-                })
-            }
-        }
-
-        impl async_graphql::GQLInputValue for $ty {
+        impl async_graphql::InputValueType for $ty {
             fn parse(value: &async_graphql::Value) -> Option<Self> {
-                <$ty as async_graphql::GQLScalar>::parse(value)
+                <$ty as async_graphql::Scalar>::parse(value)
             }
         }
 
         #[async_graphql::async_trait::async_trait]
-        impl async_graphql::GQLOutputValue for $ty {
-            async fn resolve(
-                value: &Self,
-                _: &async_graphql::ContextSelectionSet<'_>,
-            ) -> async_graphql::Result<serde_json::Value> {
-                value.to_json()
-            }
-        }
-
-        #[async_graphql::async_trait::async_trait]
-        impl async_graphql::GQLOutputValue for &$ty {
+        impl async_graphql::OutputValueType for $ty {
             async fn resolve(
                 value: &Self,
                 _: &async_graphql::ContextSelectionSet<'_>,
@@ -224,12 +177,19 @@ macro_rules! impl_scalar {
     };
 }
 
-/// Represents a GraphQL output value
+impl<T: Type + Send + Sync> Type for &T {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
 #[async_trait::async_trait]
-impl<T: GQLObject + Send + Sync> GQLOutputValue for T {
+impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut result = serde_json::Map::<String, serde_json::Value>::new();
-        crate::resolver::do_resolve(ctx, value, &mut result).await?;
-        Ok(result.into())
+        T::resolve(*value, ctx).await
     }
 }

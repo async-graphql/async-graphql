@@ -1,4 +1,4 @@
-use crate::registry::Type;
+use crate::registry;
 use crate::validation::context::ValidatorContext;
 use crate::validation::visitor::Visitor;
 use graphql_parser::query::Field;
@@ -14,7 +14,7 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
             .field_by_name(&field.name)
             .is_none()
         {
-            if let Some(Type::Union { .. }) = ctx.parent_type() {
+            if let Some(registry::Type::Union { .. }) = ctx.parent_type() {
                 if field.name == "__typename" {
                     return;
                 }

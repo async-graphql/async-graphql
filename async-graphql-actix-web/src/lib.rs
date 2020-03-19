@@ -13,7 +13,7 @@ use actix_web::web::{BytesMut, Payload};
 use actix_web::{web, FromRequest, HttpRequest, HttpResponse, Responder};
 use actix_web_actors::ws;
 use async_graphql::http::{GQLRequest, GQLResponse};
-use async_graphql::{GQLObject, GQLSubscription, Schema};
+use async_graphql::{ObjectType, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::StreamExt;
 use mime::Mime;
@@ -35,9 +35,9 @@ pub struct HandlerBuilder<Query, Mutation, Subscription> {
 
 impl<Query, Mutation, Subscription> HandlerBuilder<Query, Mutation, Subscription>
 where
-    Query: GQLObject + Send + Sync + 'static,
-    Mutation: GQLObject + Send + Sync + 'static,
-    Subscription: GQLSubscription + Send + Sync + 'static,
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     /// Create an HTTP handler builder
     pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
@@ -152,9 +152,9 @@ async fn handle_request<Query, Mutation, Subscription>(
     mut payload: Payload,
 ) -> actix_web::Result<HttpResponse>
 where
-    Query: GQLObject + Send + Sync,
-    Mutation: GQLObject + Send + Sync,
-    Subscription: GQLSubscription + Send + Sync,
+    Query: ObjectType + Send + Sync,
+    Mutation: ObjectType + Send + Sync,
+    Subscription: SubscriptionType + Send + Sync,
 {
     if let Ok(ct) = get_content_type(req.headers()) {
         if ct.essence_str() == mime::MULTIPART_FORM_DATA {

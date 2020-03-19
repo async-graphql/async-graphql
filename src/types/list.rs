@@ -1,7 +1,7 @@
-use crate::{registry, ContextSelectionSet, GQLInputValue, GQLOutputValue, GQLType, Result, Value};
+use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
 use std::borrow::Cow;
 
-impl<T: GQLType> GQLType for Vec<T> {
+impl<T: Type> Type for Vec<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))
     }
@@ -16,13 +16,13 @@ impl<T: GQLType> GQLType for Vec<T> {
     }
 }
 
-impl<T: GQLInputValue> GQLInputValue for Vec<T> {
+impl<T: InputValueType> InputValueType for Vec<T> {
     fn parse(value: &Value) -> Option<Self> {
         match value {
             Value::List(values) => {
                 let mut result = Vec::new();
                 for value in values {
-                    result.push(GQLInputValue::parse(value)?);
+                    result.push(InputValueType::parse(value)?);
                 }
                 Some(result)
             }
@@ -32,17 +32,17 @@ impl<T: GQLInputValue> GQLInputValue for Vec<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for Vec<T> {
+impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
         for item in value {
-            res.push(GQLOutputValue::resolve(item, &ctx).await?);
+            res.push(OutputValueType::resolve(item, &ctx).await?);
         }
         Ok(res.into())
     }
 }
 
-impl<T: GQLType> GQLType for &[T] {
+impl<T: Type> Type for &[T] {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::type_name()))
     }
@@ -53,32 +53,11 @@ impl<T: GQLType> GQLType for &[T] {
 }
 
 #[async_trait::async_trait]
-impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &[T] {
+impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut res = Vec::new();
         for item in value.iter() {
-            res.push(GQLOutputValue::resolve(item, &ctx).await?);
-        }
-        Ok(res.into())
-    }
-}
-
-impl<T: GQLType> GQLType for &Vec<T> {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::type_name()))
-    }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry)
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &Vec<T> {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut res = Vec::new();
-        for item in value.iter() {
-            res.push(GQLOutputValue::resolve(item, &ctx).await?);
+            res.push(OutputValueType::resolve(item, &ctx).await?);
         }
         Ok(res.into())
     }
@@ -86,7 +65,7 @@ impl<T: GQLOutputValue + Send + Sync> GQLOutputValue for &Vec<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::GQLType;
+    use crate::Type;
 
     #[test]
     fn test_list_type() {

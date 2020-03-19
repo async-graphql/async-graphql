@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::get_crate_name;
+use crate::utils::{check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -16,6 +16,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     };
 
     let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
+    check_reserved_name(&gql_typename, enum_args.internal)?;
+
     let desc = enum_args
         .desc
         .as_ref()
@@ -55,7 +57,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .unwrap_or_else(|| quote! {None});
         enum_items.push(&variant.ident);
         items.push(quote! {
-            #crate_name::GQLEnumItem {
+            #crate_name::EnumItem {
                 name: #gql_item_name,
                 value: #ident::#item_ident,
             }
@@ -76,13 +78,13 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             #(#enum_items),*
         }
 
-        impl #crate_name::GQLEnum for #ident {
-            fn items() -> &'static [#crate_name::GQLEnumItem<#ident>] {
+        impl #crate_name::EnumType for #ident {
+            fn items() -> &'static [#crate_name::EnumItem<#ident>] {
                 &[#(#items),*]
             }
         }
 
-        impl #crate_name::GQLType for #ident {
+        impl #crate_name::Type for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -90,7 +92,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| {
                     #crate_name::registry::Type::Enum {
-                        name: #gql_typename,
+                        name: #gql_typename.to_string(),
                         description: #desc,
                         enum_values: {
                             let mut enum_items = std::collections::HashMap::new();
@@ -102,43 +104,16 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             }
         }
 
-        impl #crate_name::GQLInputValue for #ident {
+        impl #crate_name::InputValueType for #ident {
             fn parse(value: &#crate_name::Value) -> Option<Self> {
-                #crate_name::GQLEnum::parse_enum(value)
+                #crate_name::EnumType::parse_enum(value)
             }
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::GQLOutputValue for #ident {
+        impl #crate_name::OutputValueType for #ident {
             async fn resolve(value: &Self, _: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<serde_json::Value> {
-                #crate_name::GQLEnum::resolve_enum(value)
-            }
-        }
-
-        impl #crate_name::GQLType for &#ident {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
-            }
-
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type::<Self, _>(|registry| {
-                    #crate_name::registry::Type::Enum {
-                        name: #gql_typename,
-                        description: #desc,
-                        enum_values: {
-                            let mut enum_items = std::collections::HashMap::new();
-                            #(#schema_enum_items)*
-                            enum_items
-                        },
-                    }
-                })
-            }
-        }
-
-        #[#crate_name::async_trait::async_trait]
-        impl #crate_name::GQLOutputValue for &#ident {
-            async fn resolve(value: &Self, _: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<serde_json::Value> {
-                #crate_name::GQLEnum::resolve_enum(*value)
+                #crate_name::EnumType::resolve_enum(value)
             }
         }
     };

@@ -71,6 +71,9 @@ pub enum QueryError {
 
     #[error("Unrecognized inline fragment \"{name}\" on type \"{object}\"")]
     UnrecognizedInlineFragment { object: String, name: String },
+
+    #[error("Argument \"{field_name}\" must be a non-negative integer")]
+    ArgumentMustBeNonNegative { field_name: String },
 }
 
 pub trait ErrorWithPosition {

@@ -5,10 +5,10 @@ use actix::{
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::{GQLError, GQLRequest, GQLResponse};
-use async_graphql::{GQLObject, GQLSubscription, Schema, Subscribe, Variables};
+use async_graphql::{ObjectType, Schema, Subscribe, SubscriptionType, Variables};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize)]
 struct OperationMessage {
@@ -27,9 +27,9 @@ pub struct WsSession<Query, Mutation, Subscription> {
 
 impl<Query, Mutation, Subscription> WsSession<Query, Mutation, Subscription>
 where
-    Query: GQLObject + Send + Sync + 'static,
-    Mutation: GQLObject + Send + Sync + 'static,
-    Subscription: GQLSubscription + Send + Sync + 'static,
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     pub fn new(schema: Arc<Schema<Query, Mutation, Subscription>>) -> Self {
         Self {
@@ -39,17 +39,27 @@ where
             subscribes: Default::default(),
         }
     }
+
+    fn hb(&self, ctx: &mut WebsocketContext<Self>) {
+        ctx.run_interval(Duration::new(1, 0), |act, ctx| {
+            if Instant::now().duration_since(act.hb) > Duration::new(10, 0) {
+                ctx.stop();
+            }
+        });
+    }
 }
 
 impl<Query, Mutation, Subscription> Actor for WsSession<Query, Mutation, Subscription>
 where
-    Query: GQLObject + Sync + Send + 'static,
-    Mutation: GQLObject + Sync + Send + 'static,
-    Subscription: GQLSubscription + Send + Sync + 'static,
+    Query: ObjectType + Sync + Send + 'static,
+    Mutation: ObjectType + Sync + Send + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     type Context = WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        self.hb(ctx);
+
         new_client(ctx.address().recipient())
             .into_actor(self)
             .then(|client_id, actor, _| {
@@ -68,9 +78,9 @@ where
 impl<Query, Mutation, Subscription> StreamHandler<Result<Message, ProtocolError>>
     for WsSession<Query, Mutation, Subscription>
 where
-    Query: GQLObject + Sync + Send + 'static,
-    Mutation: GQLObject + Sync + Send + 'static,
-    Subscription: GQLSubscription + Send + Sync + 'static,
+    Query: ObjectType + Sync + Send + 'static,
+    Mutation: ObjectType + Sync + Send + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     fn handle(&mut self, msg: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {
@@ -164,9 +174,9 @@ where
 impl<Query, Mutation, Subscription> Handler<PushMessage>
     for WsSession<Query, Mutation, Subscription>
 where
-    Query: GQLObject + Send + Sync + 'static,
-    Mutation: GQLObject + Send + Sync + 'static,
-    Subscription: GQLSubscription + Send + Sync + 'static,
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     type Result = ResponseActFuture<Self, std::result::Result<(), ()>>;
 

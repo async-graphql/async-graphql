@@ -1,6 +1,6 @@
 use crate::args;
 use crate::output_type::OutputType;
-use crate::utils::{build_value_repr, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -25,6 +25,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| self_name.clone());
+    check_reserved_name(&gql_typename, object_args.internal)?;
+
     let desc = object_args
         .desc
         .as_ref()
@@ -134,7 +136,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         args.insert(#name, #crate_name::registry::InputValue {
                             name: #name,
                             description: #desc,
-                            ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                            ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
                         });
                     });
@@ -156,15 +158,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let schema_ty = ty.value_type();
                 schema_fields.push(quote! {
-                    fields.insert(#field_name, #crate_name::registry::Field {
-                        name: #field_name,
+                    fields.insert(#field_name.to_string(), #crate_name::registry::Field {
+                        name: #field_name.to_string(),
                         description: #field_desc,
                         args: {
                             let mut args = std::collections::HashMap::new();
                             #(#schema_args)*
                             args
                         },
-                        ty: <#schema_ty as #crate_name::GQLType>::create_type_info(registry),
+                        ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
                     });
                 });
@@ -191,7 +193,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if field.name.as_str() == #field_name {
                         #(#get_params)*
                         let ctx_obj = ctx.with_item(&field.selection_set);
-                        return #crate_name::GQLOutputValue::resolve(&#resolve_obj, &ctx_obj).await.
+                        return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj).await.
                             map_err(|err| err.with_position(field.position).into());
                     }
                 });
@@ -204,14 +206,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
-        impl #generics #crate_name::GQLType for #self_ty {
+        impl #generics #crate_name::Type for #self_ty {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
-                    name: #gql_typename,
+                    name: #gql_typename.to_string(),
                     description: #desc,
                     fields: {
                         let mut fields = std::collections::HashMap::new();
@@ -223,7 +225,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl#generics #crate_name::GQLObject for #self_ty {
+        impl#generics #crate_name::ObjectType for #self_ty {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 use #crate_name::ErrorWithPosition;
 
@@ -241,6 +243,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
                 });
+            }
+        }
+
+        #[#crate_name::async_trait::async_trait]
+        impl #generics #crate_name::OutputValueType for #self_ty {
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+                #crate_name::do_resolve(ctx, value).await
             }
         }
     };

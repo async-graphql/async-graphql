@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, Result, Scalar, Value};
 use std::ops::{Deref, DerefMut};
 
 /// ID scalar
@@ -39,7 +39,7 @@ impl From<usize> for ID {
     }
 }
 
-impl GQLScalar for ID {
+impl Scalar for ID {
     fn type_name() -> &'static str {
         "ID"
     }

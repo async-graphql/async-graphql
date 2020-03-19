@@ -1,4 +1,4 @@
-use crate::{ContextSelectionSet, ErrorWithPosition, GQLObject, QueryError, Result};
+use crate::{ContextSelectionSet, ErrorWithPosition, ObjectType, QueryError, Result};
 use graphql_parser::query::{Selection, TypeCondition};
 use std::future::Future;
 use std::pin::Pin;
@@ -9,7 +9,7 @@ struct Resolver<'a, T> {
     result: &'a mut serde_json::Map<String, serde_json::Value>,
 }
 
-impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
+impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
     pub fn resolve(&'a mut self) -> Pin<Box<dyn Future<Output = Result<()>> + 'a + Send>> {
         Box::pin(async move {
             if self.ctx.items.is_empty() {
@@ -83,7 +83,22 @@ impl<'a, T: GQLObject + Send + Sync> Resolver<'a, T> {
     }
 }
 
-pub async fn do_resolve<'a, T: GQLObject + Send + Sync>(
+pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
+    ctx: &'a ContextSelectionSet<'a>,
+    root: &'a T,
+) -> Result<serde_json::Value> {
+    let mut result = serde_json::Map::<String, serde_json::Value>::new();
+    Resolver {
+        ctx,
+        obj: root,
+        result: &mut result,
+    }
+    .resolve()
+    .await?;
+    Ok(result.into())
+}
+
+pub async fn do_resolve_values<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
     result: &mut serde_json::Map<String, serde_json::Value>,
@@ -91,7 +106,7 @@ pub async fn do_resolve<'a, T: GQLObject + Send + Sync>(
     Resolver {
         ctx,
         obj: root,
-        result,
+        result: result,
     }
     .resolve()
     .await?;

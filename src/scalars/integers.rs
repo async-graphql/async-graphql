@@ -1,9 +1,9 @@
-use crate::{impl_scalar_internal, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, Result, Scalar, Value};
 
 macro_rules! impl_integer_scalars {
     ($($ty:ty),*) => {
         $(
-        impl GQLScalar for $ty {
+        impl Scalar for $ty {
             fn type_name() -> &'static str {
                 "Int"
             }

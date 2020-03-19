@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{ErrorWithPosition, GQLInputValue, GQLType, QueryError, Result};
+use crate::{ErrorWithPosition, InputValueType, QueryError, Result, Type};
 use bytes::Bytes;
 use fnv::FnvHasher;
 use graphql_parser::query::{
@@ -235,7 +235,7 @@ impl<'a, T> ContextBase<'a, T> {
                     .map(|(_, value)| value)
                 {
                     let value = self.resolve_input_value(value.clone())?;
-                    let res: bool = GQLInputValue::parse(&value).ok_or_else(|| {
+                    let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
@@ -262,7 +262,7 @@ impl<'a, T> ContextBase<'a, T> {
                     .map(|(_, value)| value)
                 {
                     let value = self.resolve_input_value(value.clone())?;
-                    let res: bool = GQLInputValue::parse(&value).ok_or_else(|| {
+                    let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
@@ -296,7 +296,7 @@ impl<'a, T> ContextBase<'a, T> {
 
 impl<'a> ContextBase<'a, &'a Field> {
     #[doc(hidden)]
-    pub fn param_value<T: GQLInputValue, F: FnOnce() -> Value>(
+    pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
         &self,
         name: &str,
         default: F,
@@ -310,7 +310,7 @@ impl<'a> ContextBase<'a, &'a Field> {
         {
             Some(value) => {
                 let value = self.resolve_input_value(value)?;
-                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                let res = InputValueType::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
                         actual: value,
@@ -321,7 +321,7 @@ impl<'a> ContextBase<'a, &'a Field> {
             }
             None => {
                 let value = default();
-                let res = GQLInputValue::parse(&value).ok_or_else(|| {
+                let res = InputValueType::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
                         actual: value.clone(),

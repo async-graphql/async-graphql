@@ -1,7 +1,7 @@
-use crate::{impl_scalar_internal, GQLScalar, Result, Value};
+use crate::{impl_scalar_internal, Result, Scalar, Value};
 use uuid::Uuid;
 
-impl GQLScalar for Uuid {
+impl Scalar for Uuid {
     fn type_name() -> &'static str {
         "UUID"
     }

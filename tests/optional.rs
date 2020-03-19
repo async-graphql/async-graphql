@@ -50,8 +50,8 @@ pub async fn test_optional_type() {
             value1: Some(10),
             value2: None,
         },
-        GQLEmptyMutation,
-        GQLEmptySubscription,
+        EmptyMutation,
+        EmptySubscription,
     );
     let query = format!(
         r#"{{

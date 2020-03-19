@@ -1,3 +1,4 @@
+mod connection;
 mod empty_mutation;
 mod empty_subscription;
 mod r#enum;
@@ -6,8 +7,9 @@ mod optional;
 mod query_root;
 mod upload;
 
-pub use empty_mutation::GQLEmptyMutation;
-pub use empty_subscription::GQLEmptySubscription;
+pub use connection::{Connection, DataSource, EmptyEdgeFields, QueryOperation};
+pub use empty_mutation::EmptyMutation;
+pub use empty_subscription::EmptySubscription;
 pub use query_root::QueryRoot;
-pub use r#enum::{GQLEnum, GQLEnumItem};
+pub use r#enum::{EnumItem, EnumType};
 pub use upload::Upload;

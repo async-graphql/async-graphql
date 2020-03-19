@@ -1,11 +1,11 @@
 mod starwars;
 
 use async_graphql::http::{graphiql_source, playground_source, GQLRequest};
-use async_graphql::{GQLEmptyMutation, GQLEmptySubscription, Schema};
+use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use mime;
 use tide::{self, Request, Response};
 
-type StarWarsSchema = Schema<starwars::QueryRoot, GQLEmptyMutation, GQLEmptySubscription>;
+type StarWarsSchema = Schema<starwars::QueryRoot, EmptyMutation, EmptySubscription>;
 
 async fn index(mut request: Request<StarWarsSchema>) -> Response {
     let gql_request: GQLRequest = request.body_json().await.unwrap();
@@ -28,7 +28,7 @@ async fn gql_graphiql(_request: Request<StarWarsSchema>) -> Response {
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
     let mut app = tide::with_state(
-        Schema::new(starwars::QueryRoot, GQLEmptyMutation, GQLEmptySubscription)
+        Schema::new(starwars::QueryRoot, EmptyMutation, EmptySubscription)
             .data(starwars::StarWars::new()),
     );
     app.at("/").post(index);

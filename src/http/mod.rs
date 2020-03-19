@@ -6,7 +6,7 @@ pub use playground_source::playground_source;
 
 use crate::error::{RuleError, RuleErrors};
 use crate::query::PreparedQuery;
-use crate::{GQLObject, GQLSubscription, PositionError, Result, Schema, Variables};
+use crate::{ObjectType, PositionError, Result, Schema, SubscriptionType, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -26,9 +26,9 @@ impl GQLRequest {
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> GQLResponse
     where
-        Query: GQLObject + Send + Sync,
-        Mutation: GQLObject + Send + Sync,
-        Subscription: GQLSubscription + Send + Sync,
+        Query: ObjectType + Send + Sync,
+        Mutation: ObjectType + Send + Sync,
+        Subscription: SubscriptionType + Send + Sync,
     {
         match self.prepare(schema) {
             Ok(query) => GQLResponse(query.execute().await),
@@ -41,9 +41,9 @@ impl GQLRequest {
         schema: &'a Schema<Query, Mutation, Subscription>,
     ) -> Result<PreparedQuery<'a, Query, Mutation>>
     where
-        Query: GQLObject + Send + Sync,
-        Mutation: GQLObject + Send + Sync,
-        Subscription: GQLSubscription + Send + Sync,
+        Query: ObjectType + Send + Sync,
+        Mutation: ObjectType + Send + Sync,
+        Subscription: SubscriptionType + Send + Sync,
     {
         let vars = match self.variables.take() {
             Some(value) => match Variables::parse_from_json(value) {

@@ -3,7 +3,7 @@ use crate::model::__DirectiveLocation;
 use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::types::QueryRoot;
-use crate::{GQLObject, GQLSubscription, GQLType, SubscribeBuilder};
+use crate::{ObjectType, SubscribeBuilder, SubscriptionType, Type};
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -16,13 +16,14 @@ pub struct Schema<Query, Mutation, Subscription> {
     pub(crate) data: Data,
 }
 
-impl<Query: GQLObject, Mutation: GQLObject, Subscription: GQLSubscription>
+impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     Schema<Query, Mutation, Subscription>
 {
     /// Create a schema.
     ///
     /// The root object for the query and Mutation needs to be specified.
-    /// If there is no mutation, you can use `GQLEmptyMutation`.
+    /// If there is no mutation, you can use `EmptyMutation`.
+    /// If there is no subscription, you can use `EmptySubscription`.
     pub fn new(query: Query, mutation: Mutation, subscription: Subscription) -> Self {
         let mut registry = Registry {
             types: Default::default(),

@@ -1,4 +1,4 @@
-use crate::{model, GQLType, Value};
+use crate::{model, Value};
 use graphql_parser::query::Type as ParsedType;
 use std::collections::{HashMap, HashSet};
 
@@ -52,6 +52,7 @@ impl<'a> TypeName<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct InputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -59,14 +60,16 @@ pub struct InputValue {
     pub default_value: Option<&'static str>,
 }
 
+#[derive(Clone)]
 pub struct Field {
-    pub name: &'static str,
+    pub name: String,
     pub description: Option<&'static str>,
     pub args: HashMap<&'static str, InputValue>,
     pub ty: String,
     pub deprecation: Option<&'static str>,
 }
 
+#[derive(Clone)]
 pub struct EnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -80,28 +83,28 @@ pub enum Type {
         is_valid: fn(value: &Value) -> bool,
     },
     Object {
-        name: &'static str,
+        name: String,
         description: Option<&'static str>,
-        fields: HashMap<&'static str, Field>,
+        fields: HashMap<String, Field>,
     },
     Interface {
-        name: &'static str,
+        name: String,
         description: Option<&'static str>,
-        fields: HashMap<&'static str, Field>,
+        fields: HashMap<String, Field>,
         possible_types: HashSet<String>,
     },
     Union {
-        name: &'static str,
+        name: String,
         description: Option<&'static str>,
         possible_types: HashSet<String>,
     },
     Enum {
-        name: &'static str,
+        name: String,
         description: Option<&'static str>,
         enum_values: HashMap<&'static str, EnumValue>,
     },
     InputObject {
-        name: &'static str,
+        name: String,
         description: Option<&'static str>,
         input_fields: Vec<InputValue>,
     },
@@ -112,7 +115,7 @@ impl Type {
         self.fields().and_then(|fields| fields.get(name))
     }
 
-    pub fn fields(&self) -> Option<&HashMap<&'static str, Field>> {
+    pub fn fields(&self) -> Option<&HashMap<String, Field>> {
         match self {
             Type::Object { fields, .. } => Some(&fields),
             Type::Interface { fields, .. } => Some(&fields),
@@ -183,13 +186,16 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn create_type<T: GQLType, F: FnMut(&mut Registry) -> Type>(&mut self, mut f: F) -> String {
+    pub fn create_type<T: crate::Type, F: FnMut(&mut Registry) -> Type>(
+        &mut self,
+        mut f: F,
+    ) -> String {
         let name = T::type_name();
         if !self.types.contains_key(name.as_ref()) {
             self.types.insert(
                 name.to_string(),
                 Type::Object {
-                    name: "",
+                    name: "".to_string(),
                     description: None,
                     fields: Default::default(),
                 },
@@ -197,9 +203,9 @@ impl Registry {
             let mut ty = f(self);
             if let Type::Object { fields, .. } = &mut ty {
                 fields.insert(
-                    "__typename",
+                    "__typename".to_string(),
                     Field {
-                        name: "__typename",
+                        name: "__typename".to_string(),
                         description: None,
                         args: Default::default(),
                         ty: "String!".to_string(),

@@ -82,7 +82,7 @@ pub use serde_json;
 
 pub mod http;
 
-pub use base::GQLScalar;
+pub use base::Scalar;
 pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
@@ -90,7 +90,10 @@ pub use query::{PreparedQuery, QueryBuilder};
 pub use scalars::ID;
 pub use schema::Schema;
 pub use subscription::SubscribeBuilder;
-pub use types::{GQLEmptyMutation, GQLEmptySubscription, Upload};
+pub use types::{
+    Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,
+    Upload,
+};
 
 pub type Result<T> = anyhow::Result<T>;
 pub type Error = anyhow::Error;
@@ -101,15 +104,15 @@ pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
-pub use base::{GQLInputObject, GQLInputValue, GQLObject, GQLOutputValue, GQLType};
+pub use base::{InputObjectType, InputValueType, ObjectType, OutputValueType, Type};
 #[doc(hidden)]
 pub use context::ContextBase;
 #[doc(hidden)]
-pub use resolver::do_resolve;
+pub use resolver::{do_resolve, do_resolve_values};
 #[doc(hidden)]
-pub use subscription::{GQLSubscription, Subscribe};
+pub use subscription::{Subscribe, SubscriptionType};
 #[doc(hidden)]
-pub use types::{GQLEnum, GQLEnumItem};
+pub use types::{EnumItem, EnumType};
 
 /// Define a GraphQL object
 ///
@@ -143,8 +146,8 @@ pub use types::{GQLEnum, GQLEnumItem};
 /// - Vec<T>, such as `Vec<i32>`
 /// - Slice<T>, such as `&[i32]`
 /// - Option<T>, such as `Option<i32>`
-/// - GQLObject and `&GQLObject`
-/// - GQLEnum
+/// - Object and &Object
+/// - Enum
 /// - Result<T, E>, such as `Result<i32, E>`
 ///
 /// # Context
@@ -192,7 +195,7 @@ pub use types::{GQLEnum, GQLEnumItem};
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value: 10 }, GQLEmptyMutation, GQLEmptySubscription);
+///     let schema = Schema::new(MyObject{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.query(r#"{
 ///         value
 ///         valueRef
@@ -259,7 +262,7 @@ pub use async_graphql_derive::Object;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, GQLEmptyMutation, GQLEmptySubscription);
+///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.query("{ value1 value2 }").execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
@@ -307,7 +310,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject, GQLEmptyMutation, GQLEmptySubscription);
+///     let schema = Schema::new(MyObject, EmptyMutation, EmptySubscription);
 ///     let res = schema.query(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})
@@ -412,7 +415,7 @@ pub use async_graphql_derive::InputObject;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, GQLEmptyMutation, GQLEmptySubscription).data("hello".to_string());
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string());
 ///     let res = schema.query(r#"
 ///     {
 ///         typeA {

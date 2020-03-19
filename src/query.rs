@@ -2,8 +2,8 @@ use crate::context::Data;
 use crate::registry::Registry;
 use crate::types::QueryRoot;
 use crate::validation::check_rules;
-use crate::{ContextBase, GQLOutputValue, Result};
-use crate::{GQLObject, QueryError, QueryParseError, Variables};
+use crate::{ContextBase, OutputValueType, Result};
+use crate::{ObjectType, QueryError, QueryParseError, Variables};
 use bytes::Bytes;
 use graphql_parser::parse_query;
 use graphql_parser::query::{
@@ -112,8 +112,8 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     /// Execute the query.
     pub async fn execute(self) -> Result<serde_json::Value>
     where
-        Query: GQLObject + Send + Sync,
-        Mutation: GQLObject + Send + Sync,
+        Query: ObjectType + Send + Sync,
+        Mutation: ObjectType + Send + Sync,
     {
         self.prepare()?.execute().await
     }
@@ -159,8 +159,8 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
     /// Execute the query.
     pub async fn execute(self) -> Result<serde_json::Value>
     where
-        Query: GQLObject + Send + Sync,
-        Mutation: GQLObject + Send + Sync,
+        Query: ObjectType + Send + Sync,
+        Mutation: ObjectType + Send + Sync,
     {
         let ctx = ContextBase {
             item: &self.selection_set,
@@ -172,8 +172,8 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
         };
 
         match self.root {
-            Root::Query(query) => return GQLOutputValue::resolve(query, &ctx).await,
-            Root::Mutation(mutation) => return GQLOutputValue::resolve(mutation, &ctx).await,
+            Root::Query(query) => return OutputValueType::resolve(query, &ctx).await,
+            Root::Mutation(mutation) => return OutputValueType::resolve(mutation, &ctx).await,
         }
     }
 }

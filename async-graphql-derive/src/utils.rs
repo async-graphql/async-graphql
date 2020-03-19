@@ -2,7 +2,7 @@ use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition, ParseError, Query, Value};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::Ident;
+use syn::{Error, Ident, Result};
 
 pub fn get_crate_name(internal: bool) -> TokenStream {
     match internal {
@@ -14,7 +14,7 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     }
 }
 
-pub fn parse_value(s: &str) -> Result<Value, ParseError> {
+pub fn parse_value(s: &str) -> std::result::Result<Value, ParseError> {
     let mut doc = parse_query(&format!("query ($a:Int!={}) {{ dummy }}", s))?;
     let definition = doc.definitions.remove(0);
     if let Definition::Operation(OperationDefinition::Query(Query {
@@ -76,5 +76,24 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
                 }
             }
         }
+    }
+}
+
+pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
+    if internal {
+        return Ok(());
+    }
+    if name.ends_with("Connection") {
+        Err(Error::new(
+            Span::call_site(),
+            "The name ending with 'Connection' is reserved",
+        ))
+    } else if name == "PageInfo" {
+        Err(Error::new(
+            Span::call_site(),
+            "The name 'PageInfo' is reserved",
+        ))
+    } else {
+        Ok(())
     }
 }

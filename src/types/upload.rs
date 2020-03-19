@@ -1,4 +1,4 @@
-use crate::{registry, GQLInputValue, GQLType, Value};
+use crate::{registry, InputValueType, Type, Value};
 use std::borrow::Cow;
 
 /// Upload file type
@@ -10,7 +10,7 @@ pub struct Upload {
     pub content: Vec<u8>,
 }
 
-impl<'a> GQLType for Upload {
+impl<'a> Type for Upload {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("Upload")
     }
@@ -27,7 +27,7 @@ impl<'a> GQLType for Upload {
     }
 }
 
-impl<'a> GQLInputValue for Upload {
+impl<'a> InputValueType for Upload {
     fn parse(value: &Value) -> Option<Self> {
         if let Value::String(s) = value {
             if s.starts_with("file:") {

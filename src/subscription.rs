@@ -1,8 +1,7 @@
 use crate::registry::Registry;
 use crate::validation::check_rules;
 use crate::{
-    ContextBase, ContextSelectionSet, GQLType, QueryError, QueryParseError, Result, Schema,
-    Variables,
+    ContextBase, ContextSelectionSet, QueryError, QueryParseError, Result, Schema, Type, Variables,
 };
 use graphql_parser::parse_query;
 use graphql_parser::query::{
@@ -26,7 +25,7 @@ impl Subscribe {
         msg: &(dyn Any + Send + Sync),
     ) -> Result<Option<serde_json::Value>>
     where
-        Subscription: GQLSubscription + Sync + Send + 'static,
+        Subscription: SubscriptionType + Sync + Send + 'static,
     {
         let ctx = ContextBase::<()> {
             item: (),
@@ -42,8 +41,8 @@ impl Subscribe {
 
 /// Represents a GraphQL subscription object
 #[async_trait::async_trait]
-pub trait GQLSubscription: GQLType {
-    /// This function returns true of type `GQLEmptySubscription` only
+pub trait SubscriptionType: Type {
+    /// This function returns true of type `EmptySubscription` only
     #[doc(hidden)]
     fn is_empty() -> bool {
         return false;
@@ -89,7 +88,7 @@ pub trait GQLSubscription: GQLType {
     ) -> Result<Option<serde_json::Value>>;
 }
 
-fn create_types<T: GQLSubscription>(
+fn create_types<T: SubscriptionType>(
     ctx: &ContextSelectionSet<'_>,
     fragments: &HashMap<String, FragmentDefinition>,
     types: &mut HashMap<TypeId, Field>,
@@ -131,6 +130,7 @@ fn create_types<T: GQLSubscription>(
     Ok(())
 }
 
+/// Subscribe builder
 pub struct SubscribeBuilder<'a, Subscription> {
     pub(crate) subscription: &'a Subscription,
     pub(crate) registry: &'a Registry,
@@ -141,7 +141,7 @@ pub struct SubscribeBuilder<'a, Subscription> {
 
 impl<'a, Subscription> SubscribeBuilder<'a, Subscription>
 where
-    Subscription: GQLSubscription,
+    Subscription: SubscriptionType,
 {
     /// Specify the operation name.
     pub fn operator_name(self, name: &'a str) -> Self {

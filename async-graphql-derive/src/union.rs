@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::get_crate_name;
+use crate::utils::{check_reserved_name, get_crate_name};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Fields, Result, Type};
@@ -25,6 +25,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
+    check_reserved_name(&gql_typename, interface_args.internal)?;
+
     let desc = interface_args
         .desc
         .as_ref()
@@ -47,15 +49,15 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 }
             });
             registry_types.push(quote! {
-                <#p as #crate_name::GQLType>::create_type_info(registry);
+                <#p as #crate_name::Type>::create_type_info(registry);
             });
             possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::GQLType>::type_name().to_string());
+                possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
             });
             inline_fragment_resolvers.push(quote! {
-                if name == <#p as #crate_name::GQLType>::type_name() {
+                if name == <#p as #crate_name::Type>::type_name() {
                     if let #ident::#enum_name(obj) = self {
-                        #crate_name::do_resolve(ctx, obj, result).await?;
+                        #crate_name::do_resolve_values(ctx, obj, result).await?;
                     }
                     return Ok(());
                 }
@@ -71,7 +73,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #(#type_into_impls)*
 
-        impl #generics #crate_name::GQLType for #ident #generics {
+        impl #generics #crate_name::Type for #ident #generics {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -94,7 +96,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::GQLObject for #ident #generics {
+        impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 use #crate_name::ErrorWithPosition;
                 anyhow::bail!(#crate_name::QueryError::FieldNotFound {
@@ -110,6 +112,13 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
                 });
+            }
+        }
+
+        #[#crate_name::async_trait::async_trait]
+        impl #generics #crate_name::OutputValueType for #ident #generics {
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+                #crate_name::do_resolve(ctx, value).await
             }
         }
     };

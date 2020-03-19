@@ -1,8 +1,7 @@
 use crate::model::{__Schema, __Type};
-use crate::registry::Type;
 use crate::{
-    registry, Context, ContextSelectionSet, ErrorWithPosition, GQLObject, GQLOutputValue, GQLType,
-    QueryError, Result, Value,
+    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
+    OutputValueType, QueryError, Result, Type, Value,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -12,7 +11,7 @@ pub struct QueryRoot<T> {
     pub inner: T,
 }
 
-impl<T: GQLType> GQLType for QueryRoot<T> {
+impl<T: Type> Type for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -20,11 +19,13 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
     fn create_type_info(registry: &mut registry::Registry) -> String {
         let schema_type = __Schema::create_type_info(registry);
         let root = T::create_type_info(registry);
-        if let Some(Type::Object { fields, .. }) = registry.types.get_mut(T::type_name().as_ref()) {
+        if let Some(registry::Type::Object { fields, .. }) =
+            registry.types.get_mut(T::type_name().as_ref())
+        {
             fields.insert(
-                "__schema",
+                "__schema".to_string(),
                 registry::Field {
-                    name: "__schema",
+                    name: "__schema".to_string(),
                     description: Some("Access the current type schema of this server."),
                     args: Default::default(),
                     ty: schema_type,
@@ -33,9 +34,9 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
             );
 
             fields.insert(
-                "__type",
+                "__type".to_string(),
                 registry::Field {
-                    name: "__type",
+                    name: "__type".to_string(),
                     description: Some("Request the type information of a single type."),
                     args: {
                         let mut args = HashMap::new();
@@ -60,11 +61,11 @@ impl<T: GQLType> GQLType for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
+impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "__schema" {
             let ctx_obj = ctx.with_item(&field.selection_set);
-            return GQLOutputValue::resolve(
+            return OutputValueType::resolve(
                 &__Schema {
                     registry: &ctx.registry,
                 },
@@ -75,7 +76,7 @@ impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
         } else if field.name.as_str() == "__type" {
             let type_name: String = ctx.param_value("name", || Value::Null)?;
             let ctx_obj = ctx.with_item(&field.selection_set);
-            return GQLOutputValue::resolve(
+            return OutputValueType::resolve(
                 &ctx.registry
                     .types
                     .get(&type_name)
@@ -99,5 +100,12 @@ impl<T: GQLObject + Send + Sync> GQLObject for QueryRoot<T> {
             object: T::type_name().to_string(),
             name: name.to_string(),
         });
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        do_resolve(ctx, value).await
     }
 }

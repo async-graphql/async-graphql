@@ -38,8 +38,8 @@ pub async fn test_list_type() {
         Root {
             value: vec![1, 2, 3, 4, 5],
         },
-        GQLEmptyMutation,
-        GQLEmptySubscription,
+        EmptyMutation,
+        EmptySubscription,
     );
     let json_value: serde_json::Value = vec![1, 2, 3, 4, 5].into();
     let query = format!(

@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{build_value_repr, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -35,6 +35,8 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
+    check_reserved_name(&gql_typename, object_args.internal)?;
+
     let desc = object_args
         .desc
         .as_ref()
@@ -71,17 +73,17 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             get_fields.push(quote! {
                 let #ident:#ty = {
                     match obj.get(#name) {
-                        Some(value) => #crate_name::GQLInputValue::parse(value)?,
+                        Some(value) => #crate_name::InputValueType::parse(value)?,
                         None => {
                             let default = #default_repr;
-                            #crate_name::GQLInputValue::parse(&default)?
+                            #crate_name::InputValueType::parse(&default)?
                         }
                     }
                 };
             });
         } else {
             get_fields.push(quote! {
-                let #ident:#ty = #crate_name::GQLInputValue::parse(obj.get(#name).unwrap_or(&#crate_name::Value::Null))?;
+                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).unwrap_or(&#crate_name::Value::Null))?;
             });
         }
 
@@ -90,7 +92,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             #crate_name::registry::InputValue {
                 name: #name,
                 description: #desc,
-                ty: <#ty as #crate_name::GQLType>::create_type_info(registry),
+                ty: <#ty as #crate_name::Type>::create_type_info(registry),
                 default_value: #default,
             }
         })
@@ -99,23 +101,23 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
     let expanded = quote! {
         #new_struct
 
-        impl #crate_name::GQLType for #ident {
+        impl #crate_name::Type for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::InputObject {
-                    name: #gql_typename,
+                    name: #gql_typename.to_string(),
                     description: #desc,
                     input_fields: vec![#(#schema_fields),*]
                 })
             }
         }
 
-        impl #crate_name::GQLInputValue for #ident {
+        impl #crate_name::InputValueType for #ident {
             fn parse(value: &#crate_name::Value) -> Option<Self> {
-                use #crate_name::GQLType;
+                use #crate_name::Type;
 
                 if let #crate_name::Value::Object(obj) = value {
                     #(#get_fields)*
@@ -126,7 +128,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             }
         }
 
-        impl #crate_name::GQLInputObject for #ident {}
+        impl #crate_name::InputObjectType for #ident {}
     };
     Ok(expanded.into())
 }

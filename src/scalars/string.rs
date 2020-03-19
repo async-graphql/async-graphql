@@ -1,12 +1,12 @@
 use crate::{
-    impl_scalar_internal, registry, ContextSelectionSet, GQLOutputValue, GQLScalar, GQLType,
-    Result, Value,
+    impl_scalar_internal, registry, ContextSelectionSet, OutputValueType, Result, Scalar, Type,
+    Value,
 };
 use std::borrow::Cow;
 
 const STRING_DESC:&'static str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
 
-impl GQLScalar for String {
+impl Scalar for String {
     fn type_name() -> &'static str {
         "String"
     }
@@ -36,7 +36,7 @@ impl GQLScalar for String {
 
 impl_scalar_internal!(String);
 
-impl<'a> GQLType for &'a str {
+impl<'a> Type for &'a str {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("String")
     }
@@ -54,7 +54,7 @@ impl<'a> GQLType for &'a str {
 }
 
 #[async_trait::async_trait]
-impl<'a> GQLOutputValue for &'a str {
+impl<'a> OutputValueType for &'a str {
     async fn resolve(value: &Self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         Ok(value.to_string().into())
     }

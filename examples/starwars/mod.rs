@@ -1,7 +1,7 @@
 mod model;
 
 use model::Episode;
-pub use model::*;
+pub use model::QueryRoot;
 use slab::Slab;
 use std::collections::HashMap;
 
@@ -123,5 +123,13 @@ impl StarWars {
 
     pub fn droid(&self, id: &str) -> Option<usize> {
         self.droid_data.get(id).cloned()
+    }
+
+    pub fn humans(&self) -> Vec<usize> {
+        self.human_data.values().cloned().collect()
+    }
+
+    pub fn droids(&self) -> Vec<usize> {
+        self.droid_data.values().cloned().collect()
     }
 }
