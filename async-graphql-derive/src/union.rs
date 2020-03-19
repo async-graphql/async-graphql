@@ -83,7 +83,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     #(#registry_types)*
 
                     #crate_name::registry::Type::Union {
-                        name: #gql_typename,
+                        name: #gql_typename.to_string(),
                         description: #desc,
                         possible_types: {
                             let mut possible_types = std::collections::HashSet::new();
