@@ -53,6 +53,11 @@
 //! ## References
 //!
 //! * [GraphQL](https://graphql.org)
+//! * [GraphQL Multipart Request](https://github.com/jaydenseric/graphql-multipart-request-spec)
+//! * [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
+//! * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
+
+#![warn(missing_docs)]
 
 #[macro_use]
 extern crate thiserror;
@@ -80,9 +85,10 @@ pub use graphql_parser;
 #[doc(hidden)]
 pub use serde_json;
 
+/// A helper module that supports HTTP
 pub mod http;
 
-pub use base::Scalar;
+pub use base::{Scalar, Type};
 pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
@@ -95,7 +101,10 @@ pub use types::{
     Upload,
 };
 
+/// Result type, are actually `anyhow::Result<T>`
 pub type Result<T> = anyhow::Result<T>;
+
+/// Error type, are actually `anyhow::Error`
 pub type Error = anyhow::Error;
 
 // internal types
@@ -104,7 +113,7 @@ pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
-pub use base::{InputObjectType, InputValueType, ObjectType, OutputValueType, Type};
+pub use base::{InputObjectType, InputValueType, ObjectType, OutputValueType};
 #[doc(hidden)]
 pub use context::ContextBase;
 #[doc(hidden)]

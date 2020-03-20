@@ -12,15 +12,22 @@ use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 use std::ops::Deref;
 
+/// GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
 pub struct GQLRequest {
+    /// Query source
     pub query: String,
+
+    /// Operation name for this query
     #[serde(rename = "operationName")]
     pub operation_name: Option<String>,
+
+    /// Variables for this query
     pub variables: Option<serde_json::Value>,
 }
 
 impl GQLRequest {
+    /// Execute the query and return the `GQLResponse`.
     pub async fn execute<Query, Mutation, Subscription>(
         mut self,
         schema: &Schema<Query, Mutation, Subscription>,
@@ -36,6 +43,7 @@ impl GQLRequest {
         }
     }
 
+    /// Prepare a query and return a `PreparedQuery` object that gets some information about the query.
     pub fn prepare<'a, Query, Mutation, Subscription>(
         &'a mut self,
         schema: &'a Schema<Query, Mutation, Subscription>,
@@ -65,6 +73,7 @@ impl GQLRequest {
     }
 }
 
+/// Serializable query result type
 pub struct GQLResponse(pub Result<serde_json::Value>);
 
 impl Serialize for GQLResponse {
@@ -86,6 +95,7 @@ impl Serialize for GQLResponse {
     }
 }
 
+/// Serializable error type
 pub struct GQLError<'a>(pub &'a anyhow::Error);
 
 impl<'a> Deref for GQLError<'a> {

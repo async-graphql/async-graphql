@@ -1,6 +1,9 @@
 use crate::{impl_scalar_internal, Result, Scalar, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
+/// Implement the DateTime<Utc> scalar
+///
+/// The input/output is a string in RFC3339 format.
 impl Scalar for DateTime<Utc> {
     fn type_name() -> &'static str {
         "DateTime"

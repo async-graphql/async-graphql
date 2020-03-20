@@ -119,6 +119,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     }
 }
 
+/// Prepared query object
 pub struct PreparedQuery<'a, Query, Mutation> {
     root: Root<'a, Query, Mutation>,
     registry: &'a Registry,

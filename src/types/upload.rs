@@ -5,8 +5,13 @@ use std::borrow::Cow;
 ///
 /// Reference: https://github.com/jaydenseric/graphql-multipart-request-spec
 pub struct Upload {
+    /// Filename
     pub filename: String,
+
+    /// Content type, such as `application/json`, `image/jpg` ...
     pub content_type: Option<String>,
+
+    /// File content
     pub content: Vec<u8>,
 }
 

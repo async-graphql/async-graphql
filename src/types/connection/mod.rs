@@ -7,25 +7,33 @@ use crate::{Context, ObjectType, QueryError, Result};
 
 pub use connection::Connection;
 
-/// Connection query operation.
+/// Connection query operation
 pub enum QueryOperation<'a> {
+    /// Forward query
     Forward {
+        /// After this cursor
         after: Option<&'a str>,
+
+        /// How many records did this query return
         limit: usize,
     },
+    /// Backward query
     Backward {
+        /// Before this cursor
         before: Option<&'a str>,
+
+        /// How many records did this query return
         limit: usize,
     },
 }
 
-/// Empty edge extension object.
+/// Empty edge extension object
 pub struct EmptyEdgeFields;
 
 #[async_graphql_derive::Object(internal)]
 impl EmptyEdgeFields {}
 
-/// Data source of GraphQL Cursor Connections type.
+/// Data source of GraphQL Cursor Connections type
 ///
 /// `Edge` is an extension object type that extends the edge fields, If you don't need it, you can use `EmptyEdgeFields`.
 ///
@@ -55,9 +63,9 @@ impl EmptyEdgeFields {}
 /// #[async_trait::async_trait]
 /// impl DataSource for Numbers {
 ///     type Element = i32;
-///     type Edge = DiffFields;
+///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, operation: &QueryOperation<'_>) -> Result<Connection<Self::Element, Self::Edge>> {
+///     async fn query_operation(&self, operation: &QueryOperation<'_>) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::Forward {after, limit} => {
 ///                 let start = after.and_then(|after| base64::decode(after).ok())
@@ -119,9 +127,15 @@ impl EmptyEdgeFields {}
 /// ```
 #[async_trait::async_trait]
 pub trait DataSource: Sync + Send {
+    /// Record type
     type Element;
-    type Edge: ObjectType + Send + Sync;
 
+    /// Fields for Edge
+    ///
+    /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]`.
+    type EdgeFieldsObj: ObjectType + Send + Sync;
+
+    /// Execute the query.
     async fn query(
         &self,
         ctx: &Context<'_>,
@@ -129,7 +143,7 @@ pub trait DataSource: Sync + Send {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> Result<Connection<Self::Element, Self::Edge>> {
+    ) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let operation = if let Some(after) = &after {
             QueryOperation::Forward {
                 after: Some(after),
@@ -198,8 +212,9 @@ pub trait DataSource: Sync + Send {
         self.query_operation(&operation).await
     }
 
+    /// Parses the parameters and executes the query，Usually you just need to implement this method.
     async fn query_operation(
         &self,
         operation: &QueryOperation<'_>,
-    ) -> Result<Connection<Self::Element, Self::Edge>>;
+    ) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>>;
 }

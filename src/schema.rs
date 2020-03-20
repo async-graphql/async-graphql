@@ -19,7 +19,7 @@ pub struct Schema<Query, Mutation, Subscription> {
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     Schema<Query, Mutation, Subscription>
 {
-    /// Create a schema.
+    /// Create a schema
     ///
     /// The root object for the query and Mutation needs to be specified.
     /// If there is no mutation, you can use `EmptyMutation`.
@@ -124,6 +124,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         }
     }
 
+    /// Start a subscribe and return `SubscribeBuilder`.
     pub fn subscribe<'a>(&'a self, source: &'a str) -> SubscribeBuilder<'a, Subscription> {
         SubscribeBuilder {
             subscription: &self.subscription,

@@ -9,7 +9,7 @@ use inflector::Inflector;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-/// Connection type.
+/// Connection type
 ///
 /// Connection is the result of a query for `DataSource`,
 /// If the `T` type is `OutputValueType`, you can return the value as a field function directly,
@@ -22,6 +22,7 @@ pub struct Connection<T, E: ObjectType + Sync + Send> {
 }
 
 impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
+    /// Create a connection object.
     pub fn new(
         total_count: Option<usize>,
         has_previous_page: bool,

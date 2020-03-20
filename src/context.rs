@@ -43,6 +43,7 @@ impl DerefMut for Variables {
 }
 
 impl Variables {
+    /// Parse variables from JSON object.
     pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
         let gql_value = json_value_to_gql_value(value);
         if let Value::Object(_) = gql_value {
@@ -140,11 +141,13 @@ impl Data {
     }
 }
 
+/// Context for `SelectionSet`
 pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
 
-/// Context object for resolve field.
+/// Context object for resolve field
 pub type Context<'a> = ContextBase<'a, &'a Field>;
 
+/// Query context
 pub struct ContextBase<'a, T> {
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,

@@ -5,12 +5,12 @@ use byteorder::{ReadBytesExt, BE};
 #[async_trait::async_trait]
 impl<'a, T: Sync> DataSource for &'a [T] {
     type Element = &'a T;
-    type Edge = EmptyEdgeFields;
+    type EdgeFieldsObj = EmptyEdgeFields;
 
     async fn query_operation(
         &self,
         operation: &QueryOperation<'_>,
-    ) -> Result<Connection<Self::Element, Self::Edge>> {
+    ) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let (start, end) = match operation {
             QueryOperation::Forward { after, limit } => {
                 let start = after

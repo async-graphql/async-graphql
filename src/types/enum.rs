@@ -1,11 +1,13 @@
 use crate::{Result, Type};
 use graphql_parser::query::Value;
 
+#[allow(missing_docs)]
 pub struct EnumItem<T> {
     pub name: &'static str,
     pub value: T,
 }
 
+#[allow(missing_docs)]
 #[async_trait::async_trait]
 pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [EnumItem<Self>];

@@ -1,9 +1,11 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, Result};
+use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
 use graphql_parser::query::{Field, Value};
 use std::borrow::Cow;
 
 /// Represents a GraphQL type
+///
+/// All GraphQL types implement this trait, such as `Scalar`, `Object`, `Union` ...
 pub trait Type {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
@@ -15,16 +17,39 @@ pub trait Type {
 
     /// Create type information in the registry and return qualified typename.
     fn create_type_info(registry: &mut registry::Registry) -> String;
+
+    /// Returns a `GlobalID` that is unique among all types.
+    fn global_id(id: ID) -> ID {
+        base64::encode(format!("{}:{}", Self::type_name(), id)).into()
+    }
+
+    /// Parse `GlobalID`.
+    fn from_global_id(id: ID) -> Result<ID> {
+        let v: Vec<&str> = id.splitn(2, ":").collect();
+        if v.len() != 2 {
+            return Err(QueryError::InvalidGlobalID.into());
+        }
+        if v[0] != Self::type_name() {
+            return Err(QueryError::InvalidGlobalIDType {
+                expect: Self::type_name().to_string(),
+                actual: v[0].to_string(),
+            }
+            .into());
+        }
+        Ok(v[1].to_string().into())
+    }
 }
 
 /// Represents a GraphQL input value
 pub trait InputValueType: Type + Sized {
+    /// Parse from `Value`
     fn parse(value: &Value) -> Option<Self>;
 }
 
 /// Represents a GraphQL output value
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
+    /// Resolve an output value to `serde_json::Value`.
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
 }
 
@@ -142,6 +167,7 @@ macro_rules! impl_scalar_internal {
     };
 }
 
+/// After implementing the `Scalar` trait, you must call this macro to implement some additional traits.
 #[macro_export]
 macro_rules! impl_scalar {
     ($ty:ty) => {

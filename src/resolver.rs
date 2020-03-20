@@ -83,6 +83,7 @@ impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
     }
 }
 
+#[allow(missing_docs)]
 pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
@@ -98,6 +99,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     Ok(result.into())
 }
 
+#[allow(missing_docs)]
 pub async fn do_resolve_values<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,

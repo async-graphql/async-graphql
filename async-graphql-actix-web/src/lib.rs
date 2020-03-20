@@ -1,3 +1,7 @@
+//! Integrate `async-graphql` to `actix-web`
+
+#![warn(missing_docs)]
+
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]

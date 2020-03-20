@@ -47,7 +47,8 @@ Open `http://localhost:8000` in browser
 * Minimal overhead
 * Easy integration (hyper, actix_web, tide ...)
 * Upload files (Multipart request)
-* Subscription (WebSocket transport
+* Subscription (WebSocket transport)
+
 ## Integrations
 
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
@@ -63,6 +64,7 @@ Open `http://localhost:8000` in browser
         - [X] ID
         - [X] DateTime
         - [X] UUID
+        - [X] Url
     - [X] Containers 
         - [X] List
         - [X] Non-Null

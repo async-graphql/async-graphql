@@ -1,3 +1,4 @@
+/// Generate the page for GraphIQL
 pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
     let stylesheet_source = r#"
     <style>

@@ -3,6 +3,7 @@ mod floats;
 mod id;
 mod integers;
 mod string;
+mod url;
 
 #[cfg(feature = "chrono")]
 mod datetime;

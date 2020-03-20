@@ -11,6 +11,10 @@ use graphql_parser::query::{
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
+/// Subscribe stub
+///
+/// When a new push message is generated, a JSON object that needs to be pushed can be obtained by
+/// `Subscribe::resolve`, and if None is returned, the Subscribe is not subscribed to a message of this type.
 pub struct Subscribe {
     types: HashMap<TypeId, Field>,
     variables: Variables,
@@ -19,6 +23,7 @@ pub struct Subscribe {
 }
 
 impl Subscribe {
+    #[allow(missing_docs)]
     pub async fn resolve<Query, Mutation, Subscription>(
         &self,
         schema: &Schema<Query, Mutation, Subscription>,
@@ -40,6 +45,7 @@ impl Subscribe {
 }
 
 /// Represents a GraphQL subscription object
+#[allow(missing_docs)]
 #[async_trait::async_trait]
 pub trait SubscriptionType: Type {
     /// This function returns true of type `EmptySubscription` only
@@ -159,6 +165,7 @@ where
         }
     }
 
+    /// Perform a subscription operation and return `Subscribe`.
     pub fn execute(self) -> Result<Subscribe> {
         let document = parse_query(self.source).map_err(|err| QueryParseError(err.to_string()))?;
         check_rules(self.registry, &document)?;

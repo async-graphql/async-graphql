@@ -1,3 +1,4 @@
+/// Generate the page for GraphQL Playground
 pub fn playground_source(
     graphql_endpoint_url: &str,
     subscription_endpoint: Option<&str>,
