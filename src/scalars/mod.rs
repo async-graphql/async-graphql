@@ -9,6 +9,8 @@ mod url;
 mod datetime;
 #[cfg(feature = "uuid")]
 mod uuid;
+#[cfg(feature = "bson")]
+mod bson;
 
 pub use id::ID;
 
@@ -18,6 +20,7 @@ mod tests {
     use crate::Type;
     use chrono::{DateTime, Utc};
     use uuid::Uuid;
+    use bson::oid::ObjectId;
 
     #[test]
     fn test_scalar_type() {
@@ -52,6 +55,12 @@ mod tests {
         {
             assert_eq!(<Uuid as Type>::type_name(), "UUID");
             assert_eq!(<Uuid as Type>::qualified_type_name(), "UUID!");
+        }
+
+        #[cfg(feature = "bson")]
+        {
+            assert_eq!(<ObjectId as Type>::type_name(), "ObjectId");
+            assert_eq!(<ObjectId as Type>::qualified_type_name(), "ObjectId!");
         }
     }
 }
