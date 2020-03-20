@@ -15,5 +15,7 @@ jobs:
         run: cargo build --all --verbose
       - name: Check format
         run: cargo fmt --all -- --check
+      - name: Check with clippy
+        run: cargo clippy
       - name: Run tests
         run: cargo test --all --verbose
