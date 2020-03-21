@@ -65,6 +65,7 @@ Open `http://localhost:8000` in browser
         - [X] DateTime
         - [X] UUID
         - [X] Url
+        - [X] ObjectId
     - [X] Containers 
         - [X] List
         - [X] Non-Null
