@@ -261,7 +261,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::ContextBase<'_, ()>,
                 types: &std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>,
                 msg: &(dyn std::any::Any + Send + Sync),
-            ) -> #crate_name::Result<Option<serde_json::Value>> {
+            ) -> #crate_name::Result<Option<#crate_name::serde_json::Value>> {
                 let tid = msg.type_id();
                 if let Some(field) = types.get(&tid) {
                     let ctx_field = ctx.with_item(field);

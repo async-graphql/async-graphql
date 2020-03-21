@@ -261,7 +261,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 .with_position(field.position));
             }
 
-            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, serde_json::Value>) -> #crate_name::Result<()> {
+            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, #crate_name::serde_json::Value>) -> #crate_name::Result<()> {
                 #(#inline_fragment_resolvers)*
                 #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
