@@ -152,6 +152,7 @@ pub use types::{EnumItem, EnumType};
 /// | name        | Argument name             | string   | Y        |
 /// | desc        | Argument description      | string   | Y        |
 /// | default     | Argument default value    | string   | Y        |
+/// | validators  | Input value validators    | `InputValueValidator` | Y        |
 ///
 /// # The field returns the value type
 ///
@@ -299,6 +300,7 @@ pub use async_graphql_derive::Enum;
 /// | name        | Field name                | string   | Y        |
 /// | desc        | Field description         | string   | Y        |
 /// | default     | Field default value       | string   | Y        |
+/// | validators  | Input value validators    | `InputValueValidator` | Y        |
 ///
 /// # Examples
 ///
@@ -483,6 +485,7 @@ pub use async_graphql_derive::Union;
 /// | name        | Argument name             | string   | Y        |
 /// | desc        | Argument description      | string   | Y        |
 /// | default     | Argument default value    | string   | Y        |
+/// | validators  | Input value validators    | `InputValueValidator` | Y        |
 ///
 /// # Examples
 ///

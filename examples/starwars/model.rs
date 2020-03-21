@@ -136,7 +136,17 @@ impl QueryRoot {
     async fn droid(
         &self,
         ctx: &Context<'_>,
-        #[arg(desc = "id of the droid")] id: String,
+        #[arg(
+            desc = "id of the droid",
+            validators(
+                async_graphql::validators::IntRange(min = 10, max = 20),
+                and(
+                    async_graphql::validators::IntRange(min = 10, max = 20),
+                    async_graphql::validators::IntRange(min = 10, max = 20)
+                )
+            )
+        )]
+        id: String,
     ) -> Option<Droid> {
         ctx.data::<StarWars>().droid(&id).map(|id| Droid(id))
     }

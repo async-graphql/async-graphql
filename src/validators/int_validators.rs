@@ -3,10 +3,10 @@ use graphql_parser::query::Value;
 
 /// Integer range validator
 pub struct IntRange {
-    /// Minimum value, including this value
+    /// Minimum value, including this value.
     pub min: i64,
 
-    /// Maximum value, including this value
+    /// Maximum value, including this value.
     pub max: i64,
 }
 
@@ -19,6 +19,54 @@ impl InputValueValidator for IntRange {
                     n.as_i64().unwrap(),
                     self.min,
                     self.max
+                ))
+            } else {
+                None
+            }
+        } else {
+            Some("expected type \"Int\"".to_string())
+        }
+    }
+}
+
+/// Integer less then validator
+pub struct IntLessThan {
+    /// Less then this value.
+    pub value: i64,
+}
+
+impl InputValueValidator for IntLessThan {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::Int(n) = value {
+            if n.as_i64().unwrap() >= self.value {
+                Some(format!(
+                    "the value is {}, must be less than {}",
+                    n.as_i64().unwrap(),
+                    self.value
+                ))
+            } else {
+                None
+            }
+        } else {
+            Some("expected type \"Int\"".to_string())
+        }
+    }
+}
+
+/// Integer greater then validator
+pub struct IntGreaterThan {
+    /// Greater then this value.
+    pub value: i64,
+}
+
+impl InputValueValidator for IntGreaterThan {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::Int(n) = value {
+            if n.as_i64().unwrap() <= self.value {
+                Some(format!(
+                    "the value is {}, must be greater than {}",
+                    n.as_i64().unwrap(),
+                    self.value
                 ))
             } else {
                 None

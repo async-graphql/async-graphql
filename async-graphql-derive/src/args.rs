@@ -64,7 +64,7 @@ pub struct Argument {
 }
 
 impl Argument {
-    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
+    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Self> {
         let mut name = None;
         let mut desc = None;
         let mut default = None;
@@ -120,7 +120,7 @@ impl Argument {
                         }
                     }
 
-                    validators = parse_validators(&ls)?;
+                    validators = parse_validators(crate_name, &ls)?;
                 }
                 _ => {}
             }
@@ -326,7 +326,7 @@ pub struct InputField {
 }
 
 impl InputField {
-    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
+    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Self> {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
@@ -389,7 +389,7 @@ impl InputField {
                         }
                     }
 
-                    validators = parse_validators(&args)?;
+                    validators = parse_validators(crate_name, &args)?;
                 }
             }
         }

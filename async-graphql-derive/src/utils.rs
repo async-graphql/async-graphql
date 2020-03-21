@@ -97,29 +97,70 @@ pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
     }
 }
 
-pub fn parse_validators(args: &MetaList) -> Result<TokenStream> {
+pub fn parse_validator(crate_name: &TokenStream, nested_meta: &NestedMeta) -> Result<TokenStream> {
+    let mut params = Vec::new();
+
+    match nested_meta {
+        NestedMeta::Meta(Meta::List(ls)) => {
+            if ls.path.is_ident("and") {
+                let mut validators = Vec::new();
+                for nested_meta in &ls.nested {
+                    validators.push(parse_validator(crate_name, nested_meta)?);
+                }
+                Ok(validators
+                    .into_iter()
+                    .fold(None, |acc, item| match acc {
+                        Some(prev) => Some(quote! { #crate_name::validators::and(#prev, #item) }),
+                        None => Some(item),
+                    })
+                    .unwrap())
+            } else if ls.path.is_ident("or") {
+                let mut validators = Vec::new();
+                for nested_meta in &ls.nested {
+                    validators.push(parse_validator(crate_name, nested_meta)?);
+                }
+                Ok(validators
+                    .into_iter()
+                    .fold(None, |acc, item| match acc {
+                        Some(prev) => Some(quote! { #crate_name::validators::or(#prev, #item) }),
+                        None => Some(item),
+                    })
+                    .unwrap())
+            } else {
+                let ty = &ls.path;
+                for item in &ls.nested {
+                    if let NestedMeta::Meta(Meta::NameValue(nv)) = item {
+                        let name = &nv.path;
+                        let value = &nv.lit;
+                        params.push(quote! { #name: #value });
+                    } else {
+                        return Err(Error::new_spanned(
+                            nested_meta,
+                            "Invalid property for validator",
+                        ));
+                    }
+                }
+                Ok(quote! { #ty { #(#params),* } })
+            }
+        }
+        NestedMeta::Meta(Meta::Path(ty)) => Ok(quote! { #ty {} }),
+        NestedMeta::Meta(Meta::NameValue(_)) | NestedMeta::Lit(_) => {
+            Err(Error::new_spanned(nested_meta, "Invalid validator"))
+        }
+    }
+}
+
+pub fn parse_validators(crate_name: &TokenStream, args: &MetaList) -> Result<TokenStream> {
     let mut validators = Vec::new();
     for arg in &args.nested {
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
-            if ls.path.is_ident("validator") {
-                let mut ty = None;
-                let mut params = Vec::new();
-                for item in &ls.nested {
-                    match item {
-                        NestedMeta::Meta(Meta::Path(p)) => {
-                            ty = Some(p);
-                        }
-                        NestedMeta::Meta(Meta::NameValue(nv)) => {
-                            let name = &nv.path;
-                            let value = &nv.lit;
-                            params.push(quote! { #name: #value });
-                        }
-                        _ => {}
-                    }
+            if ls.path.is_ident("validators") {
+                for meta in &ls.nested {
+                    let validator = parse_validator(crate_name, meta)?;
+                    validators.push(quote! { Box::new(#validator) });
                 }
-                validators.push(quote! { Box::new(#ty { #(#params),* }) });
             }
         }
     }
-    Ok(quote! { std::sync::Arc::new(vec![#(#validators)*]) })
+    Ok(quote! { std::sync::Arc::new(vec![#(#validators),*]) })
 }

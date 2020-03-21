@@ -114,7 +114,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if let FnArg::Typed(pat) = arg {
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
-                                args.push((arg_ident, arg_ty, args::Argument::parse(&pat.attrs)?));
+                                args.push((
+                                    arg_ident,
+                                    arg_ty,
+                                    args::Argument::parse(&crate_name, &pat.attrs)?,
+                                ));
                                 pat.attrs.clear();
                             }
                             _ => {

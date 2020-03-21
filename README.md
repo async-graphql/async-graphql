@@ -101,6 +101,19 @@ Open `http://localhost:8000` in browser
     - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
         - [X] Actix-web
     - [X] Cursor Connections
+    - [X] Input value validators
+        - [X] Custom validator
+        - [X] Combination
+            - [X] and
+            - [X] or
+        - [X] Integer
+            - [X] IntRange
+            - [X] IntLessThan
+            - [X] IntGreaterThan
+        - [X] String
+            - [X] Email
+            - [X] MAC
+        - [X] String
 - [X] Subscription
     - [X] Filter
     - [X] WebSocket transport
