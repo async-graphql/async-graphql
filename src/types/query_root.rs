@@ -47,6 +47,7 @@ impl<T: Type> Type for QueryRoot<T> {
                                 description: None,
                                 ty: "String!".to_string(),
                                 default_value: None,
+                                validators: Default::default(),
                             },
                         );
                         args
@@ -87,7 +88,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             .map_err(|err| err.with_position(field.position).into());
         }
 
-        return self.inner.resolve_field(ctx, field).await;
+        self.inner.resolve_field(ctx, field).await
     }
 
     async fn resolve_inline_fragment(

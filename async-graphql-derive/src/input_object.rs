@@ -94,6 +94,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 description: #desc,
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
                 default_value: #default,
+                validators: Default::default(),
             }
         })
     }

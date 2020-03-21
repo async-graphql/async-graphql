@@ -1,11 +1,11 @@
-mod connection;
+mod connection_type;
 mod edge;
 mod page_info;
 mod slice;
 
 use crate::{Context, ObjectType, QueryError, Result};
 
-pub use connection::Connection;
+pub use connection_type::Connection;
 
 /// Connection query operation
 pub enum QueryOperation<'a> {

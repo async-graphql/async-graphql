@@ -167,14 +167,14 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
             item: &self.selection_set,
             variables: &self.variables,
             variable_definitions: self.variable_definitions.as_deref(),
-            registry: self.registry.clone(),
+            registry: self.registry,
             data: self.data,
             fragments: &self.fragments,
         };
 
         match self.root {
-            Root::Query(query) => return OutputValueType::resolve(query, &ctx).await,
-            Root::Mutation(mutation) => return OutputValueType::resolve(mutation, &ctx).await,
+            Root::Query(query) => OutputValueType::resolve(query, &ctx).await,
+            Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx).await,
         }
     }
 }

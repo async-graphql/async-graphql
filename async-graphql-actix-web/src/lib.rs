@@ -114,7 +114,7 @@ where
             Box::pin(async move {
                 if req.method() == Method::GET {
                     if enable_subscription {
-                        if let Some(s) = req.headers().get(&header::UPGRADE) {
+                        if let Some(s) = req.headers().get(header::UPGRADE) {
                             if let Ok(s) = s.to_str() {
                                 if s.to_ascii_lowercase().contains("websocket") {
                                     return ws::start_with_protocols(
@@ -168,14 +168,14 @@ where
             let mut gql_request = {
                 let data = read_multipart(&mut multipart, "operations").await?;
                 serde_json::from_slice::<GQLRequest>(&data)
-                    .map_err(|err| actix_web::error::ErrorBadRequest(err))?
+                    .map_err(actix_web::error::ErrorBadRequest)?
             };
 
             // read map
             let mut map = {
                 let data = read_multipart(&mut multipart, "map").await?;
                 serde_json::from_slice::<HashMap<String, Vec<String>>>(&data)
-                    .map_err(|err| actix_web::error::ErrorBadRequest(err))?
+                    .map_err(actix_web::error::ErrorBadRequest)?
             };
 
             let mut query = match gql_request.prepare(schema) {
@@ -202,8 +202,7 @@ where
                             let content_type = field.content_type().to_string();
                             let mut data = BytesMut::new();
                             while let Some(part) = field.next().await {
-                                let part =
-                                    part.map_err(|err| actix_web::error::ErrorBadRequest(err))?;
+                                let part = part.map_err(actix_web::error::ErrorBadRequest)?;
                                 data.extend(&part);
 
                                 if data.len() > max_file_size {
@@ -261,7 +260,7 @@ where
 }
 
 fn get_content_type(headers: &HeaderMap) -> actix_web::Result<Mime> {
-    if let Some(content_type) = headers.get(&header::CONTENT_TYPE) {
+    if let Some(content_type) = headers.get(header::CONTENT_TYPE) {
         if let Ok(content_type) = content_type.to_str() {
             if let Ok(ct) = content_type.parse::<Mime>() {
                 return Ok(ct);
@@ -287,7 +286,7 @@ async fn read_multipart(multipart: &mut Multipart, name: &str) -> actix_web::Res
 
                     let mut data = BytesMut::new();
                     while let Some(part) = field.next().await {
-                        let part = part.map_err(|err| actix_web::error::ErrorBadRequest(err))?;
+                        let part = part.map_err(actix_web::error::ErrorBadRequest)?;
                         data.extend(&part);
                     }
                     data

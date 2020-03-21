@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Scalar, Result, Value};
+use crate::{impl_scalar_internal, Result, Scalar, Value};
 use bson::oid::ObjectId;
 
 impl Scalar for ObjectId {

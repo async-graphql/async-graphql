@@ -461,7 +461,7 @@ fn visit_arguments<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a>,
     pos: Pos,
-    arguments: &'a Vec<(Name, Value)>,
+    arguments: &'a [(Name, Value)],
 ) {
     for (name, value) in arguments {
         v.enter_argument(ctx, pos, name, value);
@@ -472,7 +472,7 @@ fn visit_arguments<'a, V: Visitor<'a>>(
 fn visit_variable_definitions<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a>,
-    variable_definitions: &'a Vec<VariableDefinition>,
+    variable_definitions: &'a [VariableDefinition],
 ) {
     for d in variable_definitions {
         v.enter_variable_definition(ctx, d);
@@ -483,7 +483,7 @@ fn visit_variable_definitions<'a, V: Visitor<'a>>(
 fn visit_directives<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut ValidatorContext<'a>,
-    directives: &'a Vec<Directive>,
+    directives: &'a [Directive],
 ) {
     for d in directives {
         v.enter_directive(ctx, d);

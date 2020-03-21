@@ -62,6 +62,6 @@ impl ObjectType for EmptyMutation {
 #[async_trait::async_trait]
 impl OutputValueType for EmptyMutation {
     async fn resolve(_value: &Self, _ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        return Err(QueryError::NotConfiguredMutations.into());
+        Err(QueryError::NotConfiguredMutations.into())
     }
 }

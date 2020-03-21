@@ -50,7 +50,7 @@ impl<'a> ValidatorContext<'a> {
     }
 
     pub fn parent_type(&self) -> Option<&'a registry::Type> {
-        self.type_stack.get(self.type_stack.len() - 2).map(|t| *t)
+        self.type_stack.get(self.type_stack.len() - 2).copied()
     }
 
     pub fn current_type(&self) -> &'a registry::Type {
@@ -62,6 +62,6 @@ impl<'a> ValidatorContext<'a> {
     }
 
     pub fn fragment(&self, name: &str) -> Option<&'a FragmentDefinition> {
-        self.fragments.get(name).map(|f| *f)
+        self.fragments.get(name).copied()
     }
 }

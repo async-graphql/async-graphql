@@ -31,6 +31,7 @@ impl<T: InputValueType> InputValueType for Vec<T> {
     }
 }
 
+#[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {

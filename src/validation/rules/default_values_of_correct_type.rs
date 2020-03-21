@@ -17,20 +17,18 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
                     "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
                     variable_definition.name, variable_definition.var_type,
                 ));
-            } else {
-                if !is_valid_input_value(
-                    ctx.registry,
-                    &variable_definition.var_type.to_string(),
-                    value,
-                ) {
-                    ctx.report_error(
-                        vec![variable_definition.position],
-                        format!(
-                            "Invalid default value for argument \"{}\", expected type \"{}\"",
-                            variable_definition.name, variable_definition.var_type
-                        ),
-                    )
-                }
+            } else if !is_valid_input_value(
+                ctx.registry,
+                &variable_definition.var_type.to_string(),
+                value,
+            ) {
+                ctx.report_error(
+                    vec![variable_definition.position],
+                    format!(
+                        "Invalid default value for argument \"{}\", expected type \"{}\"",
+                        variable_definition.name, variable_definition.var_type
+                    ),
+                )
             }
         }
     }

@@ -58,6 +58,8 @@
 //! * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
 
 #![warn(missing_docs)]
+#![allow(clippy::needless_doctest_main)]
+#![allow(clippy::needless_lifetimes)]
 
 #[macro_use]
 extern crate thiserror;
@@ -75,6 +77,9 @@ mod schema;
 mod subscription;
 mod types;
 mod validation;
+
+/// Input value validators
+pub mod validators;
 
 #[doc(hidden)]
 pub use anyhow;

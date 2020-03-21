@@ -4,7 +4,7 @@ use crate::{
 };
 use std::borrow::Cow;
 
-const STRING_DESC:&'static str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
+const STRING_DESC: &str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
 
 impl Scalar for String {
     fn type_name() -> &'static str {
@@ -56,6 +56,6 @@ impl<'a> Type for &'a str {
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
     async fn resolve(value: &Self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        Ok(value.to_string().into())
+        Ok((*value).into())
     }
 }

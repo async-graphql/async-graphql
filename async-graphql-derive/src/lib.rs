@@ -1,3 +1,5 @@
+#![allow(clippy::cognitive_complexity)]
+
 extern crate proc_macro;
 
 mod args;

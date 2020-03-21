@@ -2,15 +2,14 @@ use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition, ParseError, Query, Value};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Error, Ident, Result};
+use syn::{Error, Ident, Meta, MetaList, NestedMeta, Result};
 
 pub fn get_crate_name(internal: bool) -> TokenStream {
-    match internal {
-        true => quote! { crate },
-        false => {
-            let id = Ident::new("async_graphql", Span::call_site());
-            quote! { #id }
-        }
+    if internal {
+        quote! { crate }
+    } else {
+        let id = Ident::new("async_graphql", Span::call_site());
+        quote! { #id }
     }
 }
 
@@ -96,4 +95,31 @@ pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+pub fn parse_validators(args: &MetaList) -> Result<TokenStream> {
+    let mut validators = Vec::new();
+    for arg in &args.nested {
+        if let NestedMeta::Meta(Meta::List(ls)) = arg {
+            if ls.path.is_ident("validator") {
+                let mut ty = None;
+                let mut params = Vec::new();
+                for item in &ls.nested {
+                    match item {
+                        NestedMeta::Meta(Meta::Path(p)) => {
+                            ty = Some(p);
+                        }
+                        NestedMeta::Meta(Meta::NameValue(nv)) => {
+                            let name = &nv.path;
+                            let value = &nv.lit;
+                            params.push(quote! { #name: #value });
+                        }
+                        _ => {}
+                    }
+                }
+                validators.push(quote! { Box::new(#ty { #(#params),* }) });
+            }
+        }
+    }
+    Ok(quote! { std::sync::Arc::new(vec![#(#validators)*]) })
 }

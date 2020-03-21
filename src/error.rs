@@ -150,7 +150,6 @@ pub enum QueryError {
     },
 }
 
-
 /// Creates a wrapper with an error location
 #[allow(missing_docs)]
 pub trait ErrorWithPosition {

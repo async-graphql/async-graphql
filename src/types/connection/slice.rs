@@ -26,7 +26,7 @@ impl<'a, T: Sync> DataSource for &'a [T] {
                     .and_then(|before| base64::decode(before).ok())
                     .and_then(|data| data.as_slice().read_u32::<BE>().ok())
                     .map(|idx| idx as usize)
-                    .unwrap_or(self.len());
+                    .unwrap_or_else(|| self.len());
                 let start = if end < *limit { 0 } else { end - *limit };
                 (start, end)
             }

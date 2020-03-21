@@ -12,7 +12,7 @@ impl<'a> OutputType<'a> {
         let ty = if let Type::Path(p) = input {
             if p.path.segments.last().unwrap().ident == "Result" {
                 if let PathArguments::AngleBracketed(args) = &p.path.segments[0].arguments {
-                    if args.args.len() == 0 {
+                    if args.args.is_empty() {
                         return Err(Error::new_spanned(input, "Invalid type"));
                     }
                     let mut res = None;

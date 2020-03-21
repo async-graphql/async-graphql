@@ -1,9 +1,11 @@
+use crate::validators::InputValueValidator;
 use crate::{model, Value};
 use graphql_parser::query::Type as ParsedType;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 fn parse_non_null(type_name: &str) -> Option<&str> {
-    if type_name.ends_with("!") {
+    if type_name.ends_with('!') {
         Some(&type_name[..type_name.len() - 1])
     } else {
         None
@@ -11,7 +13,7 @@ fn parse_non_null(type_name: &str) -> Option<&str> {
 }
 
 fn parse_list(type_name: &str) -> Option<&str> {
-    if type_name.starts_with("[") {
+    if type_name.starts_with('[') {
         Some(&type_name[1..type_name.len() - 1])
     } else {
         None
@@ -58,6 +60,7 @@ pub struct InputValue {
     pub description: Option<&'static str>,
     pub ty: String,
     pub default_value: Option<&'static str>,
+    pub validators: Arc<Vec<Box<dyn InputValueValidator>>>,
 }
 
 #[derive(Clone)]

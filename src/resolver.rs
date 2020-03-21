@@ -108,7 +108,7 @@ pub async fn do_resolve_values<'a, T: ObjectType + Send + Sync>(
     Resolver {
         ctx,
         obj: root,
-        result: result,
+        result,
     }
     .resolve()
     .await?;

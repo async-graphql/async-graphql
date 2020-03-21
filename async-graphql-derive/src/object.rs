@@ -87,8 +87,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             (_, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
-                                        || path.path.segments.last().unwrap().ident.to_string()
-                                            != "Context"
+                                        || path.path.segments.last().unwrap().ident != "Context"
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
@@ -114,6 +113,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         name,
                         desc,
                         default,
+                        validators,
                     },
                 ) in args
                 {
@@ -138,6 +138,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             description: #desc,
                             ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
+                            validators: #validators,
                         });
                     });
 
@@ -171,9 +172,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 });
 
-                let ctx_field = match arg_ctx {
-                    true => quote! { &ctx, },
-                    false => quote! {},
+                let ctx_field = if arg_ctx {
+                    quote! { &ctx, }
+                } else {
+                    quote! {}
                 };
 
                 let field_ident = &method.sig.ident;

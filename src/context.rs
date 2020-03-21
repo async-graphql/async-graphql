@@ -60,7 +60,7 @@ impl Variables {
         content_type: Option<&str>,
         content: Bytes,
     ) {
-        let mut it = var_path.split(".").peekable();
+        let mut it = var_path.split('.').peekable();
 
         if let Some(first) = it.next() {
             if first != "variables" {
@@ -85,18 +85,16 @@ impl Variables {
                         return;
                     }
                 }
-            } else {
-                if let Value::Object(obj) = current {
-                    if let Some(value) = obj.get_mut(s) {
-                        if !has_next {
-                            *value = Value::String(file_string(filename, content_type, &content));
-                            return;
-                        } else {
-                            current = value;
-                        }
-                    } else {
+            } else if let Value::Object(obj) = current {
+                if let Some(value) = obj.get_mut(s) {
+                    if !has_next {
+                        *value = Value::String(file_string(filename, content_type, &content));
                         return;
+                    } else {
+                        current = value;
                     }
+                } else {
+                    return;
                 }
             }
         }
@@ -119,11 +117,9 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
         serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
         serde_json::Value::Number(n) => Value::Int((n.as_i64().unwrap() as i32).into()),
         serde_json::Value::String(s) => Value::String(s),
-        serde_json::Value::Array(ls) => Value::List(
-            ls.into_iter()
-                .map(|value| json_value_to_gql_value(value))
-                .collect(),
-        ),
+        serde_json::Value::Array(ls) => {
+            Value::List(ls.into_iter().map(json_value_to_gql_value).collect())
+        }
         serde_json::Value::Object(obj) => Value::Object(
             obj.into_iter()
                 .map(|(name, value)| (name, json_value_to_gql_value(value)))
@@ -172,7 +168,7 @@ impl<'a, T> ContextBase<'a, T> {
             item,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
-            registry: self.registry.clone(),
+            registry: self.registry,
             data: self.data,
             fragments: self.fragments,
         }
@@ -198,10 +194,10 @@ impl<'a, T> ContextBase<'a, T> {
                 return Ok(default.clone());
             }
         }
-        return Err(QueryError::VarNotDefined {
+        Err(QueryError::VarNotDefined {
             var_name: name.to_string(),
         }
-        .into());
+        .into())
     }
 
     fn resolve_input_value(&self, mut value: Value) -> Result<Value> {
@@ -216,7 +212,7 @@ impl<'a, T> ContextBase<'a, T> {
                 Ok(value)
             }
             Value::Object(ref mut obj) => {
-                for (_, value) in obj {
+                for value in obj.values_mut() {
                     if let Value::Variable(var_name) = value {
                         *value = self.var_value(&var_name)?;
                     }

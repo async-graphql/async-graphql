@@ -56,7 +56,8 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
                     name: "if",
                     description: Some("Included when true."),
                     ty: "Boolean!".to_string(),
-                    default_value: None
+                    default_value: None,
+                    validators: Default::default(),
                 });
                 args
             }
@@ -76,7 +77,8 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
                     name: "if",
                     description: Some("Skipped when true."),
                     ty: "Boolean!".to_string(),
-                    default_value: None
+                    default_value: None,
+                    validators: Default::default(),
                 });
                 args
             }

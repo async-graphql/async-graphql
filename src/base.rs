@@ -25,7 +25,7 @@ pub trait Type {
 
     /// Parse `GlobalID`.
     fn from_global_id(id: ID) -> Result<ID> {
-        let v: Vec<&str> = id.splitn(2, ":").collect();
+        let v: Vec<&str> = id.splitn(2, ':').collect();
         if v.len() != 2 {
             return Err(QueryError::InvalidGlobalID.into());
         }
@@ -155,6 +155,7 @@ macro_rules! impl_scalar_internal {
             }
         }
 
+        #[allow(clippy::ptr_arg)]
         #[async_trait::async_trait]
         impl crate::OutputValueType for $ty {
             async fn resolve(
@@ -191,6 +192,7 @@ macro_rules! impl_scalar {
             }
         }
 
+        #[allow(clippy::ptr_arg)]
         #[async_graphql::async_trait::async_trait]
         impl async_graphql::OutputValueType for $ty {
             async fn resolve(
@@ -215,6 +217,7 @@ impl<T: Type + Send + Sync> Type for &T {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         T::resolve(*value, ctx).await
     }

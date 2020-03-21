@@ -51,7 +51,7 @@ pub trait SubscriptionType: Type {
     /// This function returns true of type `EmptySubscription` only
     #[doc(hidden)]
     fn is_empty() -> bool {
-        return false;
+        false
     }
 
     fn create_type(field: &Field, types: &mut HashMap<TypeId, Field>) -> Result<()>;

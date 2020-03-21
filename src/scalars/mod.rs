@@ -5,12 +5,12 @@ mod integers;
 mod string;
 mod url;
 
+#[cfg(feature = "bson")]
+mod bson;
 #[cfg(feature = "chrono")]
 mod datetime;
 #[cfg(feature = "uuid")]
 mod uuid;
-#[cfg(feature = "bson")]
-mod bson;
 
 pub use id::ID;
 
@@ -18,9 +18,9 @@ pub use id::ID;
 mod tests {
     use super::ID;
     use crate::Type;
+    use bson::oid::ObjectId;
     use chrono::{DateTime, Utc};
     use uuid::Uuid;
-    use bson::oid::ObjectId;
 
     #[test]
     fn test_scalar_type() {

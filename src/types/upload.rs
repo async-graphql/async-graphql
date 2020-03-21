@@ -37,10 +37,10 @@ impl<'a> InputValueType for Upload {
         if let Value::String(s) = value {
             if s.starts_with("file:") {
                 let s = &s[5..];
-                if let Some(idx) = s.find("|") {
+                if let Some(idx) = s.find('|') {
                     let name_and_type = &s[..idx];
                     let content = &s[idx + 1..];
-                    if let Some(type_idx) = name_and_type.find(":") {
+                    if let Some(type_idx) = name_and_type.find(':') {
                         let name = &name_and_type[..type_idx];
                         let mime_type = &name_and_type[type_idx + 1..];
                         return Some(Self {

@@ -1,5 +1,7 @@
-use crate::utils::parse_value;
+use crate::utils::{parse_validators, parse_value};
 use graphql_parser::query::Value;
+use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{Attribute, AttributeArgs, Error, Meta, MetaList, NestedMeta, Result, Type};
 
 #[derive(Debug)]
@@ -58,6 +60,7 @@ pub struct Argument {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub default: Option<Value>,
+    pub validators: TokenStream,
 }
 
 impl Argument {
@@ -65,59 +68,59 @@ impl Argument {
         let mut name = None;
         let mut desc = None;
         let mut default = None;
+        let mut validators = quote! { Default::default() };
 
         for attr in attrs {
             match attr.parse_meta() {
                 Ok(Meta::List(ls)) if ls.path.is_ident("arg") => {
                     for meta in &ls.nested {
-                        match meta {
-                            NestedMeta::Meta(Meta::NameValue(nv)) => {
-                                if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        name = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'name' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        desc = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'desc' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("default") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        match parse_value(&lit.value()) {
-                                            Ok(Value::Variable(_)) => {
-                                                return Err(Error::new_spanned(
-                                                    &nv.lit,
-                                                    "The default cannot be a variable",
-                                                ))
-                                            }
-                                            Ok(value) => default = Some(value),
-                                            Err(err) => {
-                                                return Err(Error::new_spanned(
-                                                    &nv.lit,
-                                                    format!("Invalid value: {}", err),
-                                                ));
-                                            }
+                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
+                            if nv.path.is_ident("name") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    name = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'name' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("desc") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    desc = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'desc' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("default") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    match parse_value(&lit.value()) {
+                                        Ok(Value::Variable(_)) => {
+                                            return Err(Error::new_spanned(
+                                                &nv.lit,
+                                                "The default cannot be a variable",
+                                            ))
                                         }
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'default' should be a string.",
-                                        ));
+                                        Ok(value) => default = Some(value),
+                                        Err(err) => {
+                                            return Err(Error::new_spanned(
+                                                &nv.lit,
+                                                format!("Invalid value: {}", err),
+                                            ));
+                                        }
                                     }
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'default' should be a string.",
+                                    ));
                                 }
                             }
-                            _ => {}
                         }
                     }
+
+                    validators = parse_validators(&ls)?;
                 }
                 _ => {}
             }
@@ -127,6 +130,7 @@ impl Argument {
             name,
             desc,
             default,
+            validators,
         })
     }
 }
@@ -153,38 +157,35 @@ impl Field {
                 Ok(Meta::List(ls)) if ls.path.is_ident("field") => {
                     is_field = true;
                     for meta in &ls.nested {
-                        match meta {
-                            NestedMeta::Meta(Meta::NameValue(nv)) => {
-                                if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        name = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'name' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        desc = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'desc' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("deprecation") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        deprecation = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'deprecation' should be a string.",
-                                        ));
-                                    }
+                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
+                            if nv.path.is_ident("name") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    name = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'name' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("desc") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    desc = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'desc' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("deprecation") {
+                                if let syn::Lit::Str(lit) = &nv.lit {
+                                    deprecation = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'deprecation' should be a string.",
+                                    ));
                                 }
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -272,38 +273,35 @@ impl EnumItem {
             if attr.path.is_ident("item") {
                 if let Ok(Meta::List(args)) = attr.parse_meta() {
                     for meta in args.nested {
-                        match meta {
-                            NestedMeta::Meta(Meta::NameValue(nv)) => {
-                                if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
-                                        name = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'name' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
-                                        desc = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'desc' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("deprecation") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
-                                        deprecation = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'deprecation' should be a string.",
-                                        ));
-                                    }
+                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
+                            if nv.path.is_ident("name") {
+                                if let syn::Lit::Str(lit) = nv.lit {
+                                    name = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'name' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("desc") {
+                                if let syn::Lit::Str(lit) = nv.lit {
+                                    desc = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'desc' should be a string.",
+                                    ));
+                                }
+                            } else if nv.path.is_ident("deprecation") {
+                                if let syn::Lit::Str(lit) = nv.lit {
+                                    deprecation = Some(lit.value());
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Attribute 'deprecation' should be a string.",
+                                    ));
                                 }
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -324,6 +322,7 @@ pub struct InputField {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub default: Option<Value>,
+    pub validators: TokenStream,
 }
 
 impl InputField {
@@ -332,18 +331,19 @@ impl InputField {
         let mut name = None;
         let mut desc = None;
         let mut default = None;
+        let mut validators = quote! { Default::default() };
 
         for attr in attrs {
             if attr.path.is_ident("field") {
-                if let Ok(Meta::List(args)) = attr.parse_meta() {
-                    for meta in args.nested {
+                if let Ok(Meta::List(args)) = &attr.parse_meta() {
+                    for meta in &args.nested {
                         match meta {
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
                                 internal = true;
                             }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
                                         name = Some(lit.value());
                                     } else {
                                         return Err(Error::new_spanned(
@@ -352,7 +352,7 @@ impl InputField {
                                         ));
                                     }
                                 } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
                                         desc = Some(lit.value());
                                     } else {
                                         return Err(Error::new_spanned(
@@ -361,7 +361,7 @@ impl InputField {
                                         ));
                                     }
                                 } else if nv.path.is_ident("default") {
-                                    if let syn::Lit::Str(lit) = nv.lit {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
                                         match parse_value(&lit.value()) {
                                             Ok(Value::Variable(_)) => {
                                                 return Err(Error::new_spanned(
@@ -388,6 +388,8 @@ impl InputField {
                             _ => {}
                         }
                     }
+
+                    validators = parse_validators(&args)?;
                 }
             }
         }
@@ -397,6 +399,7 @@ impl InputField {
             name,
             desc,
             default,
+            validators,
         })
     }
 }
@@ -468,65 +471,62 @@ impl InterfaceFieldArgument {
         let mut default = None;
 
         for meta in &ls.nested {
-            match meta {
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            name = Some(lit.value());
+            if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
+                if nv.path.is_ident("name") {
+                    if let syn::Lit::Str(lit) = &nv.lit {
+                        name = Some(lit.value());
+                    } else {
+                        return Err(Error::new_spanned(
+                            &nv.lit,
+                            "Attribute 'name' should be a string.",
+                        ));
+                    }
+                } else if nv.path.is_ident("desc") {
+                    if let syn::Lit::Str(lit) = &nv.lit {
+                        desc = Some(lit.value());
+                    } else {
+                        return Err(Error::new_spanned(
+                            &nv.lit,
+                            "Attribute 'desc' should be a string.",
+                        ));
+                    }
+                } else if nv.path.is_ident("type") {
+                    if let syn::Lit::Str(lit) = &nv.lit {
+                        if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
+                            ty = Some(ty2);
                         } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
+                            return Err(Error::new_spanned(&lit, "Expect type"));
                         }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("type") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
-                                ty = Some(ty2);
-                            } else {
-                                return Err(Error::new_spanned(&lit, "Expect type"));
+                    } else {
+                        return Err(Error::new_spanned(
+                            &nv.lit,
+                            "Attribute 'type' should be a string.",
+                        ));
+                    }
+                } else if nv.path.is_ident("default") {
+                    if let syn::Lit::Str(lit) = &nv.lit {
+                        match parse_value(&lit.value()) {
+                            Ok(Value::Variable(_)) => {
+                                return Err(Error::new_spanned(
+                                    &nv.lit,
+                                    "The default cannot be a variable",
+                                ))
                             }
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'type' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("default") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            match parse_value(&lit.value()) {
-                                Ok(Value::Variable(_)) => {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "The default cannot be a variable",
-                                    ))
-                                }
-                                Ok(value) => default = Some(value),
-                                Err(err) => {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        format!("Invalid value: {}", err),
-                                    ));
-                                }
+                            Ok(value) => default = Some(value),
+                            Err(err) => {
+                                return Err(Error::new_spanned(
+                                    &nv.lit,
+                                    format!("Invalid value: {}", err),
+                                ));
                             }
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'default' should be a string.",
-                            ));
                         }
+                    } else {
+                        return Err(Error::new_spanned(
+                            &nv.lit,
+                            "Attribute 'default' should be a string.",
+                        ));
                     }
                 }
-                _ => {}
             }
         }
 

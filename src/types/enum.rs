@@ -34,7 +34,7 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
         let items = Self::items();
         for item in items {
             if item.value == *self {
-                return Ok(item.name.clone().into());
+                return Ok(item.name.into());
             }
         }
         unreachable!()

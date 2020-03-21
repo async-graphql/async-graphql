@@ -32,9 +32,8 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
                 Selection::Field(field) => {
                     let output_name = field
                         .alias
-                        .as_ref()
-                        .map(|alias| alias.as_str())
-                        .unwrap_or(field.name.as_str());
+                        .as_deref()
+                        .unwrap_or_else(|| field.name.as_str());
                     self.add_output(output_name, field);
                 }
                 Selection::InlineFragment(inline_fragment) => {
