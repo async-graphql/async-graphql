@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{OperationDefinition, VariableDefinition};
 use graphql_parser::schema::Value;
 use graphql_parser::Pos;
@@ -13,7 +12,7 @@ pub struct NoUndefinedVariables<'a> {
 impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         _operation_definition: &'a OperationDefinition,
     ) {
         self.vars.clear();
@@ -21,7 +20,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
 
     fn enter_variable_definition(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         variable_definition: &'a VariableDefinition,
     ) {
         self.vars.insert(&variable_definition.name);
@@ -29,7 +28,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
 
     fn enter_argument(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         pos: Pos,
         _name: &str,
         value: &'a Value,

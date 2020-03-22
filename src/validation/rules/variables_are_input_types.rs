@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::VariableDefinition;
 
 #[derive(Default)]
@@ -8,7 +7,7 @@ pub struct VariablesAreInputTypes;
 impl<'a> Visitor<'a> for VariablesAreInputTypes {
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         variable_definition: &'a VariableDefinition,
     ) {
         if let Some(ty) = ctx

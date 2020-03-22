@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Field, Selection, SelectionSet};
 use std::collections::HashMap;
 
@@ -9,7 +8,7 @@ pub struct OverlappingFieldsCanBeMerged;
 impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
     fn enter_selection_set(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         selection_set: &'a SelectionSet,
     ) {
         let mut find_conflicts = FindConflicts {
@@ -22,7 +21,7 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
 
 struct FindConflicts<'a, 'ctx> {
     outputs: HashMap<&'a str, &'a Field>,
-    ctx: &'a mut ValidatorContext<'ctx>,
+    ctx: &'a mut VisitorContext<'ctx>,
 }
 
 impl<'a, 'ctx> FindConflicts<'a, 'ctx> {

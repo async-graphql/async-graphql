@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::OperationDefinition;
 
 #[derive(Default)]
@@ -8,7 +7,7 @@ pub struct UploadFile;
 impl<'a> Visitor<'a> for UploadFile {
     fn enter_operation_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         operation_definition: &'a OperationDefinition,
     ) {
         if let OperationDefinition::Query(query) = operation_definition {

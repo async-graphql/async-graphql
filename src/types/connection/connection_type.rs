@@ -78,6 +78,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         args: Default::default(),
                         ty: PageInfo::create_type_info(registry),
                         deprecation: None,
+                        cache_control: Default::default(),
                     },
                 );
 
@@ -89,6 +90,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         args: Default::default(),
                         ty: <Option::<Vec<Option<Edge<T,E>>>> as Type>::create_type_info(registry),
                         deprecation: None,
+                        cache_control: Default::default(),
                     },
                 );
 
@@ -100,6 +102,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         args: Default::default(),
                         ty: Option::<i32>::create_type_info(registry),
                         deprecation: None,
+                        cache_control: Default::default(),
                     },
                 );
 
@@ -109,11 +112,13 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                     description: Some(r#"A list of all of the objects returned in the connection. This is a convenience field provided for quickly exploring the API; rather than querying for "{ edges { node } }" when no edge data is needed, this field can be be used instead. Note that when clients like Relay need to fetch the "cursor" field on the edge to enable efficient pagination, this shortcut cannot be used, and the full "{ edges { node } }" version should be used instead."#),
                     args: Default::default(),
                     ty: Vec::<T>::type_name().to_string(),
-                    deprecation: None
+                    deprecation: None,
+                    cache_control: Default::default(),
                 });
 
                 fields
             },
+            cache_control: Default::default(),
         })
     }
 }

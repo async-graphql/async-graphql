@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Mutation, OperationDefinition, Query, Subscription};
 use std::collections::HashSet;
 
@@ -11,7 +10,7 @@ pub struct UniqueOperationNames<'a> {
 impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
     fn enter_operation_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         operation_definition: &'a OperationDefinition,
     ) {
         let name = match operation_definition {

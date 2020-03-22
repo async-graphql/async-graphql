@@ -185,6 +185,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 },
                 ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                 deprecation: #deprecation,
+                cache_control: Default::default(),
             });
         });
 

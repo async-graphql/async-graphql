@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{OperationDefinition, VariableDefinition};
 use std::collections::HashSet;
 
@@ -11,7 +10,7 @@ pub struct UniqueVariableNames<'a> {
 impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
     fn enter_operation_definition(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         _operation_definition: &'a OperationDefinition,
     ) {
         self.names.clear();
@@ -19,7 +18,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
 
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         variable_definition: &'a VariableDefinition,
     ) {
         if !self.names.insert(variable_definition.name.as_str()) {

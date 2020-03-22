@@ -1,17 +1,14 @@
 use crate::error::RuleErrors;
 use crate::registry::Registry;
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::{visit, VisitorNil};
+use crate::visitor::{visit, VisitorContext, VisitorNil};
 use crate::Result;
 use graphql_parser::query::Document;
 
-mod context;
 mod rules;
 mod utils;
-mod visitor;
 
 pub fn check_rules(registry: &Registry, doc: &Document) -> Result<()> {
-    let mut ctx = ValidatorContext::new(registry, doc);
+    let mut ctx = VisitorContext::new(registry, doc);
     let mut visitor = VisitorNil
         .with(rules::ArgumentsOfCorrectType::default())
         .with(rules::DefaultValuesOfCorrectType)

@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::FragmentDefinition;
 use std::collections::HashSet;
 
@@ -11,7 +10,7 @@ pub struct UniqueFragmentNames<'a> {
 impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
     fn enter_fragment_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a FragmentDefinition,
     ) {
         if !self.names.insert(&fragment_definition.name) {

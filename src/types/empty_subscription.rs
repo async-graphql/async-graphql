@@ -24,6 +24,7 @@ impl Type for EmptySubscription {
             name: "EmptySubscription".to_string(),
             description: None,
             fields: Default::default(),
+            cache_control: Default::default(),
         })
     }
 }

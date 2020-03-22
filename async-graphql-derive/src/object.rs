@@ -59,6 +59,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         return Err(Error::new_spanned(&method.sig.output, "Missing type"))
                     }
                 };
+                let cache_control = {
+                    let public = field.cache_control.public;
+                    let max_age = field.cache_control.max_age;
+                    quote! {
+                        #crate_name::CacheControl {
+                            public: #public,
+                            max_age: #max_age,
+                        }
+                    }
+                };
 
                 let mut arg_ctx = false;
                 let mut args = Vec::new();
@@ -162,6 +172,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 let schema_ty = ty.value_type();
+
                 schema_fields.push(quote! {
                     fields.insert(#field_name.to_string(), #crate_name::registry::Field {
                         name: #field_name.to_string(),
@@ -173,6 +184,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         },
                         ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
+                        cache_control: #cache_control,
                     });
                 });
 
@@ -209,6 +221,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
     }
 
+    let cache_control = {
+        let public = object_args.cache_control.public;
+        let max_age = object_args.cache_control.max_age;
+        quote! {
+            #crate_name::CacheControl {
+                public: #public,
+                max_age: #max_age,
+            }
+        }
+    };
+
     let expanded = quote! {
         #item_impl
 
@@ -226,6 +249,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         #(#schema_fields)*
                         fields
                     },
+                    cache_control: #cache_control,
                 })
             }
         }

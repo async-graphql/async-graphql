@@ -1,13 +1,12 @@
 use crate::registry;
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::Field;
 
 #[derive(Default)]
 pub struct FieldsOnCorrectType;
 
 impl<'a> Visitor<'a> for FieldsOnCorrectType {
-    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Field) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
         if ctx
             .parent_type()
             .unwrap()

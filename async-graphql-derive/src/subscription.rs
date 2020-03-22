@@ -196,6 +196,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         },
                         ty: <#ty as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
+                        cache_control: Default::default(),
                     });
                 });
 
@@ -240,6 +241,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         #(#schema_fields)*
                         fields
                     },
+                    cache_control: Default::default(),
                 })
             }
         }

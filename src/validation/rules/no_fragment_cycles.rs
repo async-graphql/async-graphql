@@ -1,6 +1,5 @@
 use crate::error::RuleError;
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Document, FragmentDefinition, FragmentSpread};
 use graphql_parser::Pos;
 use std::collections::{HashMap, HashSet};
@@ -55,7 +54,7 @@ pub struct NoFragmentCycles<'a> {
 }
 
 impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, _doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
         let mut detector = CycleDetector {
             visited: HashSet::new(),
             spreads: &self.spreads,
@@ -75,7 +74,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
 
     fn enter_fragment_definition(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a FragmentDefinition,
     ) {
         self.current_fragment = Some(&fragment_definition.name);
@@ -84,7 +83,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
 
     fn exit_fragment_definition(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         _fragment_definition: &'a FragmentDefinition,
     ) {
         self.current_fragment = None;
@@ -92,7 +91,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
 
     fn enter_fragment_spread(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         fragment_spread: &'a FragmentSpread,
     ) {
         if let Some(current_fragment) = self.current_fragment {

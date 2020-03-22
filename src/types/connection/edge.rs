@@ -47,6 +47,7 @@ where
                             args: Default::default(),
                             ty: T::create_type_info(registry),
                             deprecation: None,
+                            cache_control: Default::default(),
                         },
                     );
 
@@ -58,12 +59,14 @@ where
                             args: Default::default(),
                             ty: String::create_type_info(registry),
                             deprecation: None,
+                            cache_control: Default::default(),
                         },
                     );
 
                     fields.extend(extra_fields);
                     fields
                 },
+                cache_control: Default::default(),
             }
         })
     }

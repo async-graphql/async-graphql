@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
 use std::collections::HashMap;
 
@@ -9,7 +8,7 @@ pub struct PossibleFragmentSpreads<'a> {
 }
 
 impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
-    fn enter_document(&mut self, _ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         for d in &doc.definitions {
             if let Definition::Fragment(fragment) = d {
                 let TypeCondition::On(type_name) = &fragment.type_condition;
@@ -21,7 +20,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
 
     fn enter_fragment_spread(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         fragment_spread: &'a FragmentSpread,
     ) {
         if let Some(fragment_type) = self
@@ -42,7 +41,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
 
     fn enter_inline_fragment(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         inline_fragment: &'a InlineFragment,
     ) {
         if let Some(parent_type) = ctx.parent_type() {

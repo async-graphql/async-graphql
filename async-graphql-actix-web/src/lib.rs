@@ -247,10 +247,25 @@ where
                 .respond_to(&req)
                 .await?)
         } else if ct.essence_str() == mime::APPLICATION_JSON {
-            let gql_req = web::Json::<GQLRequest>::from_request(&req, &mut payload.0).await?;
-            Ok(web::Json(gql_req.into_inner().execute(&schema).await)
-                .respond_to(&req)
-                .await?)
+            let mut gql_req = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
+                .await?
+                .into_inner();
+            let prepared = gql_req
+                .prepare(&schema)
+                .map_err(actix_web::error::ErrorBadRequest)?;
+            let mut cache_control = dbg!(prepared.cache_control()).value();
+            let gql_resp = prepared.execute().await;
+            if gql_resp.is_err() {
+                cache_control = None;
+            }
+            let mut resp = web::Json(GQLResponse(gql_resp)).respond_to(&req).await?;
+            if let Some(cache_control) = cache_control {
+                resp.headers_mut().insert(
+                    header::CACHE_CONTROL,
+                    header::HeaderValue::from_str(&cache_control).unwrap(),
+                );
+            }
+            Ok(resp)
         } else {
             Ok(HttpResponse::UnsupportedMediaType().finish())
         }

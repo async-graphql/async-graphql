@@ -77,6 +77,7 @@ mod schema;
 mod subscription;
 mod types;
 mod validation;
+mod visitor;
 
 /// Input value validators
 pub mod validators;
@@ -98,6 +99,7 @@ pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use query::{PreparedQuery, QueryBuilder};
+pub use registry::CacheControl;
 pub use scalars::ID;
 pub use schema::Schema;
 pub use subscription::SubscribeBuilder;
@@ -132,18 +134,20 @@ pub use types::{EnumItem, EnumType};
 ///
 /// # Macro parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Object name               | string   | Y        |
-/// | desc        | Object description        | string   | Y        |
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | desc          | Object description        | string   | Y        |
+/// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 ///
 /// # Field parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Field name                | string   | Y        |
-/// | desc        | Field description         | string   | Y        |
-/// | deprecation | Field deprecation reason  | string   | Y        |
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Field name                | string   | Y        |
+/// | desc          | Field description         | string   | Y        |
+/// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 ///
 /// # Field argument parameters
 ///

@@ -30,6 +30,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     args: Default::default(),
                     ty: schema_type,
                     deprecation: None,
+                    cache_control: Default::default(),
                 },
             );
 
@@ -54,6 +55,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     },
                     ty: "__Type".to_string(),
                     deprecation: None,
+                    cache_control: Default::default(),
                 },
             );
         }

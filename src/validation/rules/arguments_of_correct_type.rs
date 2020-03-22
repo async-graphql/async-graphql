@@ -1,7 +1,6 @@
 use crate::registry::InputValue;
-use crate::validation::context::ValidatorContext;
 use crate::validation::utils::is_valid_input_value;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::Field;
 use graphql_parser::schema::{Directive, Value};
 use graphql_parser::Pos;
@@ -13,7 +12,7 @@ pub struct ArgumentsOfCorrectType<'a> {
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
-    fn enter_directive(&mut self, ctx: &mut ValidatorContext<'a>, directive: &'a Directive) {
+    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Directive) {
         self.current_args = ctx
             .registry
             .directives
@@ -21,13 +20,13 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
             .map(|d| &d.args);
     }
 
-    fn exit_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {
+    fn exit_directive(&mut self, _ctx: &mut VisitorContext<'a>, _directive: &'a Directive) {
         self.current_args = None;
     }
 
     fn enter_argument(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         pos: Pos,
         name: &str,
         value: &'a Value,
@@ -58,14 +57,14 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut ValidatorContext<'a>, field: &'a Field) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
         self.current_args = ctx
             .parent_type()
             .and_then(|p| p.field_by_name(&field.name))
             .map(|f| &f.args);
     }
 
-    fn exit_field(&mut self, _ctx: &mut ValidatorContext<'a>, _field: &'a Field) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
         self.current_args = None;
     }
 }

@@ -34,7 +34,7 @@ type Storage = Arc<Mutex<Slab<Book>>>;
 
 struct QueryRoot;
 
-#[async_graphql::Object]
+#[async_graphql::Object(cache_control(max_age = 5))]
 impl QueryRoot {
     #[field]
     async fn books(&self, ctx: &Context<'_>) -> Vec<Book> {

@@ -70,6 +70,7 @@ pub struct Field {
     pub args: HashMap<&'static str, InputValue>,
     pub ty: String,
     pub deprecation: Option<&'static str>,
+    pub cache_control: CacheControl,
 }
 
 #[derive(Clone)]
@@ -77,6 +78,84 @@ pub struct EnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub deprecation: Option<&'static str>,
+}
+
+/// Cache control values
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// struct QueryRoot;
+///
+/// #[Object(cache_control(max_age = 60))]
+/// impl QueryRoot {
+///     #[field(cache_control(max_age = 30))]
+///     async fn value1(&self) -> i32 {
+///         unimplemented!()
+///     }
+///
+///     #[field(cache_control(private))]
+///     async fn value2(&self) -> i32 {
+///         unimplemented!()
+///     }
+/// }
+///
+/// #[async_std::main]
+/// async fn main() {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     assert_eq!(schema.query("{ value1 }").prepare().unwrap().cache_control(), CacheControl { public: true, max_age: 30 });
+///     assert_eq!(schema.query("{ value2 }").prepare().unwrap().cache_control(), CacheControl { public: false, max_age: 60 });
+///     assert_eq!(schema.query("{ value1 value2 }").prepare().unwrap().cache_control(), CacheControl { public: false, max_age: 30 });
+/// }
+/// ```
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct CacheControl {
+    /// Scope is public, default is true
+    pub public: bool,
+
+    /// Cache max age, default is 0.
+    pub max_age: usize,
+}
+
+impl Default for CacheControl {
+    fn default() -> Self {
+        Self {
+            public: true,
+            max_age: 0,
+        }
+    }
+}
+
+impl CacheControl {
+    /// Get 'Cache-Control' header value.
+    pub fn value(&self) -> Option<String> {
+        if self.max_age > 0 {
+            if !self.public {
+                Some(format!("max-age={}, private", self.max_age))
+            } else {
+                Some(format!("max-age={}", self.max_age))
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl CacheControl {
+    pub(crate) fn merge(self, other: &CacheControl) -> Self {
+        CacheControl {
+            public: self.public && other.public,
+            max_age: if self.max_age == 0 {
+                other.max_age
+            } else if other.max_age == 0 {
+                self.max_age
+            } else {
+                self.max_age.min(other.max_age)
+            },
+        }
+    }
 }
 
 pub enum Type {
@@ -89,6 +168,7 @@ pub enum Type {
         name: String,
         description: Option<&'static str>,
         fields: HashMap<String, Field>,
+        cache_control: CacheControl,
     },
     Interface {
         name: String,
@@ -201,6 +281,7 @@ impl Registry {
                     name: "".to_string(),
                     description: None,
                     fields: Default::default(),
+                    cache_control: Default::default(),
                 },
             );
             let mut ty = f(self);
@@ -213,6 +294,7 @@ impl Registry {
                         args: Default::default(),
                         ty: "String!".to_string(),
                         deprecation: None,
+                        cache_control: Default::default(),
                     },
                 );
             }

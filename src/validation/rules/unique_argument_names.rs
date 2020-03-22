@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::Field;
 use graphql_parser::schema::{Directive, Value};
 use graphql_parser::Pos;
@@ -11,13 +10,13 @@ pub struct UniqueArgumentNames<'a> {
 }
 
 impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
-    fn enter_directive(&mut self, _ctx: &mut ValidatorContext<'a>, _directive: &'a Directive) {
+    fn enter_directive(&mut self, _ctx: &mut VisitorContext<'a>, _directive: &'a Directive) {
         self.names.clear();
     }
 
     fn enter_argument(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         pos: Pos,
         name: &'a str,
         _value: &'a Value,
@@ -30,7 +29,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
         }
     }
 
-    fn enter_field(&mut self, _ctx: &mut ValidatorContext<'a>, _field: &'a Field) {
+    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
         self.names.clear();
     }
 }

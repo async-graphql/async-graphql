@@ -1,6 +1,5 @@
-use crate::validation::context::ValidatorContext;
 use crate::validation::utils::is_valid_input_value;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Type, VariableDefinition};
 
 pub struct DefaultValuesOfCorrectType;
@@ -8,7 +7,7 @@ pub struct DefaultValuesOfCorrectType;
 impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
     fn enter_variable_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         variable_definition: &'a VariableDefinition,
     ) {
         if let Some(value) = &variable_definition.default_value {

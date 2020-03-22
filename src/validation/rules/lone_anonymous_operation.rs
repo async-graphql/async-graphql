@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Definition, Document, OperationDefinition};
 
 #[derive(Default)]
@@ -8,7 +7,7 @@ pub struct LoneAnonymousOperation {
 }
 
 impl<'a> Visitor<'a> for LoneAnonymousOperation {
-    fn enter_document(&mut self, _ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         self.operation_count = Some(
             doc.definitions
                 .iter()
@@ -22,7 +21,7 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
 
     fn enter_operation_definition(
         &mut self,
-        ctx: &mut ValidatorContext<'a>,
+        ctx: &mut VisitorContext<'a>,
         operation_definition: &'a OperationDefinition,
     ) {
         if let Some(operation_count) = self.operation_count {

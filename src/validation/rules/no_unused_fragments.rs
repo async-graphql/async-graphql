@@ -1,5 +1,4 @@
-use crate::validation::context::ValidatorContext;
-use crate::validation::visitor::Visitor;
+use crate::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Definition, Document, FragmentSpread};
 use std::collections::HashSet;
 
@@ -9,7 +8,7 @@ pub struct NoUnusedFragments<'a> {
 }
 
 impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
-    fn exit_document(&mut self, ctx: &mut ValidatorContext<'a>, doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         for d in &doc.definitions {
             if let Definition::Fragment(fragment) = d {
                 if !self.spreads.contains(fragment.name.as_str()) {
@@ -24,7 +23,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
 
     fn enter_fragment_spread(
         &mut self,
-        _ctx: &mut ValidatorContext<'a>,
+        _ctx: &mut VisitorContext<'a>,
         fragment_spread: &'a FragmentSpread,
     ) {
         self.spreads.insert(&fragment_spread.fragment_name);

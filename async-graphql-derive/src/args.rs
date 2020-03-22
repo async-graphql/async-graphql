@@ -2,13 +2,70 @@ use crate::utils::{parse_validator, parse_value};
 use graphql_parser::query::Value;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, AttributeArgs, Error, Meta, MetaList, NestedMeta, Result, Type};
+use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};
+
+#[derive(Debug)]
+pub struct CacheControl {
+    pub public: bool,
+    pub max_age: usize,
+}
+
+impl Default for CacheControl {
+    fn default() -> Self {
+        Self {
+            public: true,
+            max_age: 0,
+        }
+    }
+}
+
+impl CacheControl {
+    pub fn parse(ls: &MetaList) -> Result<Self> {
+        let mut cache_control = Self {
+            public: true,
+            max_age: 0,
+        };
+
+        for meta in &ls.nested {
+            match meta {
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("max_age") {
+                        if let Lit::Int(n) = &nv.lit {
+                            match n.base10_parse::<usize>() {
+                                Ok(n) => cache_control.max_age = n,
+                                Err(err) => {
+                                    return Err(Error::new_spanned(&nv.lit, err));
+                                }
+                            }
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'max_age' must be integer.",
+                            ));
+                        }
+                    }
+                }
+                NestedMeta::Meta(Meta::Path(p)) => {
+                    if p.is_ident("public") {
+                        cache_control.public = true;
+                    } else if p.is_ident("private") {
+                        cache_control.public = false;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(cache_control)
+    }
+}
 
 #[derive(Debug)]
 pub struct Object {
     pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
+    pub cache_control: CacheControl,
 }
 
 impl Object {
@@ -16,6 +73,7 @@ impl Object {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
+        let mut cache_control = CacheControl::default();
 
         for arg in args {
             match arg {
@@ -43,6 +101,11 @@ impl Object {
                         }
                     }
                 }
+                NestedMeta::Meta(Meta::List(ls)) => {
+                    if ls.path.is_ident("cache_control") {
+                        cache_control = CacheControl::parse(&ls)?;
+                    }
+                }
                 _ => {}
             }
         }
@@ -51,6 +114,7 @@ impl Object {
             internal,
             name,
             desc,
+            cache_control,
         })
     }
 }
@@ -140,6 +204,7 @@ pub struct Field {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub deprecation: Option<String>,
+    pub cache_control: CacheControl,
 }
 
 impl Field {
@@ -148,6 +213,7 @@ impl Field {
         let mut name = None;
         let mut desc = None;
         let mut deprecation = None;
+        let mut cache_control = CacheControl::default();
 
         for attr in attrs {
             match attr.parse_meta()? {
@@ -157,35 +223,43 @@ impl Field {
                 Meta::List(ls) if ls.path.is_ident("field") => {
                     is_field = true;
                     for meta in &ls.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
-                            if nv.path.is_ident("name") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    name = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'name' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("desc") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    desc = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'desc' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("deprecation") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    deprecation = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'deprecation' should be a string.",
-                                    ));
+                        match meta {
+                            NestedMeta::Meta(Meta::NameValue(nv)) => {
+                                if nv.path.is_ident("name") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        name = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'name' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("desc") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        desc = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'desc' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("deprecation") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        deprecation = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'deprecation' should be a string.",
+                                        ));
+                                    }
                                 }
                             }
+                            NestedMeta::Meta(Meta::List(ls)) => {
+                                if ls.path.is_ident("cache_control") {
+                                    cache_control = CacheControl::parse(ls)?;
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -198,6 +272,7 @@ impl Field {
                 name,
                 desc,
                 deprecation,
+                cache_control,
             }))
         } else {
             Ok(None)

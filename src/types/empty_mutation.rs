@@ -35,6 +35,7 @@ impl Type for EmptyMutation {
             name: "EmptyMutation".to_string(),
             description: None,
             fields: Default::default(),
+            cache_control: Default::default(),
         })
     }
 }
