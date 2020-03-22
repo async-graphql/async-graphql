@@ -1,10 +1,12 @@
 mod int_validators;
+mod list_validators;
 mod string_validators;
 
 use graphql_parser::schema::Value;
 
-pub use int_validators::{IntGreaterThan, IntLessThan, IntRange};
-pub use string_validators::{Email, MAC};
+pub use int_validators::{IntGreaterThan, IntLessThan, IntNonZero, IntRange};
+pub use list_validators::{ListMaxLength, ListMinLength};
+pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 
 /// Input value validator
 ///
@@ -20,19 +22,19 @@ pub use string_validators::{Email, MAC};
 /// impl QueryRoot {
 ///     // Input is email address
 ///     #[field]
-///     async fn value1(&self, #[arg(validators(Email))] email: String) -> i32 {
+///     async fn value1(&self, #[arg(validator(Email))] email: String) -> i32 {
 ///         unimplemented!()
 ///     }
 ///
 ///     // Input is email or MAC address
 ///     #[field]
-///     async fn value2(&self, #[arg(validators(or(Email, MAC(colon: false))))] email_or_mac: String) -> i32 {
+///     async fn value2(&self, #[arg(validator(or(Email, MAC(colon = false))))] email_or_mac: String) -> i32 {
 ///         unimplemented!()
 ///     }
 ///
 ///     // Input is integer between 100 and 200
 ///     #[field]
-///     async fn value3(&self, #[arg(validators(IntRange(min = 100, max = 200)))] value: i32) -> i32 {
+///     async fn value3(&self, #[arg(validator(IntRange(min = 100, max = 200)))] value: i32) -> i32 {
 ///         unimplemented!()
 ///     }
 /// }
@@ -42,6 +44,8 @@ where
     Self: Sync + Send,
 {
     /// Check value is valid, returns the reason for the error if it fails, otherwise None.
+    ///
+    /// If the input type is different from the required type, return None directly, and other validators will find this error.
     fn is_valid(&self, value: &Value) -> Option<String>;
 }
 

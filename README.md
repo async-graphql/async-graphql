@@ -109,10 +109,15 @@ Open `http://localhost:8000` in browser
             - [X] IntRange
             - [X] IntLessThan
             - [X] IntGreaterThan
+            - [X] IntNonZero
         - [X] String
             - [X] Email
             - [X] MAC
-        - [X] String
+            - [X] StringMinLength
+            - [X] StringMaxLength
+        - [X] List
+            - [X] ListMaxLength
+            - [X] ListMinLength
 - [X] Subscription
     - [X] Filter
     - [X] WebSocket transport

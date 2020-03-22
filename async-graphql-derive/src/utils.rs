@@ -97,7 +97,10 @@ pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
     }
 }
 
-pub fn parse_validator(crate_name: &TokenStream, nested_meta: &NestedMeta) -> Result<TokenStream> {
+pub fn parse_nested_validator(
+    crate_name: &TokenStream,
+    nested_meta: &NestedMeta,
+) -> Result<TokenStream> {
     let mut params = Vec::new();
 
     match nested_meta {
@@ -105,7 +108,7 @@ pub fn parse_validator(crate_name: &TokenStream, nested_meta: &NestedMeta) -> Re
             if ls.path.is_ident("and") {
                 let mut validators = Vec::new();
                 for nested_meta in &ls.nested {
-                    validators.push(parse_validator(crate_name, nested_meta)?);
+                    validators.push(parse_nested_validator(crate_name, nested_meta)?);
                 }
                 Ok(validators
                     .into_iter()
@@ -117,7 +120,7 @@ pub fn parse_validator(crate_name: &TokenStream, nested_meta: &NestedMeta) -> Re
             } else if ls.path.is_ident("or") {
                 let mut validators = Vec::new();
                 for nested_meta in &ls.nested {
-                    validators.push(parse_validator(crate_name, nested_meta)?);
+                    validators.push(parse_nested_validator(crate_name, nested_meta)?);
                 }
                 Ok(validators
                     .into_iter()
@@ -150,17 +153,24 @@ pub fn parse_validator(crate_name: &TokenStream, nested_meta: &NestedMeta) -> Re
     }
 }
 
-pub fn parse_validators(crate_name: &TokenStream, args: &MetaList) -> Result<TokenStream> {
-    let mut validators = Vec::new();
+pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<TokenStream> {
     for arg in &args.nested {
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
-            if ls.path.is_ident("validators") {
-                for meta in &ls.nested {
-                    let validator = parse_validator(crate_name, meta)?;
-                    validators.push(quote! { Box::new(#validator) });
+            if ls.path.is_ident("validator") {
+                if ls.nested.len() > 1 {
+                    return Err(Error::new_spanned(ls,
+                                                  "Only one validator can be defined. You can connect combine validators with `and` or `or`"));
                 }
+                if ls.nested.len() == 0 {
+                    return Err(Error::new_spanned(
+                        ls,
+                        "At least one validator must be defined",
+                    ));
+                }
+                let validator = parse_nested_validator(crate_name, &ls.nested[0])?;
+                return Ok(quote! { Some(std::sync::Arc::new(#validator)) });
             }
         }
     }
-    Ok(quote! { std::sync::Arc::new(vec![#(#validators),*]) })
+    Ok(quote! {None})
 }

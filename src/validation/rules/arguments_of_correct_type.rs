@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
             .current_args
             .and_then(|args| args.get(name).map(|input| input))
         {
-            for validator in arg.validators.iter() {
+            if let Some(validator) = &arg.validator {
                 if let Some(reason) = validator.is_valid(value) {
                     ctx.report_error(
                         vec![pos],

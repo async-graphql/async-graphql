@@ -3,6 +3,54 @@ use graphql_parser::schema::Value;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+/// String minimum length validator
+pub struct StringMinLength {
+    /// Must be greater than or equal to this value.
+    pub length: usize,
+}
+
+impl InputValueValidator for StringMinLength {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::String(s) = value {
+            if s.len() < self.length {
+                Some(format!(
+                    "The value length is {}, but the length must be greater than or equal to {}",
+                    s.len(),
+                    self.length
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
+/// String maximum length validator
+pub struct StringMaxLength {
+    /// Must be less than or equal to this value.
+    pub length: usize,
+}
+
+impl InputValueValidator for StringMaxLength {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::String(s) = value {
+            if s.len() > self.length {
+                Some(format!(
+                    "The value length is {}, but the length must be less than or equal to {}",
+                    s.len(),
+                    self.length
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
 static EMAIL_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new("^(([0-9A-Za-z!#$%&'*+-/=?^_`{|}~&&[^@]]+)|(\"([0-9A-Za-z!#$%&'*+-/=?^_`{|}~ \"(),:;<>@\\[\\\\\\]]+)\"))@").unwrap()
 });
@@ -19,7 +67,7 @@ impl InputValueValidator for Email {
                 None
             }
         } else {
-            Some("expected type \"String\"".to_string())
+            None
         }
     }
 }
@@ -31,8 +79,8 @@ static MAC_ADDRESS_NO_COLON_RE: Lazy<Regex> =
 
 /// MAC address validator
 pub struct MAC {
-    /// Must include colon
-    colon: bool,
+    /// Must include colon.
+    pub colon: bool,
 }
 
 impl InputValueValidator for MAC {
@@ -50,7 +98,7 @@ impl InputValueValidator for MAC {
                 None
             }
         } else {
-            Some("expected type \"String\"".to_string())
+            None
         }
     }
 }

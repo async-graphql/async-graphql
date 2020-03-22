@@ -117,7 +117,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         name,
                         desc,
                         default,
-                        validators,
+                        validator,
                     },
                 ) in args
                 {
@@ -142,7 +142,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             description: #desc,
                             ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
-                            validators: #validators,
+                            validator: #validator,
                         });
                     });
 

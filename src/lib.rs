@@ -152,7 +152,7 @@ pub use types::{EnumItem, EnumType};
 /// | name        | Argument name             | string   | Y        |
 /// | desc        | Argument description      | string   | Y        |
 /// | default     | Argument default value    | string   | Y        |
-/// | validators  | Input value validators    | `InputValueValidator` | Y        |
+/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # The field returns the value type
 ///
@@ -300,7 +300,7 @@ pub use async_graphql_derive::Enum;
 /// | name        | Field name                | string   | Y        |
 /// | desc        | Field description         | string   | Y        |
 /// | default     | Field default value       | string   | Y        |
-/// | validators  | Input value validators    | `InputValueValidator` | Y        |
+/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # Examples
 ///
@@ -355,7 +355,7 @@ pub use async_graphql_derive::InputObject;
 /// | desc        | Field description         | string   | Y        |
 /// | context     | Method with the context   | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
-/// | args        | Field arguments           | [Arg]    | Y        |
+/// | args        | Field arguments           |          | Y        |
 ///
 /// # Field argument parameters
 ///
@@ -485,7 +485,7 @@ pub use async_graphql_derive::Union;
 /// | name        | Argument name             | string   | Y        |
 /// | desc        | Argument description      | string   | Y        |
 /// | default     | Argument default value    | string   | Y        |
-/// | validators  | Input value validators    | `InputValueValidator` | Y        |
+/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # Examples
 ///

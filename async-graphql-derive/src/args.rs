@@ -1,4 +1,4 @@
-use crate::utils::{parse_validators, parse_value};
+use crate::utils::{parse_validator, parse_value};
 use graphql_parser::query::Value;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -60,7 +60,7 @@ pub struct Argument {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub default: Option<Value>,
-    pub validators: TokenStream,
+    pub validator: TokenStream,
 }
 
 impl Argument {
@@ -68,11 +68,11 @@ impl Argument {
         let mut name = None;
         let mut desc = None;
         let mut default = None;
-        let mut validators = quote! { Default::default() };
+        let mut validator = quote! { None };
 
         for attr in attrs {
-            match attr.parse_meta() {
-                Ok(Meta::List(ls)) if ls.path.is_ident("arg") => {
+            match attr.parse_meta()? {
+                Meta::List(ls) if ls.path.is_ident("arg") => {
                     for meta in &ls.nested {
                         if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
                             if nv.path.is_ident("name") {
@@ -120,7 +120,7 @@ impl Argument {
                         }
                     }
 
-                    validators = parse_validators(crate_name, &ls)?;
+                    validator = parse_validator(crate_name, &ls)?;
                 }
                 _ => {}
             }
@@ -130,7 +130,7 @@ impl Argument {
             name,
             desc,
             default,
-            validators,
+            validator,
         })
     }
 }
@@ -150,11 +150,11 @@ impl Field {
         let mut deprecation = None;
 
         for attr in attrs {
-            match attr.parse_meta() {
-                Ok(Meta::Path(p)) if p.is_ident("field") => {
+            match attr.parse_meta()? {
+                Meta::Path(p) if p.is_ident("field") => {
                     is_field = true;
                 }
-                Ok(Meta::List(ls)) if ls.path.is_ident("field") => {
+                Meta::List(ls) if ls.path.is_ident("field") => {
                     is_field = true;
                     for meta in &ls.nested {
                         if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
@@ -271,7 +271,7 @@ impl EnumItem {
 
         for attr in attrs {
             if attr.path.is_ident("item") {
-                if let Ok(Meta::List(args)) = attr.parse_meta() {
+                if let Meta::List(args) = attr.parse_meta()? {
                     for meta in args.nested {
                         if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
                             if nv.path.is_ident("name") {
@@ -322,7 +322,7 @@ pub struct InputField {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub default: Option<Value>,
-    pub validators: TokenStream,
+    pub validator: TokenStream,
 }
 
 impl InputField {
@@ -331,11 +331,11 @@ impl InputField {
         let mut name = None;
         let mut desc = None;
         let mut default = None;
-        let mut validators = quote! { Default::default() };
+        let mut validator = quote! { None };
 
         for attr in attrs {
             if attr.path.is_ident("field") {
-                if let Ok(Meta::List(args)) = &attr.parse_meta() {
+                if let Meta::List(args) = &attr.parse_meta()? {
                     for meta in &args.nested {
                         match meta {
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
@@ -389,7 +389,7 @@ impl InputField {
                         }
                     }
 
-                    validators = parse_validators(crate_name, &args)?;
+                    validator = parse_validator(crate_name, &args)?;
                 }
             }
         }
@@ -399,7 +399,7 @@ impl InputField {
             name,
             desc,
             default,
-            validators,
+            validator,
         })
     }
 }

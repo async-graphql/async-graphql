@@ -47,7 +47,7 @@ impl<T: Type> Type for QueryRoot<T> {
                                 description: None,
                                 ty: "String!".to_string(),
                                 default_value: None,
-                                validators: Default::default(),
+                                validator: None,
                             },
                         );
                         args

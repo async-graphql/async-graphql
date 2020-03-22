@@ -24,7 +24,7 @@ impl InputValueValidator for IntRange {
                 None
             }
         } else {
-            Some("expected type \"Int\"".to_string())
+            None
         }
     }
 }
@@ -48,7 +48,7 @@ impl InputValueValidator for IntLessThan {
                 None
             }
         } else {
-            Some("expected type \"Int\"".to_string())
+            None
         }
     }
 }
@@ -67,6 +67,26 @@ impl InputValueValidator for IntGreaterThan {
                     "the value is {}, must be greater than {}",
                     n.as_i64().unwrap(),
                     self.value
+                ))
+            } else {
+                None
+            }
+        } else {
+            Some("expected type \"Int\"".to_string())
+        }
+    }
+}
+
+/// Integer nonzero validator
+pub struct IntNonZero {}
+
+impl InputValueValidator for IntNonZero {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::Int(n) = value {
+            if n.as_i64().unwrap() == 0 {
+                Some(format!(
+                    "the value is {}, but must be nonzero",
+                    n.as_i64().unwrap(),
                 ))
             } else {
                 None

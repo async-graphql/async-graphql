@@ -60,7 +60,7 @@ pub struct InputValue {
     pub description: Option<&'static str>,
     pub ty: String,
     pub default_value: Option<&'static str>,
-    pub validators: Arc<Vec<Box<dyn InputValueValidator>>>,
+    pub validator: Option<Arc<dyn InputValueValidator>>,
 }
 
 #[derive(Clone)]
