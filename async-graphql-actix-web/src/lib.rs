@@ -253,7 +253,7 @@ where
             let prepared = gql_req
                 .prepare(&schema)
                 .map_err(actix_web::error::ErrorBadRequest)?;
-            let mut cache_control = dbg!(prepared.cache_control()).value();
+            let mut cache_control = prepared.cache_control().value();
             let gql_resp = prepared.execute().await;
             if gql_resp.is_err() {
                 cache_control = None;

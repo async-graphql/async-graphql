@@ -214,7 +214,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             let ctx_selection_set = ctx_field.with_item(&field.selection_set);
                             let value =
                                 #crate_name::OutputValueType::resolve(msg, &ctx_selection_set).await?;
-                            return Ok(Some(value));
+                            let mut res = #crate_name::serde_json::Map::new();
+                            res.insert(ctx_field.result_name(), value);
+                            return Ok(Some(res.into()));
                         }
                     }
                 });
