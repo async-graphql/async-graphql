@@ -1,5 +1,5 @@
 use crate::registry::InputValue;
-use crate::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Value;
 use graphql_parser::query::{Directive, Field};
 use graphql_parser::Pos;

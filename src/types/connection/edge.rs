@@ -1,5 +1,5 @@
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
+    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, JsonWriter, ObjectType,
     OutputValueType, QueryError, Result, Type,
 };
 use graphql_parser::query::Field;
@@ -78,24 +78,30 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
+    async fn resolve_field(
+        &self,
+        ctx: &Context<'_>,
+        field: &Field,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
         if field.name.as_str() == "node" {
             let ctx_obj = ctx.with_item(&field.selection_set);
-            return OutputValueType::resolve(self.node, &ctx_obj)
+            return OutputValueType::resolve(self.node, &ctx_obj, w)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "cursor" {
-            return Ok(self.cursor.into());
+            w.string(self.cursor);
+            return Ok(());
         }
 
-        self.extra_type.resolve_field(ctx, field).await
+        self.extra_type.resolve_field(ctx, field, w).await
     }
 
     async fn resolve_inline_fragment(
         &self,
         name: &str,
         _ctx: &ContextSelectionSet<'_>,
-        _result: &mut serde_json::Map<String, serde_json::Value>,
+        _w: &mut JsonWriter,
     ) -> Result<()> {
         anyhow::bail!(QueryError::UnrecognizedInlineFragment {
             object: <Edge<T, E> as Type>::type_name().to_string(),
@@ -110,7 +116,11 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        do_resolve(ctx, value).await
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
+        do_resolve(ctx, value, w).await
     }
 }

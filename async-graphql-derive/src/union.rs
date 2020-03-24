@@ -57,7 +57,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             inline_fragment_resolvers.push(quote! {
                 if name == <#p as #crate_name::Type>::type_name() {
                     if let #ident::#enum_name(obj) = self {
-                        #crate_name::do_resolve_values(ctx, obj, result).await?;
+                        #crate_name::do_resolve(ctx, obj, result).await?;
                     }
                     return Ok(());
                 }
@@ -118,7 +118,10 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::do_resolve(ctx, value).await
+                w.begin_object();
+                #crate_name::do_resolve(ctx, value).await?;
+                w.end_object();
+                Ok(())
             }
         }
     };

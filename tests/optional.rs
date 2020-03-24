@@ -66,7 +66,8 @@ pub async fn test_optional_type() {
             }}"#
     );
     assert_eq!(
-        schema.query(&query).execute().await.unwrap(),
+        serde_json::from_str::<serde_json::Value>(&schema.query(&query).execute().await.unwrap())
+            .unwrap(),
         serde_json::json!({
             "value1": 10,
             "value1Ref": 10,

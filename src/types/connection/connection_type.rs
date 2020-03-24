@@ -1,7 +1,7 @@
 use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
+    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, JsonWriter, ObjectType,
     OutputValueType, QueryError, Result, Type,
 };
 use graphql_parser::query::Field;
@@ -127,11 +127,16 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     for Connection<T, E>
 {
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
+    async fn resolve_field(
+        &self,
+        ctx: &Context<'_>,
+        field: &Field,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
         if field.name.as_str() == "pageInfo" {
             let ctx_obj = ctx.with_item(&field.selection_set);
             let page_info = &self.page_info;
-            return OutputValueType::resolve(page_info, &ctx_obj)
+            return OutputValueType::resolve(page_info, &ctx_obj, w)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "edges" {
@@ -145,14 +150,16 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                     node,
                 })
                 .collect::<Vec<_>>();
-            return OutputValueType::resolve(&edges, &ctx_obj)
+            return OutputValueType::resolve(&edges, &ctx_obj, w)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "totalCount" {
-            return Ok(self
-                .total_count
-                .map(|n| (n as i32).into())
-                .unwrap_or_else(|| serde_json::Value::Null));
+            if let Some(total_count) = self.total_count {
+                w.int(total_count as i64);
+            } else {
+                w.null();
+            }
+            return Ok(());
         } else if field.name.as_str() == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_item(&field.selection_set);
             let items = self
@@ -160,7 +167,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                 .iter()
                 .map(|(_, _, item)| item)
                 .collect::<Vec<_>>();
-            return OutputValueType::resolve(&items, &ctx_obj)
+            return OutputValueType::resolve(&items, &ctx_obj, w)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         }
@@ -176,7 +183,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
         &self,
         name: &str,
         _ctx: &ContextSelectionSet<'_>,
-        _result: &mut serde_json::Map<String, serde_json::Value>,
+        _w: &mut JsonWriter,
     ) -> Result<()> {
         anyhow::bail!(QueryError::UnrecognizedInlineFragment {
             object: Connection::<T, E>::type_name().to_string(),
@@ -189,7 +196,11 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
     for Connection<T, E>
 {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        do_resolve(ctx, value).await
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
+        do_resolve(ctx, value, w).await
     }
 }

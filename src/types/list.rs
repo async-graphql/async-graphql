@@ -1,4 +1,6 @@
-use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
+use crate::{
+    registry, ContextSelectionSet, InputValueType, JsonWriter, OutputValueType, Result, Type, Value,
+};
 use std::borrow::Cow;
 
 impl<T: Type> Type for Vec<T> {
@@ -34,12 +36,19 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 #[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut res = Vec::new();
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
+        w.begin_array();
         for item in value {
-            res.push(OutputValueType::resolve(item, &ctx).await?);
+            w.begin_array_value();
+            OutputValueType::resolve(item, &ctx, w).await?;
+            w.end_array_value();
         }
-        Ok(res.into())
+        w.end_array();
+        Ok(())
     }
 }
 
@@ -55,12 +64,19 @@ impl<T: Type> Type for &[T] {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        let mut res = Vec::new();
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
+        w.begin_array();
         for item in value.iter() {
-            res.push(OutputValueType::resolve(item, &ctx).await?);
+            w.begin_array_value();
+            OutputValueType::resolve(item, &ctx, w).await?;
+            w.end_array_value();
         }
-        Ok(res.into())
+        w.end_array();
+        Ok(())
     }
 }
 

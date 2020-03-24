@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, JsonWriter, QueryError, Result, ID};
 use graphql_parser::query::{Field, Value};
 use std::borrow::Cow;
 
@@ -50,7 +50,8 @@ pub trait InputValueType: Type + Sized {
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>, w: &mut JsonWriter)
+        -> Result<()>;
 }
 
 /// Represents a GraphQL object
@@ -63,14 +64,19 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value>;
+    async fn resolve_field(
+        &self,
+        ctx: &Context<'_>,
+        field: &Field,
+        w: &mut JsonWriter,
+    ) -> Result<()>;
 
     /// Resolve an inline fragment with the `name`.
     async fn resolve_inline_fragment(
         &self,
         name: &str,
         ctx: &ContextSelectionSet<'_>,
-        result: &mut serde_json::Map<String, serde_json::Value>,
+        w: &mut JsonWriter,
     ) -> Result<()>;
 }
 
@@ -101,8 +107,9 @@ pub trait InputObjectType: InputValueType {}
 ///         }
 ///     }
 ///
-///     fn to_json(&self) -> Result<serde_json::Value> {
-///         Ok(self.0.into())
+///     fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+///         w.int(self.0 as i64);
+///         Ok(())
 ///     }
 /// }
 ///
@@ -128,7 +135,7 @@ pub trait Scalar: Sized + Send {
     }
 
     /// Convert the scalar value to json value.
-    fn to_json(&self) -> Result<serde_json::Value>;
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()>;
 }
 
 #[macro_export]
@@ -161,8 +168,9 @@ macro_rules! impl_scalar_internal {
             async fn resolve(
                 value: &Self,
                 _: &crate::ContextSelectionSet<'_>,
-            ) -> crate::Result<serde_json::Value> {
-                value.to_json()
+                w: &mut crate::JsonWriter,
+            ) -> crate::Result<()> {
+                value.to_json(w)
             }
         }
     };
@@ -198,8 +206,9 @@ macro_rules! impl_scalar {
             async fn resolve(
                 value: &Self,
                 _: &async_graphql::ContextSelectionSet<'_>,
-            ) -> async_graphql::Result<serde_json::Value> {
-                value.to_json()
+                w: &mut async_graphql::JsonWriter,
+            ) -> async_graphql::Result<()> {
+                value.to_json(w)
             }
         }
     };
@@ -218,7 +227,11 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        T::resolve(*value, ctx).await
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        w: &mut JsonWriter,
+    ) -> Result<()> {
+        T::resolve(*value, ctx, w).await
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
-    impl_scalar_internal, registry, ContextSelectionSet, OutputValueType, Result, Scalar, Type,
-    Value,
+    impl_scalar_internal, registry, ContextSelectionSet, JsonWriter, OutputValueType, Result,
+    Scalar, Type, Value,
 };
 use std::borrow::Cow;
 
@@ -29,8 +29,9 @@ impl Scalar for String {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.clone().into())
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+        w.string(self.as_str());
+        Ok(())
     }
 }
 
@@ -55,7 +56,8 @@ impl<'a> Type for &'a str {
 
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
-    async fn resolve(value: &Self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        Ok((*value).into())
+    async fn resolve(value: &Self, _: &ContextSelectionSet<'_>, w: &mut JsonWriter) -> Result<()> {
+        w.string(*value);
+        Ok(())
     }
 }

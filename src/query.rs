@@ -1,14 +1,13 @@
 use crate::context::Data;
-use crate::registry::{CacheControl, Registry, Type};
+use crate::registry::{CacheControl, Registry};
 use crate::types::QueryRoot;
 use crate::validation::check_rules;
-use crate::visitor::{visit, Visitor, VisitorContext};
-use crate::{ContextBase, OutputValueType, Result};
+use crate::{ContextBase, JsonWriter, OutputValueType, Result};
 use crate::{ObjectType, QueryError, QueryParseError, Variables};
 use bytes::Bytes;
 use graphql_parser::parse_query;
 use graphql_parser::query::{
-    Definition, Field, FragmentDefinition, OperationDefinition, SelectionSet, VariableDefinition,
+    Definition, FragmentDefinition, OperationDefinition, SelectionSet, VariableDefinition,
 };
 use std::collections::HashMap;
 
@@ -48,14 +47,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     /// Prepare query
     pub fn prepare(self) -> Result<PreparedQuery<'a, Query, Mutation>> {
         let document = parse_query(self.source).map_err(|err| QueryParseError(err.to_string()))?;
-        check_rules(self.registry, &document)?;
-
-        let cache_control = {
-            let mut ctx = VisitorContext::new(self.registry, &document);
-            let mut visitor = CacheControlVisitor::default();
-            visit(&mut visitor, &mut ctx, &document);
-            visitor.cache_control
-        };
+        let cache_control = check_rules(self.registry, &document)?;
 
         let mut fragments = HashMap::new();
         let mut selection_set = None;
@@ -119,7 +111,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<serde_json::Value>
+    pub async fn execute(self) -> Result<String>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -168,7 +160,7 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<serde_json::Value>
+    pub async fn execute(self) -> Result<String>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -181,38 +173,17 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
             data: self.data,
             fragments: &self.fragments,
         };
+        let mut w = JsonWriter::default();
 
         match self.root {
-            Root::Query(query) => OutputValueType::resolve(query, &ctx).await,
-            Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx).await,
+            Root::Query(query) => OutputValueType::resolve(query, &ctx, &mut w).await?,
+            Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx, &mut w).await?,
         }
+        Ok(w.into_string())
     }
 
     /// Get cache control value
     pub fn cache_control(&self) -> CacheControl {
         self.cache_control
-    }
-}
-
-#[derive(Default)]
-struct CacheControlVisitor {
-    cache_control: CacheControl,
-}
-
-impl<'a> Visitor<'a> for CacheControlVisitor {
-    fn enter_selection_set(
-        &mut self,
-        ctx: &mut VisitorContext<'a>,
-        _selection_set: &'a SelectionSet,
-    ) {
-        if let Type::Object { cache_control, .. } = ctx.current_type() {
-            self.cache_control = self.cache_control.merge(cache_control);
-        }
-    }
-
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
-        if let Some(registry_field) = ctx.parent_type().unwrap().field_by_name(&field.name) {
-            self.cache_control = self.cache_control.merge(&registry_field.cache_control);
-        }
     }
 }

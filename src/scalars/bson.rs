@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{impl_scalar_internal, JsonWriter, Result, Scalar, Value};
 use bson::oid::ObjectId;
 
 impl Scalar for ObjectId {
@@ -13,8 +13,9 @@ impl Scalar for ObjectId {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.to_string().into())
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+        w.string(&self.to_string());
+        Ok(())
     }
 }
 

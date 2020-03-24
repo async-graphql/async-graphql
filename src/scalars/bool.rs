@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{impl_scalar_internal, JsonWriter, Result, Scalar, Value};
 
 impl Scalar for bool {
     fn type_name() -> &'static str {
@@ -16,8 +16,9 @@ impl Scalar for bool {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok((*self).into())
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+        w.bool(*self);
+        Ok(())
     }
 }
 

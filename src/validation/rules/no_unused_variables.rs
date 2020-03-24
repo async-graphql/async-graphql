@@ -1,4 +1,4 @@
-use crate::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{OperationDefinition, VariableDefinition};
 use graphql_parser::schema::Value;
 use graphql_parser::Pos;

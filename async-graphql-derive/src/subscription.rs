@@ -211,12 +211,22 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if let Some(msg) = msg.downcast_ref::<#ty>() {
                         #(#get_params)*
                         if self.#ident(msg, #(#use_params)*) {
+                            let mut w = #crate_name::JsonWriter::default();
                             let ctx_selection_set = ctx_field.with_item(&field.selection_set);
-                            let value =
-                                #crate_name::OutputValueType::resolve(msg, &ctx_selection_set).await?;
-                            let mut res = #crate_name::serde_json::Map::new();
-                            res.insert(ctx_field.result_name(), value);
-                            return Ok(Some(res.into()));
+
+                            w.begin_object();
+
+                            w.begin_object_key();
+                            w.string(ctx_field.result_name());
+                            w.end_object_key();
+
+                            w.begin_object_value();
+                            #crate_name::OutputValueType::resolve(msg, &ctx_selection_set, &mut w).await?;
+                            w.end_object_value();
+
+                            w.end_object();
+
+                            return Ok(Some(w.into_string()));
                         }
                     }
                 });
@@ -265,7 +275,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::ContextBase<'_, ()>,
                 types: &std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>,
                 msg: &(dyn std::any::Any + Send + Sync),
-            ) -> #crate_name::Result<Option<#crate_name::serde_json::Value>> {
+            ) -> #crate_name::Result<Option<String>> {
                 let tid = msg.type_id();
                 if let Some(field) = types.get(&tid) {
                     let ctx_field = ctx.with_item(field);

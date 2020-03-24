@@ -1,4 +1,4 @@
-use crate::{ContextSelectionSet, ErrorWithPosition, ObjectType, QueryError, Result};
+use crate::{ContextSelectionSet, ErrorWithPosition, JsonWriter, ObjectType, QueryError, Result};
 use graphql_parser::query::{Selection, TypeCondition};
 use std::future::Future;
 use std::pin::Pin;
@@ -6,7 +6,7 @@ use std::pin::Pin;
 struct Resolver<'a, T> {
     ctx: &'a ContextSelectionSet<'a>,
     obj: &'a T,
-    result: &'a mut serde_json::Map<String, serde_json::Value>,
+    w: &'a mut JsonWriter,
 }
 
 impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
@@ -28,15 +28,24 @@ impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
 
                         let ctx_field = self.ctx.with_item(field);
                         if field.name.as_str() == "__typename" {
-                            self.result
-                                .insert(ctx_field.result_name(), T::type_name().to_string().into());
+                            self.w.begin_object_key();
+                            self.w.string(ctx_field.result_name());
+                            self.w.end_object_key();
+
+                            self.w.begin_object_value();
+                            self.w.string(&T::type_name());
+                            self.w.end_object_value();
+
                             continue;
                         }
 
-                        self.result.insert(
-                            ctx_field.result_name(),
-                            self.obj.resolve_field(&ctx_field, field).await?,
-                        );
+                        self.w.begin_object_key();
+                        self.w.string(ctx_field.result_name());
+                        self.w.end_object_key();
+
+                        self.w.begin_object_value();
+                        self.obj.resolve_field(&ctx_field, field, self.w).await?;
+                        self.w.end_object_value();
                     }
                     Selection::FragmentSpread(fragment_spread) => {
                         if self.ctx.is_skip(&fragment_spread.directives)? {
@@ -46,13 +55,12 @@ impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
                         if let Some(fragment) =
                             self.ctx.fragments.get(&fragment_spread.fragment_name)
                         {
-                            Resolver {
+                            let mut r = Resolver {
                                 ctx: &self.ctx.with_item(&fragment.selection_set),
                                 obj: self.obj,
-                                result: self.result,
-                            }
-                            .resolve()
-                            .await?;
+                                w: self.w,
+                            };
+                            r.resolve().await?;
                         } else {
                             return Err(QueryError::UnknownFragment {
                                 name: fragment_spread.fragment_name.clone(),
@@ -70,7 +78,7 @@ impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
                                 .resolve_inline_fragment(
                                     &name,
                                     &self.ctx.with_item(&inline_fragment.selection_set),
-                                    self.result,
+                                    self.w,
                                 )
                                 .await?;
                         }
@@ -84,33 +92,12 @@ impl<'a, T: ObjectType + Send + Sync> Resolver<'a, T> {
 }
 
 #[allow(missing_docs)]
+#[inline]
 pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
-    let mut result = serde_json::Map::<String, serde_json::Value>::new();
-    Resolver {
-        ctx,
-        obj: root,
-        result: &mut result,
-    }
-    .resolve()
-    .await?;
-    Ok(result.into())
-}
-
-#[allow(missing_docs)]
-pub async fn do_resolve_values<'a, T: ObjectType + Send + Sync>(
-    ctx: &'a ContextSelectionSet<'a>,
-    root: &'a T,
-    result: &mut serde_json::Map<String, serde_json::Value>,
+    w: &mut JsonWriter,
 ) -> Result<()> {
-    Resolver {
-        ctx,
-        obj: root,
-        result,
-    }
-    .resolve()
-    .await?;
+    Resolver { ctx, obj: root, w }.resolve().await?;
     Ok(())
 }

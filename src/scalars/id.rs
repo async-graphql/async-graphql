@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{impl_scalar_internal, JsonWriter, Result, Scalar, Value};
 use std::ops::{Deref, DerefMut};
 
 /// ID scalar
@@ -58,8 +58,9 @@ impl Scalar for ID {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.clone().into())
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+        w.string(&self.0);
+        Ok(())
     }
 }
 

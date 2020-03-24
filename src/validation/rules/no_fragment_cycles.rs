@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Document, FragmentDefinition, FragmentSpread};
 use graphql_parser::Pos;
 use std::collections::{HashMap, HashSet};

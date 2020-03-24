@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{impl_scalar_internal, JsonWriter, Result, Scalar, Value};
 
 macro_rules! impl_float_scalars {
     ($($ty:ty),*) => {
@@ -20,8 +20,9 @@ macro_rules! impl_float_scalars {
                 }
             }
 
-            fn to_json(&self) -> Result<serde_json::Value> {
-                Ok((*self).into())
+            fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+                w.float(*self as f64);
+                Ok(())
             }
         }
 

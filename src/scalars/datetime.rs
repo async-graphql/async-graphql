@@ -1,4 +1,4 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{impl_scalar_internal, JsonWriter, Result, Scalar, Value};
 use chrono::{DateTime, TimeZone, Utc};
 
 /// Implement the DateTime<Utc> scalar
@@ -16,8 +16,9 @@ impl Scalar for DateTime<Utc> {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.to_rfc3339().into())
+    fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
+        w.string(&self.to_rfc3339());
+        Ok(())
     }
 }
 

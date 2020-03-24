@@ -61,7 +61,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             inline_fragment_resolvers.push(quote! {
                 if name == <#p as #crate_name::Type>::type_name() {
                     if let #ident::#enum_name(obj) = self {
-                        #crate_name::do_resolve_values(ctx, obj, result).await?;
+                        return #crate_name::do_resolve(ctx, obj, w).await;
                     }
                     return Ok(());
                 }
@@ -205,7 +205,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             if field.name.as_str() == #name {
                 #(#get_params)*
                 let ctx_obj = ctx.with_item(&field.selection_set);
-                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj).await.
+                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, w).await.
                     map_err(|err| err.with_position(field.position).into());
             }
         });
@@ -250,7 +250,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field, w: &mut #crate_name::JsonWriter) -> #crate_name::Result<()> {
                 use #crate_name::ErrorWithPosition;
 
                 #(#resolvers)*
@@ -262,7 +262,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 .with_position(field.position));
             }
 
-            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, #crate_name::serde_json::Value>) -> #crate_name::Result<()> {
+            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, w: &mut #crate_name::JsonWriter) -> #crate_name::Result<()> {
                 #(#inline_fragment_resolvers)*
                 #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
@@ -273,8 +273,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::do_resolve(ctx, value).await
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, w: &mut #crate_name::JsonWriter) -> #crate_name::Result<()> {
+                w.begin_object();
+                #crate_name::do_resolve(ctx, value, w).await?;
+                w.end_object();
+                Ok(())
             }
         }
     };

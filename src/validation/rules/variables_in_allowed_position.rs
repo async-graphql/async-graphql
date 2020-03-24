@@ -1,5 +1,5 @@
 use crate::registry::TypeName;
-use crate::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Value;
 use graphql_parser::query::{Field, OperationDefinition, VariableDefinition};
 use graphql_parser::schema::Directive;

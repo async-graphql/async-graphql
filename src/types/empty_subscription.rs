@@ -1,9 +1,8 @@
 use crate::{
-    registry, ContextBase, ContextSelectionSet, OutputValueType, QueryError, Result,
+    registry, ContextBase, ContextSelectionSet, JsonWriter, OutputValueType, QueryError, Result,
     SubscriptionType, Type,
 };
 use graphql_parser::query::Field;
-use serde_json::Value;
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
 use std::collections::hash_map::RandomState;
@@ -44,14 +43,18 @@ impl SubscriptionType for EmptySubscription {
         _ctx: &ContextBase<'_, ()>,
         _types: &HashMap<TypeId, Field, RandomState>,
         _msg: &(dyn Any + Send + Sync),
-    ) -> Result<Option<Value>> {
+    ) -> Result<Option<String>> {
         unreachable!()
     }
 }
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptySubscription {
-    async fn resolve(_value: &Self, _ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        _value: &Self,
+        _ctx: &ContextSelectionSet<'_>,
+        _w: &mut JsonWriter,
+    ) -> Result<()> {
         Err(QueryError::NotConfiguredSubscriptions.into())
     }
 }

@@ -1,4 +1,4 @@
-use crate::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{Visitor, VisitorContext};
 use graphql_parser::query::{Mutation, OperationDefinition, Query, Subscription};
 use std::collections::HashSet;
 

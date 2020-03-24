@@ -250,9 +250,10 @@ where
             let mut gql_req = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
                 .await?
                 .into_inner();
-            let prepared = gql_req
-                .prepare(&schema)
-                .map_err(actix_web::error::ErrorBadRequest)?;
+            let prepared = match gql_req.prepare(&schema) {
+                Ok(prepared) => prepared,
+                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
+            };
             let mut cache_control = prepared.cache_control().value();
             let gql_resp = prepared.execute().await;
             if gql_resp.is_err() {

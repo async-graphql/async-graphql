@@ -1,4 +1,5 @@
 mod arguments_of_correct_type;
+mod cache_control;
 mod default_values_of_correct_type;
 mod fields_on_correct_type;
 mod fragments_on_composite_types;
@@ -25,6 +26,7 @@ mod variables_are_input_types;
 mod variables_in_allowed_position;
 
 pub use arguments_of_correct_type::ArgumentsOfCorrectType;
+pub use cache_control::CacheControlCalculate;
 pub use default_values_of_correct_type::DefaultValuesOfCorrectType;
 pub use fields_on_correct_type::FieldsOnCorrectType;
 pub use fragments_on_composite_types::FragmentsOnCompositeTypes;

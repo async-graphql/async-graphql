@@ -333,7 +333,10 @@ impl<'a> ContextBase<'a, &'a Field> {
     }
 
     #[doc(hidden)]
-    pub fn result_name(&self) -> String {
-        self.item.alias.clone().unwrap_or_else(|| self.name.clone())
+    pub fn result_name(&self) -> &str {
+        self.item
+            .alias
+            .as_deref()
+            .unwrap_or_else(|| self.name.as_str())
     }
 }
