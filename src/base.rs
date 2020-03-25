@@ -1,7 +1,9 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, JsonWriter, QueryError, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
 use graphql_parser::query::{Field, Value};
 use std::borrow::Cow;
+use std::future::Future;
+use std::pin::Pin;
 
 /// Represents a GraphQL type
 ///
@@ -50,9 +52,12 @@ pub trait InputValueType: Type + Sized {
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>, w: &mut JsonWriter)
-        -> Result<()>;
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
 }
+
+#[allow(missing_docs)]
+pub type BoxFieldFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
 
 /// Represents a GraphQL object
 #[async_trait::async_trait]
@@ -64,20 +69,20 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(
-        &self,
-        ctx: &Context<'_>,
-        field: &Field,
-        w: &mut JsonWriter,
-    ) -> Result<()>;
+    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value>;
 
-    /// Resolve an inline fragment with the `name`.
-    async fn resolve_inline_fragment(
-        &self,
+    /// Collect the fields with the `name` inline object
+    fn collect_inline_fields<'a>(
+        &'a self,
         name: &str,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()>;
+        _ctx: ContextSelectionSet<'a>,
+        _futures: &mut Vec<BoxFieldFuture<'a>>,
+    ) -> Result<()> {
+        anyhow::bail!(QueryError::UnrecognizedInlineFragment {
+            object: Self::type_name().to_string(),
+            name: name.to_string(),
+        });
+    }
 }
 
 /// Represents a GraphQL input object
@@ -107,9 +112,8 @@ pub trait InputObjectType: InputValueType {}
 ///         }
 ///     }
 ///
-///     fn to_json(&self, w: &mut JsonWriter) -> Result<()> {
-///         w.int(self.0 as i64);
-///         Ok(())
+///     fn to_json(&self) -> Result<serde_json::Value> {
+///         Ok(self.0.into())
 ///     }
 /// }
 ///
@@ -135,7 +139,7 @@ pub trait Scalar: Sized + Send {
     }
 
     /// Convert the scalar value to json value.
-    fn to_json(&self, w: &mut JsonWriter) -> Result<()>;
+    fn to_json(&self) -> Result<serde_json::Value>;
 }
 
 #[macro_export]
@@ -168,9 +172,8 @@ macro_rules! impl_scalar_internal {
             async fn resolve(
                 value: &Self,
                 _: &crate::ContextSelectionSet<'_>,
-                w: &mut crate::JsonWriter,
-            ) -> crate::Result<()> {
-                value.to_json(w)
+            ) -> crate::Result<serde_json::Value> {
+                value.to_json()
             }
         }
     };
@@ -206,9 +209,8 @@ macro_rules! impl_scalar {
             async fn resolve(
                 value: &Self,
                 _: &async_graphql::ContextSelectionSet<'_>,
-                w: &mut async_graphql::JsonWriter,
-            ) -> async_graphql::Result<()> {
-                value.to_json(w)
+            ) -> async_graphql::Result<serde_json::Value> {
+                value.to_json()
             }
         }
     };
@@ -227,11 +229,7 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
-        T::resolve(*value, ctx, w).await
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        T::resolve(*value, ctx).await
     }
 }

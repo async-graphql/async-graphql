@@ -1,7 +1,7 @@
 use crate::model::{__Schema, __Type};
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, JsonWriter, ObjectType,
-    OutputValueType, QueryError, Result, Type, Value,
+    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
+    OutputValueType, Result, Type, Value,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -65,12 +65,7 @@ impl<T: Type> Type for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
-    async fn resolve_field(
-        &self,
-        ctx: &Context<'_>,
-        field: &Field,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
+    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "__schema" {
             let ctx_obj = ctx.with_item(&field.selection_set);
             return OutputValueType::resolve(
@@ -78,7 +73,6 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     registry: &ctx.registry,
                 },
                 &ctx_obj,
-                w,
             )
             .await
             .map_err(|err| err.with_position(field.position).into());
@@ -91,38 +85,18 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     .get(&type_name)
                     .map(|ty| __Type::new_simple(ctx.registry, ty)),
                 &ctx_obj,
-                w,
             )
             .await
             .map_err(|err| err.with_position(field.position).into());
         }
 
-        self.inner.resolve_field(ctx, field, w).await
-    }
-
-    async fn resolve_inline_fragment(
-        &self,
-        name: &str,
-        _ctx: &ContextSelectionSet<'_>,
-        _w: &mut JsonWriter,
-    ) -> Result<()> {
-        anyhow::bail!(QueryError::UnrecognizedInlineFragment {
-            object: T::type_name().to_string(),
-            name: name.to_string(),
-        });
+        self.inner.resolve_field(ctx, field).await
     }
 }
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
-        w.begin_object();
-        do_resolve(ctx, value, w).await?;
-        w.end_object();
-        Ok(())
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        do_resolve(ctx, value).await
     }
 }

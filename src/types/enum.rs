@@ -1,4 +1,4 @@
-use crate::{JsonWriter, Result, Type};
+use crate::{Result, Type};
 use graphql_parser::query::Value;
 
 #[allow(missing_docs)]
@@ -30,12 +30,11 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
         })
     }
 
-    fn resolve_enum(&self, w: &mut JsonWriter) -> Result<()> {
+    fn resolve_enum(&self) -> Result<serde_json::Value> {
         let items = Self::items();
         for item in items {
             if item.value == *self {
-                w.string(item.name);
-                return Ok(());
+                return Ok(item.name.into());
             }
         }
         unreachable!()

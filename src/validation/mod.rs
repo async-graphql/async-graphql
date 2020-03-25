@@ -1,12 +1,12 @@
-use crate::error::RuleErrors;
-use crate::registry::Registry;
-use crate::validation::visitor::{visit, VisitorContext, VisitorNil};
-use crate::{CacheControl, Result};
-use graphql_parser::query::Document;
-
 mod rules;
 mod utils;
 mod visitor;
+
+use crate::error::RuleErrors;
+use crate::registry::Registry;
+use crate::{CacheControl, Result};
+use graphql_parser::query::Document;
+use visitor::{visit, VisitorContext, VisitorNil};
 
 pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CacheControl> {
     let mut ctx = VisitorContext::new(registry, doc);

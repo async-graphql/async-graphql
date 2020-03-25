@@ -34,7 +34,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .unwrap_or_else(|| quote! {None});
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
-    let mut inline_fragment_resolvers = Vec::new();
+    let mut collect_inline_fields = Vec::new();
 
     for field in &fields.unnamed {
         if let Type::Path(p) = &field.ty {
@@ -54,13 +54,13 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             possible_types.push(quote! {
                 possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
             });
-            inline_fragment_resolvers.push(quote! {
-                if name == <#p as #crate_name::Type>::type_name() {
-                    if let #ident::#enum_name(obj) = self {
-                        #crate_name::do_resolve(ctx, obj, result).await?;
-                    }
-                    return Ok(());
-                }
+            collect_inline_fields.push(quote! {
+                // if name == <#p as #crate_name::Type>::type_name() {
+                //     if let #ident::#enum_name(obj) = self {
+                //         return &obj;
+                //     }
+                //     unreachable!()
+                // }
             });
         } else {
             return Err(Error::new_spanned(field, "Invalid type"));
@@ -106,9 +106,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 .with_position(field.position));
             }
 
-            async fn resolve_inline_fragment(&self, name: &str, ctx: &#crate_name::ContextSelectionSet<'_>, result: &mut #crate_name::serde_json::Map<String, #crate_name::serde_json::Value>) -> #crate_name::Result<()> {
-                #(#inline_fragment_resolvers)*
-                anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
+            fn collect_inline_fields<'a>(
+                &'a self,
+                name: &str,
+                ctx: #crate_name::ContextSelectionSet<'a>,
+                futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
+            ) -> #crate_name::Result<()> {
+                #(#collect_inline_fields)*
+                #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
                 });
@@ -118,10 +123,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                w.begin_object();
-                #crate_name::do_resolve(ctx, value).await?;
-                w.end_object();
-                Ok(())
+                #crate_name::do_resolve(ctx, value).await
             }
         }
     };

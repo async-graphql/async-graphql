@@ -161,7 +161,7 @@ pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<Toke
                     return Err(Error::new_spanned(ls,
                                                   "Only one validator can be defined. You can connect combine validators with `and` or `or`"));
                 }
-                if ls.nested.is_empty() {
+                if ls.nested.len() == 0 {
                     return Err(Error::new_spanned(
                         ls,
                         "At least one validator must be defined",

@@ -144,6 +144,7 @@ pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
 pub type Context<'a> = ContextBase<'a, &'a Field>;
 
 /// Query context
+#[derive(Clone)]
 pub struct ContextBase<'a, T> {
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
@@ -333,10 +334,7 @@ impl<'a> ContextBase<'a, &'a Field> {
     }
 
     #[doc(hidden)]
-    pub fn result_name(&self) -> &str {
-        self.item
-            .alias
-            .as_deref()
-            .unwrap_or_else(|| self.name.as_str())
+    pub fn result_name(&self) -> String {
+        self.item.alias.clone().unwrap_or_else(|| self.name.clone())
     }
 }

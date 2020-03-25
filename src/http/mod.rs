@@ -74,7 +74,7 @@ impl GQLRequest {
 }
 
 /// Serializable query result type
-pub struct GQLResponse(pub Result<String>);
+pub struct GQLResponse(pub Result<serde_json::Value>);
 
 impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
@@ -82,13 +82,10 @@ impl Serialize for GQLResponse {
             Ok(res) => {
                 let mut map = serializer.serialize_map(None)?;
                 map.serialize_key("data")?;
-                map.serialize_value(
-                    &serde_json::value::RawValue::from_string(res.clone()).unwrap(),
-                )?;
+                map.serialize_value(&res)?;
                 map.end()
             }
             Err(err) => {
-                println!("err: {}", err);
                 let mut map = serializer.serialize_map(None)?;
                 map.serialize_key("errors")?;
                 map.serialize_value(&GQLError(err))?;
@@ -242,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_response_data() {
-        let resp = GQLResponse(Ok(serde_json::to_string(&json!({"ok": true})).unwrap()));
+        let resp = GQLResponse(Ok(json!({"ok": true})));
         assert_eq!(
             serde_json::to_value(resp).unwrap(),
             json! ({

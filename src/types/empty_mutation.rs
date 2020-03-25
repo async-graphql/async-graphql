@@ -1,6 +1,5 @@
 use crate::{
-    registry, Context, ContextSelectionSet, JsonWriter, ObjectType, OutputValueType, QueryError,
-    Result, Type,
+    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, QueryError, Result, Type,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -46,32 +45,14 @@ impl ObjectType for EmptyMutation {
         true
     }
 
-    async fn resolve_field(
-        &self,
-        _ctx: &Context<'_>,
-        _name: &Field,
-        _w: &mut JsonWriter,
-    ) -> Result<()> {
-        unreachable!()
-    }
-
-    async fn resolve_inline_fragment(
-        &self,
-        _name: &str,
-        _ctx: &ContextSelectionSet<'_>,
-        _w: &mut JsonWriter,
-    ) -> Result<()> {
+    async fn resolve_field(&self, _ctx: &Context<'_>, _name: &Field) -> Result<serde_json::Value> {
         unreachable!()
     }
 }
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptyMutation {
-    async fn resolve(
-        _value: &Self,
-        _ctx: &ContextSelectionSet<'_>,
-        _w: &mut JsonWriter,
-    ) -> Result<()> {
+    async fn resolve(_value: &Self, _ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         Err(QueryError::NotConfiguredMutations.into())
     }
 }

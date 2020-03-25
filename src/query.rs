@@ -2,7 +2,7 @@ use crate::context::Data;
 use crate::registry::{CacheControl, Registry};
 use crate::types::QueryRoot;
 use crate::validation::check_rules;
-use crate::{ContextBase, JsonWriter, OutputValueType, Result};
+use crate::{ContextBase, OutputValueType, Result};
 use crate::{ObjectType, QueryError, QueryParseError, Variables};
 use bytes::Bytes;
 use graphql_parser::parse_query;
@@ -111,7 +111,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<String>
+    pub async fn execute(self) -> Result<serde_json::Value>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -160,7 +160,7 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<String>
+    pub async fn execute(self) -> Result<serde_json::Value>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -173,13 +173,11 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
             data: self.data,
             fragments: &self.fragments,
         };
-        let mut w = JsonWriter::default();
 
         match self.root {
-            Root::Query(query) => OutputValueType::resolve(query, &ctx, &mut w).await?,
-            Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx, &mut w).await?,
+            Root::Query(query) => OutputValueType::resolve(query, &ctx).await,
+            Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx).await,
         }
-        Ok(w.into_string())
     }
 
     /// Get cache control value

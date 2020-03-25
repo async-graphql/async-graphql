@@ -1,6 +1,6 @@
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, JsonWriter, ObjectType,
-    OutputValueType, QueryError, Result, Type,
+    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
+    OutputValueType, Result, Type,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -78,35 +78,17 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve_field(
-        &self,
-        ctx: &Context<'_>,
-        field: &Field,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
+    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "node" {
             let ctx_obj = ctx.with_item(&field.selection_set);
-            return OutputValueType::resolve(self.node, &ctx_obj, w)
+            return OutputValueType::resolve(self.node, &ctx_obj)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "cursor" {
-            w.string(self.cursor);
-            return Ok(());
+            return Ok(self.cursor.into());
         }
 
-        self.extra_type.resolve_field(ctx, field, w).await
-    }
-
-    async fn resolve_inline_fragment(
-        &self,
-        name: &str,
-        _ctx: &ContextSelectionSet<'_>,
-        _w: &mut JsonWriter,
-    ) -> Result<()> {
-        anyhow::bail!(QueryError::UnrecognizedInlineFragment {
-            object: <Edge<T, E> as Type>::type_name().to_string(),
-            name: name.to_string(),
-        });
+        self.extra_type.resolve_field(ctx, field).await
     }
 }
 
@@ -116,11 +98,7 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
-        do_resolve(ctx, value, w).await
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        do_resolve(ctx, value).await
     }
 }

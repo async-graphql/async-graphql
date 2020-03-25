@@ -1,6 +1,4 @@
-use crate::{
-    registry, ContextSelectionSet, InputValueType, JsonWriter, OutputValueType, Result, Type, Value,
-};
+use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
 use std::borrow::Cow;
 
 impl<T: Type> Type for Vec<T> {
@@ -36,19 +34,12 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 #[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
-        w.begin_array();
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        let mut futures = Vec::with_capacity(value.len());
         for item in value {
-            w.begin_array_value();
-            OutputValueType::resolve(item, &ctx, w).await?;
-            w.end_array_value();
+            futures.push(OutputValueType::resolve(item, &ctx));
         }
-        w.end_array();
-        Ok(())
+        Ok(futures::future::try_join_all(futures).await?.into())
     }
 }
 
@@ -64,19 +55,12 @@ impl<T: Type> Type for &[T] {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        w: &mut JsonWriter,
-    ) -> Result<()> {
-        w.begin_array();
-        for item in value.iter() {
-            w.begin_array_value();
-            OutputValueType::resolve(item, &ctx, w).await?;
-            w.end_array_value();
+    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+        let mut futures = Vec::with_capacity(value.len());
+        for item in *value {
+            futures.push(OutputValueType::resolve(item, &ctx));
         }
-        w.end_array();
-        Ok(())
+        Ok(futures::future::try_join_all(futures).await?.into())
     }
 }
 

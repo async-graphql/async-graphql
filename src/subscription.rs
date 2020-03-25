@@ -28,7 +28,7 @@ impl Subscribe {
         &self,
         schema: &Schema<Query, Mutation, Subscription>,
         msg: &(dyn Any + Send + Sync),
-    ) -> Result<Option<String>>
+    ) -> Result<Option<serde_json::Value>>
     where
         Subscription: SubscriptionType + Sync + Send + 'static,
     {
@@ -91,7 +91,7 @@ pub trait SubscriptionType: Type {
         ctx: &ContextBase<'_, ()>,
         types: &HashMap<TypeId, Field>,
         msg: &(dyn Any + Send + Sync),
-    ) -> Result<Option<String>>;
+    ) -> Result<Option<serde_json::Value>>;
 }
 
 fn create_types<T: SubscriptionType>(

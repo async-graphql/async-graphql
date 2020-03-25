@@ -69,7 +69,6 @@ extern crate serde_derive;
 mod base;
 mod context;
 mod error;
-mod json_writer;
 mod model;
 mod query;
 mod resolver;
@@ -98,7 +97,6 @@ pub use base::{Scalar, Type};
 pub use context::{Context, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
-pub use json_writer::JsonWriter;
 pub use query::{PreparedQuery, QueryBuilder};
 pub use registry::CacheControl;
 pub use scalars::ID;
@@ -121,11 +119,11 @@ pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
-pub use base::{InputObjectType, InputValueType, ObjectType, OutputValueType};
+pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
 #[doc(hidden)]
 pub use context::ContextBase;
 #[doc(hidden)]
-pub use resolver::do_resolve;
+pub use resolver::{collect_fields, do_resolve};
 #[doc(hidden)]
 pub use subscription::{Subscribe, SubscriptionType};
 #[doc(hidden)]
@@ -216,13 +214,13 @@ pub use types::{EnumItem, EnumType};
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(MyObject{ value: 10 }, EmptyMutation, EmptySubscription);
-///     let res = serde_json::from_str::<serde_json::Value>(&schema.query(r#"{
+///     let res = schema.query(r#"{
 ///         value
 ///         valueRef
 ///         valueWithError
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
-///     }"#).execute().await.unwrap()).unwrap();
+///     }"#).execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///         "valueRef": 10,
@@ -283,7 +281,7 @@ pub use async_graphql_derive::Object;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
-///     let res = serde_json::from_str::<serde_json::Value>(&schema.query("{ value1 value2 }").execute().await.unwrap()).unwrap();
+///     let res = schema.query("{ value1 value2 }").execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
 /// ```
@@ -332,11 +330,11 @@ pub use async_graphql_derive::Enum;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(MyObject, EmptyMutation, EmptySubscription);
-///     let res = serde_json::from_str::<serde_json::Value>(&schema.query(r#"
+///     let res = schema.query(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
-///     }"#).execute().await.unwrap()).unwrap();
+///     }"#).execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// }
 /// ```
@@ -437,14 +435,14 @@ pub use async_graphql_derive::InputObject;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string());
-///     let res = serde_json::from_str::<serde_json::Value>(&schema.query(r#"
+///     let res = schema.query(r#"
 ///     {
 ///         typeA {
 ///             valueA
 ///             valueB
 ///             valueC(a: 3, b: 2)
 ///         }
-///     }"#).execute().await.unwrap()).unwrap();
+///     }"#).execute().await.unwrap();
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",
