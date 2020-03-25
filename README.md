@@ -120,8 +120,8 @@ Open `http://localhost:8000` in browser
         - [X] List
             - [X] ListMaxLength
             - [X] ListMinLength
-    - [ ] Limit query complexity
-    - [ ] Limit query depth 
+    - [X] Limit query complexity
+    - [X] Limit query depth 
 - [X] Subscription
     - [X] Filter
     - [X] WebSocket transport
