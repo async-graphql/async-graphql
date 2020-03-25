@@ -1,8 +1,8 @@
 use crate::context::Data;
 use crate::registry::{CacheControl, Registry};
 use crate::types::QueryRoot;
-use crate::validation::check_rules;
-use crate::{ContextBase, OutputValueType, Result};
+use crate::validation::{check_rules, CheckResult};
+use crate::{ContextBase, OutputValueType, Result, Schema};
 use crate::{ObjectType, QueryError, QueryParseError, Variables};
 use bytes::Bytes;
 use graphql_parser::parse_query;
@@ -17,17 +17,15 @@ enum Root<'a, Query, Mutation> {
 }
 
 /// Query builder
-pub struct QueryBuilder<'a, Query, Mutation> {
-    pub(crate) query: &'a QueryRoot<Query>,
-    pub(crate) mutation: &'a Mutation,
-    pub(crate) registry: &'a Registry,
+pub struct QueryBuilder<'a, Query, Mutation, Subscription> {
+    pub(crate) schema: &'a Schema<Query, Mutation, Subscription>,
     pub(crate) source: &'a str,
     pub(crate) operation_name: Option<&'a str>,
     pub(crate) variables: Option<Variables>,
     pub(crate) data: &'a Data,
 }
 
-impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
+impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscription> {
     /// Specify the operation name.
     pub fn operator_name(self, name: &'a str) -> Self {
         QueryBuilder {
@@ -47,7 +45,23 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
     /// Prepare query
     pub fn prepare(self) -> Result<PreparedQuery<'a, Query, Mutation>> {
         let document = parse_query(self.source).map_err(|err| QueryParseError(err.to_string()))?;
-        let cache_control = check_rules(self.registry, &document)?;
+        let CheckResult {
+            cache_control,
+            complexity,
+            depth,
+        } = check_rules(&self.schema.registry, &document)?;
+
+        if let Some(limit_complexity) = self.schema.complexity {
+            if complexity > limit_complexity {
+                return Err(QueryError::TooComplex.into());
+            }
+        }
+
+        if let Some(limit_depth) = self.schema.depth {
+            if depth > limit_depth {
+                return Err(QueryError::TooDeep.into());
+            }
+        }
 
         let mut fragments = HashMap::new();
         let mut selection_set = None;
@@ -59,14 +73,14 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                 Definition::Operation(operation_definition) => match operation_definition {
                     OperationDefinition::SelectionSet(s) => {
                         selection_set = Some(s);
-                        root = Some(Root::Query(self.query));
+                        root = Some(Root::Query(&self.schema.query));
                     }
                     OperationDefinition::Query(query)
                         if query.name.is_none() || query.name.as_deref() == self.operation_name =>
                     {
                         selection_set = Some(query.selection_set);
                         variable_definitions = Some(query.variable_definitions);
-                        root = Some(Root::Query(self.query));
+                        root = Some(Root::Query(&self.schema.query));
                     }
                     OperationDefinition::Mutation(mutation)
                         if mutation.name.is_none()
@@ -74,7 +88,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
                     {
                         selection_set = Some(mutation.selection_set);
                         variable_definitions = Some(mutation.variable_definitions);
-                        root = Some(Root::Mutation(self.mutation));
+                        root = Some(Root::Mutation(&self.schema.mutation));
                     }
                     OperationDefinition::Subscription(subscription)
                         if subscription.name.is_none()
@@ -91,7 +105,7 @@ impl<'a, Query, Mutation> QueryBuilder<'a, Query, Mutation> {
         }
 
         Ok(PreparedQuery {
-            registry: self.registry,
+            registry: &self.schema.registry,
             variables: self.variables.unwrap_or_default(),
             data: self.data,
             fragments,

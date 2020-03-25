@@ -463,11 +463,13 @@ fn visit_selection_set<'a, V: Visitor<'a>>(
     ctx: &mut VisitorContext<'a>,
     selection_set: &'a SelectionSet,
 ) {
-    v.enter_selection_set(ctx, selection_set);
-    for selection in &selection_set.items {
-        visit_selection(v, ctx, selection);
+    if !selection_set.items.is_empty() {
+        v.enter_selection_set(ctx, selection_set);
+        for selection in &selection_set.items {
+            visit_selection(v, ctx, selection);
+        }
+        v.exit_selection_set(ctx, selection_set);
     }
-    v.exit_selection_set(ctx, selection_set);
 }
 
 fn visit_selection<'a, V: Visitor<'a>>(
@@ -578,6 +580,9 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(
 ) {
     v.enter_fragment_spread(ctx, fragment_spread);
     visit_directives(v, ctx, &fragment_spread.directives);
+    if let Some(fragment) = ctx.fragment(fragment_spread.fragment_name.as_str()) {
+        visit_selection_set(v, ctx, &fragment.selection_set);
+    }
     v.exit_fragment_spread(ctx, fragment_spread);
 }
 

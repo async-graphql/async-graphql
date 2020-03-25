@@ -148,6 +148,12 @@ pub enum QueryError {
         /// Actual type
         actual: String,
     },
+
+    #[error("Too complex.")]
+    TooComplex,
+
+    #[error("Too deep.")]
+    TooDeep,
 }
 
 /// Creates a wrapper with an error location

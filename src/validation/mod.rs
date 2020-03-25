@@ -1,6 +1,7 @@
 mod rules;
 mod utils;
 mod visitor;
+mod visitors;
 
 use crate::error::RuleErrors;
 use crate::registry::Registry;
@@ -8,9 +9,18 @@ use crate::{CacheControl, Result};
 use graphql_parser::query::Document;
 use visitor::{visit, VisitorContext, VisitorNil};
 
-pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CacheControl> {
+pub struct CheckResult {
+    pub cache_control: CacheControl,
+    pub complexity: usize,
+    pub depth: usize,
+}
+
+pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CheckResult> {
     let mut ctx = VisitorContext::new(registry, doc);
     let mut cache_control = CacheControl::default();
+    let mut complexity = 0;
+    let mut depth = 0;
+
     let mut visitor = VisitorNil
         .with(rules::ArgumentsOfCorrectType::default())
         .with(rules::DefaultValuesOfCorrectType)
@@ -37,14 +47,21 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CacheControl> 
         .with(rules::KnownDirectives::default())
         .with(rules::OverlappingFieldsCanBeMerged)
         .with(rules::UploadFile)
-        .with(rules::CacheControlCalculate {
+        .with(visitors::CacheControlCalculate {
             cache_control: &mut cache_control,
-        });
+        })
+        .with(visitors::ComplexityCalculate {
+            complexity: &mut complexity,
+        })
+        .with(visitors::DepthCalculate::new(&mut depth));
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {
-        Err(RuleErrors { errors: ctx.errors }.into())
-    } else {
-        Ok(cache_control)
+        return Err(RuleErrors { errors: ctx.errors }.into());
     }
+    Ok(CheckResult {
+        cache_control,
+        complexity,
+        depth: depth as usize,
+    })
 }

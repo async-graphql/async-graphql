@@ -96,7 +96,9 @@ Open `http://localhost:8000` in browser
             - [X] FIELD
             - [X] FRAGMENT_SPREAD
             - [X] INLINE_FRAGMENT
-    - [X] Schema
+    - [X] Introspection
+        - [X] Query
+        - [X] Disable introspection
     - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
         - [X] Actix-web
     - [X] Cursor Connections
@@ -118,6 +120,8 @@ Open `http://localhost:8000` in browser
         - [X] List
             - [X] ListMaxLength
             - [X] ListMinLength
+    - [ ] Limit query complexity
+    - [ ] Limit query depth 
 - [X] Subscription
     - [X] Filter
     - [X] WebSocket transport

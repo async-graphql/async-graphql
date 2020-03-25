@@ -9,11 +9,13 @@ use std::collections::HashMap;
 
 /// GraphQL schema
 pub struct Schema<Query, Mutation, Subscription> {
-    query: QueryRoot<Query>,
-    mutation: Mutation,
+    pub(crate) query: QueryRoot<Query>,
+    pub(crate) mutation: Mutation,
     pub(crate) subscription: Subscription,
     pub(crate) registry: Registry,
     pub(crate) data: Data,
+    pub(crate) complexity: Option<usize>,
+    pub(crate) depth: Option<usize>,
 }
 
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
@@ -99,12 +101,35 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         }
 
         Self {
-            query: QueryRoot { inner: query },
+            query: QueryRoot {
+                inner: query,
+                disable_introspection: false,
+            },
             mutation,
             subscription,
             registry,
             data: Default::default(),
+            complexity: None,
+            depth: None,
         }
+    }
+
+    /// Disable introspection query
+    pub fn disable_introspection(mut self) -> Self {
+        self.query.disable_introspection = true;
+        self
+    }
+
+    /// Set limit complexity, Default no limit.
+    pub fn limit_complexity(mut self, complexity: usize) -> Self {
+        self.complexity = Some(complexity);
+        self
+    }
+
+    /// Set limit complexity, Default no limit.
+    pub fn limit_depth(mut self, depth: usize) -> Self {
+        self.depth = Some(depth);
+        self
     }
 
     /// Add a global data that can be accessed in the `Context`.
@@ -114,11 +139,9 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     }
 
     /// Start a query and return `QueryBuilder`.
-    pub fn query<'a>(&'a self, source: &'a str) -> QueryBuilder<'a, Query, Mutation> {
+    pub fn query<'a>(&'a self, source: &'a str) -> QueryBuilder<'a, Query, Mutation, Subscription> {
         QueryBuilder {
-            query: &self.query,
-            mutation: &self.mutation,
-            registry: &self.registry,
+            schema: self,
             source,
             operation_name: None,
             variables: None,

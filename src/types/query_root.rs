@@ -1,7 +1,7 @@
 use crate::model::{__Schema, __Type};
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
-    OutputValueType, Result, Type, Value,
+    OutputValueType, QueryError, Result, Type, Value,
 };
 use graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 pub struct QueryRoot<T> {
     pub inner: T,
+    pub disable_introspection: bool,
 }
 
 impl<T: Type> Type for QueryRoot<T> {
@@ -67,6 +68,14 @@ impl<T: Type> Type for QueryRoot<T> {
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "__schema" {
+            if self.disable_introspection {
+                return Err(QueryError::FieldNotFound {
+                    field_name: field.name.clone(),
+                    object: Self::type_name().to_string(),
+                }
+                .into());
+            }
+
             let ctx_obj = ctx.with_item(&field.selection_set);
             return OutputValueType::resolve(
                 &__Schema {
