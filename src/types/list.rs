@@ -36,8 +36,9 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut futures = Vec::with_capacity(value.len());
-        for item in value {
-            futures.push(OutputValueType::resolve(item, &ctx));
+        for (idx, item) in value.iter().enumerate() {
+            let ctx_idx = ctx.with_index(idx);
+            futures.push(async move { OutputValueType::resolve(item, &ctx_idx).await });
         }
         Ok(futures::future::try_join_all(futures).await?.into())
     }
@@ -57,8 +58,9 @@ impl<T: Type> Type for &[T] {
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
     async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
         let mut futures = Vec::with_capacity(value.len());
-        for item in *value {
-            futures.push(OutputValueType::resolve(item, &ctx));
+        for (idx, item) in (*value).iter().enumerate() {
+            let ctx_idx = ctx.with_index(idx);
+            futures.push(async move { OutputValueType::resolve(item, &ctx_idx).await });
         }
         Ok(futures::future::try_join_all(futures).await?.into())
     }

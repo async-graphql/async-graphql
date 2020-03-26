@@ -1,3 +1,5 @@
+//! A helper module that supports HTTP
+
 mod graphiql_source;
 mod playground_source;
 
@@ -6,7 +8,7 @@ pub use playground_source::playground_source;
 
 use crate::error::{RuleError, RuleErrors};
 use crate::query::PreparedQuery;
-use crate::{ObjectType, PositionError, Result, Schema, SubscriptionType, Variables};
+use crate::{ObjectType, PositionError, QueryResult, Result, Schema, SubscriptionType, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -74,7 +76,7 @@ impl GQLRequest {
 }
 
 /// Serializable query result type
-pub struct GQLResponse(pub Result<serde_json::Value>);
+pub struct GQLResponse(pub Result<QueryResult>);
 
 impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
@@ -82,7 +84,11 @@ impl Serialize for GQLResponse {
             Ok(res) => {
                 let mut map = serializer.serialize_map(None)?;
                 map.serialize_key("data")?;
-                map.serialize_value(&res)?;
+                map.serialize_value(&res.data)?;
+                if res.extensions.is_some() {
+                    map.serialize_key("extensions")?;
+                    map.serialize_value(&res.extensions)?;
+                }
                 map.end()
             }
             Err(err) => {
@@ -239,7 +245,10 @@ mod tests {
 
     #[test]
     fn test_response_data() {
-        let resp = GQLResponse(Ok(json!({"ok": true})));
+        let resp = GQLResponse(Ok(QueryResult {
+            data: json!({"ok": true}),
+            extensions: None,
+        }));
         assert_eq!(
             serde_json::to_value(resp).unwrap(),
             json! ({

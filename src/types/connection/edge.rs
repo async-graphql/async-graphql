@@ -80,7 +80,7 @@ where
 {
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "node" {
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             return OutputValueType::resolve(self.node, &ctx_obj)
                 .await
                 .map_err(|err| err.with_position(field.position).into());

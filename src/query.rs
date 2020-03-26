@@ -1,4 +1,5 @@
 use crate::context::Data;
+use crate::extensions::BoxExtension;
 use crate::registry::{CacheControl, Registry};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult};
@@ -10,6 +11,7 @@ use graphql_parser::query::{
     Definition, FragmentDefinition, OperationDefinition, SelectionSet, VariableDefinition,
 };
 use std::collections::HashMap;
+use std::sync::atomic::AtomicUsize;
 
 enum Root<'a, Query, Mutation> {
     Query(&'a QueryRoot<Query>),
@@ -19,6 +21,7 @@ enum Root<'a, Query, Mutation> {
 /// Query builder
 pub struct QueryBuilder<'a, Query, Mutation, Subscription> {
     pub(crate) schema: &'a Schema<Query, Mutation, Subscription>,
+    pub(crate) extensions: Vec<BoxExtension>,
     pub(crate) source: &'a str,
     pub(crate) operation_name: Option<&'a str>,
     pub(crate) variables: Option<Variables>,
@@ -44,12 +47,19 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
 
     /// Prepare query
     pub fn prepare(self) -> Result<PreparedQuery<'a, Query, Mutation>> {
+        self.extensions
+            .iter()
+            .for_each(|e| e.parse_start(self.source));
         let document = parse_query(self.source).map_err(|err| QueryParseError(err.to_string()))?;
+        self.extensions.iter().for_each(|e| e.parse_end());
+
+        self.extensions.iter().for_each(|e| e.validation_start());
         let CheckResult {
             cache_control,
             complexity,
             depth,
         } = check_rules(&self.schema.registry, &document)?;
+        self.extensions.iter().for_each(|e| e.validation_end());
 
         if let Some(limit_complexity) = self.schema.complexity {
             if complexity > limit_complexity {
@@ -105,6 +115,7 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
         }
 
         Ok(PreparedQuery {
+            extensions: self.extensions,
             registry: &self.schema.registry,
             variables: self.variables.unwrap_or_default(),
             data: self.data,
@@ -125,7 +136,7 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<serde_json::Value>
+    pub async fn execute(self) -> Result<QueryResult>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -134,9 +145,19 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
     }
 }
 
+/// Query result
+pub struct QueryResult {
+    /// Data of query result
+    pub data: serde_json::Value,
+
+    /// Extensions result
+    pub extensions: Option<serde_json::Value>,
+}
+
 /// Prepared query object
 pub struct PreparedQuery<'a, Query, Mutation> {
     root: Root<'a, Query, Mutation>,
+    extensions: Vec<BoxExtension>,
     registry: &'a Registry,
     variables: Variables,
     data: &'a Data,
@@ -174,24 +195,47 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<serde_json::Value>
+    pub async fn execute(self) -> Result<QueryResult>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
     {
+        let resolve_id = AtomicUsize::default();
         let ctx = ContextBase {
+            resolve_id: &resolve_id,
+            extensions: &self.extensions,
             item: &self.selection_set,
             variables: &self.variables,
             variable_definitions: self.variable_definitions.as_deref(),
             registry: self.registry,
             data: self.data,
             fragments: &self.fragments,
+            current_path: Default::default(),
         };
 
-        match self.root {
+        self.extensions.iter().for_each(|e| e.execution_start());
+        let data = match self.root {
             Root::Query(query) => OutputValueType::resolve(query, &ctx).await,
             Root::Mutation(mutation) => OutputValueType::resolve(mutation, &ctx).await,
-        }
+        }?;
+
+        self.extensions.iter().for_each(|e| e.execution_end());
+
+        let res = QueryResult {
+            data,
+            extensions: if !self.extensions.is_empty() {
+                Some(
+                    self.extensions
+                        .iter()
+                        .map(|e| (e.name().to_string(), e.result()))
+                        .collect::<serde_json::Map<_, _>>()
+                        .into(),
+                )
+            } else {
+                None
+            },
+        };
+        Ok(res)
     }
 
     /// Get cache control value

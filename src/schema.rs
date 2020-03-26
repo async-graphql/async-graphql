@@ -1,4 +1,5 @@
 use crate::context::Data;
+use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
 use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
@@ -16,6 +17,7 @@ pub struct Schema<Query, Mutation, Subscription> {
     pub(crate) data: Data,
     pub(crate) complexity: Option<usize>,
     pub(crate) depth: Option<usize>,
+    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
@@ -111,6 +113,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
             data: Default::default(),
             complexity: None,
             depth: None,
+            extensions: Default::default(),
         }
     }
 
@@ -132,6 +135,16 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         self
     }
 
+    /// Add an extension
+    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
+        mut self,
+        extension_factory: F,
+    ) -> Self {
+        self.extensions
+            .push(Box::new(move || Box::new(extension_factory())));
+        self
+    }
+
     /// Add a global data that can be accessed in the `Context`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
@@ -141,6 +154,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     /// Start a query and return `QueryBuilder`.
     pub fn query<'a>(&'a self, source: &'a str) -> QueryBuilder<'a, Query, Mutation, Subscription> {
         QueryBuilder {
+            extensions: self.extensions.iter().map(|factory| factory()).collect(),
             schema: self,
             source,
             operation_name: None,
@@ -152,6 +166,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     /// Start a subscribe and return `SubscribeBuilder`.
     pub fn subscribe<'a>(&'a self, source: &'a str) -> SubscribeBuilder<'a, Subscription> {
         SubscribeBuilder {
+            extensions: Default::default(),
             subscription: &self.subscription,
             registry: &self.registry,
             source,

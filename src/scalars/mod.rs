@@ -1,4 +1,5 @@
 mod bool;
+mod datetime;
 mod floats;
 mod id;
 mod integers;
@@ -7,8 +8,6 @@ mod url;
 
 #[cfg(feature = "bson")]
 mod bson;
-#[cfg(feature = "chrono")]
-mod datetime;
 #[cfg(feature = "uuid")]
 mod uuid;
 
@@ -42,14 +41,11 @@ mod tests {
         assert_eq!(<ID as Type>::type_name(), "ID");
         assert_eq!(<ID as Type>::qualified_type_name(), "ID!");
 
-        #[cfg(feature = "chrono")]
-        {
-            assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
-            assert_eq!(
-                <DateTime::<Utc> as Type>::qualified_type_name(),
-                "DateTime!"
-            );
-        }
+        assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
+        assert_eq!(
+            <DateTime::<Utc> as Type>::qualified_type_name(),
+            "DateTime!"
+        );
 
         #[cfg(feature = "uuid")]
         {

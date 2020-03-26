@@ -1,3 +1,4 @@
+use crate::extensions::BoxExtension;
 use crate::registry::Registry;
 use crate::validation::check_rules;
 use crate::{
@@ -10,6 +11,7 @@ use graphql_parser::query::{
 };
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::sync::atomic::AtomicUsize;
 
 /// Subscribe stub
 ///
@@ -32,13 +34,17 @@ impl Subscribe {
     where
         Subscription: SubscriptionType + Sync + Send + 'static,
     {
+        let resolve_id = AtomicUsize::default();
         let ctx = ContextBase::<()> {
+            extensions: &[],
             item: (),
+            resolve_id: &resolve_id,
             variables: &self.variables,
             variable_definitions: Some(&self.variable_definitions),
             registry: &schema.registry,
             data: &schema.data,
             fragments: &self.fragments,
+            current_path: Default::default(),
         };
         schema.subscription.resolve(&ctx, &self.types, msg).await
     }
@@ -58,6 +64,7 @@ pub trait SubscriptionType: Type {
 
     fn create_subscribe(
         &self,
+        extensions: &[BoxExtension],
         registry: &Registry,
         selection_set: SelectionSet,
         variables: Variables,
@@ -68,13 +75,17 @@ pub trait SubscriptionType: Type {
         Self: Sized,
     {
         let mut types = HashMap::new();
+        let resolve_id = AtomicUsize::default();
         let ctx = ContextSelectionSet {
+            extensions,
             item: &selection_set,
+            resolve_id: &resolve_id,
             variables: &variables,
             variable_definitions: Some(&variable_definitions),
             registry,
             data: &Default::default(),
             fragments: &fragments,
+            current_path: Default::default(),
         };
         create_types::<Self>(&ctx, &fragments, &mut types)?;
         Ok(Subscribe {
@@ -113,7 +124,11 @@ fn create_types<T: SubscriptionType>(
                 }
 
                 if let Some(fragment) = fragments.get(&fragment_spread.fragment_name) {
-                    create_types::<T>(&ctx.with_item(&fragment.selection_set), fragments, types)?;
+                    create_types::<T>(
+                        &ctx.with_selection_set(&fragment.selection_set),
+                        fragments,
+                        types,
+                    )?;
                 } else {
                     return Err(QueryError::UnknownFragment {
                         name: fragment_spread.fragment_name.clone(),
@@ -126,7 +141,7 @@ fn create_types<T: SubscriptionType>(
                     continue;
                 }
                 create_types::<T>(
-                    &ctx.with_item(&inline_fragment.selection_set),
+                    &ctx.with_selection_set(&inline_fragment.selection_set),
                     fragments,
                     types,
                 )?;
@@ -139,6 +154,7 @@ fn create_types<T: SubscriptionType>(
 /// Subscribe builder
 pub struct SubscribeBuilder<'a, Subscription> {
     pub(crate) subscription: &'a Subscription,
+    pub(crate) extensions: &'a [BoxExtension],
     pub(crate) registry: &'a Registry,
     pub(crate) source: &'a str,
     pub(crate) operation_name: Option<&'a str>,
@@ -197,6 +213,7 @@ where
         })?;
 
         self.subscription.create_subscribe(
+            self.extensions,
             self.registry,
             subscription.selection_set,
             self.variables.unwrap_or_default(),

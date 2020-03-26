@@ -35,7 +35,7 @@ macro_rules! test_scalars {
             let json_value: serde_json::Value = $value.into();
             let query = format!("{{ value testArg(input: {0}) testInput(input: {{value: {0}}}) }}", json_value);
             assert_eq!(
-                schema.query(&query).execute().await.unwrap(),
+                schema.query(&query).execute().await.unwrap().data,
                 serde_json::json!({ "value": $value, "testArg": $value, "testInput": $value })
             );
         }

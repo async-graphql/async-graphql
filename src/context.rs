@@ -1,3 +1,4 @@
+use crate::extensions::BoxExtension;
 use crate::registry::Registry;
 use crate::{ErrorWithPosition, InputValueType, QueryError, Result, Type};
 use bytes::Bytes;
@@ -5,10 +6,13 @@ use fnv::FnvHasher;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
+use serde::ser::SerializeSeq;
+use serde::{Serialize, Serializer};
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
+use std::sync::atomic::AtomicUsize;
 
 /// Variables of query
 #[derive(Debug, Clone)]
@@ -143,15 +147,83 @@ pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
 /// Context object for resolve field
 pub type Context<'a> = ContextBase<'a, &'a Field>;
 
+/// The query path segment
+#[derive(Clone)]
+pub enum QueryPathSegment {
+    /// Index
+    Index(usize),
+
+    /// Field name
+    Name(String),
+}
+
+impl Serialize for QueryPathSegment {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        match self {
+            QueryPathSegment::Index(idx) => serializer.serialize_i32(*idx as i32),
+            QueryPathSegment::Name(name) => serializer.serialize_str(name),
+        }
+    }
+}
+
+/// The query path, consists of multiple segments `QueryPathSegment`
+#[derive(Default, Clone)]
+pub struct QueryPath(im::Vector<QueryPathSegment>);
+
+impl Serialize for QueryPath {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+        for segment in &self.0 {
+            seq.serialize_element(segment)?;
+        }
+        seq.end()
+    }
+}
+
+impl std::fmt::Display for QueryPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (idx, segment) in self.0.iter().enumerate() {
+            if idx > 0 {
+                write!(f, ".")?;
+            }
+            match segment {
+                QueryPathSegment::Name(name) => write!(f, "{}", name)?,
+                QueryPathSegment::Index(idx) => write!(f, "{}", idx)?,
+            }
+        }
+        Ok(())
+    }
+}
+
+impl QueryPath {
+    fn append(&self, segment: QueryPathSegment) -> QueryPath {
+        let mut p = self.0.clone();
+        p.push_back(segment);
+        QueryPath(p)
+    }
+
+    pub(crate) fn field_name(&self) -> &str {
+        for segment in self.0.iter().rev() {
+            if let QueryPathSegment::Name(name) = segment {
+                return name.as_str();
+            }
+        }
+        unreachable!()
+    }
+}
+
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
+    pub(crate) resolve_id: &'a AtomicUsize,
+    pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
     pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
+    pub(crate) current_path: QueryPath,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -164,14 +236,43 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 
 impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
-    pub fn with_item<R>(&self, item: R) -> ContextBase<'a, R> {
+    pub fn get_resolve_id(&self) -> usize {
+        self.resolve_id
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    }
+
+    #[doc(hidden)]
+    pub fn with_field(&self, field: &'a Field) -> ContextBase<'a, &'a Field> {
         ContextBase {
-            item,
+            extensions: self.extensions,
+            item: field,
+            resolve_id: self.resolve_id,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
             fragments: self.fragments,
+            current_path: self.current_path.append(QueryPathSegment::Name(
+                field.alias.clone().unwrap_or_else(|| field.name.clone()),
+            )),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn with_selection_set(
+        &self,
+        selection_set: &'a SelectionSet,
+    ) -> ContextBase<'a, &'a SelectionSet> {
+        ContextBase {
+            extensions: self.extensions,
+            item: selection_set,
+            resolve_id: self.resolve_id,
+            variables: self.variables,
+            variable_definitions: self.variable_definitions,
+            registry: self.registry,
+            data: self.data,
+            fragments: self.fragments,
+            current_path: self.current_path.clone(),
         }
     }
 
@@ -294,6 +395,23 @@ impl<'a, T> ContextBase<'a, T> {
     }
 }
 
+impl<'a> ContextBase<'a, &'a SelectionSet> {
+    #[doc(hidden)]
+    pub fn with_index(&self, idx: usize) -> ContextBase<'a, &'a SelectionSet> {
+        ContextBase {
+            extensions: self.extensions,
+            item: self.item,
+            resolve_id: self.resolve_id,
+            variables: self.variables,
+            variable_definitions: self.variable_definitions,
+            registry: self.registry,
+            data: self.data,
+            fragments: self.fragments,
+            current_path: self.current_path.append(QueryPathSegment::Index(idx)),
+        }
+    }
+}
+
 impl<'a> ContextBase<'a, &'a Field> {
     #[doc(hidden)]
     pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
@@ -334,7 +452,11 @@ impl<'a> ContextBase<'a, &'a Field> {
     }
 
     #[doc(hidden)]
-    pub fn result_name(&self) -> String {
-        self.item.alias.clone().unwrap_or_else(|| self.name.clone())
+    pub fn result_name(&self) -> &str {
+        if let Some(QueryPathSegment::Name(segment)) = self.current_path.0.last() {
+            &segment
+        } else {
+            unreachable!()
+        }
     }
 }

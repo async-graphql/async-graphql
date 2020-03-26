@@ -36,6 +36,9 @@
 //! * Easy integration (hyper, actix_web, tide ...)
 //! * Upload files (Multipart request)
 //! * Subscription (WebSocket transport)
+//! * Custom extension
+//! * Apollo Tracing extension
+//! * Limit query complexity/depth
 //!
 //! ## Integrations
 //!
@@ -69,6 +72,7 @@ extern crate serde_derive;
 mod base;
 mod context;
 mod error;
+pub mod extensions;
 mod model;
 mod query;
 mod resolver;
@@ -90,14 +94,13 @@ pub use graphql_parser;
 #[doc(hidden)]
 pub use serde_json;
 
-/// A helper module that supports HTTP
 pub mod http;
 
 pub use base::{Scalar, Type};
-pub use context::{Context, Variables};
+pub use context::{Context, QueryPath, QueryPathSegment, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
-pub use query::{PreparedQuery, QueryBuilder};
+pub use query::{PreparedQuery, QueryBuilder, QueryResult};
 pub use registry::CacheControl;
 pub use scalars::ID;
 pub use schema::Schema;
@@ -220,7 +223,7 @@ pub use types::{EnumItem, EnumType};
 ///         valueWithError
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
-///     }"#).execute().await.unwrap();
+///     }"#).execute().await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///         "valueRef": 10,
@@ -281,7 +284,7 @@ pub use async_graphql_derive::Object;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
-///     let res = schema.query("{ value1 value2 }").execute().await.unwrap();
+///     let res = schema.query("{ value1 value2 }").execute().await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
 /// ```
@@ -334,7 +337,7 @@ pub use async_graphql_derive::Enum;
 ///     {
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
-///     }"#).execute().await.unwrap();
+///     }"#).execute().await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// }
 /// ```
@@ -442,7 +445,7 @@ pub use async_graphql_derive::InputObject;
 ///             valueB
 ///             valueC(a: 3, b: 2)
 ///         }
-///     }"#).execute().await.unwrap();
+///     }"#).execute().await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",

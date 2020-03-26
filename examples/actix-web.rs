@@ -28,7 +28,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(
                 Schema::new(starwars::QueryRoot, EmptyMutation, EmptySubscription)
-                    .data(starwars::StarWars::new()),
+                    .data(starwars::StarWars::new())
+                    .extension(|| async_graphql::extensions::ApolloTracing::default()),
             )
             .service(web::resource("/").guard(guard::Post()).to(index))
             .service(web::resource("/").guard(guard::Get()).to(gql_playgound))

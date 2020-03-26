@@ -204,7 +204,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         resolvers.push(quote! {
             if field.name.as_str() == #name {
                 #(#get_params)*
-                let ctx_obj = ctx.with_item(&field.selection_set);
+                let ctx_obj = ctx.with_selection_set(&field.selection_set);
                 return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj).await.
                     map_err(|err| err.with_position(field.position).into());
             }

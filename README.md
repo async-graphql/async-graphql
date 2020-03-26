@@ -47,6 +47,9 @@ Open `http://localhost:8000` in browser
 * Easy integration (hyper, actix_web, tide ...)
 * Upload files (Multipart request)
 * Subscription (WebSocket transport)
+* Custom extension
+* Apollo Tracing extension
+* Limit query complexity/depth
 
 ## Integrations
 
@@ -122,9 +125,12 @@ Open `http://localhost:8000` in browser
             - [X] ListMinLength
     - [X] Limit query complexity
     - [X] Limit query depth 
+- [X] Extensions
+    - [X] Custom
+    - [X] Apollo tracing
 - [X] Subscription
     - [X] Filter
-    - [X] WebSocket transport
+    - [X] WebSocket transport (use `async-graphql-actix-web`)
 - [X] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType
@@ -169,6 +175,7 @@ Licensed under either of
 * [GraphQL Multipart Request](https://github.com/jaydenseric/graphql-multipart-request-spec)
 * [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
 * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
+* [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
 
 ## Contribute
 

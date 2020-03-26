@@ -129,13 +129,13 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 {
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "pageInfo" {
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let page_info = &self.page_info;
             return OutputValueType::resolve(page_info, &ctx_obj)
                 .await
                 .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "edges" {
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let edges = self
                 .nodes
                 .iter()
@@ -154,7 +154,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                 .map(|n| (n as i32).into())
                 .unwrap_or_else(|| serde_json::Value::Null));
         } else if field.name.as_str() == T::type_name().to_plural().to_camel_case() {
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let items = self
                 .nodes
                 .iter()

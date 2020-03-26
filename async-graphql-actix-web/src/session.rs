@@ -5,7 +5,7 @@ use actix::{
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::{GQLError, GQLRequest, GQLResponse};
-use async_graphql::{ObjectType, Schema, Subscribe, SubscriptionType, Variables};
+use async_graphql::{ObjectType, QueryResult, Schema, Subscribe, SubscriptionType, Variables};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -196,7 +196,13 @@ where
                         let push_msg = serde_json::to_string(&OperationMessage {
                             ty: "data".to_string(),
                             id: Some(id.clone()),
-                            payload: Some(serde_json::to_value(GQLResponse(res)).unwrap()),
+                            payload: Some(
+                                serde_json::to_value(GQLResponse(res.map(|data| QueryResult {
+                                    data,
+                                    extensions: None,
+                                })))
+                                .unwrap(),
+                            ),
                         })
                         .unwrap();
                         push_msgs.push(push_msg);

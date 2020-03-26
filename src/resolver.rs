@@ -1,4 +1,5 @@
 use crate::base::BoxFieldFuture;
+use crate::extensions::ResolveInfo;
 use crate::{ContextSelectionSet, Error, ErrorWithPosition, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
 use graphql_parser::query::{Selection, TypeCondition};
@@ -36,8 +37,8 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                let ctx_field = ctx.with_item(field);
-                let field_name = ctx_field.result_name();
+                let ctx_field = ctx.with_field(field);
+                let field_name = ctx_field.result_name().to_string();
 
                 if field.name.as_str() == "__typename" {
                     // Get the typename
@@ -51,9 +52,50 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 futures.push(Box::pin({
                     let ctx_field = ctx_field.clone();
                     async move {
-                        root.resolve_field(&ctx_field, field)
+                        let resolve_id = ctx_field.get_resolve_id();
+
+                        if !ctx_field.extensions.is_empty() {
+                            let resolve_info = ResolveInfo {
+                                resolve_id,
+                                path: &ctx_field.current_path,
+                                parent_type: &T::type_name(),
+                                return_type: match ctx_field
+                                    .registry
+                                    .types
+                                    .get(T::type_name().as_ref())
+                                    .and_then(|ty| ty.field_by_name(field.name.as_str()))
+                                    .map(|field| &field.ty)
+                                {
+                                    Some(ty) => &ty,
+                                    None => {
+                                        anyhow::bail!(QueryError::FieldNotFound {
+                                            field_name: field.name.clone(),
+                                            object: T::type_name().to_string(),
+                                        }
+                                        .with_position(field.position));
+                                    }
+                                },
+                            };
+
+                            ctx_field
+                                .extensions
+                                .iter()
+                                .for_each(|e| e.resolve_field_start(&resolve_info));
+                        }
+
+                        let res = root
+                            .resolve_field(&ctx_field, field)
                             .map_ok(move |value| (field_name, value))
-                            .await
+                            .await?;
+
+                        if !ctx_field.extensions.is_empty() {
+                            ctx_field
+                                .extensions
+                                .iter()
+                                .for_each(|e| e.resolve_field_end(resolve_id));
+                        }
+
+                        Ok(res)
                     }
                 }))
             }
@@ -63,7 +105,11 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 }
 
                 if let Some(fragment) = ctx.fragments.get(&fragment_spread.fragment_name) {
-                    collect_fields(ctx.with_item(&fragment.selection_set), root, futures)?;
+                    collect_fields(
+                        ctx.with_selection_set(&fragment.selection_set),
+                        root,
+                        futures,
+                    )?;
                 } else {
                     return Err(QueryError::UnknownFragment {
                         name: fragment_spread.fragment_name.clone(),
@@ -79,7 +125,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
                     root.collect_inline_fields(
                         name,
-                        ctx.with_item(&inline_fragment.selection_set),
+                        ctx.with_selection_set(&inline_fragment.selection_set),
                         futures,
                     )?;
                 }

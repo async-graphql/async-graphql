@@ -211,11 +211,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if let Some(msg) = msg.downcast_ref::<#ty>() {
                         #(#get_params)*
                         if self.#ident(msg, #(#use_params)*) {
-                            let ctx_selection_set = ctx_field.with_item(&field.selection_set);
+                            let ctx_selection_set = ctx_field.with_selection_set(&field.selection_set);
                             let value =
                                 #crate_name::OutputValueType::resolve(msg, &ctx_selection_set).await?;
                             let mut res = #crate_name::serde_json::Map::new();
-                            res.insert(ctx_field.result_name(), value);
+                            res.insert(ctx_field.result_name().to_string(), value);
                             return Ok(Some(res.into()));
                         }
                     }
@@ -268,7 +268,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             ) -> #crate_name::Result<Option<#crate_name::serde_json::Value>> {
                 let tid = msg.type_id();
                 if let Some(field) = types.get(&tid) {
-                    let ctx_field = ctx.with_item(field);
+                    let ctx_field = ctx.with_field(field);
                     #(#filters)*
                 }
                 Ok(None)

@@ -76,7 +76,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 .into());
             }
 
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             return OutputValueType::resolve(
                 &__Schema {
                     registry: &ctx.registry,
@@ -87,7 +87,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             .map_err(|err| err.with_position(field.position).into());
         } else if field.name.as_str() == "__type" {
             let type_name: String = ctx.param_value("name", || Value::Null)?;
-            let ctx_obj = ctx.with_item(&field.selection_set);
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
             return OutputValueType::resolve(
                 &ctx.registry
                     .types
