@@ -59,6 +59,7 @@
 //! * [GraphQL Multipart Request](https://github.com/jaydenseric/graphql-multipart-request-spec)
 //! * [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
 //! * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
+//! * [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
 
 #![warn(missing_docs)]
 #![allow(clippy::needless_doctest_main)]
