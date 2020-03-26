@@ -11,7 +11,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     root: &'a T,
 ) -> Result<serde_json::Value> {
     let mut futures = Vec::new();
-    collect_fields(ctx.clone(), root, &mut futures)?;
+    collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
     let map = serde_json::Map::from_iter(res);
     Ok(map.into())
@@ -19,7 +19,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
 
 #[allow(missing_docs)]
 pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
-    ctx: ContextSelectionSet<'a>,
+    ctx: &ContextSelectionSet<'a>,
     root: &'a T,
     futures: &mut Vec<BoxFieldFuture<'a>>,
 ) -> Result<()> {
@@ -37,11 +37,10 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                let ctx_field = ctx.with_field(field);
-                let field_name = ctx_field.result_name().to_string();
-
                 if field.name.as_str() == "__typename" {
                     // Get the typename
+                    let ctx_field = ctx.with_field(field);
+                    let field_name = ctx_field.result_name().to_string();
                     futures.push(Box::pin(
                         future::ok::<serde_json::Value, Error>(T::type_name().to_string().into())
                             .map_ok(move |value| (field_name, value)),
@@ -50,14 +49,16 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 }
 
                 futures.push(Box::pin({
-                    let ctx_field = ctx_field.clone();
+                    let ctx = ctx.clone();
                     async move {
+                        let ctx_field = ctx.with_field(field);
+                        let field_name = ctx_field.result_name().to_string();
                         let resolve_id = ctx_field.get_resolve_id();
 
                         if !ctx_field.extensions.is_empty() {
                             let resolve_info = ResolveInfo {
                                 resolve_id,
-                                path: &ctx_field.current_path,
+                                path_node: ctx_field.path_node.as_ref().unwrap(),
                                 parent_type: &T::type_name(),
                                 return_type: match ctx_field
                                     .registry
@@ -106,7 +107,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
 
                 if let Some(fragment) = ctx.fragments.get(&fragment_spread.fragment_name) {
                     collect_fields(
-                        ctx.with_selection_set(&fragment.selection_set),
+                        &ctx.with_selection_set(&fragment.selection_set),
                         root,
                         futures,
                     )?;
@@ -125,7 +126,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
                     root.collect_inline_fields(
                         name,
-                        ctx.with_selection_set(&inline_fragment.selection_set),
+                        &ctx.with_selection_set(&inline_fragment.selection_set),
                         futures,
                     )?;
                 }

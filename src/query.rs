@@ -202,6 +202,7 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
     {
         let resolve_id = AtomicUsize::default();
         let ctx = ContextBase {
+            path_node: None,
             resolve_id: &resolve_id,
             extensions: &self.extensions,
             item: &self.selection_set,
@@ -210,7 +211,6 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
             registry: self.registry,
             data: self.data,
             fragments: &self.fragments,
-            current_path: Default::default(),
         };
 
         self.extensions.iter().for_each(|e| e.execution_start());

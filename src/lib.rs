@@ -98,7 +98,7 @@ pub use serde_json;
 pub mod http;
 
 pub use base::{Scalar, Type};
-pub use context::{Context, QueryPath, QueryPathSegment, Variables};
+pub use context::{Context, QueryPathSegment, Variables};
 pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
 pub use graphql_parser::query::Value;
 pub use query::{PreparedQuery, QueryBuilder, QueryResult};

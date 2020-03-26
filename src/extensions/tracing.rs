@@ -1,5 +1,5 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::QueryPath;
+use crate::QueryPathSegment;
 use chrono::{DateTime, Utc};
 use fnv::FnvHasher;
 use parking_lot::Mutex;
@@ -7,28 +7,35 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
+use std::ops::Deref;
 
 struct PendingResolve {
-    path: QueryPath,
+    path: serde_json::Value,
+    field_name: String,
     parent_type: String,
     return_type: String,
     start_time: DateTime<Utc>,
 }
 
 struct ResolveStat {
-    path: QueryPath,
-    parent_type: String,
-    return_type: String,
-    start_time: DateTime<Utc>,
+    pending_resolve: PendingResolve,
     end_time: DateTime<Utc>,
     start_offset: i64,
+}
+
+impl Deref for ResolveStat {
+    type Target = PendingResolve;
+
+    fn deref(&self) -> &Self::Target {
+        &self.pending_resolve
+    }
 }
 
 impl Serialize for ResolveStat {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("path", &self.path)?;
-        map.serialize_entry("fieldName", self.path.field_name())?;
+        map.serialize_entry("fieldName", &self.field_name)?;
         map.serialize_entry("parentType", &self.parent_type)?;
         map.serialize_entry("returnType", &self.return_type)?;
         map.serialize_entry("startOffset", &self.start_offset)?;
@@ -86,7 +93,17 @@ impl Extension for ApolloTracing {
         inner.pending_resolves.insert(
             info.resolve_id,
             PendingResolve {
-                path: info.path.clone(),
+                path: {
+                    let mut path: Vec<serde_json::Value> = Vec::new();
+                    info.path_node.for_each(|segment| {
+                        path.push(match segment {
+                            QueryPathSegment::Index(idx) => (*idx).into(),
+                            QueryPathSegment::Name(name) => (*name).to_string().into(),
+                        })
+                    });
+                    path.into()
+                },
+                field_name: info.path_node.field_name().to_string(),
                 parent_type: info.parent_type.to_string(),
                 return_type: info.return_type.to_string(),
                 start_time: Utc::now(),
@@ -101,10 +118,7 @@ impl Extension for ApolloTracing {
                 .num_nanoseconds()
                 .unwrap();
             inner.resolves.push(ResolveStat {
-                path: pending_resolve.path,
-                parent_type: pending_resolve.parent_type,
-                return_type: pending_resolve.return_type,
-                start_time: pending_resolve.start_time,
+                pending_resolve,
                 start_offset,
                 end_time: Utc::now(),
             });

@@ -36,6 +36,7 @@ impl Subscribe {
     {
         let resolve_id = AtomicUsize::default();
         let ctx = ContextBase::<()> {
+            path_node: None,
             extensions: &[],
             item: (),
             resolve_id: &resolve_id,
@@ -44,7 +45,6 @@ impl Subscribe {
             registry: &schema.registry,
             data: &schema.data,
             fragments: &self.fragments,
-            current_path: Default::default(),
         };
         schema.subscription.resolve(&ctx, &self.types, msg).await
     }
@@ -77,6 +77,7 @@ pub trait SubscriptionType: Type {
         let mut types = HashMap::new();
         let resolve_id = AtomicUsize::default();
         let ctx = ContextSelectionSet {
+            path_node: None,
             extensions,
             item: &selection_set,
             resolve_id: &resolve_id,
@@ -85,7 +86,6 @@ pub trait SubscriptionType: Type {
             registry,
             data: &Default::default(),
             fragments: &fragments,
-            current_path: Default::default(),
         };
         create_types::<Self>(&ctx, &fragments, &mut types)?;
         Ok(Subscribe {

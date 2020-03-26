@@ -1,8 +1,8 @@
 //! Extensions for schema
-use crate::QueryPath;
 
 mod tracing;
 
+use crate::context::QueryPathNode;
 pub use tracing::ApolloTracing;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
@@ -13,8 +13,8 @@ pub struct ResolveInfo<'a> {
     /// not strictly ordered, so each pair is identified by an id.
     pub resolve_id: usize,
 
-    /// Current path.
-    pub path: &'a QueryPath,
+    /// Current path node, You can go through the entire path.
+    pub path_node: &'a QueryPathNode<'a>,
 
     /// Parent type
     pub parent_type: &'a str,

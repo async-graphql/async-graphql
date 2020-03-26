@@ -6,8 +6,6 @@ use fnv::FnvHasher;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
-use serde::ser::SerializeSeq;
-use serde::{Serialize, Serializer};
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
 use std::hash::BuildHasherDefault;
@@ -149,72 +147,51 @@ pub type Context<'a> = ContextBase<'a, &'a Field>;
 
 /// The query path segment
 #[derive(Clone)]
-pub enum QueryPathSegment {
+pub enum QueryPathSegment<'a> {
     /// Index
     Index(usize),
 
     /// Field name
-    Name(String),
+    Name(&'a str),
 }
 
-impl Serialize for QueryPathSegment {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        match self {
-            QueryPathSegment::Index(idx) => serializer.serialize_i32(*idx as i32),
-            QueryPathSegment::Name(name) => serializer.serialize_str(name),
-        }
-    }
+/// The query path node
+#[derive(Clone)]
+pub struct QueryPathNode<'a> {
+    /// Parent node
+    pub parent: Option<&'a QueryPathNode<'a>>,
+
+    /// Current path segment
+    pub segment: QueryPathSegment<'a>,
 }
 
-/// The query path, consists of multiple segments `QueryPathSegment`
-#[derive(Default, Clone)]
-pub struct QueryPath(im::Vector<QueryPathSegment>);
-
-impl Serialize for QueryPath {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-        for segment in &self.0 {
-            seq.serialize_element(segment)?;
-        }
-        seq.end()
-    }
-}
-
-impl std::fmt::Display for QueryPath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (idx, segment) in self.0.iter().enumerate() {
-            if idx > 0 {
-                write!(f, ".")?;
-            }
-            match segment {
-                QueryPathSegment::Name(name) => write!(f, "{}", name)?,
-                QueryPathSegment::Index(idx) => write!(f, "{}", idx)?,
-            }
-        }
-        Ok(())
-    }
-}
-
-impl QueryPath {
-    fn append(&self, segment: QueryPathSegment) -> QueryPath {
-        let mut p = self.0.clone();
-        p.push_back(segment);
-        QueryPath(p)
-    }
-
+impl<'a> QueryPathNode<'a> {
     pub(crate) fn field_name(&self) -> &str {
-        for segment in self.0.iter().rev() {
-            if let QueryPathSegment::Name(name) = segment {
-                return name.as_str();
+        let mut p = self;
+        loop {
+            if let QueryPathSegment::Name(name) = &p.segment {
+                return name;
             }
+            p = p.parent.unwrap();
         }
-        unreachable!()
+    }
+
+    pub(crate) fn for_each<F: FnMut(&QueryPathSegment<'a>)>(&self, mut f: F) {
+        self.for_each_ref(&mut f);
+    }
+
+    fn for_each_ref<F: FnMut(&QueryPathSegment<'a>)>(&self, f: &mut F) {
+        if let Some(parent) = &self.parent {
+            parent.for_each_ref(f);
+        }
+        f(&self.segment);
     }
 }
 
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
+    pub(crate) path_node: Option<QueryPathNode<'a>>,
     pub(crate) resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
@@ -223,7 +200,6 @@ pub struct ContextBase<'a, T> {
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
-    pub(crate) current_path: QueryPath,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -242,8 +218,17 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn with_field(&self, field: &'a Field) -> ContextBase<'a, &'a Field> {
+    pub fn with_field(&'a self, field: &'a Field) -> ContextBase<'a, &'a Field> {
         ContextBase {
+            path_node: Some(QueryPathNode {
+                parent: self.path_node.as_ref(),
+                segment: QueryPathSegment::Name(
+                    field
+                        .alias
+                        .as_deref()
+                        .unwrap_or_else(|| field.name.as_str()),
+                ),
+            }),
             extensions: self.extensions,
             item: field,
             resolve_id: self.resolve_id,
@@ -252,9 +237,6 @@ impl<'a, T> ContextBase<'a, T> {
             registry: self.registry,
             data: self.data,
             fragments: self.fragments,
-            current_path: self.current_path.append(QueryPathSegment::Name(
-                field.alias.clone().unwrap_or_else(|| field.name.clone()),
-            )),
         }
     }
 
@@ -264,6 +246,7 @@ impl<'a, T> ContextBase<'a, T> {
         selection_set: &'a SelectionSet,
     ) -> ContextBase<'a, &'a SelectionSet> {
         ContextBase {
+            path_node: self.path_node.clone(),
             extensions: self.extensions,
             item: selection_set,
             resolve_id: self.resolve_id,
@@ -272,7 +255,6 @@ impl<'a, T> ContextBase<'a, T> {
             registry: self.registry,
             data: self.data,
             fragments: self.fragments,
-            current_path: self.current_path.clone(),
         }
     }
 
@@ -397,8 +379,12 @@ impl<'a, T> ContextBase<'a, T> {
 
 impl<'a> ContextBase<'a, &'a SelectionSet> {
     #[doc(hidden)]
-    pub fn with_index(&self, idx: usize) -> ContextBase<'a, &'a SelectionSet> {
+    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a SelectionSet> {
         ContextBase {
+            path_node: Some(QueryPathNode {
+                parent: self.path_node.as_ref(),
+                segment: QueryPathSegment::Index(idx),
+            }),
             extensions: self.extensions,
             item: self.item,
             resolve_id: self.resolve_id,
@@ -407,7 +393,6 @@ impl<'a> ContextBase<'a, &'a SelectionSet> {
             registry: self.registry,
             data: self.data,
             fragments: self.fragments,
-            current_path: self.current_path.append(QueryPathSegment::Index(idx)),
         }
     }
 }
@@ -453,10 +438,9 @@ impl<'a> ContextBase<'a, &'a Field> {
 
     #[doc(hidden)]
     pub fn result_name(&self) -> &str {
-        if let Some(QueryPathSegment::Name(segment)) = self.current_path.0.last() {
-            &segment
-        } else {
-            unreachable!()
-        }
+        self.item
+            .alias
+            .as_deref()
+            .unwrap_or_else(|| self.item.name.as_str())
     }
 }

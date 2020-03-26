@@ -109,7 +109,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             fn collect_inline_fields<'a>(
                 &'a self,
                 name: &str,
-                ctx: #crate_name::ContextSelectionSet<'a>,
+                ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {
                 #(#collect_inline_fields)*

@@ -75,7 +75,7 @@ pub trait ObjectType: OutputValueType {
     fn collect_inline_fields<'a>(
         &'a self,
         name: &str,
-        _ctx: ContextSelectionSet<'a>,
+        _ctx: &ContextSelectionSet<'a>,
         _futures: &mut Vec<BoxFieldFuture<'a>>,
     ) -> Result<()> {
         anyhow::bail!(QueryError::UnrecognizedInlineFragment {
