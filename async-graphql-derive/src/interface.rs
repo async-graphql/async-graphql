@@ -59,12 +59,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
             });
             collect_inline_fields.push(quote! {
-                // if name == <#p as #crate_name::Type>::type_name() {
-                //     if let #ident::#enum_name(obj) = self {
-                //         return &obj;
-                //     }
-                //     unreachable!()
-                // }
+                if name == <#p as #crate_name::Type>::type_name() {
+                    if let #ident::#enum_name(obj) = self {
+                        return #crate_name::collect_fields(ctx, obj, futures);
+                    }
+                    unreachable!()
+                }
             });
         } else {
             return Err(Error::new_spanned(field, "Invalid type"));
