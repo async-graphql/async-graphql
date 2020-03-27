@@ -1,4 +1,5 @@
 mod bool;
+mod chrono_tz;
 mod datetime;
 mod floats;
 mod id;
