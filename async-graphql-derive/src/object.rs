@@ -222,7 +222,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 });
 
-                method.attrs.clear();
+                method.attrs.remove(
+                    method
+                        .attrs
+                        .iter()
+                        .enumerate()
+                        .find(|(_, a)| a.path.is_ident("field"))
+                        .map(|(idx, _)| idx)
+                        .unwrap(),
+                );
             }
         }
     }
