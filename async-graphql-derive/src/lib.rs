@@ -8,6 +8,7 @@ mod input_object;
 mod interface;
 mod object;
 mod output_type;
+mod simple_object;
 mod subscription;
 mod union;
 mod utils;
@@ -25,6 +26,20 @@ pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     let mut item_impl = parse_macro_input!(input as ItemImpl);
     match object::generate(&object_args, &mut item_impl) {
+        Ok(expanded) => expanded,
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn SimpleObject(args: TokenStream, input: TokenStream) -> TokenStream {
+    let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
+        Ok(object_args) => object_args,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    let mut derive_input = parse_macro_input!(input as DeriveInput);
+    match simple_object::generate(&object_args, &mut derive_input) {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }

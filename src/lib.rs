@@ -178,7 +178,7 @@ pub use types::{EnumItem, EnumType};
 ///
 /// ```ignore
 /// #[Object]
-/// impl MyObject {
+/// impl QueryRoot {
 ///     async fn value(&self, ctx: &Context<'_>) -> { ... }
 /// }
 /// ```
@@ -188,12 +188,12 @@ pub use types::{EnumItem, EnumType};
 /// ```rust
 /// use async_graphql::*;
 ///
-/// struct MyObject {
+/// struct QueryRoot {
 ///     value: i32,
 /// }
 ///
 /// #[Object]
-/// impl MyObject {
+/// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self) -> i32 {
 ///         self.value
@@ -217,7 +217,7 @@ pub use types::{EnumItem, EnumType};
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value: 10 }, EmptyMutation, EmptySubscription);
+///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.query(r#"{
 ///         value
 ///         valueRef
@@ -235,6 +235,49 @@ pub use types::{EnumItem, EnumType};
 /// }
 /// ```
 pub use async_graphql_derive::Object;
+
+/// Define a GraphQL object
+///
+/// Similar to `Object`, but defined on a structure that automatically generates getters for all fields.
+///
+/// # Macro parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | desc          | Object description        | string   | Y        |
+/// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
+///
+/// # Field parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Field name                | string   | Y        |
+/// | desc          | Field description         | string   | Y        |
+/// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[SimpleObject]
+/// struct QueryRoot {
+///     #[field]
+///     value: i32,
+/// }
+///
+/// #[async_std::main]
+/// async fn main() {
+///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
+///     let res = schema.query("{ value }").execute().await.unwrap().data;
+///     assert_eq!(res, serde_json::json!({
+///         "value": 10,
+///     }));
+/// }
+/// ```
+pub use async_graphql_derive::SimpleObject;
 
 /// Define a GraphQL enum
 ///
@@ -264,13 +307,13 @@ pub use async_graphql_derive::Object;
 ///     #[item(name = "b")] B,
 /// }
 ///
-/// struct MyObject {
+/// struct QueryRoot {
 ///     value1: MyEnum,
 ///     value2: MyEnum,
 /// }
 ///
 /// #[Object]
-/// impl MyObject {
+/// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value1(&self) -> MyEnum {
 ///         self.value1
@@ -284,7 +327,7 @@ pub use async_graphql_derive::Object;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
+///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.query("{ value1 value2 }").execute().await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
@@ -321,10 +364,10 @@ pub use async_graphql_derive::Enum;
 ///     b: i32,
 /// }
 ///
-/// struct MyObject;
+/// struct QueryRoot;
 ///
 /// #[Object]
-/// impl MyObject {
+/// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self, input: MyInputObject) -> i32 {
 ///         input.a * input.b
@@ -333,7 +376,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(MyObject, EmptyMutation, EmptySubscription);
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.query(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})

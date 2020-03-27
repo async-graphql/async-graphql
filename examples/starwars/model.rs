@@ -171,3 +171,9 @@ impl QueryRoot {
     field(name = "appears_in", type = "&'ctx [Episode]", context)
 )]
 pub struct Character(Human, Droid);
+
+#[async_graphql::SimpleObject]
+struct QueryRoot1 {
+    #[field]
+    value: i32,
+}
