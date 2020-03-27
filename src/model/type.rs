@@ -49,7 +49,7 @@ Depending on the kind of a type, certain fields describe information about that 
 )]
 impl<'a> __Type<'a> {
     #[field]
-    async fn kind(&self) -> __TypeKind {
+    fn kind(&self) -> __TypeKind {
         match &self.detail {
             TypeDetail::Simple(ty) => match ty {
                 registry::Type::Scalar { .. } => __TypeKind::Scalar,
@@ -65,7 +65,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn name(&self) -> Option<String> {
+    fn name(&self) -> Option<String> {
         match &self.detail {
             TypeDetail::Simple(ty) => Some(ty.name().to_string()),
             TypeDetail::NonNull(_) => None,
@@ -74,7 +74,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn description(&self) -> Option<String> {
+    fn description(&self) -> Option<String> {
         match &self.detail {
             TypeDetail::Simple(ty) => match ty {
                 registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
@@ -92,7 +92,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn fields(
+    fn fields(
         &self,
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
@@ -118,7 +118,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
+    fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Simple(registry::Type::Object { name, .. }) = &self.detail {
             Some(
                 self.registry
@@ -135,7 +135,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
+    fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Simple(registry::Type::Interface { possible_types, .. }) = &self.detail {
             Some(
                 possible_types
@@ -158,7 +158,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn enum_values(
+    fn enum_values(
         &self,
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
@@ -179,7 +179,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
+    fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Simple(registry::Type::InputObject { input_fields, .. }) = &self.detail {
             Some(
                 input_fields
@@ -196,7 +196,7 @@ impl<'a> __Type<'a> {
     }
 
     #[field]
-    async fn of_type(&self) -> Option<__Type<'a>> {
+    fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
             Some(__Type::new(self.registry, &ty))
         } else if let TypeDetail::NonNull(ty) = &self.detail {

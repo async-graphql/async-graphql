@@ -13,17 +13,17 @@ pub struct __Field<'a> {
 )]
 impl<'a> __Field<'a> {
     #[field]
-    async fn name(&self) -> String {
+    fn name(&self) -> String {
         self.field.name.to_string()
     }
 
     #[field]
-    async fn description(&self) -> Option<String> {
+    fn description(&self) -> Option<String> {
         self.field.description.map(|s| s.to_string())
     }
 
     #[field]
-    async fn args(&self) -> Vec<__InputValue<'a>> {
+    fn args(&self) -> Vec<__InputValue<'a>> {
         let mut args = self
             .field
             .args
@@ -38,17 +38,17 @@ impl<'a> __Field<'a> {
     }
 
     #[field(name = "type")]
-    async fn ty(&self) -> __Type<'a> {
+    fn ty(&self) -> __Type<'a> {
         __Type::new(self.registry, &self.field.ty)
     }
 
     #[field]
-    async fn is_deprecated(&self) -> bool {
+    fn is_deprecated(&self) -> bool {
         self.field.deprecation.is_some()
     }
 
     #[field]
-    async fn deprecation_reason(&self) -> Option<String> {
+    fn deprecation_reason(&self) -> Option<String> {
         self.field.deprecation.map(|s| s.to_string())
     }
 }

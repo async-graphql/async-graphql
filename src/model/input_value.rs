@@ -13,22 +13,22 @@ pub struct __InputValue<'a> {
 )]
 impl<'a> __InputValue<'a> {
     #[field]
-    async fn name(&self) -> String {
+    fn name(&self) -> String {
         self.input_value.name.to_string()
     }
 
     #[field]
-    async fn description(&self) -> Option<String> {
+    fn description(&self) -> Option<String> {
         self.input_value.description.map(|s| s.to_string())
     }
 
     #[field(name = "type")]
-    async fn ty(&self) -> __Type<'a> {
+    fn ty(&self) -> __Type<'a> {
         __Type::new(self.registry, &self.input_value.ty)
     }
 
     #[field]
-    async fn default_value(&self) -> Option<String> {
+    fn default_value(&self) -> Option<String> {
         self.input_value.default_value.map(|s| s.to_string())
     }
 }
