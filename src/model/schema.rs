@@ -12,7 +12,7 @@ pub struct __Schema<'a> {
 )]
 impl<'a> __Schema<'a> {
     #[field(desc = "A list of all types supported by this server.")]
-    fn types(&self) -> Vec<__Type<'a>> {
+    async fn types(&self) -> Vec<__Type<'a>> {
         self.registry
             .types
             .values()
@@ -21,7 +21,7 @@ impl<'a> __Schema<'a> {
     }
 
     #[field(desc = "The type that query operations will be rooted at.")]
-    fn query_type(&self) -> __Type<'a> {
+    async fn query_type(&self) -> __Type<'a> {
         __Type::new_simple(
             self.registry,
             &self.registry.types[&self.registry.query_type],
@@ -31,7 +31,7 @@ impl<'a> __Schema<'a> {
     #[field(
         desc = "If this server supports mutation, the type that mutation operations will be rooted at."
     )]
-    fn mutation_type(&self) -> Option<__Type<'a>> {
+    async fn mutation_type(&self) -> Option<__Type<'a>> {
         if let Some(ty) = &self.registry.mutation_type {
             Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
         } else {
@@ -42,7 +42,7 @@ impl<'a> __Schema<'a> {
     #[field(
         desc = "If this server support subscription, the type that subscription operations will be rooted at."
     )]
-    fn subscription_type(&self) -> Option<__Type<'a>> {
+    async fn subscription_type(&self) -> Option<__Type<'a>> {
         if let Some(ty) = &self.registry.subscription_type {
             Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
         } else {
@@ -51,7 +51,7 @@ impl<'a> __Schema<'a> {
     }
 
     #[field(desc = "A list of all directives supported by this server.")]
-    fn directives(&self) -> Vec<__Directive<'a>> {
+    async fn directives(&self) -> Vec<__Directive<'a>> {
         self.registry
             .directives
             .values()

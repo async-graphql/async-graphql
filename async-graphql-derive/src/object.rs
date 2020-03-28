@@ -39,7 +39,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
             if let Some(field) = args::Field::parse(&method.attrs)? {
-                let is_async = method.sig.asyncness.is_some();
+                if method.sig.asyncness.is_none() {
+                    return Err(Error::new_spanned(
+                        &method.sig.output,
+                        "Must be asynchronous",
+                    ));
+                }
+
                 let field_name = field
                     .name
                     .clone()
@@ -196,18 +202,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 };
 
                 let field_ident = &method.sig.ident;
-                let await_resolve = if is_async {
-                    quote! { .await }
-                } else {
-                    quote! {}
-                };
                 let resolve_obj = match &ty {
                     OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_field #(#use_params),*)#await_resolve
+                        self.#field_ident(#ctx_field #(#use_params),*).await
                     },
                     OutputType::Result(_, _) => {
                         quote! {
-                            self.#field_ident(#ctx_field #(#use_params),*)#await_resolve.
+                            self.#field_ident(#ctx_field #(#use_params),*).await.
                                 map_err(|err| err.with_position(field.position))?
                         }
                     }

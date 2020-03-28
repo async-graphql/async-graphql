@@ -12,22 +12,22 @@ pub struct __EnumValue<'a> {
 )]
 impl<'a> __EnumValue<'a> {
     #[field]
-    fn name(&self, _: &Context<'_>) -> String {
+    async fn name(&self, _: &Context<'_>) -> String {
         self.value.name.to_string()
     }
 
     #[field]
-    fn description(&self, _: &Context<'_>) -> Option<String> {
+    async fn description(&self, _: &Context<'_>) -> Option<String> {
         self.value.description.map(|s| s.to_string())
     }
 
     #[field]
-    fn is_deprecated(&self, _: &Context<'_>) -> bool {
+    async fn is_deprecated(&self, _: &Context<'_>) -> bool {
         self.value.deprecation.is_some()
     }
 
     #[field]
-    fn deprecation_reason(&self, _: &Context<'_>) -> Option<String> {
+    async fn deprecation_reason(&self, _: &Context<'_>) -> Option<String> {
         self.value.deprecation.map(|s| s.to_string())
     }
 }

@@ -79,22 +79,22 @@ In some cases, you need to provide options to alter GraphQL's execution behavior
 )]
 impl<'a> __Directive<'a> {
     #[field]
-    fn name(&self) -> String {
+    async fn name(&self) -> String {
         self.directive.name.to_string()
     }
 
     #[field]
-    fn description(&self) -> Option<String> {
+    async fn description(&self) -> Option<String> {
         self.directive.description.map(|s| s.to_string())
     }
 
     #[field]
-    fn locations(&self) -> &Vec<__DirectiveLocation> {
+    async fn locations(&self) -> &Vec<__DirectiveLocation> {
         &self.directive.locations
     }
 
     #[field]
-    fn args(&self) -> Vec<__InputValue<'a>> {
+    async fn args(&self) -> Vec<__InputValue<'a>> {
         self.directive
             .args
             .values()
