@@ -50,6 +50,7 @@ Open `http://localhost:8000` in browser
 * Custom extension
 * Apollo Tracing extension
 * Limit query complexity/depth
+* Error Extensions
 
 ## Integrations
 
@@ -102,8 +103,7 @@ Open `http://localhost:8000` in browser
     - [X] Introspection
         - [X] Query
         - [X] Disable introspection
-    - [X] Multipart Request (https://github.com/jaydenseric/graphql-multipart-request-spec)
-        - [X] Actix-web
+    - [X] Multipart Request
     - [X] Cursor Connections
     - [X] Input value validators
         - [X] Custom validator
@@ -130,7 +130,7 @@ Open `http://localhost:8000` in browser
     - [X] Apollo tracing
 - [X] Subscription
     - [X] Filter
-    - [X] WebSocket transport (use `async-graphql-actix-web`)
+    - [X] WebSocket transport
 - [X] Validation rules
     - [X] ArgumentsOfCorrectType
     - [X] DefaultValuesOfCorrectType
