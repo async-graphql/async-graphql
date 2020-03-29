@@ -6,7 +6,7 @@ mod playground_source;
 pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
-use crate::error::{RuleError, RuleErrors};
+use crate::error::{ExtendedError, RuleError, RuleErrors};
 use crate::query::PreparedQuery;
 use crate::{ObjectType, PositionError, QueryResult, Result, Schema, SubscriptionType, Variables};
 use graphql_parser::Pos;
@@ -129,9 +129,17 @@ impl<'a> Serialize for GQLError<'a> {
             seq.end()
         } else {
             let mut seq = serializer.serialize_seq(None)?;
-            seq.serialize_element(&serde_json::json!({
-                "message": self.0.to_string(),
-            }))?;
+            if let Some(extensions) = get_error_extensions(self.0) {
+                seq.serialize_element(&serde_json::json!({
+                    "message": self.0.to_string(),
+                    "extensions": extensions
+                }))?;
+            } else {
+                seq.serialize_element(&serde_json::json!({
+                    "message": self.0.to_string(),
+                }))?;
+            }
+
             seq.end()
         }
     }
@@ -164,6 +172,9 @@ impl<'a> Serialize for GQLPositionError<'a> {
             "locations",
             std::slice::from_ref(&GQLErrorPos(&self.0.position)),
         )?;
+        if let Some(extensions) = get_error_extensions(&self.0.inner) {
+            map.serialize_entry("extensions", &extensions)?;
+        }
         map.end()
     }
 }
@@ -260,6 +271,30 @@ mod tests {
     }
 
     #[test]
+    fn test_response_error_with_extension() {
+        let err = ExtendedError(
+            "MyErrorMessage".to_owned(),
+            json!({
+                "code": "MY_TEST_CODE"
+            }),
+        );
+
+        let resp = GQLResponse(Err(err.into()));
+
+        assert_eq!(
+            serde_json::to_value(resp).unwrap(),
+            json!({
+                "errors": [{
+                    "message":"MyErrorMessage",
+                    "extensions": {
+                        "code": "MY_TEST_CODE"
+                    }
+                }]
+            })
+        );
+    }
+
+    #[test]
     fn test_response_error() {
         let resp = GQLResponse(Err(anyhow::anyhow!("error")));
         assert_eq!(
@@ -292,4 +327,13 @@ mod tests {
             })
         );
     }
+}
+
+fn get_error_extensions(err: &crate::Error) -> Option<&serde_json::Value> {
+    if let Some(extended_err) = err.downcast_ref::<ExtendedError>() {
+        if extended_err.1.is_object() {
+            return Some(&extended_err.1);
+        }
+    }
+    None
 }

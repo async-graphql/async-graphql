@@ -99,7 +99,9 @@ pub mod http;
 
 pub use base::{Scalar, Type};
 pub use context::{Context, QueryPathSegment, Variables};
-pub use error::{ErrorWithPosition, PositionError, QueryError, QueryParseError};
+pub use error::{
+    ErrorWithPosition, ExtendedError, PositionError, QueryError, QueryParseError, ResultExt,
+};
 pub use graphql_parser::query::Value;
 pub use query::{PreparedQuery, QueryBuilder, QueryResult};
 pub use registry::CacheControl;

@@ -220,3 +220,39 @@ impl Display for RuleErrors {
         Ok(())
     }
 }
+
+/// A wrapped Error with extensions.
+#[derive(Debug, Error)]
+pub struct ExtendedError(pub String, pub serde_json::Value);
+
+impl Display for ExtendedError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[allow(missing_docs)]
+pub trait ResultExt<T, E>
+where
+    Self: Sized,
+    E: std::fmt::Display + Sized,
+{
+    fn extend_err<CB>(self, cb: CB) -> crate::Result<T>
+    where
+        CB: FnOnce(&E) -> serde_json::Value;
+}
+
+impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
+where
+    E: std::fmt::Display + Sized,
+{
+    fn extend_err<C>(self, cb: C) -> crate::Result<T>
+    where
+        C: FnOnce(&E) -> serde_json::Value,
+    {
+        match self {
+            Err(e) => Err(anyhow::anyhow!(ExtendedError(e.to_string(), cb(&e)))),
+            Ok(value) => Ok(value),
+        }
+    }
+}
