@@ -1,6 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use async_graphql::{Context, Result, Schema, ID};
-use async_graphql_actix_web::publish_message;
+use async_graphql::{publish, Context, Result, Schema, ID};
 use futures::lock::Mutex;
 use slab::Slab;
 use std::sync::Arc;
@@ -58,10 +57,11 @@ impl MutationRoot {
             author,
         };
         entry.insert(book);
-        publish_message(BookChanged {
+        publish(BookChanged {
             mutation_type: MutationType::Created,
             id: id.clone(),
-        });
+        })
+        .await;
         id
     }
 
@@ -71,10 +71,11 @@ impl MutationRoot {
         let id = id.parse::<usize>()?;
         if books.contains(id) {
             books.remove(id);
-            publish_message(BookChanged {
+            publish(BookChanged {
                 mutation_type: MutationType::Deleted,
                 id: id.into(),
-            });
+            })
+            .await;
             Ok(true)
         } else {
             Ok(false)
@@ -122,8 +123,9 @@ impl SubscriptionRoot {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
-        let schema =
-            Schema::new(QueryRoot, MutationRoot, SubscriptionRoot).data(Storage::default());
+        let schema = Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
+            .data(Storage::default())
+            .finish();
         let handler = async_graphql_actix_web::HandlerBuilder::new(schema)
             .enable_ui("http://localhost:8000", Some("ws://localhost:8000"))
             .enable_subscription()

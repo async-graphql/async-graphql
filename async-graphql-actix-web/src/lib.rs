@@ -2,12 +2,6 @@
 
 #![warn(missing_docs)]
 
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate actix_derive;
-
-mod pubsub;
 mod session;
 
 use crate::session::WsSession;
@@ -24,9 +18,8 @@ use mime::Mime;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
 
-pub use pubsub::publish_message;
+// pub use pubsub::publish_message;
 
 /// Actix-web handler builder
 pub struct HandlerBuilder<Query, Mutation, Subscription> {
@@ -99,9 +92,9 @@ where
         HttpRequest,
         Payload,
     ) -> Pin<Box<dyn Future<Output = actix_web::Result<HttpResponse>>>>
-           + 'static
-           + Clone {
-        let schema = Arc::new(self.schema);
+           + Clone
+           + 'static {
+        let schema = self.schema.clone();
         let max_file_size = self.max_file_size;
         let max_file_count = self.max_file_count;
         let enable_ui = self.enable_ui;
@@ -156,9 +149,9 @@ async fn handle_request<Query, Mutation, Subscription>(
     mut payload: Payload,
 ) -> actix_web::Result<HttpResponse>
 where
-    Query: ObjectType + Send + Sync,
-    Mutation: ObjectType + Send + Sync,
-    Subscription: SubscriptionType + Send + Sync,
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     if let Ok(ct) = get_content_type(req.headers()) {
         if ct.essence_str() == mime::MULTIPART_FORM_DATA {

@@ -35,9 +35,9 @@ impl GQLRequest {
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> GQLResponse
     where
-        Query: ObjectType + Send + Sync,
-        Mutation: ObjectType + Send + Sync,
-        Subscription: SubscriptionType + Send + Sync,
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         match self.prepare(schema) {
             Ok(query) => GQLResponse(query.execute().await),
@@ -51,9 +51,9 @@ impl GQLRequest {
         schema: &'a Schema<Query, Mutation, Subscription>,
     ) -> Result<PreparedQuery<'a, Query, Mutation>>
     where
-        Query: ObjectType + Send + Sync,
-        Mutation: ObjectType + Send + Sync,
-        Subscription: SubscriptionType + Send + Sync,
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let vars = match self.variables.take() {
             Some(value) => match Variables::parse_from_json(value) {

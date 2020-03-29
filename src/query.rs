@@ -58,16 +58,16 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
             cache_control,
             complexity,
             depth,
-        } = check_rules(&self.schema.registry, &document)?;
+        } = check_rules(&self.schema.0.registry, &document)?;
         self.extensions.iter().for_each(|e| e.validation_end());
 
-        if let Some(limit_complexity) = self.schema.complexity {
+        if let Some(limit_complexity) = self.schema.0.complexity {
             if complexity > limit_complexity {
                 return Err(QueryError::TooComplex.into());
             }
         }
 
-        if let Some(limit_depth) = self.schema.depth {
+        if let Some(limit_depth) = self.schema.0.depth {
             if depth > limit_depth {
                 return Err(QueryError::TooDeep.into());
             }
@@ -83,14 +83,14 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
                 Definition::Operation(operation_definition) => match operation_definition {
                     OperationDefinition::SelectionSet(s) => {
                         selection_set = Some(s);
-                        root = Some(Root::Query(&self.schema.query));
+                        root = Some(Root::Query(&self.schema.0.query));
                     }
                     OperationDefinition::Query(query)
                         if query.name.is_none() || query.name.as_deref() == self.operation_name =>
                     {
                         selection_set = Some(query.selection_set);
                         variable_definitions = Some(query.variable_definitions);
-                        root = Some(Root::Query(&self.schema.query));
+                        root = Some(Root::Query(&self.schema.0.query));
                     }
                     OperationDefinition::Mutation(mutation)
                         if mutation.name.is_none()
@@ -98,7 +98,7 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
                     {
                         selection_set = Some(mutation.selection_set);
                         variable_definitions = Some(mutation.variable_definitions);
-                        root = Some(Root::Mutation(&self.schema.mutation));
+                        root = Some(Root::Mutation(&self.schema.0.mutation));
                     }
                     OperationDefinition::Subscription(subscription)
                         if subscription.name.is_none()
@@ -116,7 +116,7 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
 
         Ok(PreparedQuery {
             extensions: self.extensions,
-            registry: &self.schema.registry,
+            registry: &self.schema.0.registry,
             variables: self.variables.unwrap_or_default(),
             data: self.data,
             fragments,

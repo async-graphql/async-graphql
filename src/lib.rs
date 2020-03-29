@@ -104,8 +104,11 @@ pub use graphql_parser::query::Value;
 pub use query::{PreparedQuery, QueryBuilder, QueryResult};
 pub use registry::CacheControl;
 pub use scalars::ID;
-pub use schema::Schema;
-pub use subscription::SubscribeBuilder;
+pub use schema::{publish, Schema};
+pub use subscription::{
+    SubscriptionStream, SubscriptionStub, SubscriptionStubs, SubscriptionTransport,
+    WebSocketTransport,
+};
 pub use types::{
     Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,
     Upload,
@@ -129,7 +132,7 @@ pub use context::ContextBase;
 #[doc(hidden)]
 pub use resolver::{collect_fields, do_resolve};
 #[doc(hidden)]
-pub use subscription::{Subscribe, SubscriptionType};
+pub use subscription::SubscriptionType;
 #[doc(hidden)]
 pub use types::{EnumItem, EnumType};
 
@@ -481,7 +484,7 @@ pub use async_graphql_derive::InputObject;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string());
+///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.query(r#"
 ///     {
 ///         typeA {

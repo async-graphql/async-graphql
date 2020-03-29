@@ -27,9 +27,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(
-                Schema::new(starwars::QueryRoot, EmptyMutation, EmptySubscription)
+                Schema::build(starwars::QueryRoot, EmptyMutation, EmptySubscription)
                     .data(starwars::StarWars::new())
-                    .extension(|| async_graphql::extensions::ApolloTracing::default()),
+                    .extension(|| async_graphql::extensions::ApolloTracing::default())
+                    .finish(),
             )
             .service(web::resource("/").guard(guard::Post()).to(index))
             .service(web::resource("/").guard(guard::Get()).to(gql_playgound))
