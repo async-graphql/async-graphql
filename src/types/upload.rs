@@ -38,7 +38,7 @@ use std::borrow::Cow;
 /// you can now upload a file `myFile.txt` with the below curl command:
 ///
 /// ```curl
-/// curl POST 'localhost:8000' \
+/// curl 'localhost:8000' \
 /// --form 'operations={
 ///         "query": "mutation ($file: Upload!) { upload(file: $file)  }",
 ///         "variables": { "file": null }}' \
