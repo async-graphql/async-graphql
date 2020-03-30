@@ -34,7 +34,7 @@ use std::borrow::Cow;
 ///
 /// ```
 /// # Example Curl Request
-/// Assuming you have defined your mutation root like in the example above,
+/// Assuming you have defined your MutationRoot like in the example above,
 /// you can now upload a file `myFile.txt` with the below curl command:
 ///
 /// ```curl
