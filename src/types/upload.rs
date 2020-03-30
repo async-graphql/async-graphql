@@ -1,9 +1,50 @@
 use crate::{registry, InputValueType, Type, Value};
 use std::borrow::Cow;
 
-/// Upload file type
+/// Uploaded file
 ///
-/// Reference: https://github.com/jaydenseric/graphql-multipart-request-spec
+/// **Reference:** <https://github.com/jaydenseric/graphql-multipart-request-spec>
+///
+///
+/// Graphql supports file uploads via `multipart/form-data`.
+/// Enable this feature by accepting an argument of type `Upload` (single file) or
+/// `Vec<Upload>` (multiple files) in your mutation like in the example blow.
+///
+///
+/// # Example
+/// *[Full Example](<https://github.com/sunli829/async-graphql/blob/master/async-graphql-actix-web/examples/upload-file.rs>)*
+///
+/// ```
+/// use async_graphql::Upload;
+///
+/// struct MutationRoot;
+///
+/// #[async_graphql::Object]
+/// impl MutationRoot {
+///     #[field]
+///     async fn upload(&self, file: Upload) -> bool {
+///         println!(
+///             "upload: filename={} size={}",
+///             file.filename,
+///             file.content.len()
+///         );
+///         true
+///     }
+/// }
+///
+/// ```
+/// # Example Curl Request
+/// Assuming you have defined your MutationRoot like in the example above,
+/// you can now upload a file `myFile.txt` with the below curl command:
+///
+/// ```curl
+/// curl 'localhost:8000' \
+/// --form 'operations={
+///         "query": "mutation ($file: Upload!) { upload(file: $file)  }",
+///         "variables": { "file": null }}' \
+/// --form 'map={ "0": ["variables.file"] }' \
+/// --form '0=@myFile.txt'
+/// ```
 pub struct Upload {
     /// Filename
     pub filename: String,
