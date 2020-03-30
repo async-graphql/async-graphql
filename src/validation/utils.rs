@@ -79,30 +79,41 @@ pub fn is_valid_input_value(
                     registry::Type::InputObject { input_fields, .. } => match value {
                         Value::Object(values) => {
                             for field in input_fields {
-                                let value = values.get(field.name).unwrap_or(&Value::Null);
-
-                                if let Some(validator) = &field.validator {
-                                    if let Some(reason) = validator.is_valid(value) {
-                                        return Some(valid_error(
-                                            &QueryPathNode {
-                                                parent: Some(&path_node),
-                                                segment: QueryPathSegment::Name(field.name),
-                                            },
-                                            reason,
-                                        ));
+                                if let Some(value) = values.get(field.name) {
+                                    if let Some(validator) = &field.validator {
+                                        if let Some(reason) = validator.is_valid(value) {
+                                            return Some(valid_error(
+                                                &QueryPathNode {
+                                                    parent: Some(&path_node),
+                                                    segment: QueryPathSegment::Name(field.name),
+                                                },
+                                                reason,
+                                            ));
+                                        }
                                     }
-                                }
 
-                                if let Some(reason) = is_valid_input_value(
-                                    registry,
-                                    &field.ty,
-                                    value,
-                                    QueryPathNode {
-                                        parent: Some(&path_node),
-                                        segment: QueryPathSegment::Name(field.name),
-                                    },
-                                ) {
-                                    return Some(reason);
+                                    if let Some(reason) = is_valid_input_value(
+                                        registry,
+                                        &field.ty,
+                                        value,
+                                        QueryPathNode {
+                                            parent: Some(&path_node),
+                                            segment: QueryPathSegment::Name(field.name),
+                                        },
+                                    ) {
+                                        return Some(reason);
+                                    }
+                                } else if registry::TypeName::create(&field.ty).is_non_null()
+                                    && field.default_value.is_none()
+                                {
+                                    return Some(valid_error(
+                                            &path_node,
+                                            format!(
+                                                "field \"{}\" of type \"{}\" is required but not provided",
+                                                field.name,
+                                                ty.name(),
+                                            ),
+                                        ));
                                 }
                             }
                             None
