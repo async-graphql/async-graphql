@@ -19,7 +19,7 @@ impl From<MyError> for Error {
     fn from(my_error: MyError) -> Error {
         match my_error {
             MyError::NotFound => {
-                let msg = "Could not find ressource".to_owned();
+                let msg = "Could not find resource".to_owned();
                 let extensions = json!({"code": "NOT_FOUND"});
                 ExtendedError(msg, extensions).into()
             }

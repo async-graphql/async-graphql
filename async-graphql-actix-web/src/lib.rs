@@ -200,7 +200,7 @@ where
 
                                 if data.len() > max_file_size {
                                     return Err(actix_web::error::ErrorPayloadTooLarge(
-                                        "payload to large",
+                                        "payload too large",
                                     ));
                                 }
                             }
@@ -218,7 +218,7 @@ where
                             file_count += 1;
                             if file_count > max_file_count {
                                 return Err(actix_web::error::ErrorPayloadTooLarge(
-                                    "payload to large",
+                                    "payload too large",
                                 ));
                             }
                         } else {
