@@ -14,7 +14,7 @@ impl InputValueValidator for StringMinLength {
         if let Value::String(s) = value {
             if s.len() < self.length {
                 Some(format!(
-                    "The value length is {}, but the length must be greater than or equal to {}",
+                    "the value length is {}, but the length must be greater than or equal to {}",
                     s.len(),
                     self.length
                 ))
@@ -38,7 +38,7 @@ impl InputValueValidator for StringMaxLength {
         if let Value::String(s) = value {
             if s.len() > self.length {
                 Some(format!(
-                    "The value length is {}, but the length must be less than or equal to {}",
+                    "the value length is {}, but the length must be less than or equal to {}",
                     s.len(),
                     self.length
                 ))

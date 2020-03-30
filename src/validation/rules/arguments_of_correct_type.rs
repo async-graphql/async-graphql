@@ -1,6 +1,8 @@
+use crate::context::QueryPathNode;
 use crate::registry::InputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::QueryPathSegment;
 use graphql_parser::query::Field;
 use graphql_parser::schema::{Directive, Value};
 use graphql_parser::Pos;
@@ -45,14 +47,16 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 }
             }
 
-            if !is_valid_input_value(ctx.registry, &arg.ty, value) {
-                ctx.report_error(
-                    vec![pos],
-                    format!(
-                        "Invalid value for argument \"{}\", expected type \"{}\"",
-                        arg.name, arg.ty,
-                    ),
-                );
+            if let Some(reason) = is_valid_input_value(
+                ctx.registry,
+                &arg.ty,
+                value,
+                QueryPathNode {
+                    parent: None,
+                    segment: QueryPathSegment::Name(arg.name),
+                },
+            ) {
+                ctx.report_error(vec![pos], format!("Invalid value for argument {}", reason));
             }
         }
     }

@@ -165,6 +165,27 @@ pub struct QueryPathNode<'a> {
     pub segment: QueryPathSegment<'a>,
 }
 
+impl<'a> std::fmt::Display for QueryPathNode<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut first = true;
+        self.for_each(|segment| {
+            if !first {
+                write!(f, ".").ok();
+            }
+            match segment {
+                QueryPathSegment::Index(idx) => {
+                    write!(f, "{}", *idx).ok();
+                }
+                QueryPathSegment::Name(name) => {
+                    write!(f, "{}", name).ok();
+                }
+            }
+            first = false;
+        });
+        Ok(())
+    }
+}
+
 impl<'a> QueryPathNode<'a> {
     pub(crate) fn field_name(&self) -> &str {
         let mut p = self;

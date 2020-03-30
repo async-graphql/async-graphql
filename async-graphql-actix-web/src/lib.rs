@@ -171,12 +171,12 @@ where
                     .map_err(actix_web::error::ErrorBadRequest)?
             };
 
-            let mut query = match gql_request.prepare(schema) {
-                Ok(query) => query,
+            let mut prepared = match gql_request.prepare(schema) {
+                Ok(prepared) => prepared,
                 Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
             };
 
-            if !query.is_upload() {
+            if !prepared.is_upload() {
                 return Err(actix_web::error::ErrorBadRequest(
                     "It's not an upload operation",
                 ));
@@ -208,7 +208,7 @@ where
                             let data = data.freeze();
 
                             for var_path in var_paths {
-                                query.set_upload(
+                                prepared.set_upload(
                                     &var_path,
                                     filename,
                                     Some(&content_type),
@@ -236,16 +236,17 @@ where
                 return Err(actix_web::error::ErrorBadRequest("missing files"));
             }
 
-            Ok(web::Json(GQLResponse(query.execute().await))
+            Ok(web::Json(GQLResponse(prepared.execute().await))
                 .respond_to(&req)
                 .await?)
         } else if ct.essence_str() == mime::APPLICATION_JSON {
             let mut gql_req = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
                 .await?
                 .into_inner();
-            let prepared = gql_req
-                .prepare(&schema)
-                .map_err(actix_web::error::ErrorBadRequest)?;
+            let prepared = match gql_req.prepare(schema) {
+                Ok(prepared) => prepared,
+                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
+            };
             let mut cache_control = prepared.cache_control().value();
             let gql_resp = prepared.execute().await;
             if gql_resp.is_err() {

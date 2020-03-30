@@ -1,5 +1,7 @@
+use crate::context::QueryPathNode;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::QueryPathSegment;
 use graphql_parser::query::{Type, VariableDefinition};
 
 pub struct DefaultValuesOfCorrectType;
@@ -16,17 +18,18 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
                     "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
                     variable_definition.name, variable_definition.var_type,
                 ));
-            } else if !is_valid_input_value(
+            } else if let Some(reason) = is_valid_input_value(
                 ctx.registry,
                 &variable_definition.var_type.to_string(),
                 value,
+                QueryPathNode {
+                    parent: None,
+                    segment: QueryPathSegment::Name(&variable_definition.name),
+                },
             ) {
                 ctx.report_error(
                     vec![variable_definition.position],
-                    format!(
-                        "Invalid default value for argument \"{}\", expected type \"{}\"",
-                        variable_definition.name, variable_definition.var_type
-                    ),
+                    format!("Invalid default value for argument {}", reason),
                 )
             }
         }
