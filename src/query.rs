@@ -10,6 +10,7 @@ use graphql_parser::parse_query;
 use graphql_parser::query::{
     Definition, FragmentDefinition, OperationDefinition, SelectionSet, VariableDefinition,
 };
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
 
@@ -26,6 +27,7 @@ pub struct QueryBuilder<'a, Query, Mutation, Subscription> {
     pub(crate) operation_name: Option<&'a str>,
     pub(crate) variables: Option<Variables>,
     pub(crate) data: &'a Data,
+    pub(crate) ctx_data: Option<Data>,
 }
 
 impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscription> {
@@ -43,6 +45,18 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
             variables: Some(vars),
             ..self
         }
+    }
+
+    /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
+    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+        if let Some(ctx_data) = &mut self.ctx_data {
+            ctx_data.insert(data);
+        } else {
+            let mut ctx_data = Data::default();
+            ctx_data.insert(data);
+            self.ctx_data = Some(ctx_data);
+        }
+        self
     }
 
     /// Prepare query
@@ -119,6 +133,7 @@ impl<'a, Query, Mutation, Subscription> QueryBuilder<'a, Query, Mutation, Subscr
             registry: &self.schema.0.registry,
             variables: self.variables.unwrap_or_default(),
             data: self.data,
+            ctx_data: self.ctx_data,
             fragments,
             selection_set: selection_set.ok_or({
                 if let Some(name) = self.operation_name {
@@ -161,6 +176,7 @@ pub struct PreparedQuery<'a, Query, Mutation> {
     registry: &'a Registry,
     variables: Variables,
     data: &'a Data,
+    ctx_data: Option<Data>,
     fragments: HashMap<String, FragmentDefinition>,
     selection_set: SelectionSet,
     variable_definitions: Option<Vec<VariableDefinition>>,
@@ -210,6 +226,7 @@ impl<'a, Query, Mutation> PreparedQuery<'a, Query, Mutation> {
             variable_definitions: self.variable_definitions.as_deref(),
             registry: self.registry,
             data: self.data,
+            ctx_data: self.ctx_data.as_ref(),
             fragments: &self.fragments,
         };
 

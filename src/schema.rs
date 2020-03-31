@@ -3,14 +3,13 @@ use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
 use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
-use crate::subscription::{create_connection, SubscriptionStub, SubscriptionTransport};
+use crate::subscription::{SubscriptionConnectionBuilder, SubscriptionStub, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::check_rules;
 use crate::{
-    ContextSelectionSet, ObjectType, QueryError, QueryParseError, Result, SubscriptionStream,
-    SubscriptionType, Type, Variables,
+    ContextSelectionSet, ObjectType, QueryError, QueryParseError, Result, SubscriptionType, Type,
+    Variables,
 };
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::lock::Mutex;
 use futures::SinkExt;
@@ -75,7 +74,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         self
     }
 
-    /// Add a global data that can be accessed in the `Context`.
+    /// Add a global data that can be accessed in the `Schema`, you access it with `Context::data`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.0.data.insert(data);
         self
@@ -220,6 +219,7 @@ where
             operation_name: None,
             variables: None,
             data: &self.0.data,
+            ctx_data: None,
         }
     }
 
@@ -273,6 +273,7 @@ where
             variable_definitions: Some(&subscription.variable_definitions),
             registry: &self.0.registry,
             data: &Default::default(),
+            ctx_data: None,
             fragments: &fragments,
         };
         create_subscription_types::<Subscription>(&ctx, &fragments, &mut types)?;
@@ -282,18 +283,20 @@ where
             variables,
             variable_definitions: subscription.variable_definitions,
             fragments,
+            ctx_data: None,
         })
     }
 
-    /// Create subscription connection, returns `Sink` and `Stream`.
-    pub async fn subscription_connection<T: SubscriptionTransport>(
+    /// Create subscription connection, returns `SubscriptionConnectionBuilder`.
+    pub fn subscription_connection<T: SubscriptionTransport>(
         &self,
         transport: T,
-    ) -> (
-        mpsc::Sender<Bytes>,
-        SubscriptionStream<Query, Mutation, Subscription, T>,
-    ) {
-        create_connection(self, transport).await
+    ) -> SubscriptionConnectionBuilder<Query, Mutation, Subscription, T> {
+        SubscriptionConnectionBuilder {
+            schema: self.clone(),
+            transport,
+            ctx_data: None,
+        }
     }
 }
 

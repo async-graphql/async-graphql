@@ -2,13 +2,11 @@ use crate::extensions::BoxExtension;
 use crate::registry::Registry;
 use crate::{ErrorWithPosition, InputValueType, QueryError, Result, Type};
 use bytes::Bytes;
-use fnv::FnvHasher;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
-use std::hash::BuildHasherDefault;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::AtomicUsize;
 
@@ -131,7 +129,7 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
 }
 
 #[derive(Default)]
-pub struct Data(HashMap<TypeId, Box<dyn Any + Sync + Send>, BuildHasherDefault<FnvHasher>>);
+pub struct Data(BTreeMap<TypeId, Box<dyn Any + Sync + Send>>);
 
 impl Data {
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
@@ -220,6 +218,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
+    pub(crate) ctx_data: Option<&'a Data>,
     pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
 }
 
@@ -257,6 +256,7 @@ impl<'a, T> ContextBase<'a, T> {
             variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
+            ctx_data: self.ctx_data,
             fragments: self.fragments,
         }
     }
@@ -275,15 +275,16 @@ impl<'a, T> ContextBase<'a, T> {
             variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
+            ctx_data: self.ctx_data,
             fragments: self.fragments,
         }
     }
 
-    /// Gets the global data defined in the `Schema`.
+    /// Gets the global data defined in the `Context` or `Schema`.
     pub fn data<D: Any + Send + Sync>(&self) -> &D {
-        self.data
-            .0
-            .get(&TypeId::of::<D>())
+        self.ctx_data
+            .and_then(|ctx_data| ctx_data.0.get(&TypeId::of::<D>()))
+            .or_else(|| self.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
             .expect("The specified data type does not exist.")
     }
@@ -413,6 +414,7 @@ impl<'a> ContextBase<'a, &'a SelectionSet> {
             variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
+            ctx_data: self.ctx_data,
             fragments: self.fragments,
         }
     }

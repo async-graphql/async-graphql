@@ -1,12 +1,10 @@
 use crate::extensions::{Extension, ResolveInfo};
 use crate::QueryPathSegment;
 use chrono::{DateTime, Utc};
-use fnv::FnvHasher;
 use parking_lot::Mutex;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
-use std::collections::HashMap;
-use std::hash::BuildHasherDefault;
+use std::collections::BTreeMap;
 use std::ops::Deref;
 
 struct PendingResolve {
@@ -50,7 +48,7 @@ impl Serialize for ResolveStat {
 struct Inner {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
-    pending_resolves: HashMap<usize, PendingResolve, BuildHasherDefault<FnvHasher>>,
+    pending_resolves: BTreeMap<usize, PendingResolve>,
     resolves: Vec<ResolveStat>,
 }
 

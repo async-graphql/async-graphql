@@ -39,6 +39,7 @@
 //! * Custom extension
 //! * Apollo Tracing extension
 //! * Limit query complexity/depth
+//! * Error Extensions
 //!
 //! ## Integrations
 //!
@@ -108,8 +109,8 @@ pub use registry::CacheControl;
 pub use scalars::ID;
 pub use schema::{publish, Schema};
 pub use subscription::{
-    SubscriptionStream, SubscriptionStub, SubscriptionStubs, SubscriptionTransport,
-    WebSocketTransport,
+    SubscriptionConnectionBuilder, SubscriptionStream, SubscriptionStub, SubscriptionStubs,
+    SubscriptionTransport, WebSocketTransport,
 };
 pub use types::{
     Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,

@@ -8,7 +8,10 @@ pub use playground_source::playground_source;
 
 use crate::error::{ExtendedError, RuleError, RuleErrors};
 use crate::query::PreparedQuery;
-use crate::{ObjectType, PositionError, QueryResult, Result, Schema, SubscriptionType, Variables};
+use crate::{
+    ObjectType, PositionError, QueryBuilder, QueryResult, Result, Schema, SubscriptionType,
+    Variables,
+};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -45,11 +48,11 @@ impl GQLRequest {
         }
     }
 
-    /// Prepare a query and return a `PreparedQuery` object that gets some information about the query.
-    pub fn prepare<'a, Query, Mutation, Subscription>(
+    /// Create query builder
+    pub fn builder<'a, Query, Mutation, Subscription>(
         &'a mut self,
         schema: &'a Schema<Query, Mutation, Subscription>,
-    ) -> Result<PreparedQuery<'a, Query, Mutation>>
+    ) -> Result<QueryBuilder<'a, Query, Mutation, Subscription>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
@@ -71,7 +74,20 @@ impl GQLRequest {
             Some(name) => query.operator_name(name),
             None => query,
         };
-        query.prepare()
+        Ok(query)
+    }
+
+    /// Prepare a query and return a `PreparedQuery` object that gets some information about the query.
+    pub fn prepare<'a, Query, Mutation, Subscription>(
+        &'a mut self,
+        schema: &'a Schema<Query, Mutation, Subscription>,
+    ) -> Result<PreparedQuery<'a, Query, Mutation>>
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        self.builder(schema)?.prepare()
     }
 }
 

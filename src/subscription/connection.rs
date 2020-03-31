@@ -1,3 +1,4 @@
+use crate::context::Data;
 use crate::schema::SUBSCRIPTION_SENDERS;
 use crate::subscription::SubscriptionStub;
 use crate::{ObjectType, Result, Schema, SubscriptionType};
@@ -12,24 +13,20 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 /// Subscription stubs, use to hold all subscription information for the `SubscriptionConnection`
-pub struct SubscriptionStubs<Query, Mutation, Subscription>(
-    Slab<SubscriptionStub<Query, Mutation, Subscription>>,
-);
-
-impl<Query, Mutation, Subscription> Default for SubscriptionStubs<Query, Mutation, Subscription> {
-    fn default() -> Self {
-        Self(Slab::new())
-    }
+pub struct SubscriptionStubs<Query, Mutation, Subscription> {
+    stubs: Slab<SubscriptionStub<Query, Mutation, Subscription>>,
+    ctx_data: Option<Arc<Data>>,
 }
 
 #[allow(missing_docs)]
 impl<Query, Mutation, Subscription> SubscriptionStubs<Query, Mutation, Subscription> {
-    pub fn add(&mut self, stub: SubscriptionStub<Query, Mutation, Subscription>) -> usize {
-        self.0.insert(stub)
+    pub fn add(&mut self, mut stub: SubscriptionStub<Query, Mutation, Subscription>) -> usize {
+        stub.ctx_data = self.ctx_data.clone();
+        self.stubs.insert(stub)
     }
 
     pub fn remove(&mut self, id: usize) {
-        self.0.remove(id);
+        self.stubs.remove(id);
     }
 }
 
@@ -56,8 +53,9 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
 }
 
 pub async fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
-    schema: &Schema<Query, Mutation, Subscription>,
+    schema: Schema<Query, Mutation, Subscription>,
     transport: T,
+    ctx_data: Option<Data>,
 ) -> (
     mpsc::Sender<Bytes>,
     SubscriptionStream<Query, Mutation, Subscription, T>,
@@ -74,9 +72,12 @@ where
     (
         tx_bytes.clone(),
         SubscriptionStream {
-            schema: schema.clone(),
+            schema,
             transport,
-            stubs: Default::default(),
+            stubs: SubscriptionStubs {
+                stubs: Default::default(),
+                ctx_data: ctx_data.map(Arc::new),
+            },
             rx_bytes,
             rx_msg,
             send_queue: VecDeque::new(),
@@ -151,7 +152,7 @@ where
                 let send_queue = &mut this.send_queue as *mut VecDeque<Bytes>;
                 let fut = async move {
                     unsafe {
-                        for (id, stub) in (*stubs).0.iter() {
+                        for (id, stub) in (*stubs).stubs.iter() {
                             if let Some(res) = stub.resolve(msg.as_ref()).await.transpose() {
                                 if let Some(bytes) = (*transport).handle_response(id, res) {
                                     (*send_queue).push_back(bytes);

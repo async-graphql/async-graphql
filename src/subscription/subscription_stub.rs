@@ -1,8 +1,10 @@
+use crate::context::Data;
 use crate::{ContextBase, ObjectType, Result, Schema, SubscriptionType, Variables};
 use graphql_parser::query::{Field, FragmentDefinition, VariableDefinition};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
 
 /// Subscription stub
 ///
@@ -14,6 +16,7 @@ pub struct SubscriptionStub<Query, Mutation, Subscription> {
     pub(crate) variables: Variables,
     pub(crate) variable_definitions: Vec<VariableDefinition>,
     pub(crate) fragments: HashMap<String, FragmentDefinition>,
+    pub(crate) ctx_data: Option<Arc<Data>>,
 }
 
 impl<Query, Mutation, Subscription> SubscriptionStub<Query, Mutation, Subscription>
@@ -37,6 +40,7 @@ where
             variable_definitions: Some(&self.variable_definitions),
             registry: &self.schema.0.registry,
             data: &self.schema.0.data,
+            ctx_data: self.ctx_data.as_deref(),
             fragments: &self.fragments,
         };
         self.schema
