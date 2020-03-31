@@ -113,7 +113,6 @@ where
         loop {
             // send bytes
             if let Some(bytes) = self.send_queue.pop_front() {
-                println!("{}", String::from_utf8(bytes.to_vec()).unwrap());
                 return Poll::Ready(Some(bytes));
             }
 
