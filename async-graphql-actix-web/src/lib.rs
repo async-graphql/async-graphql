@@ -243,9 +243,10 @@ where
                     .map_err(actix_web::error::ErrorBadRequest)?
             };
 
-            let mut builder = gql_request
-                .builder(schema)
-                .map_err(actix_web::error::ErrorBadRequest)?;
+            let mut builder = match gql_request.builder(schema) {
+                Ok(builder) => builder,
+                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
+            };
 
             if let Some(on_request) = on_request {
                 builder = on_request(&req, builder);
@@ -320,12 +321,13 @@ where
                 .respond_to(&req)
                 .await?)
         } else if ct.essence_str() == mime::APPLICATION_JSON {
-            let mut gql_req = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
+            let mut gql_request = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
                 .await?
                 .into_inner();
-            let mut builder = gql_req
-                .builder(schema)
-                .map_err(actix_web::error::ErrorBadRequest)?;
+            let mut builder = match gql_request.builder(schema) {
+                Ok(builder) => builder,
+                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
+            };
             if let Some(on_request) = on_request {
                 builder = on_request(&req, builder);
             }

@@ -129,6 +129,12 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         &ctx.with_selection_set(&inline_fragment.selection_set),
                         futures,
                     )?;
+                } else {
+                    collect_fields(
+                        &ctx.with_selection_set(&inline_fragment.selection_set),
+                        root,
+                        futures,
+                    )?;
                 }
             }
         }
