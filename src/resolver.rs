@@ -105,7 +105,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                if let Some(fragment) = ctx.fragments.get(&fragment_spread.fragment_name) {
+                if let Some(fragment) = ctx.fragments.get(fragment_spread.fragment_name.as_str()) {
                     collect_fields(
                         &ctx.with_selection_set(&fragment.selection_set),
                         root,

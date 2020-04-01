@@ -51,5 +51,5 @@ mime = "0.3.16"
 [workspace]
 members = [
     "async-graphql-derive",
-    "async-graphql-actix-web"
+#    "async-graphql-actix-web"
 ]

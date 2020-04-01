@@ -47,14 +47,11 @@ impl SubscriptionTransport for WebSocketTransport {
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
                         if let Ok(request) = serde_json::from_value::<GQLRequest>(payload) {
-                            let variables = if let Some(value) = request.variables {
-                                match Variables::parse_from_json(value) {
-                                    Ok(variables) => variables,
-                                    Err(_) => Default::default(),
-                                }
-                            } else {
-                                Default::default()
-                            };
+                            let variables = request
+                                .variables
+                                .map(|value| Variables::parse_from_json(value).ok())
+                                .flatten()
+                                .unwrap_or_default();
 
                             match schema.create_subscription_stub(
                                 &request.query,

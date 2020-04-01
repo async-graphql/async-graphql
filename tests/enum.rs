@@ -44,7 +44,7 @@ pub async fn test_enum_type() {
             "#
     );
     assert_eq!(
-        schema.query(&query).execute().await.unwrap().data,
+        schema.query(&query).unwrap().execute().await.unwrap().data,
         serde_json::json!({
             "value": "A",
             "testArg": "A",

@@ -215,7 +215,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
-    pub(crate) variable_definitions: Option<&'a [VariableDefinition]>,
+    pub(crate) variable_definitions: &'a [VariableDefinition],
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) ctx_data: Option<&'a Data>,
@@ -292,7 +292,8 @@ impl<'a, T> ContextBase<'a, T> {
     fn var_value(&self, name: &str) -> Result<Value> {
         let def = self
             .variable_definitions
-            .and_then(|defs| defs.iter().find(|def| def.name == name));
+            .iter()
+            .find(|def| def.name == name);
         if let Some(def) = def {
             if let Some(var_value) = self.variables.get(&def.name) {
                 return Ok(var_value.clone());

@@ -5,7 +5,7 @@ use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::subscription::{SubscriptionConnectionBuilder, SubscriptionStub, SubscriptionTransport};
 use crate::types::QueryRoot;
-use crate::validation::check_rules;
+use crate::validation::{check_rules, CheckResult};
 use crate::{
     ContextSelectionSet, ObjectType, QueryError, QueryParseError, Result, SubscriptionType, Type,
     Variables,
@@ -211,16 +211,46 @@ where
     }
 
     /// Start a query and return `QueryBuilder`.
-    pub fn query<'a>(&'a self, source: &'a str) -> QueryBuilder<'a, Query, Mutation, Subscription> {
-        QueryBuilder {
-            extensions: self.0.extensions.iter().map(|factory| factory()).collect(),
-            schema: self,
-            source,
-            operation_name: None,
-            variables: None,
-            data: &self.0.data,
-            ctx_data: None,
+    pub fn query(&self, source: &str) -> Result<QueryBuilder<Query, Mutation, Subscription>> {
+        let extensions = self
+            .0
+            .extensions
+            .iter()
+            .map(|factory| factory())
+            .collect::<Vec<_>>();
+        extensions.iter().for_each(|e| e.parse_start(source));
+        let document = parse_query(source).map_err(|err| QueryParseError(err.to_string()))?;
+        extensions.iter().for_each(|e| e.parse_end());
+
+        extensions.iter().for_each(|e| e.validation_start());
+        let CheckResult {
+            cache_control,
+            complexity,
+            depth,
+        } = check_rules(&self.0.registry, &document)?;
+        extensions.iter().for_each(|e| e.validation_end());
+
+        if let Some(limit_complexity) = self.0.complexity {
+            if complexity > limit_complexity {
+                return Err(QueryError::TooComplex.into());
+            }
         }
+
+        if let Some(limit_depth) = self.0.depth {
+            if depth > limit_depth {
+                return Err(QueryError::TooDeep.into());
+            }
+        }
+
+        Ok(QueryBuilder {
+            extensions,
+            schema: self.clone(),
+            document,
+            operation_name: None,
+            variables: Default::default(),
+            ctx_data: None,
+            cache_control,
+        })
     }
 
     /// Create subscription stub, typically called inside the `SubscriptionTransport::handle_request` method/
@@ -270,7 +300,7 @@ where
             item: &subscription.selection_set,
             resolve_id: &resolve_id,
             variables: &variables,
-            variable_definitions: Some(&subscription.variable_definitions),
+            variable_definitions: &subscription.variable_definitions,
             registry: &self.0.registry,
             data: &Default::default(),
             ctx_data: None,

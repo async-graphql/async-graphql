@@ -2,6 +2,7 @@ use actix_rt;
 use actix_web::{guard, web, App, HttpResponse, HttpServer};
 use async_graphql::http::{graphiql_source, playground_source, GQLRequest, GQLResponse};
 use async_graphql::*;
+use futures::TryFutureExt;
 use serde_json::json;
 
 #[derive(Debug)]
@@ -74,7 +75,12 @@ async fn index(
     s: web::Data<Schema<QueryRoot, EmptyMutation, EmptySubscription>>,
     req: web::Json<GQLRequest>,
 ) -> web::Json<GQLResponse> {
-    web::Json(req.into_inner().execute(&s).await)
+    web::Json(GQLResponse(
+        req.into_inner()
+            .into_query_builder(&s)
+            .and_then(|builder| builder.execute())
+            .await,
+    ))
 }
 
 async fn gql_playgound() -> HttpResponse {

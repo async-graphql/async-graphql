@@ -7,7 +7,6 @@ pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
 use crate::error::{ExtendedError, RuleError, RuleErrors};
-use crate::query::PreparedQuery;
 use crate::{
     ObjectType, PositionError, QueryBuilder, QueryResult, Result, Schema, SubscriptionType,
     Variables,
@@ -32,62 +31,26 @@ pub struct GQLRequest {
 }
 
 impl GQLRequest {
-    /// Execute the query and return the `GQLResponse`.
-    pub async fn execute<Query, Mutation, Subscription>(
-        mut self,
+    /// Into query builder, you can set other parameters or execute queries immediately.
+    pub async fn into_query_builder<Query, Mutation, Subscription>(
+        self,
         schema: &Schema<Query, Mutation, Subscription>,
-    ) -> GQLResponse
+    ) -> Result<QueryBuilder<Query, Mutation, Subscription>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        match self.prepare(schema) {
-            Ok(query) => GQLResponse(query.execute().await),
-            Err(err) => GQLResponse(Err(err)),
+        let mut builder = schema.query(&self.query)?;
+        if let Some(operation_name) = self.operation_name {
+            builder = builder.operator_name(operation_name);
         }
-    }
-
-    /// Create query builder
-    pub fn builder<'a, Query, Mutation, Subscription>(
-        &'a mut self,
-        schema: &'a Schema<Query, Mutation, Subscription>,
-    ) -> Result<QueryBuilder<'a, Query, Mutation, Subscription>>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        let vars = match self.variables.take() {
-            Some(value) => match Variables::parse_from_json(value) {
-                Ok(vars) => Some(vars),
-                Err(err) => return Err(err),
-            },
-            None => None,
-        };
-        let query = schema.query(&self.query);
-        let query = match vars {
-            Some(vars) => query.variables(vars),
-            None => query,
-        };
-        let query = match &self.operation_name {
-            Some(name) => query.operator_name(name),
-            None => query,
-        };
-        Ok(query)
-    }
-
-    /// Prepare a query and return a `PreparedQuery` object that gets some information about the query.
-    pub fn prepare<'a, Query, Mutation, Subscription>(
-        &'a mut self,
-        schema: &'a Schema<Query, Mutation, Subscription>,
-    ) -> Result<PreparedQuery<'a, Query, Mutation>>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        self.builder(schema)?.prepare()
+        if let Some(variables) = self.variables {
+            if let Ok(variables) = Variables::parse_from_json(variables) {
+                builder = builder.variables(variables);
+            }
+        }
+        Ok(builder)
     }
 }
 

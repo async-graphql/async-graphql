@@ -37,7 +37,7 @@ where
             item: (),
             resolve_id: &resolve_id,
             variables: &self.variables,
-            variable_definitions: Some(&self.variable_definitions),
+            variable_definitions: &self.variable_definitions,
             registry: &self.schema.0.registry,
             data: &self.schema.0.data,
             ctx_data: self.ctx_data.as_deref(),
