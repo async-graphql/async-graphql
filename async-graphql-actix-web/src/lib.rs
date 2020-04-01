@@ -26,8 +26,8 @@ use std::sync::Arc;
 type BoxOnRequestFn<Query, Mutation, Subscription> = Arc<
     dyn for<'a> Fn(
         &HttpRequest,
-        QueryBuilder<'a, Query, Mutation, Subscription>,
-    ) -> QueryBuilder<'a, Query, Mutation, Subscription>,
+        QueryBuilder<Query, Mutation, Subscription>,
+    ) -> QueryBuilder<Query, Mutation, Subscription>,
 >;
 
 type BoxOnConnectFn<Query, Mutation, Subscription> = Arc<
@@ -109,8 +109,8 @@ where
     pub fn on_request<
         F: for<'a> Fn(
                 &HttpRequest,
-                QueryBuilder<'a, Query, Mutation, Subscription>,
-            ) -> QueryBuilder<'a, Query, Mutation, Subscription>
+                QueryBuilder<Query, Mutation, Subscription>,
+            ) -> QueryBuilder<Query, Mutation, Subscription>
             + 'static,
     >(
         self,
@@ -230,7 +230,7 @@ where
             let mut multipart = Multipart::from_request(&req, &mut payload.0).await?;
 
             // read operators
-            let mut gql_request = {
+            let gql_request = {
                 let data = read_multipart(&mut multipart, "operations").await?;
                 serde_json::from_slice::<GQLRequest>(&data)
                     .map_err(actix_web::error::ErrorBadRequest)?
@@ -243,7 +243,7 @@ where
                     .map_err(actix_web::error::ErrorBadRequest)?
             };
 
-            let mut builder = match gql_request.builder(schema) {
+            let mut builder = match gql_request.into_query_builder(schema).await {
                 Ok(builder) => builder,
                 Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
             };
@@ -252,12 +252,7 @@ where
                 builder = on_request(&req, builder);
             }
 
-            let mut prepared = match builder.prepare() {
-                Ok(prepared) => prepared,
-                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
-            };
-
-            if !prepared.is_upload() {
+            if !builder.is_upload() {
                 return Err(actix_web::error::ErrorBadRequest(
                     "It's not an upload operation",
                 ));
@@ -289,7 +284,7 @@ where
                             let data = data.freeze();
 
                             for var_path in var_paths {
-                                prepared.set_upload(
+                                builder.set_upload(
                                     &var_path,
                                     filename,
                                     Some(&content_type),
@@ -317,26 +312,22 @@ where
                 return Err(actix_web::error::ErrorBadRequest("missing files"));
             }
 
-            Ok(web::Json(GQLResponse(prepared.execute().await))
+            Ok(web::Json(GQLResponse(builder.execute().await))
                 .respond_to(&req)
                 .await?)
         } else if ct.essence_str() == mime::APPLICATION_JSON {
-            let mut gql_request = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
+            let gql_request = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
                 .await?
                 .into_inner();
-            let mut builder = match gql_request.builder(schema) {
+            let mut builder = match gql_request.into_query_builder(schema).await {
                 Ok(builder) => builder,
                 Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
             };
             if let Some(on_request) = on_request {
                 builder = on_request(&req, builder);
             }
-            let prepared = match builder.prepare() {
-                Ok(prepared) => prepared,
-                Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
-            };
-            let mut cache_control = prepared.cache_control().value();
-            let gql_resp = prepared.execute().await;
+            let mut cache_control = builder.cache_control().value();
+            let gql_resp = builder.execute().await;
             if gql_resp.is_err() {
                 cache_control = None;
             }
