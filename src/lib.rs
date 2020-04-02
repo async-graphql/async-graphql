@@ -220,13 +220,13 @@ pub use types::{EnumItem, EnumType};
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
-///     let res = schema.query(r#"{
+///     let res = schema.execute(r#"{
 ///         value
 ///         valueRef
 ///         valueWithError
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
-///     }"#).unwrap().execute().await.unwrap().data;
+///     }"#).await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///         "valueRef": 10,
@@ -273,7 +273,7 @@ pub use async_graphql_derive::Object;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
-///     let res = schema.query("{ value }").unwrap().execute().await.unwrap().data;
+///     let res = schema.execute("{ value }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
@@ -330,7 +330,7 @@ pub use async_graphql_derive::SimpleObject;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
-///     let res = schema.query("{ value1 value2 }").unwrap().execute().await.unwrap().data;
+///     let res = schema.execute("{ value1 value2 }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
 /// ```
@@ -379,11 +379,11 @@ pub use async_graphql_derive::Enum;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let res = schema.query(r#"
+///     let res = schema.execute(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
-///     }"#).unwrap().execute().await.unwrap().data;
+///     }"#).await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// }
 /// ```
@@ -484,14 +484,14 @@ pub use async_graphql_derive::InputObject;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
-///     let res = schema.query(r#"
+///     let res = schema.execute(r#"
 ///     {
 ///         typeA {
 ///             valueA
 ///             valueB
 ///             valueC(a: 3, b: 2)
 ///         }
-///     }"#).unwrap().execute().await.unwrap().data;
+///     }"#).await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",

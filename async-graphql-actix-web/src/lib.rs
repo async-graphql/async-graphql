@@ -243,7 +243,7 @@ where
                     .map_err(actix_web::error::ErrorBadRequest)?
             };
 
-            let mut builder = match gql_request.into_query_builder(schema).await {
+            let mut builder = match gql_request.into_query_builder(schema) {
                 Ok(builder) => builder,
                 Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
             };
@@ -319,7 +319,7 @@ where
             let gql_request = web::Json::<GQLRequest>::from_request(&req, &mut payload.0)
                 .await?
                 .into_inner();
-            let mut builder = match gql_request.into_query_builder(schema).await {
+            let mut builder = match gql_request.into_query_builder(schema) {
                 Ok(builder) => builder,
                 Err(err) => return Ok(web::Json(GQLResponse(Err(err))).respond_to(&req).await?),
             };

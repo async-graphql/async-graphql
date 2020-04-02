@@ -7,12 +7,12 @@ use crate::subscription::{SubscriptionConnectionBuilder, SubscriptionStub, Subsc
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    ContextSelectionSet, Error, ObjectType, Pos, QueryError, Result, SubscriptionType, Type,
-    Variables,
+    ContextSelectionSet, Error, ObjectType, Pos, QueryError, QueryResponse, Result,
+    SubscriptionType, Type, Variables,
 };
 use futures::channel::mpsc;
 use futures::lock::Mutex;
-use futures::SinkExt;
+use futures::{SinkExt, TryFutureExt};
 use graphql_parser::parse_query;
 use graphql_parser::query::{
     Definition, Field, FragmentDefinition, OperationDefinition, Selection,
@@ -251,6 +251,13 @@ where
             ctx_data: None,
             cache_control,
         })
+    }
+
+    /// Execute query without create the `QueryBuilder`.
+    pub async fn execute(&self, source: &str) -> Result<QueryResponse> {
+        futures::future::ready(self.query(source))
+            .and_then(|builder| builder.execute())
+            .await
     }
 
     /// Create subscription stub, typically called inside the `SubscriptionTransport::handle_request` method/

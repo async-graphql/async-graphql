@@ -30,7 +30,7 @@ pub struct GQLRequest {
 
 impl GQLRequest {
     /// Into query builder, you can set other parameters or execute queries immediately.
-    pub async fn into_query_builder<Query, Mutation, Subscription>(
+    pub fn into_query_builder<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> Result<QueryBuilder<Query, Mutation, Subscription>>

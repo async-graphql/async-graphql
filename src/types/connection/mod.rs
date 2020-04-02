@@ -106,7 +106,7 @@ impl EmptyEdgeFields {}
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.query("{ numbers(first: 2) { edges { node } } }").unwrap().execute().await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
 ///                 {"node": 0},
@@ -115,7 +115,7 @@ impl EmptyEdgeFields {}
 ///         },
 ///     }));
 ///
-///     assert_eq!(schema.query("{ numbers(last: 2) { edges { node diff } } }").unwrap().execute().await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
 ///                 {"node": -2, "diff": -1002},
