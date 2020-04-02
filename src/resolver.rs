@@ -45,8 +45,10 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     let ctx_field = ctx.with_field(field);
                     let field_name = ctx_field.result_name().to_string();
                     futures.push(Box::pin(
-                        future::ok::<serde_json::Value, Error>(T::type_name().to_string().into())
-                            .map_ok(move |value| (field_name, value)),
+                        future::ok::<serde_json::Value, Error>(
+                            root.introspection_type_name().to_string().into(),
+                        )
+                        .map_ok(move |value| (field_name, value)),
                     ));
                     continue;
                 }

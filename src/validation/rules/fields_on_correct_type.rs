@@ -13,7 +13,9 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
             .field_by_name(&field.name)
             .is_none()
         {
-            if let Some(registry::Type::Union { .. }) = ctx.parent_type() {
+            if let Some(registry::Type::Union { .. }) | Some(registry::Type::Interface { .. }) =
+                ctx.parent_type()
+            {
                 if field.name == "__typename" {
                     return;
                 }

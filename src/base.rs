@@ -18,6 +18,13 @@ pub trait Type {
         format!("{}!", Self::type_name())
     }
 
+    /// Introspection type name
+    ///
+    /// Is the return value of field `__type`, the interface and union should return the current type, and the others return `Type::type_name`.
+    fn introspection_type_name(&self) -> Cow<'static, str> {
+        Self::type_name()
+    }
+
     /// Create type information in the registry and return qualified typename.
     fn create_type_info(registry: &mut registry::Registry) -> String;
 

@@ -35,6 +35,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
     let mut collect_inline_fields = Vec::new();
+    let mut get_introspection_typename = Vec::new();
 
     for field in &fields.unnamed {
         if let Type::Path(p) = &field.ty {
@@ -62,6 +63,9 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     unreachable!()
                 }
             });
+            get_introspection_typename.push(quote! {
+                #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+            })
         } else {
             return Err(Error::new_spanned(field, "Invalid type"));
         }
@@ -76,6 +80,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         impl #generics #crate_name::Type for #ident #generics {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn introspection_type_name(&self) -> std::borrow::Cow<'static, str> {
+                match self {
+                    #(#get_introspection_typename),*
+                }
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {

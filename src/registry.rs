@@ -282,20 +282,7 @@ impl Registry {
                     cache_control: Default::default(),
                 },
             );
-            let mut ty = f(self);
-            if let Type::Object { fields, .. } = &mut ty {
-                fields.insert(
-                    "__typename".to_string(),
-                    Field {
-                        name: "__typename".to_string(),
-                        description: None,
-                        args: Default::default(),
-                        ty: "String!".to_string(),
-                        deprecation: None,
-                        cache_control: Default::default(),
-                    },
-                );
-            }
+            let ty = f(self);
             self.types.insert(name.to_string(), ty);
         }
         T::qualified_type_name()

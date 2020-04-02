@@ -480,24 +480,26 @@ fn visit_selection<'a, V: Visitor<'a>>(
     v.enter_selection(ctx, selection);
     match selection {
         Selection::Field(field) => {
-            if let Some(schema_field) = ctx.current_type().field_by_name(&field.name) {
-                ctx.with_type(
-                    ctx.registry
-                        .basic_type_by_typename(&schema_field.ty)
-                        .unwrap(),
-                    |ctx| {
-                        visit_field(v, ctx, field);
-                    },
-                );
-            } else {
-                ctx.report_error(
-                    vec![field.position],
-                    format!(
-                        "Cannot query field \"{}\" on type \"{}\".",
-                        field.name,
-                        ctx.current_type().name()
-                    ),
-                );
+            if field.name != "__typename" {
+                if let Some(schema_field) = ctx.current_type().field_by_name(&field.name) {
+                    ctx.with_type(
+                        ctx.registry
+                            .basic_type_by_typename(&schema_field.ty)
+                            .unwrap(),
+                        |ctx| {
+                            visit_field(v, ctx, field);
+                        },
+                    );
+                } else {
+                    ctx.report_error(
+                        vec![field.position],
+                        format!(
+                            "Cannot query field \"{}\" on type \"{}\".",
+                            field.name,
+                            ctx.current_type().name()
+                        ),
+                    );
+                }
             }
         }
         Selection::FragmentSpread(fragment_spread) => {
