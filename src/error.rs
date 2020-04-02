@@ -229,11 +229,11 @@ pub struct RuleError {
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Self {
         let msg = err.to_string();
-        let mut s = msg.splitn(2, "\n");
+        let mut s = msg.splitn(2, '\n');
         let first = s.next().unwrap();
-        let ln = &first[first.rfind(" ").unwrap() + 1..];
+        let ln = &first[first.rfind(' ').unwrap() + 1..];
         let (line, column) = {
-            let mut s = ln.splitn(2, ":");
+            let mut s = ln.splitn(2, ':');
             (
                 s.next().unwrap().parse().unwrap(),
                 s.next().unwrap().parse().unwrap(),
