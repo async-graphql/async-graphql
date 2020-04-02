@@ -1,5 +1,4 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::QueryPathSegment;
 use chrono::{DateTime, Utc};
 use parking_lot::Mutex;
 use serde::ser::SerializeMap;
@@ -91,16 +90,7 @@ impl Extension for ApolloTracing {
         inner.pending_resolves.insert(
             info.resolve_id,
             PendingResolve {
-                path: {
-                    let mut path: Vec<serde_json::Value> = Vec::new();
-                    info.path_node.for_each(|segment| {
-                        path.push(match segment {
-                            QueryPathSegment::Index(idx) => (*idx).into(),
-                            QueryPathSegment::Name(name) => (*name).to_string().into(),
-                        })
-                    });
-                    path.into()
-                },
+                path: info.path_node.to_json(),
                 field_name: info.path_node.field_name().to_string(),
                 parent_type: info.parent_type.to_string(),
                 return_type: info.return_type.to_string(),

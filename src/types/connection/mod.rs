@@ -3,7 +3,7 @@ mod edge;
 mod page_info;
 mod slice;
 
-use crate::{Context, ObjectType, QueryError, Result};
+use crate::{Context, FieldResult, ObjectType};
 
 pub use connection_type::Connection;
 
@@ -65,7 +65,7 @@ impl EmptyEdgeFields {}
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, operation: &QueryOperation<'_>) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>> {
+///     async fn query_operation(&self, operation: &QueryOperation<'_>) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::Forward {after, limit} => {
 ///                 let start = after.and_then(|after| base64::decode(after).ok())
@@ -97,7 +97,7 @@ impl EmptyEdgeFields {}
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> Result<Connection<i32, DiffFields>> {
+///     ) -> FieldResult<Connection<i32, DiffFields>> {
 ///         Numbers.query(ctx, after, before, first, last).await
 ///     }
 /// }
@@ -138,26 +138,17 @@ pub trait DataSource: Sync + Send {
     /// Execute the query.
     async fn query(
         &self,
-        ctx: &Context<'_>,
+        _ctx: &Context<'_>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>> {
+    ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let operation = if let Some(after) = &after {
             QueryOperation::Forward {
                 after: Some(after),
                 limit: match first {
-                    Some(value) => {
-                        if value < 0 {
-                            return Err(QueryError::ArgumentMustBeNonNegative {
-                                field_name: ctx.name.clone(),
-                            }
-                            .into());
-                        } else {
-                            value as usize
-                        }
-                    }
+                    Some(value) => value.max(0) as usize,
                     None => 10,
                 },
             }
@@ -165,42 +156,19 @@ pub trait DataSource: Sync + Send {
             QueryOperation::Backward {
                 before: Some(before),
                 limit: match last {
-                    Some(value) => {
-                        if value < 0 {
-                            return Err(QueryError::ArgumentMustBeNonNegative {
-                                field_name: ctx.name.clone(),
-                            }
-                            .into());
-                        } else {
-                            value as usize
-                        }
-                    }
+                    Some(value) => value.max(0) as usize,
                     None => 10,
                 },
             }
         } else if let Some(first) = first {
             QueryOperation::Forward {
                 after: None,
-                limit: if first < 0 {
-                    return Err(QueryError::ArgumentMustBeNonNegative {
-                        field_name: ctx.name.clone(),
-                    }
-                    .into());
-                } else {
-                    first as usize
-                },
+                limit: first.max(0) as usize,
             }
         } else if let Some(last) = last {
             QueryOperation::Backward {
                 before: None,
-                limit: if last < 0 {
-                    return Err(QueryError::ArgumentMustBeNonNegative {
-                        field_name: ctx.name.clone(),
-                    }
-                    .into());
-                } else {
-                    last as usize
-                },
+                limit: last.max(0) as usize,
             }
         } else {
             QueryOperation::Forward {
@@ -216,5 +184,5 @@ pub trait DataSource: Sync + Send {
     async fn query_operation(
         &self,
         operation: &QueryOperation<'_>,
-    ) -> Result<Connection<Self::Element, Self::EdgeFieldsObj>>;
+    ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>>;
 }

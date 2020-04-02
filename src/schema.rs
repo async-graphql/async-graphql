@@ -7,7 +7,7 @@ use crate::subscription::{SubscriptionConnectionBuilder, SubscriptionStub, Subsc
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    ContextSelectionSet, ObjectType, QueryError, QueryParseError, Result, SubscriptionType, Type,
+    ContextSelectionSet, Error, ObjectType, Pos, QueryError, Result, SubscriptionType, Type,
     Variables,
 };
 use futures::channel::mpsc;
@@ -219,7 +219,7 @@ where
             .map(|factory| factory())
             .collect::<Vec<_>>();
         extensions.iter().for_each(|e| e.parse_start(source));
-        let document = parse_query(source).map_err(|err| QueryParseError(err.to_string()))?;
+        let document = parse_query(source).map_err(Into::<Error>::into)?;
         extensions.iter().for_each(|e| e.parse_end());
 
         extensions.iter().for_each(|e| e.validation_start());
@@ -232,13 +232,13 @@ where
 
         if let Some(limit_complexity) = self.0.complexity {
             if complexity > limit_complexity {
-                return Err(QueryError::TooComplex.into());
+                return Err(QueryError::TooComplex.into_error(Pos { line: 0, column: 0 }));
             }
         }
 
         if let Some(limit_depth) = self.0.depth {
             if depth > limit_depth {
-                return Err(QueryError::TooDeep.into());
+                return Err(QueryError::TooDeep.into_error(Pos { line: 0, column: 0 }));
             }
         }
 
@@ -263,7 +263,7 @@ where
     where
         Self: Sized,
     {
-        let document = parse_query(source).map_err(|err| QueryParseError(err.to_string()))?;
+        let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document)?;
 
         let mut fragments = HashMap::new();
@@ -288,8 +288,9 @@ where
             QueryError::UnknownOperationNamed {
                 name: name.to_string(),
             }
+            .into_error(Pos::default())
         } else {
-            QueryError::MissingOperation
+            QueryError::MissingOperation.into_error(Pos::default())
         })?;
 
         let mut types = HashMap::new();
@@ -358,7 +359,7 @@ fn create_subscription_types<T: SubscriptionType>(
                     return Err(QueryError::UnknownFragment {
                         name: fragment_spread.fragment_name.clone(),
                     }
-                    .into());
+                    .into_error(fragment_spread.position));
                 }
             }
             Selection::InlineFragment(inline_fragment) => {

@@ -1,9 +1,10 @@
 use crate::model::{__Schema, __Type};
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
-    OutputValueType, QueryError, Result, Type, Value,
+    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
+    QueryError, Result, Type, Value,
 };
 use graphql_parser::query::Field;
+use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -69,11 +70,14 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "__schema" {
             if self.disable_introspection {
-                return Err(QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
-                    object: Self::type_name().to_string(),
-                }
-                .into());
+                return Err(Error::Query {
+                    pos: field.position,
+                    path: Some(ctx.path_node.as_ref().unwrap().to_json()),
+                    err: QueryError::FieldNotFound {
+                        field_name: field.name.clone(),
+                        object: Self::type_name().to_string(),
+                    },
+                });
             }
 
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
@@ -82,11 +86,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     registry: &ctx.registry,
                 },
                 &ctx_obj,
+                field.position,
             )
-            .await
-            .map_err(|err| err.with_position(field.position).into());
+            .await;
         } else if field.name.as_str() == "__type" {
-            let type_name: String = ctx.param_value("name", || Value::Null)?;
+            let type_name: String = ctx.param_value("name", field.position, || Value::Null)?;
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
             return OutputValueType::resolve(
                 &ctx.registry
@@ -94,9 +98,9 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     .get(&type_name)
                     .map(|ty| __Type::new_simple(ctx.registry, ty)),
                 &ctx_obj,
+                field.position,
             )
-            .await
-            .map_err(|err| err.with_position(field.position).into());
+            .await;
         }
 
         self.inner.resolve_field(ctx, field).await
@@ -105,7 +109,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> Result<serde_json::Value> {
         do_resolve(ctx, value).await
     }
 }

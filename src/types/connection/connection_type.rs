@@ -1,8 +1,8 @@
 use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ErrorWithPosition, ObjectType,
-    OutputValueType, QueryError, Result, Type,
+    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos,
+    QueryError, Result, Type,
 };
 use graphql_parser::query::Field;
 use inflector::Inflector;
@@ -131,9 +131,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
         if field.name.as_str() == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let page_info = &self.page_info;
-            return OutputValueType::resolve(page_info, &ctx_obj)
-                .await
-                .map_err(|err| err.with_position(field.position).into());
+            return OutputValueType::resolve(page_info, &ctx_obj, field.position).await;
         } else if field.name.as_str() == "edges" {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let edges = self
@@ -145,9 +143,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                     node,
                 })
                 .collect::<Vec<_>>();
-            return OutputValueType::resolve(&edges, &ctx_obj)
-                .await
-                .map_err(|err| err.with_position(field.position).into());
+            return OutputValueType::resolve(&edges, &ctx_obj, field.position).await;
         } else if field.name.as_str() == "totalCount" {
             return Ok(self
                 .total_count
@@ -160,16 +156,17 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                 .iter()
                 .map(|(_, _, item)| item)
                 .collect::<Vec<_>>();
-            return OutputValueType::resolve(&items, &ctx_obj)
-                .await
-                .map_err(|err| err.with_position(field.position).into());
+            return OutputValueType::resolve(&items, &ctx_obj, field.position).await;
         }
 
-        anyhow::bail!(QueryError::FieldNotFound {
-            field_name: field.name.clone(),
-            object: Connection::<T, E>::type_name().to_string(),
-        }
-        .with_position(field.position))
+        Err(Error::Query {
+            pos: field.position,
+            path: None,
+            err: QueryError::FieldNotFound {
+                field_name: field.name.clone(),
+                object: Connection::<T, E>::type_name().to_string(),
+            },
+        })
     }
 }
 
@@ -177,7 +174,11 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
     for Connection<T, E>
 {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> Result<serde_json::Value> {
         do_resolve(ctx, value).await
     }
 }

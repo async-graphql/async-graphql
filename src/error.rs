@@ -1,12 +1,77 @@
-use crate::Error;
-use graphql_parser::query::Value;
+use graphql_parser::query::{ParseError, Value};
 use graphql_parser::Pos;
-use std::fmt::{Debug, Display, Formatter};
+use std::error::Error as StdError;
+use std::fmt::Debug;
 
-/// Error for query parser
-#[derive(Debug, Error)]
-#[error("{0}")]
-pub struct QueryParseError(pub(crate) String);
+/// FieldError type
+pub struct FieldError(anyhow::Error, Option<serde_json::Value>);
+
+impl FieldError {
+    #[doc(hidden)]
+    pub fn into_error(self, pos: Pos) -> Error {
+        Error::Query {
+            pos,
+            path: None,
+            err: QueryError::FieldError {
+                err: self.0,
+                extended_error: self.1,
+            },
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn into_error_with_path(self, pos: Pos, path: serde_json::Value) -> Error {
+        Error::Query {
+            pos,
+            path: Some(path),
+            err: QueryError::FieldError {
+                err: self.0,
+                extended_error: self.1,
+            },
+        }
+    }
+}
+
+/// FieldResult type
+pub type FieldResult<T> = std::result::Result<T, FieldError>;
+
+impl<E> From<E> for FieldError
+where
+    E: StdError + Send + Sync + 'static,
+{
+    fn from(err: E) -> Self {
+        FieldError(anyhow::Error::from(err), None)
+    }
+}
+
+#[allow(missing_docs)]
+pub trait ResultExt<T, E>
+where
+    Self: Sized,
+    E: StdError + Send + Sync + 'static,
+{
+    fn extend_err<CB>(self, cb: CB) -> FieldResult<T>
+    where
+        CB: FnOnce(&E) -> serde_json::Value;
+}
+
+impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
+where
+    E: StdError + Send + Sync + 'static,
+{
+    fn extend_err<C>(self, cb: C) -> FieldResult<T>
+    where
+        C: FnOnce(&E) -> serde_json::Value,
+    {
+        match self {
+            Err(err) => {
+                let extended_err = cb(&err);
+                Err(FieldError(err.into(), Some(extended_err)))
+            }
+            Ok(value) => Ok(value),
+        }
+    }
+}
 
 /// Error for query
 #[derive(Debug, Error)]
@@ -131,73 +196,27 @@ pub enum QueryError {
         name: String,
     },
 
-    #[error("Argument \"{field_name}\" must be a non-negative integer")]
-    ArgumentMustBeNonNegative {
-        /// Field name
-        field_name: String,
-    },
-
-    #[error("Invalid global id")]
-    InvalidGlobalID,
-
-    #[error("Invalid global id, expected type \"{expect}\", found {actual}.")]
-    InvalidGlobalIDType {
-        /// Expect type
-        expect: String,
-
-        /// Actual type
-        actual: String,
-    },
-
-    #[error("Too complex.")]
+    #[error("Too complex")]
     TooComplex,
 
-    #[error("Too deep.")]
+    #[error("Too deep")]
     TooDeep,
+
+    #[error("Failed to resolve field: {err}")]
+    FieldError {
+        err: anyhow::Error,
+        extended_error: Option<serde_json::Value>,
+    },
 }
 
-/// Creates a wrapper with an error location
-#[allow(missing_docs)]
-pub trait ErrorWithPosition {
-    type Result;
-
-    fn with_position(self, position: Pos) -> PositionError;
-}
-
-impl<T: Into<Error>> ErrorWithPosition for T {
-    type Result = PositionError;
-
-    fn with_position(self, position: Pos) -> PositionError {
-        PositionError {
-            position,
-            inner: self.into(),
+impl QueryError {
+    #[doc(hidden)]
+    pub fn into_error(self, pos: Pos) -> Error {
+        Error::Query {
+            pos,
+            path: None,
+            err: self,
         }
-    }
-}
-
-/// A wrapper with the wrong location
-#[allow(missing_docs)]
-#[derive(Debug, Error)]
-pub struct PositionError {
-    pub position: Pos,
-    pub inner: Error,
-}
-
-impl PositionError {
-    #[allow(missing_docs)]
-    pub fn new(position: Pos, inner: Error) -> Self {
-        Self { position, inner }
-    }
-
-    #[allow(missing_docs)]
-    pub fn into_inner(self) -> Error {
-        self.inner
-    }
-}
-
-impl Display for PositionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
     }
 }
 
@@ -207,52 +226,27 @@ pub struct RuleError {
     pub message: String,
 }
 
-#[derive(Debug, Error)]
-pub struct RuleErrors {
-    pub errors: Vec<RuleError>,
-}
-
-impl Display for RuleErrors {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for error in &self.errors {
-            writeln!(f, "{}", error.message)?;
+impl From<ParseError> for Error {
+    fn from(err: ParseError) -> Self {
+        Error::Parse {
+            message: err.to_string(),
         }
-        Ok(())
-    }
-}
-
-/// A wrapped Error with extensions.
-#[derive(Debug, Error)]
-pub struct ExtendedError(pub String, pub serde_json::Value);
-
-impl Display for ExtendedError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
 #[allow(missing_docs)]
-pub trait ResultExt<T, E>
-where
-    Self: Sized,
-    E: std::fmt::Display + Sized,
-{
-    fn extend_err<CB>(self, cb: CB) -> crate::Result<T>
-    where
-        CB: FnOnce(&E) -> serde_json::Value;
-}
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Parse error: {message}")]
+    Parse { message: String },
 
-impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
-where
-    E: std::fmt::Display + Sized,
-{
-    fn extend_err<C>(self, cb: C) -> crate::Result<T>
-    where
-        C: FnOnce(&E) -> serde_json::Value,
-    {
-        match self {
-            Err(e) => Err(anyhow::anyhow!(ExtendedError(e.to_string(), cb(&e)))),
-            Ok(value) => Ok(value),
-        }
-    }
+    #[error("Query error: {err}")]
+    Query {
+        pos: Pos,
+        path: Option<serde_json::Value>,
+        err: QueryError,
+    },
+
+    #[error("Rule error")]
+    Rule { errors: Vec<RuleError> },
 }

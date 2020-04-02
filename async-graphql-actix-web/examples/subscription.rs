@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use async_graphql::{publish, Context, Result, Schema, ID};
+use async_graphql::{publish, Context, FieldResult, Schema, ID};
 use futures::lock::Mutex;
 use slab::Slab;
 use std::sync::Arc;
@@ -66,7 +66,7 @@ impl MutationRoot {
     }
 
     #[field]
-    async fn delete_book(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
+    async fn delete_book(&self, ctx: &Context<'_>, id: ID) -> FieldResult<bool> {
         let mut books = ctx.data::<Storage>().lock().await;
         let id = id.parse::<usize>()?;
         if books.contains(id) {

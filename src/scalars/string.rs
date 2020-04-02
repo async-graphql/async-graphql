@@ -1,6 +1,6 @@
 use crate::{
-    impl_scalar_internal, registry, ContextSelectionSet, OutputValueType, Result, Scalar, Type,
-    Value,
+    impl_scalar_internal, registry, ContextSelectionSet, OutputValueType, Pos, Result, Scalar,
+    Type, Value,
 };
 use std::borrow::Cow;
 
@@ -55,7 +55,11 @@ impl<'a> Type for &'a str {
 
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
-    async fn resolve(value: &Self, _: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        value: &Self,
+        _: &ContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> Result<serde_json::Value> {
         Ok((*value).into())
     }
 }

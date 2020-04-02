@@ -1,4 +1,5 @@
 use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
+use graphql_parser::Pos;
 use std::borrow::Cow;
 
 impl<T: Type> Type for Vec<T> {
@@ -34,11 +35,15 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 #[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
         let mut futures = Vec::with_capacity(value.len());
         for (idx, item) in value.iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
-            futures.push(async move { OutputValueType::resolve(item, &ctx_idx).await });
+            futures.push(async move { OutputValueType::resolve(item, &ctx_idx, pos).await });
         }
         Ok(futures::future::try_join_all(futures).await?.into())
     }
@@ -56,11 +61,15 @@ impl<T: Type> Type for &[T] {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
         let mut futures = Vec::with_capacity(value.len());
         for (idx, item) in (*value).iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
-            futures.push(async move { OutputValueType::resolve(item, &ctx_idx).await });
+            futures.push(async move { OutputValueType::resolve(item, &ctx_idx, pos).await });
         }
         Ok(futures::future::try_join_all(futures).await?.into())
     }

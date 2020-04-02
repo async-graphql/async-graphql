@@ -6,15 +6,13 @@ mod playground_source;
 pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
-use crate::error::{ExtendedError, RuleError, RuleErrors};
 use crate::{
-    ObjectType, PositionError, QueryBuilder, QueryResult, Result, Schema, SubscriptionType,
+    Error, ObjectType, QueryBuilder, QueryError, QueryResponse, Result, Schema, SubscriptionType,
     Variables,
 };
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
-use std::ops::Deref;
 
 /// GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -55,7 +53,7 @@ impl GQLRequest {
 }
 
 /// Serializable query result type
-pub struct GQLResponse(pub Result<QueryResult>);
+pub struct GQLResponse(pub Result<QueryResponse>);
 
 impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
@@ -81,45 +79,62 @@ impl Serialize for GQLResponse {
 }
 
 /// Serializable error type
-pub struct GQLError<'a>(pub &'a anyhow::Error);
-
-impl<'a> Deref for GQLError<'a> {
-    type Target = anyhow::Error;
-
-    fn deref(&self) -> &Self::Target {
-        self.0
-    }
-}
+pub struct GQLError<'a>(pub &'a Error);
 
 impl<'a> Serialize for GQLError<'a> {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        if let Some(err) = self.0.downcast_ref::<PositionError>() {
-            let mut seq = serializer.serialize_seq(Some(1))?;
-            seq.serialize_element(&GQLPositionError(err))?;
-            seq.end()
-        } else if let Some(err) = self.0.downcast_ref::<RuleErrors>() {
-            let mut seq = serializer.serialize_seq(Some(err.errors.len()))?;
-            for err in &err.errors {
-                seq.serialize_element(&GQLRuleError(err))?;
-            }
-            seq.end()
-        } else {
-            let mut seq = serializer.serialize_seq(None)?;
-            if let Some(extensions) = get_error_extensions(self.0) {
-                seq.serialize_element(&serde_json::json!({
-                    "message": self.0.to_string(),
-                    "extensions": extensions
+        match self.0 {
+            Error::Parse { message } => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                seq.serialize_element(&serde_json::json! ({
+                    "message": message,
                 }))?;
-            } else {
-                seq.serialize_element(&serde_json::json!({
-                    "message": self.0.to_string(),
-                }))?;
+                seq.end()
             }
+            Error::Query { pos, path, err } => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                if let QueryError::FieldError {
+                    err,
+                    extended_error,
+                } = err
+                {
+                    let mut map = serde_json::Map::new();
 
-            seq.end()
+                    map.insert("message".to_string(), err.to_string().into());
+                    map.insert(
+                        "locations".to_string(),
+                        serde_json::json!([{"line": pos.line, "column": pos.column}]),
+                    );
+
+                    if let Some(path) = path {
+                        map.insert("path".to_string(), path.clone());
+                    }
+
+                    if let Some(obj @ serde_json::Value::Object(_)) = extended_error {
+                        map.insert("extensions".to_string(), obj.clone());
+                    }
+                    seq.serialize_element(&serde_json::Value::Object(map))?;
+                } else {
+                    seq.serialize_element(&serde_json::json!({
+                        "message": err.to_string(),
+                        "locations": [{"line": pos.line, "column": pos.column}]
+                    }))?;
+                }
+                seq.end()
+            }
+            Error::Rule { errors } => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                for error in errors {
+                    seq.serialize_element(&serde_json::json!({
+                        "message": error.message,
+                        "locations": error.locations.iter().map(|pos| serde_json::json!({"line": pos.line, "column": pos.column})).collect::<Vec<_>>(),
+                    }))?;
+                }
+                seq.end()
+            }
         }
     }
 }
@@ -138,52 +153,9 @@ impl<'a> Serialize for GQLErrorPos<'a> {
     }
 }
 
-struct GQLPositionError<'a>(&'a PositionError);
-
-impl<'a> Serialize for GQLPositionError<'a> {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(None)?;
-        map.serialize_entry("message", &self.0.inner.to_string())?;
-        map.serialize_entry(
-            "locations",
-            std::slice::from_ref(&GQLErrorPos(&self.0.position)),
-        )?;
-        if let Some(extensions) = get_error_extensions(&self.0.inner) {
-            map.serialize_entry("extensions", &extensions)?;
-        }
-        map.end()
-    }
-}
-
-struct GQLRuleError<'a>(&'a RuleError);
-
-impl<'a> Serialize for GQLRuleError<'a> {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(None)?;
-        map.serialize_entry("message", &self.0.message)?;
-        map.serialize_entry(
-            "locations",
-            &self
-                .0
-                .locations
-                .iter()
-                .map(|pos| GQLErrorPos(pos))
-                .collect::<Vec<_>>(),
-        )?;
-        map.end()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ErrorWithPosition;
     use graphql_parser::Pos;
     use serde_json::json;
 
@@ -235,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_response_data() {
-        let resp = GQLResponse(Ok(QueryResult {
+        let resp = GQLResponse(Ok(QueryResponse {
             data: json!({"ok": true}),
             extensions: None,
         }));
@@ -250,13 +222,20 @@ mod tests {
     }
 
     #[test]
-    fn test_response_error_with_extension() {
-        let err = ExtendedError(
-            "MyErrorMessage".to_owned(),
-            json!({
-                "code": "MY_TEST_CODE"
-            }),
-        );
+    fn test_field_error_with_extension() {
+        let err = Error::Query {
+            pos: Pos {
+                line: 10,
+                column: 20,
+            },
+            path: None,
+            err: QueryError::FieldError {
+                err: anyhow::anyhow!("MyErrorMessage"),
+                extended_error: Some(json!({
+                    "code": "MY_TEST_CODE"
+                })),
+            },
+        };
 
         let resp = GQLResponse(Err(err.into()));
 
@@ -267,20 +246,8 @@ mod tests {
                     "message":"MyErrorMessage",
                     "extensions": {
                         "code": "MY_TEST_CODE"
-                    }
-                }]
-            })
-        );
-    }
-
-    #[test]
-    fn test_response_error() {
-        let resp = GQLResponse(Err(anyhow::anyhow!("error")));
-        assert_eq!(
-            serde_json::to_value(resp).unwrap(),
-            json!({
-                "errors": [{
-                    "message":"error"
+                    },
+                    "locations": [{"line": 10, "column": 20}]
                 }]
             })
         );
@@ -288,17 +255,19 @@ mod tests {
 
     #[test]
     fn test_response_error_with_pos() {
-        let resp = GQLResponse(Err(anyhow::anyhow!("error")
-            .with_position(Pos {
+        let resp = GQLResponse(Err(Error::Query {
+            pos: Pos {
                 line: 10,
                 column: 20,
-            })
-            .into()));
+            },
+            path: None,
+            err: QueryError::NotSupported,
+        }));
         assert_eq!(
             serde_json::to_value(resp).unwrap(),
             json!({
                 "errors": [{
-                    "message":"error",
+                    "message":"Not supported.",
                     "locations": [
                         {"line": 10, "column": 20}
                     ]
@@ -306,13 +275,4 @@ mod tests {
             })
         );
     }
-}
-
-fn get_error_extensions(err: &crate::Error) -> Option<&serde_json::Value> {
-    if let Some(extended_err) = err.downcast_ref::<ExtendedError>() {
-        if extended_err.1.is_object() {
-            return Some(&extended_err.1);
-        }
-    }
-    None
 }

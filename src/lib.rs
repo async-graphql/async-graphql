@@ -100,11 +100,10 @@ pub mod http;
 
 pub use base::{Scalar, Type};
 pub use context::{Context, QueryPathSegment, Variables};
-pub use error::{
-    ErrorWithPosition, ExtendedError, PositionError, QueryError, QueryParseError, ResultExt,
-};
+pub use error::{Error, FieldError, FieldResult, QueryError, ResultExt};
 pub use graphql_parser::query::Value;
-pub use query::{QueryBuilder, QueryResult};
+pub use graphql_parser::Pos;
+pub use query::{QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::ID;
 pub use schema::{publish, Schema};
@@ -118,10 +117,7 @@ pub use types::{
 };
 
 /// Result type, are actually `anyhow::Result<T>`
-pub type Result<T> = anyhow::Result<T>;
-
-/// Error type, are actually `anyhow::Error`
-pub type Error = anyhow::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 
 // internal types
 #[doc(hidden)]
@@ -176,7 +172,7 @@ pub use types::{EnumItem, EnumType};
 /// - Option<T>, such as `Option<i32>`
 /// - Object and &Object
 /// - Enum
-/// - Result<T, E>, such as `Result<i32, E>`
+/// - FieldResult<T, E>, such as `FieldResult<i32, E>`
 ///
 /// # Context
 ///
@@ -211,7 +207,7 @@ pub use types::{EnumItem, EnumType};
 ///     }
 ///
 ///     #[field(desc = "value with error")]
-///     async fn value_with_error(&self) -> Result<i32> {
+///     async fn value_with_error(&self) -> FieldResult<i32> {
 ///         Ok(self.value)
 ///     }
 ///

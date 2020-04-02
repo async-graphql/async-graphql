@@ -1,6 +1,6 @@
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    ObjectType, QueryResult, Result, Schema, SubscriptionStubs, SubscriptionTransport,
+    ObjectType, QueryResponse, Result, Schema, SubscriptionStubs, SubscriptionTransport,
     SubscriptionType, Variables,
 };
 use bytes::Bytes;
@@ -22,12 +22,14 @@ pub struct WebSocketTransport {
 }
 
 impl SubscriptionTransport for WebSocketTransport {
+    type Error = String;
+
     fn handle_request<Query, Mutation, Subscription>(
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         stubs: &mut SubscriptionStubs<Query, Mutation, Subscription>,
         data: Bytes,
-    ) -> Result<Option<Bytes>>
+    ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
@@ -92,10 +94,10 @@ impl SubscriptionTransport for WebSocketTransport {
                     }
                     Ok(None)
                 }
-                "connection_terminate" => Err(anyhow::anyhow!("connection_terminate")),
-                _ => Err(anyhow::anyhow!("unknown op")),
+                "connection_terminate" => Err("connection_terminate".to_string()),
+                _ => Err("unknown op".to_string()),
             },
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err.to_string()),
         }
     }
 
@@ -106,7 +108,7 @@ impl SubscriptionTransport for WebSocketTransport {
                     ty: "data".to_string(),
                     id: Some(id.clone()),
                     payload: Some(
-                        serde_json::to_value(GQLResponse(result.map(|data| QueryResult {
+                        serde_json::to_value(GQLResponse(result.map(|data| QueryResponse {
                             data,
                             extensions: None,
                         })))

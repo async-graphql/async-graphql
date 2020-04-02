@@ -76,8 +76,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
             resolvers.push(quote! {
                 if field.name.as_str() == #field_name {
                     let ctx_obj = ctx.with_selection_set(&field.selection_set);
-                    return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj).await.
-                        map_err(|err| err.with_position(field.position).into());
+                    return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj, field.position).await;
                 }
             });
 
@@ -128,21 +127,18 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                use #crate_name::ErrorWithPosition;
-
                 #(#resolvers)*
 
-                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                Err(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
-                }
-                .with_position(field.position));
+                }.into_error(field.position))
             }
         }
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, value).await
             }
         }

@@ -1,4 +1,6 @@
-use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
+use crate::{
+    registry, ContextSelectionSet, InputValueType, OutputValueType, Pos, Result, Type, Value,
+};
 use std::borrow::Cow;
 
 impl<T: Type> Type for Option<T> {
@@ -27,10 +29,13 @@ impl<T: InputValueType> InputValueType for Option<T> {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> where
-    {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> where {
         if let Some(inner) = value {
-            OutputValueType::resolve(inner, ctx).await
+            OutputValueType::resolve(inner, ctx, pos).await
         } else {
             Ok(serde_json::Value::Null)
         }

@@ -181,7 +181,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
 
                     get_params.push(quote! {
-                        let #ident: #ty = ctx_field.param_value(#name, #default)?;
+                        let #ident: #ty = ctx_field.param_value(#name, field.position, #default)?;
                     });
                 }
 
@@ -213,7 +213,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         if self.#ident(msg, #(#use_params)*) {
                             let ctx_selection_set = ctx_field.with_selection_set(&field.selection_set);
                             let value =
-                                #crate_name::OutputValueType::resolve(msg, &ctx_selection_set).await?;
+                                #crate_name::OutputValueType::resolve(msg, &ctx_selection_set, field.position).await?;
                             let mut res = #crate_name::serde_json::Map::new();
                             res.insert(ctx_field.result_name().to_string(), value);
                             return Ok(Some(res.into()));
@@ -251,13 +251,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::SubscriptionType for SubscriptionRoot {
             fn create_type(field: &#crate_name::graphql_parser::query::Field, types: &mut std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>) -> #crate_name::Result<()> {
-                use #crate_name::ErrorWithPosition;
                 #(#create_types)*
-                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                Err(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
-                }
-                .with_position(field.position));
+                }.into_error(field.position))
             }
 
             async fn resolve(

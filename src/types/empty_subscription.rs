@@ -1,8 +1,9 @@
 use crate::{
-    registry, ContextBase, ContextSelectionSet, OutputValueType, QueryError, Result,
+    registry, ContextBase, ContextSelectionSet, Error, OutputValueType, QueryError, Result,
     SubscriptionType, Type,
 };
 use graphql_parser::query::Field;
+use graphql_parser::Pos;
 use serde_json::Value;
 use std::any::{Any, TypeId};
 use std::borrow::Cow;
@@ -51,7 +52,15 @@ impl SubscriptionType for EmptySubscription {
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptySubscription {
-    async fn resolve(_value: &Self, _ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        Err(QueryError::NotConfiguredSubscriptions.into())
+    async fn resolve(
+        _value: &Self,
+        _ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
+        Err(Error::Query {
+            pos,
+            path: None,
+            err: QueryError::NotConfiguredSubscriptions,
+        })
     }
 }

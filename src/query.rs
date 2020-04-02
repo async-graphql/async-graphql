@@ -1,18 +1,19 @@
 use crate::context::Data;
 use crate::extensions::BoxExtension;
 use crate::registry::CacheControl;
-use crate::{ContextBase, OutputValueType, Result, Schema};
+use crate::{ContextBase, Error, OutputValueType, Result, Schema};
 use crate::{ObjectType, QueryError, Variables};
 use bytes::Bytes;
 use graphql_parser::query::{
     Definition, Document, OperationDefinition, SelectionSet, VariableDefinition,
 };
+use graphql_parser::Pos;
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
 
-/// Query result
-pub struct QueryResult {
+/// Query response
+pub struct QueryResponse {
     /// Data of query result
     pub data: serde_json::Value,
 
@@ -126,16 +127,19 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
     }
 
     /// Execute the query.
-    pub async fn execute(self) -> Result<QueryResult>
+    pub async fn execute(self) -> Result<QueryResponse>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
     {
         let resolve_id = AtomicUsize::default();
         let mut fragments = HashMap::new();
-        let (selection_set, variable_definitions, is_query) = self
-            .current_operation()
-            .ok_or_else(|| QueryError::MissingOperation)?;
+        let (selection_set, variable_definitions, is_query) =
+            self.current_operation().ok_or_else(|| Error::Query {
+                pos: Pos::default(),
+                path: None,
+                err: QueryError::MissingOperation,
+            })?;
 
         for definition in &self.document.definitions {
             if let Definition::Fragment(fragment) = &definition {
@@ -158,13 +162,13 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
 
         self.extensions.iter().for_each(|e| e.execution_start());
         let data = if is_query {
-            OutputValueType::resolve(&self.schema.0.query, &ctx).await?
+            OutputValueType::resolve(&self.schema.0.query, &ctx, selection_set.span.0).await?
         } else {
-            OutputValueType::resolve(&self.schema.0.mutation, &ctx).await?
+            OutputValueType::resolve(&self.schema.0.mutation, &ctx, selection_set.span.0).await?
         };
         self.extensions.iter().for_each(|e| e.execution_end());
 
-        let res = QueryResult {
+        let res = QueryResponse {
             data,
             extensions: if !self.extensions.is_empty() {
                 Some(

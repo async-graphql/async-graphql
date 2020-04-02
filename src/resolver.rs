@@ -1,6 +1,6 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::ResolveInfo;
-use crate::{ContextSelectionSet, Error, ErrorWithPosition, ObjectType, QueryError, Result};
+use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
 use graphql_parser::query::{Selection, TypeCondition};
 use std::iter::FromIterator;
@@ -24,10 +24,13 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
     futures: &mut Vec<BoxFieldFuture<'a>>,
 ) -> Result<()> {
     if ctx.items.is_empty() {
-        anyhow::bail!(QueryError::MustHaveSubFields {
-            object: T::type_name().to_string(),
-        }
-        .with_position(ctx.span.0));
+        return Err(Error::Query {
+            pos: ctx.span.0,
+            path: None,
+            err: QueryError::MustHaveSubFields {
+                object: T::type_name().to_string(),
+            },
+        });
     }
 
     for selection in &ctx.item.items {
@@ -69,11 +72,14 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                 {
                                     Some(ty) => &ty,
                                     None => {
-                                        anyhow::bail!(QueryError::FieldNotFound {
-                                            field_name: field.name.clone(),
-                                            object: T::type_name().to_string(),
-                                        }
-                                        .with_position(field.position));
+                                        return Err(Error::Query {
+                                            pos: field.position,
+                                            path: None,
+                                            err: QueryError::FieldNotFound {
+                                                field_name: field.name.clone(),
+                                                object: T::type_name().to_string(),
+                                            },
+                                        });
                                     }
                                 },
                             };
@@ -112,10 +118,13 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         futures,
                     )?;
                 } else {
-                    return Err(QueryError::UnknownFragment {
-                        name: fragment_spread.fragment_name.clone(),
-                    }
-                    .into());
+                    return Err(Error::Query {
+                        pos: fragment_spread.position,
+                        path: None,
+                        err: QueryError::UnknownFragment {
+                            name: fragment_spread.fragment_name.clone(),
+                        },
+                    });
                 }
             }
             Selection::InlineFragment(inline_fragment) => {
@@ -126,6 +135,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
                     root.collect_inline_fields(
                         name,
+                        inline_fragment.position,
                         &ctx.with_selection_set(&inline_fragment.selection_set),
                         futures,
                     )?;

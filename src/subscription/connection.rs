@@ -34,6 +34,9 @@ impl<Query, Mutation, Subscription> SubscriptionStubs<Query, Mutation, Subscript
 ///
 /// You can customize your transport by implementing this trait.
 pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
+    /// The error type.
+    type Error;
+
     /// Parse the request data here.
     /// If you have a new request, create a `SubscriptionStub` with the `Schema::create_subscription_stub`, and then call `SubscriptionStubs::add`.
     /// You can return a `Byte`, which will be sent to the client. If it returns an error, the connection will be broken.
@@ -42,7 +45,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         schema: &Schema<Query, Mutation, Subscription>,
         stubs: &mut SubscriptionStubs<Query, Mutation, Subscription>,
         data: Bytes,
-    ) -> Result<Option<Bytes>>
+    ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,

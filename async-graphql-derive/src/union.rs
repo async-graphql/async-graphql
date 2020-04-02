@@ -98,31 +98,30 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                use #crate_name::ErrorWithPosition;
-                anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                Err(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
-                }
-                .with_position(field.position));
+                }.into_error(field.position))
             }
 
             fn collect_inline_fields<'a>(
                 &'a self,
                 name: &str,
+                pos: #crate_name::Pos,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {
                 #(#collect_inline_fields)*
-                #crate_name::anyhow::bail!(#crate_name::QueryError::UnrecognizedInlineFragment {
+                Err(#crate_name::QueryError::UnrecognizedInlineFragment {
                     object: #gql_typename.to_string(),
                     name: name.to_string(),
-                });
+                }.into_error(pos))
             }
         }
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, value).await
             }
         }

@@ -3,9 +3,8 @@ mod utils;
 mod visitor;
 mod visitors;
 
-use crate::error::RuleErrors;
 use crate::registry::Registry;
-use crate::{CacheControl, Result};
+use crate::{CacheControl, Error, Result};
 use graphql_parser::query::Document;
 use visitor::{visit, VisitorContext, VisitorNil};
 
@@ -57,7 +56,7 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CheckResult> {
 
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {
-        return Err(RuleErrors { errors: ctx.errors }.into());
+        return Err(Error::Rule { errors: ctx.errors });
     }
     Ok(CheckResult {
         cache_control,

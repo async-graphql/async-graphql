@@ -1,5 +1,5 @@
 use super::StarWars;
-use async_graphql::{Connection, Context, DataSource, EmptyEdgeFields, Result};
+use async_graphql::{Connection, Context, DataSource, EmptyEdgeFields, FieldResult};
 
 #[async_graphql::Enum(desc = "One of the films in the Star Wars Trilogy")]
 pub enum Episode {
@@ -118,7 +118,7 @@ impl QueryRoot {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> Result<Connection<Human, EmptyEdgeFields>> {
+    ) -> FieldResult<Connection<Human, EmptyEdgeFields>> {
         let humans = ctx
             .data::<StarWars>()
             .humans()
@@ -149,7 +149,7 @@ impl QueryRoot {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> Result<Connection<Droid, EmptyEdgeFields>> {
+    ) -> FieldResult<Connection<Droid, EmptyEdgeFields>> {
         let droids = ctx
             .data::<StarWars>()
             .droids()

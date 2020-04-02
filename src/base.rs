@@ -1,6 +1,7 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, Error, QueryError, Result, ID};
 use graphql_parser::query::{Field, Value};
+use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
@@ -26,19 +27,15 @@ pub trait Type {
     }
 
     /// Parse `GlobalID`.
-    fn from_global_id(id: ID) -> Result<ID> {
+    fn from_global_id(id: ID) -> Option<ID> {
         let v: Vec<&str> = id.splitn(2, ':').collect();
         if v.len() != 2 {
-            return Err(QueryError::InvalidGlobalID.into());
+            return None;
         }
         if v[0] != Self::type_name() {
-            return Err(QueryError::InvalidGlobalIDType {
-                expect: Self::type_name().to_string(),
-                actual: v[0].to_string(),
-            }
-            .into());
+            return None;
         }
-        Ok(v[1].to_string().into())
+        Some(v[1].to_string().into())
     }
 }
 
@@ -52,7 +49,11 @@ pub trait InputValueType: Type + Sized {
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value>;
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value>;
 }
 
 #[allow(missing_docs)]
@@ -75,13 +76,18 @@ pub trait ObjectType: OutputValueType {
     fn collect_inline_fields<'a>(
         &'a self,
         name: &str,
+        pos: Pos,
         _ctx: &ContextSelectionSet<'a>,
         _futures: &mut Vec<BoxFieldFuture<'a>>,
     ) -> Result<()> {
-        anyhow::bail!(QueryError::UnrecognizedInlineFragment {
-            object: Self::type_name().to_string(),
-            name: name.to_string(),
-        });
+        Err(Error::Query {
+            pos,
+            path: None,
+            err: QueryError::UnrecognizedInlineFragment {
+                object: Self::type_name().to_string(),
+                name: name.to_string(),
+            },
+        })
     }
 }
 
@@ -172,6 +178,7 @@ macro_rules! impl_scalar_internal {
             async fn resolve(
                 value: &Self,
                 _: &crate::ContextSelectionSet<'_>,
+                _pos: crate::Pos,
             ) -> crate::Result<serde_json::Value> {
                 value.to_json()
             }
@@ -209,6 +216,7 @@ macro_rules! impl_scalar {
             async fn resolve(
                 value: &Self,
                 _: &async_graphql::ContextSelectionSet<'_>,
+                _pos: async_graphql::Pos,
             ) -> async_graphql::Result<serde_json::Value> {
                 value.to_json()
             }
@@ -229,7 +237,11 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(value: &Self, ctx: &ContextSelectionSet<'_>) -> Result<serde_json::Value> {
-        T::resolve(*value, ctx).await
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
+        T::resolve(*value, ctx, pos).await
     }
 }

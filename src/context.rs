@@ -1,6 +1,6 @@
 use crate::extensions::BoxExtension;
 use crate::registry::Registry;
-use crate::{ErrorWithPosition, InputValueType, QueryError, Result, Type};
+use crate::{InputValueType, Pos, QueryError, Result, Type};
 use bytes::Bytes;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
@@ -205,12 +205,25 @@ impl<'a> QueryPathNode<'a> {
         }
         f(&self.segment);
     }
+
+    #[doc(hidden)]
+    pub fn to_json(&self) -> serde_json::Value {
+        let mut path: Vec<serde_json::Value> = Vec::new();
+        self.for_each(|segment| {
+            path.push(match segment {
+                QueryPathSegment::Index(idx) => (*idx).into(),
+                QueryPathSegment::Name(name) => (*name).to_string().into(),
+            })
+        });
+        path.into()
+    }
 }
 
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
-    pub(crate) path_node: Option<QueryPathNode<'a>>,
+    #[allow(missing_docs)]
+    pub path_node: Option<QueryPathNode<'a>>,
     pub(crate) resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
@@ -289,7 +302,7 @@ impl<'a, T> ContextBase<'a, T> {
             .expect("The specified data type does not exist.")
     }
 
-    fn var_value(&self, name: &str) -> Result<Value> {
+    fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
         let def = self
             .variable_definitions
             .iter()
@@ -304,16 +317,16 @@ impl<'a, T> ContextBase<'a, T> {
         Err(QueryError::VarNotDefined {
             var_name: name.to_string(),
         }
-        .into())
+        .into_error(pos))
     }
 
-    fn resolve_input_value(&self, mut value: Value) -> Result<Value> {
+    fn resolve_input_value(&self, mut value: Value, pos: Pos) -> Result<Value> {
         match value {
-            Value::Variable(var_name) => self.var_value(&var_name),
+            Value::Variable(var_name) => self.var_value(&var_name, pos),
             Value::List(ref mut ls) => {
                 for value in ls {
                     if let Value::Variable(var_name) = value {
-                        *value = self.var_value(&var_name)?;
+                        *value = self.var_value(&var_name, pos)?;
                     }
                 }
                 Ok(value)
@@ -321,7 +334,7 @@ impl<'a, T> ContextBase<'a, T> {
             Value::Object(ref mut obj) => {
                 for value in obj.values_mut() {
                     if let Value::Variable(var_name) = value {
-                        *value = self.var_value(&var_name)?;
+                        *value = self.var_value(&var_name, pos)?;
                     }
                 }
                 Ok(value)
@@ -340,13 +353,13 @@ impl<'a, T> ContextBase<'a, T> {
                     .find(|(name, _)| name == "if")
                     .map(|(_, value)| value)
                 {
-                    let value = self.resolve_input_value(value.clone())?;
+                    let value = self.resolve_input_value(value.clone(), directive.position)?;
                     let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
                         }
-                        .with_position(directive.position)
+                        .into_error(directive.position)
                     })?;
                     if res {
                         return Ok(true);
@@ -357,8 +370,7 @@ impl<'a, T> ContextBase<'a, T> {
                         arg_name: "if",
                         arg_type: "Boolean!",
                     }
-                    .with_position(directive.position)
-                    .into());
+                    .into_error(directive.position));
                 }
             } else if directive.name == "include" {
                 if let Some(value) = directive
@@ -367,13 +379,13 @@ impl<'a, T> ContextBase<'a, T> {
                     .find(|(name, _)| name == "if")
                     .map(|(_, value)| value)
                 {
-                    let value = self.resolve_input_value(value.clone())?;
+                    let value = self.resolve_input_value(value.clone(), directive.position)?;
                     let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
                         }
-                        .with_position(directive.position)
+                        .into_error(directive.position)
                     })?;
                     if !res {
                         return Ok(true);
@@ -384,15 +396,13 @@ impl<'a, T> ContextBase<'a, T> {
                         arg_name: "if",
                         arg_type: "Boolean!",
                     }
-                    .with_position(directive.position)
-                    .into());
+                    .into_error(directive.position));
                 }
             } else {
                 return Err(QueryError::UnknownDirective {
                     name: directive.name.clone(),
                 }
-                .with_position(directive.position)
-                .into());
+                .into_error(directive.position));
             }
         }
 
@@ -426,6 +436,7 @@ impl<'a> ContextBase<'a, &'a Field> {
     pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
         &self,
         name: &str,
+        pos: Pos,
         default: F,
     ) -> Result<T> {
         match self
@@ -436,13 +447,13 @@ impl<'a> ContextBase<'a, &'a Field> {
             .cloned()
         {
             Some(value) => {
-                let value = self.resolve_input_value(value)?;
+                let value = self.resolve_input_value(value, pos)?;
                 let res = InputValueType::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
                         actual: value,
                     }
-                    .with_position(self.item.position)
+                    .into_error(pos)
                 })?;
                 Ok(res)
             }
@@ -453,7 +464,7 @@ impl<'a> ContextBase<'a, &'a Field> {
                         expect: T::qualified_type_name(),
                         actual: value.clone(),
                     }
-                    .with_position(self.item.position)
+                    .into_error(pos)
                 })?;
                 Ok(res)
             }

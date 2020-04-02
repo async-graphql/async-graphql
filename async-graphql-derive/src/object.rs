@@ -174,7 +174,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
 
                     get_params.push(quote! {
-                        let #ident: #ty = ctx.param_value(#name, #default)?;
+                        let #ident: #ty = ctx.param_value(#name, field.position, #default)?;
                     });
                 }
 
@@ -195,7 +195,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 });
 
-                let ctx_field = if arg_ctx {
+                let ctx_param = if arg_ctx {
                     quote! { &ctx, }
                 } else {
                     quote! {}
@@ -204,12 +204,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_ident = &method.sig.ident;
                 let resolve_obj = match &ty {
                     OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_field #(#use_params),*).await
+                        self.#field_ident(#ctx_param #(#use_params),*).await
                     },
                     OutputType::Result(_, _) => {
                         quote! {
-                            self.#field_ident(#ctx_field #(#use_params),*).await.
-                                map_err(|err| err.with_position(field.position))?
+                            {
+                                let res:#crate_name::FieldResult<_> = self.#field_ident(#ctx_param #(#use_params),*).await;
+                                res.map_err(|err| err.into_error_with_path(field.position, ctx.path_node.as_ref().unwrap().to_json()))?
+                            }
                         }
                     }
                 };
@@ -218,8 +220,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if field.name.as_str() == #field_name {
                         #(#get_params)*
                         let ctx_obj = ctx.with_selection_set(&field.selection_set);
-                        return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj).await.
-                            map_err(|err| err.with_position(field.position).into());
+                        return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, field.position).await;
                     }
                 });
 
@@ -272,21 +273,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                use #crate_name::ErrorWithPosition;
-
                 #(#resolvers)*
-
-                #crate_name::anyhow::bail!(#crate_name::QueryError::FieldNotFound {
+                Err(#crate_name::QueryError::FieldNotFound {
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
-                }
-                .with_position(field.position));
+                }.into_error(field.position))
             }
         }
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #self_ty {
-            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, value).await
             }
         }
