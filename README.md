@@ -37,6 +37,13 @@ cargo run --example actix-web
 
 Open `http://localhost:8000` in browser
 
+## Benchmark
+
+```shell script
+git clone https://github.com/sunli829/graphql-benchmark
+cargo run --release
+```
+
 ## Features
 
 * Fully support async/await
