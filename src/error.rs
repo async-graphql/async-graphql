@@ -1,10 +1,10 @@
 use graphql_parser::query::{ParseError, Value};
 use graphql_parser::Pos;
-use std::error::Error as StdError;
 use std::fmt::Debug;
 
 /// FieldError type
-pub struct FieldError(anyhow::Error, Option<serde_json::Value>);
+#[derive(Clone, Debug)]
+pub struct FieldError(pub String, pub Option<serde_json::Value>);
 
 impl FieldError {
     #[doc(hidden)]
@@ -37,10 +37,52 @@ pub type FieldResult<T> = std::result::Result<T, FieldError>;
 
 impl<E> From<E> for FieldError
 where
-    E: StdError + Send + Sync + 'static,
+    E: std::fmt::Display + Send + Sync + 'static,
 {
     fn from(err: E) -> Self {
-        FieldError(anyhow::Error::from(err), None)
+        FieldError(format!("{}", err), None)
+    }
+}
+
+#[allow(missing_docs)]
+pub trait ErrorExtensions
+where
+    Self: Sized,
+{
+    fn extend(&self) -> FieldError;
+    fn extend_with<C>(self, cb: C) -> FieldError
+    where
+        C: FnOnce(&Self) -> serde_json::Value,
+    {
+        let name = self.extend().0;
+
+        if let Some(mut base) = self.extend().1 {
+            let mut cb_res = cb(&self);
+            if let Some(base_map) = base.as_object_mut() {
+                if let Some(cb_res_map) = cb_res.as_object_mut() {
+                    base_map.append(cb_res_map);
+                }
+                return FieldError(name, Some(serde_json::json!(base_map)));
+            } else {
+                return FieldError(name, Some(cb_res));
+            }
+        }
+
+        FieldError(name, Some(cb(&self)))
+    }
+}
+
+impl ErrorExtensions for FieldError {
+    fn extend(&self) -> FieldError {
+        self.clone()
+    }
+}
+
+// implementing for &E instead of E gives the user the possibility to implement for E which does
+// not conflict with this implementation acting as a fallback.
+impl<E: std::fmt::Display> ErrorExtensions for &E {
+    fn extend(&self) -> FieldError {
+        FieldError(format!("{}", self), None)
     }
 }
 
@@ -48,26 +90,33 @@ where
 pub trait ResultExt<T, E>
 where
     Self: Sized,
-    E: StdError + Send + Sync + 'static,
 {
     fn extend_err<CB>(self, cb: CB) -> FieldResult<T>
     where
         CB: FnOnce(&E) -> serde_json::Value;
+
+    fn extend(self) -> FieldResult<T>;
 }
 
+// This is implemented on E and not &E which means it cannot be used on foreign types.
+// (see example).
 impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
 where
-    E: StdError + Send + Sync + 'static,
+    E: ErrorExtensions + Send + Sync + 'static,
 {
     fn extend_err<C>(self, cb: C) -> FieldResult<T>
     where
         C: FnOnce(&E) -> serde_json::Value,
     {
         match self {
-            Err(err) => {
-                let extended_err = cb(&err);
-                Err(FieldError(err.into(), Some(extended_err)))
-            }
+            Err(err) => Err(err.extend_with(|e| cb(e))),
+            Ok(value) => Ok(value),
+        }
+    }
+
+    fn extend(self) -> FieldResult<T> {
+        match self {
+            Err(err) => Err(err.extend()),
             Ok(value) => Ok(value),
         }
     }
@@ -204,7 +253,7 @@ pub enum QueryError {
 
     #[error("Failed to resolve field: {err}")]
     FieldError {
-        err: anyhow::Error,
+        err: String,
         extended_error: Option<serde_json::Value>,
     },
 }

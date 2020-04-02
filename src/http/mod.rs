@@ -121,6 +121,7 @@ impl<'a> Serialize for GQLError<'a> {
                     if let Some(obj @ serde_json::Value::Object(_)) = extended_error {
                         map.insert("extensions".to_string(), obj.clone());
                     }
+
                     seq.serialize_element(&serde_json::Value::Object(map))?;
                 } else {
                     seq.serialize_element(&serde_json::json!({
@@ -235,7 +236,7 @@ mod tests {
             },
             path: None,
             err: QueryError::FieldError {
-                err: anyhow::anyhow!("MyErrorMessage"),
+                err: "MyErrorMessage".to_owned(),
                 extended_error: Some(json!({
                     "code": "MY_TEST_CODE"
                 })),
