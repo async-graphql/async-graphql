@@ -228,8 +228,22 @@ pub struct RuleError {
 
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Self {
+        let msg = err.to_string();
+        let mut s = msg.splitn(2, "\n");
+        let first = s.next().unwrap();
+        let ln = &first[first.rfind(" ").unwrap() + 1..];
+        let (line, column) = {
+            let mut s = ln.splitn(2, ":");
+            (
+                s.next().unwrap().parse().unwrap(),
+                s.next().unwrap().parse().unwrap(),
+            )
+        };
+        let tail = s.next().unwrap();
         Error::Parse {
-            message: err.to_string(),
+            line,
+            column,
+            message: tail.to_string(),
         }
     }
 }
@@ -238,7 +252,11 @@ impl From<ParseError> for Error {
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Parse error: {message}")]
-    Parse { message: String },
+    Parse {
+        line: usize,
+        column: usize,
+        message: String,
+    },
 
     #[error("Query error: {err}")]
     Query {
