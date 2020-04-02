@@ -60,7 +60,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     if let #ident::#enum_name(obj) = self {
                         return #crate_name::collect_fields(ctx, obj, futures);
                     }
-                    unreachable!()
+                    return Ok(());
                 }
             });
             get_introspection_typename.push(quote! {
