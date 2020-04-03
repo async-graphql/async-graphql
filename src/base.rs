@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, Error, QueryError, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, Result, ID};
 use graphql_parser::query::{Field, Value};
 use graphql_parser::Pos;
 use std::borrow::Cow;

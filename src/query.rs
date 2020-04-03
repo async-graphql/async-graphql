@@ -1,7 +1,8 @@
 use crate::context::Data;
 use crate::extensions::BoxExtension;
+use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
-use crate::{ContextBase, Error, OutputValueType, Result, Schema};
+use crate::{do_resolve, ContextBase, Error, Result, Schema};
 use crate::{ObjectType, QueryError, Variables};
 use bytes::Bytes;
 use graphql_parser::query::{
@@ -162,9 +163,9 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
 
         self.extensions.iter().for_each(|e| e.execution_start());
         let data = if is_query {
-            OutputValueType::resolve(&self.schema.0.query, &ctx, selection_set.span.0).await?
+            do_resolve(&ctx, &self.schema.0.query).await?
         } else {
-            OutputValueType::resolve(&self.schema.0.mutation, &ctx, selection_set.span.0).await?
+            do_mutation_resolve(&ctx, &self.schema.0.mutation).await?
         };
         self.extensions.iter().for_each(|e| e.execution_end());
 

@@ -76,6 +76,7 @@ mod context;
 mod error;
 pub mod extensions;
 mod model;
+mod mutation_resolver;
 mod query;
 mod resolver;
 mod scalars;

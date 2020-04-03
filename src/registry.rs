@@ -245,6 +245,7 @@ impl Type {
         match self {
             Type::Interface { possible_types, .. } => possible_types.contains(type_name),
             Type::Union { possible_types, .. } => possible_types.contains(type_name),
+            Type::Object { name, .. } => name == type_name,
             _ => false,
         }
     }
