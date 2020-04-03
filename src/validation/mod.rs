@@ -1,4 +1,5 @@
 mod rules;
+mod suggestion;
 mod utils;
 mod visitor;
 mod visitors;

@@ -3,6 +3,8 @@
 mod graphiql_source;
 mod playground_source;
 
+use itertools::Itertools;
+
 pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 
@@ -136,7 +138,7 @@ impl<'a> Serialize for GQLError<'a> {
                 for error in errors {
                     seq.serialize_element(&serde_json::json!({
                         "message": error.message,
-                        "locations": error.locations.iter().map(|pos| serde_json::json!({"line": pos.line, "column": pos.column})).collect::<Vec<_>>(),
+                        "locations": error.locations.iter().map(|pos| serde_json::json!({"line": pos.line, "column": pos.column})).collect_vec(),
                     }))?;
                 }
                 seq.end()

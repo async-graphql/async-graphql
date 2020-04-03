@@ -17,6 +17,7 @@ use graphql_parser::parse_query;
 use graphql_parser::query::{
     Definition, Field, FragmentDefinition, OperationDefinition, Selection,
 };
+use itertools::Itertools;
 use once_cell::sync::Lazy;
 use slab::Slab;
 use std::any::{Any, TypeId};
@@ -217,7 +218,7 @@ where
             .extensions
             .iter()
             .map(|factory| factory())
-            .collect::<Vec<_>>();
+            .collect_vec();
         extensions.iter().for_each(|e| e.parse_start(source));
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         extensions.iter().for_each(|e| e.parse_end());

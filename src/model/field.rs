@@ -1,6 +1,7 @@
 use crate::model::{__InputValue, __Type};
 use crate::registry;
 use async_graphql_derive::Object;
+use itertools::Itertools;
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
@@ -32,7 +33,7 @@ impl<'a> __Field<'a> {
                 registry: self.registry,
                 input_value,
             })
-            .collect::<Vec<_>>();
+            .collect_vec();
         args.sort_by(|a, b| a.input_value.name.cmp(b.input_value.name));
         args
     }

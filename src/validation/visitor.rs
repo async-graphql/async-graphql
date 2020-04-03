@@ -1,5 +1,6 @@
 use crate::error::RuleError;
 use crate::registry;
+use crate::validation::suggestion::make_suggestion;
 use graphql_parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     Name, OperationDefinition, Selection, SelectionSet, TypeCondition, Value, VariableDefinition,
@@ -494,9 +495,20 @@ fn visit_selection<'a, V: Visitor<'a>>(
                     ctx.report_error(
                         vec![field.position],
                         format!(
-                            "Cannot query field \"{}\" on type \"{}\".",
+                            "Unknown field \"{}\" on type \"{}\".{}",
                             field.name,
-                            ctx.current_type().name()
+                            ctx.current_type().name(),
+                            make_suggestion(
+                                " Did you mean",
+                                ctx.current_type()
+                                    .fields()
+                                    .iter()
+                                    .map(|fields| fields.keys())
+                                    .flatten()
+                                    .map(|s| s.as_str()),
+                                &field.name
+                            )
+                            .unwrap_or_default()
                         ),
                     );
                 }

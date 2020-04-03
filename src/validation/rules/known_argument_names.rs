@@ -1,4 +1,5 @@
 use crate::registry::InputValue;
+use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Value;
 use graphql_parser::query::{Directive, Field};
@@ -16,6 +17,20 @@ enum ArgsType<'a> {
 #[derive(Default)]
 pub struct KnownArgumentNames<'a> {
     current_args: Option<(&'a HashMap<&'static str, InputValue>, ArgsType<'a>)>,
+}
+
+impl<'a> KnownArgumentNames<'a> {
+    fn get_suggestion(&self, name: &str) -> String {
+        make_suggestion(
+            " Did you mean",
+            self.current_args
+                .iter()
+                .map(|(args, _)| args.iter().map(|arg| *arg.0))
+                .flatten(),
+            name,
+        )
+        .unwrap_or_default()
+    }
 }
 
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
@@ -48,8 +63,11 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                         ctx.report_error(
                             vec![pos],
                             format!(
-                                "Unknown argument \"{}\" on field \"{}\" of type \"{}\"",
-                                name, field_name, type_name,
+                                "Unknown argument \"{}\" on field \"{}\" of type \"{}\".{}",
+                                name,
+                                field_name,
+                                type_name,
+                                self.get_suggestion(name)
                             ),
                         );
                     }
@@ -57,8 +75,10 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                         ctx.report_error(
                             vec![pos],
                             format!(
-                                "Unknown argument \"{}\" on directive \"{}\"",
-                                name, directive_name
+                                "Unknown argument \"{}\" on directive \"{}\".{}",
+                                name,
+                                directive_name,
+                                self.get_suggestion(name)
                             ),
                         );
                     }

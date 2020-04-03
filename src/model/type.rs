@@ -1,6 +1,7 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
 use crate::registry;
 use async_graphql_derive::Object;
+use itertools::Itertools;
 
 enum TypeDetail<'a> {
     Simple(&'a registry::Type),
@@ -108,7 +109,7 @@ impl<'a> __Type<'a> {
                         registry: self.registry,
                         field,
                     })
-                    .collect::<Vec<_>>();
+                    .collect_vec();
                 fields.sort_by(|a, b| a.field.name.cmp(&b.field.name));
                 Some(fields)
             })

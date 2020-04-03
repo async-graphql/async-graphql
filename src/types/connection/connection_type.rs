@@ -6,6 +6,7 @@ use crate::{
 };
 use graphql_parser::query::Field;
 use inflector::Inflector;
+use itertools::Itertools;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -142,7 +143,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                     extra_type,
                     node,
                 })
-                .collect::<Vec<_>>();
+                .collect_vec();
             return OutputValueType::resolve(&edges, &ctx_obj, field.position).await;
         } else if field.name.as_str() == "totalCount" {
             return Ok(self
@@ -151,11 +152,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
                 .unwrap_or_else(|| serde_json::Value::Null));
         } else if field.name.as_str() == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            let items = self
-                .nodes
-                .iter()
-                .map(|(_, _, item)| item)
-                .collect::<Vec<_>>();
+            let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
             return OutputValueType::resolve(&items, &ctx_obj, field.position).await;
         }
 
