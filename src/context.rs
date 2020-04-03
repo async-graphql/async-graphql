@@ -103,10 +103,9 @@ impl Variables {
 
 fn file_string(filename: &str, content_type: Option<&str>, content: &[u8]) -> String {
     if let Some(content_type) = content_type {
-        format!("file:{}:{}|", filename, content_type)
-            + unsafe { std::str::from_utf8_unchecked(content) }
+        format!("file:{}:{}|", filename, content_type) + &base64::encode(content)
     } else {
-        format!("file:{}|", filename) + unsafe { std::str::from_utf8_unchecked(content) }
+        format!("file:{}|", filename) + &base64::encode(content)
     }
 }
 

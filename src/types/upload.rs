@@ -80,20 +80,22 @@ impl<'a> InputValueType for Upload {
                 let s = &s[5..];
                 if let Some(idx) = s.find('|') {
                     let name_and_type = &s[..idx];
-                    let content = &s[idx + 1..];
+                    let content_b64 = &s[idx + 1..];
                     if let Some(type_idx) = name_and_type.find(':') {
                         let name = &name_and_type[..type_idx];
                         let mime_type = &name_and_type[type_idx + 1..];
+                        let content = base64::decode(content_b64).ok().unwrap_or_default();
                         return Some(Self {
                             filename: name.to_string(),
                             content_type: Some(mime_type.to_string()),
-                            content: content.as_bytes().to_vec(),
+                            content,
                         });
                     } else {
+                        let content = base64::decode(content_b64).ok().unwrap_or_default();
                         return Some(Self {
                             filename: name_and_type.to_string(),
                             content_type: None,
-                            content: content.as_bytes().to_vec(),
+                            content,
                         });
                     }
                 }
