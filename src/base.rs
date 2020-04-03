@@ -82,19 +82,15 @@ pub trait ObjectType: OutputValueType {
     /// Collect the fields with the `name` inline object
     fn collect_inline_fields<'a>(
         &'a self,
-        name: &str,
-        pos: Pos,
-        _ctx: &ContextSelectionSet<'a>,
-        _futures: &mut Vec<BoxFieldFuture<'a>>,
-    ) -> Result<()> {
-        Err(Error::Query {
-            pos,
-            path: None,
-            err: QueryError::UnrecognizedInlineFragment {
-                object: Self::type_name().to_string(),
-                name: name.to_string(),
-            },
-        })
+        _name: &str,
+        _pos: Pos,
+        ctx: &ContextSelectionSet<'a>,
+        futures: &mut Vec<BoxFieldFuture<'a>>,
+    ) -> Result<()>
+    where
+        Self: Send + Sync + Sized,
+    {
+        crate::collect_fields(ctx, self, futures)
     }
 }
 
