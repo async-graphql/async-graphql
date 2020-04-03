@@ -20,7 +20,7 @@ pub trait Type {
 
     /// Introspection type name
     ///
-    /// Is the return value of field `__type`, the interface and union should return the current type, and the others return `Type::type_name`.
+    /// Is the return value of field `__typename`, the interface and union should return the current type, and the others return `Type::type_name`.
     fn introspection_type_name(&self) -> Cow<'static, str> {
         Self::type_name()
     }
