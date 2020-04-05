@@ -125,7 +125,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
                     self.variable_usages
                         .entry(scope.clone())
                         .or_insert_with(Vec::new)
-                        .push((name.as_str(), pos, expected_type.clone()));
+                        .push((name.as_str(), pos, *expected_type));
                 }
             }
         }

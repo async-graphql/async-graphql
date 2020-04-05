@@ -67,7 +67,7 @@ impl<'a> TypeName<'a> {
     pub fn unwrap_non_null(&self) -> Self {
         match self {
             TypeName::NonNull(ty) => TypeName::create(ty),
-            _ => self.clone(),
+            _ => *self,
         }
     }
 

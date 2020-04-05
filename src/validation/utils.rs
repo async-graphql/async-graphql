@@ -166,10 +166,10 @@ pub fn is_valid_input_value(
                                 }
                             }
 
-                            for name in input_names {
+                            if let Some(name) = input_names.iter().next() {
                                 return Some(valid_error(
                                     &path_node,
-                                    format!("unknown field \"{}\" of type \"{}\"", name, ty.name(),),
+                                    format!("unknown field \"{}\" of type \"{}\"", name, ty.name()),
                                 ));
                             }
 

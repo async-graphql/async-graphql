@@ -633,7 +633,7 @@ fn visit_directives<'a, V: Visitor<'a>>(
             v.enter_argument(ctx, d.position, name, value);
             let expected_ty = schema_directive
                 .and_then(|schema_directive| schema_directive.args.get(name.as_str()))
-                .and_then(|input_ty| Some(TypeName::create(&input_ty.ty)));
+                .map(|input_ty| TypeName::create(&input_ty.ty));
             ctx.with_input_type(expected_ty, |ctx| {
                 visit_input_value(v, ctx, d.position, expected_ty, value)
             });
