@@ -3,6 +3,8 @@
 <div align="center">
   <!-- CI -->
   <img src="https://github.com/sunli829/potatonet/workflows/CI/badge.svg" />
+  <!-- codecov -->
+  <img src="https://codecov.io/gh/sunli829/async-graphql/branch/master/graph/badge.svg" />
   <!-- Crates version -->
   <a href="https://crates.io/crates/async-graphql">
     <img src="https://img.shields.io/crates/v/async-graphql.svg?style=flat-square"
