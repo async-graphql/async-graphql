@@ -1,8 +1,48 @@
 use crate::context::QueryPathNode;
-use crate::{registry, QueryPathSegment, Value};
+use crate::{registry, Pos, QueryPathSegment, Value};
+use graphql_parser::query::OperationDefinition;
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Scope<'a> {
+    Operation(Option<&'a str>),
+    Fragment(&'a str),
+}
 
 fn valid_error(path_node: &QueryPathNode, msg: String) -> String {
     format!("\"{}\", {}", path_node, msg)
+}
+
+pub fn referenced_variables(value: &Value) -> Vec<&str> {
+    let mut vars = Vec::new();
+    referenced_variables_to_vec(value, &mut vars);
+    vars
+}
+
+fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
+    match value {
+        Value::Variable(name) => {
+            vars.push(name.as_str());
+        }
+        Value::List(values) => values
+            .iter()
+            .for_each(|value| referenced_variables_to_vec(value, vars)),
+        Value::Object(obj) => obj
+            .values()
+            .for_each(|value| referenced_variables_to_vec(value, vars)),
+        _ => {}
+    }
+}
+
+pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&str>, Pos) {
+    match operation_definition {
+        OperationDefinition::SelectionSet(selection_set) => (None, selection_set.span.0),
+        OperationDefinition::Query(query) => (query.name.as_deref(), query.position),
+        OperationDefinition::Mutation(mutation) => (mutation.name.as_deref(), mutation.position),
+        OperationDefinition::Subscription(subscription) => {
+            (subscription.name.as_deref(), subscription.position)
+        }
+    }
 }
 
 pub fn is_valid_input_value(
@@ -40,7 +80,7 @@ pub fn is_valid_input_value(
                 }
                 None
             }
-            _ => None,
+            _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::TypeName::Named(type_name) => {
             if let Value::Null = value {
@@ -74,11 +114,20 @@ pub fn is_valid_input_value(
                                 None
                             }
                         }
-                        _ => None,
+                        _ => Some(valid_error(
+                            &path_node,
+                            format!("expected type \"{}\"", type_name),
+                        )),
                     },
                     registry::Type::InputObject { input_fields, .. } => match value {
                         Value::Object(values) => {
-                            for field in input_fields {
+                            let mut input_names = values
+                                .keys()
+                                .map(|name| name.as_str())
+                                .collect::<HashSet<_>>();
+
+                            for field in input_fields.values() {
+                                input_names.remove(field.name);
                                 if let Some(value) = values.get(field.name) {
                                     if let Some(validator) = &field.validator {
                                         if let Some(reason) = validator.is_valid(value) {
@@ -116,6 +165,14 @@ pub fn is_valid_input_value(
                                         ));
                                 }
                             }
+
+                            for name in input_names {
+                                return Some(valid_error(
+                                    &path_node,
+                                    format!("unknown field \"{}\" of type \"{}\"", name, ty.name(),),
+                                ));
+                            }
+
                             None
                         }
                         _ => None,

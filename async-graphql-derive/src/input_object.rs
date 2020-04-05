@@ -90,13 +90,13 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
         fields.push(ident);
         schema_fields.push(quote! {
-            #crate_name::registry::InputValue {
+            fields.insert(#name.to_string(), #crate_name::registry::InputValue {
                 name: #name,
                 description: #desc,
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
                 default_value: #default,
                 validator: #validator,
-            }
+            });
         })
     }
 
@@ -112,7 +112,11 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::InputObject {
                     name: #gql_typename.to_string(),
                     description: #desc,
-                    input_fields: vec![#(#schema_fields),*]
+                    input_fields: {
+                        let mut fields = std::collections::HashMap::new();
+                        #(#schema_fields)*
+                        fields
+                    }
                 })
             }
         }

@@ -9,8 +9,10 @@ pub struct CacheControlCalculate<'a> {
 
 impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
     fn enter_selection_set(&mut self, ctx: &mut VisitorContext<'_>, _selection_set: &SelectionSet) {
-        if let Type::Object { cache_control, .. } = ctx.current_type() {
-            self.cache_control.merge(cache_control);
+        if let Some(current_type) = ctx.current_type() {
+            if let Type::Object { cache_control, .. } = current_type {
+                self.cache_control.merge(cache_control);
+            }
         }
     }
 

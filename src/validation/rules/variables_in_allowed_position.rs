@@ -1,59 +1,89 @@
 use crate::registry::TypeName;
+use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Value;
-use graphql_parser::query::{Field, OperationDefinition, VariableDefinition};
-use graphql_parser::schema::Directive;
+use graphql_parser::query::{
+    Document, FragmentDefinition, FragmentSpread, OperationDefinition, Type, VariableDefinition,
+};
 use graphql_parser::Pos;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct VariableInAllowedPosition<'a> {
-    var_types: HashMap<&'a str, String>,
+    spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(&'a str, Pos, TypeName<'a>)>>,
+    variable_defs: HashMap<Scope<'a>, Vec<(Pos, &'a VariableDefinition)>>,
+    current_scope: Option<Scope<'a>>,
 }
 
 impl<'a> VariableInAllowedPosition<'a> {
-    fn check_type(
-        &mut self,
+    fn collect_incorrect_usages(
+        &self,
+        from: &Scope<'a>,
+        var_defs: &[(Pos, &'a VariableDefinition)],
         ctx: &mut VisitorContext<'a>,
-        pos: Pos,
-        except_type: &str,
-        value: &Value,
+        visited: &mut HashSet<Scope<'a>>,
     ) {
-        let ty = TypeName::create(except_type);
-        match (ty, value) {
-            (_, Value::Variable(name)) => {
-                if let Some(var_type) = self.var_types.get(name.as_str()) {
-                    if except_type != var_type {
+        if visited.contains(from) {
+            return;
+        }
+
+        visited.insert(from.clone());
+
+        if let Some(usages) = self.variable_usages.get(from) {
+            for (var_name, usage_pos, var_type) in usages {
+                if let Some((def_pos, var_def)) =
+                    var_defs.iter().find(|(_, def)| def.name == *var_name)
+                {
+                    let expected_type = match (&var_def.default_value, &var_def.var_type) {
+                        (Some(_), Type::ListType(_)) => var_def.var_type.to_string() + "!",
+                        (Some(_), Type::NamedType(_)) => var_def.var_type.to_string() + "!",
+                        (_, _) => var_def.var_type.to_string(),
+                    };
+
+                    if !var_type.is_subtype(&TypeName::create(&expected_type)) {
                         ctx.report_error(
-                            vec![pos],
+                            vec![*def_pos, *usage_pos],
                             format!(
-                                "Variable \"{}\" of type \"{}\" used in position expecting type \"{}\"",
-                                name, var_type, except_type
-                            ),
+                            "Variable \"{}\" of type \"{}\" used in position expecting type \"{}\"",
+                            var_name, var_type, expected_type
+                        ),
                         );
                     }
                 }
             }
-            (TypeName::List(elem_type), Value::List(values)) => {
-                for value in values {
-                    self.check_type(ctx, pos, elem_type, value);
-                }
+        }
+
+        if let Some(spreads) = self.spreads.get(from) {
+            for spread in spreads {
+                self.collect_incorrect_usages(&Scope::Fragment(spread), var_defs, ctx, visited);
             }
-            (TypeName::NonNull(elem_type), value) => {
-                self.check_type(ctx, pos, elem_type, value);
-            }
-            _ => {}
         }
     }
 }
 
 impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
+        for (op_scope, var_defs) in &self.variable_defs {
+            self.collect_incorrect_usages(op_scope, var_defs, ctx, &mut HashSet::new());
+        }
+    }
+
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _operation_definition: &'a OperationDefinition,
+        operation_definition: &'a OperationDefinition,
     ) {
-        self.var_types.clear();
+        let (op_name, _) = operation_name(operation_definition);
+        self.current_scope = Some(Scope::Operation(op_name));
+    }
+
+    fn enter_fragment_definition(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        fragment_definition: &'a FragmentDefinition,
+    ) {
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
 
     fn enter_variable_definition(
@@ -61,31 +91,368 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         _ctx: &mut VisitorContext<'a>,
         variable_definition: &'a VariableDefinition,
     ) {
-        self.var_types.insert(
-            variable_definition.name.as_str(),
-            variable_definition.var_type.to_string(),
+        if let Some(ref scope) = self.current_scope {
+            self.variable_defs
+                .entry(scope.clone())
+                .or_insert_with(Vec::new)
+                .push((variable_definition.position, variable_definition));
+        }
+    }
+
+    fn enter_fragment_spread(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        fragment_spread: &'a FragmentSpread,
+    ) {
+        if let Some(ref scope) = self.current_scope {
+            self.spreads
+                .entry(scope.clone())
+                .or_insert_with(HashSet::new)
+                .insert(fragment_spread.fragment_name.as_str());
+        }
+    }
+
+    fn enter_input_value(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        pos: Pos,
+        expected_type: &Option<TypeName<'a>>,
+        value: &'a Value,
+    ) {
+        if let Value::Variable(name) = value {
+            if let Some(expected_type) = expected_type {
+                if let Some(scope) = &self.current_scope {
+                    self.variable_usages
+                        .entry(scope.clone())
+                        .or_insert_with(Vec::new)
+                        .push((name.as_str(), pos, expected_type.clone()));
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+
+    pub fn factory<'a>() -> VariableInAllowedPosition<'a> {
+        VariableInAllowedPosition::default()
+    }
+
+    #[test]
+    fn boolean_into_boolean() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($booleanArg: Boolean)
+          {
+            complicatedArgs {
+              booleanArgField(booleanArg: $booleanArg)
+            }
+          }
+        "#,
         );
     }
 
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Directive) {
-        if let Some(schema_directive) = ctx.registry.directives.get(directive.name.as_str()) {
-            for (name, value) in &directive.arguments {
-                if let Some(input) = schema_directive.args.get(name.as_str()) {
-                    self.check_type(ctx, directive.position, &input.ty, value);
-                }
+    #[test]
+    fn boolean_into_boolean_within_fragment() {
+        expect_passes_rule(
+            factory,
+            r#"
+          fragment booleanArgFrag on ComplicatedArgs {
+            booleanArgField(booleanArg: $booleanArg)
+          }
+          query Query($booleanArg: Boolean)
+          {
+            complicatedArgs {
+              ...booleanArgFrag
             }
-        }
+          }
+        "#,
+        );
+
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($booleanArg: Boolean)
+          {
+            complicatedArgs {
+              ...booleanArgFrag
+            }
+          }
+          fragment booleanArgFrag on ComplicatedArgs {
+            booleanArgField(booleanArg: $booleanArg)
+          }
+        "#,
+        );
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
-        if let Some(parent_type) = ctx.parent_type() {
-            if let Some(schema_field) = parent_type.field_by_name(&field.name) {
-                for (name, value) in &field.arguments {
-                    if let Some(arg) = schema_field.args.get(name.as_str()) {
-                        self.check_type(ctx, field.position, &arg.ty, value);
-                    }
-                }
+    #[test]
+    fn non_null_boolean_into_boolean() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($nonNullBooleanArg: Boolean!)
+          {
+            complicatedArgs {
+              booleanArgField(booleanArg: $nonNullBooleanArg)
             }
-        }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn non_null_boolean_into_boolean_within_fragment() {
+        expect_passes_rule(
+            factory,
+            r#"
+          fragment booleanArgFrag on ComplicatedArgs {
+            booleanArgField(booleanArg: $nonNullBooleanArg)
+          }
+          query Query($nonNullBooleanArg: Boolean!)
+          {
+            complicatedArgs {
+              ...booleanArgFrag
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn int_into_non_null_int_with_default() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($intArg: Int = 1)
+          {
+            complicatedArgs {
+              nonNullIntArgField(nonNullIntArg: $intArg)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn string_list_into_string_list() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($stringListVar: [String])
+          {
+            complicatedArgs {
+              stringListArgField(stringListArg: $stringListVar)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn non_null_string_list_into_string_list() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($stringListVar: [String!])
+          {
+            complicatedArgs {
+              stringListArgField(stringListArg: $stringListVar)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn string_into_string_list_in_item_position() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($stringVar: String)
+          {
+            complicatedArgs {
+              stringListArgField(stringListArg: [$stringVar])
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn non_null_string_into_string_list_in_item_position() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($stringVar: String!)
+          {
+            complicatedArgs {
+              stringListArgField(stringListArg: [$stringVar])
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn complex_input_into_complex_input() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($complexVar: ComplexInput)
+          {
+            complicatedArgs {
+              complexArgField(complexArg: $complexVar)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn complex_input_into_complex_input_in_field_position() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($boolVar: Boolean = false)
+          {
+            complicatedArgs {
+              complexArgField(complexArg: {requiredArg: $boolVar})
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn non_null_boolean_into_non_null_boolean_in_directive() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($boolVar: Boolean!)
+          {
+            dog @include(if: $boolVar)
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn boolean_in_non_null_in_directive_with_default() {
+        expect_passes_rule(
+            factory,
+            r#"
+          query Query($boolVar: Boolean = false)
+          {
+            dog @include(if: $boolVar)
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn int_into_non_null_int() {
+        expect_fails_rule(
+            factory,
+            r#"
+          query Query($intArg: Int) {
+            complicatedArgs {
+              nonNullIntArgField(nonNullIntArg: $intArg)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn int_into_non_null_int_within_fragment() {
+        expect_fails_rule(
+            factory,
+            r#"
+          fragment nonNullIntArgFieldFrag on ComplicatedArgs {
+            nonNullIntArgField(nonNullIntArg: $intArg)
+          }
+          query Query($intArg: Int) {
+            complicatedArgs {
+              ...nonNullIntArgFieldFrag
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn int_into_non_null_int_within_nested_fragment() {
+        expect_fails_rule(
+            factory,
+            r#"
+          fragment outerFrag on ComplicatedArgs {
+            ...nonNullIntArgFieldFrag
+          }
+          fragment nonNullIntArgFieldFrag on ComplicatedArgs {
+            nonNullIntArgField(nonNullIntArg: $intArg)
+          }
+          query Query($intArg: Int) {
+            complicatedArgs {
+              ...outerFrag
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn string_over_boolean() {
+        expect_fails_rule(
+            factory,
+            r#"
+          query Query($stringVar: String) {
+            complicatedArgs {
+              booleanArgField(booleanArg: $stringVar)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn string_into_string_list() {
+        expect_fails_rule(
+            factory,
+            r#"
+          query Query($stringVar: String) {
+            complicatedArgs {
+              stringListArgField(stringListArg: $stringVar)
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn boolean_into_non_null_boolean_in_directive() {
+        expect_fails_rule(
+            factory,
+            r#"
+          query Query($boolVar: Boolean) {
+            dog @include(if: $boolVar)
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn string_into_non_null_boolean_in_directive() {
+        expect_fails_rule(
+            factory,
+            r#"
+          query Query($stringVar: String) {
+            dog @include(if: $stringVar)
+          }
+        "#,
+        );
     }
 }

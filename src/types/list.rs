@@ -22,12 +22,12 @@ impl<T: InputValueType> InputValueType for Vec<T> {
         match value {
             Value::List(values) => {
                 let mut result = Vec::new();
-                for value in values {
-                    result.push(InputValueType::parse(value)?);
+                for elem_value in values {
+                    result.push(InputValueType::parse(elem_value)?);
                 }
                 Some(result)
             }
-            _ => None,
+            _ => Some(vec![InputValueType::parse(value)?]),
         }
     }
 }

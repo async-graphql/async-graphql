@@ -71,7 +71,7 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
                 {
                     let mut obj = std::collections::BTreeMap::new();
                     #(#members)*
-                    obj
+                    #crate_name::Value::Object(obj)
                 }
             }
         }

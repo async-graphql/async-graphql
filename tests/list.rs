@@ -24,6 +24,11 @@ pub async fn test_list_type() {
         }
 
         #[field]
+        async fn value_input_slice(&self, a: Vec<i32>) -> Vec<i32> {
+            a
+        }
+
+        #[field]
         async fn test_arg(&self, input: Vec<i32>) -> Vec<i32> {
             input
         }
@@ -47,7 +52,10 @@ pub async fn test_list_type() {
             valueVec
             valueSlice
             testArg(input: {0})
-            testInput(input: {{value: {0}}}) }}
+            testInput(input: {{value: {0}}})
+            valueInputSlice1: valueInputSlice(a: [1, 2, 3])
+            valueInputSlice2: valueInputSlice(a: 55)
+            }}
             "#,
         json_value
     );
@@ -58,6 +66,8 @@ pub async fn test_list_type() {
             "valueSlice": vec![1, 2, 3, 4, 5],
             "testArg": vec![1, 2, 3, 4, 5],
             "testInput": vec![1, 2, 3, 4, 5],
+            "valueInputSlice1": vec![1, 2, 3],
+            "valueInputSlice2": vec![55],
         })
     );
 }

@@ -4,6 +4,9 @@ mod utils;
 mod visitor;
 mod visitors;
 
+#[cfg(test)]
+mod test_harness;
+
 use crate::registry::Registry;
 use crate::{CacheControl, Error, Result};
 use graphql_parser::query::Document;
@@ -41,7 +44,6 @@ pub fn check_rules(registry: &Registry, doc: &Document) -> Result<CheckResult> {
         .with(rules::VariablesAreInputTypes)
         .with(rules::VariableInAllowedPosition::default())
         .with(rules::ScalarLeafs)
-        .with(rules::NoComposeLeafs)
         .with(rules::PossibleFragmentSpreads::default())
         .with(rules::ProvidedNonNullArguments)
         .with(rules::KnownDirectives::default())

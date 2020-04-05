@@ -184,7 +184,7 @@ impl<'a> __Type<'a> {
         if let TypeDetail::Simple(registry::Type::InputObject { input_fields, .. }) = &self.detail {
             Some(
                 input_fields
-                    .iter()
+                    .values()
                     .map(|input_value| __InputValue {
                         registry: self.registry,
                         input_value,

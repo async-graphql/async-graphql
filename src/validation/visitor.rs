@@ -1,9 +1,9 @@
 use crate::error::RuleError;
 use crate::registry;
-use crate::validation::suggestion::make_suggestion;
+use crate::registry::{Type, TypeName};
 use graphql_parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
-    Name, OperationDefinition, Selection, SelectionSet, TypeCondition, Value, VariableDefinition,
+    OperationDefinition, Selection, SelectionSet, TypeCondition, Value, VariableDefinition,
 };
 use graphql_parser::Pos;
 use std::collections::HashMap;
@@ -11,7 +11,8 @@ use std::collections::HashMap;
 pub struct VisitorContext<'a> {
     pub registry: &'a registry::Registry,
     pub errors: Vec<RuleError>,
-    type_stack: Vec<&'a registry::Type>,
+    type_stack: Vec<Option<&'a registry::Type>>,
+    input_type: Vec<Option<TypeName<'a>>>,
     fragments: HashMap<&'a str, &'a FragmentDefinition>,
 }
 
@@ -21,6 +22,7 @@ impl<'a> VisitorContext<'a> {
             registry,
             errors: Default::default(),
             type_stack: Default::default(),
+            input_type: Default::default(),
             fragments: doc
                 .definitions
                 .iter()
@@ -45,7 +47,7 @@ impl<'a> VisitorContext<'a> {
 
     pub fn with_type<F: FnMut(&mut VisitorContext<'a>)>(
         &mut self,
-        ty: &'a registry::Type,
+        ty: Option<&'a registry::Type>,
         mut f: F,
     ) {
         self.type_stack.push(ty);
@@ -53,16 +55,29 @@ impl<'a> VisitorContext<'a> {
         self.type_stack.pop();
     }
 
+    pub fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
+        &mut self,
+        ty: Option<TypeName<'a>>,
+        mut f: F,
+    ) {
+        self.input_type.push(ty);
+        f(self);
+        self.input_type.pop();
+    }
+
     pub fn parent_type(&self) -> Option<&'a registry::Type> {
         if self.type_stack.len() >= 2 {
-            self.type_stack.get(self.type_stack.len() - 2).copied()
+            self.type_stack
+                .get(self.type_stack.len() - 2)
+                .copied()
+                .flatten()
         } else {
             None
         }
     }
 
-    pub fn current_type(&self) -> &'a registry::Type {
-        self.type_stack.last().unwrap()
+    pub fn current_type(&self) -> Option<&'a registry::Type> {
+        self.type_stack.last().copied().flatten()
     }
 
     pub fn is_known_fragment(&self, name: &str) -> bool {
@@ -179,6 +194,23 @@ pub trait Visitor<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         _inline_fragment: &'a InlineFragment,
+    ) {
+    }
+
+    fn enter_input_value(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _pos: Pos,
+        _expected_type: &Option<TypeName<'a>>,
+        _value: &'a Value,
+    ) {
+    }
+    fn exit_input_value(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _pos: Pos,
+        _expected_type: &Option<TypeName<'a>>,
+        _value: &Value,
     ) {
     }
 }
@@ -395,14 +427,9 @@ fn visit_definitions<'a, V: Visitor<'a>>(
             }
             Definition::Fragment(fragment) => {
                 let TypeCondition::On(name) = &fragment.type_condition;
-                if let Some(ty) = ctx.registry.types.get(name) {
-                    ctx.with_type(ty, |ctx| visit_fragment_definition(v, ctx, fragment));
-                } else {
-                    ctx.report_error(
-                        vec![fragment.position],
-                        format!("Unknown type \"{}\".", name),
-                    );
-                }
+                ctx.with_type(ctx.registry.types.get(name), |ctx| {
+                    visit_fragment_definition(v, ctx, fragment)
+                });
             }
         }
     }
@@ -416,12 +443,12 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
     v.enter_operation_definition(ctx, operation);
     match operation {
         OperationDefinition::SelectionSet(selection_set) => {
-            ctx.with_type(&ctx.registry.types[&ctx.registry.query_type], |ctx| {
+            ctx.with_type(Some(&ctx.registry.types[&ctx.registry.query_type]), |ctx| {
                 visit_selection_set(v, ctx, selection_set)
             });
         }
         OperationDefinition::Query(query) => {
-            ctx.with_type(&ctx.registry.types[&ctx.registry.query_type], |ctx| {
+            ctx.with_type(Some(&ctx.registry.types[&ctx.registry.query_type]), |ctx| {
                 visit_variable_definitions(v, ctx, &query.variable_definitions);
                 visit_directives(v, ctx, &query.directives);
                 visit_selection_set(v, ctx, &query.selection_set);
@@ -429,7 +456,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
         }
         OperationDefinition::Mutation(mutation) => {
             if let Some(mutation_type) = &ctx.registry.mutation_type {
-                ctx.with_type(&ctx.registry.types[mutation_type], |ctx| {
+                ctx.with_type(Some(&ctx.registry.types[mutation_type]), |ctx| {
                     visit_variable_definitions(v, ctx, &mutation.variable_definitions);
                     visit_directives(v, ctx, &mutation.directives);
                     visit_selection_set(v, ctx, &mutation.selection_set);
@@ -443,7 +470,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
         }
         OperationDefinition::Subscription(subscription) => {
             if let Some(subscription_type) = &ctx.registry.subscription_type {
-                ctx.with_type(&ctx.registry.types[subscription_type], |ctx| {
+                ctx.with_type(Some(&ctx.registry.types[subscription_type]), |ctx| {
                     visit_variable_definitions(v, ctx, &subscription.variable_definitions);
                     visit_directives(v, ctx, &subscription.directives);
                     visit_selection_set(v, ctx, &subscription.selection_set);
@@ -482,36 +509,16 @@ fn visit_selection<'a, V: Visitor<'a>>(
     match selection {
         Selection::Field(field) => {
             if field.name != "__typename" {
-                if let Some(schema_field) = ctx.current_type().field_by_name(&field.name) {
-                    ctx.with_type(
-                        ctx.registry
-                            .basic_type_by_typename(&schema_field.ty)
-                            .unwrap(),
-                        |ctx| {
-                            visit_field(v, ctx, field);
-                        },
-                    );
-                } else {
-                    ctx.report_error(
-                        vec![field.position],
-                        format!(
-                            "Unknown field \"{}\" on type \"{}\".{}",
-                            field.name,
-                            ctx.current_type().name(),
-                            make_suggestion(
-                                " Did you mean",
-                                ctx.current_type()
-                                    .fields()
-                                    .iter()
-                                    .map(|fields| fields.keys())
-                                    .flatten()
-                                    .map(|s| s.as_str()),
-                                &field.name
-                            )
-                            .unwrap_or_default()
-                        ),
-                    );
-                }
+                ctx.with_type(
+                    ctx.current_type()
+                        .and_then(|ty| ty.field_by_name(&field.name))
+                        .and_then(|schema_field| {
+                            ctx.registry.basic_type_by_typename(&schema_field.ty)
+                        }),
+                    |ctx| {
+                        visit_field(v, ctx, field);
+                    },
+                );
             }
         }
         Selection::FragmentSpread(fragment_spread) => {
@@ -519,14 +526,9 @@ fn visit_selection<'a, V: Visitor<'a>>(
         }
         Selection::InlineFragment(inline_fragment) => {
             if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
-                if let Some(ty) = ctx.registry.types.get(name) {
-                    ctx.with_type(ty, |ctx| visit_inline_fragment(v, ctx, inline_fragment));
-                } else {
-                    ctx.report_error(
-                        vec![inline_fragment.position],
-                        format!("Unknown type \"{}\".", name),
-                    );
-                }
+                ctx.with_type(ctx.registry.types.get(name), |ctx| {
+                    visit_inline_fragment(v, ctx, inline_fragment)
+                });
             }
         }
     }
@@ -535,22 +537,75 @@ fn visit_selection<'a, V: Visitor<'a>>(
 
 fn visit_field<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut VisitorContext<'a>, field: &'a Field) {
     v.enter_field(ctx, field);
-    visit_arguments(v, ctx, field.position, &field.arguments);
+
+    for (name, value) in &field.arguments {
+        v.enter_argument(ctx, field.position, name, value);
+        let expected_ty = ctx
+            .parent_type()
+            .and_then(|ty| ty.field_by_name(&field.name))
+            .and_then(|schema_field| schema_field.args.get(name.as_str()))
+            .map(|input_ty| TypeName::create(&input_ty.ty));
+        ctx.with_input_type(expected_ty, |ctx| {
+            visit_input_value(v, ctx, field.position, expected_ty, value)
+        });
+        v.exit_argument(ctx, field.position, name, value);
+    }
+
     visit_directives(v, ctx, &field.directives);
     visit_selection_set(v, ctx, &field.selection_set);
     v.exit_field(ctx, field);
 }
 
-fn visit_arguments<'a, V: Visitor<'a>>(
+fn visit_input_value<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
     pos: Pos,
-    arguments: &'a [(Name, Value)],
+    expected_ty: Option<TypeName<'a>>,
+    value: &'a Value,
 ) {
-    for (name, value) in arguments {
-        v.enter_argument(ctx, pos, name, value);
-        v.exit_argument(ctx, pos, name, value);
+    v.enter_input_value(ctx, pos, &expected_ty, value);
+
+    match value {
+        Value::List(values) => {
+            if let Some(expected_ty) = expected_ty {
+                let elem_ty = expected_ty.unwrap_non_null();
+                if let TypeName::List(expected_ty) = elem_ty {
+                    values.iter().for_each(|value| {
+                        visit_input_value(v, ctx, pos, Some(TypeName::create(expected_ty)), value)
+                    });
+                }
+            }
+        }
+        Value::Object(values) => {
+            if let Some(expected_ty) = expected_ty {
+                let expected_ty = expected_ty.unwrap_non_null();
+                if let TypeName::Named(expected_ty) = expected_ty {
+                    if let Some(ty) = ctx
+                        .registry
+                        .types
+                        .get(TypeName::get_basic_typename(expected_ty))
+                    {
+                        if let Type::InputObject { input_fields, .. } = ty {
+                            for (item_key, item_value) in values {
+                                if let Some(input_value) = input_fields.get(item_key) {
+                                    visit_input_value(
+                                        v,
+                                        ctx,
+                                        pos,
+                                        Some(TypeName::create(&input_value.ty)),
+                                        item_value,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _ => {}
     }
+
+    v.exit_input_value(ctx, pos, &expected_ty, value);
 }
 
 fn visit_variable_definitions<'a, V: Visitor<'a>>(
@@ -571,7 +626,20 @@ fn visit_directives<'a, V: Visitor<'a>>(
 ) {
     for d in directives {
         v.enter_directive(ctx, d);
-        visit_arguments(v, ctx, d.position, &d.arguments);
+
+        let schema_directive = ctx.registry.directives.get(&d.name);
+
+        for (name, value) in &d.arguments {
+            v.enter_argument(ctx, d.position, name, value);
+            let expected_ty = schema_directive
+                .and_then(|schema_directive| schema_directive.args.get(name.as_str()))
+                .and_then(|input_ty| Some(TypeName::create(&input_ty.ty)));
+            ctx.with_input_type(expected_ty, |ctx| {
+                visit_input_value(v, ctx, d.position, expected_ty, value)
+            });
+            v.exit_argument(ctx, d.position, name, value);
+        }
+
         v.exit_directive(ctx, d);
     }
 }
@@ -594,9 +662,6 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(
 ) {
     v.enter_fragment_spread(ctx, fragment_spread);
     visit_directives(v, ctx, &fragment_spread.directives);
-    if let Some(fragment) = ctx.fragment(fragment_spread.fragment_name.as_str()) {
-        visit_selection_set(v, ctx, &fragment.selection_set);
-    }
     v.exit_fragment_spread(ctx, fragment_spread);
 }
 

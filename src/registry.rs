@@ -20,10 +20,21 @@ fn parse_list(type_name: &str) -> Option<&str> {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum TypeName<'a> {
     List(&'a str),
     NonNull(&'a str),
     Named(&'a str),
+}
+
+impl<'a> std::fmt::Display for TypeName<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TypeName::Named(name) => write!(f, "{}", name),
+            TypeName::NonNull(name) => write!(f, "{}!", name),
+            TypeName::List(name) => write!(f, "[{}]", name),
+        }
+    }
 }
 
 impl<'a> TypeName<'a> {
@@ -50,6 +61,27 @@ impl<'a> TypeName<'a> {
             true
         } else {
             false
+        }
+    }
+
+    pub fn unwrap_non_null(&self) -> Self {
+        match self {
+            TypeName::NonNull(ty) => TypeName::create(ty),
+            _ => self.clone(),
+        }
+    }
+
+    pub fn is_subtype(&self, sub: &TypeName<'_>) -> bool {
+        match (self, sub) {
+            (TypeName::NonNull(super_type), TypeName::NonNull(sub_type))
+            | (TypeName::Named(super_type), TypeName::NonNull(sub_type)) => {
+                TypeName::create(super_type).is_subtype(&TypeName::create(sub_type))
+            }
+            (TypeName::Named(super_type), TypeName::Named(sub_type)) => super_type == sub_type,
+            (TypeName::List(super_type), TypeName::List(sub_type)) => {
+                TypeName::create(super_type).is_subtype(&TypeName::create(sub_type))
+            }
+            _ => false,
         }
     }
 }
@@ -187,7 +219,7 @@ pub enum Type {
     InputObject {
         name: String,
         description: Option<&'static str>,
-        input_fields: Vec<InputValue>,
+        input_fields: HashMap<String, InputValue>,
     },
 }
 
@@ -224,6 +256,14 @@ impl Type {
         }
     }
 
+    pub fn is_abstract(&self) -> bool {
+        match self {
+            Type::Interface { .. } => true,
+            Type::Union { .. } => true,
+            _ => false,
+        }
+    }
+
     pub fn is_leaf(&self) -> bool {
         match self {
             Type::Enum { .. } => true,
@@ -247,6 +287,32 @@ impl Type {
             Type::Union { possible_types, .. } => possible_types.contains(type_name),
             Type::Object { name, .. } => name == type_name,
             _ => false,
+        }
+    }
+
+    pub fn possible_types(&self) -> Option<&HashSet<String>> {
+        match self {
+            Type::Interface { possible_types, .. } => Some(possible_types),
+            Type::Union { possible_types, .. } => Some(possible_types),
+            _ => None,
+        }
+    }
+
+    pub fn type_overlap(&self, ty: &Type) -> bool {
+        if self as *const Type == ty as *const Type {
+            return true;
+        }
+
+        match (self.is_abstract(), ty.is_abstract()) {
+            (true, true) => self
+                .possible_types()
+                .iter()
+                .copied()
+                .flatten()
+                .any(|type_name| ty.is_possible_type(type_name)),
+            (true, false) => self.is_possible_type(ty.name()),
+            (false, true) => ty.is_possible_type(self.name()),
+            (false, false) => false,
         }
     }
 }
