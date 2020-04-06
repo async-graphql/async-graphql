@@ -3,7 +3,7 @@ use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type};
+use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -32,8 +32,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         .map(|s| quote! {Some(#s)})
         .unwrap_or_else(|| quote! {None});
 
-    let mut create_types = Vec::new();
-    let mut filters = Vec::new();
+    let mut create_stream = Vec::new();
     let mut schema_fields = Vec::new();
 
     for item in &mut item_impl.items {
@@ -55,32 +54,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
 
-                if method.sig.inputs.len() < 2 {
-                    return Err(Error::new_spanned(
-                        &method.sig.inputs,
-                        "The filter function needs at least two arguments",
-                    ));
-                }
-
                 if method.sig.asyncness.is_some() {
                     return Err(Error::new_spanned(
-                        &method.sig.inputs,
-                        "The filter function must be synchronous",
-                    ));
-                }
-
-                let mut res_typ_ok = false;
-                if let ReturnType::Type(_, res_ty) = &method.sig.output {
-                    if let Type::Path(p) = res_ty.as_ref() {
-                        if p.path.is_ident("bool") {
-                            res_typ_ok = true;
-                        }
-                    }
-                }
-                if !res_typ_ok {
-                    return Err(Error::new_spanned(
-                        &method.sig.output,
-                        "The filter function must return a boolean value",
+                        &method.sig.asyncness,
+                        "The subscription stream function must be synchronous",
                     ));
                 }
 
@@ -94,23 +71,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 }
 
-                let ty = if let FnArg::Typed(ty) = &method.sig.inputs[1] {
-                    match ty.ty.as_ref() {
-                        Type::Reference(r) => r.elem.as_ref().clone(),
-                        _ => {
-                            return Err(Error::new_spanned(ty, "Incorrect object type"));
-                        }
-                    }
-                } else {
-                    return Err(Error::new_spanned(
-                        &method.sig.inputs[1],
-                        "Incorrect object type",
-                    ));
-                };
-
                 let mut args = Vec::new();
 
-                for arg in method.sig.inputs.iter_mut().skip(2) {
+                for arg in method.sig.inputs.iter_mut().skip(1) {
                     if let FnArg::Typed(pat) = arg {
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
@@ -181,9 +144,25 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
 
                     get_params.push(quote! {
-                        let #ident: #ty = ctx_field.param_value(#name, field.position, #default)?;
+                        let #ident: #ty = ctx.param_value(#name, ctx.position, #default)?;
                     });
                 }
+
+                let stream_ty = match &method.sig.output {
+                    ReturnType::Default => {
+                        return Err(Error::new_spanned(
+                            &method.sig.output,
+                            "Must be return a stream type",
+                        ))
+                    }
+                    ReturnType::Type(_, ty) => {
+                        if let Type::ImplTrait(TypeImplTrait { bounds, .. }) = ty.as_ref() {
+                            quote! { #bounds }
+                        } else {
+                            quote! { #ty }
+                        }
+                    }
+                };
 
                 schema_fields.push(quote! {
                     fields.insert(#field_name.to_string(), #crate_name::registry::Field {
@@ -194,30 +173,46 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             #(#schema_args)*
                             args
                         },
-                        ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                        ty: <#stream_ty as #crate_name::futures::stream::Stream>::Item::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: Default::default(),
                     });
                 });
 
-                create_types.push(quote! {
-                    if field.name.as_str() == #field_name {
-                        types.insert(std::any::TypeId::of::<#ty>(), field.clone());
-                        return Ok(());
-                    }
-                });
-
-                filters.push(quote! {
-                    if let Some(msg) = msg.downcast_ref::<#ty>() {
+                create_stream.push(quote! {
+                    if ctx.name.as_str() == #field_name {
+                        let field_name = ctx.result_name().to_string();
                         #(#get_params)*
-                        if self.#ident(msg, #(#use_params)*) {
-                            let ctx_selection_set = ctx_field.with_selection_set(&field.selection_set);
-                            let value =
-                                #crate_name::OutputValueType::resolve(msg, &ctx_selection_set, field.position).await?;
-                            let mut res = #crate_name::serde_json::Map::new();
-                            res.insert(ctx_field.result_name().to_string(), value);
-                            return Ok(Some(res.into()));
-                        }
+                        let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
+                        let schema = schema.clone();
+                        let pos = ctx.position;
+                        let environment = environment.clone();
+                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params)*).fuse(), move |msg| {
+                            let environment = environment.clone();
+                            let field_selection_set = field_selection_set.clone();
+                            let schema = schema.clone();
+                            async move {
+                                let resolve_id = std::sync::atomic::AtomicUsize::default();
+                                let ctx_selection_set = environment.create_context(
+                                    &*field_selection_set,
+                                    Some(#crate_name::QueryPathNode {
+                                        parent: None,
+                                        segment: #crate_name::QueryPathSegment::Name("time"),
+                                    }),
+                                    &resolve_id,
+                                    schema.registry(),
+                                    schema.data(),
+                                );
+                                #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
+                            }
+                        }).
+                        filter_map(move |res| {
+                            let res = res.ok().map(|value| {
+                                #crate_name::serde_json::json!({ &field_name: value })
+                            });
+                            async move { res }
+                        });
+                        return Ok(Box::pin(stream));
                     }
                 });
 
@@ -234,6 +229,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
 
+            #[allow(bare_trait_objects)]
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
                     name: #gql_typename.to_string(),
@@ -250,26 +246,24 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::SubscriptionType for SubscriptionRoot {
-            fn create_type(field: &#crate_name::graphql_parser::query::Field, types: &mut std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>) -> #crate_name::Result<()> {
-                #(#create_types)*
-                Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
-                    object: #gql_typename.to_string(),
-                }.into_error(field.position))
-            }
-
-            async fn resolve(
+            #[allow(unused_variables)]
+            #[allow(bare_trait_objects)]
+            fn create_field_stream<Query, Mutation>(
                 &self,
-                ctx: &#crate_name::ContextBase<'_, ()>,
-                types: &std::collections::HashMap<std::any::TypeId, #crate_name::graphql_parser::query::Field>,
-                msg: &(dyn std::any::Any + Send + Sync),
-            ) -> #crate_name::Result<Option<#crate_name::serde_json::Value>> {
-                let tid = msg.type_id();
-                if let Some(field) = types.get(&tid) {
-                    let ctx_field = ctx.with_field(field);
-                    #(#filters)*
-                }
-                Ok(None)
+                ctx: &#crate_name::Context<'_>,
+                schema: &#crate_name::Schema<Query, Mutation, Self>,
+                environment: std::sync::Arc<#crate_name::Environment>,
+            ) -> #crate_name::Result<std::pin::Pin<Box<dyn futures::Stream<Item = #crate_name::serde_json::Value>>>>
+            where
+                Query: #crate_name::ObjectType + Send + Sync + 'static,
+                Mutation: #crate_name::ObjectType + Send + Sync + 'static,
+                Self: Send + Sync + 'static + Sized,
+            {
+                #(#create_stream)*
+                Err(#crate_name::QueryError::FieldNotFound {
+                    field_name: ctx.name.clone(),
+                    object: #gql_typename.to_string(),
+                }.into_error(ctx.position))
             }
         }
     };

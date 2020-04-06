@@ -1,6 +1,6 @@
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    ObjectType, QueryResponse, Result, Schema, SubscriptionStubs, SubscriptionTransport,
+    ObjectType, QueryResponse, Schema, SubscriptionStreams, SubscriptionTransport,
     SubscriptionType, Variables,
 };
 use bytes::Bytes;
@@ -27,7 +27,7 @@ impl SubscriptionTransport for WebSocketTransport {
     fn handle_request<Query, Mutation, Subscription>(
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
-        stubs: &mut SubscriptionStubs<Query, Mutation, Subscription>,
+        streams: &mut SubscriptionStreams,
         data: Bytes,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
@@ -54,16 +54,15 @@ impl SubscriptionTransport for WebSocketTransport {
                                 .map(|value| Variables::parse_from_json(value).ok())
                                 .flatten()
                                 .unwrap_or_default();
-
-                            match schema.create_subscription_stub(
+                            match schema.create_subscription_stream(
                                 &request.query,
                                 request.operation_name.as_deref(),
                                 variables,
                             ) {
-                                Ok(stub) => {
-                                    let stub_id = stubs.add(stub);
-                                    self.id_to_sid.insert(id.clone(), stub_id);
-                                    self.sid_to_id.insert(stub_id, id);
+                                Ok(stream) => {
+                                    let stream_id = streams.add(stream);
+                                    self.id_to_sid.insert(id.clone(), stream_id);
+                                    self.sid_to_id.insert(stream_id, id);
                                     Ok(None)
                                 }
                                 Err(err) => Ok(Some(
@@ -89,7 +88,7 @@ impl SubscriptionTransport for WebSocketTransport {
                     if let Some(id) = msg.id {
                         if let Some(id) = self.id_to_sid.remove(&id) {
                             self.sid_to_id.remove(&id);
-                            stubs.remove(id);
+                            streams.remove(id);
                         }
                     }
                     Ok(None)
@@ -101,15 +100,15 @@ impl SubscriptionTransport for WebSocketTransport {
         }
     }
 
-    fn handle_response(&mut self, id: usize, result: Result<serde_json::Value>) -> Option<Bytes> {
+    fn handle_response(&mut self, id: usize, value: serde_json::Value) -> Option<Bytes> {
         if let Some(id) = self.sid_to_id.get(&id) {
             Some(
                 serde_json::to_vec(&OperationMessage {
                     ty: "data".to_string(),
                     id: Some(id.clone()),
                     payload: Some(
-                        serde_json::to_value(GQLResponse(result.map(|data| QueryResponse {
-                            data,
+                        serde_json::to_value(GQLResponse(Ok(QueryResponse {
+                            data: value,
                             extensions: None,
                         })))
                         .unwrap(),

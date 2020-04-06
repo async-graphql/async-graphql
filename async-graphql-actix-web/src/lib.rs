@@ -11,10 +11,7 @@ use actix_web::web::{BytesMut, Payload};
 use actix_web::{web, FromRequest, HttpRequest, HttpResponse, Responder};
 use actix_web_actors::ws;
 use async_graphql::http::{GQLRequest, GQLResponse};
-use async_graphql::{
-    ObjectType, QueryBuilder, Schema, SubscriptionConnectionBuilder, SubscriptionType,
-    WebSocketTransport,
-};
+use async_graphql::{ObjectType, QueryBuilder, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::StreamExt;
 use mime::Mime;
@@ -30,13 +27,6 @@ type BoxOnRequestFn<Query, Mutation, Subscription> = Arc<
     ) -> QueryBuilder<Query, Mutation, Subscription>,
 >;
 
-type BoxOnConnectFn<Query, Mutation, Subscription> = Arc<
-    dyn Fn(
-        &HttpRequest,
-        SubscriptionConnectionBuilder<Query, Mutation, Subscription, WebSocketTransport>,
-    ) -> SubscriptionConnectionBuilder<Query, Mutation, Subscription, WebSocketTransport>,
->;
-
 /// Actix-web handler builder
 pub struct HandlerBuilder<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
@@ -45,7 +35,6 @@ pub struct HandlerBuilder<Query, Mutation, Subscription> {
     enable_subscription: bool,
     enable_ui: Option<(String, Option<String>)>,
     on_request: Option<BoxOnRequestFn<Query, Mutation, Subscription>>,
-    on_connect: Option<BoxOnConnectFn<Query, Mutation, Subscription>>,
 }
 
 impl<Query, Mutation, Subscription> HandlerBuilder<Query, Mutation, Subscription>
@@ -63,7 +52,6 @@ where
             enable_subscription: false,
             enable_ui: None,
             on_request: None,
-            on_connect: None,
         }
     }
 
@@ -122,24 +110,6 @@ where
         }
     }
 
-    /// When there is a new subscription connection, you can use this closure to append your own data to the `SubscriptionConnectionBuilder`.
-    pub fn on_connect<
-        F: Fn(
-                &HttpRequest,
-                SubscriptionConnectionBuilder<Query, Mutation, Subscription, WebSocketTransport>,
-            )
-                -> SubscriptionConnectionBuilder<Query, Mutation, Subscription, WebSocketTransport>
-            + 'static,
-    >(
-        self,
-        f: F,
-    ) -> Self {
-        Self {
-            on_connect: Some(Arc::new(f)),
-            ..self
-        }
-    }
-
     /// Create an HTTP handler.
     pub fn build(
         self,
@@ -155,13 +125,11 @@ where
         let enable_ui = self.enable_ui;
         let enable_subscription = self.enable_subscription;
         let on_request = self.on_request;
-        let on_connect = self.on_connect;
 
         move |req: HttpRequest, payload: Payload| {
             let schema = schema.clone();
             let enable_ui = enable_ui.clone();
             let on_request = on_request.clone();
-            let on_connect = on_connect.clone();
 
             Box::pin(async move {
                 if req.method() == Method::GET {
@@ -170,11 +138,7 @@ where
                             if let Ok(s) = s.to_str() {
                                 if s.to_ascii_lowercase().contains("websocket") {
                                     return ws::start_with_protocols(
-                                        WsSession::new(
-                                            schema.clone(),
-                                            req.clone(),
-                                            on_connect.clone(),
-                                        ),
+                                        WsSession::new(schema.clone()),
                                         &["graphql-ws"],
                                         &req,
                                         payload,

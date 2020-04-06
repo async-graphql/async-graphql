@@ -1,32 +1,25 @@
-use crate::context::Data;
-use crate::schema::SUBSCRIPTION_SENDERS;
-use crate::subscription::SubscriptionStub;
-use crate::{ObjectType, Result, Schema, SubscriptionType};
+use crate::{ObjectType, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{Context, Poll};
-use futures::{Future, FutureExt, Stream};
+use futures::Stream;
 use slab::Slab;
-use std::any::Any;
 use std::collections::VecDeque;
 use std::pin::Pin;
-use std::sync::Arc;
 
-/// Subscription stubs, use to hold all subscription information for the `SubscriptionConnection`
-pub struct SubscriptionStubs<Query, Mutation, Subscription> {
-    stubs: Slab<SubscriptionStub<Query, Mutation, Subscription>>,
-    ctx_data: Option<Arc<Data>>,
+/// Use to hold all subscription stream for the `SubscriptionConnection`
+pub struct SubscriptionStreams {
+    streams: Slab<Pin<Box<dyn Stream<Item = serde_json::Value>>>>,
 }
 
 #[allow(missing_docs)]
-impl<Query, Mutation, Subscription> SubscriptionStubs<Query, Mutation, Subscription> {
-    pub fn add(&mut self, mut stub: SubscriptionStub<Query, Mutation, Subscription>) -> usize {
-        stub.ctx_data = self.ctx_data.clone();
-        self.stubs.insert(stub)
+impl SubscriptionStreams {
+    pub fn add(&mut self, stream: Pin<Box<dyn Stream<Item = serde_json::Value>>>) -> usize {
+        self.streams.insert(stream)
     }
 
     pub fn remove(&mut self, id: usize) {
-        self.stubs.remove(id);
+        self.streams.remove(id);
     }
 }
 
@@ -38,12 +31,12 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
     type Error;
 
     /// Parse the request data here.
-    /// If you have a new request, create a `SubscriptionStub` with the `Schema::create_subscription_stub`, and then call `SubscriptionStubs::add`.
+    /// If you have a new subscribe, create a stream with the `Schema::create_subscription_stream`, and then call `SubscriptionStreams::add`.
     /// You can return a `Byte`, which will be sent to the client. If it returns an error, the connection will be broken.
     fn handle_request<Query, Mutation, Subscription>(
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
-        stubs: &mut SubscriptionStubs<Query, Mutation, Subscription>,
+        streams: &mut SubscriptionStreams,
         data: Bytes,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
@@ -52,13 +45,12 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         Subscription: SubscriptionType + Sync + Send + 'static;
 
     /// When a response message is generated, you can convert the message to the format you want here.
-    fn handle_response(&mut self, id: usize, result: Result<serde_json::Value>) -> Option<Bytes>;
+    fn handle_response(&mut self, id: usize, value: serde_json::Value) -> Option<Bytes>;
 }
 
-pub async fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
+pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
-    ctx_data: Option<Data>,
 ) -> (
     mpsc::Sender<Bytes>,
     SubscriptionStream<Query, Mutation, Subscription, T>,
@@ -69,23 +61,16 @@ where
     Subscription: SubscriptionType + Sync + Send + 'static,
 {
     let (tx_bytes, rx_bytes) = mpsc::channel(8);
-    let (tx_msg, rx_msg) = mpsc::channel(8);
-    let mut senders = SUBSCRIPTION_SENDERS.lock().await;
-    senders.insert(tx_msg);
     (
         tx_bytes.clone(),
         SubscriptionStream {
             schema,
             transport,
-            stubs: SubscriptionStubs {
-                stubs: Default::default(),
-                ctx_data: ctx_data.map(Arc::new),
+            streams: SubscriptionStreams {
+                streams: Default::default(),
             },
             rx_bytes,
-            rx_msg,
             send_queue: VecDeque::new(),
-            resolve_queue: VecDeque::default(),
-            resolve_fut: None,
         },
     )
 }
@@ -94,12 +79,9 @@ where
 pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
-    stubs: SubscriptionStubs<Query, Mutation, Subscription>,
+    streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
-    rx_msg: mpsc::Receiver<Arc<dyn Any + Sync + Send>>,
     send_queue: VecDeque<Bytes>,
-    resolve_queue: VecDeque<Arc<dyn Any + Sync + Send>>,
-    resolve_fut: Option<Pin<Box<dyn Future<Output = ()>>>>,
 }
 
 impl<Query, Mutation, Subscription, T> Stream
@@ -125,7 +107,7 @@ where
                     let this = &mut *self;
                     match this
                         .transport
-                        .handle_request(&this.schema, &mut this.stubs, data)
+                        .handle_request(&this.schema, &mut this.streams, data)
                     {
                         Ok(Some(bytes)) => {
                             this.send_queue.push_back(bytes);
@@ -139,44 +121,38 @@ where
                 Poll::Pending => {}
             }
 
-            if let Some(resolve_fut) = &mut self.resolve_fut {
-                match resolve_fut.poll_unpin(cx) {
-                    Poll::Ready(_) => {
-                        self.resolve_fut = None;
-                    }
-                    Poll::Pending => return Poll::Pending,
-                }
-            } else if let Some(msg) = self.resolve_queue.pop_front() {
-                // FIXME: I think this code is safe, but I don't know how to implement it in safe code.
-                let this = &mut *self;
-                let stubs = &this.stubs as *const SubscriptionStubs<Query, Mutation, Subscription>;
-                let transport = &mut this.transport as *mut T;
-                let send_queue = &mut this.send_queue as *mut VecDeque<Bytes>;
-                let fut = async move {
-                    unsafe {
-                        for (id, stub) in (*stubs).stubs.iter() {
-                            if let Some(res) = stub.resolve(msg.as_ref()).await.transpose() {
-                                if let Some(bytes) = (*transport).handle_response(id, res) {
-                                    (*send_queue).push_back(bytes);
+            // receive msg
+            let this = &mut *self;
+            if !this.streams.streams.is_empty() {
+                loop {
+                    let mut num_closed = 0;
+                    let mut num_pending = 0;
+
+                    for (id, incoming_stream) in &mut this.streams.streams {
+                        match incoming_stream.as_mut().poll_next(cx) {
+                            Poll::Ready(Some(value)) => {
+                                if let Some(bytes) = this.transport.handle_response(id, value) {
+                                    this.send_queue.push_back(bytes);
                                 }
+                            }
+                            Poll::Ready(None) => {
+                                num_closed += 1;
+                            }
+                            Poll::Pending => {
+                                num_pending += 1;
                             }
                         }
                     }
-                };
-                self.resolve_fut = Some(Box::pin(fut));
-                continue;
-            }
 
-            // receive msg
-            match Pin::new(&mut self.rx_msg).poll_next(cx) {
-                Poll::Ready(Some(msg)) => {
-                    self.resolve_queue.push_back(msg);
+                    if num_closed == this.streams.streams.len() {
+                        // all closed
+                        return Poll::Ready(None);
+                    } else if num_pending == this.streams.streams.len() {
+                        return Poll::Pending;
+                    }
                 }
-                Poll::Ready(None) => return Poll::Ready(None),
-                Poll::Pending => {
-                    // all pending
-                    return Poll::Pending;
-                }
+            } else {
+                return Poll::Pending;
             }
         }
     }

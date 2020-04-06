@@ -1,8 +1,6 @@
-use crate::BoxOnConnectFn;
 use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
-use actix_web::HttpRequest;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::{ObjectType, Schema, SubscriptionType, WebSocketTransport};
 use bytes::Bytes;
@@ -11,11 +9,9 @@ use futures::SinkExt;
 use std::time::{Duration, Instant};
 
 pub struct WsSession<Query, Mutation, Subscription> {
-    req: HttpRequest,
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
-    on_connect: Option<BoxOnConnectFn<Query, Mutation, Subscription>>,
 }
 
 impl<Query, Mutation, Subscription> WsSession<Query, Mutation, Subscription>
@@ -24,17 +20,11 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    pub fn new(
-        schema: Schema<Query, Mutation, Subscription>,
-        req: HttpRequest,
-        on_connect: Option<BoxOnConnectFn<Query, Mutation, Subscription>>,
-    ) -> Self {
+    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
         Self {
-            req,
             schema,
             hb: Instant::now(),
             sink: None,
-            on_connect,
         }
     }
 
@@ -58,24 +48,9 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         let schema = self.schema.clone();
-        let on_connect = self.on_connect.clone();
-        let req = self.req.clone();
-        async move {
-            let mut builder = schema
-                .clone()
-                .subscription_connection(WebSocketTransport::default());
-            if let Some(on_connect) = on_connect {
-                builder = on_connect(&req, builder);
-            }
-            builder.build().await
-        }
-        .into_actor(self)
-        .then(|(sink, stream), actor, ctx| {
-            actor.sink = Some(sink);
-            ctx.add_stream(stream);
-            async {}.into_actor(actor)
-        })
-        .wait(ctx);
+        let (sink, stream) = schema.subscription_connection(WebSocketTransport::default());
+        ctx.add_stream(stream);
+        self.sink = Some(sink);
     }
 }
 

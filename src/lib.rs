@@ -76,7 +76,6 @@ extern crate serde_derive;
 mod base;
 mod context;
 mod error;
-pub mod extensions;
 mod model;
 mod mutation_resolver;
 mod query;
@@ -87,13 +86,15 @@ mod subscription;
 mod types;
 mod validation;
 
-/// Input value validators
+pub mod extensions;
 pub mod validators;
 
 #[doc(hidden)]
 pub use anyhow;
 #[doc(hidden)]
 pub use async_trait;
+#[doc(hidden)]
+pub use futures;
 #[doc(hidden)]
 pub use graphql_parser;
 #[doc(hidden)]
@@ -102,17 +103,16 @@ pub use serde_json;
 pub mod http;
 
 pub use base::{Scalar, Type};
-pub use context::{Context, QueryPathSegment, Variables};
+pub use context::{Context, Environment, QueryPathNode, QueryPathSegment, Variables};
 pub use error::{Error, ErrorExtensions, FieldError, FieldResult, QueryError, ResultExt};
 pub use graphql_parser::query::Value;
 pub use graphql_parser::Pos;
 pub use query::{QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::ID;
-pub use schema::{publish, Schema};
+pub use schema::Schema;
 pub use subscription::{
-    SubscriptionConnectionBuilder, SubscriptionStream, SubscriptionStub, SubscriptionStubs,
-    SubscriptionTransport, WebSocketTransport,
+    SubscriptionStream, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
 pub use types::{
     Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,

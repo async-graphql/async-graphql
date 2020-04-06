@@ -3,31 +3,24 @@ use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
 use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
-use crate::subscription::{SubscriptionConnectionBuilder, SubscriptionStub, SubscriptionTransport};
+use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
     ContextSelectionSet, Error, ObjectType, Pos, QueryError, QueryResponse, Result,
-    SubscriptionType, Type, Variables,
+    SubscriptionStream, SubscriptionType, Type, Variables,
 };
+use bytes::Bytes;
 use futures::channel::mpsc;
-use futures::lock::Mutex;
-use futures::{SinkExt, TryFutureExt};
+use futures::{Stream, TryFutureExt};
 use graphql_parser::parse_query;
-use graphql_parser::query::{
-    Definition, Field, FragmentDefinition, OperationDefinition, Selection,
-};
+use graphql_parser::query::{Definition, OperationDefinition};
 use itertools::Itertools;
-use once_cell::sync::Lazy;
-use slab::Slab;
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
-
-type MsgSender = mpsc::Sender<Arc<dyn Any + Sync + Send>>;
-
-pub(crate) static SUBSCRIPTION_SENDERS: Lazy<Mutex<Slab<MsgSender>>> = Lazy::new(Default::default);
 
 pub(crate) struct SchemaInner<Query, Mutation, Subscription> {
     pub(crate) query: QueryRoot<Query>,
@@ -211,6 +204,16 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
+    #[doc(hidden)]
+    pub fn data(&self) -> &Data {
+        &self.0.data
+    }
+
+    #[doc(hidden)]
+    pub fn registry(&self) -> &Registry {
+        &self.0.registry
+    }
+
     /// Start a query and return `QueryBuilder`.
     pub fn query(&self, source: &str) -> Result<QueryBuilder<Query, Mutation, Subscription>> {
         let extensions = self
@@ -233,13 +236,13 @@ where
 
         if let Some(limit_complexity) = self.0.complexity {
             if complexity > limit_complexity {
-                return Err(QueryError::TooComplex.into_error(Pos { line: 0, column: 0 }));
+                return Err(QueryError::TooComplex.into_error(Pos::default()));
             }
         }
 
         if let Some(limit_depth) = self.0.depth {
             if depth > limit_depth {
-                return Err(QueryError::TooDeep.into_error(Pos { line: 0, column: 0 }));
+                return Err(QueryError::TooDeep.into_error(Pos::default()));
             }
         }
 
@@ -261,16 +264,13 @@ where
             .await
     }
 
-    /// Create subscription stub, typically called inside the `SubscriptionTransport::handle_request` method/
-    pub fn create_subscription_stub(
+    /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
+    pub fn create_subscription_stream(
         &self,
         source: &str,
         operation_name: Option<&str>,
         variables: Variables,
-    ) -> Result<SubscriptionStub<Query, Mutation, Subscription>>
-    where
-        Self: Sized,
-    {
+    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value>>>> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document)?;
 
@@ -301,7 +301,6 @@ where
             QueryError::MissingOperation.into_error(Pos::default())
         })?;
 
-        let mut types = HashMap::new();
         let resolve_id = AtomicUsize::default();
         let ctx = ContextSelectionSet {
             path_node: None,
@@ -315,87 +314,20 @@ where
             ctx_data: None,
             fragments: &fragments,
         };
-        create_subscription_types::<Subscription>(&ctx, &fragments, &mut types)?;
-        Ok(SubscriptionStub {
-            schema: self.clone(),
-            types,
-            variables,
-            variable_definitions: subscription.variable_definitions,
-            fragments,
-            ctx_data: None,
-        })
+
+        let mut streams = Vec::new();
+        create_subscription_stream(self, Arc::new(ctx.create_environment()), &ctx, &mut streams)?;
+        Ok(Box::pin(futures::stream::select_all(streams)))
     }
 
-    /// Create subscription connection, returns `SubscriptionConnectionBuilder`.
+    /// Create subscription connection, returns `Sink` and `Stream`.
     pub fn subscription_connection<T: SubscriptionTransport>(
         &self,
         transport: T,
-    ) -> SubscriptionConnectionBuilder<Query, Mutation, Subscription, T> {
-        SubscriptionConnectionBuilder {
-            schema: self.clone(),
-            transport,
-            ctx_data: None,
-        }
-    }
-}
-
-fn create_subscription_types<T: SubscriptionType>(
-    ctx: &ContextSelectionSet<'_>,
-    fragments: &HashMap<String, FragmentDefinition>,
-    types: &mut HashMap<TypeId, Field>,
-) -> Result<()> {
-    for selection in &ctx.items {
-        match selection {
-            Selection::Field(field) => {
-                if ctx.is_skip(&field.directives)? {
-                    continue;
-                }
-                T::create_type(field, types)?;
-            }
-            Selection::FragmentSpread(fragment_spread) => {
-                if ctx.is_skip(&fragment_spread.directives)? {
-                    continue;
-                }
-
-                if let Some(fragment) = fragments.get(&fragment_spread.fragment_name) {
-                    create_subscription_types::<T>(
-                        &ctx.with_selection_set(&fragment.selection_set),
-                        fragments,
-                        types,
-                    )?;
-                } else {
-                    return Err(QueryError::UnknownFragment {
-                        name: fragment_spread.fragment_name.clone(),
-                    }
-                    .into_error(fragment_spread.position));
-                }
-            }
-            Selection::InlineFragment(inline_fragment) => {
-                if ctx.is_skip(&inline_fragment.directives)? {
-                    continue;
-                }
-                create_subscription_types::<T>(
-                    &ctx.with_selection_set(&inline_fragment.selection_set),
-                    fragments,
-                    types,
-                )?;
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Publish a message that will be pushed to all subscribed clients.
-pub async fn publish<T: Any + Send + Sync + Sized>(msg: T) {
-    let mut senders = SUBSCRIPTION_SENDERS.lock().await;
-    let msg = Arc::new(msg);
-    let mut remove = Vec::new();
-    for (id, sender) in senders.iter_mut() {
-        if sender.send(msg.clone()).await.is_err() {
-            remove.push(id);
-        }
-    }
-    for id in remove {
-        senders.remove(id);
+    ) -> (
+        mpsc::Sender<Bytes>,
+        SubscriptionStream<Query, Mutation, Subscription, T>,
+    ) {
+        create_connection(self.clone(), transport)
     }
 }

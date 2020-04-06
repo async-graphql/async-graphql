@@ -242,7 +242,48 @@ impl<'a, T> Deref for ContextBase<'a, T> {
     }
 }
 
+#[doc(hidden)]
+pub struct Environment {
+    pub variables: Variables,
+    pub variable_definitions: Vec<VariableDefinition>,
+    pub fragments: HashMap<String, FragmentDefinition>,
+}
+
+impl Environment {
+    #[doc(hidden)]
+    pub fn create_context<'a, T>(
+        &'a self,
+        item: T,
+        path_node: Option<QueryPathNode<'a>>,
+        resolve_id: &'a AtomicUsize,
+        registry: &'a Registry,
+        data: &'a Data,
+    ) -> ContextBase<'a, T> {
+        ContextBase {
+            path_node,
+            resolve_id,
+            extensions: &[],
+            item,
+            variables: &self.variables,
+            variable_definitions: &self.variable_definitions,
+            registry,
+            data,
+            ctx_data: None,
+            fragments: &self.fragments,
+        }
+    }
+}
+
 impl<'a, T> ContextBase<'a, T> {
+    #[doc(hidden)]
+    pub fn create_environment(&self) -> Environment {
+        Environment {
+            variables: self.variables.clone(),
+            variable_definitions: self.variable_definitions.to_vec(),
+            fragments: self.fragments.clone(),
+        }
+    }
+
     #[doc(hidden)]
     pub fn get_resolve_id(&self) -> usize {
         self.resolve_id

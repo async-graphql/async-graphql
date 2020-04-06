@@ -1,14 +1,13 @@
+use crate::context::Environment;
 use crate::{
-    registry, ContextBase, ContextSelectionSet, Error, OutputValueType, QueryError, Result,
-    SubscriptionType, Type,
+    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, QueryError, Result,
+    Schema, SubscriptionType, Type,
 };
-use graphql_parser::query::Field;
+use futures::Stream;
 use graphql_parser::Pos;
-use serde_json::Value;
-use std::any::{Any, TypeId};
 use std::borrow::Cow;
-use std::collections::hash_map::RandomState;
-use std::collections::HashMap;
+use std::pin::Pin;
+use std::sync::Arc;
 
 /// Empty subscription
 ///
@@ -36,17 +35,22 @@ impl SubscriptionType for EmptySubscription {
         true
     }
 
-    fn create_type(_field: &Field, _types: &mut HashMap<TypeId, Field>) -> Result<()> {
-        unreachable!()
-    }
-
-    async fn resolve(
+    fn create_field_stream<Query, Mutation>(
         &self,
-        _ctx: &ContextBase<'_, ()>,
-        _types: &HashMap<TypeId, Field, RandomState>,
-        _msg: &(dyn Any + Send + Sync),
-    ) -> Result<Option<Value>> {
-        unreachable!()
+        _ctx: &Context<'_>,
+        _schema: &Schema<Query, Mutation, Self>,
+        _environment: Arc<Environment>,
+    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value>>>>
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Self: Send + Sync + 'static + Sized,
+    {
+        Err(Error::Query {
+            pos: Pos::default(),
+            path: None,
+            err: QueryError::NotConfiguredSubscriptions,
+        })
     }
 }
 
