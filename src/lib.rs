@@ -118,6 +118,7 @@ pub use types::{
     Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,
     Upload,
 };
+pub use validation::ValidationMode;
 
 /// Result type, are actually `anyhow::Result<T>`
 pub type Result<T> = std::result::Result<T, Error>;

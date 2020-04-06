@@ -5,7 +5,7 @@ use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
-use crate::validation::{check_rules, CheckResult};
+use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
     ContextSelectionSet, Error, ObjectType, Pos, QueryError, QueryResponse, Result,
     SubscriptionStream, SubscriptionType, Type, Variables,
@@ -22,6 +22,7 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 pub(crate) struct SchemaInner<Query, Mutation, Subscription> {
+    pub(crate) validation_mode: ValidationMode,
     pub(crate) query: QueryRoot<Query>,
     pub(crate) mutation: Mutation,
     pub(crate) subscription: Subscription,
@@ -70,6 +71,12 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     /// Add a global data that can be accessed in the `Schema`, you access it with `Context::data`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.0.data.insert(data);
+        self
+    }
+
+    /// Set the validation mode, default is `ValidationMode::Strict`.
+    pub fn validation_mode(mut self, validation_mode: ValidationMode) -> Self {
+        self.0.validation_mode = validation_mode;
         self
     }
 
@@ -180,6 +187,7 @@ where
         }
 
         SchemaBuilder(SchemaInner {
+            validation_mode: ValidationMode::Strict,
             query: QueryRoot {
                 inner: query,
                 disable_introspection: false,
@@ -230,7 +238,7 @@ where
             cache_control,
             complexity,
             depth,
-        } = check_rules(&self.0.registry, &document)?;
+        } = check_rules(&self.0.registry, &document, self.0.validation_mode)?;
         extensions.iter().for_each(|e| e.validation_end());
 
         if let Some(limit_complexity) = self.0.complexity {
@@ -271,7 +279,7 @@ where
         variables: Variables,
     ) -> Result<impl Stream<Item = serde_json::Value>> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
-        check_rules(&self.0.registry, &document)?;
+        check_rules(&self.0.registry, &document, self.0.validation_mode)?;
 
         let mut fragments = HashMap::new();
         let mut subscription = None;
