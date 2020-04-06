@@ -62,7 +62,7 @@ where
 {
     let (tx_bytes, rx_bytes) = mpsc::channel(8);
     (
-        tx_bytes.clone(),
+        tx_bytes,
         SubscriptionStream {
             schema,
             transport,
