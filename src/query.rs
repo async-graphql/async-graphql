@@ -104,7 +104,7 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
                     .schema
                     .0
                     .registry
-                    .basic_type_by_parsed_type(&d.var_type)
+                    .concrete_type_by_parsed_type(&d.var_type)
                 {
                     if ty.name() == "Upload" {
                         return true;

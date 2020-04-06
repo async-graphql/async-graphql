@@ -187,7 +187,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         let schema = schema.clone();
                         let pos = ctx.position;
                         let environment = environment.clone();
-                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params)*).fuse(), move |msg| {
+                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params),*).fuse(), move |msg| {
                             let environment = environment.clone();
                             let field_selection_set = field_selection_set.clone();
                             let schema = schema.clone();

@@ -513,7 +513,7 @@ fn visit_selection<'a, V: Visitor<'a>>(
                     ctx.current_type()
                         .and_then(|ty| ty.field_by_name(&field.name))
                         .and_then(|schema_field| {
-                            ctx.registry.basic_type_by_typename(&schema_field.ty)
+                            ctx.registry.concrete_type_by_name(&schema_field.ty)
                         }),
                     |ctx| {
                         visit_field(v, ctx, field);
@@ -583,7 +583,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(
                     if let Some(ty) = ctx
                         .registry
                         .types
-                        .get(TypeName::get_basic_typename(expected_ty))
+                        .get(TypeName::concrete_typename(expected_ty))
                     {
                         if let Type::InputObject { input_fields, .. } = ty {
                             for (item_key, item_value) in values {

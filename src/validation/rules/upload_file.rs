@@ -12,7 +12,7 @@ impl<'a> Visitor<'a> for UploadFile {
     ) {
         if let OperationDefinition::Query(query) = operation_definition {
             for var in &query.variable_definitions {
-                if let Some(ty) = ctx.registry.basic_type_by_parsed_type(&var.var_type) {
+                if let Some(ty) = ctx.registry.concrete_type_by_parsed_type(&var.var_type) {
                     if ty.name() == "Upload" {
                         ctx.report_error(
                             vec![var.position],
@@ -23,7 +23,7 @@ impl<'a> Visitor<'a> for UploadFile {
             }
         } else if let OperationDefinition::Subscription(subscription) = operation_definition {
             for var in &subscription.variable_definitions {
-                if let Some(ty) = ctx.registry.basic_type_by_parsed_type(&var.var_type) {
+                if let Some(ty) = ctx.registry.concrete_type_by_parsed_type(&var.var_type) {
                     if ty.name() == "Upload" {
                         ctx.report_error(
                             vec![var.position],

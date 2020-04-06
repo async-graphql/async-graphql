@@ -48,10 +48,10 @@ impl<'a> TypeName<'a> {
         }
     }
 
-    pub fn get_basic_typename(type_name: &str) -> &str {
+    pub fn concrete_typename(type_name: &str) -> &str {
         match TypeName::create(type_name) {
-            TypeName::List(type_name) => Self::get_basic_typename(type_name),
-            TypeName::NonNull(type_name) => Self::get_basic_typename(type_name),
+            TypeName::List(type_name) => Self::concrete_typename(type_name),
+            TypeName::NonNull(type_name) => Self::concrete_typename(type_name),
             TypeName::Named(type_name) => type_name,
         }
     }
@@ -373,14 +373,14 @@ impl Registry {
             });
     }
 
-    pub fn basic_type_by_typename(&self, type_name: &str) -> Option<&Type> {
-        self.types.get(TypeName::get_basic_typename(type_name))
+    pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&Type> {
+        self.types.get(TypeName::concrete_typename(type_name))
     }
 
-    pub fn basic_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&Type> {
+    pub fn concrete_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&Type> {
         match query_type {
-            ParsedType::NonNullType(ty) => self.basic_type_by_parsed_type(ty),
-            ParsedType::ListType(ty) => self.basic_type_by_parsed_type(ty),
+            ParsedType::NonNullType(ty) => self.concrete_type_by_parsed_type(ty),
+            ParsedType::ListType(ty) => self.concrete_type_by_parsed_type(ty),
             ParsedType::NamedType(name) => self.types.get(name.as_str()),
         }
     }

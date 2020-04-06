@@ -18,7 +18,6 @@ use graphql_parser::query::{Definition, OperationDefinition};
 use itertools::Itertools;
 use std::any::Any;
 use std::collections::HashMap;
-use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -270,7 +269,7 @@ where
         source: &str,
         operation_name: Option<&str>,
         variables: Variables,
-    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value>>>> {
+    ) -> Result<impl Stream<Item = serde_json::Value>> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document)?;
 
@@ -317,7 +316,7 @@ where
 
         let mut streams = Vec::new();
         create_subscription_stream(self, Arc::new(ctx.create_environment()), &ctx, &mut streams)?;
-        Ok(Box::pin(futures::stream::select_all(streams)))
+        Ok(futures::stream::select_all(streams))
     }
 
     /// Create subscription connection, returns `Sink` and `Stream`.

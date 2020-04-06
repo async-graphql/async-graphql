@@ -14,8 +14,8 @@ pub struct SubscriptionStreams {
 
 #[allow(missing_docs)]
 impl SubscriptionStreams {
-    pub fn add(&mut self, stream: Pin<Box<dyn Stream<Item = serde_json::Value>>>) -> usize {
-        self.streams.insert(stream)
+    pub fn add<S: Stream<Item = serde_json::Value> + 'static>(&mut self, stream: S) -> usize {
+        self.streams.insert(Box::pin(stream))
     }
 
     pub fn remove(&mut self, id: usize) {
