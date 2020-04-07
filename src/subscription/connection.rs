@@ -4,17 +4,20 @@ use futures::channel::mpsc;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use slab::Slab;
-use std::collections::VecDeque;
+use std::future::Future;
 use std::pin::Pin;
 
 /// Use to hold all subscription stream for the `SubscriptionConnection`
 pub struct SubscriptionStreams {
-    streams: Slab<Pin<Box<dyn Stream<Item = serde_json::Value>>>>,
+    streams: Slab<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>,
 }
 
 #[allow(missing_docs)]
 impl SubscriptionStreams {
-    pub fn add<S: Stream<Item = serde_json::Value> + 'static>(&mut self, stream: S) -> usize {
+    pub fn add<S: Stream<Item = serde_json::Value> + Send + 'static>(
+        &mut self,
+        stream: S,
+    ) -> usize {
         self.streams.insert(Box::pin(stream))
     }
 
@@ -26,6 +29,7 @@ impl SubscriptionStreams {
 /// Subscription transport
 ///
 /// You can customize your transport by implementing this trait.
+#[async_trait::async_trait]
 pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
     /// The error type.
     type Error;
@@ -33,7 +37,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
     /// Parse the request data here.
     /// If you have a new subscribe, create a stream with the `Schema::create_subscription_stream`, and then call `SubscriptionStreams::add`.
     /// You can return a `Byte`, which will be sent to the client. If it returns an error, the connection will be broken.
-    fn handle_request<Query, Mutation, Subscription>(
+    async fn handle_request<Query, Mutation, Subscription>(
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
@@ -70,7 +74,7 @@ where
                 streams: Default::default(),
             },
             rx_bytes,
-            send_queue: VecDeque::new(),
+            handle_request_fut: None,
         },
     )
 }
@@ -81,7 +85,9 @@ pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTran
     transport: T,
     streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
-    send_queue: VecDeque<Bytes>,
+    handle_request_fut: Option<
+        Pin<Box<dyn Future<Output = std::result::Result<Option<Bytes>, T::Error>> + 'static>>,
+    >,
 }
 
 impl<Query, Mutation, Subscription, T> Stream
@@ -95,34 +101,44 @@ where
     type Item = Bytes;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        loop {
-            // send bytes
-            if let Some(bytes) = self.send_queue.pop_front() {
-                return Poll::Ready(Some(bytes));
-            }
+        let this = &mut *self;
 
+        loop {
             // receive bytes
-            match Pin::new(&mut self.rx_bytes).poll_next(cx) {
-                Poll::Ready(Some(data)) => {
-                    let this = &mut *self;
-                    match this
-                        .transport
-                        .handle_request(&this.schema, &mut this.streams, data)
-                    {
-                        Ok(Some(bytes)) => {
-                            this.send_queue.push_back(bytes);
-                            continue;
+            if let Some(handle_request_fut) = &mut this.handle_request_fut {
+                match handle_request_fut.as_mut().poll(cx) {
+                    Poll::Ready(Ok(bytes)) => {
+                        this.handle_request_fut = None;
+                        if let Some(bytes) = bytes {
+                            return Poll::Ready(Some(bytes));
                         }
-                        Ok(None) => {}
-                        Err(_) => return Poll::Ready(None),
+                        continue;
                     }
+                    Poll::Ready(Err(_)) => return Poll::Ready(None),
+                    Poll::Pending => {}
                 }
-                Poll::Ready(None) => return Poll::Ready(None),
-                Poll::Pending => {}
+            } else {
+                match Pin::new(&mut this.rx_bytes).poll_next(cx) {
+                    Poll::Ready(Some(data)) => {
+                        // The following code I think is safe.😁
+                        let transport = &mut this.transport as *mut T;
+                        let schema = &this.schema as *const Schema<Query, Mutation, Subscription>;
+                        let streams = &mut this.streams as *mut SubscriptionStreams;
+                        unsafe {
+                            this.handle_request_fut = Some(Box::pin((*transport).handle_request(
+                                &*schema,
+                                &mut *streams,
+                                data,
+                            )));
+                        }
+                        continue;
+                    }
+                    Poll::Ready(None) => return Poll::Ready(None),
+                    Poll::Pending => {}
+                }
             }
 
             // receive msg
-            let this = &mut *self;
             if !this.streams.streams.is_empty() {
                 loop {
                     let mut num_closed = 0;
@@ -132,7 +148,7 @@ where
                         match incoming_stream.as_mut().poll_next(cx) {
                             Poll::Ready(Some(value)) => {
                                 if let Some(bytes) = this.transport.handle_response(id, value) {
-                                    this.send_queue.push_back(bytes);
+                                    return Poll::Ready(Some(bytes));
                                 }
                             }
                             Poll::Ready(None) => {

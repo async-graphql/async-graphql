@@ -21,10 +21,11 @@ pub struct WebSocketTransport {
     sid_to_id: HashMap<usize, String>,
 }
 
+#[async_trait::async_trait]
 impl SubscriptionTransport for WebSocketTransport {
     type Error = String;
 
-    fn handle_request<Query, Mutation, Subscription>(
+    async fn handle_request<Query, Mutation, Subscription>(
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
@@ -54,11 +55,14 @@ impl SubscriptionTransport for WebSocketTransport {
                                 .map(|value| Variables::parse_from_json(value).ok())
                                 .flatten()
                                 .unwrap_or_default();
-                            match schema.create_subscription_stream(
-                                &request.query,
-                                request.operation_name.as_deref(),
-                                variables,
-                            ) {
+                            match schema
+                                .create_subscription_stream(
+                                    &request.query,
+                                    request.operation_name.as_deref(),
+                                    variables,
+                                )
+                                .await
+                            {
                                 Ok(stream) => {
                                     let stream_id = streams.add(stream);
                                     self.id_to_sid.insert(id.clone(), stream_id);

@@ -54,10 +54,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
 
-                if method.sig.asyncness.is_some() {
+                if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(
                         &method.sig.asyncness,
-                        "The subscription stream function must be synchronous",
+                        "The subscription stream function must be asynchronous",
                     ));
                 }
 
@@ -187,7 +187,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         let schema = schema.clone();
                         let pos = ctx.position;
                         let environment = environment.clone();
-                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params),*).fuse(), move |msg| {
+                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params),*).await.fuse(), move |msg| {
                             let environment = environment.clone();
                             let field_selection_set = field_selection_set.clone();
                             let schema = schema.clone();
@@ -248,12 +248,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         impl #crate_name::SubscriptionType for SubscriptionRoot {
             #[allow(unused_variables)]
             #[allow(bare_trait_objects)]
-            fn create_field_stream<Query, Mutation>(
+            async fn create_field_stream<Query, Mutation>(
                 &self,
                 ctx: &#crate_name::Context<'_>,
                 schema: &#crate_name::Schema<Query, Mutation, Self>,
                 environment: std::sync::Arc<#crate_name::Environment>,
-            ) -> #crate_name::Result<std::pin::Pin<Box<dyn futures::Stream<Item = #crate_name::serde_json::Value>>>>
+            ) -> #crate_name::Result<std::pin::Pin<Box<dyn futures::Stream<Item = #crate_name::serde_json::Value> + Send>>>
             where
                 Query: #crate_name::ObjectType + Send + Sync + 'static,
                 Mutation: #crate_name::ObjectType + Send + Sync + 'static,

@@ -35,12 +35,12 @@ impl SubscriptionType for EmptySubscription {
         true
     }
 
-    fn create_field_stream<Query, Mutation>(
+    async fn create_field_stream<Query, Mutation>(
         &self,
         _ctx: &Context<'_>,
         _schema: &Schema<Query, Mutation, Self>,
         _environment: Arc<Environment>,
-    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value>>>>
+    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,

@@ -272,12 +272,12 @@ where
     }
 
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
-    pub fn create_subscription_stream(
+    pub async fn create_subscription_stream(
         &self,
         source: &str,
         operation_name: Option<&str>,
         variables: Variables,
-    ) -> Result<impl Stream<Item = serde_json::Value>> {
+    ) -> Result<impl Stream<Item = serde_json::Value> + Send> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document, self.0.validation_mode)?;
 
@@ -323,7 +323,8 @@ where
         };
 
         let mut streams = Vec::new();
-        create_subscription_stream(self, Arc::new(ctx.create_environment()), &ctx, &mut streams)?;
+        create_subscription_stream(self, Arc::new(ctx.create_environment()), &ctx, &mut streams)
+            .await?;
         Ok(futures::stream::select_all(streams))
     }
 

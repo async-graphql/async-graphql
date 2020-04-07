@@ -8,6 +8,9 @@ use futures::channel::mpsc;
 use futures::SinkExt;
 use std::time::{Duration, Instant};
 
+const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
+const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub struct WsSession<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
@@ -29,10 +32,11 @@ where
     }
 
     fn hb(&self, ctx: &mut WebsocketContext<Self>) {
-        ctx.run_interval(Duration::new(1, 0), |act, ctx| {
-            if Instant::now().duration_since(act.hb) > Duration::new(10, 0) {
+        ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
+            if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 ctx.stop();
             }
+            ctx.ping(b"");
         });
     }
 }

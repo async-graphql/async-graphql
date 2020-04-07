@@ -112,7 +112,8 @@ pub use registry::CacheControl;
 pub use scalars::ID;
 pub use schema::Schema;
 pub use subscription::{
-    SubscriptionStream, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
+    SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
+    WebSocketTransport,
 };
 pub use types::{
     Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,

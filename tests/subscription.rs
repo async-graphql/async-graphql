@@ -22,12 +22,12 @@ pub async fn test_subscription() {
     #[Subscription]
     impl SubscriptionRoot {
         #[field]
-        fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
+        async fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
             futures::stream::iter(start..end)
         }
 
         #[field]
-        fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
+        async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
@@ -41,6 +41,7 @@ pub async fn test_subscription() {
                 None,
                 Default::default(),
             )
+            .await
             .unwrap();
         for i in 10..20 {
             assert_eq!(
@@ -58,6 +59,7 @@ pub async fn test_subscription() {
                 None,
                 Default::default(),
             )
+            .await
             .unwrap();
         for i in 10..20 {
             assert_eq!(
