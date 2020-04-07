@@ -2,8 +2,11 @@ use crate::args;
 use crate::utils::{check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{Data, DeriveInput, Error, Result};
+use syn::{Data, DeriveInput, Error, Meta, NestedMeta, Result};
+
+const DERIVES: &[&str] = &["Copy", "Clone", "Eq", "PartialEq", "Debug"];
 
 pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
@@ -14,6 +17,49 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         Data::Enum(e) => e,
         _ => return Err(Error::new_spanned(input, "It should be a enum")),
     };
+
+    let mut new_attrs = Vec::new();
+    let mut has_derive = false;
+    for attr in attrs {
+        match attr.parse_meta()? {
+            Meta::List(ls) if ls.path.is_ident("derive") => {
+                let mut items = ls
+                    .nested
+                    .iter()
+                    .map(|item| quote! { #item })
+                    .collect::<Vec<_>>();
+
+                for name in DERIVES {
+                    let mut found = false;
+                    for nested_meta in &ls.nested {
+                        if let NestedMeta::Meta(meta) = nested_meta {
+                            if meta.path().is_ident(name) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if !found {
+                        let name_ident = Ident::new(name, Span::call_site());
+                        items.push(quote! { #name_ident })
+                    }
+                }
+
+                new_attrs.push(quote! { #[derive(#(#items),*)] });
+                has_derive = true;
+            }
+            _ => new_attrs.push(quote! { #attr }),
+        }
+    }
+
+    if !has_derive {
+        let mut items = Vec::new();
+        for name in DERIVES {
+            let name_ident = Ident::new(name, Span::call_site());
+            items.push(quote! { #name_ident });
+        }
+        new_attrs.push(quote! { #[derive(#(#items),*)] });
+    }
 
     let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
     check_reserved_name(&gql_typename, enum_args.internal)?;
@@ -72,8 +118,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     }
 
     let expanded = quote! {
-        #(#attrs)*
-        #[derive(Copy, Clone, Eq, PartialEq, Debug)]
+        #(#new_attrs)*
         #vis enum #ident {
             #(#enum_items),*
         }
