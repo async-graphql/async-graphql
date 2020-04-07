@@ -114,13 +114,14 @@ impl SubscriptionRoot {
 
     #[field]
     async fn books(&self, mutation_type: Option<MutationType>) -> impl Stream<Item = BookChanged> {
-        if let Some(mutation_type) = mutation_type {
-            SimpleBroker::<BookChanged>::subscribe()
-                .filter(move |event| futures::future::ready(event.mutation_type == mutation_type))
-                .boxed()
-        } else {
-            SimpleBroker::<BookChanged>::subscribe().boxed()
-        }
+        SimpleBroker::<BookChanged>::subscribe().filter(move |event| {
+            let res = if let Some(mutation_type) = mutation_type {
+                event.mutation_type == mutation_type
+            } else {
+                true
+            };
+            futures::future::ready(res)
+        })
     }
 }
 
