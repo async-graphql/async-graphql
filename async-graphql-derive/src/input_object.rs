@@ -20,7 +20,13 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         let vis = &field.vis;
         let ty = &field.ty;
         let ident = &field.ident;
+        let attrs = field
+            .attrs
+            .iter()
+            .filter(|attr| !attr.path.is_ident("field"))
+            .collect::<Vec<_>>();
         struct_fields.push(quote! {
+            #(#attrs)*
             #vis #ident: #ty
         });
     }

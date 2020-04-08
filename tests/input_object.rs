@@ -93,3 +93,21 @@ pub async fn test_input_object_default_value() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_inputobject_derive_and_item_attributes() {
+    use serde::Deserialize;
+
+    #[async_graphql::InputObject]
+    #[derive(Deserialize, PartialEq, Debug)]
+    struct MyInputObject {
+        #[field]
+        #[serde(alias = "other")]
+        real: i32,
+    }
+
+    assert_eq!(
+        serde_json::from_str::<MyInputObject>(r#"{ "other" : 100 }"#).unwrap(),
+        MyInputObject { real: 100 }
+    );
+}
