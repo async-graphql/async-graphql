@@ -6,7 +6,7 @@ use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Meta, NestedMeta, Result};
 
-const DERIVES: &[&str] = &["Copy", "Clone", "Eq", "PartialEq", "Debug"];
+const DERIVES: &[&str] = &["Copy", "Clone", "Eq", "PartialEq"];
 
 pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
@@ -86,6 +86,11 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         let item_ident = &variant.ident;
+        let item_attrs = variant
+            .attrs
+            .iter()
+            .filter(|attr| !attr.path.is_ident("item"))
+            .collect::<Vec<_>>();
         let mut item_args = args::EnumItem::parse(&variant.attrs)?;
         let gql_item_name = item_args
             .name
@@ -101,7 +106,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .as_ref()
             .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
-        enum_items.push(&variant.ident);
+        enum_items.push(quote! { #(#item_attrs)* #item_ident});
         items.push(quote! {
             #crate_name::EnumItem {
                 name: #gql_item_name,

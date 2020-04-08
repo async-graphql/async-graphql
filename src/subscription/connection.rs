@@ -80,6 +80,7 @@ where
 }
 
 #[allow(missing_docs)]
+#[allow(clippy::type_complexity)]
 pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,

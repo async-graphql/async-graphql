@@ -9,8 +9,7 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Mutex;
 
-static SUBSCRIBERS: Lazy<Mutex<HashMap<TypeId, Box<dyn Any + Send>>>> =
-    Lazy::new(|| Default::default());
+static SUBSCRIBERS: Lazy<Mutex<HashMap<TypeId, Box<dyn Any + Send>>>> = Lazy::new(Default::default);
 
 struct Senders<T>(Slab<UnboundedSender<T>>);
 

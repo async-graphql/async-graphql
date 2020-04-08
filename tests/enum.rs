@@ -52,3 +52,26 @@ pub async fn test_enum_type() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_enum_derive_and_item_attributes() {
+    use serde::Deserialize;
+
+    #[async_graphql::Enum]
+    #[derive(Deserialize, PartialEq, Debug)]
+    enum Test {
+        #[serde(alias = "Other")]
+        Real,
+    }
+
+    #[derive(Deserialize, PartialEq, Debug)]
+    #[allow(dead_code)]
+    struct TestStruct {
+        value: Test,
+    }
+
+    assert_eq!(
+        serde_json::from_str::<TestStruct>(r#"{ "value" : "Other" }"#).unwrap(),
+        TestStruct { value: Test::Real }
+    );
+}

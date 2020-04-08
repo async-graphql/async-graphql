@@ -6,6 +6,7 @@ use async_graphql_derive::{Enum, Object};
     internal,
     desc = "A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies."
 )]
+#[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum __DirectiveLocation {
     #[item(desc = "Location adjacent to a query operation.")]
