@@ -22,6 +22,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         Fields::Unnamed(fields) => fields,
         _ => return Err(Error::new_spanned(input, "All fields must be unnamed.")),
     };
+    let extends = interface_args.extends;
     let mut enum_names = Vec::new();
     let mut enum_items = Vec::new();
     let mut type_into_impls = Vec::new();
@@ -86,6 +87,9 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         args,
         deprecation,
         context,
+        external,
+        provides,
+        requires,
     } in &interface_args.fields
     {
         let method_name = Ident::new(name, Span::call_site());
@@ -95,6 +99,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         let mut decl_params = Vec::new();
         let mut get_params = Vec::new();
         let mut schema_args = Vec::new();
+        let requires = match &requires {
+            Some(requires) => quote! { Some(#requires) },
+            None => quote! { None },
+        };
+        let provides = match &provides {
+            Some(provides) => quote! { Some(#provides) },
+            None => quote! { None },
+        };
 
         if *context {
             decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
@@ -190,6 +202,9 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                 deprecation: #deprecation,
                 cache_control: Default::default(),
+                external: #external,
+                provides: #provides,
+                requires: #requires,
             });
         });
 
@@ -252,6 +267,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                             #(#possible_types)*
                             possible_types
                         },
+                        extends: #extends,
+                        keys: None,
                     }
                 })
             }

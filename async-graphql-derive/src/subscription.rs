@@ -176,6 +176,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         ty: <#stream_ty as #crate_name::futures::stream::Stream>::Item::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
                     });
                 });
 
@@ -240,6 +243,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         fields
                     },
                     cache_control: Default::default(),
+                    extends: false,
+                    keys: None,
                 })
             }
         }

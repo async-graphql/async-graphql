@@ -48,6 +48,9 @@ where
                             ty: T::create_type_info(registry),
                             deprecation: None,
                             cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
                         },
                     );
 
@@ -60,6 +63,9 @@ where
                             ty: String::create_type_info(registry),
                             deprecation: None,
                             cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
                         },
                     );
 
@@ -67,6 +73,8 @@ where
                     fields
                 },
                 cache_control: Default::default(),
+                extends: false,
+                keys: None,
             }
         })
     }

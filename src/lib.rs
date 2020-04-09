@@ -109,7 +109,7 @@ pub use graphql_parser::query::Value;
 pub use graphql_parser::Pos;
 pub use query::{QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
-pub use scalars::ID;
+pub use scalars::{Any, ID};
 pub use schema::Schema;
 pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
@@ -149,6 +149,7 @@ pub use types::{EnumItem, EnumType};
 /// | name          | Object name               | string   | Y        |
 /// | desc          | Object description        | string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
 /// # Field parameters
 ///
@@ -158,6 +159,9 @@ pub use types::{EnumItem, EnumType};
 /// | desc          | Field description         | string   | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
+/// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
+/// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 ///
 /// # Field argument parameters
 ///

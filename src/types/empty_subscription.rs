@@ -25,6 +25,8 @@ impl Type for EmptySubscription {
             description: None,
             fields: Default::default(),
             cache_control: Default::default(),
+            extends: false,
+            keys: None,
         })
     }
 }

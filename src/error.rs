@@ -256,6 +256,12 @@ pub enum QueryError {
         err: String,
         extended_error: Option<serde_json::Value>,
     },
+
+    #[error("Entity not found")]
+    EntityNotFound,
+
+    #[error("\"__typename\" must be an existing string")]
+    TypeNameNotExists,
 }
 
 impl QueryError {

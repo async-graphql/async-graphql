@@ -80,6 +80,9 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         ty: PageInfo::create_type_info(registry),
                         deprecation: None,
                         cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None
                     },
                 );
 
@@ -92,6 +95,9 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         ty: <Option::<Vec<Option<Edge<T,E>>>> as Type>::create_type_info(registry),
                         deprecation: None,
                         cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None
                     },
                 );
 
@@ -104,6 +110,9 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         ty: Option::<i32>::create_type_info(registry),
                         deprecation: None,
                         cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None
                     },
                 );
 
@@ -115,11 +124,16 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                     ty: Vec::<T>::type_name().to_string(),
                     deprecation: None,
                     cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None
                 });
 
                 fields
             },
             cache_control: Default::default(),
+            extends: false,
+            keys: None
         })
     }
 }

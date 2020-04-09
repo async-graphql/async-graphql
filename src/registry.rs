@@ -1,7 +1,8 @@
 use crate::validators::InputValueValidator;
-use crate::{model, Value};
+use crate::{model, Any, Type as _, Value};
 use graphql_parser::query::Type as ParsedType;
 use std::collections::{HashMap, HashSet};
+use std::fmt::Write;
 use std::sync::Arc;
 
 fn parse_non_null(type_name: &str) -> Option<&str> {
@@ -103,6 +104,9 @@ pub struct Field {
     pub ty: String,
     pub deprecation: Option<&'static str>,
     pub cache_control: CacheControl,
+    pub external: bool,
+    pub requires: Option<&'static str>,
+    pub provides: Option<&'static str>,
 }
 
 #[derive(Clone)]
@@ -199,12 +203,16 @@ pub enum Type {
         description: Option<&'static str>,
         fields: HashMap<String, Field>,
         cache_control: CacheControl,
+        extends: bool,
+        keys: Option<Vec<String>>,
     },
     Interface {
         name: String,
         description: Option<&'static str>,
         fields: HashMap<String, Field>,
         possible_types: HashSet<String>,
+        extends: bool,
+        keys: Option<Vec<String>>,
     },
     Union {
         name: String,
@@ -347,6 +355,8 @@ impl Registry {
                     description: None,
                     fields: Default::default(),
                     cache_control: Default::default(),
+                    extends: false,
+                    keys: None,
                 },
             );
             let ty = f(self);
@@ -373,6 +383,19 @@ impl Registry {
             });
     }
 
+    pub fn add_keys(&mut self, ty: &str, keys: &str) {
+        let all_keys = match self.types.get_mut(ty) {
+            Some(Type::Object { keys: all_keys, .. }) => all_keys,
+            Some(Type::Interface { keys: all_keys, .. }) => all_keys,
+            _ => return,
+        };
+        if let Some(all_keys) = all_keys {
+            all_keys.push(keys.to_string());
+        } else {
+            *all_keys = Some(vec![keys.to_string()]);
+        }
+    }
+
     pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&Type> {
         self.types.get(TypeName::concrete_typename(type_name))
     }
@@ -382,6 +405,213 @@ impl Registry {
             ParsedType::NonNullType(ty) => self.concrete_type_by_parsed_type(ty),
             ParsedType::ListType(ty) => self.concrete_type_by_parsed_type(ty),
             ParsedType::NamedType(name) => self.types.get(name.as_str()),
+        }
+    }
+
+    fn create_federation_fields<'a, I: Iterator<Item = &'a Field>>(sdl: &mut String, it: I) {
+        for field in it {
+            write!(sdl, "\t{}: {}", field.name, field.ty).ok();
+            if field.external {
+                write!(sdl, " @external").ok();
+            }
+            if let Some(requires) = field.requires {
+                write!(sdl, " @requires(fields: \"{}\")", requires).ok();
+            }
+            if let Some(provides) = field.provides {
+                write!(sdl, " @provides(fields: \"{}\")", provides).ok();
+            }
+            write!(sdl, "\n").ok();
+        }
+    }
+
+    fn create_federation_type(&self, ty: &Type, sdl: &mut String) {
+        match ty {
+            Type::Object {
+                name,
+                fields,
+                extends,
+                keys,
+                ..
+            } => {
+                if name.starts_with("__") {
+                    return;
+                }
+                if name == "_Service" {
+                    return;
+                }
+                if fields.len() == 4 {
+                    // Is empty query root, only __schema, __type, _service, _entities fields
+                    return;
+                }
+
+                if *extends {
+                    write!(sdl, "extend ").ok();
+                }
+                write!(sdl, "type {} ", name).ok();
+                if let Some(keys) = keys {
+                    for key in keys {
+                        write!(sdl, "@key(fields: \"{}\") ", key).ok();
+                    }
+                }
+                write!(sdl, "{{\n").ok();
+                Self::create_federation_fields(sdl, fields.values());
+                write!(sdl, "}}\n").ok();
+            }
+            Type::Interface {
+                name,
+                fields,
+                extends,
+                keys,
+                ..
+            } => {
+                if *extends {
+                    write!(sdl, "extend ").ok();
+                }
+                write!(sdl, "interface {} ", name).ok();
+                if let Some(keys) = keys {
+                    for key in keys {
+                        write!(sdl, "@key(fields: \"{}\") ", key).ok();
+                    }
+                }
+                write!(sdl, "{{\n").ok();
+                Self::create_federation_fields(sdl, fields.values());
+                write!(sdl, "}}\n").ok();
+            }
+            _ => {}
+        }
+    }
+
+    pub fn create_federation_sdl(&self) -> String {
+        let mut sdl = String::new();
+        for ty in self.types.values() {
+            self.create_federation_type(ty, &mut sdl);
+        }
+        sdl
+    }
+
+    fn has_entities(&self) -> bool {
+        self.types.values().any(|ty| match ty {
+            Type::Object {
+                keys: Some(keys), ..
+            } => !keys.is_empty(),
+            Type::Interface {
+                keys: Some(keys), ..
+            } => !keys.is_empty(),
+            _ => false,
+        })
+    }
+
+    fn create_entity_type(&mut self) {
+        let possible_types = self
+            .types
+            .values()
+            .filter_map(|ty| match ty {
+                Type::Object {
+                    name,
+                    keys: Some(keys),
+                    ..
+                } if !keys.is_empty() => Some(name.clone()),
+                Type::Interface {
+                    name,
+                    keys: Some(keys),
+                    ..
+                } if !keys.is_empty() => Some(name.clone()),
+                _ => None,
+            })
+            .collect();
+
+        self.types.insert(
+            "_Entity".to_string(),
+            Type::Union {
+                name: "_Entity".to_string(),
+                description: None,
+                possible_types,
+            },
+        );
+    }
+
+    pub fn create_federation_types(&mut self) {
+        if !self.has_entities() {
+            return;
+        }
+
+        Any::create_type_info(self);
+
+        self.types.insert(
+            "_Service".to_string(),
+            Type::Object {
+                name: "_Service".to_string(),
+                description: None,
+                fields: {
+                    let mut fields = HashMap::new();
+                    fields.insert(
+                        "sdl".to_string(),
+                        Field {
+                            name: "sdl".to_string(),
+                            description: None,
+                            args: Default::default(),
+                            ty: "String".to_string(),
+                            deprecation: None,
+                            cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
+                        },
+                    );
+                    fields
+                },
+                cache_control: Default::default(),
+                extends: false,
+                keys: None,
+            },
+        );
+
+        self.create_entity_type();
+
+        let query_root = self.types.get_mut(&self.query_type).unwrap();
+        if let Type::Object { fields, .. } = query_root {
+            fields.insert(
+                "_service".to_string(),
+                Field {
+                    name: "_service".to_string(),
+                    description: None,
+                    args: Default::default(),
+                    ty: "_Service!".to_string(),
+                    deprecation: None,
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                },
+            );
+
+            fields.insert(
+                "_entities".to_string(),
+                Field {
+                    name: "_entities".to_string(),
+                    description: None,
+                    args: {
+                        let mut args = HashMap::new();
+                        args.insert(
+                            "representations",
+                            InputValue {
+                                name: "representations",
+                                description: None,
+                                ty: "[_Any!]!".to_string(),
+                                default_value: None,
+                                validator: None,
+                            },
+                        );
+                        args
+                    },
+                    ty: "[_Entity]!".to_string(),
+                    deprecation: None,
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                },
+            );
         }
     }
 }

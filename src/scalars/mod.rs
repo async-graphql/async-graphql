@@ -1,3 +1,4 @@
+mod any;
 mod bool;
 mod chrono_tz;
 mod datetime;
@@ -12,6 +13,7 @@ mod bson;
 #[cfg(feature = "uuid")]
 mod uuid;
 
+pub use any::Any;
 pub use id::ID;
 
 #[cfg(test)]

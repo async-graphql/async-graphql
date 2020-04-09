@@ -1,12 +1,21 @@
 use crate::model::{__Schema, __Type};
+use crate::scalars::Any;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
     QueryError, Result, Type, Value,
 };
+use async_graphql_derive::SimpleObject;
 use graphql_parser::query::Field;
 use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::collections::HashMap;
+
+/// Federation service
+#[SimpleObject(internal)]
+struct Service {
+    #[field]
+    sdl: Option<String>,
+}
 
 pub struct QueryRoot<T> {
     pub inner: T,
@@ -33,6 +42,9 @@ impl<T: Type> Type for QueryRoot<T> {
                     ty: schema_type,
                     deprecation: None,
                     cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
                 },
             );
 
@@ -58,6 +70,9 @@ impl<T: Type> Type for QueryRoot<T> {
                     ty: "__Type".to_string(),
                     deprecation: None,
                     cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
                 },
             );
         }
@@ -97,6 +112,24 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     .types
                     .get(&type_name)
                     .map(|ty| __Type::new_simple(ctx.registry, ty)),
+                &ctx_obj,
+                field.position,
+            )
+            .await;
+        } else if field.name.as_str() == "_entities" {
+            let representations: Vec<Any> =
+                ctx.param_value("representations", field.position, || Value::Null)?;
+            let mut res = Vec::new();
+            for item in representations {
+                res.push(self.inner.find_entity(ctx, field.position, &item.0).await?);
+            }
+            return Ok(res.into());
+        } else if field.name.as_str() == "_service" {
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
+            return OutputValueType::resolve(
+                &Service {
+                    sdl: Some(ctx.registry.create_federation_sdl()),
+                },
                 &ctx_obj,
                 field.position,
             )

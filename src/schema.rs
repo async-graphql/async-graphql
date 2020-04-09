@@ -186,6 +186,9 @@ where
             Subscription::create_type_info(&mut registry);
         }
 
+        // federation
+        registry.create_federation_types();
+
         SchemaBuilder(SchemaInner {
             validation_mode: ValidationMode::Strict,
             query: QueryRoot {

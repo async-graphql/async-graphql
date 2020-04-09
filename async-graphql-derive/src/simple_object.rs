@@ -9,6 +9,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
+    let extends = object_args.extends;
     let s = match &mut input.data {
         Data::Struct(e) => e,
         _ => return Err(Error::new_spanned(input, "It should be a struct")),
@@ -48,6 +49,15 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 .as_ref()
                 .map(|s| quote! {Some(#s)})
                 .unwrap_or_else(|| quote! {None});
+            let external = field.external;
+            let requires = match &field.requires {
+                Some(requires) => quote! { Some(#requires) },
+                None => quote! { None },
+            };
+            let provides = match &field.provides {
+                Some(provides) => quote! { Some(#provides) },
+                None => quote! { None },
+            };
             let ty = &item.ty;
 
             let cache_control = {
@@ -69,6 +79,9 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     ty: <#ty as #crate_name::Type>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: #cache_control,
+                    external: #external,
+                    provides: #provides,
+                    requires: #requires,
                 });
             });
 
@@ -120,6 +133,8 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                         fields
                     },
                     cache_control: #cache_control,
+                    extends: #extends,
+                    keys: None,
                 })
             }
         }

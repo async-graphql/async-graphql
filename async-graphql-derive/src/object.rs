@@ -20,6 +20,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type")),
     };
     let generics = &item_impl.generics;
+    let extends = object_args.extends;
 
     let gql_typename = object_args
         .name
@@ -35,6 +36,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
+    let mut find_entities = Vec::new();
+    let mut add_keys = Vec::new();
+    let mut create_entity_types = Vec::new();
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
@@ -60,6 +64,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .as_ref()
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
+                let external = field.external;
+                let requires = match &field.requires {
+                    Some(requires) => quote! { Some(#requires) },
+                    None => quote! { None },
+                };
+                let provides = match &field.provides {
+                    Some(provides) => quote! { Some(#provides) },
+                    None => quote! { None },
+                };
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
@@ -192,6 +205,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: #cache_control,
+                        external: #external,
+                        provides: #provides,
+                        requires: #requires,
                     });
                 });
 
@@ -233,6 +249,127 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         .map(|(idx, _)| idx)
                         .unwrap(),
                 );
+            } else if method.attrs.iter().any(|attr| attr.path.is_ident("entity")) {
+                let ty = match &method.sig.output {
+                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
+                    ReturnType::Default => {
+                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
+                    }
+                };
+                let mut arg_ctx = false;
+                let mut args = Vec::new();
+
+                for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
+                    if let FnArg::Receiver(receiver) = arg {
+                        if idx != 0 {
+                            return Err(Error::new_spanned(
+                                receiver,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+                    } else if let FnArg::Typed(pat) = arg {
+                        if idx == 0 {
+                            return Err(Error::new_spanned(
+                                pat,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+
+                        match (&*pat.pat, &*pat.ty) {
+                            (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
+                                args.push((
+                                    arg_ident,
+                                    arg_ty,
+                                    args::Argument::parse(&crate_name, &pat.attrs)?,
+                                ));
+                                pat.attrs.clear();
+                            }
+                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                                if let Type::Path(path) = elem.as_ref() {
+                                    if idx != 1
+                                        || path.path.segments.last().unwrap().ident != "Context"
+                                    {
+                                        return Err(Error::new_spanned(
+                                            arg,
+                                            "The Context must be the second argument.",
+                                        ));
+                                    }
+                                    arg_ctx = true;
+                                }
+                            }
+                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
+                        }
+                    }
+                }
+
+                let entity_type = ty.value_type();
+                let mut key_pat = Vec::new();
+                let mut key_getter = Vec::new();
+                let mut use_keys = Vec::new();
+                let mut keys = Vec::new();
+                let mut keys_str = String::new();
+
+                for (ident, ty, args::Argument { name, .. }) in &args {
+                    let name = name
+                        .clone()
+                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
+
+                    if !keys_str.is_empty() {
+                        keys_str.push(' ');
+                    }
+                    keys_str.push_str(&name);
+
+                    key_pat.push(quote! {
+                        Some(#ident)
+                    });
+                    key_getter.push(quote! {
+                        params.get(#name).and_then(|value| {
+                            let value: Option<#ty> = #crate_name::InputValueType::parse(value);
+                            value
+                        })
+                    });
+                    keys.push(name);
+                    use_keys.push(ident);
+                }
+                add_keys.push(quote! { registry.add_keys(&#entity_type::type_name(), #keys_str); });
+                create_entity_types.push(quote! { #entity_type::create_type_info(registry); });
+
+                let field_ident = &method.sig.ident;
+                let ctx_param = if arg_ctx {
+                    quote! { &ctx, }
+                } else {
+                    quote! {}
+                };
+                let do_find = match &ty {
+                    OutputType::Value(_) => quote! {
+                        self.#field_ident(#ctx_param #(#use_keys),*).await
+                    },
+                    OutputType::Result(_, _) => {
+                        quote! { self.#field_ident(#ctx_param #(#use_keys),*).await? }
+                    }
+                };
+
+                find_entities.push((
+                    args.len(),
+                    quote! {
+                        if typename == &#entity_type::type_name() {
+                            if let (#(#key_pat),*) = (#(#key_getter),*) {
+                                let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                                return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, pos).await;
+                            }
+                        }
+                    },
+                ));
+
+                method.attrs.remove(
+                    method
+                        .attrs
+                        .iter()
+                        .enumerate()
+                        .find(|(_, a)| a.path.is_ident("entity"))
+                        .map(|(idx, _)| idx)
+                        .unwrap(),
+                );
             }
         }
     }
@@ -248,6 +385,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
     };
 
+    find_entities.sort_by(|(a, _), (b, _)| b.cmp(a));
+    let find_entities_iter = find_entities.iter().map(|(_, code)| code);
+
     let expanded = quote! {
         #item_impl
 
@@ -257,7 +397,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
+                let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
                     name: #gql_typename.to_string(),
                     description: #desc,
                     fields: {
@@ -266,7 +406,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         fields
                     },
                     cache_control: #cache_control,
-                })
+                    extends: #extends,
+                    keys: None,
+                });
+                #(#create_entity_types)*
+                #(#add_keys)*
+                ty
             }
         }
 
@@ -278,6 +423,20 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     field_name: field.name.clone(),
                     object: #gql_typename.to_string(),
                 }.into_error(field.position))
+            }
+
+            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, pos: #crate_name::Pos, params: &#crate_name::Value) -> #crate_name::Result<serde_json::Value> {
+                let params = match params {
+                    #crate_name::Value::Object(params) => params,
+                    _ => return Err(#crate_name::QueryError::EntityNotFound.into_error(pos)),
+                };
+                let typename = if let Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                    typename
+                } else {
+                    return Err(#crate_name::QueryError::TypeNameNotExists.into_error(pos));
+                };
+                #(#find_entities_iter)*
+                Err(#crate_name::QueryError::EntityNotFound.into_error(pos))
             }
         }
 

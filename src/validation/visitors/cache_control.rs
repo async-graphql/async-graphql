@@ -17,7 +17,10 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
     }
 
     fn enter_field(&mut self, ctx: &mut VisitorContext<'_>, field: &Field) {
-        if let Some(registry_field) = ctx.parent_type().unwrap().field_by_name(&field.name) {
+        if let Some(registry_field) = ctx
+            .parent_type()
+            .and_then(|parent| parent.field_by_name(&field.name))
+        {
             self.cache_control.merge(&registry_field.cache_control);
         }
     }

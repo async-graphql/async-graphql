@@ -66,6 +66,7 @@ pub struct Object {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub cache_control: CacheControl,
+    pub extends: bool,
 }
 
 impl Object {
@@ -74,11 +75,15 @@ impl Object {
         let mut name = None;
         let mut desc = None;
         let mut cache_control = CacheControl::default();
+        let mut extends = false;
 
         for arg in args {
             match arg {
                 NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
                     internal = true;
+                }
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("extends") => {
+                    extends = true;
                 }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
@@ -115,6 +120,7 @@ impl Object {
             name,
             desc,
             cache_control,
+            extends,
         })
     }
 }
@@ -205,6 +211,9 @@ pub struct Field {
     pub desc: Option<String>,
     pub deprecation: Option<String>,
     pub cache_control: CacheControl,
+    pub external: bool,
+    pub provides: Option<String>,
+    pub requires: Option<String>,
 }
 
 impl Field {
@@ -214,6 +223,9 @@ impl Field {
         let mut desc = None;
         let mut deprecation = None;
         let mut cache_control = CacheControl::default();
+        let mut external = false;
+        let mut provides = None;
+        let mut requires = None;
 
         for attr in attrs {
             match attr.parse_meta()? {
@@ -224,6 +236,9 @@ impl Field {
                     is_field = true;
                     for meta in &ls.nested {
                         match meta {
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
+                                external = true;
+                            }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
                                     if let syn::Lit::Str(lit) = &nv.lit {
@@ -252,6 +267,24 @@ impl Field {
                                             "Attribute 'deprecation' should be a string.",
                                         ));
                                     }
+                                } else if nv.path.is_ident("provides") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        provides = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'provides' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("requires") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        requires = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'requires' should be a string.",
+                                        ));
+                                    }
                                 }
                             }
                             NestedMeta::Meta(Meta::List(ls)) => {
@@ -273,6 +306,9 @@ impl Field {
                 desc,
                 deprecation,
                 cache_control,
+                external,
+                provides,
+                requires,
             }))
         } else {
             Ok(None)
@@ -630,6 +666,9 @@ pub struct InterfaceField {
     pub args: Vec<InterfaceFieldArgument>,
     pub deprecation: Option<String>,
     pub context: bool,
+    pub external: bool,
+    pub provides: Option<String>,
+    pub requires: Option<String>,
 }
 
 impl InterfaceField {
@@ -640,11 +679,17 @@ impl InterfaceField {
         let mut args = Vec::new();
         let mut deprecation = None;
         let mut context = false;
+        let mut external = false;
+        let mut provides = None;
+        let mut requires = None;
 
         for meta in &ls.nested {
             match meta {
                 NestedMeta::Meta(Meta::Path(p)) if p.is_ident("context") => {
                     context = true;
+                }
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
+                    external = true;
                 }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
@@ -687,6 +732,24 @@ impl InterfaceField {
                                 "Attribute 'deprecation' should be a string.",
                             ));
                         }
+                    } else if nv.path.is_ident("provides") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            provides = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'provides' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("requires") {
+                        if let syn::Lit::Str(lit) = &nv.lit {
+                            requires = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'requires' should be a string.",
+                            ));
+                        }
                     }
                 }
                 NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("arg") => {
@@ -711,6 +774,9 @@ impl InterfaceField {
             args,
             deprecation,
             context,
+            external,
+            requires,
+            provides,
         })
     }
 }
@@ -721,6 +787,7 @@ pub struct Interface {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub fields: Vec<InterfaceField>,
+    pub extends: bool,
 }
 
 impl Interface {
@@ -729,14 +796,15 @@ impl Interface {
         let mut name = None;
         let mut desc = None;
         let mut fields = Vec::new();
+        let mut extends = false;
 
         for arg in args {
             match arg {
                 NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
                     internal = true;
                 }
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("extends") => {
+                    extends = true;
                 }
                 NestedMeta::Meta(Meta::NameValue(nv)) => {
                     if nv.path.is_ident("name") {
@@ -771,6 +839,7 @@ impl Interface {
             name,
             desc,
             fields,
+            extends,
         })
     }
 }

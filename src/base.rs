@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
 use graphql_parser::query::{Field, Value};
 use graphql_parser::Pos;
 use std::borrow::Cow;
@@ -91,6 +91,16 @@ pub trait ObjectType: OutputValueType {
         Self: Send + Sync + Sized,
     {
         crate::collect_fields(ctx, self, futures)
+    }
+
+    /// Query entities with params
+    async fn find_entity(
+        &self,
+        _ctx: &Context<'_>,
+        pos: Pos,
+        _params: &Value,
+    ) -> Result<serde_json::Value> {
+        Err(QueryError::EntityNotFound.into_error(pos))
     }
 }
 
