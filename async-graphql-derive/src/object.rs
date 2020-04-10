@@ -331,8 +331,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     keys.push(name);
                     use_keys.push(ident);
                 }
-                add_keys.push(quote! { registry.add_keys(&#entity_type::type_name(), #keys_str); });
-                create_entity_types.push(quote! { #entity_type::create_type_info(registry); });
+                add_keys.push(quote! { registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), #keys_str); });
+                create_entity_types.push(quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); });
 
                 let field_ident = &method.sig.ident;
                 let ctx_param = if arg_ctx {
@@ -352,7 +352,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 find_entities.push((
                     args.len(),
                     quote! {
-                        if typename == &#entity_type::type_name() {
+                        if typename == &<#entity_type as #crate_name::Type>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                                 return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, pos).await;

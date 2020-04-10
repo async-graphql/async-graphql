@@ -45,6 +45,12 @@ impl From<usize> for ID {
     }
 }
 
+impl PartialEq<&str> for ID {
+    fn eq(&self, other: &&str) -> bool {
+        self.0.as_str() == *other
+    }
+}
+
 impl Scalar for ID {
     fn type_name() -> &'static str {
         "ID"

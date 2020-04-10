@@ -43,12 +43,14 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
                     }
                     OperationDefinition::Query(query)
                         if query.name.is_none()
+                            || self.operation_name.is_none()
                             || query.name.as_deref() == self.operation_name.as_deref() =>
                     {
                         return Some((&query.selection_set, &query.variable_definitions, true));
                     }
                     OperationDefinition::Mutation(mutation)
                         if mutation.name.is_none()
+                            || self.operation_name.is_none()
                             || mutation.name.as_deref() == self.operation_name.as_deref() =>
                     {
                         return Some((
@@ -59,6 +61,7 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
                     }
                     OperationDefinition::Subscription(subscription)
                         if subscription.name.is_none()
+                            || self.operation_name.is_none()
                             || subscription.name.as_deref() == self.operation_name.as_deref() =>
                     {
                         return None;

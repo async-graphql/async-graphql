@@ -410,6 +410,13 @@ impl Registry {
 
     fn create_federation_fields<'a, I: Iterator<Item = &'a Field>>(sdl: &mut String, it: I) {
         for field in it {
+            if field.name.starts_with("__") {
+                continue;
+            }
+            if field.name == "_service" || field.name == "_entities" {
+                continue;
+            }
+
             write!(sdl, "\t{}: {}", field.name, field.ty).ok();
             if field.external {
                 write!(sdl, " @external").ok();
