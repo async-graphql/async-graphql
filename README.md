@@ -82,6 +82,7 @@ Licensed under either of
 * [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
 * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
 * [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
+* [Apollo Federation](https://www.apollographql.com/docs/apollo-server/federation/introduction)
 
 ## Contribute
 
