@@ -60,114 +60,11 @@ cargo run --release
 * Apollo Tracing extension
 * Limit query complexity/depth
 * Error Extensions
+* Apollo Federation
 
 ## Integrations
 
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
-
-## Goals
-
-- [X] Types
-    - [X] Scalar
-        - [X] Integer
-        - [X] Float
-        - [X] String
-        - [X] Bool
-        - [X] ID
-        - [X] DateTime
-        - [X] UUID
-        - [X] Url
-        - [X] ObjectId
-    - [X] Containers 
-        - [X] List
-        - [X] Non-Null
-    - [X] Object
-    - [X] Enum
-    - [X] InputObject
-        - [X] Field default value
-        - [X] Deprecated flag
-    - [X] Interface
-    - [X] Union
-- [X] Query
-    - [X] Fields
-    - [X] Arguments
-        - [X] Default value
-        - [X] Deprecated flag
-    - [X] Alias
-    - [X] Fragments
-    - [X] Inline fragments
-    - [X] Operation name
-    - [X] Variables
-        - [X] Default value
-        - [X] Parse value
-    - [X] Directives
-        - [X] @include
-            - [X] FIELD
-            - [X] FRAGMENT_SPREAD
-            - [X] INLINE_FRAGMENT
-        - [X] @skip
-            - [X] FIELD
-            - [X] FRAGMENT_SPREAD
-            - [X] INLINE_FRAGMENT
-    - [X] Introspection
-        - [X] Query
-        - [X] Disable introspection
-    - [X] Multipart Request
-    - [X] Cursor Connections
-    - [X] Input value validators
-        - [X] Custom validator
-        - [X] Combination
-            - [X] and
-            - [X] or
-        - [X] Integer
-            - [X] IntRange
-            - [X] IntLessThan
-            - [X] IntGreaterThan
-            - [X] IntNonZero
-        - [X] String
-            - [X] Email
-            - [X] MAC
-            - [X] StringMinLength
-            - [X] StringMaxLength
-        - [X] List
-            - [X] ListMaxLength
-            - [X] ListMinLength
-    - [X] Limit query complexity
-    - [X] Limit query depth 
-- [X] Extensions
-    - [X] Custom
-    - [X] Apollo tracing
-- [X] Subscription
-    - [X] Filter
-    - [X] WebSocket transport
-- [X] Validation rules
-    - [X] ArgumentsOfCorrectType
-    - [X] DefaultValuesOfCorrectType
-    - [X] FieldsOnCorrectType
-    - [X] FragmentsOnCompositeTypes
-    - [X] KnownArgumentNames
-    - [X] KnownDirectives
-    - [X] KnownFragmentNames
-    - [X] KnownTypeNames
-    - [X] LoneAnonymousOperation
-    - [X] NoFragmentCycles
-    - [X] NoUndefinedVariables
-    - [X] NoUnusedFragments
-    - [X] NoUnusedVariables
-    - [X] OverlappingFieldsCanBeMerged
-    - [X] PossibleFragmentSpreads
-    - [X] ProvidedNonNullArguments
-    - [X] ScalarLeafs
-    - [X] UniqueArgumentNames
-    - [X] UniqueFragmentNames
-    - [X] UniqueOperationNames
-    - [X] UniqueVariableNames
-    - [X] VariablesAreInputTypes
-    - [X] VariableInAllowedPosition
-- [ ] Integration examples
-    - [X] Actix-web
-    - [ ] Hyper
-    - [X] Tide
 
 ## License
 
