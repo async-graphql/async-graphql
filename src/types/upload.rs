@@ -24,11 +24,7 @@ use std::path::PathBuf;
 /// impl MutationRoot {
 ///     #[field]
 ///     async fn upload(&self, file: Upload) -> bool {
-///         println!(
-///             "upload: filename={} size={}",
-///             file.filename,
-///             file.content.len()
-///         );
+///         println!("upload: filename={}", file.filename);
 ///         true
 ///     }
 /// }
