@@ -4,14 +4,15 @@ use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
 use crate::{do_resolve, ContextBase, Error, Result, Schema};
 use crate::{ObjectType, QueryError, Variables};
-use bytes::Bytes;
 use graphql_parser::query::{
     Definition, Document, OperationDefinition, SelectionSet, VariableDefinition,
 };
 use graphql_parser::Pos;
 use std::any::Any;
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::atomic::AtomicUsize;
+use tempdir::TempDir;
 
 /// Query response
 pub struct QueryResponse {
@@ -31,6 +32,7 @@ pub struct QueryBuilder<Query, Mutation, Subscription> {
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Option<Data>,
     pub(crate) cache_control: CacheControl,
+    pub(crate) files_holder: Option<TempDir>,
 }
 
 impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> {
@@ -118,16 +120,21 @@ impl<Query, Mutation, Subscription> QueryBuilder<Query, Mutation, Subscription> 
         false
     }
 
-    /// Set upload files
+    /// Set file holder
+    pub fn set_files_holder(&mut self, files_holder: TempDir) {
+        self.files_holder = Some(files_holder);
+    }
+
+    /// Set uploaded file path
     pub fn set_upload(
         &mut self,
         var_path: &str,
         filename: &str,
         content_type: Option<&str>,
-        content: Bytes,
+        path: &Path,
     ) {
         self.variables
-            .set_upload(var_path, filename, content_type, content);
+            .set_upload(var_path, filename, content_type, path);
     }
 
     /// Execute the query.

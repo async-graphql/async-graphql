@@ -264,6 +264,7 @@ where
             variables: Default::default(),
             ctx_data: None,
             cache_control,
+            files_holder: None,
         })
     }
 

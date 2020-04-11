@@ -1,11 +1,15 @@
 //! A helper module that supports HTTP
 
 mod graphiql_source;
+mod http_request;
+mod multipart;
 mod playground_source;
+mod token_reader;
 
 use itertools::Itertools;
 
 pub use graphiql_source::graphiql_source;
+pub use http_request::GQLHttpRequest;
 pub use playground_source::playground_source;
 
 use crate::{
@@ -16,7 +20,20 @@ use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
-/// GraphQL Request object
+#[allow(missing_docs)]
+#[async_trait::async_trait]
+pub trait IntoQueryBuilder {
+    async fn into_query_builder<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Result<QueryBuilder<Query, Mutation, Subscription>>
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static;
+}
+
+/// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
 pub struct GQLRequest {
     /// Query source
@@ -30,9 +47,9 @@ pub struct GQLRequest {
     pub variables: Option<serde_json::Value>,
 }
 
-impl GQLRequest {
-    /// Into query builder, you can set other parameters or execute queries immediately.
-    pub fn into_query_builder<Query, Mutation, Subscription>(
+#[async_trait::async_trait]
+impl IntoQueryBuilder for GQLRequest {
+    async fn into_query_builder<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> Result<QueryBuilder<Query, Mutation, Subscription>>
@@ -54,7 +71,7 @@ impl GQLRequest {
     }
 }
 
-/// Serializable query result type
+/// Serializable GraphQL Response object
 pub struct GQLResponse(pub Result<QueryResponse>);
 
 impl Serialize for GQLResponse {
@@ -141,6 +158,13 @@ impl<'a> Serialize for GQLError<'a> {
                         "locations": error.locations.iter().map(|pos| serde_json::json!({"line": pos.line, "column": pos.column})).collect_vec(),
                     }))?;
                 }
+                seq.end()
+            }
+            Error::Request(err) => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                seq.serialize_element(&serde_json::json!({
+                    "message": err.to_string(),
+                }))?;
                 seq.end()
             }
         }

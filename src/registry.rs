@@ -427,7 +427,7 @@ impl Registry {
             if let Some(provides) = field.provides {
                 write!(sdl, " @provides(fields: \"{}\")", provides).ok();
             }
-            write!(sdl, "\n").ok();
+            writeln!(sdl).ok();
         }
     }
 
@@ -460,9 +460,9 @@ impl Registry {
                         write!(sdl, "@key(fields: \"{}\") ", key).ok();
                     }
                 }
-                write!(sdl, "{{\n").ok();
+                writeln!(sdl, "{{").ok();
                 Self::create_federation_fields(sdl, fields.values());
-                write!(sdl, "}}\n").ok();
+                writeln!(sdl, "}}").ok();
             }
             Type::Interface {
                 name,
@@ -480,9 +480,9 @@ impl Registry {
                         write!(sdl, "@key(fields: \"{}\") ", key).ok();
                     }
                 }
-                write!(sdl, "{{\n").ok();
+                writeln!(sdl, "{{").ok();
                 Self::create_federation_fields(sdl, fields.values());
-                write!(sdl, "}}\n").ok();
+                writeln!(sdl, "}}").ok();
             }
             _ => {}
         }

@@ -62,9 +62,8 @@ impl Default for Inner {
     }
 }
 
-/// Apollo tracing
+/// Apollo tracing extension for performance tracing
 ///
-/// Apollo Tracing is a GraphQL extension for performance tracing.
 /// Apollo Tracing works by including data in the extensions field of the GraphQL response, which is reserved by the GraphQL spec for extra information that a server wants to return. That way, you have access to performance traces alongside the data returned by your query.
 /// It’s already supported by `Apollo Engine`, and we’re excited to see what other kinds of integrations people can build on top of this format.
 #[derive(Default)]

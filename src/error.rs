@@ -305,6 +305,37 @@ impl From<ParseError> for Error {
 
 #[allow(missing_docs)]
 #[derive(Debug, Error)]
+pub enum RequestError {
+    #[error("{0}")]
+    Io(std::io::Error),
+
+    #[error("Invalid request: {0}")]
+    InvalidRequest(serde_json::Error),
+
+    #[error("Invalid files map: {0}")]
+    InvalidFilesMap(serde_json::Error),
+
+    #[error("Invalid multipart data: {0}")]
+    InvalidMultipart(std::io::Error),
+
+    #[error("Missing \"operators\" part")]
+    MissingOperatorsPart,
+
+    #[error("Missing \"map\" part")]
+    MissingMapPart,
+
+    #[error("Failed to read part data: {0}")]
+    PartData(#[from] std::io::Error),
+
+    #[error("It's not an upload operation")]
+    NotUpload,
+
+    #[error("Missing files")]
+    MissingFiles,
+}
+
+#[allow(missing_docs)]
+#[derive(Debug, Error)]
 pub enum Error {
     #[error("Parse error: {message}")]
     Parse {
@@ -322,4 +353,7 @@ pub enum Error {
 
     #[error("Rule error")]
     Rule { errors: Vec<RuleError> },
+
+    #[error("Request error")]
+    Request(#[from] RequestError),
 }

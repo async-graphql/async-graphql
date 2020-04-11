@@ -1,6 +1,8 @@
 mod starwars;
 
-use async_graphql::http::{graphiql_source, playground_source, GQLRequest, GQLResponse};
+use async_graphql::http::{
+    graphiql_source, playground_source, GQLRequest, GQLResponse, IntoQueryBuilder,
+};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use futures::TryFutureExt;
 use mime;
@@ -11,7 +13,8 @@ type StarWarsSchema = Schema<starwars::QueryRoot, EmptyMutation, EmptySubscripti
 async fn index(mut request: Request<StarWarsSchema>) -> Response {
     let gql_request: GQLRequest = request.body_json().await.unwrap();
     let schema = request.state();
-    let gql_response = futures::future::ready(gql_request.into_query_builder(schema))
+    let gql_response = gql_request
+        .into_query_builder(schema)
         .and_then(|builder| builder.execute())
         .await;
     Response::new(200)

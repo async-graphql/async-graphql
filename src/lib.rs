@@ -26,7 +26,7 @@
 //!
 //! * [GitHub repository](https://github.com/sunli829/async-graphql)
 //! * [Cargo package](https://crates.io/crates/async-graphql)
-//! * Minimum supported Rust version: 1.40 or later
+//! * Minimum supported Rust version: 1.42 or later
 //!
 //! ## Features
 //!
@@ -46,7 +46,7 @@
 //!
 //! ## Integrations
 //!
-//! * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
+//! * Actix-web [async-graphql-actix_web](https://crates.io/crates/async-graphql-actix-web)
 //!
 //! ## License
 //!

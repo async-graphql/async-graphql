@@ -41,12 +41,12 @@ fn gql_value_to_json_value(value: &Value) -> serde_json::Value {
         Value::Boolean(v) => (*v).into(),
         Value::Enum(e) => e.clone().into(),
         Value::List(values) => values
-            .into_iter()
+            .iter()
             .map(|value| gql_value_to_json_value(value))
             .collect_vec()
             .into(),
         Value::Object(obj) => serde_json::Value::Object(
-            obj.into_iter()
+            obj.iter()
                 .map(|(k, v)| (k.clone(), gql_value_to_json_value(v)))
                 .collect(),
         ),

@@ -1,5 +1,5 @@
 use actix_web::{guard, web, App, HttpResponse, HttpServer};
-use async_graphql::http::{playground_source, GQLRequest, GQLResponse};
+use async_graphql::http::{playground_source, GQLRequest, GQLResponse, IntoQueryBuilder};
 use async_graphql::{Context, EmptyMutation, EmptySubscription, Object, Schema, SimpleObject, ID};
 use futures::TryFutureExt;
 
@@ -76,7 +76,8 @@ impl Query {
 
 async fn index(s: web::Data<MySchema>, req: web::Json<GQLRequest>) -> web::Json<GQLResponse> {
     web::Json(GQLResponse(
-        futures::future::ready(req.into_inner().into_query_builder(&s))
+        req.into_inner()
+            .into_query_builder(&s)
             .and_then(|builder| builder.execute())
             .await,
     ))

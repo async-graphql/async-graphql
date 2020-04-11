@@ -1,13 +1,13 @@
 use crate::extensions::BoxExtension;
 use crate::registry::Registry;
 use crate::{InputValueType, Pos, QueryError, Result, Type};
-use bytes::Bytes;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::{Deref, DerefMut};
+use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 
 /// Variables of query
@@ -58,7 +58,7 @@ impl Variables {
         var_path: &str,
         filename: &str,
         content_type: Option<&str>,
-        content: Bytes,
+        path: &Path,
     ) {
         let mut it = var_path.split('.').peekable();
 
@@ -76,7 +76,7 @@ impl Variables {
                 if let Value::List(ls) = current {
                     if let Some(value) = ls.get_mut(idx as usize) {
                         if !has_next {
-                            *value = Value::String(file_string(filename, content_type, &content));
+                            *value = Value::String(file_string(filename, content_type, path));
                             return;
                         } else {
                             current = value;
@@ -88,7 +88,7 @@ impl Variables {
             } else if let Value::Object(obj) = current {
                 if let Some(value) = obj.get_mut(s) {
                     if !has_next {
-                        *value = Value::String(file_string(filename, content_type, &content));
+                        *value = Value::String(file_string(filename, content_type, path));
                         return;
                     } else {
                         current = value;
@@ -101,11 +101,11 @@ impl Variables {
     }
 }
 
-fn file_string(filename: &str, content_type: Option<&str>, content: &[u8]) -> String {
+fn file_string(filename: &str, content_type: Option<&str>, path: &Path) -> String {
     if let Some(content_type) = content_type {
-        format!("file:{}:{}|", filename, content_type) + &base64::encode(content)
+        format!("file:{}:{}|", filename, content_type) + &path.display().to_string()
     } else {
-        format!("file:{}|", filename) + &base64::encode(content)
+        format!("file:{}|", filename) + &path.display().to_string()
     }
 }
 

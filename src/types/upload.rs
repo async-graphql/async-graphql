@@ -1,5 +1,6 @@
 use crate::{registry, InputValueType, Type, Value};
 use std::borrow::Cow;
+use std::path::PathBuf;
 
 /// Uploaded file
 ///
@@ -52,8 +53,8 @@ pub struct Upload {
     /// Content type, such as `application/json`, `image/jpg` ...
     pub content_type: Option<String>,
 
-    /// File content
-    pub content: Vec<u8>,
+    /// Temporary file path
+    pub path: PathBuf,
 }
 
 impl<'a> Type for Upload {
@@ -80,22 +81,20 @@ impl<'a> InputValueType for Upload {
                 let s = &s[5..];
                 if let Some(idx) = s.find('|') {
                     let name_and_type = &s[..idx];
-                    let content_b64 = &s[idx + 1..];
+                    let path = &s[idx + 1..];
                     if let Some(type_idx) = name_and_type.find(':') {
                         let name = &name_and_type[..type_idx];
                         let mime_type = &name_and_type[type_idx + 1..];
-                        let content = base64::decode(content_b64).ok().unwrap_or_default();
                         return Some(Self {
                             filename: name.to_string(),
                             content_type: Some(mime_type.to_string()),
-                            content,
+                            path: PathBuf::from(path),
                         });
                     } else {
-                        let content = base64::decode(content_b64).ok().unwrap_or_default();
                         return Some(Self {
                             filename: name_and_type.to_string(),
                             content_type: None,
-                            content,
+                            path: PathBuf::from(path),
                         });
                     }
                 }

@@ -3,7 +3,9 @@ extern crate thiserror;
 
 use actix_rt;
 use actix_web::{guard, web, App, HttpResponse, HttpServer};
-use async_graphql::http::{graphiql_source, playground_source, GQLRequest, GQLResponse};
+use async_graphql::http::{
+    graphiql_source, playground_source, GQLRequest, GQLResponse, IntoQueryBuilder,
+};
 use async_graphql::ErrorExtensions;
 use async_graphql::*;
 use futures::TryFutureExt;
@@ -110,7 +112,8 @@ async fn index(
     req: web::Json<GQLRequest>,
 ) -> web::Json<GQLResponse> {
     web::Json(GQLResponse(
-        futures::future::ready(req.into_inner().into_query_builder(&s))
+        req.into_inner()
+            .into_query_builder(&s)
             .and_then(|builder| builder.execute())
             .await,
     ))
