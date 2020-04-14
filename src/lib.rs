@@ -47,6 +47,7 @@
 //! ## Integrations
 //!
 //! * Actix-web [async-graphql-actix_web](https://crates.io/crates/async-graphql-actix-web)
+//! * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 //!
 //! ## License
 //!
