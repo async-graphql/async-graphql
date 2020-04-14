@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-warp"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "async-graphql for warp"
@@ -17,3 +17,6 @@ async-graphql = { path = "..", version = "1.9.1" }
 warp = "0.2.2"
 futures = "0.3.0"
 bytes = "0.5.4"
+
+[dev-dependencies]
+tokio = { version = "0.2", features = ["macros"] }

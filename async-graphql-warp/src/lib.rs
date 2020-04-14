@@ -38,8 +38,9 @@ impl Reject for BadRequest {}
 /// ```no_run
 ///
 /// use async_graphql::*;
-/// use warp::Filter;
+/// use warp::{Filter, Reply};
 /// use std::convert::Infallible;
+/// use async_graphql::http::GQLResponse;
 ///
 /// struct QueryRoot;
 ///
@@ -51,12 +52,15 @@ impl Reject for BadRequest {}
 ///     }
 /// }
 ///
-/// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-/// let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
-///     let resp = builder.execute(&schema).await;
-///     Ok::<_, Infallible>(warp::reply::json(&GQLResponse(resp)).into_response())
-/// });
-/// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// #[tokio::main]
+/// async fn main() {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
+///         let resp = builder.execute(&schema).await;
+///         Ok::<_, Infallible>(warp::reply::json(&GQLResponse(resp)).into_response())
+///     });
+///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// }
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
@@ -89,7 +93,7 @@ where
 /// use async_graphql::*;
 /// use warp::Filter;
 /// use futures::{Stream, StreamExt};
-/// use tokio::time::Duration;
+/// use std::time::Duration;
 ///
 /// struct QueryRoot;
 ///
@@ -101,14 +105,17 @@ where
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     #[field]
-///     async fn tick(&self) -> impl Stream<String> {
+///     async fn tick(&self) -> impl Stream<Item = String> {
 ///         tokio::time::interval(Duration::from_secs(1)).map(|n| format!("{}", n.elapsed().as_secs_f32()))
 ///     }
 /// }
 ///
-/// let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-/// let filter = async_graphql_warp::graphql_subscription(schema);
-/// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// #[tokio::main]
+/// async fn main() {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+///     let filter = async_graphql_warp::graphql_subscription(schema);
+///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// }
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
