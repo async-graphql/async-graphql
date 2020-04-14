@@ -33,6 +33,7 @@ impl Reject for BadRequest {}
 /// It outputs a tuple containing the `Schema` and `QuertBuilder`.
 ///
 /// # Examples
+/// *[Full Example](<https://github.com/sunli829/async-graphql-examples/blob/master/warp/starwars/src/main.rs>)*
 ///
 /// ```no_run
 ///
