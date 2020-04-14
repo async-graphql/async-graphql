@@ -96,7 +96,7 @@ pub async fn test_input_object_default_value() {
 
 #[async_std::test]
 pub async fn test_inputobject_derive_and_item_attributes() {
-    use serde::Deserialize;
+    use serde_derive::Deserialize;
 
     #[async_graphql::InputObject]
     #[derive(Deserialize, PartialEq, Debug)]

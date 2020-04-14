@@ -87,7 +87,9 @@ pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTran
     streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
     handle_request_fut: Option<
-        Pin<Box<dyn Future<Output = std::result::Result<Option<Bytes>, T::Error>> + 'static>>,
+        Pin<
+            Box<dyn Future<Output = std::result::Result<Option<Bytes>, T::Error>> + Send + 'static>,
+        >,
     >,
 }
 

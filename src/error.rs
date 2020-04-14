@@ -305,7 +305,7 @@ impl From<ParseError> for Error {
 
 #[allow(missing_docs)]
 #[derive(Debug, Error)]
-pub enum RequestError {
+pub enum ParseRequestError {
     #[error("{0}")]
     Io(std::io::Error),
 
@@ -353,7 +353,4 @@ pub enum Error {
 
     #[error("Rule error")]
     Rule { errors: Vec<RuleError> },
-
-    #[error("Request error")]
-    Request(#[from] RequestError),
 }

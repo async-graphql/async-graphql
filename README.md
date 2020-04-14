@@ -31,13 +31,9 @@ It supports all of the GraphQL specifications and is easy to integrate into exis
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.42 or later
 
-## Example
+## Examples
 
-```shell script
-cargo run --example actix_web
-```
-
-Open `http://localhost:8000` in browser
+https://github.com/sunli829/async-graphql-examples
 
 ## Benchmark
 

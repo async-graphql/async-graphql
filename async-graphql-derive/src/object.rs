@@ -427,7 +427,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }.into_error(field.position))
             }
 
-            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, pos: #crate_name::Pos, params: &#crate_name::Value) -> #crate_name::Result<serde_json::Value> {
+            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, pos: #crate_name::Pos, params: &#crate_name::Value) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 let params = match params {
                     #crate_name::Value::Object(params) => params,
                     _ => return Err(#crate_name::QueryError::EntityNotFound.into_error(pos)),

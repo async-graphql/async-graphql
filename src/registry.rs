@@ -129,21 +129,21 @@ pub struct EnumValue {
 /// impl QueryRoot {
 ///     #[field(cache_control(max_age = 30))]
 ///     async fn value1(&self) -> i32 {
-///         unimplemented!()
+///         0
 ///     }
 ///
 ///     #[field(cache_control(private))]
 ///     async fn value2(&self) -> i32 {
-///         unimplemented!()
+///         0
 ///     }
 /// }
 ///
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     assert_eq!(schema.query("{ value1 }").unwrap().cache_control(), CacheControl { public: true, max_age: 30 });
-///     assert_eq!(schema.query("{ value2 }").unwrap().cache_control(), CacheControl { public: false, max_age: 60 });
-///     assert_eq!(schema.query("{ value1 value2 }").unwrap().cache_control(), CacheControl { public: false, max_age: 30 });
+///     assert_eq!(schema.execute("{ value1 }").await.unwrap().cache_control, CacheControl { public: true, max_age: 30 });
+///     assert_eq!(schema.execute("{ value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 60 });
+///     assert_eq!(schema.execute("{ value1 value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 30 });
 /// }
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

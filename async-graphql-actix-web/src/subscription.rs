@@ -11,21 +11,23 @@ use std::time::{Duration, Instant};
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-pub struct WsSession<Query, Mutation, Subscription> {
+/// Actor for subscription via websocket
+pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
 }
 
-impl<Query, Mutation, Subscription> WsSession<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+    /// Create an actor for subscription connection via websocket.
+    pub fn new(schema: &Schema<Query, Mutation, Subscription>) -> Self {
         Self {
-            schema,
+            schema: schema.clone(),
             hb: Instant::now(),
             sink: None,
         }
@@ -41,7 +43,7 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription> Actor for WsSession<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription> Actor for WSSubscription<Query, Mutation, Subscription>
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -59,7 +61,7 @@ where
 }
 
 impl<Query, Mutation, Subscription> StreamHandler<Result<Message, ProtocolError>>
-    for WsSession<Query, Mutation, Subscription>
+    for WSSubscription<Query, Mutation, Subscription>
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -99,7 +101,7 @@ where
 }
 
 impl<Query, Mutation, Subscription> StreamHandler<Bytes>
-    for WsSession<Query, Mutation, Subscription>
+    for WSSubscription<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,

@@ -1,37 +1,23 @@
 //! A helper module that supports HTTP
 
 mod graphiql_source;
-mod http_request;
+mod into_query_builder;
 mod multipart;
 mod playground_source;
+mod stream_body;
 mod token_reader;
 
 use itertools::Itertools;
 
 pub use graphiql_source::graphiql_source;
-pub use http_request::GQLHttpRequest;
 pub use playground_source::playground_source;
+pub use stream_body::StreamBody;
 
-use crate::{
-    Error, ObjectType, QueryBuilder, QueryError, QueryResponse, Result, Schema, SubscriptionType,
-    Variables,
-};
+use crate::query::IntoQueryBuilder;
+use crate::{Error, ParseRequestError, QueryBuilder, QueryError, QueryResponse, Result, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
-
-#[allow(missing_docs)]
-#[async_trait::async_trait]
-pub trait IntoQueryBuilder {
-    async fn into_query_builder<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Result<QueryBuilder<Query, Mutation, Subscription>>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static;
-}
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -49,16 +35,8 @@ pub struct GQLRequest {
 
 #[async_trait::async_trait]
 impl IntoQueryBuilder for GQLRequest {
-    async fn into_query_builder<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Result<QueryBuilder<Query, Mutation, Subscription>>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        let mut builder = schema.query(&self.query)?;
+    async fn into_query_builder(self) -> std::result::Result<QueryBuilder, ParseRequestError> {
+        let mut builder = QueryBuilder::new(self.query);
         if let Some(operation_name) = self.operation_name {
             builder = builder.operator_name(operation_name);
         }
@@ -160,13 +138,6 @@ impl<'a> Serialize for GQLError<'a> {
                 }
                 seq.end()
             }
-            Error::Request(err) => {
-                let mut seq = serializer.serialize_seq(Some(1))?;
-                seq.serialize_element(&serde_json::json!({
-                    "message": err.to_string(),
-                }))?;
-                seq.end()
-            }
         }
     }
 }
@@ -242,6 +213,7 @@ mod tests {
         let resp = GQLResponse(Ok(QueryResponse {
             data: json!({"ok": true}),
             extensions: None,
+            cache_control: Default::default(),
         }));
         assert_eq!(
             serde_json::to_value(resp).unwrap(),

@@ -5,17 +5,16 @@ use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
-use crate::validation::{check_rules, CheckResult, ValidationMode};
+use crate::validation::{check_rules, ValidationMode};
 use crate::{
     ContextSelectionSet, Error, ObjectType, Pos, QueryError, QueryResponse, Result,
     SubscriptionStream, SubscriptionType, Type, Variables,
 };
 use bytes::Bytes;
 use futures::channel::mpsc;
-use futures::{Stream, TryFutureExt};
+use futures::Stream;
 use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition};
-use itertools::Itertools;
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
@@ -224,55 +223,9 @@ where
         &self.0.registry
     }
 
-    /// Start a query and return `QueryBuilder`.
-    pub fn query(&self, source: &str) -> Result<QueryBuilder<Query, Mutation, Subscription>> {
-        let extensions = self
-            .0
-            .extensions
-            .iter()
-            .map(|factory| factory())
-            .collect_vec();
-        extensions.iter().for_each(|e| e.parse_start(source));
-        let document = parse_query(source).map_err(Into::<Error>::into)?;
-        extensions.iter().for_each(|e| e.parse_end());
-
-        extensions.iter().for_each(|e| e.validation_start());
-        let CheckResult {
-            cache_control,
-            complexity,
-            depth,
-        } = check_rules(&self.0.registry, &document, self.0.validation_mode)?;
-        extensions.iter().for_each(|e| e.validation_end());
-
-        if let Some(limit_complexity) = self.0.complexity {
-            if complexity > limit_complexity {
-                return Err(QueryError::TooComplex.into_error(Pos::default()));
-            }
-        }
-
-        if let Some(limit_depth) = self.0.depth {
-            if depth > limit_depth {
-                return Err(QueryError::TooDeep.into_error(Pos::default()));
-            }
-        }
-
-        Ok(QueryBuilder {
-            extensions,
-            schema: self.clone(),
-            document,
-            operation_name: None,
-            variables: Default::default(),
-            ctx_data: None,
-            cache_control,
-            files_holder: None,
-        })
-    }
-
     /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, source: &str) -> Result<QueryResponse> {
-        futures::future::ready(self.query(source))
-            .and_then(|builder| builder.execute())
-            .await
+    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
+        QueryBuilder::new(query_source).execute(self).await
     }
 
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method

@@ -55,7 +55,7 @@ pub async fn test_enum_type() {
 
 #[async_std::test]
 pub async fn test_enum_derive_and_item_attributes() {
-    use serde::Deserialize;
+    use serde_derive::Deserialize;
 
     #[async_graphql::Enum]
     #[derive(Deserialize, PartialEq, Debug)]

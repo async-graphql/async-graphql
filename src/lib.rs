@@ -106,10 +106,12 @@ pub mod http;
 
 pub use base::{Scalar, Type};
 pub use context::{Context, Environment, QueryPathNode, QueryPathSegment, Variables};
-pub use error::{Error, ErrorExtensions, FieldError, FieldResult, QueryError, ResultExt};
+pub use error::{
+    Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
+};
 pub use graphql_parser::query::Value;
 pub use graphql_parser::Pos;
-pub use query::{QueryBuilder, QueryResponse};
+pub use query::{IntoQueryBuilder, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, ID};
 pub use schema::Schema;

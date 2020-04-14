@@ -1,40 +1,30 @@
-use actix_web::web::Payload;
-use async_graphql::http::GQLHttpRequest;
 use bytes::{Buf, Bytes};
-use futures::io::{Error, ErrorKind, Result};
 use futures::task::{Context, Poll};
-use futures::{AsyncRead, StreamExt};
+use futures::{AsyncRead, Stream, StreamExt};
+use std::io::{Error, ErrorKind, Result};
 use std::pin::Pin;
 
-pub struct RequestWrapper(pub Option<String>, pub Payload);
+/// An Adapter for bytes stream to `AsyncRead`
+pub struct StreamBody<S> {
+    s: S,
+    remain_bytes: Option<Bytes>,
+}
 
-unsafe impl Send for RequestWrapper {}
-unsafe impl Sync for RequestWrapper {}
-
-impl GQLHttpRequest for RequestWrapper {
-    type Body = PayloadReader;
-
-    fn content_type(&self) -> Option<&str> {
-        self.0.as_deref()
-    }
-
-    fn into_body(self) -> Self::Body {
-        PayloadReader {
-            payload: self.1,
+impl<S> StreamBody<S> {
+    #[allow(missing_docs)]
+    pub fn new(s: S) -> Self {
+        Self {
+            s,
             remain_bytes: None,
         }
     }
 }
 
-pub struct PayloadReader {
-    payload: Payload,
-    remain_bytes: Option<Bytes>,
-}
-
-unsafe impl Send for PayloadReader {}
-unsafe impl Sync for PayloadReader {}
-
-impl AsyncRead for PayloadReader {
+impl<S, E, D> AsyncRead for StreamBody<S>
+where
+    D: Buf,
+    S: Stream<Item = std::result::Result<D, E>> + Unpin,
+{
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -49,9 +39,9 @@ impl AsyncRead for PayloadReader {
                 }
                 return Poll::Ready(Ok(data.len()));
             } else {
-                match self.payload.poll_next_unpin(cx) {
-                    Poll::Ready(Some(Ok(bytes))) => {
-                        self.remain_bytes = Some(bytes);
+                match self.s.poll_next_unpin(cx) {
+                    Poll::Ready(Some(Ok(mut bytes))) => {
+                        self.remain_bytes = Some(bytes.to_bytes());
                     }
                     Poll::Ready(Some(Err(_))) => {
                         return Poll::Ready(Err(Error::from(ErrorKind::InvalidData)))

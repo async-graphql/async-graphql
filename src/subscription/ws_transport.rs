@@ -114,6 +114,7 @@ impl SubscriptionTransport for WebSocketTransport {
                         serde_json::to_value(GQLResponse(Ok(QueryResponse {
                             data: value,
                             extensions: None,
+                            cache_control: Default::default(),
                         })))
                         .unwrap(),
                     ),

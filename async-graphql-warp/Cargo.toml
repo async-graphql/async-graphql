@@ -1,0 +1,11 @@
+[package]
+name = "async-graphql-warp"
+version = "1.0.0"
+authors = ["sunli <scott_s829@163.com>"]
+edition = "2018"
+
+[dependencies]
+async-graphql = { path = "..", version = "1.9.0" }
+warp = "0.2.2"
+futures = "0.3.0"
+bytes = "0.5.4"
