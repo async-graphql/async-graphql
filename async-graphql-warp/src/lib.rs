@@ -51,7 +51,7 @@ impl Reject for BadRequest {}
 /// }
 ///
 /// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-/// let filter = async_graphql_warp::graphql(schema).and_then(|schema, builder| async move {
+/// let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
 ///     let resp = builder.execute(&schema).await;
 ///     Ok::<_, Infallible>(warp::reply::json(&GQLResponse(resp)).into_response())
 /// });
