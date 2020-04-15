@@ -147,7 +147,36 @@
 
                 <div id="content" class="content">
                     <main>
-                        
+                        <h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
+<h2><a class="header" href="#添加依赖" id="添加依赖">添加依赖</a></h2>
+<pre><code class="language-toml">[dependencies]
+async-graphql = &quot;1.9.0&quot;
+</code></pre>
+<h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
+<p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的struct来描述它们，结构的字段对应GraphQL对象的字段，但你需要用<code>#[field]</code>来修饰它，这样<code>Async-graphql</code>提供的过程宏才能够正确的识别它。</p>
+<p>Async-graphql实现了常用数据类型到GraphQL类型的映射，例如<code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>等。同时，你也能够<a href="custom_scalars.html">扩展这些基础类型</a>，基础数据类型在GraphQL里面称为标量。</p>
+<p>下面是一个简单的例子，我们只提供一个查询，返回<code>a</code>和<code>b</code>的和。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[field(desc = &quot;Returns the sum of a and b&quot;)]
+    async fn add(a: i32, b: i32) -&gt; i32 {
+        a + b
+    }
+}
+
+type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
+
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#执行查询" id="执行查询">执行查询</a></h2>
+
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
