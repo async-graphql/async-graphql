@@ -4,13 +4,9 @@ on:
   pull_request:
     branches:
       - master
-    paths:
-      - 'docs/**'
   push:
     branches:
       - master
-    paths:
-      - 'docs/**'
 
 jobs:
   deploy_en:
