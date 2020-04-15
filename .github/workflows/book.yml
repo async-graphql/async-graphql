@@ -25,10 +25,10 @@ jobs:
         run: |
           mdbook build -d gh-pages docs/en
           mdbook build -d gh-pages docs/zh-CN
-          mkdir gh_pages
-          mv docs/en/gh-pages gh_pages/en
-          mv docs/zh-CN/gh-pages gh_pages/zh-CN
-          mv docs/index.html gh_pages
+          mkdir gh-pages
+          mv docs/en/gh-pages gh-pages/en
+          mv docs/zh-CN/gh-pages gh-pages/zh-CN
+          mv docs/index.html gh-pages
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v2.5.1
         with:
