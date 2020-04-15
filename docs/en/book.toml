@@ -1,0 +1,6 @@
+[book]
+authors = ["sunli"]
+description = "Async-graphql Book"
+src = "src"
+language = "zh-CN"
+title = "Async-graphql Book"
