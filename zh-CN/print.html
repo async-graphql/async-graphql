@@ -506,6 +506,45 @@ struct Subscription {
 </span></code></pre></pre>
 <h1><a class="header" href="#实用功能" id="实用功能">实用功能</a></h1>
 <h1><a class="header" href="#输入值校验器" id="输入值校验器">输入值校验器</a></h1>
+<p>字段的参数，<a href="define_input_object.html">输入对象(InputObject)</a>的字段在GraphQL中称之为<code>Input Value</code>，如果给出的参数值类型不匹配，查询会报类型不匹配错误。但有时候我们希望给特定类型的值更多的限制，例如我们希望一个参数总是一个格式合法的Email地址，我们可以通过<a href="custom_scalars.html">自定义标量</a>来解决，但这种类型如果很多，而且我们希望能够进行自由组合，比如一个<code>String</code>类型参数，我们希望它既可以是Email地址，也可以是一个手机号码，自定义标量就特别麻烦。<code>Async-graphql</code>提供了输入值校验器来解决这个问题。</p>
+<p>输入值校验器可以通过<code>and</code>和<code>or</code>操作符自由组合。</p>
+<p>下面时一个参数校验器，它校验<code>String</code>类型的参数<code>a</code>，必须是一个合法Email或者MAC地址：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql:*;
+use async_graphql::validators::{Email, MAC};
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn input(#[arg(validator(or(Email, MAC(colon = false))))] a: String) {
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>下面的例子校验<code>i32</code>类型的参数<code>a</code>必须大于10，并且小于100，或者等于0：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql:*;
+use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn input(#[validator(
+        or(
+            and(IntGreaterThan(value = 10), IntLessThan(value = 100)),
+            IntEqual(value = 0)
+        ))] a: String) {
+    } {
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#查询缓存控制" id="查询缓存控制">查询缓存控制</a></h1>
 <h1><a class="header" href="#游标连接cursor-connections" id="游标连接cursor-connections">游标连接(Cursor Connections)</a></h1>
 <h1><a class="header" href="#apollo-tracing支持" id="apollo-tracing支持">Apollo Tracing支持</a></h1>
