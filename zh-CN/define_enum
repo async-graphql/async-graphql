@@ -5,6 +5,8 @@
 **Async-graphql会自动把枚举项的名称转换为GraphQL标准的大写加下划线形式，你也可以用`name`属性自已定义名称。**
 
 ```rust
+use async_graphql::*;
+
 #[Enum(desc = "One of the films in the Star Wars Trilogy")]
 pub enum Episode {
     #[item(desc = "Released in 1977.")]

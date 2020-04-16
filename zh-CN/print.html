@@ -230,7 +230,9 @@ struct MyObject {
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>struct MyObject {
+</span>use async_graphql::*;
+
+struct MyObject {
     value: i32,
 }
 
@@ -259,7 +261,9 @@ impl MyObject {
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>struct Query;
+</span>use async_graphql::*;
+
+struct Query;
 
 #[Object]
 impl Query {
@@ -273,12 +277,21 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
+<p>Resolve函数可以返回一个FieldResult类型，以下是FieldResult的定义：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+<span class="boring">}
+</span></code></pre></pre>
 <p>任何错误都能够被转换为<code>FieldError</code>，并且你还能扩展标准的错误输出。</p>
 <p>下面是一个例子，解析一个输入的字符串到整数，当解析失败时返回错误，并且附加额外的错误信息。</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>struct Query;
+</span>use async_graphql::*;
+
+struct Query;
 
 #[Object]
 impl Query {
@@ -297,7 +310,9 @@ impl Query {
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
+</span>use async_graphql::*;
+
+#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
 pub enum Episode {
     #[item(desc = &quot;Released in 1977.&quot;)]
     NewHope,
@@ -312,7 +327,92 @@ pub enum Episode {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
+<p>接口用于抽象具有特定字段集合的对象，<code>Async-graphql</code>内部实现实际上是一个包装器，包装器转发接口上定义的Resolve函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。</p>
+<p><code>Async-graphql</code>自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用<code>Into::into</code>。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Circle {
+    radius: f32,
+}
+
+#[Object]
+impl Circle {
+    async fn area(&amp;self) -&gt; f32 {
+        std::f32::consts::PI * self.radius * self.radius
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Circle { radius: self.radius * s }.into()
+    }
+}
+
+struct Square {
+    width: f32,
+}
+
+#[Object]
+impl Square {
+    async fn area(&amp;self) -&gt; f32 {
+        self.width * self.width
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Square { width: self.width * s }.into()
+    }
+}
+
+#[Interface(
+    field(name = &quot;area&quot;, type = &quot;f32&quot;),
+    field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
+)]
+struct Shape(Circle, Square);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#联合union" id="联合union">联合(Union)</a></h1>
+<p>联合的定义和接口非常像，<strong>但不允许定义字段</strong>。这两个类型的实现原理也差不多，对于<code>Async-graphql</code>来说，联合类型是接口类型的子集。</p>
+<p>下面把接口定义的例子做一个小小的修改，去掉字段的定义。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Circle {
+    radius: f32,
+}
+
+#[Object]
+impl Circle {
+    async fn area(&amp;self) -&gt; f32 {
+        std::f32::consts::PI * self.radius * self.radius
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Circle { radius: self.radius * s }.into()
+    }
+}
+
+struct Square {
+    width: f32,
+}
+
+#[Object]
+impl Square {
+    async fn area(&amp;self) -&gt; f32 {
+        self.width * self.width
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Square { width: self.width * s }.into()
+    }
+}
+
+#[Union]
+struct Shape(Circle, Square);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>
 <h1><a class="header" href="#定义模式schema" id="定义模式schema">定义模式(Schema)</a></h1>
 <h1><a class="header" href="#查询和变更" id="查询和变更">查询和变更</a></h1>

@@ -155,7 +155,9 @@
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>struct MyObject {
+</span>use async_graphql::*;
+
+struct MyObject {
     value: i32,
 }
 

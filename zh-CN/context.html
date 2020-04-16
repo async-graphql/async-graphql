@@ -153,7 +153,9 @@
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>struct Query;
+</span>use async_graphql::*;
+
+struct Query;
 
 #[Object]
 impl Query {

@@ -148,6 +148,50 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
+<p>接口用于抽象具有特定字段集合的对象，<code>Async-graphql</code>内部实现实际上是一个包装器，包装器转发接口上定义的Resolve函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。</p>
+<p><code>Async-graphql</code>自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用<code>Into::into</code>。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Circle {
+    radius: f32,
+}
+
+#[Object]
+impl Circle {
+    async fn area(&amp;self) -&gt; f32 {
+        std::f32::consts::PI * self.radius * self.radius
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Circle { radius: self.radius * s }.into()
+    }
+}
+
+struct Square {
+    width: f32,
+}
+
+#[Object]
+impl Square {
+    async fn area(&amp;self) -&gt; f32 {
+        self.width * self.width
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Square { width: self.width * s }.into()
+    }
+}
+
+#[Interface(
+    field(name = &quot;area&quot;, type = &quot;f32&quot;),
+    field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
+)]
+struct Shape(Circle, Square);
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
