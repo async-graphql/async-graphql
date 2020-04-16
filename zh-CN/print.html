@@ -153,7 +153,7 @@
 <p><code>Async-graphql</code>是用Rust语言实现的GraphQL服务端库。它完全兼容GraphQL规范以及绝大部分的扩展功能，类型安全并且高性能。</p>
 <p>你可以用Rust语言的方式来定义Schema，过程宏会自动生成GraphQL查询的框架代码，没有扩展Rust的语法，意味着Rustfmt可以正常使用，我很看重这一点，这也是为什么我会开发Async-graphql的原因之一。</p>
 <h2><a class="header" href="#为什么我要开发async-graphql" id="为什么我要开发async-graphql">为什么我要开发Async-graphql？</a></h2>
-<p>我喜欢GraphQL和Rust，之前我一直用<code>Juniper</code>，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定自己做一个给自己用。</p>
+<p>我喜欢GraphQL和Rust，之前我一直用<code>Juniper</code>，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定做一个给自己用。</p>
 <h2><a class="header" href="#async-graphql的现状" id="async-graphql的现状">Async-graphql的现状</a></h2>
 <p>今天（2020年04月15日）写这篇文档的时候，刚好距离我开始Async-graphql的开发一个半月，它已经大大超出了当初我设定的目标，成为了一个全功能的GraphQL服务端库。</p>
 <h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
@@ -162,7 +162,7 @@
 async-graphql = &quot;1.9.0&quot;
 </code></pre>
 <h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
-<p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的struct来描述它们，结构的字段对应GraphQL对象的字段，但你需要用<code>#[field]</code>来修饰它，这样<code>Async-graphql</code>提供的过程宏才能够正确的识别它。</p>
+<p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的结构来描述它们，结构的字段对应GraphQL对象的字段，但你需要用<code>#[field]</code>来修饰它，这样<code>Async-graphql</code>提供的过程宏才能够正确的识别它。</p>
 <p>Async-graphql实现了常用数据类型到GraphQL类型的映射，例如<code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>等。同时，你也能够<a href="custom_scalars.html">扩展这些基础类型</a>，基础数据类型在GraphQL里面称为标量。</p>
 <p>下面是一个简单的例子，我们只提供一个查询，返回<code>a</code>和<code>b</code>的和。</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -180,13 +180,79 @@ impl Query {
     }
 }
 
-type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
-
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#执行查询" id="执行查询">执行查询</a></h2>
-<h1><a class="header" href="#简单对象" id="简单对象">简单对象</a></h1>
-<h1><a class="header" href="#对象" id="对象">对象</a></h1>
+<p>在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用EmptyMutation和EmptySubscription来创建Schema。</p>
+<p>然后调用<code>Schema::execute</code>来执行查询。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
+let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#把查询结果输出为json" id="把查询结果输出为json">把查询结果输出为JSON</a></h2>
+<p>查询返回的<code>Result</code>用<code>async_graphql::http::GQLResponse</code>包装起来，就能直接转换为JSON。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
+<span class="boring">}
+</span></code></pre></pre>
+<h1><a class="header" href="#类型系统" id="类型系统">类型系统</a></h1>
+<p><code>Async-graphql</code>包含GraphQL类型到Rust类型的完整实现，并且非常易于使用。</p>
+<h1><a class="header" href="#简单对象simpleobject" id="简单对象simpleobject">简单对象(SimpleObject)</a></h1>
+<p>简单对象是把Rust结构的所有字段都直接映射到GraphQL对象，不支持定义单独的Resolve函数。</p>
+<p>下面的例子定义了一个名称为MyObject的对象，包含字段<code>a</code>和<code>b</code>，<code>c</code>由于没有<code>#[field]</code>标记，所以不会映射到GraphQL。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[SimpleObject]
+struct MyObject {
+    #[field]
+    a: i32,
+
+    #[field]
+    b: i32,
+
+    c: i32,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h1><a class="header" href="#对象object" id="对象object">对象(Object)</a></h1>
+<p>和简单对象不同，对象必须为所有的字段定义Resolve函数，Resolve函数定义在impl块中。</p>
+<p><strong>一个Resolve函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>
+<p>Resolve函数用于计算字段的值，你可以执行一个数据库查询，并返回查询结果。<strong>函数的返回值是字段的类型</strong>，你也可以返回一个<code>async_graphql::FieldResult</code>类型，这样能够返回一个错误，这个错误信息将输出到查询结果中。</p>
+<p>在查询数据库时，你可能需要一个数据库连接池对象，这个对象是个全局的，你可以在创建Schema的时候，用<code>Schema::data</code>函数附加一个全局类型的数据，下面的<code>value_from_db</code>字段展示了如何从<code>Context</code>中获取一个数据库连接。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct MyObject {
+    value: i32,
+}
+
+#[Object]
+impl MyObject {
+    #[field]
+    async fn value(&amp;self) -&gt; String {
+        self.value.to_string()
+    }
+
+    #[field]
+    async fn value_from_db(
+        &amp;self,
+        ctx: &amp;Context&lt;'_'&gt;,
+        #[arg(desc = &quot;Id of object&quot;)] id: i64)
+    -&gt; FieldResult&lt;String&gt; {
+        let conn = ctx.data::&lt;DbPool&gt;().take();
+        Ok(conn.query_something(id)?.name)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#查询上下文context" id="查询上下文context">查询上下文(Context)</a></h1>
 <h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
 <h1><a class="header" href="#枚举enum" id="枚举enum">枚举(Enum)</a></h1>
