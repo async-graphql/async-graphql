@@ -414,9 +414,96 @@ struct Shape(Circle, Square);
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>
+<p>你可以定义一个对象作为参数类型，GraphQL称之为<code>Input Object</code>，输入对象的定义方式和<a href="simple_object.html">简单对象</a>很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。</p>
+<p>输入对象不需要为每个字段指定<code>#[field]</code>标记，它每个字段都是<code>Input Value</code>。但你也可以通过可选的<code>#[field]</code>标记来给字段添加描述，重命名。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[InputObject]
+struct Coordinate {
+    latitude: f64,
+
+    #[field(desc = &quot;...&quot;)]
+    longitude: f64
+}
+
+struct Mutation;
+
+#[Object]
+impl Mutation {
+    async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
+        // 将坐标写入数据库
+        // ...
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#定义模式schema" id="定义模式schema">定义模式(Schema)</a></h1>
+<p>在定义了基本的类型之后，需要定义一个模式把他们组合起来，模式由三种类型组成，查询对象，变更对象和订阅对象，其中变更对象和订阅对象是可选的。</p>
+<p>当模式创建时，<code>Async-graphql</code>会遍历所有对象图，并注册所有类型。这意味着，如果定义了 GraphQL 对象但从未引用，那么此对象就不会暴露在模式中。</p>
 <h1><a class="header" href="#查询和变更" id="查询和变更">查询和变更</a></h1>
+<h2><a class="header" href="#查询根对象" id="查询根对象">查询根对象</a></h2>
+<p>查询根对象是一个GraphQL对象，定义类似其它对象。查询对象的所有字段Resolve函数是并发执行的。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
+        // 在数据库中查找用户
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#变更根对象" id="变更根对象">变更根对象</a></h2>
+<p>变更根对象也是一个GraphQL，但变更根对象的执行是顺序的，只有第一个变更执行完成之后才会执行下一个。</p>
+<p>下面的变更根对象提供用户注册和登录操作：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Mutation;
+
+#[Object]
+impl Mutation {
+    async fn signup(&amp;self, username: String, password: String) -&gt; Result&lt;bool&gt; {
+        // 用户注册
+    }
+
+    async fn login(&amp;self, username: String, password: String) -&gt; Result&lt;String&gt; {
+        // 用户登录并生成token
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#订阅" id="订阅">订阅</a></h1>
+<p>订阅根对象和其它根对象定义稍有不同，它的Resolve函数总是返回一个<code>Stream</code>，而字段参数通常作为数据的筛选条件。</p>
+<p>下面的例子订阅一个整数流，它每秒产生一个整数，参数<code>step</code>指定了整数的步长，默认为1。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[Subscription]
+struct Subscription {
+    fn async integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
+        let mut value = 0;
+        tokio::time::interval(Duration::from_secs(1)).map(move |_| {
+            value += step;
+            value
+        })
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#实用功能" id="实用功能">实用功能</a></h1>
 <h1><a class="header" href="#输入值校验器" id="输入值校验器">输入值校验器</a></h1>
 <h1><a class="header" href="#查询缓存控制" id="查询缓存控制">查询缓存控制</a></h1>
