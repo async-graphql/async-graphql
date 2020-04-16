@@ -106,7 +106,7 @@ pub use serde_json;
 pub mod http;
 
 pub use base::{Scalar, Type};
-pub use context::{Context, Environment, QueryPathNode, QueryPathSegment, Variables};
+pub use context::{Context, ContextBase, Environment, QueryPathNode, QueryPathSegment, Variables};
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
 };
@@ -136,8 +136,6 @@ pub use context::ContextSelectionSet;
 pub mod registry;
 #[doc(hidden)]
 pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
-#[doc(hidden)]
-pub use context::ContextBase;
 #[doc(hidden)]
 pub use resolver::{collect_fields, do_resolve};
 #[doc(hidden)]
