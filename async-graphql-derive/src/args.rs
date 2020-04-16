@@ -429,7 +429,6 @@ impl EnumItem {
 
 #[derive(Debug)]
 pub struct InputField {
-    pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
     pub default: Option<Value>,
@@ -438,7 +437,6 @@ pub struct InputField {
 
 impl InputField {
     pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Self> {
-        let mut internal = false;
         let mut name = None;
         let mut desc = None;
         let mut default = None;
@@ -449,9 +447,6 @@ impl InputField {
                 if let Meta::List(args) = &attr.parse_meta()? {
                     for meta in &args.nested {
                         match meta {
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                                internal = true;
-                            }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
                                     if let syn::Lit::Str(lit) = &nv.lit {
@@ -506,7 +501,6 @@ impl InputField {
         }
 
         Ok(Self {
-            internal,
             name,
             desc,
             default,
