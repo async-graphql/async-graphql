@@ -6,7 +6,7 @@
 
 ## 为什么我要开发Async-graphql？
 
-我喜欢GraphQL和Rust，之前我一直用`Juniper`，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定自己做一个给自己用。
+我喜欢GraphQL和Rust，之前我一直用`Juniper`，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定做一个给自己用。
 
 ## Async-graphql的现状
 
