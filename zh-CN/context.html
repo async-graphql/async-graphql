@@ -148,6 +148,24 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#查询上下文context" id="查询上下文context">查询上下文(Context)</a></h1>
+<p>查询上下文(Context)的主要作用是获取附加到Schema的全局数据，<strong>需要注意的是，如果你的Resolve函数返回的数据借用了Context内保存的数据，需要明确指定生命周期参数</strong>。</p>
+<p>下面是一个返回值借用Context内数据的例子：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct Query;
+
+#[Object]
+impl Query {
+    async fn borrow_from_context_data&lt;'ctx'&gt;(
+        &amp;self,
+        ctx: &amp;'ctx Context&lt;'_&gt;
+    ) -&gt; &amp;'ctx String {
+        ctx.data::&lt;String&gt;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

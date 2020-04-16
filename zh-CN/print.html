@@ -245,8 +245,8 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_'&gt;,
-        #[arg(desc = &quot;Id of object&quot;)] id: i64)
-    -&gt; FieldResult&lt;String&gt; {
+        #[arg(desc = &quot;Id of object&quot;)] id: i64
+    ) -&gt; FieldResult&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;().take();
         Ok(conn.query_something(id)?.name)
     }
@@ -254,8 +254,63 @@ impl MyObject {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#查询上下文context" id="查询上下文context">查询上下文(Context)</a></h1>
+<p>查询上下文(Context)的主要作用是获取附加到Schema的全局数据，<strong>需要注意的是，如果你的Resolve函数返回的数据借用了Context内保存的数据，需要明确指定生命周期参数</strong>。</p>
+<p>下面是一个返回值借用Context内数据的例子：</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct Query;
+
+#[Object]
+impl Query {
+    async fn borrow_from_context_data&lt;'ctx'&gt;(
+        &amp;self,
+        ctx: &amp;'ctx Context&lt;'_&gt;
+    ) -&gt; &amp;'ctx String {
+        ctx.data::&lt;String&gt;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
+<p>任何错误都能够被转换为<code>FieldError</code>，并且你还能扩展标准的错误输出。</p>
+<p>下面是一个例子，解析一个输入的字符串到整数，当解析失败时返回错误，并且附加额外的错误信息。</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct Query;
+
+#[Object]
+impl Query {
+    #[field]
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+        Ok(&quot;234a&quot;
+            .parse()
+            .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#枚举enum" id="枚举enum">枚举(Enum)</a></h1>
+<p>定义一个枚举相当简单，直接给出一个例子。</p>
+<p><strong>Async-graphql会自动把枚举项的名称转换为GraphQL标准的大写加下划线形式，你也可以用<code>name</code>属性自已定义名称。</strong></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
+pub enum Episode {
+    #[item(desc = &quot;Released in 1977.&quot;)]
+    NewHope,
+
+    #[item(desc = &quot;Released in 1980.&quot;)]
+    Empire,
+
+    // rename to `AAA`
+    #[item(name=&quot;AAA&quot;, desc = &quot;Released in 1983.&quot;)]
+    Jedi,
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
 <h1><a class="header" href="#联合union" id="联合union">联合(Union)</a></h1>
 <h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>

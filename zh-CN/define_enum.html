@@ -148,6 +148,25 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#枚举enum" id="枚举enum">枚举(Enum)</a></h1>
+<p>定义一个枚举相当简单，直接给出一个例子。</p>
+<p><strong>Async-graphql会自动把枚举项的名称转换为GraphQL标准的大写加下划线形式，你也可以用<code>name</code>属性自已定义名称。</strong></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
+pub enum Episode {
+    #[item(desc = &quot;Released in 1977.&quot;)]
+    NewHope,
+
+    #[item(desc = &quot;Released in 1980.&quot;)]
+    Empire,
+
+    // rename to `AAA`
+    #[item(name=&quot;AAA&quot;, desc = &quot;Released in 1983.&quot;)]
+    Jedi,
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
