@@ -96,3 +96,27 @@ impl InputValueValidator for IntNonZero {
         }
     }
 }
+
+/// Integer equal validator
+pub struct IntEqual {
+    /// equal this value.
+    pub value: i64,
+}
+
+impl InputValueValidator for IntEqual {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::Int(n) = value {
+            if n.as_i64().unwrap() != self.value {
+                Some(format!(
+                    "the value is {}, must be equal {}",
+                    n.as_i64().unwrap(),
+                    self.value
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}

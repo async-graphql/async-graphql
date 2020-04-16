@@ -6,7 +6,7 @@ mod string_validators;
 
 use graphql_parser::schema::Value;
 
-pub use int_validators::{IntGreaterThan, IntLessThan, IntNonZero, IntRange};
+pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
 pub use list_validators::{ListMaxLength, ListMinLength};
 pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 
