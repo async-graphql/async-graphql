@@ -5,6 +5,8 @@
 下面是一个返回值借用Context内数据的例子：
 
 ```rust
+use async_graphql::*;
+
 struct Query;
 
 #[Object]

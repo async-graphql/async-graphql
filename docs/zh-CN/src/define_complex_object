@@ -9,6 +9,8 @@ Resolve函数用于计算字段的值，你可以执行一个数据库查询，�
 在查询数据库时，你可能需要一个数据库连接池对象，这个对象是个全局的，你可以在创建Schema的时候，用`Schema::data`函数附加一个全局类型的数据，下面的`value_from_db`字段展示了如何从`Context`中获取一个数据库连接。
 
 ```rust
+use async_graphql::*;
+
 struct MyObject {
     value: i32,
 }
