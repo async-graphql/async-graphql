@@ -7,9 +7,11 @@
 ```rust
 use async_graphql::*;
 
+struct Subscription;
+
 #[Subscription]
-struct Subscription {
-    fn async integers(&self, #[arg(default = "1")] step: i32) -> impl Stream<Item = i32> {
+impl Subscription {
+    async fn integers(&self, #[arg(default = "1")] step: i32) -> impl Stream<Item = i32> {
         let mut value = 0;
         tokio::time::interval(Duration::from_secs(1)).map(move |_| {
             value += step;
