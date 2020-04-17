@@ -28,10 +28,8 @@ pub enum QueryOperation<'a> {
 }
 
 /// Empty edge extension object
+#[async_graphql_derive::SimpleObject(internal)]
 pub struct EmptyEdgeFields;
-
-#[async_graphql_derive::Object(internal)]
-impl EmptyEdgeFields {}
 
 /// Data source of GraphQL Cursor Connections type
 ///
@@ -48,19 +46,15 @@ impl EmptyEdgeFields {}
 ///
 /// struct QueryRoot;
 ///
-/// struct DiffFields(i32);
-///
-/// #[Object]
-/// impl DiffFields {
+/// #[SimpleObject]
+/// struct DiffFields {
 ///     #[field]
-///     async fn diff(&self) -> i32 {
-///         self.0
-///     }
+///     diff: i32,
 /// }
 ///
 /// struct Numbers;
 ///
-/// #[async_trait::async_trait]
+/// #[DataSource]
 /// impl DataSource for Numbers {
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
@@ -84,7 +78,7 @@ impl EmptyEdgeFields {}
 ///             }
 ///         };
 ///
-///         let nodes = (start..end).into_iter().map(|n| (base64::encode(n.to_be_bytes()), DiffFields(n - 1000), n)).collect();
+///         let nodes = (start..end).into_iter().map(|n| (base64::encode(n.to_be_bytes()), DiffFields {diff: n - 1000}, n)).collect();
 ///         Ok(Connection::new(None, true, true, nodes))
 ///     }
 /// }

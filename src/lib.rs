@@ -573,3 +573,6 @@ pub use async_graphql_derive::Union;
 /// }
 /// ```
 pub use async_graphql_derive::Subscription;
+
+/// Define a DataSource
+pub use async_graphql_derive::DataSource;

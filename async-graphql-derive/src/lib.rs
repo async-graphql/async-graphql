@@ -13,7 +13,9 @@ mod subscription;
 mod union;
 mod utils;
 
+use crate::utils::get_crate_name;
 use proc_macro::TokenStream;
+use quote::quote;
 use syn::parse_macro_input;
 use syn::{AttributeArgs, DeriveInput, ItemImpl};
 
@@ -113,4 +115,20 @@ pub fn Subscription(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn DataSource(args: TokenStream, input: TokenStream) -> TokenStream {
+    let datasource_args = match args::DataSource::parse(parse_macro_input!(args as AttributeArgs)) {
+        Ok(datasource_args) => datasource_args,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    let item_impl = parse_macro_input!(input as ItemImpl);
+    let crate_name = get_crate_name(datasource_args.internal);
+    let expanded = quote! {
+        #[#crate_name::async_trait::async_trait]
+        #item_impl
+    };
+    expanded.into()
 }
