@@ -1,6 +1,6 @@
 # Actix-web
 
-`Async-graphql-actix-web`提供`GQLRequest`，它实现了`actix_web::FromRequest`，它其实是QueryBuilder的包装，你可以调用`GQLRequest::into_inner`把它转换成一个`QueryBuilder`。
+`Async-graphql-actix-web`提供实现了`actix_web::FromRequest`的`GQLRequest`，它其实是QueryBuilder的包装，你可以调用`GQLRequest::into_inner`把它转换成一个`QueryBuilder`。
 
 `WSSubscription`是一个支持Web Socket订阅的Actor。
 
