@@ -155,9 +155,11 @@
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
+struct Subscription;
+
 #[Subscription]
-struct Subscription {
-    fn async integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
+impl Subscription {
+    async fn integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
         let mut value = 0;
         tokio::time::interval(Duration::from_secs(1)).map(move |_| {
             value += step;
