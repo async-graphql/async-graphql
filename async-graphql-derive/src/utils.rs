@@ -97,7 +97,7 @@ pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
     }
 }
 
-pub fn parse_nested_validator(
+fn parse_nested_validator(
     crate_name: &TokenStream,
     nested_meta: &NestedMeta,
 ) -> Result<TokenStream> {
@@ -113,7 +113,7 @@ pub fn parse_nested_validator(
                 Ok(validators
                     .into_iter()
                     .fold(None, |acc, item| match acc {
-                        Some(prev) => Some(quote! { #crate_name::validators::and(#prev, #item) }),
+                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::and(#prev, #item) }),
                         None => Some(item),
                     })
                     .unwrap())
@@ -125,7 +125,7 @@ pub fn parse_nested_validator(
                 Ok(validators
                     .into_iter()
                     .fold(None, |acc, item| match acc {
-                        Some(prev) => Some(quote! { #crate_name::validators::or(#prev, #item) }),
+                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::or(#prev, #item) }),
                         None => Some(item),
                     })
                     .unwrap())

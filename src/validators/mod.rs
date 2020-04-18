@@ -51,27 +51,27 @@ where
     fn is_valid(&self, value: &Value) -> Option<String>;
 }
 
-/// Merge the two validators and return None only if both validators are successful.
-#[doc(hidden)]
-pub fn and<A, B>(a: A, b: B) -> And<A, B>
-where
-    A: InputValueValidator,
-    B: InputValueValidator,
-{
-    And(a, b)
+/// An extension trait for `InputValueValidator`
+pub trait InputValueValidatorExt: InputValueValidator + Sized {
+    /// Merge the two validators and return None only if both validators are successful.
+    fn and<R: InputValueValidator>(self, other: R) -> And<Self, R> {
+        And(self, other)
+    }
+
+    /// Merge two validators, and return None when either validator verifies successfully.
+    fn or<R: InputValueValidator>(self, other: R) -> Or<Self, R> {
+        Or(self, other)
+    }
+
+    /// Changes the error message
+    fn map_err<F: Fn(String) -> String>(self, f: F) -> MapErr<Self, F> {
+        MapErr(self, f)
+    }
 }
 
-/// Merge two validators, and return None when either validator verifies successfully.
-#[doc(hidden)]
-pub fn or<A, B>(a: A, b: B) -> Or<A, B>
-where
-    A: InputValueValidator,
-    B: InputValueValidator,
-{
-    Or(a, b)
-}
+impl<I: InputValueValidator> InputValueValidatorExt for I {}
 
-#[doc(hidden)]
+/// Invalidator for `InputValueValidator::and`
 pub struct And<A, B>(A, B);
 
 impl<A, B> InputValueValidator for And<A, B>
@@ -84,7 +84,7 @@ where
     }
 }
 
-#[doc(hidden)]
+/// Invalidator for `InputValueValidator::or`
 pub struct Or<A, B>(A, B);
 
 impl<A, B> InputValueValidator for Or<A, B>
@@ -94,5 +94,18 @@ where
 {
     fn is_valid(&self, value: &Value) -> Option<String> {
         self.0.is_valid(value).or_else(|| self.1.is_valid(value))
+    }
+}
+
+/// Invalidator for `InputValueValidator::map_err`
+pub struct MapErr<I, F>(I, F);
+
+impl<I, F> InputValueValidator for MapErr<I, F>
+where
+    I: InputValueValidator,
+    F: Fn(String) -> String + Send + Sync,
+{
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        self.0.is_valid(value).map(&self.1)
     }
 }
