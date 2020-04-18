@@ -7,7 +7,7 @@
 下面时一个参数校验器，它校验`String`类型的参数`a`，必须是一个合法Email或者MAC地址：
 
 ```rust
-use async_graphql:*;
+use async_graphql::*;
 use async_graphql::validators::{Email, MAC};
 
 struct Query;
