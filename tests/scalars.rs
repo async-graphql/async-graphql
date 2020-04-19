@@ -1,7 +1,7 @@
 use async_graphql::*;
 
 macro_rules! test_scalars {
-    ($test_name:ident, $ty:ty, $value:expr) => {
+    ($test_name:ident, $ty:ty, $value:expr, $res_value:expr) => {
         #[async_std::test]
         pub async fn $test_name() {
             #[InputObject]
@@ -36,20 +36,21 @@ macro_rules! test_scalars {
             let query = format!("{{ value testArg(input: {0}) testInput(input: {{value: {0}}}) }}", json_value);
             assert_eq!(
                 schema.execute(&query).await.unwrap().data,
-                serde_json::json!({ "value": $value, "testArg": $value, "testInput": $value })
+                serde_json::json!({ "value": $res_value, "testArg": $res_value, "testInput": $res_value })
             );
         }
     };
 }
 
-test_scalars!(test_i8_scalar, i8, 10);
-test_scalars!(test_i16_scalar, i16, 10);
-test_scalars!(test_i32_scalar, i32, 10);
-test_scalars!(test_i64_scalar, i64, 10);
-test_scalars!(test_u8_scalar, u8, 10);
-test_scalars!(test_u16_scalar, u16, 10);
-test_scalars!(test_u32_scalar, u32, 10);
-test_scalars!(test_u64_scalar, u64, 10);
-test_scalars!(test_bool_scalar, bool, true);
-test_scalars!(test_f32_scalar, f32, 10.5);
-test_scalars!(test_f64_scalar, f32, 10.5);
+test_scalars!(test_i8_scalar, i8, 10, 10);
+test_scalars!(test_i16_scalar, i16, 10, 10);
+test_scalars!(test_i32_scalar, i32, 10, 10);
+test_scalars!(test_u8_scalar, u8, 10, 10);
+test_scalars!(test_u16_scalar, u16, 10, 10);
+test_scalars!(test_u32_scalar, u32, 10, 10);
+test_scalars!(test_bool_scalar, bool, true, true);
+test_scalars!(test_f32_scalar, f32, 10.5, 10.5);
+test_scalars!(test_f64_scalar, f32, 10.5, 10.5);
+
+test_scalars!(test_i64_scalar, i64, 10, "10");
+test_scalars!(test_u64_scalar, u64, 10, "10");
