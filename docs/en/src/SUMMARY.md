@@ -25,7 +25,6 @@
     - [Actix-web](integrations_to_actix_web.md)
 - [Advanced topics](advanced_topics.md)
     - [Custom scalars](custom_scalars.md)
-    - [Custom input value validators](custom_input_value_validators.md)
     - [Custom extensions](custom_extensions.md)
     - [Custom subscription transport](custom_subscription_transport.md)
     - [Apollo Federation](apollo_federation.md)

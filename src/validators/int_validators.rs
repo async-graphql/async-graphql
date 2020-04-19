@@ -72,7 +72,7 @@ impl InputValueValidator for IntGreaterThan {
                 None
             }
         } else {
-            Some("expected type \"Int\"".to_string())
+            None
         }
     }
 }
@@ -92,7 +92,7 @@ impl InputValueValidator for IntNonZero {
                 None
             }
         } else {
-            Some("expected type \"Int\"".to_string())
+            None
         }
     }
 }

@@ -38,3 +38,29 @@ impl Query {
     }
 }
 ```
+
+## 自定义校验器
+
+```rust
+struct MustBeZero {}
+
+impl InputValueValidator for InputValueValidator {
+    fn is_valid(&self, value: &Value) -> Option<String> {
+        if let Value::Int(n) = value {
+            if n.as_i64().unwrap() != 0 {
+                // 校验失败
+                Some(format!(
+                    "the value is {}, but must be zero",
+                    n.as_i64().unwrap(),
+                ))
+            } else {
+                // 校验通过
+                None
+            }
+        } else {
+            // 类型不匹配，直接返回None，内置校验器会发现这个错误
+            None
+        }
+    }
+}
+```

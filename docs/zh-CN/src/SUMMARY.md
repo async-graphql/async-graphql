@@ -24,7 +24,6 @@
     - [Actix-web](integrations_to_actix_web.md)
 - [高级主题](advanced_topics.md)
     - [自定义标量](custom_scalars.md)
-    - [自定义输入值校验器](custom_input_value_validators.md)
     - [自定义扩展](custom_extensions.md)
     - [自定义订阅传输协议](custom_subscription_transport.md)
     - [Apollo Federation集成](apollo_federation.md)

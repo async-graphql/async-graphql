@@ -20,7 +20,7 @@ impl InputValueValidator for ListMinLength {
                 None
             }
         } else {
-            Some("expected type \"List\"".to_string())
+            None
         }
     }
 }
