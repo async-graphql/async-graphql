@@ -148,6 +148,38 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h1>
+<p><code>Async-graphql</code>已经内置了绝大部分常用的标量类型，同时你也能自定义标量。</p>
+<p>实现<code>Async-graphql::Scalar</code>即可自定义一个标量，你只需要实现一个解析函数和输出函数。</p>
+<p>下面的例子定义一个64位整数标量，但它的输入输出都是字符串。 (<code>Async-graphql</code>已经内置了对64位整数的支持，正是采用字符串作为输入输出)</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct StringNumber(i64);
+
+impl Scalar for StringNumber {
+    fn type_name() -&gt; &amp;'static str {
+        // 类型名
+        &quot;StringNumber&quot;
+    }
+
+    fn parse(value: &amp;Value) -&gt; Option&lt;Self&gt; {
+        if let Value::String(value) = value {
+            // 解析整数
+            value.parse().ok()
+        } else {
+            // 类型不匹配则直接返回None
+            None
+        }
+    }
+}
+
+// 这个宏必须调用
+impl_scalar!(StringNumber);
+
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
