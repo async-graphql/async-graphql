@@ -796,6 +796,9 @@ impl_scalar!(StringNumber);
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#自定义扩展" id="自定义扩展">自定义扩展</a></h1>
+<p>一个GraphQL扩展对象能够接收一个查询执行各个阶段的事件，你可以收集想要的数据，这些数据能够在查询结果中返回。</p>
+<p>你只需要实现<code>async_graphql::Extension</code>就能够定义一个扩展对象，然后在创建<code>Schema</code>的时候调用<code>Schema::extension</code>应用扩展。</p>
+<p>你可以参考<a href="https://github.com/sunli829/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
 <h1><a class="header" href="#自定义订阅传输协议" id="自定义订阅传输协议">自定义订阅传输协议</a></h1>
 <h1><a class="header" href="#apollo-federation集成" id="apollo-federation集成">Apollo Federation集成</a></h1>
 
