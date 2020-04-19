@@ -26,7 +26,8 @@
 
 It supports all of the GraphQL specifications and is easy to integrate into existing web servers.
 
-* [Book(WIP)](https://sunli829.github.io/async-graphql/index.html)
+* [Book(WIP)](https://sunli829.github.io/async-graphql/en/index.html)
+* [中文文档](https://sunli829.github.io/async-graphql/zh-CN/index.html)
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/sunli829/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
