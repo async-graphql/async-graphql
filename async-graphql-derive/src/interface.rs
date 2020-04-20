@@ -19,8 +19,13 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         _ => return Err(Error::new_spanned(input, "It should be a struct.")),
     };
     let fields = match &s.fields {
-        Fields::Unnamed(fields) => fields,
+        Fields::Unnamed(fields) => Some(&fields.unnamed),
+        Fields::Unit => None,
         _ => return Err(Error::new_spanned(input, "All fields must be unnamed.")),
+    };
+    let implements = match &interface_args.implements {
+        Some(implements) => quote! { Some(#implements) },
+        None => quote! { None },
     };
     let extends = interface_args.extends;
     let mut enum_names = Vec::new();
@@ -41,38 +46,68 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut collect_inline_fields = Vec::new();
     let mut get_introspection_typename = Vec::new();
 
-    for field in &fields.unnamed {
-        if let Type::Path(p) = &field.ty {
-            let enum_name = &p.path.segments.last().unwrap().ident;
-            enum_names.push(enum_name);
-            enum_items.push(quote! { #enum_name(#p) });
-            type_into_impls.push(quote! {
-                impl #generics From<#p> for #ident #generics {
-                    fn from(obj: #p) -> Self {
-                        #ident::#enum_name(obj)
+    if let Some(implements) = &interface_args.implements {
+        let implements_ident = Ident::new(implements, Span::call_site());
+        registry_types.push(quote! {
+            <#implements_ident as #crate_name::Type>::create_type_info(registry);
+        });
+    }
+
+    if let Some(fields) = fields {
+        for field in fields {
+            if let Type::Path(p) = &field.ty {
+                let enum_name = &p.path.segments.last().unwrap().ident;
+                enum_items.push(quote! { #enum_name(#p) });
+                type_into_impls.push(quote! {
+                    impl #generics From<#p> for #ident #generics {
+                        fn from(obj: #p) -> Self {
+                            #ident::#enum_name(obj)
+                        }
                     }
-                }
-            });
-            registry_types.push(quote! {
-                <#p as #crate_name::Type>::create_type_info(registry);
-                registry.add_implements(&<#p as #crate_name::Type>::type_name(), #gql_typename);
-            });
-            possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
-            });
-            collect_inline_fields.push(quote! {
-                if name == <#p as #crate_name::Type>::type_name() {
-                    if let #ident::#enum_name(obj) = self {
+                });
+                enum_names.push(enum_name);
+
+                registry_types.push(quote! {
+                    <#p as #crate_name::Type>::create_type_info(registry);
+                    registry.add_implements(&<#p as #crate_name::Type>::type_name(), #gql_typename);
+                });
+
+                possible_types.push(quote! {
+                    possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
+                });
+
+                let collect_self_fields = Some(quote! {
+                    else if name == <#ident as #crate_name::Type>::type_name() {
                         return #crate_name::collect_fields(ctx, obj, futures);
                     }
-                    return Ok(());
-                }
-            });
-            get_introspection_typename.push(quote! {
-                #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
-            })
-        } else {
-            return Err(Error::new_spanned(field, "Invalid type"));
+                });
+                let collect_parent_interface_fields =
+                    if let Some(implements) = &interface_args.implements {
+                        let implements_ident = Ident::new(implements, Span::call_site());
+                        Some(quote! {
+                            else if name == <#implements_ident as #crate_name::Type>::type_name() {
+                                return #crate_name::collect_fields(ctx, obj, futures);
+                            }
+                        })
+                    } else {
+                        None
+                    };
+
+                collect_inline_fields.push(quote! {
+                    if let #ident::#enum_name(obj) = self {
+                        if name == <#p as #crate_name::Type>::type_name() {
+                            return #crate_name::collect_fields(ctx, obj, futures);
+                        } #collect_self_fields #collect_parent_interface_fields
+                        return Ok(());
+                    }
+                });
+
+                get_introspection_typename.push(quote! {
+                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+                })
+            } else {
+                return Err(Error::new_spanned(field, "Invalid type"));
+            }
         }
     }
 
@@ -229,6 +264,16 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         });
     }
 
+    let introspection_type_name = if get_introspection_typename.is_empty() {
+        quote! { unreachable!() }
+    } else {
+        quote! {
+            match self {
+            #(#get_introspection_typename),*
+            }
+        }
+    };
+
     let expanded = quote! {
         #(#attrs)*
         #vis enum #ident #generics { #(#enum_items),* }
@@ -245,9 +290,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             }
 
             fn introspection_type_name(&self) -> std::borrow::Cow<'static, str> {
-                match self {
-                    #(#get_introspection_typename),*
-                }
+                #introspection_type_name
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
@@ -267,6 +310,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                             #(#possible_types)*
                             possible_types
                         },
+                        implements: #implements,
                         extends: #extends,
                         keys: None,
                     }

@@ -4,7 +4,7 @@ use async_graphql_derive::Object;
 use itertools::Itertools;
 
 enum TypeDetail<'a> {
-    Simple(&'a registry::Type),
+    Named(&'a registry::Type),
     NonNull(String),
     List(String),
 }
@@ -18,7 +18,7 @@ impl<'a> __Type<'a> {
     pub fn new_simple(registry: &'a registry::Registry, ty: &'a registry::Type) -> __Type<'a> {
         __Type {
             registry,
-            detail: TypeDetail::Simple(ty),
+            detail: TypeDetail::Named(ty),
         }
     }
 
@@ -34,7 +34,7 @@ impl<'a> __Type<'a> {
             },
             registry::TypeName::Named(ty) => __Type {
                 registry,
-                detail: TypeDetail::Simple(&registry.types[ty]),
+                detail: TypeDetail::Named(&registry.types[ty]),
             },
         }
     }
@@ -52,7 +52,7 @@ impl<'a> __Type<'a> {
     #[field]
     async fn kind(&self) -> __TypeKind {
         match &self.detail {
-            TypeDetail::Simple(ty) => match ty {
+            TypeDetail::Named(ty) => match ty {
                 registry::Type::Scalar { .. } => __TypeKind::Scalar,
                 registry::Type::Object { .. } => __TypeKind::Object,
                 registry::Type::Interface { .. } => __TypeKind::Interface,
@@ -68,7 +68,7 @@ impl<'a> __Type<'a> {
     #[field]
     async fn name(&self) -> Option<String> {
         match &self.detail {
-            TypeDetail::Simple(ty) => Some(ty.name().to_string()),
+            TypeDetail::Named(ty) => Some(ty.name().to_string()),
             TypeDetail::NonNull(_) => None,
             TypeDetail::List(_) => None,
         }
@@ -77,7 +77,7 @@ impl<'a> __Type<'a> {
     #[field]
     async fn description(&self) -> Option<String> {
         match &self.detail {
-            TypeDetail::Simple(ty) => match ty {
+            TypeDetail::Named(ty) => match ty {
                 registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
                 registry::Type::Object { description, .. } => description.map(|s| s.to_string()),
                 registry::Type::Interface { description, .. } => description.map(|s| s.to_string()),
@@ -97,7 +97,7 @@ impl<'a> __Type<'a> {
         &self,
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
-        if let TypeDetail::Simple(ty) = &self.detail {
+        if let TypeDetail::Named(ty) = &self.detail {
             ty.fields().and_then(|fields| {
                 let mut fields = fields
                     .values()
@@ -120,7 +120,7 @@ impl<'a> __Type<'a> {
 
     #[field]
     async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Simple(registry::Type::Object { name, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::Type::Object { name, .. }) = &self.detail {
             Some(
                 self.registry
                     .implements
@@ -130,6 +130,12 @@ impl<'a> __Type<'a> {
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
+        } else if let TypeDetail::Named(registry::Type::Interface {
+            implements: Some(implements),
+            ..
+        }) = &self.detail
+        {
+            Some(vec![__Type::new(self.registry, implements)])
         } else {
             None
         }
@@ -137,15 +143,14 @@ impl<'a> __Type<'a> {
 
     #[field]
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Simple(registry::Type::Interface { possible_types, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::Type::Interface { possible_types, .. }) = &self.detail {
             Some(
                 possible_types
                     .iter()
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
-        } else if let TypeDetail::Simple(registry::Type::Union { possible_types, .. }) =
-            &self.detail
+        } else if let TypeDetail::Named(registry::Type::Union { possible_types, .. }) = &self.detail
         {
             Some(
                 possible_types
@@ -163,7 +168,7 @@ impl<'a> __Type<'a> {
         &self,
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
-        if let TypeDetail::Simple(registry::Type::Enum { enum_values, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::Type::Enum { enum_values, .. }) = &self.detail {
             Some(
                 enum_values
                     .values()
@@ -181,7 +186,7 @@ impl<'a> __Type<'a> {
 
     #[field]
     async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
-        if let TypeDetail::Simple(registry::Type::InputObject { input_fields, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::Type::InputObject { input_fields, .. }) = &self.detail {
             Some(
                 input_fields
                     .values()

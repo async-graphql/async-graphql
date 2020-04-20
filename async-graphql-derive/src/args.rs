@@ -777,6 +777,7 @@ pub struct Interface {
     pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
+    pub implements: Option<String>,
     pub fields: Vec<InterfaceField>,
     pub extends: bool,
 }
@@ -786,6 +787,7 @@ impl Interface {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
+        let mut implements = None;
         let mut fields = Vec::new();
         let mut extends = false;
 
@@ -816,6 +818,15 @@ impl Interface {
                                 "Attribute 'desc' should be a string.",
                             ));
                         }
+                    } else if nv.path.is_ident("implements") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            implements = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Implements 'desc' should be a string.",
+                            ));
+                        }
                     }
                 }
                 NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("field") => {
@@ -829,6 +840,7 @@ impl Interface {
             internal,
             name,
             desc,
+            implements,
             fields,
             extends,
         })
