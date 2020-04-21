@@ -309,6 +309,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | name        | Item name                 | string   | Y        |
 /// | desc        | Item description          | string   | Y        |
 /// | deprecation | Item deprecation reason   | string   | Y        |
+/// | ref         | The resolver function returns a borrowing value  | bool   | Y        |
 ///
 /// # Examples
 ///
@@ -409,6 +410,7 @@ pub use async_graphql_derive::InputObject;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
 /// | desc        | Object description        | string   | Y        |
+/// | implements  | The interface implements another interface | String | Y |
 ///
 /// # Field parameters
 ///

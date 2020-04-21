@@ -214,6 +214,7 @@ pub struct Field {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
+    pub is_ref: bool,
 }
 
 impl Field {
@@ -226,6 +227,7 @@ impl Field {
         let mut external = false;
         let mut provides = None;
         let mut requires = None;
+        let mut is_ref = false;
 
         for attr in attrs {
             match attr.parse_meta()? {
@@ -238,6 +240,9 @@ impl Field {
                         match meta {
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
                                 external = true;
+                            }
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("ref") => {
+                                is_ref = true;
                             }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
@@ -309,6 +314,7 @@ impl Field {
                 external,
                 provides,
                 requires,
+                is_ref,
             }))
         } else {
             Ok(None)

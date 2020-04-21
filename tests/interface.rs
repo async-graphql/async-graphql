@@ -48,6 +48,53 @@ pub async fn test_interface_simple_object() {
 }
 
 #[async_std::test]
+pub async fn test_interface_simple_object2() {
+    #[async_graphql::SimpleObject]
+    pub struct MyObj {
+        #[field(ref)]
+        pub id: i32,
+        #[field]
+        pub title: String,
+    }
+
+    #[async_graphql::Interface(field(name = "id", type = "&i32"))]
+    pub struct Node(MyObj);
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[field]
+        async fn node(&self) -> Node {
+            MyObj {
+                id: 33,
+                title: "haha".to_string(),
+            }
+                .into()
+        }
+    }
+
+    let query = format!(
+        r#"{{
+            node {{
+                ... on Node {{
+                    id
+                }}
+            }}
+        }}"#
+    );
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "node": {
+                "id": 33,
+            }
+        })
+    );
+}
+
+#[async_std::test]
 pub async fn test_multiple_interfaces() {
     struct MyObj;
 

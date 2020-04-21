@@ -90,12 +90,22 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 });
 
                 let ident = &item.ident;
-                getters.push(quote! {
-                    #[inline]
-                    #vis async fn #ident(&self) -> #ty {
-                        self.#ident.clone()
-                    }
-                });
+
+                if field.is_ref {
+                    getters.push(quote! {
+                        #[inline]
+                        #vis async fn #ident(&self) -> &#ty {
+                            &self.#ident
+                        }
+                    });
+                } else {
+                    getters.push(quote! {
+                        #[inline]
+                        #vis async fn #ident(&self) -> #ty {
+                            self.#ident.clone()
+                        }
+                    });
+                }
 
                 resolvers.push(quote! {
                     if field.name.as_str() == #field_name {
