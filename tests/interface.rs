@@ -70,7 +70,7 @@ pub async fn test_interface_simple_object2() {
                 id: 33,
                 title: "haha".to_string(),
             }
-                .into()
+            .into()
         }
     }
 
