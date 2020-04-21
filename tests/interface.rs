@@ -133,7 +133,7 @@ pub async fn test_multiple_interfaces() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .register_type::<InterfaceA>()
+        .register_type::<InterfaceA>() // `InterfaceA` is not directly referenced, so manual registration is required.
         .finish();
     let query = format!(
         r#"{{
