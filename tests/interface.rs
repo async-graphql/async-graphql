@@ -119,7 +119,7 @@ pub async fn test_multiple_interfaces() {
     #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
     struct InterfaceA(MyObj);
 
-    #[async_graphql::Interface(implements = "InterfaceA", field(name = "value_b", type = "i32"))]
+    #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
     struct InterfaceB(MyObj);
 
     struct Query;
@@ -132,7 +132,9 @@ pub async fn test_multiple_interfaces() {
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .register_type::<InterfaceA>()
+        .finish();
     let query = format!(
         r#"{{
             myObj {{

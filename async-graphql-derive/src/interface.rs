@@ -23,10 +23,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         Fields::Unit => None,
         _ => return Err(Error::new_spanned(input, "All fields must be unnamed.")),
     };
-    let implements = match &interface_args.implements {
-        Some(implements) => quote! { Some(#implements) },
-        None => quote! { None },
-    };
     let extends = interface_args.extends;
     let mut enum_names = Vec::new();
     let mut enum_items = Vec::new();
@@ -45,13 +41,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut possible_types = Vec::new();
     let mut collect_inline_fields = Vec::new();
     let mut get_introspection_typename = Vec::new();
-
-    if let Some(implements) = &interface_args.implements {
-        let implements_ident = Ident::new(implements, Span::call_site());
-        registry_types.push(quote! {
-            <#implements_ident as #crate_name::Type>::create_type_info(registry);
-        });
-    }
 
     if let Some(fields) = fields {
         for field in fields {
@@ -76,29 +65,13 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
                 });
 
-                let collect_self_fields = Some(quote! {
-                    else if name == <#ident as #crate_name::Type>::type_name() {
-                        return #crate_name::collect_fields(ctx, obj, futures);
-                    }
-                });
-                let collect_parent_interface_fields =
-                    if let Some(implements) = &interface_args.implements {
-                        let implements_ident = Ident::new(implements, Span::call_site());
-                        Some(quote! {
-                            else if name == <#implements_ident as #crate_name::Type>::type_name() {
-                                return #crate_name::collect_fields(ctx, obj, futures);
-                            }
-                        })
-                    } else {
-                        None
-                    };
-
                 collect_inline_fields.push(quote! {
                     if let #ident::#enum_name(obj) = self {
                         if name == <#p as #crate_name::Type>::type_name() {
                             return #crate_name::collect_fields(ctx, obj, futures);
-                        } #collect_self_fields #collect_parent_interface_fields
-                        return Ok(());
+                        } else {
+                            return obj.collect_inline_fields(name, pos, ctx, futures);
+                        }
                     }
                 });
 
@@ -310,7 +283,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                             #(#possible_types)*
                             possible_types
                         },
-                        implements: #implements,
                         extends: #extends,
                         keys: None,
                     }

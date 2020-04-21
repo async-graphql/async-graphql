@@ -38,6 +38,12 @@ pub struct SchemaBuilder<Query, Mutation, Subscription>(SchemaInner<Query, Mutat
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     SchemaBuilder<Query, Mutation, Subscription>
 {
+    /// You can use this function to register types that are not directly referenced.
+    pub fn register_type<T: Type>(mut self) -> Self {
+        T::create_type_info(&mut self.0.registry);
+        self
+    }
+
     /// Disable introspection query
     pub fn disable_introspection(mut self) -> Self {
         self.0.query.disable_introspection = true;

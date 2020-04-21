@@ -210,7 +210,6 @@ pub enum Type {
         name: String,
         description: Option<&'static str>,
         fields: HashMap<String, Field>,
-        implements: Option<&'static str>,
         possible_types: HashSet<String>,
         extends: bool,
         keys: Option<Vec<String>>,

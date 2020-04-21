@@ -130,12 +130,6 @@ impl<'a> __Type<'a> {
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
-        } else if let TypeDetail::Named(registry::Type::Interface {
-            implements: Some(implements),
-            ..
-        }) = &self.detail
-        {
-            Some(vec![__Type::new(self.registry, implements)])
         } else {
             None
         }
