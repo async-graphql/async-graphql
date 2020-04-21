@@ -1,6 +1,6 @@
 use crate::http::multipart::{Multipart, PartData};
 use crate::http::GQLRequest;
-use crate::query::IntoQueryBuilder;
+use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
 use crate::{ParseRequestError, QueryBuilder};
 use futures::{AsyncRead, AsyncReadExt};
 use mime::Mime;
@@ -12,7 +12,10 @@ where
     CT: AsRef<str> + Send,
     Body: AsyncRead + Send + Unpin,
 {
-    async fn into_query_builder(mut self) -> std::result::Result<QueryBuilder, ParseRequestError> {
+    async fn into_query_builder_opts(
+        mut self,
+        opts: &IntoQueryBuilderOpts,
+    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
         if let Some(boundary) = self
             .0
             .and_then(|value| value.as_ref().parse::<Mime>().ok())
@@ -26,9 +29,15 @@ where
             })
         {
             // multipart
-            let mut multipart = Multipart::parse(self.1, boundary.as_str())
-                .await
-                .map_err(ParseRequestError::InvalidMultipart)?;
+            let mut multipart = Multipart::parse(
+                self.1,
+                boundary.as_str(),
+                opts.temp_dir.as_deref(),
+                opts.max_file_size,
+                opts.max_num_files,
+            )
+            .await
+            .map_err(ParseRequestError::InvalidMultipart)?;
             let gql_request: GQLRequest = {
                 let part = multipart
                     .remove("operations")

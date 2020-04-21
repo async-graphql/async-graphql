@@ -12,14 +12,36 @@ use graphql_parser::{parse_query, Pos};
 use itertools::Itertools;
 use std::any::Any;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicUsize;
 use tempdir::TempDir;
 
+/// IntoQueryBuilder options
+#[derive(Default, Clone)]
+pub struct IntoQueryBuilderOpts {
+    /// A temporary path to store the contents of all files.
+    ///
+    /// If None, the system temporary path is used.
+    pub temp_dir: Option<PathBuf>,
+
+    /// Maximum file size.
+    pub max_file_size: Option<usize>,
+
+    /// Maximum number of files.
+    pub max_num_files: Option<usize>,
+}
+
 #[allow(missing_docs)]
 #[async_trait::async_trait]
-pub trait IntoQueryBuilder {
-    async fn into_query_builder(self) -> std::result::Result<QueryBuilder, ParseRequestError>;
+pub trait IntoQueryBuilder: Sized {
+    async fn into_query_builder(self) -> std::result::Result<QueryBuilder, ParseRequestError> {
+        self.into_query_builder_opts(&Default::default()).await
+    }
+
+    async fn into_query_builder_opts(
+        self,
+        opts: &IntoQueryBuilderOpts,
+    ) -> std::result::Result<QueryBuilder, ParseRequestError>;
 }
 
 /// Query response

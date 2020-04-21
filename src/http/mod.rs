@@ -13,7 +13,7 @@ pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 pub use stream_body::StreamBody;
 
-use crate::query::IntoQueryBuilder;
+use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
 use crate::{Error, ParseRequestError, QueryBuilder, QueryError, QueryResponse, Result, Variables};
 use graphql_parser::Pos;
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -35,7 +35,10 @@ pub struct GQLRequest {
 
 #[async_trait::async_trait]
 impl IntoQueryBuilder for GQLRequest {
-    async fn into_query_builder(self) -> std::result::Result<QueryBuilder, ParseRequestError> {
+    async fn into_query_builder_opts(
+        self,
+        _opts: &IntoQueryBuilderOpts,
+    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
         let mut builder = QueryBuilder::new(self.query);
         if let Some(operation_name) = self.operation_name {
             builder = builder.operator_name(operation_name);

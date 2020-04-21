@@ -6,11 +6,13 @@
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    IntoQueryBuilder, ObjectType, QueryBuilder, Schema, SubscriptionType, WebSocketTransport,
+    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
+    WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
+use std::sync::Arc;
 use warp::filters::ws::Message;
 use warp::filters::BoxedFilter;
 use warp::reject::Reject;
@@ -83,6 +85,35 @@ where
                 .map_err(|err| warp::reject::custom(BadRequest(err)))?;
             Ok::<_, Rejection>((schema, builder))
         })
+        .boxed()
+}
+
+/// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
+pub fn graphql_opts<Query, Mutation, Subscription>(
+    schema: Schema<Query, Mutation, Subscription>,
+    opts: IntoQueryBuilderOpts,
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+{
+    let opts = Arc::new(opts);
+    warp::any()
+        .and(warp::post())
+        .and(warp::header::optional::<String>("content-type"))
+        .and(warp::body::stream())
+        .and(warp::any().map(move || opts.clone()))
+        .and(warp::any().map(move || schema.clone()))
+        .and_then(
+            |content_type, body, opts: Arc<IntoQueryBuilderOpts>, schema| async move {
+                let builder = (content_type, StreamBody::new(body))
+                    .into_query_builder_opts(&opts)
+                    .await
+                    .map_err(|err| warp::reject::custom(BadRequest(err)))?;
+                Ok::<_, Rejection>((schema, builder))
+            },
+        )
         .boxed()
 }
 
