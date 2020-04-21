@@ -26,6 +26,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
+    let mut getters = Vec::new();
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
     let fields = match &mut s.fields {
@@ -60,6 +61,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     Some(provides) => quote! { Some(#provides) },
                     None => quote! { None },
                 };
+                let vis = &item.vis;
                 let ty = &item.ty;
 
                 let cache_control = {
@@ -88,6 +90,13 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 });
 
                 let ident = &item.ident;
+                getters.push(quote! {
+                    #[inline]
+                    #vis async fn #ident(&self) -> #ty {
+                        self.#ident.clone()
+                    }
+                });
+
                 resolvers.push(quote! {
                     if field.name.as_str() == #field_name {
                         let ctx_obj = ctx.with_selection_set(&field.selection_set);
@@ -121,7 +130,11 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     let expanded = quote! {
         #input
 
-        impl #generics #crate_name::Type for #ident {
+        impl #generics #ident {
+            #(#getters)*
+        }
+
+        impl #generics #crate_name::Type for #ident #generics {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
