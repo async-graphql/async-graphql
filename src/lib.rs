@@ -410,7 +410,6 @@ pub use async_graphql_derive::InputObject;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
 /// | desc        | Object description        | string   | Y        |
-/// | implements  | The interface implements another interface | String | Y |
 ///
 /// # Field parameters
 ///
