@@ -307,7 +307,7 @@ impl From<ParseError> for Error {
 #[derive(Debug, Error)]
 pub enum ParseRequestError {
     #[error("{0}")]
-    Io(std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[error("Invalid request: {0}")]
     InvalidRequest(serde_json::Error),
@@ -315,8 +315,8 @@ pub enum ParseRequestError {
     #[error("Invalid files map: {0}")]
     InvalidFilesMap(serde_json::Error),
 
-    #[error("Invalid multipart data: {0}")]
-    InvalidMultipart(std::io::Error),
+    #[error("Invalid multipart data")]
+    InvalidMultipart,
 
     #[error("Missing \"operators\" part")]
     MissingOperatorsPart,
@@ -324,14 +324,17 @@ pub enum ParseRequestError {
     #[error("Missing \"map\" part")]
     MissingMapPart,
 
-    #[error("Failed to read part data: {0}")]
-    PartData(#[from] std::io::Error),
-
     #[error("It's not an upload operation")]
     NotUpload,
 
     #[error("Missing files")]
     MissingFiles,
+
+    #[error("Too many files")]
+    TooManyFiles,
+
+    #[error("The file size is too large")]
+    TooLarge,
 }
 
 #[allow(missing_docs)]

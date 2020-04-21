@@ -36,20 +36,19 @@ where
                 opts.max_file_size,
                 opts.max_num_files,
             )
-            .await
-            .map_err(ParseRequestError::InvalidMultipart)?;
+            .await?;
             let gql_request: GQLRequest = {
                 let part = multipart
                     .remove("operations")
                     .ok_or_else(|| ParseRequestError::MissingOperatorsPart)?;
-                let reader = part.create_reader().map_err(ParseRequestError::PartData)?;
+                let reader = part.create_reader()?;
                 serde_json::from_reader(reader).map_err(ParseRequestError::InvalidRequest)?
             };
             let mut map: HashMap<String, Vec<String>> = {
                 let part = multipart
                     .remove("map")
                     .ok_or_else(|| ParseRequestError::MissingMapPart)?;
-                let reader = part.create_reader().map_err(ParseRequestError::PartData)?;
+                let reader = part.create_reader()?;
                 serde_json::from_reader(reader).map_err(ParseRequestError::InvalidFilesMap)?
             };
 

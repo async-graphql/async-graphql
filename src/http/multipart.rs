@@ -1,10 +1,11 @@
 use super::token_reader::*;
-use futures::io::{BufReader, ErrorKind};
+use crate::ParseRequestError;
+use futures::io::BufReader;
 use futures::{AsyncBufRead, AsyncRead};
 use http::{header::HeaderName, HeaderMap, HeaderValue};
 use itertools::Itertools;
 use std::fs::File;
-use std::io::{Cursor, Error, Read, Result, Write};
+use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tempdir::TempDir;
@@ -25,7 +26,7 @@ pub struct Part {
 }
 
 impl Part {
-    pub fn create_reader<'a>(&'a self) -> Result<Box<dyn Read + 'a>> {
+    pub fn create_reader<'a>(&'a self) -> Result<Box<dyn Read + 'a>, std::io::Error> {
         let reader: Box<dyn Read> = match &self.data {
             PartData::Bytes(bytes) => Box::new(Cursor::new(bytes)),
             PartData::File(path) => Box::new(File::open(path)?),
@@ -40,7 +41,7 @@ struct ContentDisposition {
 }
 
 impl ContentDisposition {
-    fn parse(value: &str) -> Result<ContentDisposition> {
+    fn parse(value: &str) -> Result<ContentDisposition, ParseRequestError> {
         let name = regex::Regex::new("name=\"(?P<name>.*?)\"")
             .unwrap()
             .captures(value)
@@ -65,7 +66,7 @@ impl Multipart {
         temp_dir_in: Option<&Path>,
         max_file_size: Option<usize>,
         max_num_files: Option<usize>,
-    ) -> Result<Multipart> {
+    ) -> Result<Multipart, ParseRequestError> {
         let mut reader = BufReader::new(reader);
         let mut temp_dir = None;
         let mut parts = Vec::new();
@@ -120,17 +121,19 @@ impl Multipart {
         parts: &mut Vec<Part>,
         max_num_files: usize,
         current_num_files: &mut usize,
-    ) -> Result<()> {
+    ) -> Result<(), ParseRequestError> {
         if parts.last().unwrap().filename.is_some() {
             *current_num_files += 1;
             if *current_num_files > max_num_files {
-                return Err(Error::from(ErrorKind::InvalidData));
+                return Err(ParseRequestError::TooManyFiles);
             }
         }
         Ok(())
     }
 
-    async fn parse_headers<R: AsyncBufRead + Unpin>(mut reader: R) -> Result<HeaderMap> {
+    async fn parse_headers<R: AsyncBufRead + Unpin>(
+        mut reader: R,
+    ) -> Result<HeaderMap, ParseRequestError> {
         let mut buf = [0; 256];
         let mut header_data = Vec::new();
         let mut state = ReadUntilState::default();
@@ -148,17 +151,17 @@ impl Multipart {
         let mut headers = [httparse::EMPTY_HEADER; MAX_HEADERS];
         header_data.extend_from_slice(b"\r\n\r\n");
         let headers = match httparse::parse_headers(&header_data, &mut headers)
-            .map_err(|_| Error::from(ErrorKind::InvalidData))?
+            .map_err(|_| ParseRequestError::InvalidMultipart)?
         {
             httparse::Status::Complete((_, headers)) => headers,
-            _ => return Err(Error::from(ErrorKind::InvalidData)),
+            _ => return Err(ParseRequestError::InvalidMultipart),
         };
 
         let mut headers_map = HeaderMap::new();
         for httparse::Header { name, value } in headers {
             headers_map.insert(
-                HeaderName::from_str(name).map_err(|_| Error::from(ErrorKind::InvalidData))?,
-                HeaderValue::from_bytes(value).map_err(|_| Error::from(ErrorKind::InvalidData))?,
+                HeaderName::from_str(name).map_err(|_| ParseRequestError::InvalidMultipart)?,
+                HeaderValue::from_bytes(value).map_err(|_| ParseRequestError::InvalidMultipart)?,
             );
         }
 
@@ -172,7 +175,7 @@ impl Multipart {
         temp_dir_in: Option<&Path>,
         max_file_size: usize,
         boundary: &str,
-    ) -> Result<Part> {
+    ) -> Result<Part, ParseRequestError> {
         let content_disposition = headers
             .get(http::header::CONTENT_DISPOSITION)
             .and_then(|value| value.to_str().ok())
@@ -208,7 +211,7 @@ impl Multipart {
                     .await?;
                 total_size += size;
                 if total_size > max_file_size {
-                    return Err(Error::from(ErrorKind::InvalidData));
+                    return Err(ParseRequestError::TooLarge);
                 }
                 file.write_all(&buf[..size])?;
                 if found {
@@ -264,11 +267,11 @@ mod tests {
     async fn test_parse() {
         let data: &[u8] = b"--abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
              Content-Disposition: form-data; name=\"file\"; filename=\"fn.txt\"\r\n\
-             Content-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n\
-             test\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\r\n\
+             test\
              --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
-             Content-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n\
-             data\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\r\n\
+             data\
              --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
         let multipart =
             Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, None, None)
@@ -291,5 +294,92 @@ mod tests {
             part_2.content_type.as_deref(),
             Some("text/plain; charset=utf-8")
         );
+    }
+
+    #[async_std::test]
+    async fn test_parse_limit_file_size() {
+        let data: &[u8] = b"--abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"fn.txt\"\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\r\n\
+             12345\
+             --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\r\n\
+             data\
+             --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            Some(5),
+            None,
+        )
+        .await
+        .is_ok());
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            Some(6),
+            None,
+        )
+        .await
+        .is_ok());
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            Some(4),
+            None,
+        )
+        .await
+        .is_err());
+    }
+
+    #[async_std::test]
+    async fn test_parse_limit_num_files() {
+        let data: &[u8] = b"--abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"fn.txt\"\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\r\n\
+             12345\
+             --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
+             Content-Disposition: form-data; name=\"file1\"; filename=\"fn1.txt\"\r\n\r\n\
+             data\
+             --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
+             Content-Disposition: form-data; name=\"file2\"\r\n\r\n\
+             data\
+             --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            None,
+            Some(1)
+        )
+        .await
+        .is_err());
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            None,
+            Some(2)
+        )
+        .await
+        .is_ok());
+
+        assert!(Multipart::parse(
+            data,
+            "abbc761f78ff4d7cb7573b5a23f96ef0",
+            None,
+            None,
+            Some(3)
+        )
+        .await
+        .is_ok());
     }
 }
