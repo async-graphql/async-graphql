@@ -1,6 +1,6 @@
 # Introduction
 
-'Async-graphql' is a GraphQL server-side library implemented in the Rust language. It is fully compatible with the GraphQL specification and most of its extensions, type-safe, and high-performance.
+`Async-graphql` is a GraphQL server-side library implemented in the Rust language. It is fully compatible with the GraphQL specification and most of its extensions, type-safe, and high-performance.
 
 You can define the Schema in the Rust language, the procedural macros automatically generate the framework code for the GraphQL query, and the lack of extending Rust's syntax means that Rustfmt can be used normally, which I value very much, which is one of the reasons why I developed `Async-graphql`.
 
