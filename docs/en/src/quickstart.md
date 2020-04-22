@@ -5,7 +5,7 @@
 ```toml
 [dependencies]
 async-graphql = "1.9.0"
-async-graphql-actix-web = "1.0.0" # If you need to integrate into acx-web
+async-graphql-actix-web = "1.0.0" # If you need to integrate into actix-web
 async-graphql-warp = "1.0.0" # If you need to integrate into warp
 ```
 
