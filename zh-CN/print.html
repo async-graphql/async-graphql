@@ -151,15 +151,17 @@
                     <main>
                         <h1><a class="header" href="#介绍" id="介绍">介绍</a></h1>
 <p><code>Async-graphql</code>是用Rust语言实现的GraphQL服务端库。它完全兼容GraphQL规范以及绝大部分的扩展功能，类型安全并且高性能。</p>
-<p>你可以用Rust语言的方式来定义Schema，过程宏会自动生成GraphQL查询的框架代码，没有扩展Rust的语法，意味着Rustfmt可以正常使用，我很看重这一点，这也是为什么我会开发Async-graphql的原因之一。</p>
+<p>你可以用Rust语言的方式来定义Schema，过程宏会自动生成GraphQL查询的框架代码，没有扩展Rust的语法，意味着Rustfmt可以正常使用，我很看重这一点，这也是为什么我会开发<code>Async-graphql</code>的原因之一。</p>
 <h2><a class="header" href="#为什么我要开发async-graphql" id="为什么我要开发async-graphql">为什么我要开发Async-graphql？</a></h2>
 <p>我喜欢GraphQL和Rust，之前我一直用<code>Juniper</code>，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定做一个给自己用。</p>
 <h2><a class="header" href="#async-graphql的现状" id="async-graphql的现状">Async-graphql的现状</a></h2>
-<p>今天（2020年04月15日）写这篇文档的时候，刚好距离我开始Async-graphql的开发一个半月，它已经大大超出了当初我设定的目标，成为了一个全功能的GraphQL服务端库。</p>
+<p>今天（2020年04月15日）写这篇文档的时候，刚好距离我开始<code>Async-graphql</code>的开发一个半月，它已经大大超出了当初我设定的目标，成为了一个全功能的GraphQL服务端库。</p>
 <h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
 <h2><a class="header" href="#添加依赖" id="添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
 async-graphql = &quot;1.9.0&quot;
+async-graphql-actix-web = &quot;1.0.0&quot; # 如果你需要集成到Actix-web
+async-graphql-warp = &quot;1.0.0&quot; # 如果你需要集成到Warp
 </code></pre>
 <h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
 <p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的结构来描述它们，结构的字段对应GraphQL对象的字段，但你需要用<code>#[field]</code>来修饰它，这样<code>Async-graphql</code>提供的过程宏才能够正确的识别它。</p>
@@ -183,8 +185,7 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#执行查询" id="执行查询">执行查询</a></h2>
-<p>在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用EmptyMutation和EmptySubscription来创建Schema。</p>
-<p>然后调用<code>Schema::execute</code>来执行查询。</p>
+<p>在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用<code>EmptyMutation</code>和<code>EmptySubscription</code>来创建Schema，然后调用<code>Schema::execute</code>来执行查询。</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -193,13 +194,15 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#把查询结果输出为json" id="把查询结果输出为json">把查询结果输出为JSON</a></h2>
-<p>查询返回的<code>Result</code>用<code>async_graphql::http::GQLResponse</code>包装起来，就能直接转换为JSON。</p>
+<p>查询返回的<code>async_graphql::Result</code>用<code>async_graphql::http::GQLResponse</code>包装起来，就能直接转换为JSON。</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
 </span>let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#和web-server的集成" id="和web-server的集成">和Web Server的集成</a></h2>
+<p>请参考https://github.com/sunli829/async-graphql-examples。</p>
 <h1><a class="header" href="#类型系统" id="类型系统">类型系统</a></h1>
 <p><code>Async-graphql</code>包含GraphQL类型到Rust类型的完整实现，并且非常易于使用。</p>
 <h1><a class="header" href="#简单对象simpleobject" id="简单对象simpleobject">简单对象(SimpleObject)</a></h1>
