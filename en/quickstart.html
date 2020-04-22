@@ -155,7 +155,7 @@ async-graphql-actix-web = &quot;1.0.0&quot; # If you need to integrate into acti
 async-graphql-warp = &quot;1.0.0&quot; # If you need to integrate into warp
 </code></pre>
 <h2><a class="header" href="#write-a-schema" id="write-a-schema">Write a Schema</a></h2>
-<p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with #[field] so that the procedure macro provided by <code>Async-graphql</code> can correctly recognize it.</p>
+<p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with <code>#[field]</code> so that the procedure macro provided by <code>Async-graphql</code> can correctly recognize it.</p>
 <p><code>Async-graphql</code> implements the mapping of common data types to GraphQL types, such as <code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, etc. Also, you can <a href="custom_scalars.html">extend these base types</a>, which are called scalars in the GraphQL.</p>
 <p>Here is a simple example where we provide just one query that returns the sum of <code>a</code> and <code>b</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
