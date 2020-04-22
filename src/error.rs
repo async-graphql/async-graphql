@@ -236,15 +236,6 @@ pub enum QueryError {
         interface: String,
     },
 
-    #[error("Unrecognized inline fragment \"{name}\" on type \"{object}\"")]
-    UnrecognizedInlineFragment {
-        /// Object name
-        object: String,
-
-        /// Inline fragment name
-        name: String,
-    },
-
     #[error("Too complex")]
     TooComplex,
 

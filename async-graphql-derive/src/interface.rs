@@ -67,11 +67,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
                 collect_inline_fields.push(quote! {
                     if let #ident::#enum_name(obj) = self {
-                        if name == <#p as #crate_name::Type>::type_name() {
-                            return #crate_name::collect_fields(ctx, obj, futures);
-                        } else {
-                            return obj.collect_inline_fields(name, pos, ctx, futures);
-                        }
+                        return obj.collect_inline_fields(name, pos, ctx, futures);
                     }
                 });
 
@@ -309,10 +305,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {
                 #(#collect_inline_fields)*
-                Err(#crate_name::QueryError::UnrecognizedInlineFragment {
-                    object: #gql_typename.to_string(),
-                    name: name.to_string(),
-                }.into_error(pos))
+                Ok(())
             }
         }
 

@@ -56,11 +56,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
             });
             collect_inline_fields.push(quote! {
-                if name == <#p as #crate_name::Type>::type_name() {
-                    if let #ident::#enum_name(obj) = self {
-                        return #crate_name::collect_fields(ctx, obj, futures);
-                    }
-                    return Ok(());
+                if let #ident::#enum_name(obj) = self {
+                    return obj.collect_inline_fields(name, pos, ctx, futures);
                 }
             });
             get_introspection_typename.push(quote! {
@@ -122,10 +119,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {
                 #(#collect_inline_fields)*
-                Err(#crate_name::QueryError::UnrecognizedInlineFragment {
-                    object: #gql_typename.to_string(),
-                    name: name.to_string(),
-                }.into_error(pos))
+                Ok(())
             }
         }
 

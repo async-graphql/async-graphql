@@ -82,7 +82,7 @@ pub trait ObjectType: OutputValueType {
     /// Collect the fields with the `name` inline object
     fn collect_inline_fields<'a>(
         &'a self,
-        _name: &str,
+        name: &str,
         _pos: Pos,
         ctx: &ContextSelectionSet<'a>,
         futures: &mut Vec<BoxFieldFuture<'a>>,
@@ -90,7 +90,19 @@ pub trait ObjectType: OutputValueType {
     where
         Self: Send + Sync + Sized,
     {
-        crate::collect_fields(ctx, self, futures)
+        if name == Self::type_name().as_ref() {
+            crate::collect_fields(ctx, self, futures)
+        } else if ctx
+            .registry
+            .implements
+            .get(Self::type_name().as_ref())
+            .map(|ty| ty.contains(name))
+            .unwrap_or_default()
+        {
+            crate::collect_fields(ctx, self, futures)
+        } else {
+            Ok(())
+        }
     }
 
     /// Query entities with params
