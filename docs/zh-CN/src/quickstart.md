@@ -5,6 +5,8 @@
 ```toml
 [dependencies]
 async-graphql = "1.9.0"
+async-graphql-actix-web = "1.0.0" # 如果你需要集成到Actix-web
+async-graphql-warp = "1.0.0" # 如果你需要集成到Warp
 ```
 
 ## 写一个Schema
@@ -32,9 +34,7 @@ impl Query {
 
 ## 执行查询
 
-在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用EmptyMutation和EmptySubscription来创建Schema。
-
-然后调用`Schema::execute`来执行查询。
+在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用`EmptyMutation`和`EmptySubscription`来创建Schema，然后调用`Schema::execute`来执行查询。
 
 ```rust
 let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
@@ -43,8 +43,12 @@ let res = schema.execute("{ add(a: 10, b: 20) }");
 
 ## 把查询结果输出为JSON
 
-查询返回的`Result`用`async_graphql::http::GQLResponse`包装起来，就能直接转换为JSON。
+查询返回的`async_graphql::Result`用`async_graphql::http::GQLResponse`包装起来，就能直接转换为JSON。
 
 ```rust
 let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
 ```
+
+## 和Web Server的集成
+
+请参考https://github.com/sunli829/async-graphql-examples。
