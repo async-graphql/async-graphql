@@ -801,6 +801,45 @@ impl_scalar!(StringNumber);
 <p>你可以参考<a href="https://github.com/sunli829/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
 <h1><a class="header" href="#自定义订阅传输协议" id="自定义订阅传输协议">自定义订阅传输协议</a></h1>
 <h1><a class="header" href="#apollo-federation集成" id="apollo-federation集成">Apollo Federation集成</a></h1>
+<p><code>Apollo Federation</code>是一个<code>GraphQL</code>网关，它可以组合多个GraphQL服务，允许每服务仅实现它负责的那一部分数据，参考<a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">官方文档</a>。</p>
+<p><code>Async-graphql</code>可以完全支持<code>Apollo Federation</code>的所有功能，但需要对<code>Schema</code>定义做一些小小的改造。</p>
+<ul>
+<li>
+<p><code>async_graphql::Object</code>和<code>async_graphql::Interface</code>的<code>extends</code>属性声明这个类别是一个已有类型的扩充。</p>
+</li>
+<li>
+<p>字段的<code>external</code>属性声明这个字段定义来自其它服务。</p>
+</li>
+<li>
+<p>字段的<code>provides</code>属性用于要求网关提供的字段集。</p>
+</li>
+<li>
+<p>字段的<code>provides</code>属性表示解析该字段值需要依赖该类型的字段集。</p>
+</li>
+</ul>
+<p>类型的key属性定义稍有不同，必须在查询根类型上定义一个实体查找函数。</p>
+<p>类似下面这样</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct Query;
+
+#[Object]
+impl Query {
+    #[entity]
+    async fn find_user_by_id(&amp;self, id: ID) -&gt; User {
+        User { id }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>这相当于</p>
+<pre><code class="language-graphql">type User @key(id: ID!) {
+    id: ID!,
+}
+</code></pre>
+<p>你必须在这个实体查找函数中根据key来创建对应的对象。</p>
+<p>完整的例子请参考https://github.com/sunli829/async-graphql-examples/tree/master/federation</p>
 
                     </main>
 
