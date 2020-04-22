@@ -11,7 +11,7 @@ async-graphql-warp = "1.0.0" # If you need to integrate into warp
 
 ## Write a Schema
 
-The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with #[field] so that the procedure macro provided by `Async-graphql` can correctly recognize it.
+The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with `#[field]` so that the procedure macro provided by `Async-graphql` can correctly recognize it.
 
 `Async-graphql` implements the mapping of common data types to GraphQL types, such as `i32`, `f64`, `Option<T>`, `Vec<T>`, etc. Also, you can [extend these base types](custom_scalars.md), which are called scalars in the GraphQL.
 
