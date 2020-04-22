@@ -163,58 +163,58 @@ pub async fn test_multiple_interfaces() {
 }
 
 #[async_std::test]
- pub async fn test_multiple_objects_in_multiple_interfaces() {
-     struct MyObjOne;
+pub async fn test_multiple_objects_in_multiple_interfaces() {
+    struct MyObjOne;
 
-     #[async_graphql::Object]
-     impl MyObjOne {
-         #[field]
-         async fn value_a(&self) -> i32 {
-             1
-         }
+    #[async_graphql::Object]
+    impl MyObjOne {
+        #[field]
+        async fn value_a(&self) -> i32 {
+            1
+        }
 
-         #[field]
-         async fn value_b(&self) -> i32 {
-             2
-         }
+        #[field]
+        async fn value_b(&self) -> i32 {
+            2
+        }
 
-         #[field]
-         async fn value_c(&self) -> i32 {
-             3
-         }
-     }
+        #[field]
+        async fn value_c(&self) -> i32 {
+            3
+        }
+    }
 
-     struct MyObjTwo;
+    struct MyObjTwo;
 
-     #[async_graphql::Object]
-     impl MyObjTwo {
-         #[field]
-         async fn value_a(&self) -> i32 {
-             1
-         }
-     }
+    #[async_graphql::Object]
+    impl MyObjTwo {
+        #[field]
+        async fn value_a(&self) -> i32 {
+            1
+        }
+    }
 
-     #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
-     struct InterfaceA(MyObjOne, MyObjTwo);
+    #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
+    struct InterfaceA(MyObjOne, MyObjTwo);
 
-     #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
-     struct InterfaceB(MyObjOne);
+    #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
+    struct InterfaceB(MyObjOne);
 
-     struct Query;
+    struct Query;
 
-     #[Object]
-     impl Query {
-         #[field]
-         async fn my_obj(&self) -> Vec<InterfaceA> {
-             vec![MyObjOne.into(), MyObjTwo.into()]
-         }
-     }
+    #[Object]
+    impl Query {
+        #[field]
+        async fn my_obj(&self) -> Vec<InterfaceA> {
+            vec![MyObjOne.into(), MyObjTwo.into()]
+        }
+    }
 
-     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-         .register_type::<InterfaceB>() // `InterfaceB` is not directly referenced, so manual registration is required.
-         .finish();
-     let query = format!(
-         r#"{{
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .register_type::<InterfaceB>() // `InterfaceB` is not directly referenced, so manual registration is required.
+        .finish();
+    let query = format!(
+        r#"{{
              myObj {{
                 ... on InterfaceA {{
                  valueA
@@ -227,20 +227,20 @@ pub async fn test_multiple_interfaces() {
                }}
              }}
          }}"#
-     );
-     assert_eq!(
-         schema.execute(&query).await.unwrap().data,
-         serde_json::json!({
-             "myObj": [{
-                 "valueA": 1,
-                 "valueB": 2,
-                 "valueC": 3,
-             }, {
-                 "valueA": 1
-             }]
-         })
-     );
- }
+    );
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "myObj": [{
+                "valueA": 1,
+                "valueB": 2,
+                "valueC": 3,
+            }, {
+                "valueA": 1
+            }]
+        })
+    );
+}
 
 #[async_std::test]
 pub async fn test_interface_field_result() {
@@ -286,4 +286,3 @@ pub async fn test_interface_field_result() {
         })
     );
 }
-

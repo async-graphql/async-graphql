@@ -90,14 +90,13 @@ pub trait ObjectType: OutputValueType {
     where
         Self: Send + Sync + Sized,
     {
-        if name == Self::type_name().as_ref() {
-            crate::collect_fields(ctx, self, futures)
-        } else if ctx
-            .registry
-            .implements
-            .get(Self::type_name().as_ref())
-            .map(|ty| ty.contains(name))
-            .unwrap_or_default()
+        if name == Self::type_name().as_ref()
+            || ctx
+                .registry
+                .implements
+                .get(Self::type_name().as_ref())
+                .map(|ty| ty.contains(name))
+                .unwrap_or_default()
         {
             crate::collect_fields(ctx, self, futures)
         } else {
