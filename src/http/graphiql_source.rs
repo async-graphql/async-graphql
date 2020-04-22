@@ -1,66 +1,60 @@
 /// Generate the page for GraphIQL
-pub fn graphiql_source(graphql_endpoint_url: &str) -> String {
-    let stylesheet_source = r#"
-    <style>
-        html, body, #app {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            width: 100%;
-        }
-    </style>
-    "#;
-    let fetcher_source = r#"
-    <script>
-        function graphQLFetcher(params) {
-            return fetch(GRAPHQL_URL, {
-                method: 'post',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(params)
-            }).then(function (response) {
-                return response.text();
-            }).then(function (body) {
-                try {
-                    return JSON.parse(body);
-                } catch (error) {
-                    return body;
-                }
-            });
-        }
-        ReactDOM.render(
-            React.createElement(GraphiQL, {
-                fetcher: graphQLFetcher,
-            }),
-            document.querySelector('#app'));
-    </script>
-    "#;
+pub fn graphiql_source(graphql_endpoint_url: &str, subscription_endpoint: Option<&str>) -> String {
+    r#"
+    <html>
+  <head>
+    <title>Simple GraphiQL Example</title>
+    <link href="https://unpkg.com/graphiql/graphiql.min.css" rel="stylesheet" />
+  </head>
+  <body style="margin: 0;">
+    <div id="graphiql" style="height: 100vh;"></div>
 
-    format!(
-        r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>GraphQL</title>
-    {stylesheet_source}
-    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/graphiql@0.17.2/graphiql.min.css">
-</head>
-<body>
-    <div id="app"></div>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/fetch/2.0.3/fetch.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react/16.10.2/umd/react.production.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/react-dom/16.10.2/umd/react-dom.production.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/graphiql@0.17.2/graphiql.min.js"></script>
-    <script>var GRAPHQL_URL = '{graphql_url}';</script>
-    {fetcher_source}
-</body>
+    <script src="//unpkg.com/subscriptions-transport-ws@0.8.3/browser/client.js"></script>
+    <script src="//unpkg.com/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/graphiql/graphiql.min.js"
+    ></script>
+
+    <script>
+      var fetcher = graphQLParams =>
+        fetch('GRAPHQL_URL', {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(graphQLParams),
+        })
+          .then(response => response.json())
+          .catch(() => response.text());
+
+      var subscription_url = GRAPHQL_SUBSCRIPTION_URL;
+
+      if (subscription_url) {
+        var subscriptionClient = new window.SubscriptionsTransportWs.SubscriptionClient(GRAPHQL_SUBSCRIPTION_URL, { reconnect: true });
+        fetcher = window.GraphiQLSubscriptionsFetcher.graphQLFetcher(subscriptionClient, fetcher);
+      }
+
+      ReactDOM.render(
+        React.createElement(GraphiQL, { fetcher }),
+        document.getElementById('graphiql'),
+      );
+    </script>
+  </body>
 </html>
-"#,
-        graphql_url = graphql_endpoint_url,
-        stylesheet_source = stylesheet_source,
-        fetcher_source = fetcher_source
+    "#
+    .replace("GRAPHQL_URL", graphql_endpoint_url)
+    .replace(
+        "GRAPHQL_SUBSCRIPTION_URL",
+        &match subscription_endpoint {
+            Some(url) => format!("'{}'", url),
+            None => "null".to_string(),
+        },
     )
 }
