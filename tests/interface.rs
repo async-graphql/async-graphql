@@ -3,15 +3,15 @@ use async_graphql::*;
 #[async_std::test]
 pub async fn test_interface_simple_object() {
     #[async_graphql::SimpleObject]
-    pub struct MyObj {
+    struct MyObj {
         #[field]
-        pub id: i32,
+        id: i32,
         #[field]
-        pub title: String,
+        title: String,
     }
 
     #[async_graphql::Interface(field(name = "id", type = "i32"))]
-    pub struct Node(MyObj);
+    struct Node(MyObj);
 
     struct Query;
 
@@ -50,15 +50,15 @@ pub async fn test_interface_simple_object() {
 #[async_std::test]
 pub async fn test_interface_simple_object2() {
     #[async_graphql::SimpleObject]
-    pub struct MyObj {
+    struct MyObj {
         #[field(ref)]
-        pub id: i32,
+        id: i32,
         #[field]
-        pub title: String,
+        title: String,
     }
 
     #[async_graphql::Interface(field(name = "id", type = "&i32"))]
-    pub struct Node(MyObj);
+    struct Node(MyObj);
 
     struct Query;
 
@@ -157,6 +157,51 @@ pub async fn test_multiple_interfaces() {
                 "valueA": 1,
                 "valueB": 2,
                 "valueC": 3,
+            }
+        })
+    );
+}
+
+#[async_std::test]
+pub async fn test_interface_field_result() {
+    struct MyObj;
+
+    #[async_graphql::Object]
+    impl MyObj {
+        #[field]
+        async fn value(&self) -> FieldResult<i32> {
+            Ok(10)
+        }
+    }
+
+    #[async_graphql::Interface(field(name = "value", type = "FieldResult<i32>"))]
+    struct Node(MyObj);
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[field]
+        async fn node(&self) -> Node {
+            MyObj.into()
+        }
+    }
+
+    let query = format!(
+        r#"{{
+            node {{
+                ... on Node {{
+                    value
+                }}
+            }}
+        }}"#
+    );
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "node": {
+                "value": 10,
             }
         })
     );
