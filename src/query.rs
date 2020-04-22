@@ -91,6 +91,8 @@ impl QueryBuilder {
     }
 
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
+    ///
+    /// **This data is only valid for this query**
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         if let Some(ctx_data) = &mut self.ctx_data {
             ctx_data.insert(data);
