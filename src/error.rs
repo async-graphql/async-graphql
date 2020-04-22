@@ -138,15 +138,6 @@ pub enum QueryError {
         actual: Value,
     },
 
-    #[error("Expected type \"{expect}\", found {actual}.")]
-    ExpectedJsonType {
-        /// Expect input JSON type
-        expect: String,
-
-        /// Actual input JSON type
-        actual: serde_json::Value,
-    },
-
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
     FieldNotFound {
         /// Field name
@@ -225,15 +216,6 @@ pub enum QueryError {
     UnknownFragment {
         // Fragment name
         name: String,
-    },
-
-    #[error("Object \"{object}\" does not implement interface \"{interface}\"")]
-    NotImplementedInterface {
-        /// Object name
-        object: String,
-
-        /// Interface name
-        interface: String,
     },
 
     #[error("Too complex")]
