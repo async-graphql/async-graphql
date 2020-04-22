@@ -223,7 +223,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             OutputType::Result(_, _) => {
                 quote! {
                     self.#method_name(#(#use_params),*).await.
-                        map_err(|err| err.with_position(field.position))?
+                        map_err(|err| err.into_error_with_path(field.position, ctx.path_node.as_ref().unwrap().to_json()))?
                 }
             }
         };
