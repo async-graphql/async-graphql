@@ -4,13 +4,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 #[async_std::test]
-pub async fn test_list_type() {
-    struct QueryRoot;
-
+pub async fn test_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
-    #[Object]
-    impl QueryRoot {}
+    #[SimpleObject]
+    struct QueryRoot;
 
     struct MutationRoot;
 
@@ -41,4 +39,43 @@ pub async fn test_list_type() {
         .unwrap();
     assert_eq!(list.lock().await[0], 1);
     assert_eq!(list.lock().await[1], 2);
+}
+
+#[async_std::test]
+pub async fn test_mutation_fragment() {
+    #[SimpleObject]
+    struct QueryRoot;
+
+    struct MutationRoot;
+
+    #[Object]
+    impl MutationRoot {
+        #[field]
+        async fn action(&self) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+    let resp = schema
+        .execute(
+            r#"
+        mutation {
+            ... {
+                actionInUnnamedFragment: action
+            }
+            ... on MutationRoot {
+                actionInNamedFragment: action
+            }
+        }"#,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        resp.data,
+        serde_json::json!({
+            "actionInUnnamedFragment": true,
+            "actionInNamedFragment": true,
+        })
+    );
 }
