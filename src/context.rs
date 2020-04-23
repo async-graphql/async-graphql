@@ -329,11 +329,16 @@ impl<'a, T> ContextBase<'a, T> {
 
     /// Gets the global data defined in the `Context` or `Schema`.
     pub fn data<D: Any + Send + Sync>(&self) -> &D {
+        self.data_opt::<D>()
+            .expect("The specified data type does not exist.")
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema`, returns `None` if the specified type data does not exist.
+    pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&D> {
         self.ctx_data
             .and_then(|ctx_data| ctx_data.0.get(&TypeId::of::<D>()))
             .or_else(|| self.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
-            .expect("The specified data type does not exist.")
     }
 
     fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {

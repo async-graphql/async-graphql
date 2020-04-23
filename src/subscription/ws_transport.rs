@@ -25,6 +25,20 @@ struct OperationMessage {
 pub struct WebSocketTransport {
     id_to_sid: HashMap<String, usize>,
     sid_to_id: HashMap<usize, String>,
+    data: Arc<Data>,
+    init_with_payload: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
+}
+
+impl WebSocketTransport {
+    /// Creates a websocket transport and sets the function that converts the `payload` of the `connect_init` message to `Data`.
+    pub fn new<F: Fn(serde_json::Value) -> Data + Send + Sync + 'static>(
+        init_with_payload: F,
+    ) -> Self {
+        WebSocketTransport {
+            init_with_payload: Some(Box::new(init_with_payload)),
+            ..WebSocketTransport::default()
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -36,7 +50,6 @@ impl SubscriptionTransport for WebSocketTransport {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
-        ctx_data: Arc<Data>,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
@@ -45,15 +58,22 @@ impl SubscriptionTransport for WebSocketTransport {
     {
         match serde_json::from_slice::<OperationMessage>(&data) {
             Ok(msg) => match msg.ty.as_str() {
-                "connection_init" => Ok(Some(
-                    serde_json::to_vec(&OperationMessage {
-                        ty: "connection_ack".to_string(),
-                        id: None,
-                        payload: None,
-                    })
-                    .unwrap()
-                    .into(),
-                )),
+                "connection_init" => {
+                    if let Some(payload) = msg.payload {
+                        if let Some(init_with_payload) = &self.init_with_payload {
+                            self.data = Arc::new(init_with_payload(payload));
+                        }
+                    }
+                    Ok(Some(
+                        serde_json::to_vec(&OperationMessage {
+                            ty: "connection_ack".to_string(),
+                            id: None,
+                            payload: None,
+                        })
+                        .unwrap()
+                        .into(),
+                    ))
+                }
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
                         if let Ok(request) = serde_json::from_value::<GQLRequest>(payload) {
@@ -67,7 +87,7 @@ impl SubscriptionTransport for WebSocketTransport {
                                     &request.query,
                                     request.operation_name.as_deref(),
                                     variables,
-                                    Some(ctx_data),
+                                    Some(self.data.clone()),
                                 )
                                 .await
                             {
@@ -106,7 +126,7 @@ impl SubscriptionTransport for WebSocketTransport {
                     Ok(None)
                 }
                 "connection_terminate" => Err("connection_terminate".to_string()),
-                _ => Err("unknown op".to_string()),
+                _ => Err("Unknown op".to_string()),
             },
             Err(err) => Err(err.to_string()),
         }

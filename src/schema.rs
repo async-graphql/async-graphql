@@ -289,11 +289,10 @@ where
     pub fn subscription_connection<T: SubscriptionTransport>(
         &self,
         transport: T,
-        ctx_data: Option<Arc<Data>>,
     ) -> (
         mpsc::Sender<Bytes>,
         SubscriptionStream<Query, Mutation, Subscription, T>,
     ) {
-        create_connection(self.clone(), transport, ctx_data.unwrap_or_default())
+        create_connection(self.clone(), transport)
     }
 }

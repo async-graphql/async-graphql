@@ -2,12 +2,10 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::{Data, ObjectType, Schema, SubscriptionType, WebSocketTransport};
+use async_graphql::{ObjectType, Schema, SubscriptionType, WebSocketTransport};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::SinkExt;
-use std::any::Any;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -18,7 +16,6 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
-    data: Data,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -33,16 +30,7 @@ where
             schema: schema.clone(),
             hb: Instant::now(),
             sink: None,
-            data: Default::default(),
         }
-    }
-
-    /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
-    ///
-    /// **This data is only valid for this subscription**
-    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
-        self.data.insert(data);
-        self
     }
 
     fn hb(&self, ctx: &mut WebsocketContext<Self>) {
@@ -66,10 +54,7 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         let schema = self.schema.clone();
-        let (sink, stream) = schema.subscription_connection(
-            WebSocketTransport::default(),
-            Some(Arc::new(std::mem::take(&mut self.data))),
-        );
+        let (sink, stream) = schema.subscription_connection(WebSocketTransport::default());
         ctx.add_stream(stream);
         self.sink = Some(sink);
     }

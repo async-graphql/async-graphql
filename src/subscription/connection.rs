@@ -1,4 +1,3 @@
-use crate::context::Data;
 use crate::{ObjectType, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -7,7 +6,6 @@ use futures::Stream;
 use slab::Slab;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
 
 /// Use to hold all subscription stream for the `SubscriptionConnection`
 pub struct SubscriptionStreams {
@@ -44,7 +42,6 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
-        ctx_data: Arc<Data>,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
@@ -58,7 +55,6 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
 pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
-    ctx_data: Arc<Data>,
 ) -> (
     mpsc::Sender<Bytes>,
     SubscriptionStream<Query, Mutation, Subscription, T>,
@@ -73,7 +69,6 @@ where
         tx_bytes,
         SubscriptionStream {
             schema,
-            ctx_data,
             transport,
             streams: SubscriptionStreams {
                 streams: Default::default(),
@@ -84,19 +79,22 @@ where
     )
 }
 
+type HandleRequestBoxFut<T> = Pin<
+    Box<
+        dyn Future<Output = std::result::Result<Option<Bytes>, <T as SubscriptionTransport>::Error>>
+            + Send
+            + 'static,
+    >,
+>;
+
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
 pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
     schema: Schema<Query, Mutation, Subscription>,
-    ctx_data: Arc<Data>,
     transport: T,
     streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
-    handle_request_fut: Option<
-        Pin<
-            Box<dyn Future<Output = std::result::Result<Option<Bytes>, T::Error>> + Send + 'static>,
-        >,
-    >,
+    handle_request_fut: Option<HandleRequestBoxFut<T>>,
 }
 
 impl<Query, Mutation, Subscription, T> Stream
@@ -133,13 +131,11 @@ where
                         let transport = &mut this.transport as *mut T;
                         let schema = &this.schema as *const Schema<Query, Mutation, Subscription>;
                         let streams = &mut this.streams as *mut SubscriptionStreams;
-                        let ctx_data = this.ctx_data.clone();
                         unsafe {
                             this.handle_request_fut = Some(Box::pin((*transport).handle_request(
                                 &*schema,
                                 &mut *streams,
                                 data,
-                                ctx_data.clone(),
                             )));
                         }
                         continue;

@@ -270,25 +270,18 @@ pub async fn test_subscription_ws_transport() {
     #[Subscription]
     impl SubscriptionRoot {
         #[field]
-        async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
-            let step = *ctx.data::<i32>();
-            futures::stream::iter((0..10).map(move |n| n * step))
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures::stream::iter(0..10)
         }
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, mut stream) = schema.subscription_connection(
-        WebSocketTransport::default(),
-        Some(Arc::new({
-            let mut data = Data::default();
-            data.insert(5);
-            data
-        })),
-    );
+    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
             "type": "connection_init",
+            "payload": { "token": "123456" }
         }))
         .unwrap()
         .into(),
@@ -322,7 +315,7 @@ pub async fn test_subscription_ws_transport() {
             Some(serde_json::json!({
             "type": "data",
             "id": "1",
-            "payload": { "data": { "values": i * 5 } },
+            "payload": { "data": { "values": i } },
             })),
             serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
         );
@@ -352,18 +345,23 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, mut stream) = schema.subscription_connection(
-        WebSocketTransport::default(),
-        Some(Arc::new({
-            let mut data = Data::default();
-            data.insert(Token("123456".to_string()));
-            data
-        })),
-    );
+
+    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::new(|value| {
+        #[derive(serde_derive::Deserialize)]
+        struct Payload {
+            token: String,
+        }
+
+        let payload: Payload = serde_json::from_value(value).unwrap();
+        let mut data = Data::default();
+        data.insert(Token(payload.token));
+        data
+    }));
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
             "type": "connection_init",
+            "payload": { "token": "123456" }
         }))
         .unwrap()
         .into(),
