@@ -26,10 +26,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     /// Create an actor for subscription connection via websocket.
-    pub fn new<F>(schema: &Schema<Query, Mutation, Subscription>) -> Self
-    where
-        F: Fn(serde_json::Value) -> Data + Send + Sync + 'static,
-    {
+    pub fn new(schema: &Schema<Query, Mutation, Subscription>) -> Self {
         Self {
             schema: schema.clone(),
             hb: Instant::now(),
