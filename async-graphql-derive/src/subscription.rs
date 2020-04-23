@@ -294,12 +294,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::Context<'_>,
                 schema: &#crate_name::Schema<Query, Mutation, Self>,
                 environment: std::sync::Arc<#crate_name::Environment>,
-            ) -> #crate_name::Result<std::pin::Pin<Box<dyn futures::Stream<Item = #crate_name::serde_json::Value> + Send>>>
+            ) -> #crate_name::Result<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::serde_json::Value> + Send>>>
             where
                 Query: #crate_name::ObjectType + Send + Sync + 'static,
                 Mutation: #crate_name::ObjectType + Send + Sync + 'static,
                 Self: Send + Sync + 'static + Sized,
             {
+                use #crate_name::futures::StreamExt;
+
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.clone(),
