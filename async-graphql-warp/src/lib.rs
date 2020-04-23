@@ -6,8 +6,8 @@
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
-    WebSocketTransport,
+    Data, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema,
+    SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
@@ -205,5 +205,70 @@ where
         ).map(|reply| {
             warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
         })
+        .boxed()
+}
+
+/// GraphQL subscription filter
+///
+/// Specifies that a function converts the init payload to data.
+pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
+    schema: Schema<Query, Mutation, Subscription>,
+    init_context_data: F,
+) -> BoxedFilter<(impl Reply,)>
+where
+    Query: ObjectType + Sync + Send + 'static,
+    Mutation: ObjectType + Sync + Send + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+    F: Fn(serde_json::Value) -> Data + Send + Sync + Clone + 'static,
+{
+    warp::any()
+        .and(warp::ws())
+        .and(warp::any().map(move || schema.clone()))
+        .and(warp::any().map(move || init_context_data.clone()))
+        .map(
+            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, init_context_data: F| {
+                ws.on_upgrade(move |websocket| {
+                    let (mut tx, rx) = websocket.split();
+                    let (mut stx, srx) =
+                        schema.subscription_connection(WebSocketTransport::new(init_context_data));
+
+                    let mut rx = rx.fuse();
+                    let mut srx = srx.fuse();
+
+                    async move {
+                        loop {
+                            select! {
+                                bytes = srx.next() => {
+                                    if let Some(bytes) = bytes {
+                                        if tx
+                                            .send(Message::text(unsafe {
+                                                String::from_utf8_unchecked(bytes.to_vec())
+                                            }))
+                                            .await
+                                            .is_err()
+                                        {
+                                            return;
+                                        }
+                                    } else {
+                                        return;
+                                    }
+                                }
+                                msg = rx.next() => {
+                                    if let Some(Ok(msg)) = msg {
+                                        if msg.is_text() {
+                                            if stx.send(Bytes::copy_from_slice(msg.as_bytes())).await.is_err() {
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+            },
+        ).map(|reply| {
+        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+    })
         .boxed()
 }

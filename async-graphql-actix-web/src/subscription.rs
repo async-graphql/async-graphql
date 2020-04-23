@@ -2,7 +2,7 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::{ObjectType, Schema, SubscriptionType, WebSocketTransport};
+use async_graphql::{Data, ObjectType, Schema, SubscriptionType, WebSocketTransport};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::SinkExt;
@@ -16,6 +16,7 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
+    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -25,11 +26,26 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     /// Create an actor for subscription connection via websocket.
-    pub fn new(schema: &Schema<Query, Mutation, Subscription>) -> Self {
+    pub fn new<F>(schema: &Schema<Query, Mutation, Subscription>) -> Self
+    where
+        F: Fn(serde_json::Value) -> Data + Send + Sync + 'static,
+    {
         Self {
             schema: schema.clone(),
             hb: Instant::now(),
             sink: None,
+            init_context_data: None,
+        }
+    }
+
+    /// Set a context data initialization function.
+    pub fn init_context_data<F>(self, f: F) -> Self
+    where
+        F: Fn(serde_json::Value) -> Data + Send + Sync + 'static,
+    {
+        Self {
+            init_context_data: Some(Box::new(f)),
+            ..self
         }
     }
 
@@ -54,7 +70,13 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         let schema = self.schema.clone();
-        let (sink, stream) = schema.subscription_connection(WebSocketTransport::default());
+        let (sink, stream) = schema.subscription_connection(
+            if let Some(init_with_payload) = self.init_context_data.take() {
+                WebSocketTransport::new(init_with_payload)
+            } else {
+                WebSocketTransport::default()
+            },
+        );
         ctx.add_stream(stream);
         self.sink = Some(sink);
     }

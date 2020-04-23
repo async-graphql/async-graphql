@@ -26,16 +26,16 @@ pub struct WebSocketTransport {
     id_to_sid: HashMap<String, usize>,
     sid_to_id: HashMap<usize, String>,
     data: Arc<Data>,
-    init_with_payload: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
+    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
 }
 
 impl WebSocketTransport {
     /// Creates a websocket transport and sets the function that converts the `payload` of the `connect_init` message to `Data`.
     pub fn new<F: Fn(serde_json::Value) -> Data + Send + Sync + 'static>(
-        init_with_payload: F,
+        init_context_data: F,
     ) -> Self {
         WebSocketTransport {
-            init_with_payload: Some(Box::new(init_with_payload)),
+            init_context_data: Some(Box::new(init_context_data)),
             ..WebSocketTransport::default()
         }
     }
@@ -60,8 +60,8 @@ impl SubscriptionTransport for WebSocketTransport {
             Ok(msg) => match msg.ty.as_str() {
                 "connection_init" => {
                     if let Some(payload) = msg.payload {
-                        if let Some(init_with_payload) = &self.init_with_payload {
-                            self.data = Arc::new(init_with_payload(payload));
+                        if let Some(init_context_data) = &self.init_context_data {
+                            self.data = Arc::new(init_context_data(payload));
                         }
                     }
                     Ok(Some(
