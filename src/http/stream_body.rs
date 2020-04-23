@@ -7,7 +7,7 @@ use std::pin::Pin;
 /// An Adapter for bytes stream to `AsyncRead`
 pub struct StreamBody<S> {
     s: S,
-    remain_bytes: Option<Bytes>,
+    remaining_bytes: Option<Bytes>,
 }
 
 impl<S> StreamBody<S> {
@@ -15,7 +15,7 @@ impl<S> StreamBody<S> {
     pub fn new(s: S) -> Self {
         Self {
             s,
-            remain_bytes: None,
+            remaining_bytes: None,
         }
     }
 }
@@ -31,17 +31,17 @@ where
         buf: &mut [u8],
     ) -> Poll<Result<usize>> {
         loop {
-            if let Some(bytes) = &mut self.remain_bytes {
+            if let Some(bytes) = &mut self.remaining_bytes {
                 let data = bytes.split_to(buf.len().min(bytes.len()));
                 buf[..data.len()].copy_from_slice(&data);
                 if !bytes.has_remaining() {
-                    self.remain_bytes = None;
+                    self.remaining_bytes = None;
                 }
                 return Poll::Ready(Ok(data.len()));
             } else {
                 match self.s.poll_next_unpin(cx) {
                     Poll::Ready(Some(Ok(mut bytes))) => {
-                        self.remain_bytes = Some(bytes.to_bytes());
+                        self.remaining_bytes = Some(bytes.to_bytes());
                     }
                     Poll::Ready(Some(Err(_))) => {
                         return Poll::Ready(Err(Error::from(ErrorKind::InvalidData)))
