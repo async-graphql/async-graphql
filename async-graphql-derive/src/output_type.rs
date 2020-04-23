@@ -34,10 +34,8 @@ impl<'a> OutputType<'a> {
             } else {
                 OutputType::Value(input)
             }
-        } else if let Type::Reference(_) = input {
-            OutputType::Value(input)
         } else {
-            return Err(Error::new_spanned(input, "Invalid type"));
+            OutputType::Value(input)
         };
         Ok(ty)
     }

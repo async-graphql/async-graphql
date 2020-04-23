@@ -197,6 +197,68 @@ pub async fn test_subscription_with_ctx_data() {
 }
 
 #[async_std::test]
+pub async fn test_subscription_with_token() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    struct Token(String);
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        #[field]
+        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+            if ctx.data::<Token>().0 != "123456" {
+                return Err("forbidden".into());
+            }
+            Ok(futures::stream::once(async move { 100 }))
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+
+    {
+        let mut stream = schema
+            .create_subscription_stream(
+                "subscription { values }",
+                None,
+                Default::default(),
+                Some(Arc::new({
+                    let mut data = Data::default();
+                    data.insert(Token("123456".to_string()));
+                    data
+                })),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            Some(serde_json::json!({ "values": 100 })),
+            stream.next().await
+        );
+        assert!(stream.next().await.is_none());
+    }
+
+    {
+        assert!(schema
+            .create_subscription_stream(
+                "subscription { values }",
+                None,
+                Default::default(),
+                Some(Arc::new({
+                    let mut data = Data::default();
+                    data.insert(Token("654321".to_string()));
+                    data
+                })),
+            )
+            .await
+            .is_err());
+    }
+}
+
+#[async_std::test]
 pub async fn test_subscription_ws_transport() {
     struct QueryRoot;
 
@@ -261,6 +323,81 @@ pub async fn test_subscription_ws_transport() {
             "type": "data",
             "id": "1",
             "payload": { "data": { "values": i * 5 } },
+            })),
+            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        );
+    }
+}
+
+#[async_std::test]
+pub async fn test_subscription_ws_transport_with_token() {
+    struct Token(String);
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        #[field]
+        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+            if ctx.data::<Token>().0 != "123456" {
+                return Err("forbidden".into());
+            }
+            Ok(futures::stream::iter(0..10))
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let (mut sink, mut stream) = schema.subscription_connection(
+        WebSocketTransport::default(),
+        Some(Arc::new({
+            let mut data = Data::default();
+            data.insert(Token("123456".to_string()));
+            data
+        })),
+    );
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "connection_init",
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(serde_json::json!({
+        "type": "connection_ack",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    for i in 0..10 {
+        assert_eq!(
+            Some(serde_json::json!({
+            "type": "data",
+            "id": "1",
+            "payload": { "data": { "values": i } },
             })),
             serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
         );
