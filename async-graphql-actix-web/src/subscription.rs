@@ -2,7 +2,7 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::{Data, ObjectType, Schema, SubscriptionType, WebSocketTransport};
+use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType, WebSocketTransport};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::SinkExt;
@@ -16,7 +16,7 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
-    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
+    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -38,7 +38,7 @@ where
     /// Set a context data initialization function.
     pub fn init_context_data<F>(self, f: F) -> Self
     where
-        F: Fn(serde_json::Value) -> Data + Send + Sync + 'static,
+        F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
     {
         Self {
             init_context_data: Some(Box::new(f)),

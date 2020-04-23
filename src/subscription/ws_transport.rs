@@ -1,8 +1,8 @@
 use crate::context::Data;
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    ObjectType, QueryResponse, Schema, SubscriptionStreams, SubscriptionTransport,
-    SubscriptionType, Variables,
+    FieldError, FieldResult, ObjectType, QueryResponse, Schema, SubscriptionStreams,
+    SubscriptionTransport, SubscriptionType, Variables,
 };
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -26,12 +26,12 @@ pub struct WebSocketTransport {
     id_to_sid: HashMap<String, usize>,
     sid_to_id: HashMap<usize, String>,
     data: Arc<Data>,
-    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> Data + Send + Sync>>,
+    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
 }
 
 impl WebSocketTransport {
     /// Creates a websocket transport and sets the function that converts the `payload` of the `connect_init` message to `Data`.
-    pub fn new<F: Fn(serde_json::Value) -> Data + Send + Sync + 'static>(
+    pub fn new<F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static>(
         init_context_data: F,
     ) -> Self {
         WebSocketTransport {
@@ -43,7 +43,7 @@ impl WebSocketTransport {
 
 #[async_trait::async_trait]
 impl SubscriptionTransport for WebSocketTransport {
-    type Error = String;
+    type Error = FieldError;
 
     async fn handle_request<Query, Mutation, Subscription>(
         &mut self,
@@ -61,7 +61,7 @@ impl SubscriptionTransport for WebSocketTransport {
                 "connection_init" => {
                     if let Some(payload) = msg.payload {
                         if let Some(init_context_data) = &self.init_context_data {
-                            self.data = Arc::new(init_context_data(payload));
+                            self.data = Arc::new(init_context_data(payload)?);
                         }
                     }
                     Ok(Some(
@@ -125,10 +125,10 @@ impl SubscriptionTransport for WebSocketTransport {
                     }
                     Ok(None)
                 }
-                "connection_terminate" => Err("connection_terminate".to_string()),
-                _ => Err("Unknown op".to_string()),
+                "connection_terminate" => Err("connection_terminate".into()),
+                _ => Err("Unknown op".into()),
             },
-            Err(err) => Err(err.to_string()),
+            Err(err) => Err(err.into()),
         }
     }
 

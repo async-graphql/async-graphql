@@ -1,7 +1,7 @@
 use crate::{ObjectType, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
-use futures::task::{Context, Poll};
+use futures::task::{AtomicWaker, Context, Poll};
 use futures::Stream;
 use slab::Slab;
 use std::future::Future;
@@ -75,6 +75,7 @@ where
             },
             rx_bytes,
             handle_request_fut: None,
+            waker: AtomicWaker::new(),
         },
     )
 }
@@ -95,6 +96,7 @@ pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTran
     streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
     handle_request_fut: Option<HandleRequestBoxFut<T>>,
+    waker: AtomicWaker,
 }
 
 impl<Query, Mutation, Subscription, T> Stream
@@ -138,6 +140,7 @@ where
                                 data,
                             )));
                         }
+                        this.waker.wake();
                         continue;
                     }
                     Poll::Ready(None) => return Poll::Ready(None),
@@ -169,12 +172,14 @@ where
 
                     if num_closed == this.streams.streams.len() {
                         // all closed
-                        return Poll::Ready(None);
+                        this.waker.register(cx.waker());
+                        return Poll::Pending;
                     } else if num_pending == this.streams.streams.len() {
                         return Poll::Pending;
                     }
                 }
             } else {
+                this.waker.register(cx.waker());
                 return Poll::Pending;
             }
         }

@@ -6,7 +6,7 @@
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    Data, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema,
+    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema,
     SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
@@ -219,7 +219,7 @@ where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    F: Fn(serde_json::Value) -> Data + Send + Sync + Clone + 'static,
+    F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + Clone + 'static,
 {
     warp::any()
         .and(warp::ws())

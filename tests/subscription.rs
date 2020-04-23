@@ -355,7 +355,7 @@ pub async fn test_subscription_ws_transport_with_token() {
         let payload: Payload = serde_json::from_value(value).unwrap();
         let mut data = Data::default();
         data.insert(Token(payload.token));
-        data
+        Ok(data)
     }));
 
     sink.send(
