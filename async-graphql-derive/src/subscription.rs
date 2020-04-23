@@ -209,12 +209,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let create_field_stream = match &ty {
                     OutputType::Value(_) => quote! {
-                        self.#ident(#ctx_param #(#use_params),*).await
+                        #crate_name::futures::stream::StreamExt::fuse(self.#ident(#ctx_param #(#use_params),*).await)
                     },
                     OutputType::Result(_, _) => {
                         quote! {
-                            self.#ident(#ctx_param #(#use_params),*).await.
-                                map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
+                            #crate_name::futures::stream::StreamExt::fuse(self.#ident(#ctx_param #(#use_params),*).await.
+                                map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?)
                         }
                     }
                 };
@@ -227,7 +227,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         let schema = schema.clone();
                         let pos = ctx.position;
                         let environment = environment.clone();
-                        let stream = #crate_name::futures::stream::StreamExt::then(#create_field_stream.fuse(), move |msg| {
+                        let stream = #crate_name::futures::stream::StreamExt::then(#create_field_stream, move |msg| {
                             let environment = environment.clone();
                             let field_selection_set = field_selection_set.clone();
                             let schema = schema.clone();
