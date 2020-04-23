@@ -161,6 +161,16 @@ pub async fn test_subscription_with_ctx_data() {
     #[Object]
     impl QueryRoot {}
 
+    struct MyObject;
+
+    #[Object]
+    impl MyObject {
+        #[field]
+        async fn value(&self, ctx: &Context<'_>) -> i32 {
+            *ctx.data::<i32>()
+        }
+    }
+
     struct SubscriptionRoot;
 
     #[Subscription]
@@ -170,6 +180,11 @@ pub async fn test_subscription_with_ctx_data() {
             let value = *ctx.data::<i32>();
             futures::stream::once(async move { value })
         }
+
+        #[field]
+        async fn objects(&self) -> impl Stream<Item = MyObject> {
+            futures::stream::once(async move { MyObject })
+        }
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
@@ -177,7 +192,7 @@ pub async fn test_subscription_with_ctx_data() {
     {
         let mut stream = schema
             .create_subscription_stream(
-                "subscription { values }",
+                "subscription { values objects { value } }",
                 None,
                 Default::default(),
                 Some(Arc::new({
@@ -190,6 +205,10 @@ pub async fn test_subscription_with_ctx_data() {
             .unwrap();
         assert_eq!(
             Some(serde_json::json!({ "values": 100 })),
+            stream.next().await
+        );
+        assert_eq!(
+            Some(serde_json::json!({ "objects": { "value": 100 } })),
             stream.next().await
         );
         assert!(stream.next().await.is_none());
