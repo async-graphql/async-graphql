@@ -10,6 +10,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+use fnv::FnvHashMap;
 
 /// Variables of query
 #[derive(Debug, Clone)]
@@ -130,7 +131,7 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
 
 #[derive(Default)]
 /// Schema/Context data
-pub struct Data(BTreeMap<TypeId, Box<dyn Any + Sync + Send>>);
+pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
 
 impl Data {
     #[allow(missing_docs)]
