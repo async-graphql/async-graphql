@@ -1,3 +1,4 @@
+use crate::context::Data;
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
     ObjectType, QueryResponse, Schema, SubscriptionStreams, SubscriptionTransport,
@@ -5,12 +6,17 @@ use crate::{
 };
 use bytes::Bytes;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 struct OperationMessage {
     #[serde(rename = "type")]
     ty: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     payload: Option<serde_json::Value>,
 }
 
@@ -30,6 +36,7 @@ impl SubscriptionTransport for WebSocketTransport {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
+        ctx_data: Arc<Data>,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
@@ -60,6 +67,7 @@ impl SubscriptionTransport for WebSocketTransport {
                                     &request.query,
                                     request.operation_name.as_deref(),
                                     variables,
+                                    Some(ctx_data),
                                 )
                                 .await
                             {

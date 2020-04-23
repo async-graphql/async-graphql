@@ -1,5 +1,6 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures::{SinkExt, Stream, StreamExt};
+use std::sync::Arc;
 
 #[async_std::test]
 pub async fn test_subscription() {
@@ -40,6 +41,7 @@ pub async fn test_subscription() {
                 "subscription { values(start: 10, end: 20) }",
                 None,
                 Default::default(),
+                None,
             )
             .await
             .unwrap();
@@ -58,6 +60,7 @@ pub async fn test_subscription() {
                 "subscription { events(start: 10, end: 20) { a b } }",
                 None,
                 Default::default(),
+                None,
             )
             .await
             .unwrap();
@@ -113,6 +116,7 @@ pub async fn test_simple_broker() {
             "subscription { events1 { value } }",
             None,
             Default::default(),
+            None,
         )
         .await
         .unwrap();
@@ -121,6 +125,7 @@ pub async fn test_simple_broker() {
             "subscription { events2 { value } }",
             None,
             Default::default(),
+            None,
         )
         .await
         .unwrap();
@@ -147,4 +152,117 @@ pub async fn test_simple_broker() {
         stream2.next().await,
         Some(serde_json::json!({ "events2": {"value": 99} }))
     );
+}
+
+#[async_std::test]
+pub async fn test_subscription_with_ctx_data() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        #[field]
+        async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
+            let value = *ctx.data::<i32>();
+            futures::stream::once(async move { value })
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+
+    {
+        let mut stream = schema
+            .create_subscription_stream(
+                "subscription { values }",
+                None,
+                Default::default(),
+                Some(Arc::new({
+                    let mut data = Data::default();
+                    data.insert(100i32);
+                    data
+                })),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            Some(serde_json::json!({ "values": 100 })),
+            stream.next().await
+        );
+        assert!(stream.next().await.is_none());
+    }
+}
+
+#[async_std::test]
+pub async fn test_subscription_ws_transport() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        #[field]
+        async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
+            let step = *ctx.data::<i32>();
+            futures::stream::iter((0..10).map(move |n| n * step))
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let (mut sink, mut stream) = schema.subscription_connection(
+        WebSocketTransport::default(),
+        Some(Arc::new({
+            let mut data = Data::default();
+            data.insert(5);
+            data
+        })),
+    );
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "connection_init",
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(serde_json::json!({
+        "type": "connection_ack",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    for i in 0..10 {
+        assert_eq!(
+            Some(serde_json::json!({
+            "type": "data",
+            "id": "1",
+            "payload": { "data": { "values": i * 5 } },
+            })),
+            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        );
+    }
 }

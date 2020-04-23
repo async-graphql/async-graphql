@@ -6,8 +6,8 @@
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
-    WebSocketTransport,
+    Data, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema,
+    SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
@@ -145,27 +145,30 @@ where
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-///     let filter = async_graphql_warp::graphql_subscription(schema);
+///     let filter = async_graphql_warp::graphql_subscription(schema, None);
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
+    ctx_data: Option<Data>,
 ) -> BoxedFilter<(impl Reply,)>
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
+    let ctx_data = ctx_data.map(Arc::new);
     warp::any()
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
+        .and(warp::any().map(move || ctx_data.clone()))
         .map(
-            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>| {
+            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, ctx_data: Option<Arc<Data>>| {
                 ws.on_upgrade(move |websocket| {
                     let (mut tx, rx) = websocket.split();
                     let (mut stx, srx) =
-                        schema.subscription_connection(WebSocketTransport::default());
+                        schema.subscription_connection(WebSocketTransport::default(),ctx_data.clone());
 
                     let mut rx = rx.fuse();
                     let mut srx = srx.fuse();

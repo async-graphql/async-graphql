@@ -106,7 +106,9 @@ pub use serde_json;
 pub mod http;
 
 pub use base::{Scalar, Type};
-pub use context::{Context, ContextBase, Environment, QueryPathNode, QueryPathSegment, Variables};
+pub use context::{
+    Context, ContextBase, Data, Environment, QueryPathNode, QueryPathSegment, Variables,
+};
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
 };

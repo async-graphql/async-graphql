@@ -3,7 +3,9 @@ use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait};
+use syn::{
+    Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait, TypeReference,
+};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -61,20 +63,25 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     ));
                 }
 
-                match &method.sig.inputs[0] {
-                    FnArg::Receiver(_) => {}
-                    _ => {
-                        return Err(Error::new_spanned(
-                            &method.sig.inputs[0],
-                            "The first argument must be self receiver",
-                        ));
-                    }
-                }
-
+                let mut arg_ctx = false;
                 let mut args = Vec::new();
 
-                for arg in method.sig.inputs.iter_mut().skip(1) {
-                    if let FnArg::Typed(pat) = arg {
+                for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
+                    if let FnArg::Receiver(receiver) = arg {
+                        if idx != 0 {
+                            return Err(Error::new_spanned(
+                                receiver,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+                    } else if let FnArg::Typed(pat) = arg {
+                        if idx == 0 {
+                            return Err(Error::new_spanned(
+                                pat,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
                                 args.push((
@@ -83,6 +90,19 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                     args::Argument::parse(&crate_name, &pat.attrs)?,
                                 ));
                                 pat.attrs.clear();
+                            }
+                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                                if let Type::Path(path) = elem.as_ref() {
+                                    if idx != 1
+                                        || path.path.segments.last().unwrap().ident != "Context"
+                                    {
+                                        return Err(Error::new_spanned(
+                                            arg,
+                                            "The Context must be the second argument.",
+                                        ));
+                                    }
+                                    arg_ctx = true;
+                                }
                             }
                             _ => {
                                 return Err(Error::new_spanned(arg, "Incorrect argument type"));
@@ -182,6 +202,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 });
 
+                let ctx_param = if arg_ctx {
+                    quote! { &ctx, }
+                } else {
+                    quote! {}
+                };
+
                 create_stream.push(quote! {
                     if ctx.name.as_str() == #field_name {
                         let field_name = ctx.result_name().to_string();
@@ -190,21 +216,20 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         let schema = schema.clone();
                         let pos = ctx.position;
                         let environment = environment.clone();
-                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#(#use_params),*).await.fuse(), move |msg| {
+                        let stream = #crate_name::futures::stream::StreamExt::then(self.#ident(#ctx_param #(#use_params),*).await.fuse(), move |msg| {
                             let environment = environment.clone();
                             let field_selection_set = field_selection_set.clone();
                             let schema = schema.clone();
                             async move {
                                 let resolve_id = std::sync::atomic::AtomicUsize::default();
                                 let ctx_selection_set = environment.create_context(
-                                    &*field_selection_set,
+                                    &schema,
                                     Some(#crate_name::QueryPathNode {
                                         parent: None,
                                         segment: #crate_name::QueryPathSegment::Name("time"),
                                     }),
+                                    &*field_selection_set,
                                     &resolve_id,
-                                    schema.registry(),
-                                    schema.data(),
                                 );
                                 #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
                             }

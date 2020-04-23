@@ -7,8 +7,8 @@ use crate::subscription::{create_connection, create_subscription_stream, Subscri
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
-    ContextSelectionSet, Error, ObjectType, Pos, QueryError, QueryResponse, Result,
-    SubscriptionStream, SubscriptionType, Type, Variables,
+    Environment, Error, ObjectType, Pos, QueryError, QueryResponse, Result, SubscriptionStream,
+    SubscriptionType, Type, Variables,
 };
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -240,6 +240,7 @@ where
         source: &str,
         operation_name: Option<&str>,
         variables: Variables,
+        ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = serde_json::Value> + Send> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document, self.0.validation_mode)?;
@@ -272,22 +273,15 @@ where
         })?;
 
         let resolve_id = AtomicUsize::default();
-        let ctx = ContextSelectionSet {
-            path_node: None,
-            extensions: &[],
-            item: &subscription.selection_set,
-            resolve_id: &resolve_id,
-            variables: &variables,
-            variable_definitions: &subscription.variable_definitions,
-            registry: &self.0.registry,
-            data: &Default::default(),
-            ctx_data: None,
-            fragments: &fragments,
-        };
-
+        let environment = Arc::new(Environment {
+            variables,
+            variable_definitions: subscription.variable_definitions,
+            fragments,
+            ctx_data: ctx_data.unwrap_or_default(),
+        });
+        let ctx = environment.create_context(self, None, &subscription.selection_set, &resolve_id);
         let mut streams = Vec::new();
-        create_subscription_stream(self, Arc::new(ctx.create_environment()), &ctx, &mut streams)
-            .await?;
+        create_subscription_stream(self, environment.clone(), &ctx, &mut streams).await?;
         Ok(futures::stream::select_all(streams))
     }
 
@@ -295,10 +289,11 @@ where
     pub fn subscription_connection<T: SubscriptionTransport>(
         &self,
         transport: T,
+        ctx_data: Option<Arc<Data>>,
     ) -> (
         mpsc::Sender<Bytes>,
         SubscriptionStream<Query, Mutation, Subscription, T>,
     ) {
-        create_connection(self.clone(), transport)
+        create_connection(self.clone(), transport, ctx_data.unwrap_or_default())
     }
 }

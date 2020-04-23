@@ -1,6 +1,6 @@
 use crate::extensions::BoxExtension;
 use crate::registry::Registry;
-use crate::{InputValueType, Pos, QueryError, Result, Type};
+use crate::{InputValueType, Pos, QueryError, Result, Schema, Type};
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
@@ -9,6 +9,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
 
 /// Variables of query
 #[derive(Debug, Clone)]
@@ -128,9 +129,11 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
 }
 
 #[derive(Default)]
+/// Schema/Context data
 pub struct Data(BTreeMap<TypeId, Box<dyn Any + Sync + Send>>);
 
 impl Data {
+    #[allow(missing_docs)]
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
         self.0.insert(TypeId::of::<D>(), Box::new(data));
     }
@@ -247,17 +250,17 @@ pub struct Environment {
     pub variables: Variables,
     pub variable_definitions: Vec<VariableDefinition>,
     pub fragments: HashMap<String, FragmentDefinition>,
+    pub ctx_data: Arc<Data>,
 }
 
 impl Environment {
     #[doc(hidden)]
-    pub fn create_context<'a, T>(
+    pub fn create_context<'a, T, Query, Mutation, Subscription>(
         &'a self,
-        item: T,
+        schema: &'a Schema<Query, Mutation, Subscription>,
         path_node: Option<QueryPathNode<'a>>,
+        item: T,
         resolve_id: &'a AtomicUsize,
-        registry: &'a Registry,
-        data: &'a Data,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
@@ -266,24 +269,15 @@ impl Environment {
             item,
             variables: &self.variables,
             variable_definitions: &self.variable_definitions,
-            registry,
-            data,
-            ctx_data: None,
+            registry: &schema.0.registry,
+            data: &schema.0.data,
+            ctx_data: Some(&self.ctx_data),
             fragments: &self.fragments,
         }
     }
 }
 
 impl<'a, T> ContextBase<'a, T> {
-    #[doc(hidden)]
-    pub fn create_environment(&self) -> Environment {
-        Environment {
-            variables: self.variables.clone(),
-            variable_definitions: self.variable_definitions.to_vec(),
-            fragments: self.fragments.clone(),
-        }
-    }
-
     #[doc(hidden)]
     pub fn get_resolve_id(&self) -> usize {
         self.resolve_id
