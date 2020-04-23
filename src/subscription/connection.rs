@@ -150,34 +150,25 @@ where
 
             // receive msg
             if !this.streams.streams.is_empty() {
-                loop {
-                    let mut num_closed = 0;
-                    let mut num_pending = 0;
+                let mut closed = Vec::new();
 
-                    for (id, incoming_stream) in &mut this.streams.streams {
-                        match incoming_stream.as_mut().poll_next(cx) {
-                            Poll::Ready(Some(value)) => {
-                                if let Some(bytes) = this.transport.handle_response(id, value) {
-                                    return Poll::Ready(Some(bytes));
-                                }
-                            }
-                            Poll::Ready(None) => {
-                                num_closed += 1;
-                            }
-                            Poll::Pending => {
-                                num_pending += 1;
+                for (id, incoming_stream) in &mut this.streams.streams {
+                    match incoming_stream.as_mut().poll_next(cx) {
+                        Poll::Ready(Some(value)) => {
+                            if let Some(bytes) = this.transport.handle_response(id, value) {
+                                return Poll::Ready(Some(bytes));
                             }
                         }
-                    }
-
-                    if num_closed == this.streams.streams.len() {
-                        // all closed
-                        this.waker.register(cx.waker());
-                        return Poll::Pending;
-                    } else if num_pending == this.streams.streams.len() {
-                        return Poll::Pending;
+                        Poll::Ready(None) => {
+                            closed.push(id);
+                        }
+                        Poll::Pending => {}
                     }
                 }
+
+                closed.iter().for_each(|id| this.streams.remove(*id));
+                this.waker.register(cx.waker());
+                return Poll::Pending;
             } else {
                 this.waker.register(cx.waker());
                 return Poll::Pending;
