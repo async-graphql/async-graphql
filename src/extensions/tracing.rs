@@ -112,12 +112,12 @@ impl Extension for ApolloTracing {
         }
     }
 
-    fn result(&self) -> serde_json::Value {
+    fn result(&self) -> Option<serde_json::Value> {
         let mut inner = self.inner.lock();
         inner
             .resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
-        serde_json::json!({
+        Some(serde_json::json!({
             "version": 1,
             "startTime": inner.start_time.to_rfc3339(),
             "endTime": inner.end_time.to_rfc3339(),
@@ -125,6 +125,6 @@ impl Extension for ApolloTracing {
             "execution": {
                 "resolvers": inner.resolves
             }
-        })
+        }))
     }
 }

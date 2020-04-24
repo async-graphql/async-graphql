@@ -212,7 +212,7 @@ impl QueryBuilder {
                 Some(
                     extensions
                         .iter()
-                        .map(|e| (e.name().to_string(), e.result()))
+                        .filter_map(|e| e.result().map(|res| (e.name().to_string(), res)))
                         .collect::<serde_json::Map<_, _>>(),
                 )
             } else {

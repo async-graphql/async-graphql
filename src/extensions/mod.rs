@@ -54,5 +54,5 @@ pub trait Extension: Sync + Send + 'static {
     fn resolve_field_end(&self, resolve_id: usize) {}
 
     /// Get the results
-    fn result(&self) -> serde_json::Value;
+    fn result(&self) -> Option<serde_json::Value>;
 }
