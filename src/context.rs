@@ -1,6 +1,7 @@
 use crate::extensions::BoxExtension;
 use crate::registry::Registry;
 use crate::{InputValueType, Pos, QueryError, Result, Schema, Type};
+use fnv::FnvHashMap;
 use graphql_parser::query::{
     Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
 };
@@ -10,7 +11,6 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
-use fnv::FnvHashMap;
 
 /// Variables of query
 #[derive(Debug, Clone)]
