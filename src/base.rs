@@ -284,6 +284,7 @@ impl<T: Type + Send + Sync> Type for Box<T> {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
+    #[allow(clippy::borrowed_box)]
     async fn resolve(
         value: &Self,
         ctx: &ContextSelectionSet<'_>,
