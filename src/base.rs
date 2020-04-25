@@ -5,6 +5,7 @@ use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 
 /// Represents a GraphQL type
 ///
@@ -267,5 +268,49 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
         pos: Pos,
     ) -> Result<serde_json::Value> {
         T::resolve(*value, ctx, pos).await
+    }
+}
+
+impl<T: Type + Send + Sync> Type for Box<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
+        T::resolve(&*value, ctx, pos).await
+    }
+}
+
+impl<T: Type + Send + Sync> Type for Arc<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> Result<serde_json::Value> {
+        T::resolve(&*value, ctx, pos).await
     }
 }
