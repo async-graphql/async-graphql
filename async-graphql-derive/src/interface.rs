@@ -175,6 +175,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         };
 
         methods.push(quote! {
+            #[inline]
             async fn #method_name #ctx_lifetime(&self, #(#decl_params),*) -> #ty {
                 match self {
                     #(#calls,)*

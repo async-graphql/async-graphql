@@ -12,6 +12,24 @@ pub struct Edge<'a, T, E> {
     pub extra_type: &'a E,
 }
 
+impl<'a, T, E> Edge<'a, T, E>
+where
+    T: OutputValueType + Send + Sync + 'a,
+    E: ObjectType + Sync + Send + 'a,
+{
+    #[doc(hidden)]
+    #[inline]
+    pub async fn node(&self) -> &T {
+        self.node
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub async fn cursor(&self) -> &str {
+        self.cursor
+    }
+}
+
 impl<'a, T, E> Type for Edge<'a, T, E>
 where
     T: OutputValueType + Send + Sync + 'a,
@@ -89,9 +107,9 @@ where
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "node" {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            return OutputValueType::resolve(self.node, &ctx_obj, field.position).await;
+            return OutputValueType::resolve(self.node().await, &ctx_obj, field.position).await;
         } else if field.name.as_str() == "cursor" {
-            return Ok(self.cursor.into());
+            return Ok(self.cursor().await.into());
         }
 
         self.extra_type.resolve_field(ctx, field).await

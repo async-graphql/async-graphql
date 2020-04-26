@@ -57,6 +57,35 @@ impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
                 .collect(),
         }
     }
+
+    #[doc(hidden)]
+    #[inline]
+    pub async fn page_info(&self) -> &PageInfo {
+        &self.page_info
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub async fn edges(&self) -> Option<Vec<Option<Edge<'_, T, E>>>> {
+        Some(
+            self.nodes
+                .iter()
+                .map(|(cursor, extra_type, node)| {
+                    Some(Edge {
+                        cursor,
+                        extra_type,
+                        node,
+                    })
+                })
+                .collect_vec(),
+        )
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub async fn total_count(&self) -> Option<i32> {
+        self.total_count.map(|n| n as i32)
+    }
 }
 
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Connection<T, E> {
@@ -145,25 +174,15 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
         if field.name.as_str() == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            let page_info = &self.page_info;
-            return OutputValueType::resolve(page_info, &ctx_obj, field.position).await;
+            return OutputValueType::resolve(self.page_info().await, &ctx_obj, field.position)
+                .await;
         } else if field.name.as_str() == "edges" {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            let edges = self
-                .nodes
-                .iter()
-                .map(|(cursor, extra_type, node)| Edge {
-                    cursor,
-                    extra_type,
-                    node,
-                })
-                .collect_vec();
-            return OutputValueType::resolve(&edges, &ctx_obj, field.position).await;
+            return OutputValueType::resolve(&self.edges().await, &ctx_obj, field.position).await;
         } else if field.name.as_str() == "totalCount" {
-            return Ok(self
-                .total_count
-                .map(|n| (n as i32).into())
-                .unwrap_or_else(|| serde_json::Value::Null));
+            let ctx_obj = ctx.with_selection_set(&field.selection_set);
+            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, field.position)
+                .await;
         } else if field.name.as_str() == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&field.selection_set);
             let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
