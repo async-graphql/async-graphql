@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.9.18" }
+async-graphql = { path = "..", version = "1.9.19" }
 tide = "0.8"
 http-types = "1.2.0"
 

@@ -66,6 +66,7 @@ cargo run --release
 
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
+* Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 
 ## License
 
