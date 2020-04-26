@@ -1,8 +1,8 @@
 use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos,
-    QueryError, Result, Type,
+    do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
+    OutputValueType, Pos, QueryError, Result, Type,
 };
 use graphql_parser::query::Field;
 use inflector::Inflector;
@@ -16,7 +16,7 @@ use std::collections::HashMap;
 /// If the `T` type is `OutputValueType`, you can return the value as a field function directly,
 /// otherwise you can use the `Connection::map` function to convert to a type that implements `OutputValueType`.
 /// `E` is an extension object type that extends the edge fields.
-pub struct Connection<T, E: ObjectType + Sync + Send> {
+pub struct Connection<T, E: ObjectType + Sync + Send = EmptyEdgeFields> {
     total_count: Option<usize>,
     page_info: PageInfo,
     nodes: Vec<(String, E, T)>,
