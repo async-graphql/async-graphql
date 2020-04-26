@@ -104,11 +104,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
+                    field_name: ctx.name.clone(),
                     object: #gql_typename.to_string(),
-                }.into_error(field.position))
+                }.into_error(ctx.position))
             }
 
             fn collect_inline_fields<'a>(

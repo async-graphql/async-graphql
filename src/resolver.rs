@@ -93,7 +93,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         }
 
                         let res = root
-                            .resolve_field(&ctx_field, field)
+                            .resolve_field(&ctx_field)
                             .map_ok(move |value| (field_name, value))
                             .await?;
 

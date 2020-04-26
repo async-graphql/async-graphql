@@ -83,7 +83,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             .for_each(|e| e.resolve_field_start(&resolve_info));
                     }
 
-                    let value = root.resolve_field(&ctx_field, field).await?;
+                    let value = root.resolve_field(&ctx_field).await?;
                     values.insert(field_name, value);
 
                     if !ctx_field.extensions.is_empty() {

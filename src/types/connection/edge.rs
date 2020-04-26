@@ -1,7 +1,6 @@
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Result, Type,
 };
-use graphql_parser::query::Field;
 use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -104,15 +103,15 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
-        if field.name.as_str() == "node" {
-            let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            return OutputValueType::resolve(self.node().await, &ctx_obj, field.position).await;
-        } else if field.name.as_str() == "cursor" {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+        if ctx.name.as_str() == "node" {
+            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            return OutputValueType::resolve(self.node().await, &ctx_obj, ctx.position).await;
+        } else if ctx.name.as_str() == "cursor" {
             return Ok(self.cursor().await.into());
         }
 
-        self.extra_type.resolve_field(ctx, field).await
+        self.extra_type.resolve_field(ctx).await
     }
 }
 

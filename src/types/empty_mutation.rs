@@ -2,7 +2,6 @@ use crate::{
     registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, QueryError, Result,
     Type,
 };
-use graphql_parser::query::Field;
 use graphql_parser::Pos;
 use std::borrow::Cow;
 
@@ -49,7 +48,7 @@ impl ObjectType for EmptyMutation {
         true
     }
 
-    async fn resolve_field(&self, _ctx: &Context<'_>, _name: &Field) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, _ctx: &Context<'_>) -> Result<serde_json::Value> {
         unreachable!()
     }
 }

@@ -4,7 +4,6 @@ use crate::{
     do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
     OutputValueType, Pos, QueryError, Result, Type,
 };
-use graphql_parser::query::Field;
 use inflector::Inflector;
 use itertools::Itertools;
 use std::borrow::Cow;
@@ -171,29 +170,28 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     for Connection<T, E>
 {
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value> {
-        if field.name.as_str() == "pageInfo" {
-            let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            return OutputValueType::resolve(self.page_info().await, &ctx_obj, field.position)
+    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+        if ctx.name.as_str() == "pageInfo" {
+            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.position).await;
+        } else if ctx.name.as_str() == "edges" {
+            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.position).await;
+        } else if ctx.name.as_str() == "totalCount" {
+            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.position)
                 .await;
-        } else if field.name.as_str() == "edges" {
-            let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            return OutputValueType::resolve(&self.edges().await, &ctx_obj, field.position).await;
-        } else if field.name.as_str() == "totalCount" {
-            let ctx_obj = ctx.with_selection_set(&field.selection_set);
-            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, field.position)
-                .await;
-        } else if field.name.as_str() == T::type_name().to_plural().to_camel_case() {
-            let ctx_obj = ctx.with_selection_set(&field.selection_set);
+        } else if ctx.name.as_str() == T::type_name().to_plural().to_camel_case() {
+            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
-            return OutputValueType::resolve(&items, &ctx_obj, field.position).await;
+            return OutputValueType::resolve(&items, &ctx_obj, ctx.position).await;
         }
 
         Err(Error::Query {
-            pos: field.position,
+            pos: ctx.position,
             path: None,
             err: QueryError::FieldNotFound {
-                field_name: field.name.clone(),
+                field_name: ctx.name.clone(),
                 object: Connection::<T, E>::type_name().to_string(),
             },
         })

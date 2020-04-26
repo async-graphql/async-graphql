@@ -108,9 +108,9 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 }
 
                 resolvers.push(quote! {
-                    if field.name.as_str() == #field_name {
-                        let ctx_obj = ctx.with_selection_set(&field.selection_set);
-                        return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj, field.position).await;
+                    if ctx.name.as_str() == #field_name {
+                        let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                        return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj, ctx.position).await;
                     }
                 });
 
@@ -167,13 +167,12 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
-
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
+                    field_name: ctx.name.clone(),
                     object: #gql_typename.to_string(),
-                }.into_error(field.position))
+                }.into_error(ctx.position))
             }
         }
 

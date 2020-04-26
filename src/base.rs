@@ -1,6 +1,6 @@
 use crate::registry::Registry;
 use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
-use graphql_parser::query::{Field, Value};
+use graphql_parser::query::Value;
 use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::future::Future;
@@ -78,7 +78,7 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(&self, ctx: &Context<'_>, field: &Field) -> Result<serde_json::Value>;
+    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value>;
 
     /// Collect the fields with the `name` inline object
     fn collect_inline_fields<'a>(

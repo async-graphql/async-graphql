@@ -137,7 +137,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 None => quote! { || #crate_name::Value::Null },
             };
             get_params.push(quote! {
-                let #ident: #ty = ctx.param_value(#name, field.position, #param_default)?;
+                let #ident: #ty = ctx.param_value(#name, ctx.position, #param_default)?;
             });
 
             let desc = desc
@@ -220,16 +220,16 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             OutputType::Result(_, _) => {
                 quote! {
                     self.#method_name(#(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(field.position, ctx.path_node.as_ref().unwrap().to_json()))?
+                        map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
                 }
             }
         };
 
         resolvers.push(quote! {
-            if field.name.as_str() == #name {
+            if ctx.name.as_str() == #name {
                 #(#get_params)*
-                let ctx_obj = ctx.with_selection_set(&field.selection_set);
-                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, field.position).await;
+                let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
             }
         });
     }
@@ -289,13 +289,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>, field: &#crate_name::graphql_parser::query::Field) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
-
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: field.name.clone(),
+                    field_name: ctx.name.clone(),
                     object: #gql_typename.to_string(),
-                }.into_error(field.position))
+                }.into_error(ctx.position))
             }
 
             fn collect_inline_fields<'a>(
