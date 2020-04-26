@@ -56,4 +56,5 @@ members = [
     "async-graphql-derive",
     "async-graphql-actix-web",
     "async-graphql-warp",
+    "async-graphql-tide",
 ]
