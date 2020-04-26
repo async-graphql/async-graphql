@@ -4,7 +4,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::needless_doctest_main)]
 
-use async_graphql::http::{GQLRequest, GQLResponse};
+use async_graphql::http::GQLResponse;
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
 };
@@ -61,7 +61,7 @@ where
 
 /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
 pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
-    mut req: Request<TideState>,
+    req: Request<TideState>,
     schema: Schema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
     opts: IntoQueryBuilderOpts,
@@ -73,12 +73,11 @@ where
     TideState: Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder,
 {
-    let gql_request: GQLRequest = req
-        .body_json()
-        .await
-        .map_err(|e| tide::Error::new(StatusCode::BadRequest, e))?;
+    let content_type = req
+        .header(&http_types::headers::CONTENT_TYPE)
+        .and_then(|values| values.first().map(|value| value.to_string()));
 
-    let mut query_builder = gql_request
+    let mut query_builder = (content_type, req)
         .into_query_builder_opts(&opts)
         .await
         .map_err(|e| tide::Error::new(StatusCode::BadRequest, e))?;
