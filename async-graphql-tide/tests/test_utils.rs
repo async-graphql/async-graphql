@@ -1,4 +1,4 @@
-pub async fn find_port() -> async_std::net::SocketAddr {
+pub async fn find_listen_addr() -> async_std::net::SocketAddr {
     async_std::net::TcpListener::bind("localhost:0")
         .await
         .unwrap()
