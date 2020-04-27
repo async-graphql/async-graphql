@@ -1,9 +1,11 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 
 macro_rules! impl_integer_scalars {
     ($($ty:ty),*) => {
         $(
-        impl Scalar for $ty {
+        #[Scalar(internal)]
+        impl ScalarType for $ty {
             fn type_name() -> &'static str {
                 "Int"
             }
@@ -23,8 +25,6 @@ macro_rules! impl_integer_scalars {
                 Ok((*self).into())
             }
         }
-
-        impl_scalar_internal!($ty);
         )*
     };
 }
@@ -34,7 +34,8 @@ impl_integer_scalars!(i8, i16, i32, u8, u16, u32);
 macro_rules! impl_int64_scalars {
     ($($ty:ty),*) => {
         $(
-        impl Scalar for $ty {
+        #[Scalar(internal)]
+        impl ScalarType for $ty {
             fn type_name() -> &'static str {
                 "Int64"
             }
@@ -55,8 +56,6 @@ macro_rules! impl_int64_scalars {
                 Ok(self.to_string().into())
             }
         }
-
-        impl_scalar_internal!($ty);
         )*
     };
 }

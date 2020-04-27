@@ -130,7 +130,8 @@ pub trait InputObjectType: InputValueType {}
 ///
 /// struct MyInt(i32);
 ///
-/// impl Scalar for MyInt {
+/// #[Scalar]
+/// impl ScalarType for MyInt {
 ///     fn type_name() -> &'static str {
 ///         "MyInt"
 ///     }
@@ -147,10 +148,8 @@ pub trait InputObjectType: InputValueType {}
 ///         Ok(self.0.into())
 ///     }
 /// }
-///
-/// impl_scalar!(MyInt); // // Don't forget this one
 /// ```
-pub trait Scalar: Sized + Send {
+pub trait ScalarType: Sized + Send {
     /// The type name of a scalar.
     fn type_name() -> &'static str;
 
@@ -171,82 +170,6 @@ pub trait Scalar: Sized + Send {
 
     /// Convert the scalar value to json value.
     fn to_json(&self) -> Result<serde_json::Value>;
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! impl_scalar_internal {
-    ($ty:ty) => {
-        impl crate::Type for $ty {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as crate::Scalar>::type_name())
-            }
-
-            fn create_type_info(registry: &mut crate::registry::Registry) -> String {
-                registry.create_type::<$ty, _>(|_| crate::registry::Type::Scalar {
-                    name: <$ty as crate::Scalar>::type_name().to_string(),
-                    description: <$ty>::description(),
-                    is_valid: |value| <$ty as crate::Scalar>::is_valid(value),
-                })
-            }
-        }
-
-        impl crate::InputValueType for $ty {
-            fn parse(value: &crate::Value) -> Option<Self> {
-                <$ty as crate::Scalar>::parse(value)
-            }
-        }
-
-        #[allow(clippy::ptr_arg)]
-        #[async_trait::async_trait]
-        impl crate::OutputValueType for $ty {
-            async fn resolve(
-                value: &Self,
-                _: &crate::ContextSelectionSet<'_>,
-                _pos: crate::Pos,
-            ) -> crate::Result<serde_json::Value> {
-                value.to_json()
-            }
-        }
-    };
-}
-
-/// After implementing the `Scalar` trait, you must call this macro to implement some additional traits.
-#[macro_export]
-macro_rules! impl_scalar {
-    ($ty:ty) => {
-        impl async_graphql::Type for $ty {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(<$ty as async_graphql::Scalar>::type_name())
-            }
-
-            fn create_type_info(registry: &mut async_graphql::registry::Registry) -> String {
-                registry.create_type::<$ty, _>(|_| async_graphql::registry::Type::Scalar {
-                    name: <$ty as async_graphql::Scalar>::type_name().to_string(),
-                    description: <$ty>::description(),
-                    is_valid: |value| <$ty as async_graphql::Scalar>::is_valid(value),
-                })
-            }
-        }
-
-        impl async_graphql::InputValueType for $ty {
-            fn parse(value: &async_graphql::Value) -> Option<Self> {
-                <$ty as async_graphql::Scalar>::parse(value)
-            }
-        }
-
-        #[allow(clippy::ptr_arg)]
-        #[async_graphql::async_trait::async_trait]
-        impl async_graphql::OutputValueType for $ty {
-            async fn resolve(
-                value: &Self,
-                _: &async_graphql::ContextSelectionSet<'_>,
-                _pos: async_graphql::Pos,
-            ) -> async_graphql::Result<serde_json::Value> {
-                value.to_json()
-            }
-        }
-    };
 }
 
 impl<T: Type + Send + Sync> Type for &T {

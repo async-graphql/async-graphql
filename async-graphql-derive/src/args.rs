@@ -865,3 +865,25 @@ impl DataSource {
         Ok(Self { internal })
     }
 }
+
+#[derive(Debug)]
+pub struct Scalar {
+    pub internal: bool,
+}
+
+impl Scalar {
+    pub fn parse(args: AttributeArgs) -> Result<Self> {
+        let mut internal = false;
+
+        for arg in args {
+            match arg {
+                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
+                    internal = true;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(Self { internal })
+    }
+}

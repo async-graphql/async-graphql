@@ -1,6 +1,8 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 
-impl Scalar for bool {
+#[Scalar(internal)]
+impl ScalarType for bool {
     fn type_name() -> &'static str {
         "Boolean"
     }
@@ -20,5 +22,3 @@ impl Scalar for bool {
         Ok((*self).into())
     }
 }
-
-impl_scalar_internal!(bool);

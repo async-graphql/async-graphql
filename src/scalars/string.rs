@@ -1,12 +1,11 @@
-use crate::{
-    impl_scalar_internal, registry, ContextSelectionSet, OutputValueType, Pos, Result, Scalar,
-    Type, Value,
-};
+use crate::{registry, ContextSelectionSet, OutputValueType, Pos, Result, ScalarType, Type, Value};
+use async_graphql_derive::Scalar;
 use std::borrow::Cow;
 
 const STRING_DESC: &str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
 
-impl Scalar for String {
+#[Scalar(internal)]
+impl ScalarType for String {
     fn type_name() -> &'static str {
         "String"
     }
@@ -33,8 +32,6 @@ impl Scalar for String {
         Ok(self.clone().into())
     }
 }
-
-impl_scalar_internal!(String);
 
 impl<'a> Type for &'a str {
     fn type_name() -> Cow<'static, str> {

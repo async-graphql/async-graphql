@@ -1,8 +1,10 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use bson::{oid::ObjectId, UtcDateTime};
 use chrono::{DateTime, Utc};
 
-impl Scalar for ObjectId {
+#[Scalar(internal)]
+impl ScalarType for ObjectId {
     fn type_name() -> &'static str {
         "ObjectId"
     }
@@ -19,9 +21,8 @@ impl Scalar for ObjectId {
     }
 }
 
-impl_scalar_internal!(ObjectId);
-
-impl Scalar for UtcDateTime {
+#[Scalar(internal)]
+impl ScalarType for UtcDateTime {
     fn type_name() -> &'static str {
         "DateTime"
     }
@@ -34,5 +35,3 @@ impl Scalar for UtcDateTime {
         (**self).to_json()
     }
 }
-
-impl_scalar_internal!(UtcDateTime);

@@ -1,4 +1,5 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use std::ops::{Deref, DerefMut};
 
 /// ID scalar
@@ -51,7 +52,8 @@ impl PartialEq<&str> for ID {
     }
 }
 
-impl Scalar for ID {
+#[Scalar(internal)]
+impl ScalarType for ID {
     fn type_name() -> &'static str {
         "ID"
     }
@@ -68,5 +70,3 @@ impl Scalar for ID {
         Ok(self.0.clone().into())
     }
 }
-
-impl_scalar_internal!(ID);

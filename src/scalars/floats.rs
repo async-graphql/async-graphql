@@ -1,9 +1,11 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 
 macro_rules! impl_float_scalars {
     ($($ty:ty),*) => {
         $(
-        impl Scalar for $ty {
+        #[Scalar(internal)]
+        impl ScalarType for $ty {
             fn type_name() -> &'static str {
                 "Float"
             }
@@ -24,8 +26,6 @@ macro_rules! impl_float_scalars {
                 Ok((*self).into())
             }
         }
-
-        impl_scalar_internal!($ty);
         )*
     };
 }

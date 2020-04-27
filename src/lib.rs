@@ -105,7 +105,7 @@ pub use serde_json;
 
 pub mod http;
 
-pub use base::{Scalar, Type};
+pub use base::{ScalarType, Type};
 pub use context::{
     Context, ContextBase, Data, Environment, QueryPathNode, QueryPathSegment, Variables,
 };
@@ -575,3 +575,6 @@ pub use async_graphql_derive::Subscription;
 
 /// Define a DataSource
 pub use async_graphql_derive::DataSource;
+
+/// Define a Scalar
+pub use async_graphql_derive::Scalar;

@@ -1,7 +1,9 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use uuid::Uuid;
 
-impl Scalar for Uuid {
+#[Scalar(internal)]
+impl ScalarType for Uuid {
     fn type_name() -> &'static str {
         "UUID"
     }
@@ -17,5 +19,3 @@ impl Scalar for Uuid {
         Ok(self.to_string().into())
     }
 }
-
-impl_scalar_internal!(Uuid);

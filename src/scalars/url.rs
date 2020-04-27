@@ -1,7 +1,9 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use url::Url;
 
-impl Scalar for Url {
+#[Scalar(internal)]
+impl ScalarType for Url {
     fn type_name() -> &'static str {
         "Url"
     }
@@ -17,5 +19,3 @@ impl Scalar for Url {
         Ok(self.to_string().into())
     }
 }
-
-impl_scalar_internal!(Url);

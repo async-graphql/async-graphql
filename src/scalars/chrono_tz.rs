@@ -1,8 +1,10 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use chrono_tz::Tz;
 use std::str::FromStr;
 
-impl Scalar for Tz {
+#[Scalar(internal)]
+impl ScalarType for Tz {
     fn type_name() -> &'static str {
         "TimeZone"
     }
@@ -18,5 +20,3 @@ impl Scalar for Tz {
         Ok(Tz::name(self).into())
     }
 }
-
-impl_scalar_internal!(Tz);

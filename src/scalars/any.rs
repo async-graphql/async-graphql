@@ -1,4 +1,5 @@
-use crate::{impl_scalar_internal, Result, Scalar, Value};
+use crate::{Result, ScalarType, Value};
+use async_graphql_derive::Scalar;
 use itertools::Itertools;
 
 /// Any scalar
@@ -7,7 +8,8 @@ use itertools::Itertools;
 #[derive(Clone, PartialEq, Debug)]
 pub struct Any(pub Value);
 
-impl Scalar for Any {
+#[Scalar(internal)]
+impl ScalarType for Any {
     fn type_name() -> &'static str {
         "_Any"
     }
@@ -28,8 +30,6 @@ impl Scalar for Any {
         Ok(gql_value_to_json_value(&self.0))
     }
 }
-
-impl_scalar_internal!(Any);
 
 fn gql_value_to_json_value(value: &Value) -> serde_json::Value {
     match value {
