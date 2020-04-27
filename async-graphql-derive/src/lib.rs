@@ -169,7 +169,7 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         #[allow(clippy::ptr_arg)]
-        #[async_trait::async_trait]
+        #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputValueType for #self_ty #where_clause {
             async fn resolve(
                 value: &Self,
