@@ -163,12 +163,10 @@ struct MyObject {
 
 #[Object]
 impl MyObject {
-    #[field]
     async fn value(&amp;self) -&gt; String {
         self.value.to_string()
     }
 
-    #[field]
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_'&gt;,
