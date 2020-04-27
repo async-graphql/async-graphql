@@ -7,11 +7,14 @@ use tide::Request;
 
 use async_graphql::*;
 
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
 #[test]
-fn quickstart() -> tide::Result<()> {
+fn quickstart() -> Result<()> {
     task::block_on(async {
-        let port = test_utils::find_port().await;
-        let server = task::spawn(async move {
+        let listen_addr = test_utils::find_listen_addr().await;
+
+        let server: task::JoinHandle<Result<()>> = task::spawn(async move {
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
@@ -26,31 +29,37 @@ fn quickstart() -> tide::Result<()> {
                 let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
                 async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
             });
-            app.listen(&port).await?;
+            app.listen(&listen_addr).await?;
 
             Ok(())
         });
 
-        let client = task::spawn(async move {
-            task::sleep(Duration::from_millis(100)).await;
-            let string = surf::post(format!("http://{}", port))
+        let client: task::JoinHandle<Result<()>> = task::spawn(async move {
+            task::sleep(Duration::from_millis(300)).await;
+
+            let string = surf::post(format!("http://{}", listen_addr))
                 .body_bytes(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
                 .set_header("Content-Type".parse().unwrap(), "application/json")
                 .recv_string()
                 .await?;
+
             assert_eq!(string, json!({"data": {"add": 30}}).to_string());
+
             Ok(())
         });
 
-        server.race(client).await
+        server.race(client).await?;
+
+        Ok(())
     })
 }
 
 #[test]
-fn hello() -> tide::Result<()> {
+fn hello() -> Result<()> {
     task::block_on(async {
-        let port = test_utils::find_port().await;
-        let server = task::spawn(async move {
+        let listen_addr = test_utils::find_listen_addr().await;
+
+        let server: task::JoinHandle<Result<()>> = task::spawn(async move {
             struct Hello(String);
             struct QueryRoot;
             #[Object]
@@ -58,22 +67,19 @@ fn hello() -> tide::Result<()> {
                 #[field(desc = "Returns hello")]
                 async fn hello<'a>(&self, ctx: &'a Context<'_>) -> String {
                     let name = ctx.data_opt::<Hello>().map(|hello| hello.0.as_str());
-                    format!(
-                        "Hello, {}!",
-                        if let Some(name) = name { name } else { "world" }
-                    )
+                    format!("Hello, {}!", name.unwrap_or("world"))
                 }
             }
 
-            struct ServerState {
+            struct AppState {
                 schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
             }
             let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 
-            let server_state = ServerState { schema };
-            let mut app = tide::with_state(server_state);
+            let app_state = AppState { schema };
+            let mut app = tide::with_state(app_state);
 
-            app.at("/").post(|req: Request<ServerState>| async move {
+            app.at("/").post(|req: Request<AppState>| async move {
                 let schema = req.state().schema.clone();
                 let name = &req
                     .header(&"name".parse().unwrap())
@@ -87,33 +93,39 @@ fn hello() -> tide::Result<()> {
                 })
                 .await
             });
-            app.listen(&port).await?;
+            app.listen(&listen_addr).await?;
 
             Ok(())
         });
 
-        let client = task::spawn(async move {
-            task::sleep(Duration::from_millis(100)).await;
-            let string = surf::post(format!("http://{}", port))
+        let client: task::JoinHandle<Result<()>> = task::spawn(async move {
+            task::sleep(Duration::from_millis(300)).await;
+
+            let string = surf::post(format!("http://{}", listen_addr))
                 .body_bytes(r#"{"query":"{ hello }"}"#)
                 .set_header("Content-Type".parse().unwrap(), "application/json")
                 .set_header("Name".parse().unwrap(), "Foo")
                 .recv_string()
                 .await?;
+
             assert_eq!(string, json!({"data":{"hello":"Hello, Foo!"}}).to_string());
 
-            let string = surf::post(format!("http://{}", port))
+            let string = surf::post(format!("http://{}", listen_addr))
                 .body_bytes(r#"{"query":"{ hello }"}"#)
                 .set_header("Content-Type".parse().unwrap(), "application/json")
                 .recv_string()
                 .await?;
+
             assert_eq!(
                 string,
                 json!({"data":{"hello":"Hello, world!"}}).to_string()
             );
+
             Ok(())
         });
 
-        server.race(client).await
+        server.race(client).await?;
+
+        Ok(())
     })
 }

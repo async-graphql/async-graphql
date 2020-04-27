@@ -8,11 +8,10 @@ use async_graphql::http::GQLResponse;
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
 };
-use tide::{Request, Response, StatusCode};
+use tide::{http::headers, Request, Response, Status, StatusCode};
 
 /// GraphQL request handler
 ///
-/// It outputs a tuple containing the `Schema` and `QuertBuilder`.
 ///
 /// # Examples
 /// *[Full Example](<https://github.com/sunli829/async-graphql-examples/blob/master/tide/starwars/src/main.rs>)*
@@ -74,13 +73,13 @@ where
     F: Fn(QueryBuilder) -> QueryBuilder,
 {
     let content_type = req
-        .header(&http_types::headers::CONTENT_TYPE)
+        .header(&headers::CONTENT_TYPE)
         .and_then(|values| values.first().map(|value| value.to_string()));
 
     let mut query_builder = (content_type, req)
         .into_query_builder_opts(&opts)
         .await
-        .map_err(|e| tide::Error::new(StatusCode::BadRequest, e))?;
+        .status(StatusCode::BadRequest)?;
 
     query_builder = query_builder_configuration(query_builder);
 
