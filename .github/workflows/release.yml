@@ -1,0 +1,58 @@
+name: Release
+on:
+  push:
+    branches:
+      - release
+    paths:
+      - '**/Cargo.toml'
+      - '.github/workflows/release.yml'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        package:
+          - name: async-graphql
+            registryName: async-graphql
+            path: .
+          - name: async-graphql-derive
+            registryName: async-graphql-derive
+            path: async-graphql-derive
+          - name: async-graphql-actix-web
+            registryName: async-graphql-actix-web
+            path: async-graphql-actix-web
+          - name: async-graphql-warp
+            registryName: async-graphql-warp
+            path: async-graphql-warp
+          - name: async-graphql-tide
+            registryName: async-graphql-tide
+            path: async-graphql-tide
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: get version
+        working-directory: ${{ matrix.package.path }}
+        run: echo ::set-env name=PACKAGE_VERSION::$(sed -nE 's/^\s*version = "(.*?)"/\1/p' Cargo.toml)
+      - name: check published version
+        run: echo ::set-env name=PUBLISHED_VERSION::$(cargo search ${{ matrix.package.registryName }} --limit 1 | sed -nE 's/^[^"]*"//; s/".*//1p' -)
+      - name: cargo login
+        if: env.PACKAGE_VERSION != env.PUBLISHED_VERSION
+        run: cargo login ${{ secrets.CRATES_TOKEN }}
+      - name: cargo package
+        if: env.PACKAGE_VERSION != env.PUBLISHED_VERSION
+        working-directory: ${{ matrix.package.path }}
+        run: |
+          echo "package dir:"
+          ls
+          cargo package
+          echo "We will publish:" $PACKAGE_VERSION
+          echo "This is current latest:" $PUBLISHED_VERSION
+      - name: Publish ${{ matrix.package.name }}
+        if: env.PACKAGE_VERSION != env.PUBLISHED_VERSION
+        working-directory: ${{ matrix.package.path }}
+        run: |
+          echo "# Cargo Publish"
+          cargo publish --no-verify
