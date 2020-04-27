@@ -113,15 +113,15 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                         return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj, ctx.position).await;
                     }
                 });
+            }
 
-                if let Some((idx, _)) = item
-                    .attrs
-                    .iter()
-                    .enumerate()
-                    .find(|(_, a)| a.path.is_ident("field"))
-                {
-                    item.attrs.remove(idx);
-                }
+            if let Some((idx, _)) = item
+                .attrs
+                .iter()
+                .enumerate()
+                .find(|(_, a)| a.path.is_ident("field"))
+            {
+                item.attrs.remove(idx);
             }
         }
     }

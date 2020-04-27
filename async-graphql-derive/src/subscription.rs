@@ -254,8 +254,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         return Ok(Box::pin(stream));
                     }
                 });
+            }
 
-                method.attrs.clear();
+            if let Some((idx, _)) = method
+                .attrs
+                .iter()
+                .enumerate()
+                .find(|(_, a)| a.path.is_ident("field"))
+            {
+                method.attrs.remove(idx);
             }
         }
     }
