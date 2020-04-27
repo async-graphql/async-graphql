@@ -12,7 +12,6 @@ use std::collections::HashMap;
 /// Federation service
 #[SimpleObject(internal)]
 struct Service {
-    #[field]
     sdl: Option<String>,
 }
 

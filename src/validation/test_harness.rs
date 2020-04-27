@@ -22,37 +22,30 @@ struct Dog;
 
 #[Object(internal)]
 impl Dog {
-    #[field]
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn nickname(&self) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn bark_volume(&self) -> Option<i32> {
         unimplemented!()
     }
 
-    #[field]
     async fn barks(&self) -> Option<bool> {
         unimplemented!()
     }
 
-    #[field]
     async fn does_know_command(&self, dog_command: Option<DogCommand>) -> Option<bool> {
         unimplemented!()
     }
 
-    #[field]
     async fn is_housetrained(&self, #[arg(default = "true")] at_other_homes: bool) -> Option<bool> {
         unimplemented!()
     }
 
-    #[field]
     async fn is_at_location(&self, x: Option<i32>, y: Option<i32>) -> Option<bool> {
         unimplemented!()
     }
@@ -70,27 +63,22 @@ struct Cat;
 
 #[Object(internal)]
 impl Cat {
-    #[field]
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn nickname(&self) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn meows(&self) -> Option<bool> {
         unimplemented!()
     }
 
-    #[field]
     async fn meow_volume(&self) -> Option<i32> {
         unimplemented!()
     }
 
-    #[field]
     async fn fur_color(&self) -> Option<FurColor> {
         unimplemented!()
     }
@@ -103,22 +91,18 @@ struct Human;
 
 #[Object(internal)]
 impl Human {
-    #[field]
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn pets(&self) -> Option<Vec<Option<Pet>>> {
         unimplemented!()
     }
 
-    #[field]
     async fn relatives(&self) -> Option<Vec<Human>> {
         unimplemented!()
     }
 
-    #[field]
     async fn iq(&self) -> Option<i32> {
         unimplemented!()
     }
@@ -128,17 +112,14 @@ struct Alien;
 
 #[Object(internal)]
 impl Alien {
-    #[field]
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn iq(&self) -> Option<i32> {
         unimplemented!()
     }
 
-    #[field]
     async fn num_eyes(&self) -> Option<i32> {
         unimplemented!()
     }
@@ -185,19 +166,10 @@ struct Intelligent(Human, Alien);
 
 #[InputObject(internal)]
 struct ComplexInput {
-    #[field]
     required_field: bool,
-
-    #[field]
     int_field: Option<i32>,
-
-    #[field]
     string_field: Option<String>,
-
-    #[field]
     boolean_field: Option<bool>,
-
-    #[field]
     string_list_field: Option<Vec<Option<String>>>,
 }
 
@@ -205,42 +177,34 @@ struct ComplicatedArgs;
 
 #[Object(internal)]
 impl ComplicatedArgs {
-    #[field]
     async fn int_arg_field(&self, int_arg: Option<i32>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn non_null_int_arg_field(&self, non_null_int_arg: i32) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn string_arg_field(&self, string_arg: Option<String>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn boolean_arg_field(&self, boolean_arg: Option<bool>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn enum_arg_field(&self, enum_arg: Option<FurColor>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn float_arg_field(&self, float_arg: Option<f64>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn id_arg_field(&self, id_arg: Option<ID>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn string_list_arg_field(
         &self,
         string_list_arg: Option<Vec<Option<String>>>,
@@ -248,17 +212,14 @@ impl ComplicatedArgs {
         unimplemented!()
     }
 
-    #[field]
     async fn complex_arg_field(&self, complex_arg: Option<ComplexInput>) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn multiple_reqs(&self, req1: i32, req2: i32) -> Option<String> {
         unimplemented!()
     }
 
-    #[field]
     async fn multiple_opts(
         &self,
         #[arg(default = "0")] opt1: i32,
@@ -267,7 +228,6 @@ impl ComplicatedArgs {
         unimplemented!()
     }
 
-    #[field]
     async fn multiple_opt_and_req(
         &self,
         req1: i32,
@@ -283,57 +243,46 @@ pub struct QueryRoot;
 
 #[Object(internal)]
 impl QueryRoot {
-    #[field]
     async fn human(&self, id: Option<ID>) -> Option<Human> {
         unimplemented!()
     }
 
-    #[field]
     async fn alien(&self) -> Option<Alien> {
         unimplemented!()
     }
 
-    #[field]
     async fn dog(&self) -> Option<Dog> {
         unimplemented!()
     }
 
-    #[field]
     async fn cat(&self) -> Option<Cat> {
         unimplemented!()
     }
 
-    #[field]
     async fn pet(&self) -> Option<Pet> {
         unimplemented!()
     }
 
-    #[field]
     async fn being(&self) -> Option<Being> {
         unimplemented!()
     }
 
-    #[field]
     async fn intelligent(&self) -> Option<Intelligent> {
         unimplemented!()
     }
 
-    #[field]
     async fn cat_or_dog(&self) -> Option<CatOrDog> {
         unimplemented!()
     }
 
-    #[field]
     async fn dog_or_human(&self) -> Option<DogOrHuman> {
         unimplemented!()
     }
 
-    #[field]
     async fn human_or_alien(&self) -> Option<HumanOrAlien> {
         unimplemented!()
     }
 
-    #[field]
     async fn complicated_args(&self) -> Option<ComplicatedArgs> {
         unimplemented!()
     }
@@ -343,7 +292,6 @@ pub struct MutationRoot;
 
 #[Object(internal)]
 impl MutationRoot {
-    #[field]
     async fn test_input(
         &self,
         #[arg(default = r#"{id: 423, name: "foo"}"#)] input: TestInput,

@@ -19,17 +19,14 @@ pub async fn test_enum_type() {
 
     #[Object]
     impl Root {
-        #[field]
         async fn value(&self) -> MyEnum {
             self.value
         }
 
-        #[field]
         async fn test_arg(&self, input: MyEnum) -> MyEnum {
             input
         }
 
-        #[field]
         async fn test_input<'a>(&self, input: MyInput) -> MyEnum {
             input.value
         }

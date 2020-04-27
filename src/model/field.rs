@@ -13,17 +13,14 @@ pub struct __Field<'a> {
     desc = "Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type."
 )]
 impl<'a> __Field<'a> {
-    #[field]
     async fn name(&self) -> String {
         self.field.name.to_string()
     }
 
-    #[field]
     async fn description(&self) -> Option<String> {
         self.field.description.map(|s| s.to_string())
     }
 
-    #[field]
     async fn args(&self) -> Vec<__InputValue<'a>> {
         let mut args = self
             .field
@@ -43,12 +40,10 @@ impl<'a> __Field<'a> {
         __Type::new(self.registry, &self.field.ty)
     }
 
-    #[field]
     async fn is_deprecated(&self) -> bool {
         self.field.deprecation.is_some()
     }
 
-    #[field]
     async fn deprecation_reason(&self) -> Option<String> {
         self.field.deprecation.map(|s| s.to_string())
     }

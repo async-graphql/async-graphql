@@ -42,7 +42,130 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            if let Some(field) = args::Field::parse(&method.attrs)? {
+            if method.attrs.iter().any(|attr| attr.path.is_ident("entity")) {
+                let ty = match &method.sig.output {
+                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
+                    ReturnType::Default => {
+                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
+                    }
+                };
+                let mut arg_ctx = false;
+                let mut args = Vec::new();
+
+                for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
+                    if let FnArg::Receiver(receiver) = arg {
+                        if idx != 0 {
+                            return Err(Error::new_spanned(
+                                receiver,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+                    } else if let FnArg::Typed(pat) = arg {
+                        if idx == 0 {
+                            return Err(Error::new_spanned(
+                                pat,
+                                "The self receiver must be the first parameter.",
+                            ));
+                        }
+
+                        match (&*pat.pat, &*pat.ty) {
+                            (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
+                                args.push((
+                                    arg_ident,
+                                    arg_ty,
+                                    args::Argument::parse(&crate_name, &pat.attrs)?,
+                                ));
+                                pat.attrs.clear();
+                            }
+                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                                if let Type::Path(path) = elem.as_ref() {
+                                    if idx != 1
+                                        || path.path.segments.last().unwrap().ident != "Context"
+                                    {
+                                        return Err(Error::new_spanned(
+                                            arg,
+                                            "The Context must be the second argument.",
+                                        ));
+                                    }
+                                    arg_ctx = true;
+                                }
+                            }
+                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
+                        }
+                    }
+                }
+
+                let entity_type = ty.value_type();
+                let mut key_pat = Vec::new();
+                let mut key_getter = Vec::new();
+                let mut use_keys = Vec::new();
+                let mut keys = Vec::new();
+                let mut keys_str = String::new();
+
+                for (ident, ty, args::Argument { name, .. }) in &args {
+                    let name = name
+                        .clone()
+                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
+
+                    if !keys_str.is_empty() {
+                        keys_str.push(' ');
+                    }
+                    keys_str.push_str(&name);
+
+                    key_pat.push(quote! {
+                        Some(#ident)
+                    });
+                    key_getter.push(quote! {
+                        params.get(#name).and_then(|value| {
+                            let value: Option<#ty> = #crate_name::InputValueType::parse(value);
+                            value
+                        })
+                    });
+                    keys.push(name);
+                    use_keys.push(ident);
+                }
+                add_keys.push(quote! { registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), #keys_str); });
+                create_entity_types.push(
+                    quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); },
+                );
+
+                let field_ident = &method.sig.ident;
+                let ctx_param = if arg_ctx {
+                    quote! { &ctx, }
+                } else {
+                    quote! {}
+                };
+                let do_find = match &ty {
+                    OutputType::Value(_) => quote! {
+                        self.#field_ident(#ctx_param #(#use_keys),*).await
+                    },
+                    OutputType::Result(_, _) => {
+                        quote! { self.#field_ident(#ctx_param #(#use_keys),*).await? }
+                    }
+                };
+
+                find_entities.push((
+                    args.len(),
+                    quote! {
+                        if typename == &<#entity_type as #crate_name::Type>::type_name() {
+                            if let (#(#key_pat),*) = (#(#key_getter),*) {
+                                let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                                return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, pos).await;
+                            }
+                        }
+                    },
+                ));
+
+                method.attrs.remove(
+                    method
+                        .attrs
+                        .iter()
+                        .enumerate()
+                        .find(|(_, a)| a.path.is_ident("entity"))
+                        .map(|(idx, _)| idx)
+                        .unwrap(),
+                );
+            } else if let Some(field) = args::Field::parse(&method.attrs)? {
                 if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(
                         &method.sig.output,
@@ -240,138 +363,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 });
 
-                method.attrs.remove(
-                    method
-                        .attrs
-                        .iter()
-                        .enumerate()
-                        .find(|(_, a)| a.path.is_ident("field"))
-                        .map(|(idx, _)| idx)
-                        .unwrap(),
-                );
-            } else if method.attrs.iter().any(|attr| attr.path.is_ident("entity")) {
-                let ty = match &method.sig.output {
-                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
-                    ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
-                    }
-                };
-                let mut arg_ctx = false;
-                let mut args = Vec::new();
-
-                for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
-                    if let FnArg::Receiver(receiver) = arg {
-                        if idx != 0 {
-                            return Err(Error::new_spanned(
-                                receiver,
-                                "The self receiver must be the first parameter.",
-                            ));
-                        }
-                    } else if let FnArg::Typed(pat) = arg {
-                        if idx == 0 {
-                            return Err(Error::new_spanned(
-                                pat,
-                                "The self receiver must be the first parameter.",
-                            ));
-                        }
-
-                        match (&*pat.pat, &*pat.ty) {
-                            (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
-                                args.push((
-                                    arg_ident,
-                                    arg_ty,
-                                    args::Argument::parse(&crate_name, &pat.attrs)?,
-                                ));
-                                pat.attrs.clear();
-                            }
-                            (_, Type::Reference(TypeReference { elem, .. })) => {
-                                if let Type::Path(path) = elem.as_ref() {
-                                    if idx != 1
-                                        || path.path.segments.last().unwrap().ident != "Context"
-                                    {
-                                        return Err(Error::new_spanned(
-                                            arg,
-                                            "The Context must be the second argument.",
-                                        ));
-                                    }
-                                    arg_ctx = true;
-                                }
-                            }
-                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
-                        }
-                    }
+                if let Some((idx, _)) = method
+                    .attrs
+                    .iter()
+                    .enumerate()
+                    .find(|(_, a)| a.path.is_ident("field"))
+                {
+                    method.attrs.remove(idx);
                 }
-
-                let entity_type = ty.value_type();
-                let mut key_pat = Vec::new();
-                let mut key_getter = Vec::new();
-                let mut use_keys = Vec::new();
-                let mut keys = Vec::new();
-                let mut keys_str = String::new();
-
-                for (ident, ty, args::Argument { name, .. }) in &args {
-                    let name = name
-                        .clone()
-                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
-
-                    if !keys_str.is_empty() {
-                        keys_str.push(' ');
-                    }
-                    keys_str.push_str(&name);
-
-                    key_pat.push(quote! {
-                        Some(#ident)
-                    });
-                    key_getter.push(quote! {
-                        params.get(#name).and_then(|value| {
-                            let value: Option<#ty> = #crate_name::InputValueType::parse(value);
-                            value
-                        })
-                    });
-                    keys.push(name);
-                    use_keys.push(ident);
-                }
-                add_keys.push(quote! { registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), #keys_str); });
-                create_entity_types.push(
-                    quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); },
-                );
-
-                let field_ident = &method.sig.ident;
-                let ctx_param = if arg_ctx {
-                    quote! { &ctx, }
-                } else {
-                    quote! {}
-                };
-                let do_find = match &ty {
-                    OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_param #(#use_keys),*).await
-                    },
-                    OutputType::Result(_, _) => {
-                        quote! { self.#field_ident(#ctx_param #(#use_keys),*).await? }
-                    }
-                };
-
-                find_entities.push((
-                    args.len(),
-                    quote! {
-                        if typename == &<#entity_type as #crate_name::Type>::type_name() {
-                            if let (#(#key_pat),*) = (#(#key_getter),*) {
-                                let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-                                return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, pos).await;
-                            }
-                        }
-                    },
-                ));
-
-                method.attrs.remove(
-                    method
-                        .attrs
-                        .iter()
-                        .enumerate()
-                        .find(|(_, a)| a.path.is_ident("entity"))
-                        .map(|(idx, _)| idx)
-                        .unwrap(),
-                );
             }
         }
     }

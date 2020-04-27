@@ -11,7 +11,6 @@ impl User {
         &self.id
     }
 
-    #[field]
     async fn reviews(&self) -> Vec<Review> {
         todo!()
     }
@@ -21,7 +20,6 @@ struct Review;
 
 #[Object]
 impl Review {
-    #[field]
     async fn body(&self) -> String {
         todo!()
     }
@@ -31,7 +29,6 @@ impl Review {
         todo!()
     }
 
-    #[field]
     async fn product(&self) -> Product {
         todo!()
     }
@@ -48,7 +45,6 @@ impl Product {
         &self.upc
     }
 
-    #[field]
     async fn reviews(&self) -> Vec<Review> {
         todo!()
     }

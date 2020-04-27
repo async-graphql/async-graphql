@@ -15,17 +15,14 @@ macro_rules! test_scalars {
 
             #[Object]
             impl Root {
-                #[field]
                 async fn value(&self) -> $ty {
                     self.value
                 }
 
-                #[field]
                 async fn test_arg(&self, input: $ty) -> $ty {
                     input
                 }
 
-                #[field]
                 async fn test_input(&self, input: MyInput) -> $ty {
                     input.value
                 }

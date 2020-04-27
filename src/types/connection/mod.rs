@@ -48,7 +48,6 @@ pub struct EmptyEdgeFields;
 ///
 /// #[SimpleObject]
 /// struct DiffFields {
-///     #[field]
 ///     diff: i32,
 /// }
 ///
@@ -85,7 +84,6 @@ pub struct EmptyEdgeFields;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field]
 ///     async fn numbers(&self, ctx: &Context<'_>,
 ///         after: Option<String>,
 ///         before: Option<String>,

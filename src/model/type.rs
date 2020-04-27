@@ -49,7 +49,6 @@ Depending on the kind of a type, certain fields describe information about that 
 "#
 )]
 impl<'a> __Type<'a> {
-    #[field]
     async fn kind(&self) -> __TypeKind {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
@@ -65,7 +64,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn name(&self) -> Option<String> {
         match &self.detail {
             TypeDetail::Named(ty) => Some(ty.name().to_string()),
@@ -74,7 +72,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn description(&self) -> Option<String> {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
@@ -92,7 +89,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn fields(
         &self,
         #[arg(default = "false")] include_deprecated: bool,
@@ -118,7 +114,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Named(registry::Type::Object { name, .. }) = &self.detail {
             Some(
@@ -135,7 +130,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Named(registry::Type::Interface { possible_types, .. }) = &self.detail {
             Some(
@@ -157,7 +151,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn enum_values(
         &self,
         #[arg(default = "false")] include_deprecated: bool,
@@ -178,7 +171,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Named(registry::Type::InputObject { input_fields, .. }) = &self.detail {
             Some(
@@ -195,7 +187,6 @@ impl<'a> __Type<'a> {
         }
     }
 
-    #[field]
     async fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
             Some(__Type::new(self.registry, &ty))

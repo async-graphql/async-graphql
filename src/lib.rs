@@ -225,7 +225,6 @@ pub use types::{EnumItem, EnumType};
 ///         Ok(self.value)
 ///     }
 ///
-///     #[field]
 ///     async fn value_with_arg(&self, #[arg(default = "1")] a: i32) -> i32 {
 ///         a
 ///     }
@@ -283,7 +282,6 @@ pub use async_graphql_derive::Object;
 ///
 /// #[SimpleObject]
 /// struct QueryRoot {
-///     #[field]
 ///     value: i32,
 /// }
 ///
@@ -462,19 +460,16 @@ pub use async_graphql_derive::InputObject;
 /// #[Object]
 /// impl TypeA {
 ///     /// Returns data borrowed from the context
-///     #[field]
 ///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> &'a str {
 ///         ctx.data::<String>().as_str()
 ///     }
 ///
 ///     /// Returns data borrowed self
-///     #[field]
 ///     async fn value_b(&self) -> &i32 {
 ///         &self.value
 ///     }
 ///
 ///     /// With parameters
-///     #[field]
 ///     async fn value_c(&self, a: i32, b: i32) -> i32 {
 ///         a + b
 ///     }
@@ -493,7 +488,6 @@ pub use async_graphql_derive::InputObject;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field]
 ///     async fn type_a(&self) -> MyInterface {
 ///         TypeA { value: 10 }.into()
 ///     }
@@ -571,7 +565,6 @@ pub use async_graphql_derive::Union;
 ///
 /// #[Subscription]
 /// impl SubscriptionRoot {
-///     #[field]
 ///     async fn value(&self, event: &Event, condition: i32) -> bool {
 ///         // Push when value is greater than condition
 ///         event.value > condition

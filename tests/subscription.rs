@@ -8,10 +8,7 @@ pub async fn test_subscription() {
 
     #[SimpleObject]
     struct Event {
-        #[field]
         a: i32,
-
-        #[field]
         b: i32,
     }
 
@@ -22,12 +19,10 @@ pub async fn test_subscription() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
             futures::stream::iter(start..end)
         }
 
-        #[field]
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
@@ -81,14 +76,12 @@ pub async fn test_simple_broker() {
     #[SimpleObject]
     #[derive(Clone)]
     struct Event1 {
-        #[field]
         value: i32,
     }
 
     #[SimpleObject]
     #[derive(Clone)]
     struct Event2 {
-        #[field]
         value: i32,
     }
 
@@ -99,12 +92,10 @@ pub async fn test_simple_broker() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn events1(&self) -> impl Stream<Item = Event1> {
             SimpleBroker::<Event1>::subscribe()
         }
 
-        #[field]
         async fn events2(&self) -> impl Stream<Item = Event2> {
             SimpleBroker::<Event2>::subscribe()
         }
@@ -165,7 +156,6 @@ pub async fn test_subscription_with_ctx_data() {
 
     #[Object]
     impl MyObject {
-        #[field]
         async fn value(&self, ctx: &Context<'_>) -> i32 {
             *ctx.data::<i32>()
         }
@@ -175,13 +165,11 @@ pub async fn test_subscription_with_ctx_data() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
             let value = *ctx.data::<i32>();
             futures::stream::once(async move { value })
         }
 
-        #[field]
         async fn objects(&self) -> impl Stream<Item = MyObject> {
             futures::stream::once(async move { MyObject })
         }
@@ -228,7 +216,6 @@ pub async fn test_subscription_with_token() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
             if ctx.data::<Token>().0 != "123456" {
                 return Err("forbidden".into());
@@ -288,7 +275,6 @@ pub async fn test_subscription_ws_transport() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn values(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(0..10)
         }
@@ -354,7 +340,6 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        #[field]
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
             if ctx.data::<Token>().0 != "123456" {
                 return Err("forbidden".into());

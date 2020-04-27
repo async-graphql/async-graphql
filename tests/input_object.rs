@@ -30,27 +30,22 @@ pub async fn test_input_object_default_value() {
 
     #[Object]
     impl MyOutput {
-        #[field]
         async fn a(&self) -> i32 {
             self.a
         }
 
-        #[field]
         async fn b(&self) -> &Vec<i32> {
             &self.b
         }
 
-        #[field]
         async fn c(&self) -> &String {
             &self.c
         }
 
-        #[field]
         async fn d(&self) -> &Option<i32> {
             &self.d
         }
 
-        #[field]
         async fn e(&self) -> &Option<i32> {
             &self.e
         }
@@ -60,7 +55,6 @@ pub async fn test_input_object_default_value() {
 
     #[Object]
     impl Root {
-        #[field]
         async fn a(&self, input: MyInput) -> MyOutput {
             MyOutput {
                 a: input.a,

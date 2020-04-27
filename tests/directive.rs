@@ -6,7 +6,6 @@ pub async fn test_directive_skip() {
 
     #[Object]
     impl QueryRoot {
-        #[field]
         pub async fn value(&self) -> i32 {
             10
         }
@@ -38,7 +37,6 @@ pub async fn test_directive_include() {
 
     #[Object]
     impl QueryRoot {
-        #[field]
         pub async fn value(&self) -> i32 {
             10
         }

@@ -12,12 +12,10 @@ pub struct __InputValue<'a> {
     desc = "Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value."
 )]
 impl<'a> __InputValue<'a> {
-    #[field]
     async fn name(&self) -> String {
         self.input_value.name.to_string()
     }
 
-    #[field]
     async fn description(&self) -> Option<String> {
         self.input_value.description.map(|s| s.to_string())
     }
@@ -27,7 +25,6 @@ impl<'a> __InputValue<'a> {
         __Type::new(self.registry, &self.input_value.ty)
     }
 
-    #[field]
     async fn default_value(&self) -> Option<String> {
         self.input_value.default_value.map(|s| s.to_string())
     }

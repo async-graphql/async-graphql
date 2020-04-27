@@ -6,12 +6,10 @@ pub async fn test_variables() {
 
     #[Object]
     impl QueryRoot {
-        #[field]
         pub async fn int_val(&self, value: i32) -> i32 {
             value
         }
 
-        #[field]
         pub async fn int_list_val(&self, value: Vec<i32>) -> Vec<i32> {
             value
         }
@@ -49,7 +47,6 @@ pub async fn test_variable_default_value() {
 
     #[Object]
     impl QueryRoot {
-        #[field]
         pub async fn int_val(&self, value: i32) -> i32 {
             value
         }

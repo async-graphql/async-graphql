@@ -114,14 +114,14 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     }
                 });
 
-                item.attrs.remove(
-                    item.attrs
-                        .iter()
-                        .enumerate()
-                        .find(|(_, a)| a.path.is_ident("field"))
-                        .map(|(idx, _)| idx)
-                        .unwrap(),
-                );
+                if let Some((idx, _)) = item
+                    .attrs
+                    .iter()
+                    .enumerate()
+                    .find(|(_, a)| a.path.is_ident("field"))
+                {
+                    item.attrs.remove(idx);
+                }
             }
         }
     }

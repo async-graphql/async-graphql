@@ -22,7 +22,6 @@ use std::path::PathBuf;
 ///
 /// #[async_graphql::Object]
 /// impl MutationRoot {
-///     #[field]
 ///     async fn upload(&self, file: Upload) -> bool {
 ///         println!("upload: filename={}", file.filename);
 ///         true

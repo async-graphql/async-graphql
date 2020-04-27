@@ -13,27 +13,22 @@ pub async fn test_list_type() {
 
     #[Object]
     impl Root {
-        #[field]
         async fn value_vec(&self) -> Vec<i32> {
             self.value.clone()
         }
 
-        #[field]
         async fn value_slice(&self) -> &[i32] {
             &self.value
         }
 
-        #[field]
         async fn value_input_slice(&self, a: Vec<i32>) -> Vec<i32> {
             a
         }
 
-        #[field]
         async fn test_arg(&self, input: Vec<i32>) -> Vec<i32> {
             input
         }
 
-        #[field]
         async fn test_input<'a>(&self, input: MyInput) -> Vec<i32> {
             input.value
         }

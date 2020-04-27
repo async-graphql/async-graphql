@@ -14,14 +14,12 @@ pub async fn test_mutation_execution_order() {
 
     #[Object]
     impl MutationRoot {
-        #[field]
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             async_std::task::sleep(Duration::from_secs(1)).await;
             ctx.data::<List>().lock().await.push(1);
             true
         }
 
-        #[field]
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             async_std::task::sleep(Duration::from_millis(500)).await;
             ctx.data::<List>().lock().await.push(2);
@@ -50,7 +48,6 @@ pub async fn test_mutation_fragment() {
 
     #[Object]
     impl MutationRoot {
-        #[field]
         async fn action(&self) -> bool {
             true
         }

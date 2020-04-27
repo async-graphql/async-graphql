@@ -79,22 +79,18 @@ pub struct __Directive<'a> {
 In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor."#
 )]
 impl<'a> __Directive<'a> {
-    #[field]
     async fn name(&self) -> String {
         self.directive.name.to_string()
     }
 
-    #[field]
     async fn description(&self) -> Option<String> {
         self.directive.description.map(|s| s.to_string())
     }
 
-    #[field]
     async fn locations(&self) -> &Vec<__DirectiveLocation> {
         &self.directive.locations
     }
 
-    #[field]
     async fn args(&self) -> Vec<__InputValue<'a>> {
         self.directive
             .args

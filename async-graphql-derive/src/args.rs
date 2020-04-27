@@ -219,7 +219,6 @@ pub struct Field {
 
 impl Field {
     pub fn parse(attrs: &[Attribute]) -> Result<Option<Self>> {
-        let mut is_field = false;
         let mut name = None;
         let mut desc = None;
         let mut deprecation = None;
@@ -231,13 +230,12 @@ impl Field {
 
         for attr in attrs {
             match attr.parse_meta()? {
-                Meta::Path(p) if p.is_ident("field") => {
-                    is_field = true;
-                }
                 Meta::List(ls) if ls.path.is_ident("field") => {
-                    is_field = true;
                     for meta in &ls.nested {
                         match meta {
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
+                                return Ok(None);
+                            }
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
                                 external = true;
                             }
@@ -305,20 +303,16 @@ impl Field {
             }
         }
 
-        if is_field {
-            Ok(Some(Self {
-                name,
-                desc,
-                deprecation,
-                cache_control,
-                external,
-                provides,
-                requires,
-                is_ref,
-            }))
-        } else {
-            Ok(None)
-        }
+        Ok(Some(Self {
+            name,
+            desc,
+            deprecation,
+            cache_control,
+            external,
+            provides,
+            requires,
+            is_ref,
+        }))
     }
 }
 
@@ -452,49 +446,58 @@ impl InputField {
             if attr.path.is_ident("field") {
                 if let Meta::List(args) = &attr.parse_meta()? {
                     for meta in &args.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
-                            if nv.path.is_ident("name") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    name = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'name' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("desc") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    desc = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'desc' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("default") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    match parse_value(&lit.value()) {
-                                        Ok(Value::Variable(_)) => {
-                                            return Err(Error::new_spanned(
-                                                &lit,
-                                                "The default cannot be a variable",
-                                            ))
-                                        }
-                                        Ok(value) => default = Some(value),
-                                        Err(err) => {
-                                            return Err(Error::new_spanned(
-                                                &lit,
-                                                format!("Invalid value: {}", err),
-                                            ));
-                                        }
+                        match meta {
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
+                                return Err(Error::new_spanned(
+                                    meta,
+                                    "Fields on InputObject are not allowed to be skipped",
+                                ));
+                            }
+                            NestedMeta::Meta(Meta::NameValue(nv)) => {
+                                if nv.path.is_ident("name") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        name = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'name' should be a string.",
+                                        ));
                                     }
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'default' should be a string.",
-                                    ));
+                                } else if nv.path.is_ident("desc") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        desc = Some(lit.value());
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'desc' should be a string.",
+                                        ));
+                                    }
+                                } else if nv.path.is_ident("default") {
+                                    if let syn::Lit::Str(lit) = &nv.lit {
+                                        match parse_value(&lit.value()) {
+                                            Ok(Value::Variable(_)) => {
+                                                return Err(Error::new_spanned(
+                                                    &lit,
+                                                    "The default cannot be a variable",
+                                                ))
+                                            }
+                                            Ok(value) => default = Some(value),
+                                            Err(err) => {
+                                                return Err(Error::new_spanned(
+                                                    &lit,
+                                                    format!("Invalid value: {}", err),
+                                                ));
+                                            }
+                                        }
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Attribute 'default' should be a string.",
+                                        ));
+                                    }
                                 }
                             }
+                            _ => {}
                         }
                     }
 

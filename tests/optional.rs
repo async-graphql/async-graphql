@@ -14,32 +14,26 @@ pub async fn test_optional_type() {
 
     #[Object]
     impl Root {
-        #[field]
         async fn value1(&self) -> Option<i32> {
             self.value1.clone()
         }
 
-        #[field]
         async fn value1_ref(&self) -> &Option<i32> {
             &self.value1
         }
 
-        #[field]
         async fn value2(&self) -> Option<i32> {
             self.value2.clone()
         }
 
-        #[field]
         async fn value2_ref(&self) -> &Option<i32> {
             &self.value2
         }
 
-        #[field]
         async fn test_arg(&self, input: Option<i32>) -> Option<i32> {
             input
         }
 
-        #[field]
         async fn test_input<'a>(&self, input: MyInput) -> Option<i32> {
             input.value.clone()
         }
