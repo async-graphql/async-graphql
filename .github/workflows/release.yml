@@ -15,12 +15,12 @@ jobs:
       max-parallel: 1
       matrix:
         package:
-          - name: async-graphql
-            registryName: async-graphql
-            path: .
           - name: async-graphql-derive
             registryName: async-graphql-derive
             path: async-graphql-derive
+          - name: async-graphql
+            registryName: async-graphql
+            path: .
           - name: async-graphql-actix-web
             registryName: async-graphql-actix-web
             path: async-graphql-actix-web
