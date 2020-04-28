@@ -11,7 +11,8 @@ use async_graphql::*;
 
 struct StringNumber(i64);
 
-impl Scalar for StringNumber {
+#[Scalar]
+impl ScalarType for StringNumber {
     fn type_name() -> &'static str {
         // 类型名
         "StringNumber"
@@ -27,8 +28,5 @@ impl Scalar for StringNumber {
         }
     }
 }
-
-// 这个宏必须调用
-impl_scalar!(StringNumber);
 
 ```
