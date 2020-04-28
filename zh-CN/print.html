@@ -202,7 +202,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#和web-server的集成" id="和web-server的集成">和Web Server的集成</a></h2>
-<p>请参考https://github.com/sunli829/async-graphql-examples。</p>
+<p>请参考https://github.com/async-graphql/examples。</p>
 <h1><a class="header" href="#类型系统" id="类型系统">类型系统</a></h1>
 <p><code>Async-graphql</code>包含GraphQL类型到Rust类型的完整实现，并且非常易于使用。</p>
 <h1><a class="header" href="#简单对象simpleobject" id="简单对象simpleobject">简单对象(SimpleObject)</a></h1>
@@ -795,7 +795,7 @@ impl ScalarType for StringNumber {
 <h1><a class="header" href="#自定义扩展" id="自定义扩展">自定义扩展</a></h1>
 <p>一个GraphQL扩展对象能够接收一个查询执行各个阶段的事件，你可以收集想要的数据，这些数据能够在查询结果中返回。</p>
 <p>只需要实现<code>async_graphql::Extension</code>就能够定义一个扩展对象，然后在创建<code>Schema</code>的时候调用<code>Schema::extension</code>应用扩展。</p>
-<p>你可以参考<a href="https://github.com/sunli829/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
+<p>你可以参考<a href="https://github.com/async-graphql/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
 <h1><a class="header" href="#自定义订阅传输协议" id="自定义订阅传输协议">自定义订阅传输协议</a></h1>
 <h1><a class="header" href="#apollo-federation集成" id="apollo-federation集成">Apollo Federation集成</a></h1>
 <p><code>Apollo Federation</code>是一个<code>GraphQL</code>网关，它可以组合多个GraphQL服务，允许每服务仅实现它负责的那一部分数据，参考<a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">官方文档</a>。</p>
@@ -836,7 +836,7 @@ impl Query {
 }
 </code></pre>
 <p>你必须在这个实体查找函数中根据key来创建对应的对象。</p>
-<p>完整的例子请参考https://github.com/sunli829/async-graphql-examples/tree/master/federation</p>
+<p>完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation</p>
 
                     </main>
 
