@@ -13,7 +13,7 @@ use std::path::PathBuf;
 ///
 ///
 /// # Example
-/// *[Full Example](<https://github.com/sunli829/async-graphql-examples/blob/master/models/files/src/lib.rs>)*
+/// *[Full Example](<https://github.com/async-graphql/examples/blob/master/models/files/src/lib.rs>)*
 ///
 /// ```
 /// use async_graphql::Upload;

@@ -51,4 +51,4 @@ let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
 
 ## Web server integration
 
-Please refer to https://github.com/sunli829/async-graphql-examples.
+Please refer to https://github.com/async-graphql/examples.

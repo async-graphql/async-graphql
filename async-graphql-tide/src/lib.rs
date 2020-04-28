@@ -14,7 +14,7 @@ use tide::{http::headers, Request, Response, Status, StatusCode};
 ///
 ///
 /// # Examples
-/// *[Full Example](<https://github.com/sunli829/async-graphql-examples/blob/master/tide/starwars/src/main.rs>)*
+/// *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
 ///
 /// ```no_run
 /// use async_graphql::*;

@@ -38,4 +38,4 @@ type User @key(id: ID!) {
 
 你必须在这个实体查找函数中根据key来创建对应的对象。
 
-完整的例子请参考https://github.com/sunli829/async-graphql-examples/tree/master/federation
+完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation

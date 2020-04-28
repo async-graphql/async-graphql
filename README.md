@@ -2,9 +2,9 @@
 
 <div align="center">
   <!-- CI -->
-  <img src="https://github.com/sunli829/potatonet/workflows/CI/badge.svg" />
+  <img src="https://github.com/async-graphql/async-graphql/workflows/CI/badge.svg" />
   <!-- codecov -->
-  <img src="https://codecov.io/gh/sunli829/async-graphql/branch/master/graph/badge.svg" />
+  <img src="https://codecov.io/gh/async-graphql/async-graphql/branch/master/graph/badge.svg" />
   <!-- Crates version -->
   <a href="https://crates.io/crates/async-graphql">
     <img src="https://img.shields.io/crates/v/async-graphql.svg?style=flat-square"
@@ -26,23 +26,23 @@
 
 It supports all of the GraphQL specifications and is easy to integrate into existing web servers.
 
-* [Book(WIP)](https://sunli829.github.io/async-graphql/en/index.html)
-* [中文文档](https://sunli829.github.io/async-graphql/zh-CN/index.html)
+* [Book(WIP)](https://async-graphql.github.io/async-graphql/en/index.html)
+* [中文文档](https://async-graphql.github.io/async-graphql/zh-CN/index.html)
 * [Docs](https://docs.rs/async-graphql)
-* [GitHub repository](https://github.com/sunli829/async-graphql)
+* [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.42 or later
 
 ## Examples
 
-If you are just getting started, we recommend checking out our examples at: https://github.com/sunli829/async-graphql-examples
+If you are just getting started, we recommend checking out our examples at: https://github.com/async-graphql/examples
 
 To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgesql, you can also check out a real-world example at: https://github.com/phated/twentyfive-stars
 
 ## Benchmark
 
 ```shell script
-git clone https://github.com/sunli829/graphql-benchmark
+git clone https://github.com/async-graphql/benchmark
 cargo run --release
 ```
 

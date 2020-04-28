@@ -7,8 +7,8 @@ description = "Macros for async-graphql"
 publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
-homepage = "https://github.com/sunli829/async-graphql"
-repository = "https://github.com/sunli829/async-graphql"
+homepage = "https://github.com/async-graphql/async-graphql"
+repository = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
