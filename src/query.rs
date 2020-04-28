@@ -1,4 +1,4 @@
-use crate::context::Data;
+use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
@@ -168,7 +168,7 @@ impl QueryBuilder {
         }
 
         // execute
-        let resolve_id = AtomicUsize::default();
+        let inc_resolve_id = AtomicUsize::default();
         let mut fragments = HashMap::new();
         let (selection_set, variable_definitions, is_query) =
             current_operation(&document, self.operation_name.as_deref()).ok_or_else(|| {
@@ -187,7 +187,8 @@ impl QueryBuilder {
 
         let ctx = ContextBase {
             path_node: None,
-            resolve_id: &resolve_id,
+            resolve_id: ResolveId::root(),
+            inc_resolve_id: &inc_resolve_id,
             extensions: &extensions,
             item: selection_set,
             variables: &self.variables,
@@ -212,7 +213,13 @@ impl QueryBuilder {
                 Some(
                     extensions
                         .iter()
-                        .filter_map(|e| e.result().map(|res| (e.name().to_string(), res)))
+                        .filter_map(|e| {
+                            if let Some(name) = e.name() {
+                                e.result().map(|res| (name.to_string(), res))
+                            } else {
+                                None
+                            }
+                        })
                         .collect::<serde_json::Map<_, _>>(),
                 )
             } else {

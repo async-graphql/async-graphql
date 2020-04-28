@@ -1,9 +1,11 @@
 //! Extensions for schema
 
+mod apollo_tracing;
 mod tracing;
 
-use crate::context::QueryPathNode;
-pub use tracing::ApolloTracing;
+pub use self::tracing::Tracing;
+use crate::context::{QueryPathNode, ResolveId};
+pub use apollo_tracing::ApolloTracing;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 
@@ -11,7 +13,7 @@ pub(crate) type BoxExtension = Box<dyn Extension>;
 pub struct ResolveInfo<'a> {
     /// Because resolver is concurrent, `Extension::resolve_field_start` and `Extension::resolve_field_end` are
     /// not strictly ordered, so each pair is identified by an id.
-    pub resolve_id: usize,
+    pub resolve_id: ResolveId,
 
     /// Current path node, You can go through the entire path.
     pub path_node: &'a QueryPathNode<'a>,
@@ -26,8 +28,10 @@ pub struct ResolveInfo<'a> {
 /// Represents a GraphQL extension
 #[allow(unused_variables)]
 pub trait Extension: Sync + Send + 'static {
-    /// Extension name.
-    fn name(&self) -> &'static str;
+    /// If this extension needs to output data to query results, you need to specify a name.
+    fn name(&self) -> Option<&'static str> {
+        None
+    }
 
     /// Called at the begin of the parse.
     fn parse_start(&self, query_source: &str) {}
@@ -51,8 +55,10 @@ pub trait Extension: Sync + Send + 'static {
     fn resolve_field_start(&self, info: &ResolveInfo<'_>) {}
 
     /// Called at the end of the resolve field.
-    fn resolve_field_end(&self, resolve_id: usize) {}
+    fn resolve_field_end(&self, resolve_id: ResolveId) {}
 
     /// Get the results
-    fn result(&self) -> Option<serde_json::Value>;
+    fn result(&self) -> Option<serde_json::Value> {
+        None
+    }
 }

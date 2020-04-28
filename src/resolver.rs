@@ -58,11 +58,10 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     async move {
                         let ctx_field = ctx.with_field(field);
                         let field_name = ctx_field.result_name().to_string();
-                        let resolve_id = ctx_field.get_resolve_id();
 
                         if !ctx_field.extensions.is_empty() {
                             let resolve_info = ResolveInfo {
-                                resolve_id,
+                                resolve_id: ctx_field.resolve_id,
                                 path_node: ctx_field.path_node.as_ref().unwrap(),
                                 parent_type: &T::type_name(),
                                 return_type: match ctx_field
@@ -101,7 +100,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                             ctx_field
                                 .extensions
                                 .iter()
-                                .for_each(|e| e.resolve_field_end(resolve_id));
+                                .for_each(|e| e.resolve_field_end(ctx_field.resolve_id));
                         }
 
                         Ok(res)

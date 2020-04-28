@@ -222,12 +222,42 @@ impl<'a> QueryPathNode<'a> {
     }
 }
 
+/// Represents the unique id of the resolve
+#[derive(Copy, Clone, Debug)]
+pub struct ResolveId {
+    /// Parent id
+    pub parent: Option<usize>,
+
+    /// Current id
+    pub current: usize,
+}
+
+impl ResolveId {
+    pub(crate) fn root() -> ResolveId {
+        ResolveId {
+            parent: None,
+            current: 0,
+        }
+    }
+}
+
+impl std::fmt::Display for ResolveId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(parent) = self.parent {
+            write!(f, "{}:{}", parent, self.current)
+        } else {
+            write!(f, "{}", self.current)
+        }
+    }
+}
+
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
     #[allow(missing_docs)]
     pub path_node: Option<QueryPathNode<'a>>,
-    pub(crate) resolve_id: &'a AtomicUsize,
+    pub(crate) resolve_id: ResolveId,
+    pub(crate) inc_resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
@@ -261,11 +291,12 @@ impl Environment {
         schema: &'a Schema<Query, Mutation, Subscription>,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
-        resolve_id: &'a AtomicUsize,
+        inc_resolve_id: &'a AtomicUsize,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
-            resolve_id,
+            resolve_id: ResolveId::root(),
+            inc_resolve_id,
             extensions: &[],
             item,
             variables: &self.variables,
@@ -279,10 +310,15 @@ impl Environment {
 }
 
 impl<'a, T> ContextBase<'a, T> {
-    #[doc(hidden)]
-    pub fn get_resolve_id(&self) -> usize {
-        self.resolve_id
+    fn get_child_resolve_id(&self) -> ResolveId {
+        let id = self
+            .inc_resolve_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1;
+        ResolveId {
+            parent: Some(self.resolve_id.current),
+            current: id,
+        }
     }
 
     #[doc(hidden)]
@@ -299,7 +335,8 @@ impl<'a, T> ContextBase<'a, T> {
             }),
             extensions: self.extensions,
             item: field,
-            resolve_id: self.resolve_id,
+            resolve_id: self.get_child_resolve_id(),
+            inc_resolve_id: self.inc_resolve_id,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
             registry: self.registry,
@@ -319,6 +356,7 @@ impl<'a, T> ContextBase<'a, T> {
             extensions: self.extensions,
             item: selection_set,
             resolve_id: self.resolve_id,
+            inc_resolve_id: &self.inc_resolve_id,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
             registry: self.registry,
@@ -460,7 +498,8 @@ impl<'a> ContextBase<'a, &'a SelectionSet> {
             }),
             extensions: self.extensions,
             item: self.item,
-            resolve_id: self.resolve_id,
+            resolve_id: self.get_child_resolve_id(),
+            inc_resolve_id: self.inc_resolve_id,
             variables: self.variables,
             variable_definitions: self.variable_definitions,
             registry: self.registry,
