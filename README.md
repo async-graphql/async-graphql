@@ -37,7 +37,7 @@ It supports all of the GraphQL specifications and is easy to integrate into exis
 
 If you are just getting started, we recommend checking out our examples at: https://github.com/async-graphql/examples
 
-To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgesql, you can also check out a real-world example at: https://github.com/phated/twentyfive-stars
+To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgresql, you can also check out a real-world example at: https://github.com/phated/twentyfive-stars
 
 ## Benchmark
 
