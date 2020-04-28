@@ -9,6 +9,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
+    let where_clause = &generics.where_clause;
     let extends = object_args.extends;
     let s = match &mut input.data {
         Data::Struct(e) => e,
@@ -140,11 +141,11 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     let expanded = quote! {
         #input
 
-        impl #generics #ident {
+        impl #generics #ident #where_clause {
             #(#getters)*
         }
 
-        impl #generics #crate_name::Type for #ident #generics {
+        impl #generics #crate_name::Type for #ident #generics #where_clause {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -166,7 +167,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::ObjectType for #ident #generics {
+        impl #generics #crate_name::ObjectType for #ident #generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
@@ -177,7 +178,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputValueType for #ident #generics {
+        impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
             async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, value).await
             }

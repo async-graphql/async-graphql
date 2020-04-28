@@ -22,6 +22,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type")),
     };
     let generics = &item_impl.generics;
+    let where_clause = &generics.where_clause;
 
     let gql_typename = object_args
         .name
@@ -270,7 +271,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
-        impl #generics #crate_name::Type for #self_ty {
+        impl #generics #crate_name::Type for #self_ty #where_clause {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -293,7 +294,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::SubscriptionType for SubscriptionRoot {
+        impl #crate_name::SubscriptionType for #self_ty #where_clause {
             #[allow(unused_variables)]
             #[allow(bare_trait_objects)]
             async fn create_field_stream<Query, Mutation>(

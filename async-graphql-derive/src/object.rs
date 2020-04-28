@@ -20,6 +20,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type")),
     };
     let generics = &item_impl.generics;
+    let where_clause = &item_impl.generics.where_clause;
     let extends = object_args.extends;
 
     let gql_typename = object_args
@@ -399,7 +400,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
-        impl #generics #crate_name::Type for #self_ty {
+        impl #generics #crate_name::Type for #self_ty #where_clause {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -424,7 +425,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl#generics #crate_name::ObjectType for #self_ty {
+        impl#generics #crate_name::ObjectType for #self_ty #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
@@ -449,7 +450,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputValueType for #self_ty {
+        impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
             async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, value).await
             }
