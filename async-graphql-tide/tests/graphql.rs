@@ -1,7 +1,6 @@
 mod test_utils;
-use async_std::prelude::*;
-use async_std::task;
 use serde_json::json;
+use smol::{Task, Timer};
 use std::time::Duration;
 use tide::Request;
 
@@ -11,10 +10,10 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 #[test]
 fn quickstart() -> Result<()> {
-    task::block_on(async {
+    smol::run(async {
         let listen_addr = test_utils::find_listen_addr().await;
 
-        let server: task::JoinHandle<Result<()>> = task::spawn(async move {
+        let server = Task::<Result<()>>::spawn(async move {
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
@@ -34,21 +33,27 @@ fn quickstart() -> Result<()> {
             Ok(())
         });
 
-        let client: task::JoinHandle<Result<()>> = task::spawn(async move {
-            task::sleep(Duration::from_millis(300)).await;
+        let client = Task::<Result<()>>::spawn(async move {
+            Timer::after(Duration::from_millis(300)).await;
 
-            let string = surf::post(format!("http://{}", listen_addr))
-                .body_bytes(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
-                .set_header("Content-Type".parse().unwrap(), "application/json")
-                .recv_string()
+            let resp = reqwest::Client::new()
+                .post(format!("http://{}", listen_addr).as_str())
+                .body(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
                 .await?;
+
+            assert_eq!(resp.status(), reqwest::StatusCode::OK);
+            let string = resp.text().await?;
+            println!("{}", string);
 
             assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
             Ok(())
         });
 
-        server.race(client).await?;
+        client.await?;
+        server.cancel().await;
 
         Ok(())
     })
@@ -56,10 +61,10 @@ fn quickstart() -> Result<()> {
 
 #[test]
 fn hello() -> Result<()> {
-    task::block_on(async {
+    smol::run(async {
         let listen_addr = test_utils::find_listen_addr().await;
 
-        let server: task::JoinHandle<Result<()>> = task::spawn(async move {
+        let server = Task::<Result<()>>::spawn(async move {
             struct Hello(String);
             struct QueryRoot;
             #[Object]
@@ -98,23 +103,33 @@ fn hello() -> Result<()> {
             Ok(())
         });
 
-        let client: task::JoinHandle<Result<()>> = task::spawn(async move {
-            task::sleep(Duration::from_millis(300)).await;
+        let client = Task::<Result<()>>::spawn(async move {
+            Timer::after(Duration::from_millis(300)).await;
 
-            let string = surf::post(format!("http://{}", listen_addr))
-                .body_bytes(r#"{"query":"{ hello }"}"#)
-                .set_header("Content-Type".parse().unwrap(), "application/json")
-                .set_header("Name".parse().unwrap(), "Foo")
-                .recv_string()
+            let resp = reqwest::Client::new()
+                .post(format!("http://{}", listen_addr).as_str())
+                .body(r#"{"query":"{ hello }"}"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .header("Name", "Foo")
+                .send()
                 .await?;
+
+            assert_eq!(resp.status(), reqwest::StatusCode::OK);
+            let string = resp.text().await?;
+            println!("{}", string);
 
             assert_eq!(string, json!({"data":{"hello":"Hello, Foo!"}}).to_string());
 
-            let string = surf::post(format!("http://{}", listen_addr))
-                .body_bytes(r#"{"query":"{ hello }"}"#)
-                .set_header("Content-Type".parse().unwrap(), "application/json")
-                .recv_string()
+            let resp = reqwest::Client::new()
+                .post(format!("http://{}", listen_addr).as_str())
+                .body(r#"{"query":"{ hello }"}"#)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()
                 .await?;
+
+            assert_eq!(resp.status(), reqwest::StatusCode::OK);
+            let string = resp.text().await?;
+            println!("{}", string);
 
             assert_eq!(
                 string,
@@ -124,7 +139,8 @@ fn hello() -> Result<()> {
             Ok(())
         });
 
-        server.race(client).await?;
+        client.await?;
+        server.cancel().await;
 
         Ok(())
     })
