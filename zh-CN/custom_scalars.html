@@ -158,7 +158,8 @@
 
 struct StringNumber(i64);
 
-impl Scalar for StringNumber {
+#[Scalar]
+impl ScalarType for StringNumber {
     fn type_name() -&gt; &amp;'static str {
         // 类型名
         &quot;StringNumber&quot;
@@ -174,9 +175,6 @@ impl Scalar for StringNumber {
         }
     }
 }
-
-// 这个宏必须调用
-impl_scalar!(StringNumber);
 
 <span class="boring">}
 </span></code></pre></pre>
