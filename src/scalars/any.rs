@@ -52,3 +52,25 @@ fn gql_value_to_json_value(value: &Value) -> serde_json::Value {
         ),
     }
 }
+
+impl<T> From<T> for Any
+where
+    T: Into<Value>,
+{
+    fn from(value: T) -> Any {
+        Any(value.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_conversion_ok() {
+        let value = Value::List(vec![Value::Int(1.into()), Value::Float(2.0), Value::Null]);
+        let expected = Any(value.clone());
+        let output: Any = value.into();
+        assert_eq!(output, expected);
+    }
+}
