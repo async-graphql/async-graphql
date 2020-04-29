@@ -22,7 +22,7 @@ impl ScalarType for StringNumber {
     fn parse(value: &Value) -> Option<Self> {
         if let Value::String(value) = value {
             // 解析整数
-            Some(Self(value.parse().ok().unwrap()))
+            value.parse().ok().map(StringNumber)
         } else {
             // 类型不匹配则直接返回None
             None
