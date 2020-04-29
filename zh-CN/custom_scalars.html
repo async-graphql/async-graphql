@@ -156,6 +156,7 @@
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
+
 struct StringNumber(i64);
 
 #[Scalar]
@@ -168,11 +169,15 @@ impl ScalarType for StringNumber {
     fn parse(value: &amp;Value) -&gt; Option&lt;Self&gt; {
         if let Value::String(value) = value {
             // 解析整数
-            value.parse().ok()
+            value.parse().ok().map(StringNumber)
         } else {
             // 类型不匹配则直接返回None
             None
         }
+    }
+
+    fn to_json(&amp;self) -&gt; Result&lt;serde_json::Value&gt; {
+        Ok(serde_json::to_value(self.0).unwrap())
     }
 }
 
