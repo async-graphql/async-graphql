@@ -9,6 +9,7 @@
 ```rust
 use async_graphql::*;
 
+
 struct StringNumber(i64);
 
 #[Scalar]
@@ -21,11 +22,15 @@ impl ScalarType for StringNumber {
     fn parse(value: &Value) -> Option<Self> {
         if let Value::String(value) = value {
             // 解析整数
-            value.parse().ok()
+            Some(Self(value.parse().ok().unwrap()))
         } else {
             // 类型不匹配则直接返回None
             None
         }
+    }
+
+    fn to_json(&self) -> Result<serde_json::Value> {
+        Ok(serde_json::to_value(self.0).unwrap())
     }
 }
 
