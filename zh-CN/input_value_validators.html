@@ -161,7 +161,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[arg(validator(or(Email, MAC(colon = false))))] a: String) {
+    async fn input(#[arg(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
     }
 }
 <span class="boring">}
@@ -179,8 +179,8 @@ struct Query;
 impl Query {
     async fn input(#[validator(
         or(
-            and(IntGreaterThan(value = 10), IntLessThan(value = 100)),
-            IntEqual(value = 0)
+            and(IntGreaterThan(value = &quot;10&quot;), IntLessThan(value = &quot;100&quot;)),
+            IntEqual(value = &quot;0&quot;)
         ))] a: String) {
     } {
     }
