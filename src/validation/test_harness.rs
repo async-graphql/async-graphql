@@ -1,5 +1,6 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
+#![allow(unreachable_code)]
 
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;

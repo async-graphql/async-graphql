@@ -28,12 +28,12 @@ pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 ///     }
 ///
 ///     // Input is email or MAC address
-///     async fn value2(&self, #[arg(validator(or(Email, MAC(colon = false))))] email_or_mac: String) -> i32 {
+///     async fn value2(&self, #[arg(validator(or(Email, MAC(colon = "false"))))] email_or_mac: String) -> i32 {
 ///         unimplemented!()
 ///     }
 ///
 ///     // Input is integer between 100 and 200
-///     async fn value3(&self, #[arg(validator(IntRange(min = 100, max = 200)))] value: i32) -> i32 {
+///     async fn value3(&self, #[arg(validator(IntRange(min = "100", max = "200")))] value: i32) -> i32 {
 ///         unimplemented!()
 ///     }
 /// }
@@ -68,7 +68,7 @@ pub trait InputValueValidatorExt: InputValueValidator + Sized {
 
 impl<I: InputValueValidator> InputValueValidatorExt for I {}
 
-/// Invalidator for `InputValueValidator::and`
+/// Invalidator for `InputValueValidatorExt::and`
 pub struct And<A, B>(A, B);
 
 impl<A, B> InputValueValidator for And<A, B>

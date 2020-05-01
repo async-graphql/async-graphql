@@ -1,3 +1,5 @@
+#![allow(unreachable_code)]
+
 use async_graphql::*;
 
 struct User {
@@ -68,16 +70,14 @@ impl QueryRoot {
 #[async_std::test]
 pub async fn test_federation() {
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = format!(
-        r#"{{
-            _entities(representations: [{{__typename: "Product", upc: "B00005N5PF"}}]) {{
+    let query = r#"{
+            _entities(representations: [{__typename: "Product", upc: "B00005N5PF"}]) {
                 __typename
-                ... on Product {{
+                ... on Product {
                     upc
-                }}
-            }}
-        }}"#
-    );
+                }
+            }
+        }"#;
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({

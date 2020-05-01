@@ -2,7 +2,7 @@ use graphql_parser::parse_query;
 use graphql_parser::query::{Definition, OperationDefinition, ParseError, Query, Value};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Error, Ident, Meta, MetaList, NestedMeta, Result};
+use syn::{Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
 
 pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
@@ -134,8 +134,15 @@ fn parse_nested_validator(
                 for item in &ls.nested {
                     if let NestedMeta::Meta(Meta::NameValue(nv)) = item {
                         let name = &nv.path;
-                        let value = &nv.lit;
-                        params.push(quote! { #name: #value });
+                        if let Lit::Str(value) = &nv.lit {
+                            let expr = syn::parse_str::<Expr>(&value.value())?;
+                            params.push(quote! { #name: #expr });
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Value must be string literal",
+                            ));
+                        }
                     } else {
                         return Err(Error::new_spanned(
                             nested_meta,
@@ -173,4 +180,51 @@ pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<Toke
         }
     }
     Ok(quote! {None})
+}
+
+pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<TokenStream>> {
+    for arg in &args.nested {
+        if let NestedMeta::Meta(Meta::List(ls)) = arg {
+            if ls.path.is_ident("guard") {
+                let mut guards = None;
+
+                for item in &ls.nested {
+                    if let NestedMeta::Meta(Meta::List(ls)) = item {
+                        let ty = &ls.path;
+                        let mut params = Vec::new();
+                        for attr in &ls.nested {
+                            if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
+                                let name = &nv.path;
+                                if let Lit::Str(value) = &nv.lit {
+                                    let expr = syn::parse_str::<Expr>(&value.value())?;
+                                    params.push(quote! { #name: #expr });
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Value must be string literal",
+                                    ));
+                                }
+                            } else {
+                                return Err(Error::new_spanned(attr, "Invalid property for guard"));
+                            }
+                        }
+
+                        let guard = quote! { #ty { #(#params),* } };
+                        if guards.is_none() {
+                            guards = Some(guard);
+                        } else {
+                            guards =
+                                Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
+                        }
+                    } else {
+                        return Err(Error::new_spanned(item, "Invalid guard"));
+                    }
+                }
+
+                return Ok(guards);
+            }
+        }
+    }
+
+    Ok(None)
 }

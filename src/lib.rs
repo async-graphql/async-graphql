@@ -90,6 +90,7 @@ mod types;
 mod validation;
 
 pub mod extensions;
+pub mod guard;
 pub mod validators;
 
 #[doc(hidden)]
@@ -167,6 +168,7 @@ pub use types::{EnumItem, EnumType};
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
+/// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 ///
 /// # Field argument parameters
 ///
@@ -274,6 +276,7 @@ pub use async_graphql_derive::Object;
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
+/// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 ///
 /// # Examples
 ///
@@ -421,7 +424,6 @@ pub use async_graphql_derive::InputObject;
 /// | name        | Field name                | string   | N        |
 /// | type        | Field type                | string   | N        |
 /// | desc        | Field description         | string   | Y        |
-/// | context     | Method with the context   | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | args        | Field arguments           |          | Y        |
 ///
@@ -447,8 +449,6 @@ pub use async_graphql_derive::InputObject;
 ///
 /// The type, name, and parameters of the interface field must exactly match the type that implements the interface,
 /// The internal implementation is a forward of the function call.
-/// You can specify the field function name that implements the interface type through the 'method' property,
-/// or you can specify that the field function has a context parameter through the 'context' attribute.
 ///
 /// ```rust
 /// use async_graphql::*;
@@ -476,7 +476,7 @@ pub use async_graphql_derive::InputObject;
 /// }
 ///
 /// #[Interface(
-///     field(name = "value_a", type = "&'ctx str", context),
+///     field(name = "value_a", type = "&'ctx str"),
 ///     field(name = "value_b", type = "&i32"),
 ///     field(name = "value_c", type = "i32",
 ///         arg(name = "a", type = "i32"),
@@ -541,6 +541,7 @@ pub use async_graphql_derive::Union;
 /// | name        | Field name                | string   | Y        |
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
+/// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 ///
 /// # Field argument parameters
 ///

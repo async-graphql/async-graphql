@@ -123,7 +123,7 @@ where
 }
 
 /// Error for query
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 #[allow(missing_docs)]
 pub enum QueryError {
     #[error("Not supported.")]
@@ -248,7 +248,7 @@ impl QueryError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RuleError {
     pub locations: Vec<Pos>,
     pub message: String,
@@ -311,7 +311,7 @@ pub enum ParseRequestError {
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum Error {
     #[error("Parse error: {message}")]
     Parse {

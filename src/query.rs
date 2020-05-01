@@ -45,6 +45,7 @@ pub trait IntoQueryBuilder: Sized {
 }
 
 /// Query response
+#[derive(Debug)]
 pub struct QueryResponse {
     /// Data of query result
     pub data: serde_json::Value,

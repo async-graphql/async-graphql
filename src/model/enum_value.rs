@@ -1,4 +1,4 @@
-use crate::{registry, Context};
+use crate::registry;
 use async_graphql_derive::Object;
 
 pub struct __EnumValue<'a> {
@@ -11,19 +11,19 @@ pub struct __EnumValue<'a> {
     desc = "One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string."
 )]
 impl<'a> __EnumValue<'a> {
-    async fn name(&self, _: &Context<'_>) -> String {
+    async fn name(&self) -> String {
         self.value.name.to_string()
     }
 
-    async fn description(&self, _: &Context<'_>) -> Option<String> {
+    async fn description(&self) -> Option<String> {
         self.value.description.map(|s| s.to_string())
     }
 
-    async fn is_deprecated(&self, _: &Context<'_>) -> bool {
+    async fn is_deprecated(&self) -> bool {
         self.value.deprecation.is_some()
     }
 
-    async fn deprecation_reason(&self, _: &Context<'_>) -> Option<String> {
+    async fn deprecation_reason(&self) -> Option<String> {
         self.value.deprecation.map(|s| s.to_string())
     }
 }

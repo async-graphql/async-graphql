@@ -90,7 +90,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         ty,
         args,
         deprecation,
-        context,
         external,
         provides,
         requires,
@@ -112,10 +111,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             None => quote! { None },
         };
 
-        if *context {
-            decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
-            use_params.push(quote! { ctx });
-        }
+        decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
+        use_params.push(quote! { ctx });
 
         for InterfaceFieldArgument {
             name,
@@ -168,21 +165,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             });
         }
 
-        let ctx_lifetime = if *context {
-            quote! { <'ctx> }
-        } else {
-            quote! {}
-        };
-
-        methods.push(quote! {
-            #[inline]
-            async fn #method_name #ctx_lifetime(&self, #(#decl_params),*) -> #ty {
-                match self {
-                    #(#calls,)*
-                }
-            }
-        });
-
         let desc = desc
             .as_ref()
             .map(|s| quote! {Some(#s)})
@@ -192,8 +174,21 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             .map(|s| quote! {Some(#s)})
             .unwrap_or_else(|| quote! {None});
 
-        let ty = OutputType::parse(ty)?;
-        let schema_ty = ty.value_type();
+        let oty = OutputType::parse(ty)?;
+        let ty = match oty {
+            OutputType::Value(ty) => ty,
+            OutputType::Result(_, ty) => ty,
+        };
+        let schema_ty = oty.value_type();
+
+        methods.push(quote! {
+            #[inline]
+            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::FieldResult<#ty> {
+                match self {
+                    #(#calls,)*
+                }
+            }
+        });
 
         schema_fields.push(quote! {
             fields.insert(#name.to_string(), #crate_name::registry::Field {
@@ -213,16 +208,9 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             });
         });
 
-        let resolve_obj = match &ty {
-            OutputType::Value(_) => quote! {
-                self.#method_name(#(#use_params),*).await
-            },
-            OutputType::Result(_, _) => {
-                quote! {
-                    self.#method_name(#(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
-                }
-            }
+        let resolve_obj = quote! {
+            self.#method_name(#(#use_params),*).await.
+                map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
         };
 
         resolvers.push(quote! {

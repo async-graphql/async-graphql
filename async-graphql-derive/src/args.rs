@@ -1,4 +1,4 @@
-use crate::utils::{parse_validator, parse_value};
+use crate::utils::{parse_guards, parse_validator, parse_value};
 use graphql_parser::query::Value;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -215,10 +215,11 @@ pub struct Field {
     pub provides: Option<String>,
     pub requires: Option<String>,
     pub is_ref: bool,
+    pub guard: Option<TokenStream>,
 }
 
 impl Field {
-    pub fn parse(attrs: &[Attribute]) -> Result<Option<Self>> {
+    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
         let mut name = None;
         let mut desc = None;
         let mut deprecation = None;
@@ -227,10 +228,12 @@ impl Field {
         let mut provides = None;
         let mut requires = None;
         let mut is_ref = false;
+        let mut guard = None;
 
         for attr in attrs {
             match attr.parse_meta()? {
                 Meta::List(ls) if ls.path.is_ident("field") => {
+                    guard = parse_guards(crate_name, &ls)?;
                     for meta in &ls.nested {
                         match meta {
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
@@ -312,6 +315,7 @@ impl Field {
             provides,
             requires,
             is_ref,
+            guard,
         }))
     }
 }
@@ -665,7 +669,6 @@ pub struct InterfaceField {
     pub ty: Type,
     pub args: Vec<InterfaceFieldArgument>,
     pub deprecation: Option<String>,
-    pub context: bool,
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
@@ -678,16 +681,12 @@ impl InterfaceField {
         let mut ty = None;
         let mut args = Vec::new();
         let mut deprecation = None;
-        let mut context = false;
         let mut external = false;
         let mut provides = None;
         let mut requires = None;
 
         for meta in &ls.nested {
             match meta {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("context") => {
-                    context = true;
-                }
                 NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
                     external = true;
                 }
@@ -773,7 +772,6 @@ impl InterfaceField {
             ty: ty.unwrap(),
             args,
             deprecation,
-            context,
             external,
             requires,
             provides,
@@ -885,5 +883,29 @@ impl Scalar {
         }
 
         Ok(Self { internal })
+    }
+}
+
+#[derive(Debug)]
+pub struct Entity {
+    pub guard: Option<TokenStream>,
+}
+
+impl Entity {
+    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
+        for attr in attrs {
+            match attr.parse_meta()? {
+                Meta::List(ls) if ls.path.is_ident("entity") => {
+                    let guard = parse_guards(crate_name, &ls)?;
+                    return Ok(Some(Self { guard }));
+                }
+                Meta::Path(p) if p.is_ident("entity") => {
+                    return Ok(Some(Self { guard: None }));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(None)
     }
 }

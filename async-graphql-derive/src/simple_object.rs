@@ -38,7 +38,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
 
     if let Some(fields) = fields {
         for item in &mut fields.named {
-            if let Some(field) = args::Field::parse(&item.attrs)? {
+            if let Some(field) = args::Field::parse(&crate_name, &item.attrs)? {
                 let field_name = field
                     .name
                     .clone()
@@ -91,27 +91,35 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 });
 
                 let ident = &item.ident;
+                let guard = if let Some(guard) = &field.guard {
+                    quote! { #guard.check(ctx).await?; }
+                } else {
+                    quote! {}
+                };
 
                 if field.is_ref {
                     getters.push(quote! {
                         #[inline]
-                        #vis async fn #ident(&self) -> &#ty {
-                            &self.#ident
+                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                            #guard
+                            Ok(&self.#ident)
                         }
                     });
                 } else {
                     getters.push(quote! {
                         #[inline]
-                        #vis async fn #ident(&self) -> #ty {
-                            self.#ident.clone()
+                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                            #guard
+                            Ok(self.#ident.clone())
                         }
                     });
                 }
 
                 resolvers.push(quote! {
                     if ctx.name.as_str() == #field_name {
+                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?;
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-                        return #crate_name::OutputValueType::resolve(&self.#ident, &ctx_obj, ctx.position).await;
+                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.position).await;
                     }
                 });
             }

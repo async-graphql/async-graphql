@@ -3,9 +3,11 @@ use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
-    Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait, TypeReference,
+    Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait,
+    TypeReference,
 };
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
@@ -41,7 +43,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            if let Some(field) = args::Field::parse(&method.attrs)? {
+            if let Some(field) = args::Field::parse(&crate_name, &method.attrs)? {
                 let ident = &method.sig.ident;
                 let field_name = field
                     .name
@@ -60,7 +62,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(
-                        &method.sig.asyncness,
+                        &method,
                         "The subscription stream function must be asynchronous",
                     ));
                 }
@@ -72,7 +74,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 };
 
-                let mut arg_ctx = false;
+                let mut create_ctx = true;
+                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -94,13 +97,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
                                 args.push((
-                                    arg_ident,
-                                    arg_ty,
+                                    arg_ident.clone(),
+                                    arg_ty.clone(),
                                     args::Argument::parse(&crate_name, &pat.attrs)?,
                                 ));
                                 pat.attrs.clear();
                             }
-                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                            (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
                                         || path.path.segments.last().unwrap().ident != "Context"
@@ -109,8 +112,21 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             arg,
                                             "The Context must be the second argument.",
                                         ));
+                                    } else {
+                                        create_ctx = false;
+                                        match arg {
+                                            Pat::Wild(_) => {
+                                                pat.pat = Box::new(
+                                                    syn::parse2::<Pat>(quote! { #arg_ctx })
+                                                        .unwrap(),
+                                                );
+                                            }
+                                            Pat::Ident(arg_ident) => {
+                                                arg_ctx = arg_ident.ident.clone();
+                                            }
+                                            _ => {}
+                                        }
                                     }
-                                    arg_ctx = true;
                                 }
                             }
                             _ => {
@@ -120,6 +136,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     } else {
                         return Err(Error::new_spanned(arg, "Incorrect argument type"));
                     }
+                }
+
+                if create_ctx {
+                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
+                        .unwrap();
+                    method.sig.inputs.insert(1, arg);
                 }
 
                 let mut schema_args = Vec::new();
@@ -184,6 +206,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     quote! { #res_ty }
                 };
 
+                if let OutputType::Value(inner_ty) = &ty {
+                    let block = &method.block;
+                    method.block =
+                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    method.sig.output = syn::parse2::<ReturnType>(
+                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                    )
+                    .expect("invalid result type");
+                }
+
                 schema_fields.push(quote! {
                     fields.insert(#field_name.to_string(), #crate_name::registry::Field {
                         name: #field_name.to_string(),
@@ -202,23 +234,18 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 });
 
-                let ctx_param = if arg_ctx {
-                    quote! { &ctx, }
-                } else {
-                    quote! {}
+                let create_field_stream = quote! {
+                    #crate_name::futures::stream::StreamExt::fuse(self.#ident(ctx, #(#use_params),*).await.
+                        map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?)
                 };
 
-                let create_field_stream = match &ty {
-                    OutputType::Value(_) => quote! {
-                        #crate_name::futures::stream::StreamExt::fuse(self.#ident(#ctx_param #(#use_params),*).await)
-                    },
-                    OutputType::Result(_, _) => {
-                        quote! {
-                            #crate_name::futures::stream::StreamExt::fuse(self.#ident(#ctx_param #(#use_params),*).await.
-                                map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?)
-                        }
-                    }
-                };
+                if let Some(guard) = &field.guard {
+                    method.block.stmts.insert(
+                        0,
+                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
+                            .expect("invalid guard"),
+                    );
+                }
 
                 create_stream.push(quote! {
                     if ctx.name.as_str() == #field_name {

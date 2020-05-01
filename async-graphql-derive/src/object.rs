@@ -3,8 +3,9 @@ use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
+use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -43,14 +44,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            if method.attrs.iter().any(|attr| attr.path.is_ident("entity")) {
+            if let Some(entity) = args::Entity::parse(&crate_name, &method.attrs)? {
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
                         return Err(Error::new_spanned(&method.sig.output, "Missing type"))
                     }
                 };
-                let mut arg_ctx = false;
+                let mut create_ctx = true;
+                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -72,13 +74,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
                                 args.push((
-                                    arg_ident,
-                                    arg_ty,
+                                    arg_ident.clone(),
+                                    arg_ty.clone(),
                                     args::Argument::parse(&crate_name, &pat.attrs)?,
                                 ));
                                 pat.attrs.clear();
                             }
-                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                            (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
                                         || path.path.segments.last().unwrap().ident != "Context"
@@ -87,13 +89,32 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             arg,
                                             "The Context must be the second argument.",
                                         ));
+                                    } else {
+                                        create_ctx = false;
+                                        match arg {
+                                            Pat::Wild(_) => {
+                                                pat.pat = Box::new(
+                                                    syn::parse2::<Pat>(quote! { #arg_ctx })
+                                                        .unwrap(),
+                                                );
+                                            }
+                                            Pat::Ident(arg_ident) => {
+                                                arg_ctx = arg_ident.ident.clone();
+                                            }
+                                            _ => {}
+                                        }
                                     }
-                                    arg_ctx = true;
                                 }
                             }
                             _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
                         }
                     }
+                }
+
+                if create_ctx {
+                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
+                        .unwrap();
+                    method.sig.inputs.insert(1, arg);
                 }
 
                 let entity_type = ty.value_type();
@@ -131,19 +152,24 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 );
 
                 let field_ident = &method.sig.ident;
-                let ctx_param = if arg_ctx {
-                    quote! { &ctx, }
-                } else {
-                    quote! {}
-                };
-                let do_find = match &ty {
-                    OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_param #(#use_keys),*).await
-                    },
-                    OutputType::Result(_, _) => {
-                        quote! { self.#field_ident(#ctx_param #(#use_keys),*).await? }
-                    }
-                };
+                if let OutputType::Value(inner_ty) = &ty {
+                    let block = &method.block;
+                    method.block =
+                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    method.sig.output = syn::parse2::<ReturnType>(
+                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                    )
+                    .expect("invalid result type");
+                }
+                let do_find = quote! { self.#field_ident(ctx, #(#use_keys),*).await.map_err(|err| err.into_error(pos))? };
+
+                if let Some(guard) = &entity.guard {
+                    method.block.stmts.insert(
+                        0,
+                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
+                            .expect("invalid guard"),
+                    );
+                }
 
                 find_entities.push((
                     args.len(),
@@ -166,12 +192,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         .map(|(idx, _)| idx)
                         .unwrap(),
                 );
-            } else if let Some(field) = args::Field::parse(&method.attrs)? {
+            } else if let Some(field) = args::Field::parse(&crate_name, &method.attrs)? {
                 if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(
-                        &method.sig.output,
-                        "Must be asynchronous",
-                    ));
+                    return Err(Error::new_spanned(&method, "Must be asynchronous"));
                 }
 
                 let field_name = field
@@ -214,7 +237,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 };
 
-                let mut arg_ctx = false;
+                let mut create_ctx = true;
+                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -236,13 +260,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         match (&*pat.pat, &*pat.ty) {
                             (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
                                 args.push((
-                                    arg_ident,
-                                    arg_ty,
+                                    arg_ident.clone(),
+                                    arg_ty.clone(),
                                     args::Argument::parse(&crate_name, &pat.attrs)?,
                                 ));
                                 pat.attrs.clear();
                             }
-                            (_, Type::Reference(TypeReference { elem, .. })) => {
+                            (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
                                         || path.path.segments.last().unwrap().ident != "Context"
@@ -252,12 +276,30 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             "The Context must be the second argument.",
                                         ));
                                     }
-                                    arg_ctx = true;
+
+                                    create_ctx = false;
+                                    match arg {
+                                        Pat::Wild(_) => {
+                                            pat.pat = Box::new(
+                                                syn::parse2::<Pat>(quote! { #arg_ctx }).unwrap(),
+                                            );
+                                        }
+                                        Pat::Ident(arg_ident) => {
+                                            arg_ctx = arg_ident.ident.clone();
+                                        }
+                                        _ => {}
+                                    }
                                 }
                             }
                             _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
                         }
                     }
+                }
+
+                if create_ctx {
+                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
+                        .unwrap();
+                    method.sig.inputs.insert(1, arg);
                 }
 
                 let mut schema_args = Vec::new();
@@ -335,24 +377,20 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                 });
 
-                let ctx_param = if arg_ctx {
-                    quote! { &ctx, }
-                } else {
-                    quote! {}
-                };
-
                 let field_ident = &method.sig.ident;
-                let resolve_obj = match &ty {
-                    OutputType::Value(_) => quote! {
-                        self.#field_ident(#ctx_param #(#use_params),*).await
-                    },
-                    OutputType::Result(_, _) => {
-                        quote! {
-                            {
-                                let res:#crate_name::FieldResult<_> = self.#field_ident(#ctx_param #(#use_params),*).await;
-                                res.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
-                            }
-                        }
+                if let OutputType::Value(inner_ty) = &ty {
+                    let block = &method.block;
+                    method.block =
+                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    method.sig.output = syn::parse2::<ReturnType>(
+                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                    )
+                    .expect("invalid result type");
+                }
+                let resolve_obj = quote! {
+                    {
+                        let res:#crate_name::FieldResult<_> = self.#field_ident(ctx, #(#use_params),*).await;
+                        res.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
                     }
                 };
 
@@ -363,6 +401,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
                     }
                 });
+
+                if let Some(guard) = field.guard {
+                    method.block.stmts.insert(
+                        0,
+                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
+                            .expect("invalid guard"),
+                    );
+                }
 
                 if let Some((idx, _)) = method
                     .attrs
