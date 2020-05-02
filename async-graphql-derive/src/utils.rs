@@ -136,7 +136,7 @@ fn parse_nested_validator(
                         let name = &nv.path;
                         if let Lit::Str(value) = &nv.lit {
                             let expr = syn::parse_str::<Expr>(&value.value())?;
-                            params.push(quote! { #name: #expr });
+                            params.push(quote! { #name: #expr.into() });
                         } else {
                             return Err(Error::new_spanned(
                                 &nv.lit,
@@ -197,7 +197,7 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
                                 let name = &nv.path;
                                 if let Lit::Str(value) = &nv.lit {
                                     let expr = syn::parse_str::<Expr>(&value.value())?;
-                                    params.push(quote! { #name: #expr });
+                                    params.push(quote! { #name: #expr.into() });
                                 } else {
                                     return Err(Error::new_spanned(
                                         &nv.lit,
