@@ -48,6 +48,7 @@
 //!
 //! * Actix-web [async-graphql-actix_web](https://crates.io/crates/async-graphql-actix-web)
 //! * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
+//! * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 //!
 //! ## License
 //!
@@ -447,8 +448,8 @@ pub use async_graphql_derive::InputObject;
 ///
 /// # Fields
 ///
-/// The type, name, and parameters of the interface field must exactly match the type that implements the interface,
-/// The internal implementation is a forward of the function call.
+/// The type, name, and parameter fields of the interface must exactly match the type of the
+/// implementation interface, but FieldResult can be omitted.
 ///
 /// ```rust
 /// use async_graphql::*;
