@@ -249,8 +249,7 @@ impl<T: Type> Type for FieldResult<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
-        T::type_name().to_string()
+        T::create_type_info(registry)
     }
 }
 
