@@ -510,3 +510,59 @@ pub async fn test_subscription_fragment() {
     }
     assert!(stream.next().await.is_none());
 }
+
+#[async_std::test]
+pub async fn test_subscription_fragment2() {
+    struct QueryRoot;
+
+    #[SimpleObject]
+    struct Event {
+        a: i32,
+        b: i32,
+    }
+
+    #[Interface(field(name = "a", type = "i32"))]
+    struct MyInterface(Event);
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
+            futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
+        }
+    }
+
+    let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
+        .register_type::<MyInterface>()
+        .finish();
+    let mut stream = schema
+        .create_subscription_stream(
+            r#"
+            subscription s {
+                events(start: 10, end: 20) {
+                    ... Frag
+                }
+            }
+
+            fragment Frag on Event {
+                a b
+            }
+            "#,
+            None,
+            Default::default(),
+            None,
+        )
+        .await
+        .unwrap();
+    for i in 10..20 {
+        assert_eq!(
+            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
+            stream.next().await
+        );
+    }
+    assert!(stream.next().await.is_none());
+}

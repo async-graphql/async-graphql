@@ -251,9 +251,10 @@ where
         for definition in document.definitions {
             match definition {
                 Definition::Operation(OperationDefinition::Subscription(s)) => {
-                    if s.name.as_deref() == operation_name || operation_name.is_none() {
+                    if subscription.is_none()
+                        && (s.name.as_deref() == operation_name || operation_name.is_none())
+                    {
                         subscription = Some(s);
-                        break;
                     }
                 }
                 Definition::Fragment(fragment) => {
