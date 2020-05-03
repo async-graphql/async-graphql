@@ -278,8 +278,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                     #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
                                 }
                             }
-                        }).
-                        map_ok(move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }));
+                        })
+                        .map_ok(move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }))
+                        .scan(true, |state, item| {
+                            if !*state {
+                                return #crate_name::futures::future::ready(None);
+                            }
+                            if item.is_err() {
+                                *state = false;
+                            }
+                            return #crate_name::futures::future::ready(Some(item));
+                        });
                         return Ok(Box::pin(stream));
                     }
                 });

@@ -486,4 +486,6 @@ pub async fn test_subscription_error() {
             },
         }))
     );
+
+    assert!(stream.next().await.is_none());
 }
