@@ -208,8 +208,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 if let OutputType::Value(inner_ty) = &ty {
                     let block = &method.block;
-                    method.block =
-                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    let new_block = quote!({
+                        {
+                            let value = (move || { async move #block })().await;
+                            Ok(value)
+                        }
+                    });
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
                         quote! { -> #crate_name::FieldResult<#inner_ty> },
                     )

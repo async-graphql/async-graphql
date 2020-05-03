@@ -154,8 +154,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_ident = &method.sig.ident;
                 if let OutputType::Value(inner_ty) = &ty {
                     let block = &method.block;
-                    method.block =
-                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    let new_block = quote!({
+                        {
+                            let value:#inner_ty = async move #block.await;
+                            Ok(value)
+                        }
+                    });
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
                         quote! { -> #crate_name::FieldResult<#inner_ty> },
                     )
@@ -380,8 +385,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_ident = &method.sig.ident;
                 if let OutputType::Value(inner_ty) = &ty {
                     let block = &method.block;
-                    method.block =
-                        syn::parse2::<Block>(quote!({ Ok(#block) })).expect("invalid block");
+                    let new_block = quote!({
+                        {
+                            let value:#inner_ty = async move #block.await;
+                            Ok(value)
+                        }
+                    });
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
                         quote! { -> #crate_name::FieldResult<#inner_ty> },
                     )
