@@ -2,6 +2,8 @@
 
 Comparing Features of Other Rust GraphQL Implementations
 
+**Please let me know if there is anything wrong.**
+
 |                | async-graphql | juniper(0.14.2) |
 |----------------|---------------|-----------------|
 | async/await    | 👍            | ⛔️              |
