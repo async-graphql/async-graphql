@@ -20,7 +20,7 @@ pub trait SubscriptionType: Type {
         ctx: &Context<'_>,
         schema: &Schema<Query, Mutation, Self>,
         environment: Arc<Environment>,
-    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
@@ -33,7 +33,7 @@ pub fn create_subscription_stream<'a, Query, Mutation, Subscription>(
     schema: &'a Schema<Query, Mutation, Subscription>,
     environment: Arc<Environment>,
     ctx: &'a ContextSelectionSet<'_>,
-    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>,
+    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>,
 ) -> BoxCreateStreamFuture<'a>
 where
     Query: ObjectType + Send + Sync + 'static,

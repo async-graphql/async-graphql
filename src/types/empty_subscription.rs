@@ -42,7 +42,7 @@ impl SubscriptionType for EmptySubscription {
         _ctx: &Context<'_>,
         _schema: &Schema<Query, Mutation, Self>,
         _environment: Arc<Environment>,
-    ) -> Result<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,

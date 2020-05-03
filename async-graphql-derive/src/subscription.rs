@@ -249,36 +249,37 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 create_stream.push(quote! {
                     if ctx.name.as_str() == #field_name {
-                        let field_name = ctx.result_name().to_string();
+                        use #crate_name::futures::stream::{StreamExt, TryStreamExt};
+
+                        let field_name = std::sync::Arc::new(ctx.result_name().to_string());
                         #(#get_params)*
                         let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
                         let schema = schema.clone();
                         let pos = ctx.position;
                         let environment = environment.clone();
-                        let stream = #crate_name::futures::stream::StreamExt::then(#create_field_stream, move |msg| {
-                            let environment = environment.clone();
-                            let field_selection_set = field_selection_set.clone();
-                            let schema = schema.clone();
-                            async move {
-                                let resolve_id = std::sync::atomic::AtomicUsize::default();
-                                let ctx_selection_set = environment.create_context(
-                                    &schema,
-                                    Some(#crate_name::QueryPathNode {
-                                        parent: None,
-                                        segment: #crate_name::QueryPathSegment::Name("time"),
-                                    }),
-                                    &*field_selection_set,
-                                    &resolve_id,
-                                );
-                                #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
+                        let stream = #create_field_stream.then({
+                            let field_name = field_name.clone();
+                            move |msg| {
+                                let environment = environment.clone();
+                                let field_selection_set = field_selection_set.clone();
+                                let schema = schema.clone();
+                                let field_name = field_name.clone();
+                                async move {
+                                    let resolve_id = std::sync::atomic::AtomicUsize::default();
+                                    let ctx_selection_set = environment.create_context(
+                                        &schema,
+                                        Some(#crate_name::QueryPathNode {
+                                            parent: None,
+                                            segment: #crate_name::QueryPathSegment::Name(&field_name),
+                                        }),
+                                        &*field_selection_set,
+                                        &resolve_id,
+                                    );
+                                    #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
+                                }
                             }
                         }).
-                        filter_map(move |res| {
-                            let res = res.ok().map(|value| {
-                                #crate_name::serde_json::json!({ &field_name: value })
-                            });
-                            async move { res }
-                        });
+                        map_ok(move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }));
                         return Ok(Box::pin(stream));
                     }
                 });
@@ -329,7 +330,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::Context<'_>,
                 schema: &#crate_name::Schema<Query, Mutation, Self>,
                 environment: std::sync::Arc<#crate_name::Environment>,
-            ) -> #crate_name::Result<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::serde_json::Value> + Send>>>
+            ) -> #crate_name::Result<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>>
             where
                 Query: #crate_name::ObjectType + Send + Sync + 'static,
                 Mutation: #crate_name::ObjectType + Send + Sync + 'static,

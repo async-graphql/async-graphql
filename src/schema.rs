@@ -241,7 +241,7 @@ where
         operation_name: Option<&str>,
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
-    ) -> Result<impl Stream<Item = serde_json::Value> + Send> {
+    ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
         let document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document, self.0.validation_mode)?;
 

@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{SinkExt, Stream, StreamExt};
+use futures::{Stream, StreamExt};
 use std::sync::Arc;
 
 #[async_std::test]
@@ -42,7 +42,7 @@ pub async fn test_subscription() {
             .unwrap();
         for i in 10..20 {
             assert_eq!(
-                Some(serde_json::json!({ "values": i })),
+                Some(Ok(serde_json::json!({ "values": i }))),
                 stream.next().await
             );
         }
@@ -61,7 +61,7 @@ pub async fn test_subscription() {
             .unwrap();
         for i in 10..20 {
             assert_eq!(
-                Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
+                Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
                 stream.next().await
             );
         }
@@ -128,20 +128,20 @@ pub async fn test_simple_broker() {
 
     assert_eq!(
         stream1.next().await,
-        Some(serde_json::json!({ "events1": {"value": 10} }))
+        Some(Ok(serde_json::json!({ "events1": {"value": 10} })))
     );
     assert_eq!(
         stream1.next().await,
-        Some(serde_json::json!({ "events1": {"value": 15} }))
+        Some(Ok(serde_json::json!({ "events1": {"value": 15} })))
     );
 
     assert_eq!(
         stream2.next().await,
-        Some(serde_json::json!({ "events2": {"value": 88} }))
+        Some(Ok(serde_json::json!({ "events2": {"value": 88} })))
     );
     assert_eq!(
         stream2.next().await,
-        Some(serde_json::json!({ "events2": {"value": 99} }))
+        Some(Ok(serde_json::json!({ "events2": {"value": 99} })))
     );
 }
 
@@ -192,11 +192,11 @@ pub async fn test_subscription_with_ctx_data() {
             .await
             .unwrap();
         assert_eq!(
-            Some(serde_json::json!({ "values": 100 })),
+            Some(Ok(serde_json::json!({ "values": 100 }))),
             stream.next().await
         );
         assert_eq!(
-            Some(serde_json::json!({ "objects": { "value": 100 } })),
+            Some(Ok(serde_json::json!({ "objects": { "value": 100 } }))),
             stream.next().await
         );
         assert!(stream.next().await.is_none());
@@ -241,7 +241,7 @@ pub async fn test_subscription_with_token() {
             .await
             .unwrap();
         assert_eq!(
-            Some(serde_json::json!({ "values": 100 })),
+            Some(Ok(serde_json::json!({ "values": 100 }))),
             stream.next().await
         );
         assert!(stream.next().await.is_none());
@@ -261,148 +261,6 @@ pub async fn test_subscription_with_token() {
             )
             .await
             .is_err());
-    }
-}
-
-#[async_std::test]
-pub async fn test_subscription_ws_transport() {
-    struct QueryRoot;
-
-    #[Object]
-    impl QueryRoot {}
-
-    struct SubscriptionRoot;
-
-    #[Subscription]
-    impl SubscriptionRoot {
-        async fn values(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(0..10)
-        }
-    }
-
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
-
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init",
-            "payload": { "token": "123456" }
-        }))
-        .unwrap()
-        .into(),
-    )
-    .await
-    .unwrap();
-
-    assert_eq!(
-        Some(serde_json::json!({
-        "type": "connection_ack",
-        })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
-    );
-
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "subscription { values }"
-            },
-        }))
-        .unwrap()
-        .into(),
-    )
-    .await
-    .unwrap();
-
-    for i in 0..10 {
-        assert_eq!(
-            Some(serde_json::json!({
-            "type": "data",
-            "id": "1",
-            "payload": { "data": { "values": i } },
-            })),
-            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
-        );
-    }
-}
-
-#[async_std::test]
-pub async fn test_subscription_ws_transport_with_token() {
-    struct Token(String);
-
-    struct QueryRoot;
-
-    #[Object]
-    impl QueryRoot {}
-
-    struct SubscriptionRoot;
-
-    #[Subscription]
-    impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
-            if ctx.data::<Token>().0 != "123456" {
-                return Err("forbidden".into());
-            }
-            Ok(futures::stream::iter(0..10))
-        }
-    }
-
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-
-    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::new(|value| {
-        #[derive(serde_derive::Deserialize)]
-        struct Payload {
-            token: String,
-        }
-
-        let payload: Payload = serde_json::from_value(value).unwrap();
-        let mut data = Data::default();
-        data.insert(Token(payload.token));
-        Ok(data)
-    }));
-
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init",
-            "payload": { "token": "123456" }
-        }))
-        .unwrap()
-        .into(),
-    )
-    .await
-    .unwrap();
-
-    assert_eq!(
-        Some(serde_json::json!({
-        "type": "connection_ack",
-        })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
-    );
-
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "subscription { values }"
-            },
-        }))
-        .unwrap()
-        .into(),
-    )
-    .await
-    .unwrap();
-
-    for i in 0..10 {
-        assert_eq!(
-            Some(serde_json::json!({
-            "type": "data",
-            "id": "1",
-            "payload": { "data": { "values": i } },
-            })),
-            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
-        );
     }
 }
 
@@ -449,7 +307,7 @@ pub async fn test_subscription_inline_fragment() {
         .unwrap();
     for i in 10..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
+            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
             stream.next().await
         );
     }
@@ -504,7 +362,7 @@ pub async fn test_subscription_fragment() {
         .unwrap();
     for i in 10..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
+            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
             stream.next().await
         );
     }
@@ -560,9 +418,72 @@ pub async fn test_subscription_fragment2() {
         .unwrap();
     for i in 10..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
+            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
             stream.next().await
         );
     }
     assert!(stream.next().await.is_none());
+}
+
+#[async_std::test]
+pub async fn test_subscription_error() {
+    struct QueryRoot;
+
+    struct Event {
+        value: i32,
+    }
+
+    #[Object]
+    impl Event {
+        async fn value(&self) -> FieldResult<i32> {
+            if self.value < 5 {
+                Ok(self.value)
+            } else {
+                Err("TestError".into())
+            }
+        }
+    }
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn events(&self) -> impl Stream<Item = Event> {
+            futures::stream::iter((0..10).map(|n| Event { value: n }))
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let mut stream = schema
+        .create_subscription_stream(
+            "subscription { events { value } }",
+            None,
+            Default::default(),
+            None,
+        )
+        .await
+        .unwrap();
+    for i in 0i32..5 {
+        assert_eq!(
+            Some(Ok(serde_json::json!({ "events": { "value": i } }))),
+            stream.next().await
+        );
+    }
+    assert_eq!(
+        stream.next().await,
+        Some(Err(Error::Query {
+            pos: Pos {
+                line: 1,
+                column: 25
+            },
+            path: Some(serde_json::json!(["events", "value"])),
+            err: QueryError::FieldError {
+                err: "TestError".to_string(),
+                extended_error: None,
+            },
+        }))
+    );
 }

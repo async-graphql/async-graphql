@@ -1,4 +1,4 @@
-use crate::{ObjectType, Schema, SubscriptionType};
+use crate::{ObjectType, Result, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
@@ -9,12 +9,12 @@ use std::pin::Pin;
 
 /// Use to hold all subscription stream for the `SubscriptionConnection`
 pub struct SubscriptionStreams {
-    streams: Slab<Pin<Box<dyn Stream<Item = serde_json::Value> + Send>>>,
+    streams: Slab<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>,
 }
 
 #[allow(missing_docs)]
 impl SubscriptionStreams {
-    pub fn add<S: Stream<Item = serde_json::Value> + Send + 'static>(
+    pub fn add<S: Stream<Item = Result<serde_json::Value>> + Send + 'static>(
         &mut self,
         stream: S,
     ) -> usize {
@@ -49,7 +49,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         Subscription: SubscriptionType + Sync + Send + 'static;
 
     /// When a response message is generated, you can convert the message to the format you want here.
-    fn handle_response(&mut self, id: usize, value: serde_json::Value) -> Option<Bytes>;
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
 }
 
 pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
@@ -154,8 +154,11 @@ where
 
                 for (id, incoming_stream) in &mut this.streams.streams {
                     match incoming_stream.as_mut().poll_next(cx) {
-                        Poll::Ready(Some(value)) => {
-                            if let Some(bytes) = this.transport.handle_response(id, value) {
+                        Poll::Ready(Some(res)) => {
+                            if res.is_err() {
+                                closed.push(id);
+                            }
+                            if let Some(bytes) = this.transport.handle_response(id, res) {
                                 return Poll::Ready(Some(bytes));
                             }
                         }

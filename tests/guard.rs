@@ -204,9 +204,9 @@ pub async fn test_guard() {
             .collect::<Vec<_>>()
             .await,
         vec![
-            serde_json::json! ({"values1": 1}),
-            serde_json::json! ({"values1": 2}),
-            serde_json::json! ({"values1": 3})
+            Ok(serde_json::json! ({"values1": 1})),
+            Ok(serde_json::json! ({"values1": 2})),
+            Ok(serde_json::json! ({"values1": 3}))
         ]
     );
 
@@ -227,9 +227,9 @@ pub async fn test_guard() {
             .collect::<Vec<_>>()
             .await,
         vec![
-            serde_json::json! ({"values2": 1}),
-            serde_json::json! ({"values2": 2}),
-            serde_json::json! ({"values2": 3})
+            Ok(serde_json::json! ({"values2": 1})),
+            Ok(serde_json::json! ({"values2": 2})),
+            Ok(serde_json::json! ({"values2": 3}))
         ]
     );
 
@@ -250,9 +250,9 @@ pub async fn test_guard() {
             .collect::<Vec<_>>()
             .await,
         vec![
-            serde_json::json! ({"values3": 1}),
-            serde_json::json! ({"values3": 2}),
-            serde_json::json! ({"values3": 3})
+            Ok(serde_json::json! ({"values3": 1})),
+            Ok(serde_json::json! ({"values3": 2})),
+            Ok(serde_json::json! ({"values3": 3}))
         ]
     );
 

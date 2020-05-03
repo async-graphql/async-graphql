@@ -1,7 +1,7 @@
 use crate::context::Data;
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    FieldError, FieldResult, ObjectType, QueryResponse, Schema, SubscriptionStreams,
+    FieldError, FieldResult, ObjectType, QueryResponse, Result, Schema, SubscriptionStreams,
     SubscriptionTransport, SubscriptionType, Variables,
 };
 use bytes::Bytes;
@@ -132,24 +132,35 @@ impl SubscriptionTransport for WebSocketTransport {
         }
     }
 
-    fn handle_response(&mut self, id: usize, value: serde_json::Value) -> Option<Bytes> {
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes> {
         if let Some(id) = self.sid_to_id.get(&id) {
-            Some(
-                serde_json::to_vec(&OperationMessage {
-                    ty: "data".to_string(),
-                    id: Some(id.clone()),
-                    payload: Some(
-                        serde_json::to_value(GQLResponse(Ok(QueryResponse {
-                            data: value,
-                            extensions: None,
-                            cache_control: Default::default(),
-                        })))
-                        .unwrap(),
-                    ),
-                })
-                .unwrap()
-                .into(),
-            )
+            match res {
+                Ok(value) => Some(
+                    serde_json::to_vec(&OperationMessage {
+                        ty: "data".to_string(),
+                        id: Some(id.clone()),
+                        payload: Some(
+                            serde_json::to_value(GQLResponse(Ok(QueryResponse {
+                                data: value,
+                                extensions: None,
+                                cache_control: Default::default(),
+                            })))
+                            .unwrap(),
+                        ),
+                    })
+                    .unwrap()
+                    .into(),
+                ),
+                Err(err) => Some(
+                    serde_json::to_vec(&OperationMessage {
+                        ty: "error".to_string(),
+                        id: Some(id.to_string()),
+                        payload: Some(serde_json::to_value(GQLError(&err)).unwrap()),
+                    })
+                    .unwrap()
+                    .into(),
+                ),
+            }
         } else {
             None
         }
