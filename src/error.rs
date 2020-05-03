@@ -1,5 +1,7 @@
+use crate::{registry, ContextSelectionSet, OutputValueType, Type};
 use graphql_parser::query::{ParseError, Value};
 use graphql_parser::Pos;
+use std::borrow::Cow;
 use std::fmt::Debug;
 
 /// FieldError type
@@ -34,6 +36,35 @@ impl FieldError {
 
 /// FieldResult type
 pub type FieldResult<T> = std::result::Result<T, FieldError>;
+
+impl<T: Type> Type for FieldResult<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn qualified_type_name() -> String {
+        T::type_name().to_string()
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        T::create_type_info(registry);
+        T::type_name().to_string()
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> crate::Result<serde_json::Value> where {
+        match value.as_ref() {
+            Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
+            Err(err) => Err(err.clone().into_error(pos)),
+        }
+    }
+}
 
 impl<E> From<E> for FieldError
 where
