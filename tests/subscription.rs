@@ -489,3 +489,52 @@ pub async fn test_subscription_error() {
 
     assert!(stream.next().await.is_none());
 }
+
+#[async_std::test]
+pub async fn test_subscription_fieldresult() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {}
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn values(&self) -> impl Stream<Item = FieldResult<i32>> {
+            futures::stream::iter(0..5)
+                .map(FieldResult::Ok)
+                .chain(futures::stream::once(
+                    async move { Err("StreamErr".into()) },
+                ))
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let mut stream = schema
+        .create_subscription_stream("subscription { values }", None, Default::default(), None)
+        .await
+        .unwrap();
+    for i in 0i32..5 {
+        assert_eq!(
+            Some(Ok(serde_json::json!({ "values": i }))),
+            stream.next().await
+        );
+    }
+    assert_eq!(
+        stream.next().await,
+        Some(Err(Error::Query {
+            pos: Pos {
+                line: 1,
+                column: 16
+            },
+            path: Some(serde_json::json!(["values"])),
+            err: QueryError::FieldError {
+                err: "StreamErr".to_string(),
+                extended_error: None,
+            },
+        }))
+    );
+
+    assert!(stream.next().await.is_none());
+}

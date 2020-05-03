@@ -1,5 +1,5 @@
 use crate::registry::Registry;
-use crate::{registry, Context, ContextSelectionSet, QueryError, Result, ID};
+use crate::{registry, Context, ContextSelectionSet, FieldResult, QueryError, Result, ID};
 use graphql_parser::query::Value;
 use graphql_parser::Pos;
 use std::borrow::Cow;
@@ -236,5 +236,40 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
         pos: Pos,
     ) -> Result<serde_json::Value> {
         T::resolve(&*value, ctx, pos).await
+    }
+}
+
+impl<T: Type> Type for FieldResult<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn qualified_type_name() -> String {
+        T::qualified_type_name()
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        T::create_type_info(registry);
+        T::type_name().to_string()
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
+    async fn resolve(
+        value: &Self,
+        ctx: &ContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> crate::Result<serde_json::Value> where {
+        match value.as_ref() {
+            Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
+            Err(err) => Err(err.clone().into_error_with_path(
+                pos,
+                match &ctx.path_node {
+                    Some(path) => path.to_json(),
+                    None => serde_json::Value::Null,
+                },
+            )),
+        }
     }
 }
