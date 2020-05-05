@@ -58,11 +58,7 @@ impl SubscriptionType for EmptySubscription {
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptySubscription {
-    async fn resolve(
-        _value: &Self,
-        _ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
+    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
         Err(Error::Query {
             pos,
             path: None,

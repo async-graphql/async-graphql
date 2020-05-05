@@ -172,11 +172,11 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputValueType for #self_ty #where_clause {
             async fn resolve(
-                value: &Self,
+                &self,
                 _: &#crate_name::ContextSelectionSet<'_>,
                 _pos: #crate_name::Pos,
             ) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                value.to_json()
+                self.to_json()
             }
         }
     };

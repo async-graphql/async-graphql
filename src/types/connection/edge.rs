@@ -120,11 +120,7 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        _pos: Pos,
-    ) -> Result<serde_json::Value> {
-        do_resolve(ctx, value).await
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+        do_resolve(ctx, self).await
     }
 }

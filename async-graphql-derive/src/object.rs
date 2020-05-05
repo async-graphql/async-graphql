@@ -384,10 +384,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 resolvers.push(quote! {
                     if ctx.name.as_str() == #field_name {
+                        use #crate_name::OutputValueType;
                         #guard
                         #(#get_params)*
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-                        return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
+                        return OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
                     }
                 });
 
@@ -478,8 +479,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
-            async fn resolve(value: &Self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::do_resolve(ctx, value).await
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+                #crate_name::do_resolve(ctx, self).await
             }
         }
     };

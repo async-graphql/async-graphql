@@ -203,11 +203,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
     for Connection<T, E>
 {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        _pos: Pos,
-    ) -> Result<serde_json::Value> {
-        do_resolve(ctx, value).await
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+        do_resolve(ctx, self).await
     }
 }

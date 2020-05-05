@@ -52,11 +52,7 @@ impl<'a> Type for &'a str {
 
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
-    async fn resolve(
-        value: &Self,
-        _: &ContextSelectionSet<'_>,
-        _pos: Pos,
-    ) -> Result<serde_json::Value> {
-        Ok((*value).into())
+    async fn resolve(&self, _: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+        Ok((*self).into())
     }
 }

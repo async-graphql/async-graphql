@@ -35,13 +35,9 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 #[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
-        let mut futures = Vec::with_capacity(value.len());
-        for (idx, item) in value.iter().enumerate() {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+        let mut futures = Vec::with_capacity(self.len());
+        for (idx, item) in self.iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
             futures.push(async move { OutputValueType::resolve(item, &ctx_idx, pos).await });
         }
@@ -61,13 +57,9 @@ impl<T: Type> Type for &[T] {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
-        let mut futures = Vec::with_capacity(value.len());
-        for (idx, item) in (*value).iter().enumerate() {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+        let mut futures = Vec::with_capacity(self.len());
+        for (idx, item) in (*self).iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
             futures.push(async move { OutputValueType::resolve(item, &ctx_idx, pos).await });
         }

@@ -29,12 +29,9 @@ impl<T: InputValueType> InputValueType for Option<T> {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> where {
-        if let Some(inner) = value {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> where
+    {
+        if let Some(inner) = self {
             OutputValueType::resolve(inner, ctx, pos).await
         } else {
             Ok(serde_json::Value::Null)

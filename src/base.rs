@@ -57,11 +57,7 @@ pub trait InputValueType: Type + Sized {
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value>;
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value>;
 }
 
 #[allow(missing_docs)]
@@ -185,12 +181,8 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
-        T::resolve(*value, ctx, pos).await
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+        T::resolve(*self, ctx, pos).await
     }
 }
 
@@ -208,12 +200,8 @@ impl<T: Type + Send + Sync> Type for Box<T> {
 impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::borrowed_box)]
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
-        T::resolve(&*value, ctx, pos).await
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+        T::resolve(&*self, ctx, pos).await
     }
 }
 
@@ -230,12 +218,8 @@ impl<T: Type + Send + Sync> Type for Arc<T> {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        value: &Self,
-        ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
-    ) -> Result<serde_json::Value> {
-        T::resolve(&*value, ctx, pos).await
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+        T::resolve(&*self, ctx, pos).await
     }
 }
 
@@ -256,11 +240,11 @@ impl<T: Type> Type for FieldResult<T> {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
     async fn resolve(
-        value: &Self,
+        &self,
         ctx: &ContextSelectionSet<'_>,
         pos: Pos,
     ) -> crate::Result<serde_json::Value> where {
-        match value.as_ref() {
+        match self {
             Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
             Err(err) => Err(err.clone().into_error_with_path(
                 pos,

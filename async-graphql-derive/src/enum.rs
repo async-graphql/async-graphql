@@ -162,8 +162,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputValueType for #ident {
-            async fn resolve(value: &Self, _: &#crate_name::ContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::EnumType::resolve_enum(value)
+            async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+                #crate_name::EnumType::resolve_enum(self)
             }
         }
     };
