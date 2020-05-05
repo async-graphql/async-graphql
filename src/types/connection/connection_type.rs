@@ -17,9 +17,14 @@ use std::collections::HashMap;
 /// otherwise you can use the `Connection::map` function to convert to a type that implements `OutputValueType`.
 /// `E` is an extension object type that extends the edge fields.
 pub struct Connection<T, E: ObjectType + Sync + Send = EmptyEdgeFields> {
-    total_count: Option<usize>,
-    page_info: PageInfo,
-    nodes: Vec<(Cursor, E, T)>,
+    /// The total number of records.
+    pub total_count: Option<usize>,
+
+    /// Information about pagination in a connection.
+    pub page_info: PageInfo,
+
+    /// All records of the current page.
+    pub nodes: Vec<(Cursor, E, T)>,
 }
 
 impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
