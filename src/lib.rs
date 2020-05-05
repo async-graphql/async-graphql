@@ -125,8 +125,8 @@ pub use subscription::{
     WebSocketTransport,
 };
 pub use types::{
-    Connection, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, QueryOperation,
-    Upload,
+    Connection, Cursor, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription,
+    QueryOperation, Upload,
 };
 pub use validation::ValidationMode;
 
