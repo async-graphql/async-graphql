@@ -1,3 +1,4 @@
+use crate::types::connection::cursor::Cursor;
 use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
@@ -18,7 +19,7 @@ use std::collections::HashMap;
 pub struct Connection<T, E: ObjectType + Sync + Send = EmptyEdgeFields> {
     total_count: Option<usize>,
     page_info: PageInfo,
-    nodes: Vec<(String, E, T)>,
+    nodes: Vec<(Cursor, E, T)>,
 }
 
 impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
@@ -27,7 +28,7 @@ impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
         total_count: Option<usize>,
         has_previous_page: bool,
         has_next_page: bool,
-        nodes: Vec<(String, E, T)>,
+        nodes: Vec<(Cursor, E, T)>,
     ) -> Self {
         Connection {
             total_count,
