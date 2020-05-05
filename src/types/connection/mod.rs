@@ -1,4 +1,5 @@
 mod connection_type;
+mod cursor;
 mod edge;
 mod page_info;
 mod slice;
@@ -6,6 +7,7 @@ mod slice;
 use crate::{Context, FieldResult, ObjectType};
 
 pub use connection_type::Connection;
+pub use cursor::Cursor;
 
 /// Connection query operation
 pub enum QueryOperation<'a> {
@@ -77,7 +79,7 @@ pub struct EmptyEdgeFields;
 ///             }
 ///         };
 ///
-///         let nodes = (start..end).into_iter().map(|n| (base64::encode(n.to_be_bytes()), DiffFields {diff: n - 1000}, n)).collect();
+///         let nodes = (start..end).into_iter().map(|n| (base64::encode(n.to_be_bytes()).into(), DiffFields {diff: n - 1000}, n)).collect();
 ///         Ok(Connection::new(None, true, true, nodes))
 ///     }
 /// }

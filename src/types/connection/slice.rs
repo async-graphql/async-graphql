@@ -35,7 +35,7 @@ impl<'a, T: Sync> DataSource for &'a [T] {
         let mut nodes = Vec::with_capacity(end - start);
         for (idx, item) in self[start..end].iter().enumerate() {
             nodes.push((
-                base64::encode((idx as u32).to_be_bytes()),
+                base64::encode((idx as u32).to_be_bytes()).into(),
                 EmptyEdgeFields,
                 item,
             ));
