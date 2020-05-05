@@ -42,13 +42,12 @@ where
         registry.create_type::<Self, _>(|registry| {
             E::create_type_info(registry);
             let extra_fields = if let Some(registry::Type::Object { fields, .. }) =
-                registry.types.get_mut(E::type_name().as_ref())
+                registry.types.remove(E::type_name().as_ref())
             {
-                fields.clone()
+                fields
             } else {
                 unreachable!()
             };
-            registry.types.remove(E::type_name().as_ref());
 
             registry::Type::Object {
                 name: Self::type_name().to_string(),
