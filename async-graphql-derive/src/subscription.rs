@@ -3,7 +3,6 @@ use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
     Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait,
@@ -75,7 +74,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 };
 
                 let mut create_ctx = true;
-                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -114,18 +112,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         ));
                                     } else {
                                         create_ctx = false;
-                                        match arg {
-                                            Pat::Wild(_) => {
-                                                pat.pat = Box::new(
-                                                    syn::parse2::<Pat>(quote! { #arg_ctx })
-                                                        .unwrap(),
-                                                );
-                                            }
-                                            Pat::Ident(arg_ident) => {
-                                                arg_ctx = arg_ident.ident.clone();
-                                            }
-                                            _ => {}
-                                        }
                                     }
                                 }
                             }
@@ -139,8 +125,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 if create_ctx {
-                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
-                        .unwrap();
+                    let arg =
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -244,17 +230,15 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?)
                 };
 
-                if let Some(guard) = &field.guard {
-                    method.block.stmts.insert(
-                        0,
-                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
-                            .expect("invalid guard"),
-                    );
-                }
+                let guard = field.guard.map(|guard| quote! {
+                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?;
+                });
 
                 create_stream.push(quote! {
                     if ctx.name.as_str() == #field_name {
                         use #crate_name::futures::stream::{StreamExt, TryStreamExt};
+
+                        #guard
 
                         let field_name = std::sync::Arc::new(ctx.result_name().to_string());
                         #(#get_params)*

@@ -3,7 +3,6 @@ use crate::output_type::OutputType;
 use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
 use inflector::Inflector;
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
 
@@ -52,7 +51,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 };
                 let mut create_ctx = true;
-                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -91,18 +89,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         ));
                                     } else {
                                         create_ctx = false;
-                                        match arg {
-                                            Pat::Wild(_) => {
-                                                pat.pat = Box::new(
-                                                    syn::parse2::<Pat>(quote! { #arg_ctx })
-                                                        .unwrap(),
-                                                );
-                                            }
-                                            Pat::Ident(arg_ident) => {
-                                                arg_ctx = arg_ident.ident.clone();
-                                            }
-                                            _ => {}
-                                        }
                                     }
                                 }
                             }
@@ -112,8 +98,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 if create_ctx {
-                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
-                        .unwrap();
+                    let arg =
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -168,19 +154,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
                 let do_find = quote! { self.#field_ident(ctx, #(#use_keys),*).await.map_err(|err| err.into_error(pos))? };
 
-                if let Some(guard) = &entity.guard {
-                    method.block.stmts.insert(
-                        0,
-                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
-                            .expect("invalid guard"),
-                    );
-                }
+                let guard = entity.guard.map(
+                    |guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error(pos))?; },
+                );
 
                 find_entities.push((
                     args.len(),
                     quote! {
                         if typename == &<#entity_type as #crate_name::Type>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
+                                #guard
                                 let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                                 return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, pos).await;
                             }
@@ -243,7 +226,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 };
 
                 let mut create_ctx = true;
-                let mut arg_ctx = Ident::new("ctx", Span::call_site());
                 let mut args = Vec::new();
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
@@ -283,17 +265,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                     }
 
                                     create_ctx = false;
-                                    match arg {
-                                        Pat::Wild(_) => {
-                                            pat.pat = Box::new(
-                                                syn::parse2::<Pat>(quote! { #arg_ctx }).unwrap(),
-                                            );
-                                        }
-                                        Pat::Ident(arg_ident) => {
-                                            arg_ctx = arg_ident.ident.clone();
-                                        }
-                                        _ => {}
-                                    }
                                 }
                             }
                             _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
@@ -302,8 +273,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 if create_ctx {
-                    let arg = syn::parse2::<FnArg>(quote! { #arg_ctx: &#crate_name::Context<'_> })
-                        .unwrap();
+                    let arg =
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -399,26 +370,26 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
                 let resolve_obj = quote! {
                     {
-                        let res:#crate_name::FieldResult<_> = self.#field_ident(ctx, #(#use_params),*).await;
+                        let res = self.#field_ident(ctx, #(#use_params),*).await;
                         res.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
                     }
                 };
 
+                let guard = field
+                    .guard
+                    .map(|guard| quote! {
+                        #guard.check(ctx).await
+                            .map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?;
+                    });
+
                 resolvers.push(quote! {
                     if ctx.name.as_str() == #field_name {
+                        #guard
                         #(#get_params)*
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                         return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
                     }
                 });
-
-                if let Some(guard) = field.guard {
-                    method.block.stmts.insert(
-                        0,
-                        syn::parse2(quote! { #guard.check(#arg_ctx).await?; })
-                            .expect("invalid guard"),
-                    );
-                }
 
                 if let Some((idx, _)) = method
                     .attrs
