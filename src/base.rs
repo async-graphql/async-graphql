@@ -243,7 +243,7 @@ impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         pos: Pos,
-    ) -> crate::Result<serde_json::Value> where {
+    ) -> crate::Result<serde_json::Value> {
         match self {
             Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
             Err(err) => Err(err.clone().into_error_with_path(
