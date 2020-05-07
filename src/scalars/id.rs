@@ -1,10 +1,13 @@
 use crate::{Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
+use std::convert::TryInto;
+use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
+use uuid::Uuid;
 
 /// ID scalar
 ///
-/// The input is a string or integer, and the output is a string.
+/// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct ID(String);
 
@@ -34,6 +37,12 @@ impl From<String> for ID {
     }
 }
 
+impl Into<String> for ID {
+    fn into(self) -> String {
+        self.0
+    }
+}
+
 impl<'a> From<&'a str> for ID {
     fn from(value: &'a str) -> Self {
         ID(value.to_string())
@@ -43,6 +52,28 @@ impl<'a> From<&'a str> for ID {
 impl From<usize> for ID {
     fn from(value: usize) -> Self {
         ID(value.to_string())
+    }
+}
+
+impl TryInto<usize> for ID {
+    type Error = ParseIntError;
+
+    fn try_into(self) -> std::result::Result<usize, Self::Error> {
+        self.0.parse()
+    }
+}
+
+impl From<Uuid> for ID {
+    fn from(uuid: Uuid) -> ID {
+        ID(uuid.to_string())
+    }
+}
+
+impl TryInto<Uuid> for ID {
+    type Error = uuid::Error;
+
+    fn try_into(self) -> std::result::Result<Uuid, Self::Error> {
+        Uuid::parse_str(&self.0)
     }
 }
 
