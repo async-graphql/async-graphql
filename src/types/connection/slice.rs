@@ -1,5 +1,5 @@
 use crate::types::connection::{EmptyEdgeFields, QueryOperation};
-use crate::{Connection, DataSource, FieldResult};
+use crate::{Connection, Context, DataSource, FieldResult};
 use byteorder::{ReadBytesExt, BE};
 
 #[async_trait::async_trait]
@@ -9,6 +9,7 @@ impl<'a, T: Sync> DataSource for &'a [T] {
 
     async fn query_operation(
         &self,
+        _ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let (start, end) = match operation {

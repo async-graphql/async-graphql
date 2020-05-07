@@ -130,7 +130,7 @@ struct Pagination {
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+///     async fn query_operation(&self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::First {limit} => {
 ///                 let start = 0;
@@ -216,7 +216,7 @@ pub trait DataSource: Sync + Send {
     /// Execute the query.
     async fn query(
         &self,
-        _ctx: &Context<'_>,
+        ctx: &Context<'_>,
         after: Option<Cursor>,
         before: Option<Cursor>,
         first: Option<i32>,
@@ -335,12 +335,13 @@ pub trait DataSource: Sync + Send {
             },
         };
 
-        self.query_operation(&operation).await
+        self.query_operation(ctx, &operation).await
     }
 
     /// Parses the parameters and executes the query，Usually you just need to implement this method.
     async fn query_operation(
         &self,
+        ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>>;
 }
