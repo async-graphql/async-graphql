@@ -632,25 +632,37 @@ impl DataSource for Integers {
     // 我们不需要扩展边的字段，所以传EmptyEdgeFields
     type EdgeFieldsObj = EmptyEdgeFields;
 
-    async fn query_operation(&amp;self, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
+    async fn query_operation(&amp;self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
         let (start, end) = match operation {
             // 向前查找
-            QueryOperation::Forward {after, limit} =&gt; {
+            QueryOperation::First {limit} =&gt; {
+                let start = 0;
+                let end = start + *limit as i32;
+                (start, end)
+            }
+            QueryOperation::FirstAfter {after, limit} =&gt; {
                 // 起始数字，从after+1开始，如果没有after参数，则从0开始
-                let start = after
-                    .and_then(|after| after.parse::&lt;i32&gt;().ok())
+                let start = after.parse::&lt;i32&gt;()
+                    .ok()
                     .map(|after| after + 1)
                     .unwrap_or(0);
                 (start, end + start + *limit)
             }
             // 向后查找
-            QueryOperation::Backward {before, limit} =&gt; {
+            QueryOperation::Last {limit} =&gt; {
+                let end = 0;
+                let start = end - *limit as i32;
+                (start, end)
+            }
+            QueryOperation::LastBefore {before, limit} =&gt; {
                 // 结束数字，如果没有before参数，则为0
-                let end = before
-                    .and_then(|before| before.parse::&lt;i32&gt;().ok())
+                let end = before.parse::&lt;i32&gt;()
+                    .ok()
                     .unwrap_or(0);
                 (end - *limit, end)
             }
+            // TODO: Advise to handle all cases
+            _ =&gt; (0, 10)
         };
 
         // 创建节点，每个节点都是一个包含三个值的元组，依次是游标，扩展边对象，节点值
