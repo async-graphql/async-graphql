@@ -31,7 +31,7 @@ impl DataSource for Integers {
                 (start, end)
             }
             QueryOperation::FirstAfter {after, limit} => {
-                // 起始数字，从after+1开始，如果没有after参数，则从0开始
+                // 起始数字，从after+1开始
                 let start = after.parse::<i32>()
                     .ok()
                     .map(|after| after + 1)
@@ -45,13 +45,13 @@ impl DataSource for Integers {
                 (start, end)
             }
             QueryOperation::LastBefore {before, limit} => {
-                // 结束数字，如果没有before参数，则为0
+                // 结束数字
                 let end = before.parse::<i32>()
                     .ok()
                     .unwrap_or(0);
                 (end - *limit, end)
             }
-            // TODO: Advise to handle all cases
+            // TODO: 建议处理所有条件
             _ => (0, 10)
         };
 
