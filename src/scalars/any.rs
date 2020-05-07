@@ -34,7 +34,7 @@ impl ScalarType for Any {
 
 impl Any {
     /// Parse this `Any` value to T by `serde_json`.
-    fn parse_value<T: DeserializeOwned>(&self) -> std::result::Result<T, serde_json::Error> {
+    pub fn parse_value<T: DeserializeOwned>(&self) -> std::result::Result<T, serde_json::Error> {
         serde_json::from_value(self.to_json().unwrap())
     }
 }
