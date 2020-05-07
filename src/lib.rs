@@ -118,7 +118,7 @@ pub use graphql_parser::query::Value;
 pub use graphql_parser::Pos;
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
-pub use scalars::{Any, ID};
+pub use scalars::{Any, Json, ID};
 pub use schema::Schema;
 pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,

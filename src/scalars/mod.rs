@@ -5,6 +5,7 @@ mod datetime;
 mod floats;
 mod id;
 mod integers;
+mod json;
 mod string;
 mod url;
 
@@ -15,6 +16,7 @@ mod uuid;
 
 pub use any::Any;
 pub use id::ID;
+pub use json::Json;
 
 #[cfg(test)]
 mod tests {

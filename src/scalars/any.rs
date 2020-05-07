@@ -28,7 +28,7 @@ impl ScalarType for Any {
     }
 
     fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(gql_value_to_json_value(&self.0))
+        Ok(gql_value_to_json_value(self.0.clone()))
     }
 }
 
@@ -39,22 +39,22 @@ impl Any {
     }
 }
 
-fn gql_value_to_json_value(value: &Value) -> serde_json::Value {
+pub(crate) fn gql_value_to_json_value(value: Value) -> serde_json::Value {
     match value {
         Value::Null => serde_json::Value::Null,
         Value::Variable(name) => name.clone().into(),
         Value::Int(n) => n.as_i64().unwrap().into(),
-        Value::Float(n) => (*n).into(),
-        Value::String(s) => s.clone().into(),
-        Value::Boolean(v) => (*v).into(),
-        Value::Enum(e) => e.clone().into(),
+        Value::Float(n) => n.into(),
+        Value::String(s) => s.into(),
+        Value::Boolean(v) => v.into(),
+        Value::Enum(e) => e.into(),
         Value::List(values) => values
-            .iter()
+            .into_iter()
             .map(|value| gql_value_to_json_value(value))
             .collect_vec()
             .into(),
         Value::Object(obj) => serde_json::Value::Object(
-            obj.iter()
+            obj.into_iter()
                 .map(|(k, v)| (k.clone(), gql_value_to_json_value(v)))
                 .collect(),
         ),
