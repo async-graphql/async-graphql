@@ -30,7 +30,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
 
     fn parse(value: &Value) -> Option<Self> {
         serde_json::from_value(gql_value_to_json_value(value.clone()))
-            .map(|inner| Json(inner))
+            .map(Json)
             .ok()
     }
 

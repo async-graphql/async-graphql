@@ -42,7 +42,7 @@ impl Any {
 pub(crate) fn gql_value_to_json_value(value: Value) -> serde_json::Value {
     match value {
         Value::Null => serde_json::Value::Null,
-        Value::Variable(name) => name.clone().into(),
+        Value::Variable(name) => name.into(),
         Value::Int(n) => n.as_i64().unwrap().into(),
         Value::Float(n) => n.into(),
         Value::String(s) => s.into(),
@@ -50,12 +50,12 @@ pub(crate) fn gql_value_to_json_value(value: Value) -> serde_json::Value {
         Value::Enum(e) => e.into(),
         Value::List(values) => values
             .into_iter()
-            .map(|value| gql_value_to_json_value(value))
+            .map(gql_value_to_json_value)
             .collect_vec()
             .into(),
         Value::Object(obj) => serde_json::Value::Object(
             obj.into_iter()
-                .map(|(k, v)| (k.clone(), gql_value_to_json_value(v)))
+                .map(|(k, v)| (k, gql_value_to_json_value(v)))
                 .collect(),
         ),
     }
