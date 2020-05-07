@@ -145,3 +145,86 @@ fn hello() -> Result<()> {
         Ok(())
     })
 }
+
+#[test]
+fn upload() -> Result<()> {
+    smol::run(async {
+        let listen_addr = test_utils::find_listen_addr().await;
+
+        let server = Task::<Result<()>>::spawn(async move {
+            struct QueryRoot;
+            #[Object]
+            impl QueryRoot {}
+
+            #[async_graphql::SimpleObject]
+            #[derive(Clone)]
+            pub struct FileInfo {
+                filename: String,
+                mime_type: Option<String>,
+            }
+
+            struct MutationRoot;
+            #[Object]
+            impl MutationRoot {
+                async fn single_upload(&self, file: Upload) -> FileInfo {
+                    println!("single_upload: filename={}", file.filename);
+                    println!("single_upload: content_type={:?}", file.content_type);
+                    println!("single_upload: path={:?}", file.path);
+
+                    let file_path = file.path.clone();
+                    let content = Task::blocking(async move { std::fs::read_to_string(file_path) })
+                        .await
+                        .ok();
+                    assert_eq!(content, Some("test\r\n".to_owned()));
+
+                    let file_info = FileInfo {
+                        filename: file.filename,
+                        mime_type: file.content_type,
+                    };
+
+                    file_info
+                }
+            }
+
+            let mut app = tide::new();
+            app.at("/").post(|req: Request<()>| async move {
+                let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
+                async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
+            });
+            app.listen(&listen_addr).await?;
+
+            Ok(())
+        });
+
+        let client = Task::<Result<()>>::spawn(async move {
+            Timer::after(Duration::from_millis(300)).await;
+
+            let form = reqwest::multipart::Form::new()
+                .text("operations", r#"{ "query": "mutation ($file: Upload!) { singleUpload(file: $file) { filename, mimeType } }", "variables": { "file": null } }"#)
+                .text("map", r#"{ "0": ["variables.file"] }"#)
+                .part("0", reqwest::multipart::Part::stream("test").file_name("test.txt").mime_str("text/plain")?);
+
+            let resp = reqwest::Client::new()
+                .post(format!("http://{}", listen_addr).as_str())
+                .multipart(form)
+                .send()
+                .await?;
+
+            assert_eq!(resp.status(), reqwest::StatusCode::OK);
+            let string = resp.text().await?;
+            println!("{}", string);
+
+            assert_eq!(
+                string,
+                json!({"data": {"singleUpload": {"filename": "test.txt", "mimeType": "text/plain"}}}).to_string()
+            );
+
+            Ok(())
+        });
+
+        client.await?;
+        server.cancel().await;
+
+        Ok(())
+    })
+}
