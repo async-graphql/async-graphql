@@ -179,7 +179,7 @@ impl DataSource for Integers {
                 (start, end)
             }
             QueryOperation::FirstAfter {after, limit} =&gt; {
-                // 起始数字，从after+1开始，如果没有after参数，则从0开始
+                // 起始数字，从after+1开始
                 let start = after.parse::&lt;i32&gt;()
                     .ok()
                     .map(|after| after + 1)
@@ -193,13 +193,13 @@ impl DataSource for Integers {
                 (start, end)
             }
             QueryOperation::LastBefore {before, limit} =&gt; {
-                // 结束数字，如果没有before参数，则为0
+                // 结束数字
                 let end = before.parse::&lt;i32&gt;()
                     .ok()
                     .unwrap_or(0);
                 (end - *limit, end)
             }
-            // TODO: Advise to handle all cases
+            // TODO: 建议处理所有条件
             _ =&gt; (0, 10)
         };
 
