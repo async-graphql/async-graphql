@@ -1,4 +1,3 @@
-use crate::scalars::any::gql_value_to_json_value;
 use crate::{Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use serde::de::DeserializeOwned;
@@ -30,9 +29,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     }
 
     fn parse(value: &Value) -> Option<Self> {
-        serde_json::from_value(gql_value_to_json_value(value.clone()))
-            .map(Json)
-            .ok()
+        serde_json::from_value(value.clone().into()).map(Json).ok()
     }
 
     fn to_json(&self) -> Result<serde_json::Value> {

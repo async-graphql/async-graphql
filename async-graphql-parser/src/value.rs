@@ -115,3 +115,45 @@ impl fmt::Display for Value {
         }
     }
 }
+
+impl From<Value> for serde_json::Value {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Null => serde_json::Value::Null,
+            Value::Variable(name) => name.into(),
+            Value::Int(n) => n.into(),
+            Value::Float(n) => n.into(),
+            Value::String(s) => s.into(),
+            Value::Boolean(v) => v.into(),
+            Value::Enum(e) => e.into(),
+            Value::List(values) => values
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<serde_json::Value>>()
+                .into(),
+            Value::Object(obj) => serde_json::Value::Object(
+                obj.into_iter()
+                    .map(|(name, value)| (name, value.into()))
+                    .collect(),
+            ),
+        }
+    }
+}
+
+impl From<serde_json::Value> for Value {
+    fn from(value: serde_json::Value) -> Self {
+        match value {
+            serde_json::Value::Null => Value::Null,
+            serde_json::Value::Bool(n) => Value::Boolean(n),
+            serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
+            serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
+            serde_json::Value::String(s) => Value::String(s),
+            serde_json::Value::Array(ls) => Value::List(ls.into_iter().map(Into::into).collect()),
+            serde_json::Value::Object(obj) => Value::Object(
+                obj.into_iter()
+                    .map(|(name, value)| (name, value.into()))
+                    .collect(),
+            ),
+        }
+    }
+}

@@ -1,6 +1,5 @@
 use crate::{Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
-use itertools::Itertools;
 use serde::de::DeserializeOwned;
 
 /// Any scalar
@@ -28,7 +27,7 @@ impl ScalarType for Any {
     }
 
     fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(gql_value_to_json_value(self.0.clone()))
+        Ok(self.0.clone().into())
     }
 }
 
@@ -36,28 +35,6 @@ impl Any {
     /// Parse this `Any` value to T by `serde_json`.
     pub fn parse_value<T: DeserializeOwned>(&self) -> std::result::Result<T, serde_json::Error> {
         serde_json::from_value(self.to_json().unwrap())
-    }
-}
-
-pub(crate) fn gql_value_to_json_value(value: Value) -> serde_json::Value {
-    match value {
-        Value::Null => serde_json::Value::Null,
-        Value::Variable(name) => name.into(),
-        Value::Int(n) => n.into(),
-        Value::Float(n) => n.into(),
-        Value::String(s) => s.into(),
-        Value::Boolean(v) => v.into(),
-        Value::Enum(e) => e.into(),
-        Value::List(values) => values
-            .into_iter()
-            .map(gql_value_to_json_value)
-            .collect_vec()
-            .into(),
-        Value::Object(obj) => serde_json::Value::Object(
-            obj.into_iter()
-                .map(|(k, v)| (k, gql_value_to_json_value(v)))
-                .collect(),
-        ),
     }
 }
 

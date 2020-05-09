@@ -46,7 +46,7 @@ impl DerefMut for Variables {
 impl Variables {
     /// Parse variables from JSON object.
     pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
-        if let Value::Object(obj) = json_value_to_gql_value(value) {
+        if let Value::Object(obj) = value.into() {
             Ok(Variables(Value::Object(obj)))
         } else {
             Ok(Default::default())
@@ -106,24 +106,6 @@ fn file_string(filename: &str, content_type: Option<&str>, path: &Path) -> Strin
         format!("file:{}:{}|", filename, content_type) + &path.display().to_string()
     } else {
         format!("file:{}|", filename) + &path.display().to_string()
-    }
-}
-
-fn json_value_to_gql_value(value: serde_json::Value) -> Value {
-    match value {
-        serde_json::Value::Null => Value::Null,
-        serde_json::Value::Bool(n) => Value::Boolean(n),
-        serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
-        serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
-        serde_json::Value::String(s) => Value::String(s),
-        serde_json::Value::Array(ls) => {
-            Value::List(ls.into_iter().map(json_value_to_gql_value).collect())
-        }
-        serde_json::Value::Object(obj) => Value::Object(
-            obj.into_iter()
-                .map(|(name, value)| (name, json_value_to_gql_value(value)))
-                .collect(),
-        ),
     }
 }
 
