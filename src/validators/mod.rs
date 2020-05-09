@@ -4,7 +4,7 @@ mod int_validators;
 mod list_validators;
 mod string_validators;
 
-use graphql_parser::schema::Value;
+use crate::Value;
 
 pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
 pub use list_validators::{ListMaxLength, ListMinLength};

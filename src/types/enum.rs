@@ -1,5 +1,4 @@
-use crate::{Result, Type};
-use graphql_parser::query::Value;
+use crate::{Result, Type, Value};
 
 #[allow(missing_docs)]
 pub struct EnumItem<T> {

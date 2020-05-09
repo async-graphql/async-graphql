@@ -1,10 +1,9 @@
-use crate::validation::utils::{operation_name, referenced_variables, Scope};
-use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{
+use crate::parser::ast::{
     Document, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
 };
-use graphql_parser::schema::Value;
-use graphql_parser::Pos;
+use crate::validation::utils::{operation_name, referenced_variables, Scope};
+use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::{Pos, Spanned, Value};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -76,7 +75,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -86,7 +85,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
@@ -94,13 +93,13 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_variable_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a VariableDefinition,
+        variable_definition: &'a Spanned<VariableDefinition>,
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
                 vars.insert((
                     variable_definition.name.as_str(),
-                    variable_definition.position,
+                    variable_definition.position(),
                 ));
             }
         }
@@ -109,9 +108,8 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _pos: Pos,
-        _name: &'a str,
-        value: &'a Value,
+        _name: &'a Spanned<String>,
+        value: &'a Spanned<Value>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
@@ -124,7 +122,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a FragmentSpread,
+        fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

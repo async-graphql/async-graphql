@@ -179,25 +179,26 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.as_str() == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.position).await;
+            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.position())
+                .await;
         } else if ctx.name.as_str() == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.position).await;
+            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.position()).await;
         } else if ctx.name.as_str() == "totalCount" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.position)
+            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.position())
                 .await;
         } else if ctx.name.as_str() == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
-            return OutputValueType::resolve(&items, &ctx_obj, ctx.position).await;
+            return OutputValueType::resolve(&items, &ctx_obj, ctx.position()).await;
         }
 
         Err(Error::Query {
-            pos: ctx.position,
+            pos: ctx.position(),
             path: None,
             err: QueryError::FieldNotFound {
-                field_name: ctx.name.clone(),
+                field_name: ctx.name.clone_inner(),
                 object: Connection::<T, E>::type_name().to_string(),
             },
         })

@@ -1,9 +1,8 @@
+use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Value;
-use graphql_parser::query::{Directive, Field};
-use graphql_parser::Pos;
+use crate::{Spanned, Value};
 use std::collections::HashMap;
 
 enum ArgsType<'a> {
@@ -34,34 +33,37 @@ impl<'a> KnownArgumentNames<'a> {
 }
 
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Directive) {
+    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
         self.current_args = ctx
             .registry
             .directives
-            .get(&directive.name)
+            .get(directive.name.as_str())
             .map(|d| (&d.args, ArgsType::Directive(&directive.name)));
     }
 
-    fn exit_directive(&mut self, _ctx: &mut VisitorContext<'a>, _directive: &'a Directive) {
+    fn exit_directive(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _directive: &'a Spanned<Directive>,
+    ) {
         self.current_args = None;
     }
 
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        pos: Pos,
-        name: &str,
-        _value: &'a Value,
+        name: &'a Spanned<String>,
+        _value: &'a Spanned<Value>,
     ) {
         if let Some((args, arg_type)) = &self.current_args {
-            if !args.contains_key(name) {
+            if !args.contains_key(name.as_str()) {
                 match arg_type {
                     ArgsType::Field {
                         field_name,
                         type_name,
                     } => {
                         ctx.report_error(
-                            vec![pos],
+                            vec![name.position()],
                             format!(
                                 "Unknown argument \"{}\" on field \"{}\" of type \"{}\".{}",
                                 name,
@@ -73,7 +75,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                     }
                     ArgsType::Directive(directive_name) => {
                         ctx.report_error(
-                            vec![pos],
+                            vec![name.position()],
                             format!(
                                 "Unknown argument \"{}\" on directive \"{}\".{}",
                                 name,
@@ -87,7 +89,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(schema_field) = parent_type.field_by_name(&field.name) {
                 self.current_args = Some((
@@ -101,7 +103,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         }
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
         self.current_args = None;
     }
 }

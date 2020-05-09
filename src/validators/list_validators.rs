@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use graphql_parser::query::Value;
+use crate::Value;
 
 /// List minimum length validator
 pub struct ListMinLength {

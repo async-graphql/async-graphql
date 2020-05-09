@@ -1,5 +1,6 @@
+use crate::parser::ast::{Mutation, OperationDefinition, Query, Subscription};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{Mutation, OperationDefinition, Query, Subscription};
+use crate::Spanned;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -11,25 +12,28 @@ impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
-        let name = match operation_definition {
-            OperationDefinition::Query(Query { name, position, .. }) => {
-                name.as_ref().map(|name| (name, position))
-            }
-            OperationDefinition::Mutation(Mutation { name, position, .. }) => {
-                name.as_ref().map(|name| (name, position))
-            }
-            OperationDefinition::Subscription(Subscription { name, position, .. }) => {
-                name.as_ref().map(|name| (name, position))
-            }
+        let name = match &operation_definition.node {
+            OperationDefinition::Query(Spanned {
+                node: Query { name, .. },
+                ..
+            }) => name.as_ref(),
+            OperationDefinition::Mutation(Spanned {
+                node: Mutation { name, .. },
+                ..
+            }) => name.as_ref(),
+            OperationDefinition::Subscription(Spanned {
+                node: Subscription { name, .. },
+                ..
+            }) => name.as_ref(),
             OperationDefinition::SelectionSet(_) => None,
         };
 
-        if let Some((name, pos)) = name {
+        if let Some(name) = name {
             if !self.names.insert(name.as_str()) {
                 ctx.report_error(
-                    vec![*pos],
+                    vec![name.position()],
                     format!("There can only be one operation named \"{}\"", name),
                 )
             }

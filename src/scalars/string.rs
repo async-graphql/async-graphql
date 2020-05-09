@@ -1,4 +1,5 @@
-use crate::{registry, ContextSelectionSet, OutputValueType, Pos, Result, ScalarType, Type, Value};
+use crate::parser::Pos;
+use crate::{registry, ContextSelectionSet, OutputValueType, Result, ScalarType, Type, Value};
 use async_graphql_derive::Scalar;
 use std::borrow::Cow;
 

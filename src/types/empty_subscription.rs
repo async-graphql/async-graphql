@@ -1,10 +1,9 @@
 use crate::context::Environment;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, QueryError, Result,
-    Schema, SubscriptionType, Type,
+    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
+    Result, Schema, SubscriptionType, Type,
 };
 use futures::Stream;
-use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::pin::Pin;
 use std::sync::Arc;

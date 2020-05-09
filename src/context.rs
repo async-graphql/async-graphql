@@ -1,10 +1,9 @@
 use crate::extensions::BoxExtension;
+use crate::parser::ast::{Directive, Field, FragmentDefinition, SelectionSet, VariableDefinition};
 use crate::registry::Registry;
-use crate::{InputValueType, Pos, QueryError, Result, Schema, Type};
+use crate::{InputValueType, QueryError, Result, Schema, Type};
+use crate::{Pos, Spanned, Value};
 use fnv::FnvHashMap;
-use graphql_parser::query::{
-    Directive, Field, FragmentDefinition, SelectionSet, Value, VariableDefinition,
-};
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::{Deref, DerefMut};
@@ -47,9 +46,8 @@ impl DerefMut for Variables {
 impl Variables {
     /// Parse variables from JSON object.
     pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
-        let gql_value = json_value_to_gql_value(value);
-        if let Value::Object(_) = gql_value {
-            Ok(Variables(gql_value))
+        if let Value::Object(obj) = json_value_to_gql_value(value) {
+            Ok(Variables(Value::Object(obj)))
         } else {
             Ok(Default::default())
         }
@@ -116,7 +114,7 @@ fn json_value_to_gql_value(value: serde_json::Value) -> Value {
         serde_json::Value::Null => Value::Null,
         serde_json::Value::Bool(n) => Value::Boolean(n),
         serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
-        serde_json::Value::Number(n) => Value::Int((n.as_i64().unwrap() as i32).into()),
+        serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
         serde_json::Value::String(s) => Value::String(s),
         serde_json::Value::Array(ls) => {
             Value::List(ls.into_iter().map(json_value_to_gql_value).collect())
@@ -141,10 +139,10 @@ impl Data {
 }
 
 /// Context for `SelectionSet`
-pub type ContextSelectionSet<'a> = ContextBase<'a, &'a SelectionSet>;
+pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Spanned<SelectionSet>>;
 
 /// Context object for resolve field
-pub type Context<'a> = ContextBase<'a, &'a Field>;
+pub type Context<'a> = ContextBase<'a, &'a Spanned<Field>>;
 
 /// The query path segment
 #[derive(Clone)]
@@ -261,7 +259,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
-    pub(crate) variable_definitions: &'a [VariableDefinition],
+    pub(crate) variable_definitions: &'a [Spanned<VariableDefinition>],
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) ctx_data: Option<&'a Data>,
@@ -279,7 +277,7 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 #[doc(hidden)]
 pub struct Environment {
     pub variables: Variables,
-    pub variable_definitions: Vec<VariableDefinition>,
+    pub variable_definitions: Vec<Spanned<VariableDefinition>>,
     pub fragments: HashMap<String, FragmentDefinition>,
     pub ctx_data: Arc<Data>,
 }
@@ -322,14 +320,15 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn with_field(&'a self, field: &'a Field) -> ContextBase<'a, &'a Field> {
+    pub fn with_field(&'a self, field: &'a Spanned<Field>) -> ContextBase<'a, &'a Spanned<Field>> {
         ContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
                 segment: QueryPathSegment::Name(
                     field
                         .alias
-                        .as_deref()
+                        .as_ref()
+                        .map(|alias| alias.as_str())
                         .unwrap_or_else(|| field.name.as_str()),
                 ),
             }),
@@ -349,8 +348,8 @@ impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
     pub fn with_selection_set(
         &self,
-        selection_set: &'a SelectionSet,
-    ) -> ContextBase<'a, &'a SelectionSet> {
+        selection_set: &'a Spanned<SelectionSet>,
+    ) -> ContextBase<'a, &'a Spanned<SelectionSet>> {
         ContextBase {
             path_node: self.path_node.clone(),
             extensions: self.extensions,
@@ -384,12 +383,12 @@ impl<'a, T> ContextBase<'a, T> {
         let def = self
             .variable_definitions
             .iter()
-            .find(|def| def.name == name);
+            .find(|def| def.name.as_str() == name);
         if let Some(def) = def {
-            if let Some(var_value) = self.variables.get(&def.name) {
+            if let Some(var_value) = self.variables.get(def.name.as_str()) {
                 return Ok(var_value.clone());
             } else if let Some(default) = &def.default_value {
-                return Ok(default.clone());
+                return Ok(default.clone_inner());
             }
         }
         Err(QueryError::VarNotDefined {
@@ -422,22 +421,17 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn is_skip(&self, directives: &[Directive]) -> Result<bool> {
+    pub fn is_skip(&self, directives: &[Spanned<Directive>]) -> Result<bool> {
         for directive in directives {
-            if directive.name == "skip" {
-                if let Some(value) = directive
-                    .arguments
-                    .iter()
-                    .find(|(name, _)| name == "if")
-                    .map(|(_, value)| value)
-                {
-                    let value = self.resolve_input_value(value.clone(), directive.position)?;
+            if directive.name.as_str() == "skip" {
+                if let Some(value) = directive.get_argument("if") {
+                    let value = self.resolve_input_value(value.clone_inner(), value.position())?;
                     let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
                         }
-                        .into_error(directive.position)
+                        .into_error(directive.position())
                     })?;
                     if res {
                         return Ok(true);
@@ -448,22 +442,17 @@ impl<'a, T> ContextBase<'a, T> {
                         arg_name: "if",
                         arg_type: "Boolean!",
                     }
-                    .into_error(directive.position));
+                    .into_error(directive.position()));
                 }
-            } else if directive.name == "include" {
-                if let Some(value) = directive
-                    .arguments
-                    .iter()
-                    .find(|(name, _)| name == "if")
-                    .map(|(_, value)| value)
-                {
-                    let value = self.resolve_input_value(value.clone(), directive.position)?;
+            } else if directive.name.as_str() == "include" {
+                if let Some(value) = directive.get_argument("if") {
+                    let value = self.resolve_input_value(value.clone_inner(), value.position())?;
                     let res: bool = InputValueType::parse(&value).ok_or_else(|| {
                         QueryError::ExpectedType {
                             expect: bool::qualified_type_name(),
                             actual: value,
                         }
-                        .into_error(directive.position)
+                        .into_error(directive.position())
                     })?;
                     if !res {
                         return Ok(true);
@@ -474,13 +463,13 @@ impl<'a, T> ContextBase<'a, T> {
                         arg_name: "if",
                         arg_type: "Boolean!",
                     }
-                    .into_error(directive.position));
+                    .into_error(directive.position()));
                 }
             } else {
                 return Err(QueryError::UnknownDirective {
-                    name: directive.name.clone(),
+                    name: directive.name.clone_inner(),
                 }
-                .into_error(directive.position));
+                .into_error(directive.position()));
             }
         }
 
@@ -488,9 +477,9 @@ impl<'a, T> ContextBase<'a, T> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a SelectionSet> {
+impl<'a> ContextBase<'a, &'a Spanned<SelectionSet>> {
     #[doc(hidden)]
-    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a SelectionSet> {
+    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Spanned<SelectionSet>> {
         ContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
@@ -510,23 +499,17 @@ impl<'a> ContextBase<'a, &'a SelectionSet> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a Field> {
+impl<'a> ContextBase<'a, &'a Spanned<Field>> {
     #[doc(hidden)]
     pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
         &self,
         name: &str,
-        pos: Pos,
         default: F,
     ) -> Result<T> {
-        match self
-            .arguments
-            .iter()
-            .find(|(n, _)| n == name)
-            .map(|(_, v)| v)
-            .cloned()
-        {
+        match self.get_argument(name).cloned() {
             Some(value) => {
-                let value = self.resolve_input_value(value, pos)?;
+                let pos = value.position();
+                let value = self.resolve_input_value(value.into_inner(), pos)?;
                 let res = InputValueType::parse(&value).ok_or_else(|| {
                     QueryError::ExpectedType {
                         expect: T::qualified_type_name(),
@@ -543,7 +526,7 @@ impl<'a> ContextBase<'a, &'a Field> {
                         expect: T::qualified_type_name(),
                         actual: value.clone(),
                     }
-                    .into_error(pos)
+                    .into_error(self.position())
                 })?;
                 Ok(res)
             }
@@ -554,7 +537,8 @@ impl<'a> ContextBase<'a, &'a Field> {
     pub fn result_name(&self) -> &str {
         self.item
             .alias
-            .as_deref()
+            .as_ref()
+            .map(|alias| alias.as_str())
             .unwrap_or_else(|| self.item.name.as_str())
     }
 }

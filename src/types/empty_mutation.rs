@@ -1,8 +1,7 @@
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, QueryError, Result,
-    Type,
+    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
+    Result, Type,
 };
-use graphql_parser::Pos;
 use std::borrow::Cow;
 
 /// Empty mutation

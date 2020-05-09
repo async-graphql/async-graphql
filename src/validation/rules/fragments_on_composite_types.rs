@@ -1,5 +1,6 @@
+use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{FragmentDefinition, InlineFragment, TypeCondition};
+use crate::Spanned;
 
 #[derive(Default)]
 pub struct FragmentsOnCompositeTypes;
@@ -8,13 +9,13 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
-                let TypeCondition::On(name) = &fragment_definition.type_condition;
+                let TypeCondition::On(name) = &fragment_definition.type_condition.node;
                 ctx.report_error(
-                    vec![fragment_definition.position],
+                    vec![fragment_definition.position()],
                     format!(
                         "Fragment \"{}\" cannot condition non composite type \"{}\"",
                         fragment_definition.name, name
@@ -27,12 +28,12 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a InlineFragment,
+        inline_fragment: &'a Spanned<InlineFragment>,
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
                 ctx.report_error(
-                    vec![inline_fragment.position],
+                    vec![inline_fragment.position()],
                     format!(
                         "Fragment cannot condition non composite type \"{}\"",
                         current_type.name()

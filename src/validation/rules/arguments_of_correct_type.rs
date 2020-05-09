@@ -1,11 +1,9 @@
 use crate::context::QueryPathNode;
+use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::QueryPathSegment;
-use graphql_parser::query::Field;
-use graphql_parser::schema::{Directive, Value};
-use graphql_parser::Pos;
+use crate::{QueryPathSegment, Spanned, Value};
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -14,33 +12,36 @@ pub struct ArgumentsOfCorrectType<'a> {
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Directive) {
+    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
         self.current_args = ctx
             .registry
             .directives
-            .get(&directive.name)
+            .get(directive.name.as_str())
             .map(|d| &d.args);
     }
 
-    fn exit_directive(&mut self, _ctx: &mut VisitorContext<'a>, _directive: &'a Directive) {
+    fn exit_directive(
+        &mut self,
+        _ctx: &mut VisitorContext<'a>,
+        _directive: &'a Spanned<Directive>,
+    ) {
         self.current_args = None;
     }
 
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        pos: Pos,
-        name: &str,
-        value: &'a Value,
+        name: &'a Spanned<String>,
+        value: &'a Spanned<Value>,
     ) {
         if let Some(arg) = self
             .current_args
-            .and_then(|args| args.get(name).map(|input| input))
+            .and_then(|args| args.get(name.as_str()).map(|input| input))
         {
             if let Some(validator) = &arg.validator {
                 if let Some(reason) = validator.is_valid(value) {
                     ctx.report_error(
-                        vec![pos],
+                        vec![name.position()],
                         format!("Invalid value for argument \"{}\", {}", arg.name, reason),
                     );
                     return;
@@ -56,19 +57,22 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                     segment: QueryPathSegment::Name(arg.name),
                 },
             ) {
-                ctx.report_error(vec![pos], format!("Invalid value for argument {}", reason));
+                ctx.report_error(
+                    vec![name.position()],
+                    format!("Invalid value for argument {}", reason),
+                );
             }
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Field) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
         self.current_args = ctx
             .parent_type()
             .and_then(|p| p.field_by_name(&field.name))
             .map(|f| &f.args);
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
         self.current_args = None;
     }
 }

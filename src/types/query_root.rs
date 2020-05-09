@@ -1,11 +1,10 @@
 use crate::model::{__Schema, __Type};
 use crate::scalars::Any;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
+    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos,
     QueryError, Result, Type, Value,
 };
 use async_graphql_derive::SimpleObject;
-use graphql_parser::Pos;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -84,10 +83,10 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
         if ctx.name.as_str() == "__schema" {
             if self.disable_introspection {
                 return Err(Error::Query {
-                    pos: ctx.position,
+                    pos: ctx.position(),
                     path: Some(ctx.path_node.as_ref().unwrap().to_json()),
                     err: QueryError::FieldNotFound {
-                        field_name: ctx.name.clone(),
+                        field_name: ctx.name.clone_inner(),
                         object: Self::type_name().to_string(),
                     },
                 });
@@ -99,11 +98,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     registry: &ctx.registry,
                 },
                 &ctx_obj,
-                ctx.position,
+                ctx.position(),
             )
             .await;
         } else if ctx.name.as_str() == "__type" {
-            let type_name: String = ctx.param_value("name", ctx.position, || Value::Null)?;
+            let type_name: String = ctx.param_value("name", || Value::Null)?;
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &ctx.registry
@@ -111,15 +110,14 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     .get(&type_name)
                     .map(|ty| __Type::new_simple(ctx.registry, ty)),
                 &ctx_obj,
-                ctx.position,
+                ctx.position(),
             )
             .await;
         } else if ctx.name.as_str() == "_entities" {
-            let representations: Vec<Any> =
-                ctx.param_value("representations", ctx.position, || Value::Null)?;
+            let representations: Vec<Any> = ctx.param_value("representations", || Value::Null)?;
             let mut res = Vec::new();
             for item in representations {
-                res.push(self.inner.find_entity(ctx, ctx.position, &item.0).await?);
+                res.push(self.inner.find_entity(ctx, &item.0).await?);
             }
             return Ok(res.into());
         } else if ctx.name.as_str() == "_service" {
@@ -129,7 +127,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     sdl: Some(ctx.registry.create_federation_sdl()),
                 },
                 &ctx_obj,
-                ctx.position,
+                ctx.position(),
             )
             .await;
         }

@@ -1,7 +1,7 @@
 use crate::context::Environment;
+use crate::parser::ast::{Selection, TypeCondition};
 use crate::{Context, ContextSelectionSet, ObjectType, Result, Schema, Type};
 use futures::{Future, Stream};
-use graphql_parser::query::{Selection, TypeCondition};
 use std::pin::Pin;
 use std::sync::Arc;
 
@@ -42,7 +42,7 @@ where
 {
     Box::pin(async move {
         for selection in &ctx.items {
-            match selection {
+            match &selection.node {
                 Selection::Field(field) => {
                     if ctx.is_skip(&field.directives)? {
                         continue;
@@ -81,7 +81,9 @@ where
                         continue;
                     }
 
-                    if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
+                    if let Some(TypeCondition::On(name)) =
+                        inline_fragment.type_condition.as_ref().map(|v| &v.node)
+                    {
                         if name.as_str() == Subscription::type_name() {
                             create_subscription_stream(
                                 schema,

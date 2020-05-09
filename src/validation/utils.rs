@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
+use crate::parser::ast::OperationDefinition;
 use crate::{registry, Pos, QueryPathSegment, Value};
-use graphql_parser::query::OperationDefinition;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -36,12 +36,18 @@ fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
 
 pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&str>, Pos) {
     match operation_definition {
-        OperationDefinition::SelectionSet(selection_set) => (None, selection_set.span.0),
-        OperationDefinition::Query(query) => (query.name.as_deref(), query.position),
-        OperationDefinition::Mutation(mutation) => (mutation.name.as_deref(), mutation.position),
-        OperationDefinition::Subscription(subscription) => {
-            (subscription.name.as_deref(), subscription.position)
+        OperationDefinition::SelectionSet(selection_set) => (None, selection_set.position()),
+        OperationDefinition::Query(query) => {
+            (query.name.as_ref().map(|n| n.as_str()), query.position())
         }
+        OperationDefinition::Mutation(mutation) => (
+            mutation.name.as_ref().map(|n| n.as_str()),
+            mutation.position(),
+        ),
+        OperationDefinition::Subscription(subscription) => (
+            subscription.name.as_ref().map(|n| n.as_str()),
+            subscription.position(),
+        ),
     }
 }
 

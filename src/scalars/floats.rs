@@ -16,7 +16,7 @@ macro_rules! impl_float_scalars {
 
             fn parse(value: &Value) -> Option<Self> {
                 match value {
-                    Value::Int(n) => Some(n.as_i64().unwrap() as Self),
+                    Value::Int(n) => Some(*n as Self),
                     Value::Float(n) => Some(*n as Self),
                     _ => None
                 }

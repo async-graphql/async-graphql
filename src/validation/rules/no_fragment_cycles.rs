@@ -1,7 +1,7 @@
 use crate::error::RuleError;
+use crate::parser::ast::{Document, FragmentDefinition, FragmentSpread};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{Document, FragmentDefinition, FragmentSpread};
-use graphql_parser::Pos;
+use crate::{Pos, Spanned};
 use std::collections::{HashMap, HashSet};
 
 struct CycleDetector<'a> {
@@ -75,7 +75,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.current_fragment = Some(&fragment_definition.name);
         self.fragment_order.push(&fragment_definition.name);
@@ -84,7 +84,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_definition: &'a FragmentDefinition,
+        _fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.current_fragment = None;
     }
@@ -92,13 +92,13 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a FragmentSpread,
+        fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         if let Some(current_fragment) = self.current_fragment {
             self.spreads
                 .entry(current_fragment)
                 .or_insert_with(Vec::new)
-                .push((&fragment_spread.fragment_name, fragment_spread.position));
+                .push((&fragment_spread.fragment_name, fragment_spread.position()));
         }
     }
 }

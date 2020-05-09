@@ -1,5 +1,6 @@
+use crate::parser::ast::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
+use crate::Spanned;
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -10,8 +11,8 @@ pub struct PossibleFragmentSpreads<'a> {
 impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         for d in &doc.definitions {
-            if let Definition::Fragment(fragment) = d {
-                let TypeCondition::On(type_name) = &fragment.type_condition;
+            if let Definition::Fragment(fragment) = &d.node {
+                let TypeCondition::On(type_name) = &fragment.type_condition.node;
                 self.fragment_types
                     .insert(fragment.name.as_str(), type_name);
             }
@@ -21,7 +22,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_fragment_spread(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a FragmentSpread,
+        fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         if let Some(fragment_type) = self
             .fragment_types
@@ -31,7 +32,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
                 if let Some(on_type) = ctx.registry.types.get(*fragment_type) {
                     if !current_type.type_overlap(on_type) {
                         ctx.report_error(
-                            vec![fragment_spread.position],
+                            vec![fragment_spread.position()],
                             format!(
                                 "Fragment \"{}\" cannot be spread here as objects of type \"{}\" can never be of type \"{}\"",
                                 &fragment_spread.fragment_name, current_type.name(), fragment_type
@@ -46,14 +47,16 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a InlineFragment,
+        inline_fragment: &'a Spanned<InlineFragment>,
     ) {
         if let Some(parent_type) = ctx.parent_type() {
-            if let Some(TypeCondition::On(fragment_type)) = &inline_fragment.type_condition {
+            if let Some(TypeCondition::On(fragment_type)) =
+                &inline_fragment.type_condition.as_ref().map(|c| &c.node)
+            {
                 if let Some(on_type) = ctx.registry.types.get(fragment_type.as_str()) {
                     if !parent_type.type_overlap(&on_type) {
                         ctx.report_error(
-                            vec![inline_fragment.position],
+                            vec![inline_fragment.position()],
                             format!(
                                 "Fragment cannot be spread here as objects of type \"{}\" \
              can never be of type \"{}\"",

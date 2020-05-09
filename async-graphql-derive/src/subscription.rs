@@ -181,7 +181,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
 
                     get_params.push(quote! {
-                        let #ident: #ty = ctx.param_value(#name, ctx.position, #default)?;
+                        let #ident: #ty = ctx.param_value(#name, #default)?;
                     });
                 }
 
@@ -227,11 +227,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let create_field_stream = quote! {
                     #crate_name::futures::stream::StreamExt::fuse(self.#ident(ctx, #(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?)
+                        map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?)
                 };
 
                 let guard = field.guard.map(|guard| quote! {
-                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?;
+                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
                 });
 
                 create_stream.push(quote! {
@@ -244,7 +244,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         #(#get_params)*
                         let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
                         let schema = schema.clone();
-                        let pos = ctx.position;
+                        let pos = ctx.position();
                         let environment = environment.clone();
                         let stream = #create_field_stream.then({
                             let field_name = field_name.clone();
@@ -338,9 +338,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone(),
+                    field_name: ctx.name.clone_inner(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position))
+                }.into_error(ctx.position()))
             }
         }
     };

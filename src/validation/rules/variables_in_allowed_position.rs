@@ -1,18 +1,17 @@
+use crate::parser::ast::{
+    Document, FragmentDefinition, FragmentSpread, OperationDefinition, Type, VariableDefinition,
+};
 use crate::registry::TypeName;
 use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Value;
-use graphql_parser::query::{
-    Document, FragmentDefinition, FragmentSpread, OperationDefinition, Type, VariableDefinition,
-};
-use graphql_parser::Pos;
+use crate::{Pos, Spanned, Value};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct VariableInAllowedPosition<'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(&'a str, Pos, TypeName<'a>)>>,
-    variable_defs: HashMap<Scope<'a>, Vec<(Pos, &'a VariableDefinition)>>,
+    variable_defs: HashMap<Scope<'a>, Vec<&'a Spanned<VariableDefinition>>>,
     current_scope: Option<Scope<'a>>,
 }
 
@@ -20,7 +19,7 @@ impl<'a> VariableInAllowedPosition<'a> {
     fn collect_incorrect_usages(
         &self,
         from: &Scope<'a>,
-        var_defs: &[(Pos, &'a VariableDefinition)],
+        var_defs: &[&'a Spanned<VariableDefinition>],
         ctx: &mut VisitorContext<'a>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
@@ -32,18 +31,16 @@ impl<'a> VariableInAllowedPosition<'a> {
 
         if let Some(usages) = self.variable_usages.get(from) {
             for (var_name, usage_pos, var_type) in usages {
-                if let Some((def_pos, var_def)) =
-                    var_defs.iter().find(|(_, def)| def.name == *var_name)
-                {
-                    let expected_type = match (&var_def.default_value, &var_def.var_type) {
-                        (Some(_), Type::ListType(_)) => var_def.var_type.to_string() + "!",
-                        (Some(_), Type::NamedType(_)) => var_def.var_type.to_string() + "!",
-                        (_, _) => var_def.var_type.to_string(),
+                if let Some(def) = var_defs.iter().find(|def| def.name.as_str() == *var_name) {
+                    let expected_type = match (&def.default_value, &def.var_type.node) {
+                        (Some(_), Type::List(_)) => def.var_type.to_string() + "!",
+                        (Some(_), Type::Named(_)) => def.var_type.to_string() + "!",
+                        (_, _) => def.var_type.to_string(),
                     };
 
                     if !var_type.is_subtype(&TypeName::create(&expected_type)) {
                         ctx.report_error(
-                            vec![*def_pos, *usage_pos],
+                            vec![def.position(), *usage_pos],
                             format!(
                             "Variable \"{}\" of type \"{}\" used in position expecting type \"{}\"",
                             var_name, var_type, expected_type
@@ -72,7 +69,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -81,7 +78,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
@@ -89,20 +86,20 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_variable_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a VariableDefinition,
+        variable_definition: &'a Spanned<VariableDefinition>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push((variable_definition.position, variable_definition));
+                .push(variable_definition);
         }
     }
 
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a FragmentSpread,
+        fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

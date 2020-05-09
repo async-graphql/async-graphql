@@ -1,5 +1,6 @@
+use crate::parser::ast::{FragmentSpread, InlineFragment, SelectionSet};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{FragmentSpread, InlineFragment, SelectionSet};
+use crate::Spanned;
 
 pub struct DepthCalculate<'a> {
     max_depth: &'a mut i32,
@@ -20,7 +21,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn enter_selection_set(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _selection_set: &'ctx SelectionSet,
+        _selection_set: &'ctx Spanned<SelectionSet>,
     ) {
         self.current_depth += 1;
         *self.max_depth = (*self.max_depth).max(self.current_depth);
@@ -29,7 +30,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn exit_selection_set(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _selection_set: &'ctx SelectionSet,
+        _selection_set: &'ctx Spanned<SelectionSet>,
     ) {
         self.current_depth -= 1;
     }
@@ -37,7 +38,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _fragment_spread: &'ctx FragmentSpread,
+        _fragment_spread: &'ctx Spanned<FragmentSpread>,
     ) {
         self.current_depth -= 1;
     }
@@ -45,7 +46,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn exit_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _fragment_spread: &'ctx FragmentSpread,
+        _fragment_spread: &'ctx Spanned<FragmentSpread>,
     ) {
         self.current_depth += 1;
     }
@@ -53,7 +54,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn enter_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _inline_fragment: &'ctx InlineFragment,
+        _inline_fragment: &'ctx Spanned<InlineFragment>,
     ) {
         self.current_depth -= 1;
     }
@@ -61,7 +62,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
     fn exit_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'ctx>,
-        _inline_fragment: &'ctx InlineFragment,
+        _inline_fragment: &'ctx Spanned<InlineFragment>,
     ) {
         self.current_depth += 1;
     }

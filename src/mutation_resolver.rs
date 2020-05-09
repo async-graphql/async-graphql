@@ -1,6 +1,6 @@
 use crate::extensions::ResolveInfo;
+use crate::parser::ast::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
-use graphql_parser::query::{Selection, TypeCondition};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -24,7 +24,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
     Box::pin(async move {
         if ctx.items.is_empty() {
             return Err(Error::Query {
-                pos: ctx.span.0,
+                pos: ctx.position(),
                 path: None,
                 err: QueryError::MustHaveSubFields {
                     object: T::type_name().to_string(),
@@ -33,7 +33,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
         }
 
         for selection in &ctx.item.items {
-            match selection {
+            match &selection.node {
                 Selection::Field(field) => {
                     if ctx.is_skip(&field.directives)? {
                         continue;
@@ -65,10 +65,10 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                                 Some(ty) => &ty,
                                 None => {
                                     return Err(Error::Query {
-                                        pos: field.position,
+                                        pos: field.position(),
                                         path: None,
                                         err: QueryError::FieldNotFound {
-                                            field_name: field.name.clone(),
+                                            field_name: field.name.clone_inner(),
                                             object: T::type_name().to_string(),
                                         },
                                     });
@@ -108,10 +108,10 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         .await?;
                     } else {
                         return Err(Error::Query {
-                            pos: fragment_spread.position,
+                            pos: fragment_spread.position(),
                             path: None,
                             err: QueryError::UnknownFragment {
-                                name: fragment_spread.fragment_name.clone(),
+                                name: fragment_spread.fragment_name.clone_inner(),
                             },
                         });
                     }
@@ -121,11 +121,12 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         continue;
                     }
 
-                    if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
+                    if let Some(TypeCondition::On(name)) =
+                        inline_fragment.type_condition.as_ref().map(|v| &v.node)
+                    {
                         let mut futures = Vec::new();
                         root.collect_inline_fields(
                             name,
-                            inline_fragment.position,
                             &ctx.with_selection_set(&inline_fragment.selection_set),
                             &mut futures,
                         )?;

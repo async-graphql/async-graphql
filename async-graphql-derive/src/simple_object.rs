@@ -93,7 +93,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 let ident = &item.ident;
                 let guard = field
                     .guard
-                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?; });
+                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?; });
 
                 if field.is_ref {
                     getters.push(quote! {
@@ -114,9 +114,9 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 resolvers.push(quote! {
                     if ctx.name.as_str() == #field_name {
                         #guard
-                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?;
+                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.position).await;
+                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.position()).await;
                     }
                 });
             }
@@ -176,9 +176,9 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone(),
+                    field_name: ctx.name.clone_inner(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position))
+                }.into_error(ctx.position()))
             }
         }
 

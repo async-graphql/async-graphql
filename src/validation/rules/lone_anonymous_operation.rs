@@ -1,5 +1,6 @@
+use crate::parser::ast::{Definition, Document, OperationDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{Definition, Document, OperationDefinition};
+use crate::Spanned;
 
 #[derive(Default)]
 pub struct LoneAnonymousOperation {
@@ -11,7 +12,7 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
         self.operation_count = Some(
             doc.definitions
                 .iter()
-                .filter(|d| match d {
+                .filter(|d| match &d.node {
                     Definition::Operation(_) => true,
                     Definition::Fragment(_) => false,
                 })
@@ -22,19 +23,19 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
         if let Some(operation_count) = self.operation_count {
-            let (err, pos) = match operation_definition {
-                OperationDefinition::SelectionSet(s) => (operation_count > 1, s.span.0),
+            let (err, pos) = match &operation_definition.node {
+                OperationDefinition::SelectionSet(s) => (operation_count > 1, s.position()),
                 OperationDefinition::Query(query) if query.name.is_none() => {
-                    (operation_count > 1, query.position)
+                    (operation_count > 1, query.position())
                 }
                 OperationDefinition::Mutation(mutation) if mutation.name.is_none() => {
-                    (operation_count > 1, mutation.position)
+                    (operation_count > 1, mutation.position())
                 }
                 OperationDefinition::Subscription(subscription) if subscription.name.is_none() => {
-                    (operation_count > 1, subscription.position)
+                    (operation_count > 1, subscription.position())
                 }
                 _ => {
                     return;

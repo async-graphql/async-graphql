@@ -106,7 +106,7 @@ impl ScalarType for ID {
 
     fn parse(value: &Value) -> Option<Self> {
         match value {
-            Value::Int(n) => Some(ID(n.as_i64().unwrap().to_string())),
+            Value::Int(n) => Some(ID(n.to_string())),
             Value::String(s) => Some(ID(s.clone())),
             _ => None,
         }

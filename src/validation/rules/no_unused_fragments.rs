@@ -1,9 +1,9 @@
-use crate::validation::utils::{operation_name, Scope};
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Pos;
-use graphql_parser::query::{
+use crate::parser::ast::{
     Definition, Document, FragmentDefinition, FragmentSpread, OperationDefinition,
 };
+use crate::validation::utils::{operation_name, Scope};
+use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::{Pos, Spanned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         let mut reachable = HashSet::new();
 
         for def in &doc.definitions {
-            if let Definition::Operation(operation_definition) = def {
+            if let Definition::Operation(operation_definition) = &def.node {
                 let (name, _) = operation_name(operation_definition);
                 self.find_reachable_fragments(&Scope::Operation(name), &mut reachable);
             }
@@ -55,7 +55,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -64,19 +64,19 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
         self.defined_fragments.insert((
             fragment_definition.name.as_str(),
-            fragment_definition.position,
+            fragment_definition.position(),
         ));
     }
 
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a FragmentSpread,
+        fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

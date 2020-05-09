@@ -16,7 +16,7 @@ macro_rules! impl_integer_scalars {
 
             fn parse(value: &Value) -> Option<Self> {
                 match value {
-                    Value::Int(n) => Some(n.as_i64().unwrap() as Self),
+                    Value::Int(n) => Some(*n as Self),
                     _ => None
                 }
             }
@@ -46,7 +46,7 @@ macro_rules! impl_int64_scalars {
 
             fn parse(value: &Value) -> Option<Self> {
                 match value {
-                    Value::Int(n) => Some(n.as_i64().unwrap() as Self),
+                    Value::Int(n) => Some(*n as Self),
                     Value::String(s) => s.parse().ok(),
                     _ => None
                 }

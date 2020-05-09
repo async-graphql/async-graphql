@@ -67,7 +67,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
                 collect_inline_fields.push(quote! {
                     if let #ident::#enum_name(obj) = self {
-                        return obj.collect_inline_fields(name, pos, ctx, futures);
+                        return obj.collect_inline_fields(name, ctx, futures);
                     }
                 });
 
@@ -134,7 +134,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 None => quote! { || #crate_name::Value::Null },
             };
             get_params.push(quote! {
-                let #ident: #ty = ctx.param_value(#name, ctx.position, #param_default)?;
+                let #ident: #ty = ctx.param_value(#name, #param_default)?;
             });
 
             let desc = desc
@@ -210,14 +210,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         let resolve_obj = quote! {
             self.#method_name(#(#use_params),*).await.
-                map_err(|err| err.into_error_with_path(ctx.position, ctx.path_node.as_ref().unwrap().to_json()))?
+                map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?
         };
 
         resolvers.push(quote! {
             if ctx.name.as_str() == #name {
                 #(#get_params)*
                 let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position).await;
+                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position()).await;
             }
         });
     }
@@ -280,15 +280,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone(),
+                    field_name: ctx.name.clone_inner(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position))
+                }.into_error(ctx.position()))
             }
 
             fn collect_inline_fields<'a>(
                 &'a self,
-                name: &str,
-                pos: #crate_name::Pos,
+                name: &#crate_name::Spanned<String>,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {

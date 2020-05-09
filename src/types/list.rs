@@ -1,5 +1,6 @@
-use crate::{registry, ContextSelectionSet, InputValueType, OutputValueType, Result, Type, Value};
-use graphql_parser::Pos;
+use crate::{
+    registry, ContextSelectionSet, InputValueType, OutputValueType, Pos, Result, Type, Value,
+};
 use std::borrow::Cow;
 
 impl<T: Type> Type for Vec<T> {

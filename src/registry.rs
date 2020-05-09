@@ -1,6 +1,6 @@
+use crate::parser::ast::Type as ParsedType;
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
-use graphql_parser::query::Type as ParsedType;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
@@ -402,9 +402,9 @@ impl Registry {
 
     pub fn concrete_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&Type> {
         match query_type {
-            ParsedType::NonNullType(ty) => self.concrete_type_by_parsed_type(ty),
-            ParsedType::ListType(ty) => self.concrete_type_by_parsed_type(ty),
-            ParsedType::NamedType(name) => self.types.get(name.as_str()),
+            ParsedType::NonNull(ty) => self.concrete_type_by_parsed_type(ty),
+            ParsedType::List(ty) => self.concrete_type_by_parsed_type(ty),
+            ParsedType::Named(name) => self.types.get(name.as_str()),
         }
     }
 

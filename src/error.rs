@@ -1,5 +1,6 @@
-use graphql_parser::query::{ParseError, Value};
-use graphql_parser::Pos;
+use crate::parser::ParseError;
+use crate::{Pos, Value};
+use pest::error::LineColLocation;
 use std::fmt::Debug;
 
 /// FieldError type
@@ -256,22 +257,14 @@ pub struct RuleError {
 
 impl From<ParseError> for Error {
     fn from(err: ParseError) -> Self {
-        let msg = err.to_string();
-        let mut s = msg.splitn(2, '\n');
-        let first = s.next().unwrap();
-        let ln = &first[first.rfind(' ').unwrap() + 1..];
-        let (line, column) = {
-            let mut s = ln.splitn(2, ':');
-            (
-                s.next().unwrap().parse().unwrap(),
-                s.next().unwrap().parse().unwrap(),
-            )
+        let (line, column) = match err.line_col {
+            LineColLocation::Pos((line, column)) => (line, column),
+            LineColLocation::Span((line, column), _) => (line, column),
         };
-        let tail = s.next().unwrap();
         Error::Parse {
             line,
             column,
-            message: tail.to_string(),
+            message: err.to_string(),
         }
     }
 }

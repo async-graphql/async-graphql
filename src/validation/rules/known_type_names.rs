@@ -1,9 +1,7 @@
+use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
 use crate::registry::TypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{
-    FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition,
-};
-use graphql_parser::Pos;
+use crate::{Pos, Spanned};
 
 #[derive(Default)]
 pub struct KnownTypeNames;
@@ -12,31 +10,33 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a FragmentDefinition,
+        fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
-        let TypeCondition::On(name) = &fragment_definition.type_condition;
-        validate_type(ctx, &name, fragment_definition.position);
+        let TypeCondition::On(name) = &fragment_definition.type_condition.node;
+        validate_type(ctx, name.as_str(), fragment_definition.position());
     }
 
     fn enter_variable_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a VariableDefinition,
+        variable_definition: &'a Spanned<VariableDefinition>,
     ) {
         validate_type(
             ctx,
             TypeName::concrete_typename(&variable_definition.var_type.to_string()),
-            variable_definition.position,
+            variable_definition.position(),
         );
     }
 
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a InlineFragment,
+        inline_fragment: &'a Spanned<InlineFragment>,
     ) {
-        if let Some(TypeCondition::On(name)) = &inline_fragment.type_condition {
-            validate_type(ctx, &name, inline_fragment.position);
+        if let Some(TypeCondition::On(name)) =
+            inline_fragment.type_condition.as_ref().map(|c| &c.node)
+        {
+            validate_type(ctx, name.as_str(), inline_fragment.position());
         }
     }
 }

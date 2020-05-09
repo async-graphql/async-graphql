@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use graphql_parser::schema::Value;
+use crate::Value;
 use once_cell::sync::Lazy;
 use regex::Regex;
 

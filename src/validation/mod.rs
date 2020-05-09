@@ -7,9 +7,9 @@ mod visitors;
 #[cfg(test)]
 mod test_harness;
 
+use crate::parser::ast::Document;
 use crate::registry::Registry;
 use crate::{CacheControl, Error, Result};
-use graphql_parser::query::Document;
 use visitor::{visit, VisitorContext, VisitorNil};
 
 pub struct CheckResult {

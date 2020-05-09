@@ -1,14 +1,15 @@
 use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::mutation_resolver::do_mutation_resolve;
-use crate::registry::CacheControl;
-use crate::validation::{check_rules, CheckResult};
-use crate::{do_resolve, ContextBase, Error, Result, Schema};
-use crate::{ObjectType, QueryError, Variables};
-use graphql_parser::query::{
+use crate::parser::ast::{
     Definition, Document, OperationDefinition, SelectionSet, VariableDefinition,
 };
-use graphql_parser::{parse_query, Pos};
+use crate::parser::parse_query;
+use crate::registry::CacheControl;
+use crate::validation::{check_rules, CheckResult};
+use crate::{
+    do_resolve, ContextBase, Error, ObjectType, Pos, QueryError, Result, Schema, Spanned, Variables,
+};
 use itertools::Itertools;
 use std::any::Any;
 use std::collections::HashMap;
@@ -181,8 +182,8 @@ impl QueryBuilder {
             })?;
 
         for definition in &document.definitions {
-            if let Definition::Fragment(fragment) = &definition {
-                fragments.insert(fragment.name.clone(), fragment.clone());
+            if let Definition::Fragment(fragment) = &definition.node {
+                fragments.insert(fragment.name.clone_inner(), fragment.clone_inner());
             }
         }
 
@@ -232,27 +233,34 @@ impl QueryBuilder {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn current_operation<'a>(
     document: &'a Document,
     operation_name: Option<&str>,
-) -> Option<(&'a SelectionSet, &'a [VariableDefinition], bool)> {
+) -> Option<(
+    &'a Spanned<SelectionSet>,
+    &'a [Spanned<VariableDefinition>],
+    bool,
+)> {
     for definition in &document.definitions {
-        match definition {
-            Definition::Operation(operation_definition) => match operation_definition {
+        match &definition.node {
+            Definition::Operation(operation_definition) => match &operation_definition.node {
                 OperationDefinition::SelectionSet(s) => {
                     return Some((s, &[], true));
                 }
                 OperationDefinition::Query(query)
                     if query.name.is_none()
                         || operation_name.is_none()
-                        || query.name.as_deref() == operation_name.as_deref() =>
+                        || query.name.as_ref().map(|name| name.as_str())
+                            == operation_name.as_deref() =>
                 {
                     return Some((&query.selection_set, &query.variable_definitions, true));
                 }
                 OperationDefinition::Mutation(mutation)
                     if mutation.name.is_none()
                         || operation_name.is_none()
-                        || mutation.name.as_deref() == operation_name.as_deref() =>
+                        || mutation.name.as_ref().map(|name| name.as_str())
+                            == operation_name.as_deref() =>
                 {
                     return Some((
                         &mutation.selection_set,
@@ -263,7 +271,8 @@ fn current_operation<'a>(
                 OperationDefinition::Subscription(subscription)
                     if subscription.name.is_none()
                         || operation_name.is_none()
-                        || subscription.name.as_deref() == operation_name.as_deref() =>
+                        || subscription.name.as_ref().map(|name| name.as_str())
+                            == operation_name.as_deref() =>
                 {
                     return None;
                 }

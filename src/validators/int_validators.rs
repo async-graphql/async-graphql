@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use graphql_parser::query::Value;
+use crate::Value;
 
 /// Integer range validator
 pub struct IntRange {
@@ -13,12 +13,10 @@ pub struct IntRange {
 impl InputValueValidator for IntRange {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
-            if n.as_i64().unwrap() < self.min || n.as_i64().unwrap() > self.max {
+            if *n < self.min || *n > self.max {
                 Some(format!(
                     "the value is {}, but the range must be between {} and {}",
-                    n.as_i64().unwrap(),
-                    self.min,
-                    self.max
+                    *n, self.min, self.max
                 ))
             } else {
                 None
@@ -38,11 +36,10 @@ pub struct IntLessThan {
 impl InputValueValidator for IntLessThan {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
-            if n.as_i64().unwrap() >= self.value {
+            if *n >= self.value {
                 Some(format!(
                     "the value is {}, must be less than {}",
-                    n.as_i64().unwrap(),
-                    self.value
+                    *n, self.value
                 ))
             } else {
                 None
@@ -62,11 +59,10 @@ pub struct IntGreaterThan {
 impl InputValueValidator for IntGreaterThan {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
-            if n.as_i64().unwrap() <= self.value {
+            if *n <= self.value {
                 Some(format!(
                     "the value is {}, must be greater than {}",
-                    n.as_i64().unwrap(),
-                    self.value
+                    *n, self.value
                 ))
             } else {
                 None
@@ -83,11 +79,8 @@ pub struct IntNonZero {}
 impl InputValueValidator for IntNonZero {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
-            if n.as_i64().unwrap() == 0 {
-                Some(format!(
-                    "the value is {}, but must be nonzero",
-                    n.as_i64().unwrap(),
-                ))
+            if *n == 0 {
+                Some(format!("the value is {}, but must be nonzero", *n,))
             } else {
                 None
             }
@@ -106,12 +99,8 @@ pub struct IntEqual {
 impl InputValueValidator for IntEqual {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
-            if n.as_i64().unwrap() != self.value {
-                Some(format!(
-                    "the value is {}, must be equal {}",
-                    n.as_i64().unwrap(),
-                    self.value
-                ))
+            if *n != self.value {
+                Some(format!("the value is {}, must be equal {}", *n, self.value))
             } else {
                 None
             }

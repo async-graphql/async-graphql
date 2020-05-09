@@ -76,12 +76,15 @@
 extern crate thiserror;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate pest_derive;
 
 mod base;
 mod context;
 mod error;
 mod model;
 mod mutation_resolver;
+mod parser;
 mod query;
 mod resolver;
 mod scalars;
@@ -101,8 +104,6 @@ pub use async_trait;
 #[doc(hidden)]
 pub use futures;
 #[doc(hidden)]
-pub use graphql_parser;
-#[doc(hidden)]
 pub use serde_json;
 
 pub mod http;
@@ -114,8 +115,7 @@ pub use context::{
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
 };
-pub use graphql_parser::query::Value;
-pub use graphql_parser::Pos;
+pub use parser::{Pos, Spanned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};
@@ -130,7 +130,7 @@ pub use types::{
 };
 pub use validation::ValidationMode;
 
-/// Result type, are actually `anyhow::Result<T>`
+/// Result type
 pub type Result<T> = std::result::Result<T, Error>;
 
 // internal types

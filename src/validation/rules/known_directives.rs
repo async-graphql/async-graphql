@@ -1,9 +1,9 @@
 use crate::model::__DirectiveLocation;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use graphql_parser::query::{
-    Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
+use crate::parser::ast::{
+    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
 };
-use graphql_parser::schema::Directive;
+use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::Spanned;
 
 #[derive(Default)]
 pub struct KnownDirectives {
@@ -14,9 +14,9 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a OperationDefinition,
+        operation_definition: &'a Spanned<OperationDefinition>,
     ) {
-        self.location_stack.push(match operation_definition {
+        self.location_stack.push(match &operation_definition.node {
             OperationDefinition::SelectionSet(_) | OperationDefinition::Query(_) => {
                 __DirectiveLocation::QUERY
             }
@@ -28,7 +28,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _operation_definition: &'a OperationDefinition,
+        _operation_definition: &'a Spanned<OperationDefinition>,
     ) {
         self.location_stack.pop();
     }
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_definition: &'a FragmentDefinition,
+        _fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::FRAGMENT_DEFINITION);
@@ -45,17 +45,17 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_definition: &'a FragmentDefinition,
+        _fragment_definition: &'a Spanned<FragmentDefinition>,
     ) {
         self.location_stack.pop();
     }
 
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Directive) {
+    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
         if let Some(schema_directive) = ctx.registry.directives.get(directive.name.as_str()) {
             if let Some(current_location) = self.location_stack.last() {
                 if !schema_directive.locations.contains(current_location) {
                     ctx.report_error(
-                        vec![directive.position],
+                        vec![directive.position()],
                         format!(
                             "Directive \"{}\" may not be used on \"{:?}\"",
                             directive.name, current_location
@@ -65,24 +65,24 @@ impl<'a> Visitor<'a> for KnownDirectives {
             }
         } else {
             ctx.report_error(
-                vec![directive.position],
+                vec![directive.position()],
                 format!("Unknown directive \"{}\"", directive.name),
             );
         }
     }
 
-    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
+    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
         self.location_stack.push(__DirectiveLocation::FIELD);
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Field) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
         self.location_stack.pop();
     }
 
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_spread: &'a FragmentSpread,
+        _fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::FRAGMENT_SPREAD);
@@ -91,7 +91,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_spread: &'a FragmentSpread,
+        _fragment_spread: &'a Spanned<FragmentSpread>,
     ) {
         self.location_stack.pop();
     }
@@ -99,7 +99,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _inline_fragment: &'a InlineFragment,
+        _inline_fragment: &'a Spanned<InlineFragment>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::INLINE_FRAGMENT);
@@ -108,7 +108,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _inline_fragment: &'a InlineFragment,
+        _inline_fragment: &'a Spanned<InlineFragment>,
     ) {
         self.location_stack.pop();
     }

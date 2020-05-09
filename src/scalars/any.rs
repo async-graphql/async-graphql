@@ -43,7 +43,7 @@ pub(crate) fn gql_value_to_json_value(value: Value) -> serde_json::Value {
     match value {
         Value::Null => serde_json::Value::Null,
         Value::Variable(name) => name.into(),
-        Value::Int(n) => n.as_i64().unwrap().into(),
+        Value::Int(n) => n.into(),
         Value::Float(n) => n.into(),
         Value::String(s) => s.into(),
         Value::Boolean(v) => v.into(),

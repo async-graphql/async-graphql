@@ -14,8 +14,9 @@ pub use playground_source::playground_source;
 pub use stream_body::StreamBody;
 
 use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
-use crate::{Error, ParseRequestError, QueryBuilder, QueryError, QueryResponse, Result, Variables};
-use graphql_parser::Pos;
+use crate::{
+    Error, ParseRequestError, Pos, QueryBuilder, QueryError, QueryResponse, Result, Variables,
+};
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -162,7 +163,7 @@ impl<'a> Serialize for GQLErrorPos<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use graphql_parser::Pos;
+    use crate::Pos;
     use serde_json::json;
 
     #[test]

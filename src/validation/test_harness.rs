@@ -2,9 +2,9 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
+use crate::parser::parse_query;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
-use graphql_parser::parse_query;
 
 #[InputObject(internal)]
 struct TestInput {

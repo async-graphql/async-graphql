@@ -57,7 +57,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             });
             collect_inline_fields.push(quote! {
                 if let #ident::#enum_name(obj) = self {
-                    return obj.collect_inline_fields(name, pos, ctx, futures);
+                    return obj.collect_inline_fields(name, ctx, futures);
                 }
             });
             get_introspection_typename.push(quote! {
@@ -106,15 +106,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone(),
+                    field_name: ctx.name.clone_inner(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position))
+                }.into_error(ctx.position()))
             }
 
             fn collect_inline_fields<'a>(
                 &'a self,
-                name: &str,
-                pos: #crate_name::Pos,
+                name: &#crate_name::Spanned<String>,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {

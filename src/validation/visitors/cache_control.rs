@@ -1,14 +1,18 @@
+use crate::parser::ast::{Field, SelectionSet};
 use crate::registry::Type;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::CacheControl;
-use graphql_parser::query::{Field, SelectionSet};
+use crate::{CacheControl, Spanned};
 
 pub struct CacheControlCalculate<'a> {
     pub cache_control: &'a mut CacheControl,
 }
 
 impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
-    fn enter_selection_set(&mut self, ctx: &mut VisitorContext<'_>, _selection_set: &SelectionSet) {
+    fn enter_selection_set(
+        &mut self,
+        ctx: &mut VisitorContext<'_>,
+        _selection_set: &Spanned<SelectionSet>,
+    ) {
         if let Some(current_type) = ctx.current_type() {
             if let Type::Object { cache_control, .. } = current_type {
                 self.cache_control.merge(cache_control);
@@ -16,7 +20,7 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'_>, field: &Field) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'_>, field: &Spanned<Field>) {
         if let Some(registry_field) = ctx
             .parent_type()
             .and_then(|parent| parent.field_by_name(&field.name))
