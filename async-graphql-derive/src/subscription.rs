@@ -238,10 +238,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     if ctx.name.as_str() == #field_name {
                         use #crate_name::futures::stream::{StreamExt, TryStreamExt};
 
-                        #guard
-
-                        let field_name = std::sync::Arc::new(ctx.result_name().to_string());
                         #(#get_params)*
+                        #guard
+                        let field_name = std::sync::Arc::new(ctx.result_name().to_string());
                         let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
                         let schema = schema.clone();
                         let pos = ctx.position();

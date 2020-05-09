@@ -387,8 +387,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 resolvers.push(quote! {
                     if ctx.name.as_str() == #field_name {
                         use #crate_name::OutputValueType;
-                        #guard
                         #(#get_params)*
+                        #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                         return OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position()).await;
                     }

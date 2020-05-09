@@ -317,3 +317,61 @@ pub async fn test_multiple_guards() {
         }
     );
 }
+
+#[async_std::test]
+pub async fn test_guard_forward_arguments() {
+    struct UserGuard<'a> {
+        id: &'a ID,
+    }
+
+    #[async_trait::async_trait]
+    impl<'a> Guard for UserGuard<'a> {
+        async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+            if ctx.data_opt::<ID>() != Some(self.id) {
+                Err("Forbidden".into())
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        #[field(guard(UserGuard(id = "@id")))]
+        async fn user(&self, id: ID) -> ID {
+            id
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+
+    let query = r#"{ user(id: "abc") }"#;
+    assert_eq!(
+        QueryBuilder::new(query)
+            .data(ID::from("abc"))
+            .execute(&schema)
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({"user": "abc"})
+    );
+
+    let query = r#"{ user(id: "abc") }"#;
+    assert_eq!(
+        QueryBuilder::new(query)
+            .data(ID::from("aaa"))
+            .execute(&schema)
+            .await
+            .unwrap_err(),
+        Error::Query {
+            pos: Pos { line: 1, column: 3 },
+            path: Some(serde_json::json!(["user"])),
+            err: QueryError::FieldError {
+                err: "Forbidden".to_string(),
+                extended_error: None,
+            },
+        }
+    );
+}

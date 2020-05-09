@@ -196,8 +196,14 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
                             if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
                                 let name = &nv.path;
                                 if let Lit::Str(value) = &nv.lit {
-                                    let expr = syn::parse_str::<Expr>(&value.value())?;
-                                    params.push(quote! { #name: #expr.into() });
+                                    let value_str = value.value();
+                                    if value_str.starts_with('@') {
+                                        let id = Ident::new(&value_str[1..], value.span());
+                                        params.push(quote! { #name: &#id });
+                                    } else {
+                                        let expr = syn::parse_str::<Expr>(&value_str)?;
+                                        params.push(quote! { #name: #expr.into() });
+                                    }
                                 } else {
                                     return Err(Error::new_spanned(
                                         &nv.lit,
