@@ -1,6 +1,6 @@
 # Context
 
-The main goal of `Context` is to acquire global data attached to Schema. **Note that if the return value of your Resulve boored data in `Context`, you need to explictly state the lifetime of the argument.**
+The main goal of `Context` is to acquire global data attached to Schema. **Note that if the return value of resolve function is borrowed from `Context`, you need to explictly state the lifetime of the argument.**
 
 The following example shows how to borrow data in `Context`.
 
