@@ -88,15 +88,11 @@ impl<'a> Serialize for GQLError<'a> {
         S: Serializer,
     {
         match self.0 {
-            Error::Parse {
-                line,
-                column,
-                message,
-            } => {
+            Error::Parse(err) => {
                 let mut seq = serializer.serialize_seq(Some(1))?;
                 seq.serialize_element(&serde_json::json! ({
-                    "message": message,
-                    "locations": [{"line": line, "column": column}]
+                    "message": err.message,
+                    "locations": [{"line": err.pos.line, "column": err.pos.column}]
                 }))?;
                 seq.end()
             }

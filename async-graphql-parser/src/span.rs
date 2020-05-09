@@ -128,7 +128,7 @@ impl<T> Spanned<T> {
     }
 
     #[inline]
-    pub(crate) fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T {
         self.node
     }
 

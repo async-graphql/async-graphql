@@ -1,5 +1,5 @@
-use crate::parser::span::Spanned;
-use crate::parser::value::Value;
+use crate::span::Spanned;
+use crate::value::Value;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]

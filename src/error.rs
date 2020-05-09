@@ -1,6 +1,4 @@
-use crate::parser::ParseError;
 use crate::{Pos, Value};
-use pest::error::LineColLocation;
 use std::fmt::Debug;
 
 /// FieldError type
@@ -249,26 +247,6 @@ impl QueryError {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct RuleError {
-    pub locations: Vec<Pos>,
-    pub message: String,
-}
-
-impl From<ParseError> for Error {
-    fn from(err: ParseError) -> Self {
-        let (line, column) = match err.line_col {
-            LineColLocation::Pos((line, column)) => (line, column),
-            LineColLocation::Span((line, column), _) => (line, column),
-        };
-        Error::Parse {
-            line,
-            column,
-            message: err.to_string(),
-        }
-    }
-}
-
 #[allow(missing_docs)]
 #[derive(Debug, Error)]
 pub enum ParseRequestError {
@@ -303,15 +281,17 @@ pub enum ParseRequestError {
     TooLarge,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct RuleError {
+    pub locations: Vec<Pos>,
+    pub message: String,
+}
+
 #[allow(missing_docs)]
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
-    #[error("Parse error: {message}")]
-    Parse {
-        line: usize,
-        column: usize,
-        message: String,
-    },
+    #[error("Parse error: {0}")]
+    Parse(#[from] crate::parser::Error),
 
     #[error("Query error: {err}")]
     Query {

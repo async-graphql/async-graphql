@@ -1,17 +1,49 @@
-use crate::parser::ast::*;
-use crate::parser::span::Spanned;
-use crate::parser::value::Value;
-use crate::{Pos, Result};
+use crate::ast::*;
+use crate::span::Spanned;
+use crate::value::Value;
+use crate::Pos;
+use pest::error::LineColLocation;
 use pest::iterators::Pair;
-use pest::{error::Error, Parser};
+use pest::Parser;
 use std::collections::BTreeMap;
+use std::fmt;
 
 #[derive(Parser)]
-#[grammar = "parser/query.pest"]
+#[grammar = "query.pest"]
 struct QueryParser;
 
-pub type ParseError = Error<Rule>;
+/// Parser error
+#[derive(Error, Debug, PartialEq)]
+pub struct Error {
+    pub pos: Pos,
+    pub message: String,
+}
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl From<pest::error::Error<Rule>> for Error {
+    fn from(err: pest::error::Error<Rule>) -> Self {
+        Error {
+            pos: {
+                let (line, column) = match err.line_col {
+                    LineColLocation::Pos((line, column)) => (line, column),
+                    LineColLocation::Span((line, column), _) => (line, column),
+                };
+                Pos { line, column }
+            },
+            message: err.to_string(),
+        }
+    }
+}
+
+/// Parser result
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Parse a GraphQL query.
 pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
     let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, input.as_ref())?
         .next()
@@ -467,9 +499,8 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
                             match chars.next() {
                                 Some(inner_c) => temp_code_point.push(inner_c),
                                 None => {
-                                    return Err(crate::Error::Parse {
-                                        line: pos.line,
-                                        column: pos.column,
+                                    return Err(Error {
+                                        pos,
                                         message: format!(
                                             "\\u must have 4 characters after it, only found '{}'",
                                             temp_code_point
@@ -483,9 +514,8 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
                         match u32::from_str_radix(&temp_code_point, 16).map(std::char::from_u32) {
                             Ok(Some(unicode_char)) => res.push(unicode_char),
                             _ => {
-                                return Err(crate::Error::Parse {
-                                    line: pos.line,
-                                    column: pos.column,
+                                return Err(Error {
+                                    pos,
                                     message: format!(
                                         "{} is not a valid unicode code point",
                                         temp_code_point
@@ -495,9 +525,8 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
                         }
                     }
                     c => {
-                        return Err(crate::Error::Parse {
-                            line: pos.line,
-                            column: pos.column,
+                        return Err(Error {
+                            pos,
                             message: format!("bad escaped char {:?}", c),
                         });
                     }
