@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value, ID};
 use async_graphql_derive::Scalar;
 use std::ops::{Deref, DerefMut};
 
@@ -29,6 +29,12 @@ where
 {
     fn from(value: T) -> Self {
         Cursor(value.to_string())
+    }
+}
+
+impl From<ID> for Cursor {
+    fn from(id: ID) -> Self {
+        Cursor(id.into())
     }
 }
 

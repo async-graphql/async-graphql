@@ -1,7 +1,7 @@
 use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use bson::oid::{self, ObjectId};
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
 use uuid::Uuid;
@@ -41,27 +41,27 @@ impl Into<String> for ID {
     }
 }
 
-impl TryInto<usize> for ID {
+impl TryFrom<ID> for usize {
     type Error = ParseIntError;
 
-    fn try_into(self) -> std::result::Result<usize, Self::Error> {
-        self.0.parse()
+    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+        id.0.parse()
     }
 }
 
-impl TryInto<Uuid> for ID {
+impl TryFrom<ID> for Uuid {
     type Error = uuid::Error;
 
-    fn try_into(self) -> std::result::Result<Uuid, Self::Error> {
-        Uuid::parse_str(&self.0)
+    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+        Uuid::parse_str(&id.0)
     }
 }
 
-impl TryInto<ObjectId> for ID {
+impl TryFrom<ID> for ObjectId {
     type Error = oid::Error;
 
-    fn try_into(self) -> std::result::Result<ObjectId, oid::Error> {
-        ObjectId::with_string(&self.0)
+    fn try_from(id: ID) -> std::result::Result<Self, oid::Error> {
+        ObjectId::with_string(&id.0)
     }
 }
 
