@@ -16,7 +16,7 @@ categories = ["network-programming", "asynchronous"]
 proc-macro = true
 
 [dependencies]
-async-graphql-parser = { path = "../async-graphql-parser", version = "0.1.0" }
+async-graphql-parser = { path = "../async-graphql-parser", version = "0.2.0" }
 proc-macro2 = "1.0.6"
 syn = { version = "1.0.13", features = ["full"] }
 quote = "1.0.3"

@@ -17,7 +17,7 @@ readme = "README.md"
 default = ["bson", "uuid", "url", "chrono-tz"]
 
 [dependencies]
-async-graphql-parser = { path = "async-graphql-parser", version = "0.1.0" }
+async-graphql-parser = { path = "async-graphql-parser", version = "0.2.0" }
 async-graphql-derive = { path = "async-graphql-derive", version = "1.11.0" }
 anyhow = "1.0.26"
 thiserror = "1.0.11"
