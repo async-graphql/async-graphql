@@ -1,7 +1,7 @@
 use async_graphql_parser::Value;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
+use syn::{Attribute, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
 
 pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
@@ -215,5 +215,21 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
         }
     }
 
+    Ok(None)
+}
+
+pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
+    for attr in attrs {
+        match attr.parse_meta()? {
+            Meta::NameValue(nv) if nv.path.is_ident("doc") => {
+                if let Lit::Str(doc) = nv.lit {
+                    let doc = doc.value();
+                    let doc_str = doc.trim();
+                    return Ok(Some(doc_str.to_string()));
+                }
+            }
+            _ => {}
+        }
+    }
     Ok(None)
 }

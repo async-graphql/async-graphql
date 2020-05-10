@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -45,8 +45,9 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
     let desc = object_args
         .desc
-        .as_ref()
-        .map(|s| quote! {Some(#s)})
+        .clone()
+        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+        .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
     let mut get_fields = Vec::new();

@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name};
+use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -11,10 +11,6 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     let generics = &input.generics;
     let where_clause = &generics.where_clause;
     let extends = object_args.extends;
-    let s = match &mut input.data {
-        Data::Struct(e) => e,
-        _ => return Err(Error::new_spanned(input, "It should be a struct")),
-    };
     let gql_typename = object_args
         .name
         .clone()
@@ -23,10 +19,15 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
 
     let desc = object_args
         .desc
-        .as_ref()
+        .clone()
+        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
+    let s = match &mut input.data {
+        Data::Struct(e) => e,
+        _ => return Err(Error::new_spanned(input, "It should be a struct")),
+    };
     let mut getters = Vec::new();
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();

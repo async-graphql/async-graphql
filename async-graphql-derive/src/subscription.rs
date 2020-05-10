@@ -1,6 +1,6 @@
 use crate::args;
 use crate::output_type::OutputType;
-use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -33,8 +33,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     let desc = object_args
         .desc
-        .as_ref()
-        .map(|s| quote! {Some(#s)})
+        .clone()
+        .or_else(|| get_rustdoc(&item_impl.attrs).ok().flatten())
+        .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
     let mut create_stream = Vec::new();

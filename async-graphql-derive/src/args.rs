@@ -1,4 +1,4 @@
-use crate::utils::{parse_guards, parse_validator};
+use crate::utils::{get_rustdoc, parse_guards, parse_validator};
 use async_graphql_parser::{parse_value, Value};
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -306,6 +306,10 @@ impl Field {
             }
         }
 
+        if desc.is_none() {
+            desc = get_rustdoc(attrs)?;
+        }
+
         Ok(Some(Self {
             name,
             desc,
@@ -423,6 +427,10 @@ impl EnumItem {
             }
         }
 
+        if desc.is_none() {
+            desc = get_rustdoc(attrs)?;
+        }
+
         Ok(Self {
             name,
             desc,
@@ -508,6 +516,10 @@ impl InputField {
                     validator = parse_validator(crate_name, &args)?;
                 }
             }
+        }
+
+        if desc.is_none() {
+            desc = get_rustdoc(attrs)?;
         }
 
         Ok(Self {

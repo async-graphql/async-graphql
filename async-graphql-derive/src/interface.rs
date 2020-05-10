@@ -1,7 +1,7 @@
 use crate::args;
 use crate::args::{InterfaceField, InterfaceFieldArgument};
 use crate::output_type::OutputType;
-use crate::utils::{build_value_repr, check_reserved_name, get_crate_name};
+use crate::utils::{build_value_repr, check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -32,11 +32,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .clone()
         .unwrap_or_else(|| ident.to_string());
     check_reserved_name(&gql_typename, interface_args.internal)?;
+
     let desc = interface_args
         .desc
-        .as_ref()
-        .map(|s| quote! {Some(#s)})
+        .clone()
+        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+        .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
+
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
     let mut collect_inline_fields = Vec::new();

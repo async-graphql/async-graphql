@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name};
+use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -66,7 +66,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
     let desc = enum_args
         .desc
-        .as_ref()
+        .clone()
+        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 

@@ -6,12 +6,10 @@ pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
 }
 
-#[Object(
-    internal,
-    desc = "A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations."
-)]
+/// A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
+#[Object(internal)]
 impl<'a> __Schema<'a> {
-    #[field(desc = "A list of all types supported by this server.")]
+    /// A list of all types supported by this server.
     async fn types(&self) -> Vec<__Type<'a>> {
         self.registry
             .types
@@ -20,7 +18,7 @@ impl<'a> __Schema<'a> {
             .collect()
     }
 
-    #[field(desc = "The type that query operations will be rooted at.")]
+    /// The type that query operations will be rooted at.
     async fn query_type(&self) -> __Type<'a> {
         __Type::new_simple(
             self.registry,
@@ -28,9 +26,7 @@ impl<'a> __Schema<'a> {
         )
     }
 
-    #[field(
-        desc = "If this server supports mutation, the type that mutation operations will be rooted at."
-    )]
+    /// If this server supports mutation, the type that mutation operations will be rooted at.
     async fn mutation_type(&self) -> Option<__Type<'a>> {
         if let Some(ty) = &self.registry.mutation_type {
             Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
@@ -39,9 +35,7 @@ impl<'a> __Schema<'a> {
         }
     }
 
-    #[field(
-        desc = "If this server support subscription, the type that subscription operations will be rooted at."
-    )]
+    /// If this server support subscription, the type that subscription operations will be rooted at.
     async fn subscription_type(&self) -> Option<__Type<'a>> {
         if let Some(ty) = &self.registry.subscription_type {
             Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
@@ -50,7 +44,7 @@ impl<'a> __Schema<'a> {
         }
     }
 
-    #[field(desc = "A list of all directives supported by this server.")]
+    /// A list of all directives supported by this server.
     async fn directives(&self) -> Vec<__Directive<'a>> {
         self.registry
             .directives

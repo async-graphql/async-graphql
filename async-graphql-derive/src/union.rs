@@ -1,11 +1,11 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name};
+use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Fields, Result, Type};
 
-pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
-    let crate_name = get_crate_name(interface_args.internal);
+pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
+    let crate_name = get_crate_name(union_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
     let attrs = &input.attrs;
@@ -21,17 +21,16 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut enum_names = Vec::new();
     let mut enum_items = Vec::new();
     let mut type_into_impls = Vec::new();
-    let gql_typename = interface_args
-        .name
-        .clone()
-        .unwrap_or_else(|| ident.to_string());
-    check_reserved_name(&gql_typename, interface_args.internal)?;
+    let gql_typename = union_args.name.clone().unwrap_or_else(|| ident.to_string());
+    check_reserved_name(&gql_typename, union_args.internal)?;
 
-    let desc = interface_args
+    let desc = union_args
         .desc
-        .as_ref()
-        .map(|s| quote! {Some(#s)})
+        .clone()
+        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+        .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
+
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
     let mut collect_inline_fields = Vec::new();

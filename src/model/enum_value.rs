@@ -6,10 +6,8 @@ pub struct __EnumValue<'a> {
     pub value: &'a registry::EnumValue,
 }
 
-#[Object(
-    internal,
-    desc = "One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string."
-)]
+/// One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.
+#[Object(internal)]
 impl<'a> __EnumValue<'a> {
     async fn name(&self) -> String {
         self.value.name.to_string()
