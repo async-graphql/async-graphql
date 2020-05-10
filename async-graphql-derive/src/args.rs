@@ -1,5 +1,5 @@
-use crate::utils::{parse_guards, parse_validator, parse_value};
-use graphql_parser::query::Value;
+use crate::utils::{parse_guards, parse_validator};
+use async_graphql_parser::{parse_value, Value};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};

@@ -120,6 +120,15 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
     Ok(Document { definitions })
 }
 
+/// Parse a graphql value
+pub fn parse_value<T: AsRef<str>>(input: T) -> Result<Value> {
+    let value_pair: Pair<Rule> = QueryParser::parse(Rule::value, input.as_ref())?
+        .next()
+        .unwrap();
+    let mut pc = PositionCalculator::new(input.as_ref());
+    parse_value2(value_pair, &mut pc)
+}
+
 fn parse_named_operation_definition(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
@@ -200,7 +209,7 @@ fn parse_named_operation_definition(
 fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::value => return Ok(parse_value(pair, pc)?),
+            Rule::value => return Ok(parse_value2(pair, pc)?),
             _ => unreachable!(),
         }
     }
@@ -313,7 +322,7 @@ fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posit
     unreachable!()
 }
 
-fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
+fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     let pair = pair.into_inner().next().unwrap();
     Ok(match pair.as_rule() {
         Rule::object => parse_object_value(pair, pc)?,
@@ -348,7 +357,7 @@ fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(S
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::name => name = Some(pair.as_str().to_string()),
-            Rule::value => value = Some(parse_value(pair, pc)?),
+            Rule::value => value = Some(parse_value2(pair, pc)?),
             _ => unreachable!(),
         }
     }
@@ -373,7 +382,7 @@ fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Va
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::value => {
-                array.push(parse_value(pair, pc)?);
+                array.push(parse_value2(pair, pc)?);
             }
             _ => unreachable!(),
         }
@@ -393,7 +402,7 @@ fn parse_pair(
             Rule::value => {
                 value = {
                     let pos = pc.step(&pair);
-                    Some(Positioned::new(parse_value(pair, pc)?, pos))
+                    Some(Positioned::new(parse_value2(pair, pc)?, pos))
                 }
             }
             _ => unreachable!(),

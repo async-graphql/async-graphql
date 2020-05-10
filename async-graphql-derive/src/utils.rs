@@ -1,5 +1,4 @@
-use graphql_parser::parse_query;
-use graphql_parser::query::{Definition, OperationDefinition, ParseError, Query, Value};
+use async_graphql_parser::Value;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
@@ -13,27 +12,11 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     }
 }
 
-pub fn parse_value(s: &str) -> std::result::Result<Value, ParseError> {
-    let mut doc = parse_query(&format!("query ($a:Int!={}) {{ dummy }}", s))?;
-    let definition = doc.definitions.remove(0);
-    if let Definition::Operation(OperationDefinition::Query(Query {
-        mut variable_definitions,
-        ..
-    })) = definition
-    {
-        let var = variable_definitions.remove(0);
-        Ok(var.default_value.unwrap())
-    } else {
-        unreachable!()
-    }
-}
-
 pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream {
     match value {
         Value::Variable(_) => unreachable!(),
         Value::Int(n) => {
-            let n = n.as_i64().unwrap();
-            quote! { #crate_name::Value::Int((#n as i32).into()) }
+            quote! { #crate_name::Value::Int(#n) }
         }
         Value::Float(n) => {
             quote! { #crate_name::Value::Float(#n) }
