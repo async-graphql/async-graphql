@@ -9,12 +9,6 @@ use std::ops::{Deref, DerefMut};
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Cursor(String);
 
-impl std::fmt::Display for Cursor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl Deref for Cursor {
     type Target = String;
 
@@ -29,36 +23,12 @@ impl DerefMut for Cursor {
     }
 }
 
-impl From<String> for Cursor {
-    fn from(value: String) -> Self {
-        Cursor(value)
-    }
-}
-
-impl<'a> From<&'a str> for Cursor {
-    fn from(value: &'a str) -> Self {
-        Cursor(value.to_string())
-    }
-}
-
-impl From<usize> for Cursor {
-    fn from(value: usize) -> Self {
-        Cursor(value.to_string())
-    }
-}
-
-/// Convert any type that implements Display to the Cursor type
-pub trait ToGraphQLCursor {
-    #[allow(missing_docs)]
-    fn to_graphql_cursor(&self) -> Cursor;
-}
-
-impl<T> ToGraphQLCursor for T
+impl<T> From<T> for Cursor
 where
-    T: std::fmt::Display,
+    T: std::fmt::Display
 {
-    fn to_graphql_cursor(&self) -> Cursor {
-        Cursor(self.to_string())
+    fn from(value: T) -> Self {
+        Cursor(value.to_string())
     }
 }
 

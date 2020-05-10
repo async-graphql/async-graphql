@@ -130,7 +130,7 @@ pub use subscription::{
 };
 pub use types::{
     Connection, Cursor, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, PageInfo,
-    QueryOperation, ToGraphQLCursor, Upload,
+    QueryOperation, Upload,
 };
 pub use validation::ValidationMode;
 
