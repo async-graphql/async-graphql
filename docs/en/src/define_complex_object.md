@@ -6,8 +6,9 @@ Different from `SimpleObject`, `Object` must have Resolve defined for each field
 
 Resolve is used to get the value of the field. You can query a database and return the result. **The return type of the function is the type of the field.** You can also return a `async_graphql::FieldResult` so to return an error if it occrs and error message will be send to query result.
 
-<!--TODO: 全局类型的数据?-->
-When querying a database, you may need a global data base connection pool, you can use `Schema::data` to attach a global data when creating Schema, the following `value_from_db` function showed how to retrive a database connection from `Context`.
+When querying a database, you may need a global data base connection pool.
+When creating `Schema`,  you can use `SchemaBuilder::data` to setup `Schema` data, and `Context::data` to setup `Context`data.
+The following `value_from_db` function showed how to retrive a database connection from `Context`.
 
 ```rust
 use async_graphql::*;
