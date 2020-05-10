@@ -3,7 +3,7 @@ use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{QueryPathSegment, Spanned, Value};
+use crate::{Positioned, QueryPathSegment, Value};
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -12,7 +12,11 @@ pub struct ArgumentsOfCorrectType<'a> {
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
+    fn enter_directive(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        directive: &'a Positioned<Directive>,
+    ) {
         self.current_args = ctx
             .registry
             .directives
@@ -23,7 +27,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     fn exit_directive(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _directive: &'a Spanned<Directive>,
+        _directive: &'a Positioned<Directive>,
     ) {
         self.current_args = None;
     }
@@ -31,8 +35,8 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Spanned<String>,
-        value: &'a Spanned<Value>,
+        name: &'a Positioned<String>,
+        value: &'a Positioned<Value>,
     ) {
         if let Some(arg) = self
             .current_args
@@ -65,14 +69,14 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         self.current_args = ctx
             .parent_type()
             .and_then(|p| p.field_by_name(&field.name))
             .map(|f| &f.args);
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Positioned<Field>) {
         self.current_args = None;
     }
 }

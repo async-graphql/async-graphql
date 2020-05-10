@@ -5,9 +5,9 @@ extern crate thiserror;
 
 pub mod ast;
 mod query_parser;
-mod span;
+mod pos;
 mod value;
 
 pub use query_parser::{parse_query, Error, Result};
-pub use span::{Pos, Span, Spanned};
+pub use pos::{Pos, Positioned};
 pub use value::Value;

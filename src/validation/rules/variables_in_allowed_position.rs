@@ -4,14 +4,14 @@ use crate::parser::ast::{
 use crate::registry::TypeName;
 use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Spanned, Value};
+use crate::{Pos, Positioned, Value};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct VariableInAllowedPosition<'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
     variable_usages: HashMap<Scope<'a>, Vec<(&'a str, Pos, TypeName<'a>)>>,
-    variable_defs: HashMap<Scope<'a>, Vec<&'a Spanned<VariableDefinition>>>,
+    variable_defs: HashMap<Scope<'a>, Vec<&'a Positioned<VariableDefinition>>>,
     current_scope: Option<Scope<'a>>,
 }
 
@@ -19,7 +19,7 @@ impl<'a> VariableInAllowedPosition<'a> {
     fn collect_incorrect_usages(
         &self,
         from: &Scope<'a>,
-        var_defs: &[&'a Spanned<VariableDefinition>],
+        var_defs: &[&'a Positioned<VariableDefinition>],
         ctx: &mut VisitorContext<'a>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
@@ -69,7 +69,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -78,7 +78,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
@@ -86,7 +86,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_variable_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a Spanned<VariableDefinition>,
+        variable_definition: &'a Positioned<VariableDefinition>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.variable_defs
@@ -99,7 +99,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a Spanned<FragmentSpread>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

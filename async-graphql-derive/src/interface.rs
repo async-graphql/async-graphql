@@ -287,7 +287,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
             fn collect_inline_fields<'a>(
                 &'a self,
-                name: &#crate_name::Spanned<String>,
+                name: &#crate_name::Positioned<String>,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {

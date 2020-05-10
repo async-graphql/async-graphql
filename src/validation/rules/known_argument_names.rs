@@ -2,7 +2,7 @@ use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Spanned, Value};
+use crate::{Positioned, Value};
 use std::collections::HashMap;
 
 enum ArgsType<'a> {
@@ -33,7 +33,11 @@ impl<'a> KnownArgumentNames<'a> {
 }
 
 impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
+    fn enter_directive(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        directive: &'a Positioned<Directive>,
+    ) {
         self.current_args = ctx
             .registry
             .directives
@@ -44,7 +48,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn exit_directive(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _directive: &'a Spanned<Directive>,
+        _directive: &'a Positioned<Directive>,
     ) {
         self.current_args = None;
     }
@@ -52,8 +56,8 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Spanned<String>,
-        _value: &'a Spanned<Value>,
+        name: &'a Positioned<String>,
+        _value: &'a Positioned<Value>,
     ) {
         if let Some((args, arg_type)) = &self.current_args {
             if !args.contains_key(name.as_str()) {
@@ -89,7 +93,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         }
     }
 
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(schema_field) = parent_type.field_by_name(&field.name) {
                 self.current_args = Some((
@@ -103,7 +107,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         }
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Positioned<Field>) {
         self.current_args = None;
     }
 }

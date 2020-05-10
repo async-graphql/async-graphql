@@ -26,27 +26,21 @@ impl fmt::Display for Pos {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
-pub struct Span {
-    pub start: Pos,
-    pub end: Pos,
-}
-
-/// Represents the location of a AST node
+/// Represents the position of a AST node
 #[derive(Clone, Debug, Copy, Default)]
 #[allow(missing_docs)]
-pub struct Spanned<T: ?Sized> {
-    pub span: Span,
+pub struct Positioned<T: ?Sized> {
+    pub pos: Pos,
     pub node: T,
 }
 
-impl<T: fmt::Display> fmt::Display for Spanned<T> {
+impl<T: fmt::Display> fmt::Display for Positioned<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.node.fmt(f)
     }
 }
 
-impl<T: Clone> Spanned<T> {
+impl<T: Clone> Positioned<T> {
     #[inline]
     #[allow(missing_docs)]
     pub fn clone_inner(&self) -> T {
@@ -54,27 +48,27 @@ impl<T: Clone> Spanned<T> {
     }
 }
 
-impl<T: PartialEq> PartialEq for Spanned<T> {
+impl<T: PartialEq> PartialEq for Positioned<T> {
     fn eq(&self, other: &Self) -> bool {
         self.node.eq(&other.node)
     }
 }
 
-impl<T: PartialOrd> PartialOrd for Spanned<T> {
+impl<T: PartialOrd> PartialOrd for Positioned<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.node.partial_cmp(&other.node)
     }
 }
 
-impl<T: Ord> Ord for Spanned<T> {
+impl<T: Ord> Ord for Positioned<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.node.cmp(&other.node)
     }
 }
 
-impl<T: Ord> Eq for Spanned<T> {}
+impl<T: Ord> Eq for Positioned<T> {}
 
-impl<T: ?Sized> Deref for Spanned<T> {
+impl<T: ?Sized> Deref for Positioned<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -82,49 +76,33 @@ impl<T: ?Sized> Deref for Spanned<T> {
     }
 }
 
-impl<T: ?Sized> DerefMut for Spanned<T> {
+impl<T: ?Sized> DerefMut for Positioned<T> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.node
     }
 }
 
-impl<T: Hash> Hash for Spanned<T> {
+impl<T: Hash> Hash for Positioned<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node.hash(state)
     }
 }
 
-impl Borrow<str> for Spanned<String> {
+impl Borrow<str> for Positioned<String> {
     fn borrow(&self) -> &str {
         self.node.as_str()
     }
 }
 
-impl BorrowMut<str> for Spanned<String> {
+impl BorrowMut<str> for Positioned<String> {
     fn borrow_mut(&mut self) -> &mut str {
         self.node.as_mut_str()
     }
 }
 
-impl<T> Spanned<T> {
-    pub(crate) fn new(node: T, pair_span: pest::Span<'_>) -> Spanned<T> {
-        let ((start_line, start_column), (end_line, end_column)) = (
-            pair_span.start_pos().line_col(),
-            pair_span.end_pos().line_col(),
-        );
-        Spanned {
-            node,
-            span: Span {
-                start: Pos {
-                    line: start_line,
-                    column: start_column,
-                },
-                end: Pos {
-                    line: end_line,
-                    column: end_column,
-                },
-            },
-        }
+impl<T> Positioned<T> {
+    pub(crate) fn new(node: T, pos: Pos) -> Positioned<T> {
+        Positioned { node, pos }
     }
 
     #[inline]
@@ -135,13 +113,13 @@ impl<T> Spanned<T> {
     /// Get start position
     #[inline]
     pub fn position(&self) -> Pos {
-        self.span.start
+        self.pos
     }
 
     #[inline]
-    pub(crate) fn pack<F: FnOnce(Self) -> R, R>(self, f: F) -> Spanned<R> {
-        Spanned {
-            span: self.span,
+    pub(crate) fn pack<F: FnOnce(Self) -> R, R>(self, f: F) -> Positioned<R> {
+        Positioned {
+            pos: self.pos,
             node: f(self),
         }
     }

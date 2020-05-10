@@ -2,7 +2,7 @@ use crate::context::QueryPathNode;
 use crate::parser::ast::{Type, VariableDefinition};
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{QueryPathSegment, Spanned};
+use crate::{Positioned, QueryPathSegment};
 
 pub struct DefaultValuesOfCorrectType;
 
@@ -10,7 +10,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
     fn enter_variable_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a Spanned<VariableDefinition>,
+        variable_definition: &'a Positioned<VariableDefinition>,
     ) {
         if let Some(value) = &variable_definition.default_value {
             if let Type::NonNull(_) = &variable_definition.var_type.node {

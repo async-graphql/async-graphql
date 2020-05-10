@@ -1,6 +1,6 @@
 use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct FragmentsOnCompositeTypes;
@@ -9,7 +9,7 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
@@ -28,7 +28,7 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a Spanned<InlineFragment>,
+        inline_fragment: &'a Positioned<InlineFragment>,
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {

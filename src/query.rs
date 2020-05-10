@@ -8,7 +8,8 @@ use crate::parser::parse_query;
 use crate::registry::CacheControl;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    do_resolve, ContextBase, Error, ObjectType, Pos, QueryError, Result, Schema, Spanned, Variables,
+    do_resolve, ContextBase, Error, ObjectType, Pos, Positioned, QueryError, Result, Schema,
+    Variables,
 };
 use itertools::Itertools;
 use std::any::Any;
@@ -238,8 +239,8 @@ fn current_operation<'a>(
     document: &'a Document,
     operation_name: Option<&str>,
 ) -> Option<(
-    &'a Spanned<SelectionSet>,
-    &'a [Spanned<VariableDefinition>],
+    &'a Positioned<SelectionSet>,
+    &'a [Positioned<VariableDefinition>],
     bool,
 )> {
     for definition in &document.definitions {

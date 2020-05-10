@@ -3,7 +3,7 @@ use crate::parser::ast::{
     Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
 };
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct KnownDirectives {
@@ -14,7 +14,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         self.location_stack.push(match &operation_definition.node {
             OperationDefinition::SelectionSet(_) | OperationDefinition::Query(_) => {
@@ -28,7 +28,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _operation_definition: &'a Spanned<OperationDefinition>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         self.location_stack.pop();
     }
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_definition: &'a Spanned<FragmentDefinition>,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::FRAGMENT_DEFINITION);
@@ -45,12 +45,16 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_definition: &'a Spanned<FragmentDefinition>,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.location_stack.pop();
     }
 
-    fn enter_directive(&mut self, ctx: &mut VisitorContext<'a>, directive: &'a Spanned<Directive>) {
+    fn enter_directive(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        directive: &'a Positioned<Directive>,
+    ) {
         if let Some(schema_directive) = ctx.registry.directives.get(directive.name.as_str()) {
             if let Some(current_location) = self.location_stack.last() {
                 if !schema_directive.locations.contains(current_location) {
@@ -71,18 +75,18 @@ impl<'a> Visitor<'a> for KnownDirectives {
         }
     }
 
-    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Positioned<Field>) {
         self.location_stack.push(__DirectiveLocation::FIELD);
     }
 
-    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Positioned<Field>) {
         self.location_stack.pop();
     }
 
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_spread: &'a Spanned<FragmentSpread>,
+        _fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::FRAGMENT_SPREAD);
@@ -91,7 +95,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _fragment_spread: &'a Spanned<FragmentSpread>,
+        _fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         self.location_stack.pop();
     }
@@ -99,7 +103,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _inline_fragment: &'a Spanned<InlineFragment>,
+        _inline_fragment: &'a Positioned<InlineFragment>,
     ) {
         self.location_stack
             .push(__DirectiveLocation::INLINE_FRAGMENT);
@@ -108,7 +112,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_inline_fragment(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _inline_fragment: &'a Spanned<InlineFragment>,
+        _inline_fragment: &'a Positioned<InlineFragment>,
     ) {
         self.location_stack.pop();
     }

@@ -1,6 +1,6 @@
 use crate::parser::ast::{Definition, Document, OperationDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct LoneAnonymousOperation {
@@ -23,7 +23,7 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         if let Some(operation_count) = self.operation_count {
             let (err, pos) = match &operation_definition.node {

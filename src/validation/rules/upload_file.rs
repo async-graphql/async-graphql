@@ -1,6 +1,6 @@
 use crate::parser::ast::OperationDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct UploadFile;
@@ -9,7 +9,7 @@ impl<'a> Visitor<'a> for UploadFile {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         if let OperationDefinition::Query(query) = &operation_definition.node {
             for var in &query.variable_definitions {

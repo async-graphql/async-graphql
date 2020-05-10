@@ -1,6 +1,6 @@
 use crate::parser::ast::{Directive, Field};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Spanned, Value};
+use crate::{Positioned, Value};
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -12,7 +12,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
     fn enter_directive(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _directive: &'a Spanned<Directive>,
+        _directive: &'a Positioned<Directive>,
     ) {
         self.names.clear();
     }
@@ -20,8 +20,8 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Spanned<String>,
-        _value: &'a Spanned<Value>,
+        name: &'a Positioned<String>,
+        _value: &'a Positioned<Value>,
     ) {
         if !self.names.insert(name) {
             ctx.report_error(
@@ -31,7 +31,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
         }
     }
 
-    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, _ctx: &mut VisitorContext<'a>, _field: &'a Positioned<Field>) {
         self.names.clear();
     }
 }

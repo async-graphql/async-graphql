@@ -1,6 +1,6 @@
 use crate::parser::ast::{Field, Selection, SelectionSet};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -10,7 +10,7 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
     fn enter_selection_set(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        selection_set: &'a Spanned<SelectionSet>,
+        selection_set: &'a Positioned<SelectionSet>,
     ) {
         let mut find_conflicts = FindConflicts {
             outputs: Default::default(),
@@ -21,12 +21,12 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
 }
 
 struct FindConflicts<'a, 'ctx> {
-    outputs: HashMap<&'a str, &'a Spanned<Field>>,
+    outputs: HashMap<&'a str, &'a Positioned<Field>>,
     ctx: &'a mut VisitorContext<'ctx>,
 }
 
 impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
-    pub fn find(&mut self, selection_set: &'a Spanned<SelectionSet>) {
+    pub fn find(&mut self, selection_set: &'a Positioned<SelectionSet>) {
         for selection in &selection_set.items {
             match &selection.node {
                 Selection::Field(field) => {
@@ -49,7 +49,7 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
         }
     }
 
-    fn add_output(&mut self, name: &'a str, field: &'a Spanned<Field>) {
+    fn add_output(&mut self, name: &'a str, field: &'a Positioned<Field>) {
         if let Some(prev_field) = self.outputs.get(name) {
             if prev_field.name != field.name {
                 self.ctx.report_error(

@@ -1,5 +1,5 @@
 use crate::ast::*;
-use crate::span::Spanned;
+use crate::pos::Positioned;
 use crate::value::Value;
 use crate::Pos;
 use pest::error::LineColLocation;
@@ -7,6 +7,8 @@ use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::BTreeMap;
 use std::fmt;
+use std::iter::Peekable;
+use std::str::Chars;
 
 #[derive(Parser)]
 #[grammar = "query.pest"]
@@ -43,25 +45,74 @@ impl From<pest::error::Error<Rule>> for Error {
 /// Parser result
 pub type Result<T> = std::result::Result<T, Error>;
 
+pub(crate) struct PositionCalculator<'a> {
+    input: Peekable<Chars<'a>>,
+    pos: usize,
+    line: usize,
+    column: usize,
+}
+
+impl<'a> PositionCalculator<'a> {
+    fn new(input: &'a str) -> PositionCalculator<'a> {
+        Self {
+            input: input.chars().peekable(),
+            pos: 0,
+            line: 1,
+            column: 1,
+        }
+    }
+
+    pub fn step(&mut self, pair: &Pair<Rule>) -> Pos {
+        let pos = pair.as_span().start();
+        debug_assert!(pos >= self.pos);
+        for _ in 0..pos - self.pos {
+            match self.input.next() {
+                Some('\r') => {
+                    if let Some(&'\n') = self.input.peek() {
+                        self.input.next();
+                        self.line += 1;
+                        self.column = 1;
+                    } else {
+                        self.column += 1;
+                    }
+                }
+                Some('\n') => {
+                    self.line += 1;
+                    self.column = 1;
+                }
+                Some(_) => {
+                    self.column += 1;
+                }
+                None => break,
+            }
+        }
+        self.pos = pos;
+        Pos {
+            line: self.line,
+            column: self.column,
+        }
+    }
+}
+
 /// Parse a GraphQL query.
 pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
     let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, input.as_ref())?
         .next()
         .unwrap();
     let mut definitions = Vec::new();
+    let mut pc = PositionCalculator::new(input.as_ref());
 
     for pair in document_pair.into_inner() {
         match pair.as_rule() {
             Rule::named_operation_definition => definitions
-                .push(parse_named_operation_definition(pair)?.pack(Definition::Operation)),
+                .push(parse_named_operation_definition(pair, &mut pc)?.pack(Definition::Operation)),
             Rule::selection_set => definitions.push(
-                parse_selection_set(pair)?
+                parse_selection_set(pair, &mut pc)?
                     .pack(OperationDefinition::SelectionSet)
                     .pack(Definition::Operation),
             ),
-            Rule::fragment_definition => {
-                definitions.push(parse_fragment_definition(pair)?.pack(Definition::Fragment))
-            }
+            Rule::fragment_definition => definitions
+                .push(parse_fragment_definition(pair, &mut pc)?.pack(Definition::Fragment)),
             Rule::EOI => {}
             _ => unreachable!(),
         }
@@ -69,14 +120,17 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
     Ok(Document { definitions })
 }
 
-fn parse_named_operation_definition(pair: Pair<Rule>) -> Result<Spanned<OperationDefinition>> {
+fn parse_named_operation_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<OperationDefinition>> {
     enum OperationType {
         Query,
         Mutation,
         Subscription,
     }
 
-    let span = pair.as_span();
+    let pos = pc.step(&pair);
     let mut operation_type = OperationType::Query;
     let mut name = None;
     let mut variable_definitions = None;
@@ -94,160 +148,177 @@ fn parse_named_operation_definition(pair: Pair<Rule>) -> Result<Spanned<Operatio
                 };
             }
             Rule::name => {
-                name = Some(Spanned::new(pair.as_str().to_string(), pair.as_span()));
+                name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
             }
             Rule::variable_definitions => {
-                variable_definitions = Some(parse_variable_definitions(pair)?);
+                variable_definitions = Some(parse_variable_definitions(pair, pc)?);
             }
             Rule::directives => {
-                directives = Some(parse_directives(pair)?);
+                directives = Some(parse_directives(pair, pc)?);
             }
             Rule::selection_set => {
-                selection_set = Some(parse_selection_set(pair)?);
+                selection_set = Some(parse_selection_set(pair, pc)?);
             }
             _ => unreachable!(),
         }
     }
 
     Ok(match operation_type {
-        OperationType::Query => Spanned::new(
+        OperationType::Query => Positioned::new(
             Query {
                 name,
                 variable_definitions: variable_definitions.unwrap_or_default(),
                 directives: directives.unwrap_or_default(),
                 selection_set: selection_set.unwrap(),
             },
-            span,
+            pos,
         )
         .pack(OperationDefinition::Query),
-        OperationType::Mutation => Spanned::new(
+        OperationType::Mutation => Positioned::new(
             Mutation {
                 name,
                 variable_definitions: variable_definitions.unwrap_or_default(),
                 directives: directives.unwrap_or_default(),
                 selection_set: selection_set.unwrap(),
             },
-            span,
+            pos,
         )
         .pack(OperationDefinition::Mutation),
-        OperationType::Subscription => Spanned::new(
+        OperationType::Subscription => Positioned::new(
             Subscription {
                 name,
                 variable_definitions: variable_definitions.unwrap_or_default(),
                 directives: directives.unwrap_or_default(),
                 selection_set: selection_set.unwrap(),
             },
-            span,
+            pos,
         )
         .pack(OperationDefinition::Subscription),
     })
 }
 
-fn parse_default_value(pair: Pair<Rule>) -> Result<Value> {
+fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::value => return Ok(parse_value(pair)?),
+            Rule::value => return Ok(parse_value(pair, pc)?),
             _ => unreachable!(),
         }
     }
     unreachable!()
 }
 
-fn parse_type(pair: Pair<Rule>) -> Result<Type> {
+fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Type> {
     let pair = pair.into_inner().next().unwrap();
     match pair.as_rule() {
-        Rule::nonnull_type => Ok(Type::NonNull(Box::new(parse_type(pair)?))),
-        Rule::list_type => Ok(Type::List(Box::new(parse_type(pair)?))),
+        Rule::nonnull_type => Ok(Type::NonNull(Box::new(parse_type(pair, pc)?))),
+        Rule::list_type => Ok(Type::List(Box::new(parse_type(pair, pc)?))),
         Rule::name => Ok(Type::Named(pair.as_str().to_string())),
-        Rule::type_ => parse_type(pair),
+        Rule::type_ => parse_type(pair, pc),
         _ => unreachable!(),
     }
 }
 
-fn parse_variable_definition(pair: Pair<Rule>) -> Result<Spanned<VariableDefinition>> {
-    let span = pair.as_span();
+fn parse_variable_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<VariableDefinition>> {
+    let pos = pc.step(&pair);
     let mut variable = None;
     let mut ty = None;
     let mut default_value = None;
 
     for pair in pair.into_inner() {
-        let span = pair.as_span();
         match pair.as_rule() {
-            Rule::variable => variable = Some(parse_variable(pair)?),
-            Rule::type_ => ty = Some(Spanned::new(parse_type(pair)?, span)),
+            Rule::variable => variable = Some(parse_variable(pair, pc)?),
+            Rule::type_ => {
+                ty = {
+                    let pos = pc.step(&pair);
+                    Some(Positioned::new(parse_type(pair, pc)?, pos))
+                }
+            }
             Rule::default_value => {
-                default_value = Some(Spanned::new(parse_default_value(pair)?, span))
+                let pos = pc.step(&pair);
+                default_value = Some(Positioned::new(parse_default_value(pair, pc)?, pos))
             }
             _ => unreachable!(),
         }
     }
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         VariableDefinition {
             name: variable.unwrap(),
             var_type: ty.unwrap(),
             default_value,
         },
-        span,
+        pos,
     ))
 }
 
-fn parse_variable_definitions(pair: Pair<Rule>) -> Result<Vec<Spanned<VariableDefinition>>> {
+fn parse_variable_definitions(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<VariableDefinition>>> {
     let mut vars = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::variable_definition => vars.push(parse_variable_definition(pair)?),
+            Rule::variable_definition => vars.push(parse_variable_definition(pair, pc)?),
             _ => unreachable!(),
         }
     }
     Ok(vars)
 }
 
-fn parse_directive(pair: Pair<Rule>) -> Result<Spanned<Directive>> {
-    let span = pair.as_span();
+fn parse_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Directive>> {
+    let pos = pc.step(&pair);
     let mut name = None;
     let mut arguments = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Spanned::new(pair.as_str().to_string(), pair.as_span())),
-            Rule::arguments => arguments = Some(parse_arguments(pair)?),
+            Rule::name => {
+                let pos = pc.step(&pair);
+                name = Some(Positioned::new(pair.as_str().to_string(), pos))
+            }
+            Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
             _ => unreachable!(),
         }
     }
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         Directive {
             name: name.unwrap(),
             arguments: arguments.unwrap_or_default(),
         },
-        span,
+        pos,
     ))
 }
 
-fn parse_directives(pair: Pair<Rule>) -> Result<Vec<Spanned<Directive>>> {
+fn parse_directives(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<Directive>>> {
     let mut directives = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::directive => directives.push(parse_directive(pair)?),
+            Rule::directive => directives.push(parse_directive(pair, pc)?),
             _ => unreachable!(),
         }
     }
     Ok(directives)
 }
 
-fn parse_variable(pair: Pair<Rule>) -> Result<Spanned<String>> {
+fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Spanned::new(pair.as_str().to_string(), pair.as_span()));
+            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
         }
     }
     unreachable!()
 }
 
-fn parse_value(pair: Pair<Rule>) -> Result<Value> {
+fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     let pair = pair.into_inner().next().unwrap();
     Ok(match pair.as_rule() {
-        Rule::object => parse_object_value(pair)?,
-        Rule::array => parse_array_value(pair)?,
-        Rule::variable => Value::Variable(parse_variable(pair)?.into_inner()),
+        Rule::object => parse_object_value(pair, pc)?,
+        Rule::array => parse_array_value(pair, pc)?,
+        Rule::variable => Value::Variable(parse_variable(pair, pc)?.into_inner()),
         Rule::float => Value::Float(pair.as_str().parse().unwrap()),
         Rule::int => Value::Int(pair.as_str().parse().unwrap()),
         Rule::string => Value::String({
@@ -271,25 +342,25 @@ fn parse_value(pair: Pair<Rule>) -> Result<Value> {
     })
 }
 
-fn parse_object_pair(pair: Pair<Rule>) -> Result<(String, Value)> {
+fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(String, Value)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::name => name = Some(pair.as_str().to_string()),
-            Rule::value => value = Some(parse_value(pair)?),
+            Rule::value => value = Some(parse_value(pair, pc)?),
             _ => unreachable!(),
         }
     }
     Ok((name.unwrap(), value.unwrap()))
 }
 
-fn parse_object_value(pair: Pair<Rule>) -> Result<Value> {
+fn parse_object_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     let mut map = BTreeMap::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::pair => {
-                map.extend(std::iter::once(parse_object_pair(pair)?));
+                map.extend(std::iter::once(parse_object_pair(pair, pc)?));
             }
             _ => unreachable!(),
         }
@@ -297,12 +368,12 @@ fn parse_object_value(pair: Pair<Rule>) -> Result<Value> {
     Ok(Value::Object(map))
 }
 
-fn parse_array_value(pair: Pair<Rule>) -> Result<Value> {
+fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
     let mut array = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::value => {
-                array.push(parse_value(pair)?);
+                array.push(parse_value(pair, pc)?);
             }
             _ => unreachable!(),
         }
@@ -310,42 +381,52 @@ fn parse_array_value(pair: Pair<Rule>) -> Result<Value> {
     Ok(Value::List(array))
 }
 
-fn parse_pair(pair: Pair<Rule>) -> Result<(Spanned<String>, Spanned<Value>)> {
+fn parse_pair(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<(Positioned<String>, Positioned<Value>)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
-        let span = pair.as_span();
         match pair.as_rule() {
-            Rule::name => name = Some(Spanned::new(pair.as_str().to_string(), span)),
-            Rule::value => value = Some(Spanned::new(parse_value(pair)?, span)),
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::value => {
+                value = {
+                    let pos = pc.step(&pair);
+                    Some(Positioned::new(parse_value(pair, pc)?, pos))
+                }
+            }
             _ => unreachable!(),
         }
     }
     Ok((name.unwrap(), value.unwrap()))
 }
 
-fn parse_arguments(pair: Pair<Rule>) -> Result<Vec<(Spanned<String>, Spanned<Value>)>> {
+fn parse_arguments(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<(Positioned<String>, Positioned<Value>)>> {
     let mut arguments = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::pair => arguments.extend(std::iter::once(parse_pair(pair)?)),
+            Rule::pair => arguments.extend(std::iter::once(parse_pair(pair, pc)?)),
             _ => unreachable!(),
         }
     }
     Ok(arguments)
 }
 
-fn parse_alias(pair: Pair<Rule>) -> Result<Spanned<String>> {
+fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Spanned::new(pair.as_str().to_string(), pair.as_span()));
+            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
         }
     }
     unreachable!()
 }
 
-fn parse_field(pair: Pair<Rule>) -> Result<Spanned<Field>> {
-    let span = pair.as_span();
+fn parse_field(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Field>> {
+    let pos = pc.step(&pair);
     let mut alias = None;
     let mut name = None;
     let mut directives = None;
@@ -354,16 +435,16 @@ fn parse_field(pair: Pair<Rule>) -> Result<Spanned<Field>> {
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::alias => alias = Some(parse_alias(pair)?),
-            Rule::name => name = Some(Spanned::new(pair.as_str().to_string(), pair.as_span())),
-            Rule::arguments => arguments = Some(parse_arguments(pair)?),
-            Rule::directives => directives = Some(parse_directives(pair)?),
-            Rule::selection_set => selection_set = Some(parse_selection_set(pair)?),
+            Rule::alias => alias = Some(parse_alias(pair, pc)?),
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
+            Rule::directives => directives = Some(parse_directives(pair, pc)?),
+            Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
             _ => unreachable!(),
         }
     }
 
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         Field {
             alias,
             name: name.unwrap(),
@@ -371,87 +452,103 @@ fn parse_field(pair: Pair<Rule>) -> Result<Spanned<Field>> {
             directives: directives.unwrap_or_default(),
             selection_set: selection_set.unwrap_or_default(),
         },
-        span,
+        pos,
     ))
 }
 
-fn parse_fragment_spread(pair: Pair<Rule>) -> Result<Spanned<FragmentSpread>> {
-    let span = pair.as_span();
+fn parse_fragment_spread(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<FragmentSpread>> {
+    let pos = pc.step(&pair);
     let mut name = None;
     let mut directives = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Spanned::new(pair.as_str().to_string(), pair.as_span())),
-            Rule::directives => directives = Some(parse_directives(pair)?),
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::directives => directives = Some(parse_directives(pair, pc)?),
             _ => unreachable!(),
         }
     }
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         FragmentSpread {
             fragment_name: name.unwrap(),
             directives: directives.unwrap_or_default(),
         },
-        span,
+        pos,
     ))
 }
 
-fn parse_type_condition(pair: Pair<Rule>) -> Result<Spanned<TypeCondition>> {
+fn parse_type_condition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<TypeCondition>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Spanned::new(
-                TypeCondition::On(Spanned::new(pair.as_str().to_string(), pair.as_span())),
-                pair.as_span(),
+            let pos = pc.step(&pair);
+            return Ok(Positioned::new(
+                TypeCondition::On(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+                pos,
             ));
         }
     }
     unreachable!()
 }
 
-fn parse_inline_fragment(pair: Pair<Rule>) -> Result<Spanned<InlineFragment>> {
-    let span = pair.as_span();
+fn parse_inline_fragment(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<InlineFragment>> {
+    let pos = pc.step(&pair);
     let mut type_condition = None;
     let mut directives = None;
     let mut selection_set = None;
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::type_condition => type_condition = Some(parse_type_condition(pair)?),
-            Rule::directives => directives = Some(parse_directives(pair)?),
-            Rule::selection_set => selection_set = Some(parse_selection_set(pair)?),
+            Rule::type_condition => type_condition = Some(parse_type_condition(pair, pc)?),
+            Rule::directives => directives = Some(parse_directives(pair, pc)?),
+            Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
             _ => unreachable!(),
         }
     }
 
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         InlineFragment {
             type_condition,
             directives: directives.unwrap_or_default(),
             selection_set: selection_set.unwrap(),
         },
-        span,
+        pos,
     ))
 }
 
-fn parse_selection_set(pair: Pair<Rule>) -> Result<Spanned<SelectionSet>> {
-    let span = pair.as_span();
+fn parse_selection_set(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<SelectionSet>> {
+    let pos = pc.step(&pair);
     let mut items = Vec::new();
     for pair in pair.into_inner().map(|pair| pair.into_inner()).flatten() {
         match pair.as_rule() {
-            Rule::field => items.push(parse_field(pair)?.pack(Selection::Field)),
+            Rule::field => items.push(parse_field(pair, pc)?.pack(Selection::Field)),
             Rule::fragment_spread => {
-                items.push(parse_fragment_spread(pair)?.pack(Selection::FragmentSpread))
+                items.push(parse_fragment_spread(pair, pc)?.pack(Selection::FragmentSpread))
             }
             Rule::inline_fragment => {
-                items.push(parse_inline_fragment(pair)?.pack(Selection::InlineFragment))
+                items.push(parse_inline_fragment(pair, pc)?.pack(Selection::InlineFragment))
             }
             _ => unreachable!(),
         }
     }
-    Ok(Spanned::new(SelectionSet { items }, span))
+    Ok(Positioned::new(SelectionSet { items }, pos))
 }
 
-fn parse_fragment_definition(pair: Pair<Rule>) -> Result<Spanned<FragmentDefinition>> {
-    let span = pair.as_span();
+fn parse_fragment_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<FragmentDefinition>> {
+    let pos = pc.step(&pair);
     let mut name = None;
     let mut type_condition = None;
     let mut directives = None;
@@ -459,22 +556,22 @@ fn parse_fragment_definition(pair: Pair<Rule>) -> Result<Spanned<FragmentDefinit
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Spanned::new(pair.as_str().to_string(), pair.as_span())),
-            Rule::type_condition => type_condition = Some(parse_type_condition(pair)?),
-            Rule::directives => directives = Some(parse_directives(pair)?),
-            Rule::selection_set => selection_set = Some(parse_selection_set(pair)?),
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::type_condition => type_condition = Some(parse_type_condition(pair, pc)?),
+            Rule::directives => directives = Some(parse_directives(pair, pc)?),
+            Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
             _ => unreachable!(),
         }
     }
 
-    Ok(Spanned::new(
+    Ok(Positioned::new(
         FragmentDefinition {
             name: name.unwrap(),
             type_condition: type_condition.unwrap(),
             directives: directives.unwrap_or_default(),
             selection_set: selection_set.unwrap(),
         },
-        span,
+        pos,
     ))
 }
 

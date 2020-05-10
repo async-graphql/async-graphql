@@ -1,12 +1,12 @@
 use crate::parser::ast::Field;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct ScalarLeafs;
 
 impl<'a> Visitor<'a> for ScalarLeafs {
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         if let Some(ty) = ctx.parent_type() {
             if let Some(schema_field) = ty.field_by_name(&field.name) {
                 if let Some(ty) = ctx.registry.concrete_type_by_name(&schema_field.ty) {

@@ -3,7 +3,7 @@ use crate::parser::ast::{
 };
 use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Spanned};
+use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -55,7 +55,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -64,7 +64,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
         self.defined_fragments.insert((
@@ -76,7 +76,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a Spanned<FragmentSpread>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

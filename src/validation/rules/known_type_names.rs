@@ -1,7 +1,7 @@
 use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
 use crate::registry::TypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Spanned};
+use crate::{Pos, Positioned};
 
 #[derive(Default)]
 pub struct KnownTypeNames;
@@ -10,7 +10,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         let TypeCondition::On(name) = &fragment_definition.type_condition.node;
         validate_type(ctx, name.as_str(), fragment_definition.position());
@@ -19,7 +19,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_variable_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a Spanned<VariableDefinition>,
+        variable_definition: &'a Positioned<VariableDefinition>,
     ) {
         validate_type(
             ctx,
@@ -31,7 +31,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a Spanned<InlineFragment>,
+        inline_fragment: &'a Positioned<InlineFragment>,
     ) {
         if let Some(TypeCondition::On(name)) =
             inline_fragment.type_condition.as_ref().map(|c| &c.node)

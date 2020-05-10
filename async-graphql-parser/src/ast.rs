@@ -1,4 +1,4 @@
-use crate::span::Spanned;
+use crate::pos::Positioned;
 use crate::value::Value;
 use std::fmt;
 
@@ -21,12 +21,12 @@ impl fmt::Display for Type {
 
 #[derive(Clone, Debug)]
 pub struct Directive {
-    pub name: Spanned<String>,
-    pub arguments: Vec<(Spanned<String>, Spanned<Value>)>,
+    pub name: Positioned<String>,
+    pub arguments: Vec<(Positioned<String>, Positioned<Value>)>,
 }
 
 impl Directive {
-    pub fn get_argument(&self, name: &str) -> Option<&Spanned<Value>> {
+    pub fn get_argument(&self, name: &str) -> Option<&Positioned<Value>> {
         self.arguments
             .iter()
             .find(|item| item.0.as_str() == name)
@@ -36,90 +36,90 @@ impl Directive {
 
 #[derive(Clone, Debug)]
 pub struct Document {
-    pub definitions: Vec<Spanned<Definition>>,
+    pub definitions: Vec<Positioned<Definition>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum Definition {
-    Operation(Spanned<OperationDefinition>),
-    Fragment(Spanned<FragmentDefinition>),
+    Operation(Positioned<OperationDefinition>),
+    Fragment(Positioned<FragmentDefinition>),
 }
 
 #[derive(Clone, Debug)]
 pub enum TypeCondition {
-    On(Spanned<String>),
+    On(Positioned<String>),
 }
 
 #[derive(Clone, Debug)]
 pub struct FragmentDefinition {
-    pub name: Spanned<String>,
-    pub type_condition: Spanned<TypeCondition>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub name: Positioned<String>,
+    pub type_condition: Positioned<TypeCondition>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }
 
 #[derive(Clone, Debug)]
 pub enum OperationDefinition {
-    SelectionSet(Spanned<SelectionSet>),
-    Query(Spanned<Query>),
-    Mutation(Spanned<Mutation>),
-    Subscription(Spanned<Subscription>),
+    SelectionSet(Positioned<SelectionSet>),
+    Query(Positioned<Query>),
+    Mutation(Positioned<Mutation>),
+    Subscription(Positioned<Subscription>),
 }
 
 #[derive(Clone, Debug)]
 pub struct Query {
-    pub name: Option<Spanned<String>>,
-    pub variable_definitions: Vec<Spanned<VariableDefinition>>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub name: Option<Positioned<String>>,
+    pub variable_definitions: Vec<Positioned<VariableDefinition>>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Mutation {
-    pub name: Option<Spanned<String>>,
-    pub variable_definitions: Vec<Spanned<VariableDefinition>>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub name: Option<Positioned<String>>,
+    pub variable_definitions: Vec<Positioned<VariableDefinition>>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Subscription {
-    pub name: Option<Spanned<String>>,
-    pub variable_definitions: Vec<Spanned<VariableDefinition>>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub name: Option<Positioned<String>>,
+    pub variable_definitions: Vec<Positioned<VariableDefinition>>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct SelectionSet {
-    pub items: Vec<Spanned<Selection>>,
+    pub items: Vec<Positioned<Selection>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct VariableDefinition {
-    pub name: Spanned<String>,
-    pub var_type: Spanned<Type>,
-    pub default_value: Option<Spanned<Value>>,
+    pub name: Positioned<String>,
+    pub var_type: Positioned<Type>,
+    pub default_value: Option<Positioned<Value>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum Selection {
-    Field(Spanned<Field>),
-    FragmentSpread(Spanned<FragmentSpread>),
-    InlineFragment(Spanned<InlineFragment>),
+    Field(Positioned<Field>),
+    FragmentSpread(Positioned<FragmentSpread>),
+    InlineFragment(Positioned<InlineFragment>),
 }
 
 #[derive(Clone, Debug)]
 pub struct Field {
-    pub alias: Option<Spanned<String>>,
-    pub name: Spanned<String>,
-    pub arguments: Vec<(Spanned<String>, Spanned<Value>)>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub alias: Option<Positioned<String>>,
+    pub name: Positioned<String>,
+    pub arguments: Vec<(Positioned<String>, Positioned<Value>)>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }
 
 impl Field {
-    pub fn get_argument(&self, name: &str) -> Option<&Spanned<Value>> {
+    pub fn get_argument(&self, name: &str) -> Option<&Positioned<Value>> {
         self.arguments
             .iter()
             .find(|item| item.0.as_str() == name)
@@ -129,13 +129,13 @@ impl Field {
 
 #[derive(Clone, Debug)]
 pub struct FragmentSpread {
-    pub fragment_name: Spanned<String>,
-    pub directives: Vec<Spanned<Directive>>,
+    pub fragment_name: Positioned<String>,
+    pub directives: Vec<Positioned<Directive>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct InlineFragment {
-    pub type_condition: Option<Spanned<TypeCondition>>,
-    pub directives: Vec<Spanned<Directive>>,
-    pub selection_set: Spanned<SelectionSet>,
+    pub type_condition: Option<Positioned<TypeCondition>>,
+    pub directives: Vec<Positioned<Directive>>,
+    pub selection_set: Positioned<SelectionSet>,
 }

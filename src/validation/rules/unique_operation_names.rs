@@ -1,6 +1,6 @@
 use crate::parser::ast::{Mutation, OperationDefinition, Query, Subscription};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -12,18 +12,18 @@ impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         let name = match &operation_definition.node {
-            OperationDefinition::Query(Spanned {
+            OperationDefinition::Query(Positioned {
                 node: Query { name, .. },
                 ..
             }) => name.as_ref(),
-            OperationDefinition::Mutation(Spanned {
+            OperationDefinition::Mutation(Positioned {
                 node: Mutation { name, .. },
                 ..
             }) => name.as_ref(),
-            OperationDefinition::Subscription(Spanned {
+            OperationDefinition::Subscription(Positioned {
                 node: Subscription { name, .. },
                 ..
             }) => name.as_ref(),

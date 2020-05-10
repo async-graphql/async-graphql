@@ -1,6 +1,6 @@
 use crate::parser::ast::FragmentDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -12,7 +12,7 @@ impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         if !self.names.insert(&fragment_definition.name) {
             ctx.report_error(

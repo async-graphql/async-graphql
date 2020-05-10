@@ -118,7 +118,7 @@ pub use context::{
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
 };
-pub use parser::{Pos, Spanned, Value};
+pub use parser::{Pos, Positioned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};

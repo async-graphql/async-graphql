@@ -3,7 +3,7 @@ use crate::parser::ast::{
 };
 use crate::validation::utils::{operation_name, referenced_variables, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Spanned, Value};
+use crate::{Pos, Positioned, Value};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -75,7 +75,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Spanned<OperationDefinition>,
+        operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         let (op_name, _) = operation_name(operation_definition);
         self.current_scope = Some(Scope::Operation(op_name));
@@ -85,7 +85,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Spanned<FragmentDefinition>,
+        fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
@@ -93,7 +93,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_variable_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a Spanned<VariableDefinition>,
+        variable_definition: &'a Positioned<VariableDefinition>,
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
@@ -108,8 +108,8 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Spanned<String>,
-        value: &'a Spanned<Value>,
+        _name: &'a Positioned<String>,
+        value: &'a Positioned<Value>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
@@ -122,7 +122,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_fragment_spread(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a Spanned<FragmentSpread>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads

@@ -1,6 +1,6 @@
 use crate::parser::ast::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -22,7 +22,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_fragment_spread(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        fragment_spread: &'a Spanned<FragmentSpread>,
+        fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         if let Some(fragment_type) = self
             .fragment_types
@@ -47,7 +47,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_inline_fragment(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        inline_fragment: &'a Spanned<InlineFragment>,
+        inline_fragment: &'a Positioned<InlineFragment>,
     ) {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(TypeCondition::On(fragment_type)) =

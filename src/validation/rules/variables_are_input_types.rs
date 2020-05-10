@@ -1,6 +1,6 @@
 use crate::parser::ast::VariableDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Spanned;
+use crate::Positioned;
 
 #[derive(Default)]
 pub struct VariablesAreInputTypes;
@@ -9,7 +9,7 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
     fn enter_variable_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        variable_definition: &'a Spanned<VariableDefinition>,
+        variable_definition: &'a Positioned<VariableDefinition>,
     ) {
         if let Some(ty) = ctx
             .registry

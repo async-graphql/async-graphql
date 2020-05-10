@@ -1,13 +1,13 @@
 use crate::parser::ast::Field;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{registry, Spanned};
+use crate::{registry, Positioned};
 
 #[derive(Default)]
 pub struct FieldsOnCorrectType;
 
 impl<'a> Visitor<'a> for FieldsOnCorrectType {
-    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Spanned<Field>) {
+    fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(registry::Type::Union { .. }) | Some(registry::Type::Interface { .. }) =
                 ctx.parent_type()

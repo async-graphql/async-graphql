@@ -2,7 +2,7 @@ use crate::extensions::BoxExtension;
 use crate::parser::ast::{Directive, Field, FragmentDefinition, SelectionSet, VariableDefinition};
 use crate::registry::Registry;
 use crate::{InputValueType, QueryError, Result, Schema, Type};
-use crate::{Pos, Spanned, Value};
+use crate::{Pos, Positioned, Value};
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
@@ -121,10 +121,10 @@ impl Data {
 }
 
 /// Context for `SelectionSet`
-pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Spanned<SelectionSet>>;
+pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Positioned<SelectionSet>>;
 
 /// Context object for resolve field
-pub type Context<'a> = ContextBase<'a, &'a Spanned<Field>>;
+pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
 
 /// The query path segment
 #[derive(Clone)]
@@ -241,7 +241,7 @@ pub struct ContextBase<'a, T> {
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
-    pub(crate) variable_definitions: &'a [Spanned<VariableDefinition>],
+    pub(crate) variable_definitions: &'a [Positioned<VariableDefinition>],
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) ctx_data: Option<&'a Data>,
@@ -259,7 +259,7 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 #[doc(hidden)]
 pub struct Environment {
     pub variables: Variables,
-    pub variable_definitions: Vec<Spanned<VariableDefinition>>,
+    pub variable_definitions: Vec<Positioned<VariableDefinition>>,
     pub fragments: HashMap<String, FragmentDefinition>,
     pub ctx_data: Arc<Data>,
 }
@@ -302,7 +302,10 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn with_field(&'a self, field: &'a Spanned<Field>) -> ContextBase<'a, &'a Spanned<Field>> {
+    pub fn with_field(
+        &'a self,
+        field: &'a Positioned<Field>,
+    ) -> ContextBase<'a, &'a Positioned<Field>> {
         ContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
@@ -330,8 +333,8 @@ impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
     pub fn with_selection_set(
         &self,
-        selection_set: &'a Spanned<SelectionSet>,
-    ) -> ContextBase<'a, &'a Spanned<SelectionSet>> {
+        selection_set: &'a Positioned<SelectionSet>,
+    ) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
         ContextBase {
             path_node: self.path_node.clone(),
             extensions: self.extensions,
@@ -403,7 +406,7 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn is_skip(&self, directives: &[Spanned<Directive>]) -> Result<bool> {
+    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> Result<bool> {
         for directive in directives {
             if directive.name.as_str() == "skip" {
                 if let Some(value) = directive.get_argument("if") {
@@ -459,9 +462,9 @@ impl<'a, T> ContextBase<'a, T> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a Spanned<SelectionSet>> {
+impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
     #[doc(hidden)]
-    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Spanned<SelectionSet>> {
+    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
         ContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
@@ -481,7 +484,7 @@ impl<'a> ContextBase<'a, &'a Spanned<SelectionSet>> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a Spanned<Field>> {
+impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     #[doc(hidden)]
     pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
         &self,
