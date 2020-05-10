@@ -148,6 +148,26 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#context" id="context">Context</a></h1>
+<p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolve function is borrowed from <code>Context</code>, you need to explictly state the lifetime of the argument.</strong></p>
+<p>The following example shows how to borrow data in <code>Context</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn borrow_from_context_data&lt;'ctx'&gt;(
+        &amp;self,
+        ctx: &amp;'ctx Context&lt;'_&gt;
+    ) -&gt; &amp;'ctx String {
+        ctx.data::&lt;String&gt;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

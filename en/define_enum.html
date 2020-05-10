@@ -148,6 +148,27 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
+<p>It's easy to define an <code>Enum</code>, here we have an example:</p>
+<p><strong>Async-graphql can automatically change the name of each item to GraphQL's CONSTANT_CASE convension, you can also use <code>name</code> to rename.</strong></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
+pub enum Episode {
+    #[item(desc = &quot;Released in 1977.&quot;)]
+    NewHope,
+
+    #[item(desc = &quot;Released in 1980.&quot;)]
+    Empire,
+
+    // rename to `AAA`
+    #[item(name=&quot;AAA&quot;, desc = &quot;Released in 1983.&quot;)]
+    Jedi,
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

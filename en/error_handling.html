@@ -148,6 +148,34 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#error-handling" id="error-handling">Error handling</a></h1>
+<p>Resolve can return a <code>FieldResult</code>, following is the definition:</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+<span class="boring">}
+</span></code></pre></pre>
+<!--TODO: 扩展标准的错误输出? -->
+<p>Any <code>Error</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
+<p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[field]
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+        Ok(&quot;234a&quot;
+            .parse()
+            .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

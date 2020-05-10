@@ -148,6 +148,36 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#inputobject" id="inputobject">InputObject</a></h1>
+<!--Input Object and SimpleObject inconsistant space.-->
+<p>You can define an <code>Object</code> as argument, GraphQL calls it <code>InputObject</code>.
+The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>.
+However, <code>SimpleObject</code> can only be used for output and <code>InputObject</code> can only be used as input.</p>
+<p><code>InputObject</code> don't need a <code>#[field]</code> for each field, every field is <code>InputValue</code>.
+But you can add optional <code>#[field]</code> to add description or rename the field.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[InputObject]
+struct Coordinate {
+    latitude: f64,
+
+    #[field(desc = &quot;...&quot;)]
+    longitude: f64
+}
+
+struct Mutation;
+
+#[Object]
+impl Mutation {
+    async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
+        // Writes coordination to database.
+        // ...
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

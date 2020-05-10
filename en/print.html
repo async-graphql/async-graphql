@@ -204,14 +204,252 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <h2><a class="header" href="#web-server-integration" id="web-server-integration">Web server integration</a></h2>
 <p>Please refer to https://github.com/async-graphql/examples.</p>
 <h1><a class="header" href="#type-system" id="type-system">Type System</a></h1>
+<p><code>Async-graphql</code> implemented conversion from GraphQL Object to Rust struct, and it's easy to use.</p>
 <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
+<p><code>SimpleObject</code> directly map all field of a struct to GraphQL object, you cannot define a Resolve function on it.</p>
+<p>The example below defined an object <code>MyObject</code>, including field <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[SimpleObject]
+struct MyObject {
+    a: i32,
+    b: i32,
+
+    #[field(skip)]
+    c: i32,
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#object" id="object">Object</a></h1>
+<p>Different from <code>SimpleObject</code>, <code>Object</code> must have Resolve defined for each field in <code>impl</code>.</p>
+<p><strong>A Resolve function has to be asynchronous. The first argument has to be <code>&amp;self</code>, second being optional <code>Context</code> and followed by field arguments.</strong></p>
+<p>Resolve is used to get the value of the field. You can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> so to return an error if it occrs and error message will be send to query result.</p>
+<!--TODO: 全局类型的数据?-->
+<p>When querying a database, you may need a global data base connection pool, you can use <code>Schema::data</code> to attach a global data when creating Schema, the following <code>value_from_db</code> function showed how to retrive a database connection from <code>Context</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct MyObject {
+    value: i32,
+}
+
+#[Object]
+impl MyObject {
+    async fn value(&amp;self) -&gt; String {
+        self.value.to_string()
+    }
+
+    async fn value_from_db(
+        &amp;self,
+        ctx: &amp;Context&lt;'_'&gt;,
+        #[arg(desc = &quot;Id of object&quot;)] id: i64
+    ) -&gt; FieldResult&lt;String&gt; {
+        let conn = ctx.data::&lt;DbPool&gt;().take();
+        Ok(conn.query_something(id)?.name)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#context" id="context">Context</a></h1>
+<p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolve function is borrowed from <code>Context</code>, you need to explictly state the lifetime of the argument.</strong></p>
+<p>The following example shows how to borrow data in <code>Context</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn borrow_from_context_data&lt;'ctx'&gt;(
+        &amp;self,
+        ctx: &amp;'ctx Context&lt;'_&gt;
+    ) -&gt; &amp;'ctx String {
+        ctx.data::&lt;String&gt;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#error-handling" id="error-handling">Error handling</a></h1>
+<p>Resolve can return a <code>FieldResult</code>, following is the definition:</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+<span class="boring">}
+</span></code></pre></pre>
+<!--TODO: 扩展标准的错误输出? -->
+<p>Any <code>Error</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
+<p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[field]
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+        Ok(&quot;234a&quot;
+            .parse()
+            .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
+<p>It's easy to define an <code>Enum</code>, here we have an example:</p>
+<p><strong>Async-graphql can automatically change the name of each item to GraphQL's CONSTANT_CASE convension, you can also use <code>name</code> to rename.</strong></p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[Enum(desc = &quot;One of the films in the Star Wars Trilogy&quot;)]
+pub enum Episode {
+    #[item(desc = &quot;Released in 1977.&quot;)]
+    NewHope,
+
+    #[item(desc = &quot;Released in 1980.&quot;)]
+    Empire,
+
+    // rename to `AAA`
+    #[item(name=&quot;AAA&quot;, desc = &quot;Released in 1983.&quot;)]
+    Jedi,
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#interface" id="interface">Interface</a></h1>
+<p><code>Interface</code> is used to abstract <code>Object</code>s with common fields. 
+<code>Async-graphql</code> implemented it as a wrapper. 
+The wrapper will forward Resolve to the <code>Object</code> that implemented this <code>Interface</code>. 
+Therefore, the <code>Object</code>'s fields' type, arguments must match with the <code>Interface</code>'s.</p>
+<p><code>Async-graphql</code> implemented auto conversion from <code>Object</code> to <code>Interface</code>, you only need to call <code>Into::into</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Circle {
+    radius: f32,
+}
+
+#[Object]
+impl Circle {
+    async fn area(&amp;self) -&gt; f32 {
+        std::f32::consts::PI * self.radius * self.radius
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Circle { radius: self.radius * s }.into()
+    }
+}
+
+struct Square {
+    width: f32,
+}
+
+#[Object]
+impl Square {
+    async fn area(&amp;self) -&gt; f32 {
+        self.width * self.width
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Square { width: self.width * s }.into()
+    }
+}
+
+#[Interface(
+    field(name = &quot;area&quot;, type = &quot;f32&quot;),
+    field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
+)]
+struct Shape(Circle, Square);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#union" id="union">Union</a></h1>
+<p>The definition of <code>Union</code> is similar to <code>Interface</code>'s, <strong>but no field allowed.</strong>.
+The implemention is quite similar for <code>Async-graphql</code>. 
+From <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
+<p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Circle {
+    radius: f32,
+}
+
+#[Object]
+impl Circle {
+    async fn area(&amp;self) -&gt; f32 {
+        std::f32::consts::PI * self.radius * self.radius
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Circle { radius: self.radius * s }.into()
+    }
+}
+
+struct Square {
+    width: f32,
+}
+
+#[Object]
+impl Square {
+    async fn area(&amp;self) -&gt; f32 {
+        self.width * self.width
+    }
+
+    async fn scale(&amp;self, s: f32) -&gt; Shape {
+        Square { width: self.width * s }.into()
+    }
+}
+
+#[Union]
+struct Shape(Circle, Square);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#inputobject" id="inputobject">InputObject</a></h1>
+<!--Input Object and SimpleObject inconsistant space.-->
+<p>You can define an <code>Object</code> as argument, GraphQL calls it <code>InputObject</code>.
+The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>.
+However, <code>SimpleObject</code> can only be used for output and <code>InputObject</code> can only be used as input.</p>
+<p><code>InputObject</code> don't need a <code>#[field]</code> for each field, every field is <code>InputValue</code>.
+But you can add optional <code>#[field]</code> to add description or rename the field.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[InputObject]
+struct Coordinate {
+    latitude: f64,
+
+    #[field(desc = &quot;...&quot;)]
+    longitude: f64
+}
+
+struct Mutation;
+
+#[Object]
+impl Mutation {
+    async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
+        // Writes coordination to database.
+        // ...
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#schema" id="schema">Schema</a></h1>
 <p>After defining the basic types, you need to define a schema to combine them. The schema consists of three types: a query object, mutation object, and subscription object, where the mutation object and subscription object are optional.</p>
 <p>When the schema is created, <code>Async-Graphql</code> will traverse all object graphs and register all types. This means that if a GraphQL object is defined but never referenced, then this object will not be exposed in the schema.</p>

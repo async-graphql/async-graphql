@@ -148,6 +148,37 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#object" id="object">Object</a></h1>
+<p>Different from <code>SimpleObject</code>, <code>Object</code> must have Resolve defined for each field in <code>impl</code>.</p>
+<p><strong>A Resolve function has to be asynchronous. The first argument has to be <code>&amp;self</code>, second being optional <code>Context</code> and followed by field arguments.</strong></p>
+<p>Resolve is used to get the value of the field. You can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> so to return an error if it occrs and error message will be send to query result.</p>
+<!--TODO: 全局类型的数据?-->
+<p>When querying a database, you may need a global data base connection pool, you can use <code>Schema::data</code> to attach a global data when creating Schema, the following <code>value_from_db</code> function showed how to retrive a database connection from <code>Context</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct MyObject {
+    value: i32,
+}
+
+#[Object]
+impl MyObject {
+    async fn value(&amp;self) -&gt; String {
+        self.value.to_string()
+    }
+
+    async fn value_from_db(
+        &amp;self,
+        ctx: &amp;Context&lt;'_'&gt;,
+        #[arg(desc = &quot;Id of object&quot;)] id: i64
+    ) -&gt; FieldResult&lt;String&gt; {
+        let conn = ctx.data::&lt;DbPool&gt;().take();
+        Ok(conn.query_something(id)?.name)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
