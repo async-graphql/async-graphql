@@ -806,13 +806,13 @@ impl ScalarType for StringNumber {
         &quot;StringNumber&quot;
     }
 
-    fn parse(value: &amp;Value) -&gt; Option&lt;Self&gt; {
+    fn parse(value: &amp;Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = value {
             // Parse the integer value
-            value.parse().ok().map(StringNumber)
+            value.parse().map(StringNumber)?
         } else {
-            // If the type does not match, return None
-            None
+            // If the type does not match
+            InputValueError::ExpectedType
         }
     }
 

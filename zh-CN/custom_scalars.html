@@ -166,13 +166,13 @@ impl ScalarType for StringNumber {
         &quot;StringNumber&quot;
     }
 
-    fn parse(value: &amp;Value) -&gt; Option&lt;Self&gt; {
+    fn parse(value: &amp;Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = value {
             // 解析整数
-            value.parse().ok().map(StringNumber)
+            value.parse().map(StringNumber)?
         } else {
-            // 类型不匹配则直接返回None
-            None
+            // 类型不匹配
+            InputValueError::ExpectedType
         }
     }
 
