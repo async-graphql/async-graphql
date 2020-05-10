@@ -25,7 +25,8 @@
 `Async-graphql` is a high-performance server-side library that supports all GraphQL specifications.
 
 * [Feature Comparison](feature-comparison.md)
-* [Book(WIP)](https://async-graphql.github.io/async-graphql/en/index.html) [中文文档](https://async-graphql.github.io/async-graphql/zh-CN/index.html)
+* [Book](https://async-graphql.github.io/async-graphql/en/index.html)
+* [中文文档](https://async-graphql.github.io/async-graphql/zh-CN/index.html)
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
