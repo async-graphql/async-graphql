@@ -9,7 +9,7 @@ use async_graphql::*;
 use async_graphql::extensions::ApolloTracing;
 
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    .extension(|| ApolloTracing::default()) // 启用ApolloTracing扩展
+    .extension(|| ApolloTracing::default()) // Enable ApolloTracing extension
     .finish();
 
 ```
