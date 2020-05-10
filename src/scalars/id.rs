@@ -98,6 +98,21 @@ impl PartialEq<&str> for ID {
     }
 }
 
+/// Convert any type that implements Display to the ID type
+pub trait ToGraphQLID {
+    #[allow(missing_docs)]
+    fn to_graphql_id(&self) -> ID;
+}
+
+impl<T> ToGraphQLID for T
+where
+    T: std::fmt::Display,
+{
+    fn to_graphql_id(&self) -> ID {
+        ID(self.to_string())
+    }
+}
+
 #[Scalar(internal)]
 impl ScalarType for ID {
     fn type_name() -> &'static str {

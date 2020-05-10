@@ -47,6 +47,21 @@ impl From<usize> for Cursor {
     }
 }
 
+/// Convert any type that implements Display to the Cursor type
+pub trait ToGraphQLCursor {
+    #[allow(missing_docs)]
+    fn to_graphql_cursor(&self) -> Cursor;
+}
+
+impl<T> ToGraphQLCursor for T
+where
+    T: std::fmt::Display,
+{
+    fn to_graphql_cursor(&self) -> Cursor {
+        Cursor(self.to_string())
+    }
+}
+
 #[Scalar(internal)]
 impl ScalarType for Cursor {
     fn type_name() -> &'static str {

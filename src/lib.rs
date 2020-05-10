@@ -122,7 +122,7 @@ pub use error::{
 pub use parser::{Pos, Positioned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
-pub use scalars::{Any, Json, ID};
+pub use scalars::{Any, Json, ToGraphQLID, ID};
 pub use schema::Schema;
 pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
@@ -130,7 +130,7 @@ pub use subscription::{
 };
 pub use types::{
     Connection, Cursor, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, PageInfo,
-    QueryOperation, Upload,
+    QueryOperation, ToGraphQLCursor, Upload,
 };
 pub use validation::ValidationMode;
 

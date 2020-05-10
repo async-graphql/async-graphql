@@ -7,7 +7,9 @@ mod optional;
 mod query_root;
 mod upload;
 
-pub use connection::{Connection, Cursor, DataSource, EmptyEdgeFields, PageInfo, QueryOperation};
+pub use connection::{
+    Connection, Cursor, DataSource, EmptyEdgeFields, PageInfo, QueryOperation, ToGraphQLCursor,
+};
 pub use empty_mutation::EmptyMutation;
 pub use empty_subscription::EmptySubscription;
 pub use query_root::QueryRoot;
