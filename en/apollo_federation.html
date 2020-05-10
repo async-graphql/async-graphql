@@ -148,6 +148,40 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#apollo-federation" id="apollo-federation">Apollo Federation</a></h1>
+<p><code>Apollo Federation</code> is a <code>GraphQL</code> gateway API which can combine multiple GraphQL services, allowing each srvice to implement the subset of the API it is responsible for. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">official documentation</a>。</p>
+<p><code>Async-GraphQL</code> supports all the functionality of <code>Apollo Federation</code>, but some modifications to your <code>Schema</code> are required.</p>
+<ul>
+<li>
+<p>You can use the <code>extends</code> property declaration on <code>async_graphql::Object</code> and <code>async_graphql::Interface</code> to extend a type offered by another implementing service.</p>
+</li>
+<li>
+<p>The <code>external</code> property declares that a field comes from another service。</p>
+</li>
+<li>
+<p>The <code>provides</code> property indicates the fields provided by a service. </p>
+</li>
+</ul>
+<p>The definition of a root Query type is slighly different. An entity search function must be defined. For example:</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>struct Query;
+
+#[Object]
+impl Query {
+    #[entity]
+    async fn find_user_by_id(&amp;self, id: ID) -&gt; User {
+        User { id }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This is equivalent to:</p>
+<pre><code class="language-graphql">type User @key(id: ID!) {
+    id: ID!,
+}
+</code></pre>
+<p>For a complete example, refer to: https://github.com/async-graphql/examples/tree/master/federation</p>
 
                     </main>
 

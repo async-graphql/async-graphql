@@ -147,7 +147,88 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#cursor" id="cursor">Cursor</a></h1>
+                        <h1><a class="header" href="#cursor-connections" id="cursor-connections">Cursor connections</a></h1>
+<p>Relay's cursor connection specification is defined to provide a consistent method for query paging. For more details on the specification see the <a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
+<p>It is simple to define a cursor connection in <code>Async-GraphQL</code></p>
+<ol>
+<li>Implement <code>async_graphql::DataSource</code> and write the <code>query_operation</code> function.</li>
+<li>Call <code>DataSource::query</code> in the field's resolve function and return the result.</li>
+</ol>
+<p>Here is a simple data source that returns continuous integers:</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct Integers;
+
+#[DataSource]
+impl DataSource for Integers {
+    // Type for response
+    type Element = i32;
+
+    // We don't need to extend the edge fields, so this can be empty
+    type EdgeFieldsObj = EmptyEdgeFields;
+
+    async fn query_operation(&amp;self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
+        let (start, end) = match operation {
+            // Look from beginning up to limit
+            QueryOperation::First {limit} =&gt; {
+                let start = 0;
+                let end = start + *limit as i32;
+                (start, end)
+            }
+            QueryOperation::FirstAfter {after, limit} =&gt; {
+                // Look after number up to limit
+                let start = after.parse::&lt;i32&gt;()
+                    .ok()
+                    .map(|after| after + 1)
+                    .unwrap_or(0);
+                (start, end + start + *limit)
+            }
+            // Look backward from last element up to limit
+            QueryOperation::Last {limit} =&gt; {
+                let end = 0;
+                let start = end - *limit as i32;
+                (start, end)
+            }
+            QueryOperation::LastBefore {before, limit} =&gt; {
+                // Look before number up to limit
+                let end = before.parse::&lt;i32&gt;()
+                    .ok()
+                    .unwrap_or(0);
+                (end - *limit, end)
+            }
+            // TODO: Need to handle all conditions
+            _ =&gt; (0, 10)
+        };
+
+        // Create nodes. Each node is a tuple containing three values: the cursor, extended edge object, and node value
+        let nodes = (start..end).into_iter().map(|n| (n.to_string(), EmptyEdgeFields, n)).collect();
+
+        Ok(Connection::new(None, true, true, nodes))
+    }
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[field]
+    async fn numbers(&amp;self,
+        ctx: &amp;Context&lt;'_&gt;,
+        after: Option&lt;String&gt;,
+        before: Option&lt;String&gt;,
+        first: Option&lt;i32&gt;,
+        last: Option&lt;i32&gt;,
+    ) -&gt; FieldResult&lt;Connection&lt;i32, EmptyEdgeFields&gt;&gt; {
+        // Make the query
+        Integers.query(ctx, after, before, first, last).await
+    }
+}
+
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

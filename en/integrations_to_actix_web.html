@@ -148,6 +148,36 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
+<p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>GQLRequest</code>. This is actually an abstraction around <code>QueryBuilder</code> and you can call <code>GQLRequest::into_inner</code> to convert it into a <code>QueryBuilder</code>。</p>
+<p><code>WSSubscription</code> is an Actor that supports WebSocket subscriptions。</p>
+<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data. </p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>async fn index(
+    // Schema now accessible here
+    schema: web::Data&lt;Schema&gt;,
+    gql_request: GQLRequest,
+) -&gt; web::Json&lt;GQLResponse&gt; {
+    web::Json(GQLResponse(gql_request.into_inner().execute(&amp;schema).await))
+}
+
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#subscription-example" id="subscription-example">Subscription example</a></h2>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>async fn index_ws(
+    schema: web::Data&lt;Schema&gt;,
+    req: HttpRequest,
+    payload: web::Payload,
+) -&gt; Result&lt;HttpResponse&gt; {
+    ws::start_with_protocols(WSSubscription::new(&amp;schema), &amp;[&quot;graphql-ws&quot;], &amp;req, payload)
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

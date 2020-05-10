@@ -148,6 +148,33 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#warp" id="warp">Warp</a></h1>
+<p>For <code>Async-graphql-warp</code>, two <code>Filter</code> integrations are provided: <code>graphql</code> and <code>graphql_subscription</code>.</p>
+<p>The <code>graphql</code> filter is used for execution <code>Query</code> and <code>Mutation</code> requests. It always asks for the POST method and outputs a <code>Schema</code> via <code>QueryBuilder</code>. You can combine other filters later, or directly call <code>QueryBuilder::execute</code> to execute the query.</p>
+<p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
+<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
+    // Execute query
+    let resp = builder.execute(&amp;schema).await;
+
+    // Return result
+    Ok::&lt;_, Infallible&gt;(warp::reply::json(&amp;GQLResponse(resp)).into_response())
+});
+warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#subscription-example" id="subscription-example">Subscription example</a></h2>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+let filter = async_graphql_warp::graphql_subscription(schema);
+warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
