@@ -4,7 +4,6 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};
 
-#[derive(Debug)]
 pub struct CacheControl {
     pub public: bool,
     pub max_age: usize,
@@ -60,7 +59,6 @@ impl CacheControl {
     }
 }
 
-#[derive(Debug)]
 pub struct Object {
     pub internal: bool,
     pub name: Option<String>,
@@ -125,7 +123,6 @@ impl Object {
     }
 }
 
-#[derive(Debug)]
 pub struct Argument {
     pub name: Option<String>,
     pub desc: Option<String>,
@@ -205,7 +202,6 @@ impl Argument {
     }
 }
 
-#[derive(Debug)]
 pub struct Field {
     pub name: Option<String>,
     pub desc: Option<String>,
@@ -324,7 +320,6 @@ impl Field {
     }
 }
 
-#[derive(Debug)]
 pub struct Enum {
     pub internal: bool,
     pub name: Option<String>,
@@ -375,7 +370,6 @@ impl Enum {
     }
 }
 
-#[derive(Debug)]
 pub struct EnumItem {
     pub name: Option<String>,
     pub desc: Option<String>,
@@ -439,7 +433,6 @@ impl EnumItem {
     }
 }
 
-#[derive(Debug)]
 pub struct InputField {
     pub name: Option<String>,
     pub desc: Option<String>,
@@ -531,7 +524,6 @@ impl InputField {
     }
 }
 
-#[derive(Debug)]
 pub struct InputObject {
     pub internal: bool,
     pub name: Option<String>,
@@ -582,7 +574,6 @@ impl InputObject {
     }
 }
 
-#[derive(Debug)]
 pub struct InterfaceFieldArgument {
     pub name: String,
     pub desc: Option<String>,
@@ -674,7 +665,6 @@ impl InterfaceFieldArgument {
     }
 }
 
-#[derive(Debug)]
 pub struct InterfaceField {
     pub name: String,
     pub desc: Option<String>,
@@ -791,7 +781,6 @@ impl InterfaceField {
     }
 }
 
-#[derive(Debug)]
 pub struct Interface {
     pub internal: bool,
     pub name: Option<String>,
@@ -854,7 +843,6 @@ impl Interface {
     }
 }
 
-#[derive(Debug)]
 pub struct DataSource {
     pub internal: bool,
 }
@@ -876,7 +864,6 @@ impl DataSource {
     }
 }
 
-#[derive(Debug)]
 pub struct Scalar {
     pub internal: bool,
 }
@@ -898,7 +885,6 @@ impl Scalar {
     }
 }
 
-#[derive(Debug)]
 pub struct Entity {
     pub guard: Option<TokenStream>,
 }
