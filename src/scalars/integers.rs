@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 macro_rules! impl_integer_scalars {
@@ -14,10 +14,17 @@ macro_rules! impl_integer_scalars {
                 Some("The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.")
             }
 
-            fn parse(value: &Value) -> Option<Self> {
+            fn parse(value: &Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Some(*n as Self),
-                    _ => None
+                    Value::Int(n) => Ok(*n as Self),
+                    _ => Err(InputValueError::ExpectedType)
+                }
+            }
+
+            fn is_valid(value: &Value) -> bool {
+                match value {
+                    Value::Int(_) => true,
+                    _ => false
                 }
             }
 
@@ -44,11 +51,18 @@ macro_rules! impl_int64_scalars {
                 Some("The `Int64` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^64) and 2^64 - 1.")
             }
 
-            fn parse(value: &Value) -> Option<Self> {
+            fn parse(value: &Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Some(*n as Self),
-                    Value::String(s) => s.parse().ok(),
-                    _ => None
+                    Value::Int(n) => Ok(*n as Self),
+                    Value::String(s) => Ok(s.parse()?),
+                    _ => Err(InputValueError::ExpectedType)
+                }
+            }
+
+            fn is_valid(value: &Value) -> bool {
+                match value {
+                    Value::Int(_) | Value::String(_) => true,
+                    _ => false
                 }
             }
 

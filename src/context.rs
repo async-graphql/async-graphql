@@ -410,16 +410,18 @@ impl<'a, T> ContextBase<'a, T> {
         for directive in directives {
             if directive.name.as_str() == "skip" {
                 if let Some(value) = directive.get_argument("if") {
-                    let value = self.resolve_input_value(value.clone_inner(), value.position())?;
-                    let res: bool = InputValueType::parse(&value).ok_or_else(|| {
-                        QueryError::ExpectedType {
-                            expect: bool::qualified_type_name(),
-                            actual: value,
+                    match InputValueType::parse(
+                        &self.resolve_input_value(value.clone_inner(), value.position())?,
+                    ) {
+                        Ok(true) => return Ok(true),
+                        Ok(false) => {}
+                        Err(err) => {
+                            return Err(err.into_error(
+                                value.pos,
+                                bool::qualified_type_name(),
+                                value.clone_inner(),
+                            ))
                         }
-                        .into_error(directive.position())
-                    })?;
-                    if res {
-                        return Ok(true);
                     }
                 } else {
                     return Err(QueryError::RequiredDirectiveArgs {
@@ -431,16 +433,18 @@ impl<'a, T> ContextBase<'a, T> {
                 }
             } else if directive.name.as_str() == "include" {
                 if let Some(value) = directive.get_argument("if") {
-                    let value = self.resolve_input_value(value.clone_inner(), value.position())?;
-                    let res: bool = InputValueType::parse(&value).ok_or_else(|| {
-                        QueryError::ExpectedType {
-                            expect: bool::qualified_type_name(),
-                            actual: value,
+                    match InputValueType::parse(
+                        &self.resolve_input_value(value.clone_inner(), value.position())?,
+                    ) {
+                        Ok(false) => return Ok(true),
+                        Ok(true) => {}
+                        Err(err) => {
+                            return Err(err.into_error(
+                                value.pos,
+                                bool::qualified_type_name(),
+                                value.clone_inner(),
+                            ))
                         }
-                        .into_error(directive.position())
-                    })?;
-                    if !res {
-                        return Ok(true);
                     }
                 } else {
                     return Err(QueryError::RequiredDirectiveArgs {
@@ -495,25 +499,20 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => {
                 let pos = value.position();
                 let value = self.resolve_input_value(value.into_inner(), pos)?;
-                let res = InputValueType::parse(&value).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: value,
-                    }
-                    .into_error(pos)
-                })?;
-                Ok(res)
+                match InputValueType::parse(&value) {
+                    Ok(res) => Ok(res),
+                    Err(err) => Err(err.into_error(pos, T::qualified_type_name(), value)),
+                }
             }
             None => {
                 let value = default();
-                let res = InputValueType::parse(&value).ok_or_else(|| {
-                    QueryError::ExpectedType {
-                        expect: T::qualified_type_name(),
-                        actual: value.clone(),
+                match InputValueType::parse(&value) {
+                    Ok(res) => Ok(res),
+                    Err(err) => {
+                        // The default value has no valid location.
+                        Err(err.into_error(Pos::default(), T::qualified_type_name(), value))
                     }
-                    .into_error(self.position())
-                })?;
-                Ok(res)
+                }
             }
         }
     }

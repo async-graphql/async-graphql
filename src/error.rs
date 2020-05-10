@@ -1,5 +1,45 @@
 use crate::{Pos, Value};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
+
+/// Input Value Error
+#[derive(Debug)]
+pub enum InputValueError {
+    /// Custom input value parsing error.
+    Custom(String),
+
+    /// The type of input value does not match the expectation.
+    ExpectedType,
+}
+
+impl<T: Display> From<T> for InputValueError {
+    fn from(err: T) -> Self {
+        InputValueError::Custom(err.to_string())
+    }
+}
+
+impl InputValueError {
+    #[allow(missing_docs)]
+    pub fn into_error(self, pos: Pos, expected_type: String, value: Value) -> Error {
+        match self {
+            InputValueError::Custom(reason) => Error::Query {
+                pos,
+                path: None,
+                err: QueryError::ParseInputValue { reason },
+            },
+            InputValueError::ExpectedType => Error::Query {
+                pos,
+                path: None,
+                err: QueryError::ExpectedInputType {
+                    expect: expected_type,
+                    actual: value,
+                },
+            },
+        }
+    }
+}
+
+/// InputValueResult type
+pub type InputValueResult<T> = std::result::Result<T, InputValueError>;
 
 /// FieldError type
 #[derive(Clone, Debug)]
@@ -128,14 +168,17 @@ pub enum QueryError {
     #[error("Not supported.")]
     NotSupported,
 
-    #[error("Expected type \"{expect}\", found {actual}.")]
-    ExpectedType {
+    #[error("Expected input type \"{expect}\", found {actual}.")]
+    ExpectedInputType {
         /// Expect input type
         expect: String,
 
         /// Actual input type
         actual: Value,
     },
+
+    #[error("Failed to parse input value: {reason}")]
+    ParseInputValue { reason: String },
 
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
     FieldNotFound {

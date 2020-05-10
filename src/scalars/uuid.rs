@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use uuid::Uuid;
 
@@ -8,10 +8,10 @@ impl ScalarType for Uuid {
         "UUID"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(Uuid::parse_str(&s).ok()?),
-            _ => None,
+            Value::String(s) => Ok(Uuid::parse_str(&s)?),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

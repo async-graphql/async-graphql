@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use serde::de::DeserializeOwned;
 
@@ -18,8 +18,8 @@ impl ScalarType for Any {
         Some("The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.")
     }
 
-    fn parse(value: &Value) -> Option<Self> {
-        Some(Self(value.clone()))
+    fn parse(value: &Value) -> InputValueResult<Self> {
+        Ok(Self(value.clone()))
     }
 
     fn is_valid(_value: &Value) -> bool {

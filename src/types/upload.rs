@@ -1,4 +1,4 @@
-use crate::{registry, InputValueType, Type, Value};
+use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
 use std::borrow::Cow;
 use std::path::PathBuf;
 
@@ -70,7 +70,7 @@ impl<'a> Type for Upload {
 }
 
 impl<'a> InputValueType for Upload {
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         if let Value::String(s) = value {
             if s.starts_with("file:") {
                 let s = &s[5..];
@@ -80,13 +80,13 @@ impl<'a> InputValueType for Upload {
                     if let Some(type_idx) = name_and_type.find(':') {
                         let name = &name_and_type[..type_idx];
                         let mime_type = &name_and_type[type_idx + 1..];
-                        return Some(Self {
+                        return Ok(Self {
                             filename: name.to_string(),
                             content_type: Some(mime_type.to_string()),
                             path: PathBuf::from(path),
                         });
                     } else {
-                        return Some(Self {
+                        return Ok(Self {
                             filename: name_and_type.to_string(),
                             content_type: None,
                             path: PathBuf::from(path),
@@ -95,6 +95,6 @@ impl<'a> InputValueType for Upload {
                 }
             }
         }
-        None
+        Err(InputValueError::ExpectedType)
     }
 }

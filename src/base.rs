@@ -1,7 +1,8 @@
 use crate::parser::Pos;
 use crate::registry::Registry;
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, Positioned, QueryError, Result, Value, ID,
+    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
+    Result, Value, ID,
 };
 use std::borrow::Cow;
 use std::future::Future;
@@ -51,7 +52,7 @@ pub trait Type {
 /// Represents a GraphQL input value
 pub trait InputValueType: Type + Sized {
     /// Parse from `Value`
-    fn parse(value: &Value) -> Option<Self>;
+    fn parse(value: &Value) -> InputValueResult<Self>;
 }
 
 /// Represents a GraphQL output value
@@ -127,11 +128,11 @@ pub trait InputObjectType: InputValueType {}
 ///         "MyInt"
 ///     }
 ///
-///     fn parse(value: &Value) -> Option<Self> {
+///     fn parse(value: &Value) -> InputValueResult<Self> {
 ///         if let Value::Int(n) = value {
-///             Some(MyInt(*n as i32))
+///             Ok(MyInt(*n as i32))
 ///         } else {
-///             None
+///             Err(InputValueError::ExpectedType)
 ///         }
 ///     }
 ///
@@ -150,13 +151,16 @@ pub trait ScalarType: Sized + Send {
     }
 
     /// Parse a scalar value, return `Some(Self)` if successful, otherwise return `None`.
-    fn parse(value: &Value) -> Option<Self>;
+    fn parse(value: &Value) -> InputValueResult<Self>;
 
     /// Checks for a valid scalar value.
     ///
     /// The default implementation is to try to parse it, and in some cases you can implement this on your own to improve performance.
     fn is_valid(value: &Value) -> bool {
-        Self::parse(value).is_some()
+        match Self::parse(value) {
+            Ok(_) => true,
+            _ => false,
+        }
     }
 
     /// Convert the scalar value to json value.

@@ -116,7 +116,8 @@ pub use context::{
     Context, ContextBase, Data, Environment, QueryPathNode, QueryPathSegment, Variables,
 };
 pub use error::{
-    Error, ErrorExtensions, FieldError, FieldResult, ParseRequestError, QueryError, ResultExt,
+    Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
+    ParseRequestError, QueryError, ResultExt,
 };
 pub use parser::{Pos, Positioned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};

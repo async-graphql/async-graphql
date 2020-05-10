@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use std::ops::{Deref, DerefMut};
 
@@ -53,10 +53,17 @@ impl ScalarType for Cursor {
         "Cursor"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(Cursor(s.into())),
-            _ => None,
+            Value::String(s) => Ok(Cursor(s.into())),
+            _ => Err(InputValueError::ExpectedType),
+        }
+    }
+
+    fn is_valid(value: &Value) -> bool {
+        match value {
+            Value::String(_) => true,
+            _ => false,
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 macro_rules! impl_float_scalars {
@@ -14,11 +14,18 @@ macro_rules! impl_float_scalars {
                 Some("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).")
             }
 
-            fn parse(value: &Value) -> Option<Self> {
+            fn parse(value: &Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Some(*n as Self),
-                    Value::Float(n) => Some(*n as Self),
-                    _ => None
+                    Value::Int(n) => Ok(*n as Self),
+                    Value::Float(n) => Ok(*n as Self),
+                    _ => Err(InputValueError::ExpectedType)
+                }
+            }
+
+            fn is_valid(value: &Value) -> bool {
+                match value {
+                    Value::Int(_) | Value::Float(_) => true,
+                    _ => false
                 }
             }
 

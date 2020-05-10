@@ -1,5 +1,6 @@
 use crate::{
-    registry, ContextSelectionSet, InputValueType, OutputValueType, Pos, Result, Type, Value,
+    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Pos, Result,
+    Type, Value,
 };
 use std::borrow::Cow;
 
@@ -19,16 +20,16 @@ impl<T: Type> Type for Vec<T> {
 }
 
 impl<T: InputValueType> InputValueType for Vec<T> {
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
             Value::List(values) => {
                 let mut result = Vec::new();
                 for elem_value in values {
                     result.push(InputValueType::parse(elem_value)?);
                 }
-                Some(result)
+                Ok(result)
             }
-            _ => Some(vec![InputValueType::parse(value)?]),
+            _ => Ok(vec![InputValueType::parse(value)?]),
         }
     }
 }

@@ -129,14 +129,14 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         }
 
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: &#crate_name::Value) -> Option<Self> {
+            fn parse(value: &#crate_name::Value) -> #crate_name::InputValueResult<Self> {
                 use #crate_name::Type;
 
                 if let #crate_name::Value::Object(obj) = value {
                     #(#get_fields)*
-                    Some(Self { #(#fields),* })
+                    Ok(Self { #(#fields),* })
                 } else {
-                    None
+                    Err(#crate_name::InputValueError::ExpectedType)
                 }
             }
         }

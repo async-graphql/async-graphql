@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -11,10 +11,10 @@ impl ScalarType for DateTime<Utc> {
         "DateTime"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(Utc.datetime_from_str(&s, "%+").ok()?),
-            _ => None,
+            Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

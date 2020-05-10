@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 #[Scalar(internal)]
@@ -11,10 +11,10 @@ impl ScalarType for bool {
         Some("The `Boolean` scalar type represents `true` or `false`.")
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::Boolean(n) => Some(*n),
-            _ => None,
+            Value::Boolean(n) => Ok(*n),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

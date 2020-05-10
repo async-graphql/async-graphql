@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use url::Url;
 
@@ -8,10 +8,10 @@ impl ScalarType for Url {
         "Url"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(Url::parse(s).ok()?),
-            _ => None,
+            Value::String(s) => Ok(Url::parse(s)?),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

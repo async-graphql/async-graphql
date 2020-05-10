@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use chrono_tz::Tz;
 use std::str::FromStr;
@@ -9,10 +9,10 @@ impl ScalarType for Tz {
         "TimeZone"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(Tz::from_str(&s).ok()?),
-            _ => None,
+            Value::String(s) => Ok(Tz::from_str(&s)?),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

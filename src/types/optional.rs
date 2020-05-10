@@ -1,5 +1,6 @@
 use crate::{
-    registry, ContextSelectionSet, InputValueType, OutputValueType, Pos, Result, Type, Value,
+    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Pos, Result,
+    Type, Value,
 };
 use std::borrow::Cow;
 
@@ -19,10 +20,10 @@ impl<T: Type> Type for Option<T> {
 }
 
 impl<T: InputValueType> InputValueType for Option<T> {
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::Null => Some(None),
-            _ => Some(Some(T::parse(value)?)),
+            Value::Null => Ok(None),
+            _ => Ok(Some(T::parse(value)?)),
         }
     }
 }

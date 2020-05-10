@@ -1,4 +1,4 @@
-use crate::{Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use bson::oid::{self, ObjectId};
 use std::convert::TryInto;
@@ -104,11 +104,18 @@ impl ScalarType for ID {
         "ID"
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::Int(n) => Some(ID(n.to_string())),
-            Value::String(s) => Some(ID(s.clone())),
-            _ => None,
+            Value::Int(n) => Ok(ID(n.to_string())),
+            Value::String(s) => Ok(ID(s.clone())),
+            _ => Err(InputValueError::ExpectedType),
+        }
+    }
+
+    fn is_valid(value: &Value) -> bool {
+        match value {
+            Value::Int(_) | Value::String(_) => true,
+            _ => false,
         }
     }
 

@@ -1,5 +1,8 @@
 use crate::parser::Pos;
-use crate::{registry, ContextSelectionSet, OutputValueType, Result, ScalarType, Type, Value};
+use crate::{
+    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Result,
+    ScalarType, Type, Value,
+};
 use async_graphql_derive::Scalar;
 use std::borrow::Cow;
 
@@ -15,10 +18,10 @@ impl ScalarType for String {
         Some(STRING_DESC)
     }
 
-    fn parse(value: &Value) -> Option<Self> {
+    fn parse(value: &Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Some(s.clone()),
-            _ => None,
+            Value::String(s) => Ok(s.clone()),
+            _ => Err(InputValueError::ExpectedType),
         }
     }
 

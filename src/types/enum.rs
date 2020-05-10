@@ -1,4 +1,4 @@
-use crate::{Result, Type, Value};
+use crate::{InputValueError, InputValueResult, Result, Type, Value};
 
 #[allow(missing_docs)]
 pub struct EnumItem<T> {
@@ -11,22 +11,24 @@ pub struct EnumItem<T> {
 pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [EnumItem<Self>];
 
-    fn parse_enum(value: &Value) -> Option<Self> {
+    fn parse_enum(value: &Value) -> InputValueResult<Self> {
         let value = match value {
-            Value::Enum(s) => Some(s.as_str()),
-            Value::String(s) => Some(s.as_str()),
-            _ => None,
+            Value::Enum(s) => s.as_str(),
+            Value::String(s) => s.as_str(),
+            _ => return Err(InputValueError::ExpectedType),
         };
 
-        value.and_then(|value| {
-            let items = Self::items();
-            for item in items {
-                if item.name == value {
-                    return Some(item.value);
-                }
+        let items = Self::items();
+        for item in items {
+            if item.name == value {
+                return Ok(item.value);
             }
-            None
-        })
+        }
+        Err(InputValueError::Custom(format!(
+            r#"Enumeration type "{}" does not contain the value "{}""#,
+            Self::type_name(),
+            value
+        )))
     }
 
     fn resolve_enum(&self) -> Result<serde_json::Value> {
