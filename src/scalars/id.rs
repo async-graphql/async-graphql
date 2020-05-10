@@ -12,9 +12,10 @@ use uuid::Uuid;
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct ID(String);
 
-impl std::fmt::Display for ID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+impl ID {
+    /// Gives a string representation of the ID
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -32,27 +33,18 @@ impl DerefMut for ID {
     }
 }
 
-impl From<String> for ID {
-    fn from(value: String) -> Self {
-        ID(value)
+impl<T> From<T> for ID
+where
+    T: std::fmt::Display,
+{
+    fn from(value: T) -> Self {
+        ID(value.to_string())
     }
 }
 
 impl Into<String> for ID {
     fn into(self) -> String {
         self.0
-    }
-}
-
-impl<'a> From<&'a str> for ID {
-    fn from(value: &'a str) -> Self {
-        ID(value.to_string())
-    }
-}
-
-impl From<usize> for ID {
-    fn from(value: usize) -> Self {
-        ID(value.to_string())
     }
 }
 
@@ -64,23 +56,11 @@ impl TryInto<usize> for ID {
     }
 }
 
-impl From<Uuid> for ID {
-    fn from(uuid: Uuid) -> ID {
-        ID(uuid.to_string())
-    }
-}
-
 impl TryInto<Uuid> for ID {
     type Error = uuid::Error;
 
     fn try_into(self) -> std::result::Result<Uuid, Self::Error> {
         Uuid::parse_str(&self.0)
-    }
-}
-
-impl From<ObjectId> for ID {
-    fn from(object_id: ObjectId) -> ID {
-        ID(object_id.to_hex())
     }
 }
 
@@ -95,21 +75,6 @@ impl TryInto<ObjectId> for ID {
 impl PartialEq<&str> for ID {
     fn eq(&self, other: &&str) -> bool {
         self.0.as_str() == *other
-    }
-}
-
-/// Convert any type that implements Display to the ID type
-pub trait ToGraphQLID {
-    #[allow(missing_docs)]
-    fn to_graphql_id(&self) -> ID;
-}
-
-impl<T> ToGraphQLID for T
-where
-    T: std::fmt::Display,
-{
-    fn to_graphql_id(&self) -> ID {
-        ID(self.to_string())
     }
 }
 

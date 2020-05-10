@@ -7,7 +7,7 @@ mod slice;
 use crate::{Context, FieldResult, ObjectType};
 
 pub use connection_type::Connection;
-pub use cursor::{Cursor};
+pub use cursor::Cursor;
 pub use page_info::PageInfo;
 
 /// Connection query operation

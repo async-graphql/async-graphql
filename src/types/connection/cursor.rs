@@ -25,7 +25,7 @@ impl DerefMut for Cursor {
 
 impl<T> From<T> for Cursor
 where
-    T: std::fmt::Display
+    T: std::fmt::Display,
 {
     fn from(value: T) -> Self {
         Cursor(value.to_string())
