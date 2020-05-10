@@ -155,7 +155,6 @@
 </span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<!--TODO: 扩展标准的错误输出? -->
 <p>Any <code>Error</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
 <p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.</p>
 <pre><pre class="playpen"><code class="language-rust">

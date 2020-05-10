@@ -151,8 +151,9 @@
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have Resolve defined for each field in <code>impl</code>.</p>
 <p><strong>A Resolve function has to be asynchronous. The first argument has to be <code>&amp;self</code>, second being optional <code>Context</code> and followed by field arguments.</strong></p>
 <p>Resolve is used to get the value of the field. You can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> so to return an error if it occrs and error message will be send to query result.</p>
-<!--TODO: 全局类型的数据?-->
-<p>When querying a database, you may need a global data base connection pool, you can use <code>Schema::data</code> to attach a global data when creating Schema, the following <code>value_from_db</code> function showed how to retrive a database connection from <code>Context</code>.</p>
+<p>When querying a database, you may need a global data base connection pool.
+When creating <code>Schema</code>,  you can use <code>SchemaBuilder::data</code> to setup <code>Schema</code> data, and <code>Context::data</code> to setup <code>Context</code>data.
+The following <code>value_from_db</code> function showed how to retrive a database connection from <code>Context</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
