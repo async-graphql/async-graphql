@@ -15,7 +15,7 @@ mod bson;
 mod uuid;
 
 pub use any::Any;
-pub use id::{ToGraphQLID, ID};
+pub use id::ID;
 pub use json::Json;
 
 #[cfg(test)]
