@@ -12,13 +12,6 @@ use uuid::Uuid;
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct ID(String);
 
-impl ID {
-    /// Gives a string representation of the ID
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 impl Deref for ID {
     type Target = String;
 

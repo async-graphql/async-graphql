@@ -33,7 +33,7 @@ pub trait Type {
 
     /// Returns a `GlobalID` that is unique among all types.
     fn global_id(id: ID) -> ID {
-        base64::encode(format!("{}:{}", Self::type_name(), id.as_str())).into()
+        base64::encode(format!("{}:{}", Self::type_name(), *id)).into()
     }
 
     /// Parse `GlobalID`.
