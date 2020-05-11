@@ -447,7 +447,12 @@ pub use async_graphql_derive::InputObject;
 ///
 /// ```ignore
 /// #[Interface]
-/// struct MyInterface(TypeA, TypeB, TypeC, ...);
+/// enum MyInterface {
+///     TypeA(TypeA),
+///     TypeB(TypeB),
+///     TypeC(TypeC),
+///     ...
+/// }
 /// ```
 ///
 /// # Fields
@@ -487,7 +492,9 @@ pub use async_graphql_derive::InputObject;
 ///         arg(name = "a", type = "i32"),
 ///         arg(name = "b", type = "i32")),
 /// )]
-/// struct MyInterface(TypeA);
+/// enum MyInterface {
+///     TypeA(TypeA)
+/// }
 ///
 /// struct QueryRoot;
 ///

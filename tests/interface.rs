@@ -9,7 +9,9 @@ pub async fn test_interface_simple_object() {
     }
 
     #[async_graphql::Interface(field(name = "id", type = "i32"))]
-    struct Node(MyObj);
+    enum Node {
+        MyObj(MyObj),
+    }
 
     struct Query;
 
@@ -52,7 +54,9 @@ pub async fn test_interface_simple_object2() {
     }
 
     #[async_graphql::Interface(field(name = "id", type = "&i32"))]
-    struct Node(MyObj);
+    enum Node {
+        MyObj(MyObj),
+    }
 
     struct Query;
 
@@ -105,10 +109,14 @@ pub async fn test_multiple_interfaces() {
     }
 
     #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
-    struct InterfaceA(MyObj);
+    enum InterfaceA {
+        MyObj(MyObj),
+    }
 
     #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
-    struct InterfaceB(MyObj);
+    enum InterfaceB {
+        MyObj(MyObj),
+    }
 
     struct Query;
 
@@ -176,10 +184,15 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
     }
 
     #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
-    struct InterfaceA(MyObjOne, MyObjTwo);
+    enum InterfaceA {
+        MyObjOne(MyObjOne),
+        MyObjTwo(MyObjTwo),
+    }
 
     #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
-    struct InterfaceB(MyObjOne);
+    enum InterfaceB {
+        MyObjOne(MyObjOne),
+    }
 
     struct Query;
 
@@ -232,7 +245,9 @@ pub async fn test_interface_field_result() {
     }
 
     #[async_graphql::Interface(field(name = "value", type = "FieldResult<i32>"))]
-    struct Node(MyObj);
+    enum Node {
+        MyObj(MyObj),
+    }
 
     struct Query;
 

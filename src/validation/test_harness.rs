@@ -140,7 +140,12 @@ struct HumanOrAlien(Human, Alien);
         arg(name = "surname", type = "Option<bool>")
     )
 )]
-struct Being(Dog, Cat, Human, Alien);
+enum Being {
+    Dog(Dog),
+    Cat(Cat),
+    Human(Human),
+    Alien(Alien),
+}
 
 #[Interface(
     internal,
@@ -150,7 +155,10 @@ struct Being(Dog, Cat, Human, Alien);
         arg(name = "surname", type = "Option<bool>")
     )
 )]
-struct Pet(Dog, Cat);
+enum Pet {
+    Dog(Dog),
+    Cat(Cat),
+}
 
 #[Interface(
     internal,
@@ -160,10 +168,15 @@ struct Pet(Dog, Cat);
         arg(name = "surname", type = "Option<bool>")
     )
 )]
-struct Canine(Dog);
+enum Canine {
+    Dog(Dog),
+}
 
 #[Interface(internal, field(name = "iq", type = "Option<i32>"))]
-struct Intelligent(Human, Alien);
+enum Intelligent {
+    Human(Human),
+    Alien(Alien),
+}
 
 #[InputObject(internal)]
 struct ComplexInput {
