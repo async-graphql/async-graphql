@@ -41,5 +41,8 @@ impl Square {
     field(name = "area", type = "f32"),
     field(name = "scale", type = "Shape", arg(name = "s", type = "f32"))
 )]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 ```
