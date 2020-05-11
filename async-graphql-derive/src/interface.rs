@@ -69,7 +69,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         };
         if let Type::Path(p) = &field.ty {
             // This validates that the field type wasn't already used
-            if enum_items.insert(p) == false {
+            if !enum_items.insert(p) {
                 return Err(Error::new_spanned(
                     field,
                     "This type already used in another variant",

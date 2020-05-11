@@ -9,10 +9,10 @@ impl ScalarType for Tz {
         "TimeZone"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Tz::from_str(&s)?),
-            _ => Err(InputValueError::ExpectedType),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 

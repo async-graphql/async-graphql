@@ -14,9 +14,9 @@ use crate::{
 use itertools::Itertools;
 use std::any::Any;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
-use tempdir::TempDir;
 
 /// IntoQueryBuilder options
 #[derive(Default, Clone)]
@@ -65,7 +65,6 @@ pub struct QueryBuilder {
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Option<Data>,
-    pub(crate) files_holder: Option<TempDir>,
 }
 
 impl QueryBuilder {
@@ -76,7 +75,6 @@ impl QueryBuilder {
             operation_name: None,
             variables: Default::default(),
             ctx_data: None,
-            files_holder: None,
         }
     }
 
@@ -107,21 +105,16 @@ impl QueryBuilder {
         self
     }
 
-    /// Set file holder
-    pub fn set_files_holder(&mut self, files_holder: TempDir) {
-        self.files_holder = Some(files_holder);
-    }
-
     /// Set uploaded file path
     pub fn set_upload(
         &mut self,
         var_path: &str,
-        filename: &str,
-        content_type: Option<&str>,
-        path: &Path,
+        filename: String,
+        content_type: Option<String>,
+        content: File,
     ) {
         self.variables
-            .set_upload(var_path, filename, content_type, path);
+            .set_upload(var_path, filename, content_type, content);
     }
 
     /// Execute the query.

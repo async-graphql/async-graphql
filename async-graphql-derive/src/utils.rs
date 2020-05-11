@@ -58,6 +58,7 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
                 }
             }
         }
+        Value::Upload(_) => quote! { #crate_name::Value::Null },
     }
 }
 

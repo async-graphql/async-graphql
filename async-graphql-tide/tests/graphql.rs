@@ -1,6 +1,7 @@
 mod test_utils;
 use serde_json::json;
 use smol::{Task, Timer};
+use std::io::Read;
 use std::time::Duration;
 use tide::Request;
 
@@ -167,20 +168,17 @@ fn upload() -> Result<()> {
             #[Object]
             impl MutationRoot {
                 async fn single_upload(&self, file: Upload) -> FileInfo {
-                    println!("single_upload: filename={}", file.filename);
-                    println!("single_upload: content_type={:?}", file.content_type);
-                    println!("single_upload: path={:?}", file.path);
-
-                    let file_path = file.path.clone();
-                    let content = Task::blocking(async move { std::fs::read_to_string(file_path) })
-                        .await
-                        .ok();
-                    assert_eq!(content, Some("test\r\n".to_owned()));
+                    println!("single_upload: filename={}", file.filename());
+                    println!("single_upload: content_type={:?}", file.content_type());
 
                     let file_info = FileInfo {
-                        filename: file.filename,
-                        mime_type: file.content_type,
+                        filename: file.filename().into(),
+                        mime_type: file.content_type().map(ToString::to_string),
                     };
+
+                    let mut content = String::new();
+                    file.into_read().read_to_string(&mut content).ok();
+                    assert_eq!(content, "test\r\n".to_owned());
 
                     file_info
                 }

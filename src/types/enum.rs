@@ -11,11 +11,11 @@ pub struct EnumItem<T> {
 pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [EnumItem<Self>];
 
-    fn parse_enum(value: &Value) -> InputValueResult<Self> {
+    fn parse_enum(value: Value) -> InputValueResult<Self> {
         let value = match value {
-            Value::Enum(s) => s.as_str(),
-            Value::String(s) => s.as_str(),
-            _ => return Err(InputValueError::ExpectedType),
+            Value::Enum(s) => s,
+            Value::String(s) => s,
+            _ => return Err(InputValueError::ExpectedType(value)),
         };
 
         let items = Self::items();

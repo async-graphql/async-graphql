@@ -8,7 +8,7 @@ pub enum InputValueError {
     Custom(String),
 
     /// The type of input value does not match the expectation.
-    ExpectedType,
+    ExpectedType(Value),
 }
 
 impl<T: Display> From<T> for InputValueError {
@@ -19,14 +19,14 @@ impl<T: Display> From<T> for InputValueError {
 
 impl InputValueError {
     #[allow(missing_docs)]
-    pub fn into_error(self, pos: Pos, expected_type: String, value: Value) -> Error {
+    pub fn into_error(self, pos: Pos, expected_type: String) -> Error {
         match self {
             InputValueError::Custom(reason) => Error::Query {
                 pos,
                 path: None,
                 err: QueryError::ParseInputValue { reason },
             },
-            InputValueError::ExpectedType => Error::Query {
+            InputValueError::ExpectedType(value) => Error::Query {
                 pos,
                 path: None,
                 err: QueryError::ExpectedInputType {

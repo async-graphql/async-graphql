@@ -52,7 +52,7 @@ pub trait Type {
 /// Represents a GraphQL input value
 pub trait InputValueType: Type + Sized {
     /// Parse from `Value`
-    fn parse(value: &Value) -> InputValueResult<Self>;
+    fn parse(value: Value) -> InputValueResult<Self>;
 }
 
 /// Represents a GraphQL output value
@@ -128,11 +128,11 @@ pub trait InputObjectType: InputValueType {}
 ///         "MyInt"
 ///     }
 ///
-///     fn parse(value: &Value) -> InputValueResult<Self> {
+///     fn parse(value: Value) -> InputValueResult<Self> {
 ///         if let Value::Int(n) = value {
-///             Ok(MyInt(*n as i32))
+///             Ok(MyInt(n as i32))
 ///         } else {
-///             Err(InputValueError::ExpectedType)
+///             Err(InputValueError::ExpectedType(value))
 ///         }
 ///     }
 ///
@@ -151,16 +151,13 @@ pub trait ScalarType: Sized + Send {
     }
 
     /// Parse a scalar value, return `Some(Self)` if successful, otherwise return `None`.
-    fn parse(value: &Value) -> InputValueResult<Self>;
+    fn parse(value: Value) -> InputValueResult<Self>;
 
     /// Checks for a valid scalar value.
     ///
-    /// The default implementation is to try to parse it, and in some cases you can implement this on your own to improve performance.
-    fn is_valid(value: &Value) -> bool {
-        match Self::parse(value) {
-            Ok(_) => true,
-            _ => false,
-        }
+    /// Implementing this function can find incorrect input values during the verification phase, which can improve performance.
+    fn is_valid(_value: &Value) -> bool {
+        true
     }
 
     /// Convert the scalar value to json value.

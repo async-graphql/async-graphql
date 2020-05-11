@@ -1,6 +1,7 @@
 use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use async_graphql_parser::UploadValue;
 use std::borrow::Cow;
-use std::path::PathBuf;
+use std::io::Read;
 
 /// Uploaded file
 ///
@@ -23,7 +24,7 @@ use std::path::PathBuf;
 /// #[async_graphql::Object]
 /// impl MutationRoot {
 ///     async fn upload(&self, file: Upload) -> bool {
-///         println!("upload: filename={}", file.filename);
+///         println!("upload: filename={}", file.filename());
 ///         true
 ///     }
 /// }
@@ -41,15 +42,23 @@ use std::path::PathBuf;
 /// --form 'map={ "0": ["variables.file"] }' \
 /// --form '0=@myFile.txt'
 /// ```
-pub struct Upload {
+pub struct Upload(UploadValue);
+
+impl Upload {
     /// Filename
-    pub filename: String,
+    pub fn filename(&self) -> &str {
+        self.0.filename.as_str()
+    }
 
     /// Content type, such as `application/json`, `image/jpg` ...
-    pub content_type: Option<String>,
+    pub fn content_type(&self) -> Option<&str> {
+        self.0.content_type.as_deref()
+    }
 
-    /// Temporary file path
-    pub path: PathBuf,
+    /// Convert to a read
+    pub fn into_read(self) -> impl Read + Sync + Send + 'static {
+        self.0.content
+    }
 }
 
 impl<'a> Type for Upload {
@@ -70,31 +79,11 @@ impl<'a> Type for Upload {
 }
 
 impl<'a> InputValueType for Upload {
-    fn parse(value: &Value) -> InputValueResult<Self> {
-        if let Value::String(s) = value {
-            if s.starts_with("file:") {
-                let s = &s[5..];
-                if let Some(idx) = s.find('|') {
-                    let name_and_type = &s[..idx];
-                    let path = &s[idx + 1..];
-                    if let Some(type_idx) = name_and_type.find(':') {
-                        let name = &name_and_type[..type_idx];
-                        let mime_type = &name_and_type[type_idx + 1..];
-                        return Ok(Self {
-                            filename: name.to_string(),
-                            content_type: Some(mime_type.to_string()),
-                            path: PathBuf::from(path),
-                        });
-                    } else {
-                        return Ok(Self {
-                            filename: name_and_type.to_string(),
-                            content_type: None,
-                            path: PathBuf::from(path),
-                        });
-                    }
-                }
-            }
+    fn parse(value: Value) -> InputValueResult<Self> {
+        if let Value::Upload(upload) = value {
+            Ok(Upload(upload))
+        } else {
+            Err(InputValueError::ExpectedType(value))
         }
-        Err(InputValueError::ExpectedType)
     }
 }

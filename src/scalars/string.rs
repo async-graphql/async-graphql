@@ -18,10 +18,10 @@ impl ScalarType for String {
         Some(STRING_DESC)
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(s.clone()),
-            _ => Err(InputValueError::ExpectedType),
+            Value::String(s) => Ok(s),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 

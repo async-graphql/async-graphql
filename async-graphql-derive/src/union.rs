@@ -61,7 +61,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
         };
         if let Type::Path(p) = &field.ty {
             // This validates that the field type wasn't already used
-            if enum_items.insert(p) == false {
+            if !enum_items.insert(p) {
                 return Err(Error::new_spanned(
                     field,
                     "This type already used in another variant",

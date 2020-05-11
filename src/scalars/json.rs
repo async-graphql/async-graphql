@@ -28,8 +28,8 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
         "JSON"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
-        Ok(serde_json::from_value(value.clone().into()).map(Json)?)
+    fn parse(value: Value) -> InputValueResult<Self> {
+        Ok(serde_json::from_value(value.into()).map(Json)?)
     }
 
     fn to_json(&self) -> Result<serde_json::Value> {

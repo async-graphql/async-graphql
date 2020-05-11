@@ -19,7 +19,7 @@ impl ScalarType for StringNumber {
         "StringNumber"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(value) = value {
             // 解析整数
             value.parse().map(StringNumber)?

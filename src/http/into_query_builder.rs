@@ -32,7 +32,6 @@ where
             let mut multipart = Multipart::parse(
                 self.1,
                 boundary.as_str(),
-                opts.temp_dir.as_deref(),
                 opts.max_file_size,
                 opts.max_num_files,
             )
@@ -59,14 +58,14 @@ where
                 if let Some(name) = &part.name {
                     if let Some(var_paths) = map.remove(name) {
                         for var_path in var_paths {
-                            if let (Some(filename), PartData::File(path)) =
+                            if let (Some(filename), PartData::File(content)) =
                                 (&part.filename, &part.data)
                             {
                                 builder.set_upload(
                                     &var_path,
-                                    &filename,
-                                    part.content_type.as_deref(),
-                                    path,
+                                    filename.clone(),
+                                    part.content_type.clone(),
+                                    content.try_clone().unwrap(),
                                 );
                             }
                         }
@@ -76,10 +75,6 @@ where
 
             if !map.is_empty() {
                 return Err(ParseRequestError::MissingFiles);
-            }
-
-            if let Some(temp_dir) = multipart.temp_dir {
-                builder.set_files_holder(temp_dir);
             }
 
             Ok(builder)

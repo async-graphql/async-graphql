@@ -3,11 +3,12 @@ use crate::parser::ast::{Directive, Field, FragmentDefinition, SelectionSet, Var
 use crate::registry::Registry;
 use crate::{InputValueType, QueryError, Result, Schema, Type};
 use crate::{Pos, Positioned, Value};
+use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
 use std::ops::{Deref, DerefMut};
-use std::path::Path;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -56,9 +57,9 @@ impl Variables {
     pub(crate) fn set_upload(
         &mut self,
         var_path: &str,
-        filename: &str,
-        content_type: Option<&str>,
-        path: &Path,
+        filename: String,
+        content_type: Option<String>,
+        content: File,
     ) {
         let mut it = var_path.split('.').peekable();
 
@@ -76,7 +77,11 @@ impl Variables {
                 if let Value::List(ls) = current {
                     if let Some(value) = ls.get_mut(idx as usize) {
                         if !has_next {
-                            *value = Value::String(file_string(filename, content_type, path));
+                            *value = Value::Upload(UploadValue {
+                                filename,
+                                content_type,
+                                content,
+                            });
                             return;
                         } else {
                             current = value;
@@ -88,7 +93,11 @@ impl Variables {
             } else if let Value::Object(obj) = current {
                 if let Some(value) = obj.get_mut(s) {
                     if !has_next {
-                        *value = Value::String(file_string(filename, content_type, path));
+                        *value = Value::Upload(UploadValue {
+                            filename,
+                            content_type,
+                            content,
+                        });
                         return;
                     } else {
                         current = value;
@@ -98,14 +107,6 @@ impl Variables {
                 }
             }
         }
-    }
-}
-
-fn file_string(filename: &str, content_type: Option<&str>, path: &Path) -> String {
-    if let Some(content_type) = content_type {
-        format!("file:{}:{}|", filename, content_type) + &path.display().to_string()
-    } else {
-        format!("file:{}|", filename) + &path.display().to_string()
     }
 }
 
@@ -411,16 +412,12 @@ impl<'a, T> ContextBase<'a, T> {
             if directive.name.as_str() == "skip" {
                 if let Some(value) = directive.get_argument("if") {
                     match InputValueType::parse(
-                        &self.resolve_input_value(value.clone_inner(), value.position())?,
+                        self.resolve_input_value(value.clone_inner(), value.position())?,
                     ) {
                         Ok(true) => return Ok(true),
                         Ok(false) => {}
                         Err(err) => {
-                            return Err(err.into_error(
-                                value.pos,
-                                bool::qualified_type_name(),
-                                value.clone_inner(),
-                            ))
+                            return Err(err.into_error(value.pos, bool::qualified_type_name()))
                         }
                     }
                 } else {
@@ -434,16 +431,12 @@ impl<'a, T> ContextBase<'a, T> {
             } else if directive.name.as_str() == "include" {
                 if let Some(value) = directive.get_argument("if") {
                     match InputValueType::parse(
-                        &self.resolve_input_value(value.clone_inner(), value.position())?,
+                        self.resolve_input_value(value.clone_inner(), value.position())?,
                     ) {
                         Ok(false) => return Ok(true),
                         Ok(true) => {}
                         Err(err) => {
-                            return Err(err.into_error(
-                                value.pos,
-                                bool::qualified_type_name(),
-                                value.clone_inner(),
-                            ))
+                            return Err(err.into_error(value.pos, bool::qualified_type_name()))
                         }
                     }
                 } else {
@@ -499,18 +492,18 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => {
                 let pos = value.position();
                 let value = self.resolve_input_value(value.into_inner(), pos)?;
-                match InputValueType::parse(&value) {
+                match InputValueType::parse(value) {
                     Ok(res) => Ok(res),
-                    Err(err) => Err(err.into_error(pos, T::qualified_type_name(), value)),
+                    Err(err) => Err(err.into_error(pos, T::qualified_type_name())),
                 }
             }
             None => {
                 let value = default();
-                match InputValueType::parse(&value) {
+                match InputValueType::parse(value) {
                     Ok(res) => Ok(res),
                     Err(err) => {
                         // The default value has no valid location.
-                        Err(err.into_error(Pos::default(), T::qualified_type_name(), value))
+                        Err(err.into_error(Pos::default(), T::qualified_type_name()))
                     }
                 }
             }

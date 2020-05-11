@@ -20,7 +20,7 @@ impl<T: Type> Type for Vec<T> {
 }
 
 impl<T: InputValueType> InputValueType for Vec<T> {
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::List(values) => {
                 let mut result = Vec::new();

@@ -9,10 +9,10 @@ impl ScalarType for ObjectId {
         "ObjectId"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(ObjectId::with_string(&s)?),
-            _ => Err(InputValueError::ExpectedType),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
@@ -27,7 +27,7 @@ impl ScalarType for UtcDateTime {
         "DateTime"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         DateTime::<Utc>::parse(value).map(UtcDateTime::from)
     }
 

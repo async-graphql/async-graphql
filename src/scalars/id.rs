@@ -77,11 +77,11 @@ impl ScalarType for ID {
         "ID"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::Int(n) => Ok(ID(n.to_string())),
-            Value::String(s) => Ok(ID(s.clone())),
-            _ => Err(InputValueError::ExpectedType),
+            Value::String(s) => Ok(ID(s)),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 

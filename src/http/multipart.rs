@@ -5,16 +5,14 @@ use futures::{AsyncBufRead, AsyncRead};
 use http::{header::HeaderName, HeaderMap, HeaderValue};
 use itertools::Itertools;
 use std::fs::File;
-use std::io::{Cursor, Read, Write};
-use std::path::{Path, PathBuf};
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::str::FromStr;
-use tempdir::TempDir;
 
 const MAX_HEADERS: usize = 16;
 
 pub enum PartData {
     Bytes(Vec<u8>),
-    File(PathBuf),
+    File(File),
 }
 
 pub struct Part {
@@ -26,10 +24,10 @@ pub struct Part {
 }
 
 impl Part {
-    pub fn create_reader<'a>(&'a self) -> Result<Box<dyn Read + 'a>, std::io::Error> {
-        let reader: Box<dyn Read> = match &self.data {
+    pub fn create_reader(self) -> Result<Box<dyn Read>, std::io::Error> {
+        let reader: Box<dyn Read> = match self.data {
             PartData::Bytes(bytes) => Box::new(Cursor::new(bytes)),
-            PartData::File(path) => Box::new(File::open(path)?),
+            PartData::File(content) => Box::new(content),
         };
         Ok(reader)
     }
@@ -55,7 +53,6 @@ impl ContentDisposition {
 }
 
 pub struct Multipart {
-    pub temp_dir: Option<TempDir>,
     pub parts: Vec<Part>,
 }
 
@@ -63,12 +60,10 @@ impl Multipart {
     pub async fn parse<R: AsyncRead + Unpin>(
         reader: R,
         boundary: &str,
-        temp_dir_in: Option<&Path>,
         max_file_size: Option<usize>,
         max_num_files: Option<usize>,
     ) -> Result<Multipart, ParseRequestError> {
         let mut reader = BufReader::new(reader);
-        let mut temp_dir = None;
         let mut parts = Vec::new();
         let boundary = format!("--{}", boundary);
         let max_num_files = max_num_files.unwrap_or(std::usize::MAX);
@@ -79,17 +74,7 @@ impl Multipart {
         reader.except_token(boundary.as_bytes()).await?;
         reader.except_token(b"\r\n").await?;
         let headers = Self::parse_headers(&mut reader).await?;
-        parts.push(
-            Self::parse_body(
-                &mut reader,
-                &headers,
-                &mut temp_dir,
-                temp_dir_in,
-                max_file_size,
-                &boundary,
-            )
-            .await?,
-        );
+        parts.push(Self::parse_body(&mut reader, &headers, max_file_size, &boundary).await?);
         Multipart::check_max_num_files(&mut parts, max_num_files, &mut current_num_files)?;
 
         // next parts
@@ -100,21 +85,11 @@ impl Multipart {
             }
 
             let headers = Self::parse_headers(&mut reader).await?;
-            parts.push(
-                Self::parse_body(
-                    &mut reader,
-                    &headers,
-                    &mut temp_dir,
-                    temp_dir_in,
-                    max_file_size,
-                    &boundary,
-                )
-                .await?,
-            );
+            parts.push(Self::parse_body(&mut reader, &headers, max_file_size, &boundary).await?);
             Multipart::check_max_num_files(&mut parts, max_num_files, &mut current_num_files)?;
         }
 
-        Ok(Multipart { temp_dir, parts })
+        Ok(Multipart { parts })
     }
 
     fn check_max_num_files(
@@ -171,8 +146,6 @@ impl Multipart {
     async fn parse_body<R: AsyncBufRead + Unpin>(
         mut reader: R,
         headers: &HeaderMap,
-        temp_dir: &mut Option<TempDir>,
-        temp_dir_in: Option<&Path>,
         max_file_size: usize,
         boundary: &str,
     ) -> Result<Part, ParseRequestError> {
@@ -193,17 +166,9 @@ impl Multipart {
         let mut state = ReadUntilState::default();
         let mut total_size = 0;
 
-        let part_data = if let Some(filename) = &content_disposition.filename {
-            if temp_dir.is_none() {
-                if let Some(temp_dir_in) = temp_dir_in {
-                    *temp_dir = Some(TempDir::new_in(temp_dir_in, "async-graphql")?);
-                } else {
-                    *temp_dir = Some(TempDir::new("async-graphql")?);
-                }
-            }
-            let temp_dir = temp_dir.as_mut().unwrap();
-            let path = temp_dir.path().join(filename);
-            let mut file = File::create(&path)?;
+        let part_data = if content_disposition.filename.is_some() {
+            // Create a temporary file.
+            let mut file = tempfile::tempfile()?;
 
             loop {
                 let (size, found) = reader
@@ -218,7 +183,8 @@ impl Multipart {
                     break;
                 }
             }
-            PartData::File(path)
+            file.seek(SeekFrom::Start(0))?;
+            PartData::File(file)
         } else {
             let mut body = Vec::new();
 
@@ -273,10 +239,9 @@ mod tests {
              Content-Type: text/plain; charset=utf-8\r\n\r\n\
              data\
              --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
-        let multipart =
-            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, None, None)
-                .await
-                .unwrap();
+        let multipart = Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, None)
+            .await
+            .unwrap();
         assert_eq!(multipart.parts.len(), 2);
 
         let part_1 = &multipart.parts[0];
@@ -307,35 +272,23 @@ mod tests {
              data\
              --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            Some(5),
-            None,
-        )
-        .await
-        .is_ok());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", Some(5), None,)
+                .await
+                .is_ok()
+        );
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            Some(6),
-            None,
-        )
-        .await
-        .is_ok());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", Some(6), None,)
+                .await
+                .is_ok()
+        );
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            Some(4),
-            None,
-        )
-        .await
-        .is_err());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", Some(4), None,)
+                .await
+                .is_err()
+        );
     }
 
     #[async_std::test]
@@ -352,34 +305,22 @@ mod tests {
              data\
              --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n";
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            None,
-            Some(1)
-        )
-        .await
-        .is_err());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, Some(1))
+                .await
+                .is_err()
+        );
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            None,
-            Some(2)
-        )
-        .await
-        .is_ok());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, Some(2))
+                .await
+                .is_ok()
+        );
 
-        assert!(Multipart::parse(
-            data,
-            "abbc761f78ff4d7cb7573b5a23f96ef0",
-            None,
-            None,
-            Some(3)
-        )
-        .await
-        .is_ok());
+        assert!(
+            Multipart::parse(data, "abbc761f78ff4d7cb7573b5a23f96ef0", None, Some(3))
+                .await
+                .is_ok()
+        );
     }
 }
