@@ -4,7 +4,7 @@
 pub use crate::{
     Context as GQLContext, Data as GQLData, Error as GQLError, FieldResult as GQLFieldResult,
     InputValueResult as GQLInputValueResult, QueryBuilder as GQLQueryBuilder, Result as GQLResult,
-    Schema as GQLSchema, Value as GQLValue, Variables as GQLVariables, ID as GQLID,
+    Schema as GQLSchema, Value as GQLValue, Variables as GQLVariables, ID as GQL_ID,
 };
 
 // traits
