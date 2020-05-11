@@ -149,7 +149,7 @@
                     <main>
                         <h1><a class="header" href="#union" id="union">Union</a></h1>
 <p>The definition of <code>Union</code> is similar to <code>Interface</code>'s, <strong>but no field allowed.</strong>.
-The implemention is quite similar for <code>Async-graphql</code>. 
+The implemention is quite similar for <code>Async-graphql</code>.
 From <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -188,7 +188,10 @@ impl Square {
 }
 
 #[Union]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 <span class="boring">}
 </span></code></pre></pre>
 

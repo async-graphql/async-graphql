@@ -328,9 +328,9 @@ pub enum Episode {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#interface" id="interface">Interface</a></h1>
-<p><code>Interface</code> is used to abstract <code>Object</code>s with common fields. 
-<code>Async-graphql</code> implemented it as a wrapper. 
-The wrapper will forward Resolve to the <code>Object</code> that implemented this <code>Interface</code>. 
+<p><code>Interface</code> is used to abstract <code>Object</code>s with common fields.
+<code>Async-graphql</code> implemented it as a wrapper.
+The wrapper will forward Resolve to the <code>Object</code> that implemented this <code>Interface</code>.
 Therefore, the <code>Object</code>'s fields' type, arguments must match with the <code>Interface</code>'s.</p>
 <p><code>Async-graphql</code> implemented auto conversion from <code>Object</code> to <code>Interface</code>, you only need to call <code>Into::into</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -372,12 +372,15 @@ impl Square {
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
 )]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#union" id="union">Union</a></h1>
 <p>The definition of <code>Union</code> is similar to <code>Interface</code>'s, <strong>but no field allowed.</strong>.
-The implemention is quite similar for <code>Async-graphql</code>. 
+The implemention is quite similar for <code>Async-graphql</code>.
 From <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
 <pre><pre class="playpen"><code class="language-rust">
@@ -416,7 +419,10 @@ impl Square {
 }
 
 #[Union]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#inputobject" id="inputobject">InputObject</a></h1>

@@ -371,7 +371,10 @@ impl Square {
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
 )]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#联合union" id="联合union">联合(Union)</a></h1>
@@ -413,7 +416,10 @@ impl Square {
 }
 
 #[Union]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>
