@@ -14,11 +14,11 @@ macro_rules! impl_float_scalars {
                 Some("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).")
             }
 
-            fn parse(value: &Value) -> InputValueResult<Self> {
+            fn parse(value: Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Ok(*n as Self),
-                    Value::Float(n) => Ok(*n as Self),
-                    _ => Err(InputValueError::ExpectedType)
+                    Value::Int(n) => Ok(n as Self),
+                    Value::Float(n) => Ok(n as Self),
+                    _ => Err(InputValueError::ExpectedType(value))
                 }
             }
 

@@ -14,10 +14,10 @@ macro_rules! impl_integer_scalars {
                 Some("The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.")
             }
 
-            fn parse(value: &Value) -> InputValueResult<Self> {
+            fn parse(value: Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Ok(*n as Self),
-                    _ => Err(InputValueError::ExpectedType)
+                    Value::Int(n) => Ok(n as Self),
+                    _ => Err(InputValueError::ExpectedType(value))
                 }
             }
 
@@ -51,11 +51,11 @@ macro_rules! impl_int64_scalars {
                 Some("The `Int64` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^64) and 2^64 - 1.")
             }
 
-            fn parse(value: &Value) -> InputValueResult<Self> {
+            fn parse(value: Value) -> InputValueResult<Self> {
                 match value {
-                    Value::Int(n) => Ok(*n as Self),
+                    Value::Int(n) => Ok(n as Self),
                     Value::String(s) => Ok(s.parse()?),
-                    _ => Err(InputValueError::ExpectedType)
+                    _ => Err(InputValueError::ExpectedType(value))
                 }
             }
 

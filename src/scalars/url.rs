@@ -8,10 +8,10 @@ impl ScalarType for Url {
         "Url"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Url::parse(s)?),
-            _ => Err(InputValueError::ExpectedType),
+            Value::String(s) => Ok(Url::parse(&s)?),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 

@@ -165,7 +165,7 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         impl #generic #crate_name::InputValueType for #self_ty #where_clause {
-            fn parse(value: &#crate_name::Value) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value)
             }
         }

@@ -81,17 +81,17 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             get_fields.push(quote! {
                 let #ident:#ty = {
                     match obj.get(#name) {
-                        Some(value) => #crate_name::InputValueType::parse(value)?,
+                        Some(value) => #crate_name::InputValueType::parse(value.clone())?,
                         None => {
                             let default = #default_repr;
-                            #crate_name::InputValueType::parse(&default)?
+                            #crate_name::InputValueType::parse(default)?
                         }
                     }
                 };
             });
         } else {
             get_fields.push(quote! {
-                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).unwrap_or(&#crate_name::Value::Null))?;
+                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).cloned().unwrap_or(#crate_name::Value::Null))?;
             });
         }
 
@@ -129,14 +129,14 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         }
 
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: &#crate_name::Value) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
                 use #crate_name::Type;
 
-                if let #crate_name::Value::Object(obj) = value {
+                if let #crate_name::Value::Object(obj) = &value {
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })
                 } else {
-                    Err(#crate_name::InputValueError::ExpectedType)
+                    Err(#crate_name::InputValueError::ExpectedType(value))
                 }
             }
         }

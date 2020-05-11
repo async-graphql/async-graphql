@@ -11,10 +11,10 @@ impl ScalarType for DateTime<Utc> {
         "DateTime"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
-            _ => Err(InputValueError::ExpectedType),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 

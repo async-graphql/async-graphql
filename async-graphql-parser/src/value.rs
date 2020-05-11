@@ -1,17 +1,27 @@
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Formatter;
-use std::io::Read;
+use std::fs::File;
 
 pub struct UploadValue {
     pub filename: String,
     pub content_type: Option<String>,
-    pub path: Option<Box<dyn Read>>,
+    pub content: File,
 }
 
 impl fmt::Debug for UploadValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!("Upload({})", self.filename)
+        write!(f, "Upload({})", self.filename)
+    }
+}
+
+impl Clone for UploadValue {
+    fn clone(&self) -> Self {
+        Self {
+            filename: self.filename.clone(),
+            content_type: self.content_type.clone(),
+            content: self.content.try_clone().unwrap(),
+        }
     }
 }
 
@@ -128,7 +138,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
-            Value::Upload(upload) => write!(f, "null"),
+            Value::Upload(_) => write!(f, "null"),
         }
     }
 }

@@ -44,10 +44,10 @@ impl ScalarType for Cursor {
         "Cursor"
     }
 
-    fn parse(value: &Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Cursor(s.into())),
-            _ => Err(InputValueError::ExpectedType),
+            Value::String(s) => Ok(Cursor(s)),
+            _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
