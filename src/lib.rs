@@ -94,9 +94,9 @@ mod subscription;
 mod types;
 mod validation;
 
-pub mod prelude;
 pub mod extensions;
 pub mod guard;
+pub mod prelude;
 pub mod validators;
 
 use async_graphql_parser as parser;
