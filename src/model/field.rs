@@ -1,6 +1,6 @@
 use crate::model::{__InputValue, __Type};
 use crate::registry;
-use async_graphql_derive::Object;
+use async_graphql_derive::GqlObject;
 use itertools::Itertools;
 
 pub struct __Field<'a> {
@@ -9,7 +9,7 @@ pub struct __Field<'a> {
 }
 
 /// Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.
-#[Object(internal)]
+#[GqlObject(internal)]
 impl<'a> __Field<'a> {
     async fn name(&self) -> String {
         self.field.name.to_string()

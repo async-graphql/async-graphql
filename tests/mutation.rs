@@ -1,4 +1,5 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::EmptySubscription;
 use futures::lock::Mutex;
 use std::sync::Arc;
 use std::time::Duration;
@@ -7,20 +8,20 @@ use std::time::Duration;
 pub async fn test_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct QueryRoot;
 
     struct MutationRoot;
 
-    #[Object]
+    #[GqlObject]
     impl MutationRoot {
-        async fn append1(&self, ctx: &Context<'_>) -> bool {
+        async fn append1(&self, ctx: &GqlContext<'_>) -> bool {
             async_std::task::sleep(Duration::from_secs(1)).await;
             ctx.data::<List>().lock().await.push(1);
             true
         }
 
-        async fn append2(&self, ctx: &Context<'_>) -> bool {
+        async fn append2(&self, ctx: &GqlContext<'_>) -> bool {
             async_std::task::sleep(Duration::from_millis(500)).await;
             ctx.data::<List>().lock().await.push(2);
             true
@@ -28,7 +29,7 @@ pub async fn test_mutation_execution_order() {
     }
 
     let list = List::default();
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+    let schema = GqlSchema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(list.clone())
         .finish();
     schema
@@ -41,19 +42,19 @@ pub async fn test_mutation_execution_order() {
 
 #[async_std::test]
 pub async fn test_mutation_fragment() {
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct QueryRoot;
 
     struct MutationRoot;
 
-    #[Object]
+    #[GqlObject]
     impl MutationRoot {
         async fn action(&self) -> bool {
             true
         }
     }
 
-    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, MutationRoot, EmptySubscription);
     let resp = schema
         .execute(
             r#"

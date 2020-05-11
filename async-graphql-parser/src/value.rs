@@ -28,7 +28,7 @@ impl Clone for UploadValue {
 /// Represents a GraphQL value
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
-pub enum Value {
+pub enum GqlValue {
     Null,
     Variable(String),
     Int(i64),
@@ -36,14 +36,14 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Enum(String),
-    List(Vec<Value>),
-    Object(BTreeMap<String, Value>),
+    List(Vec<GqlValue>),
+    Object(BTreeMap<String, GqlValue>),
     Upload(UploadValue),
 }
 
-impl PartialEq for Value {
+impl PartialEq for GqlValue {
     fn eq(&self, other: &Self) -> bool {
-        use Value::*;
+        use GqlValue::*;
 
         match (self, other) {
             (Variable(a), Variable(b)) => a.eq(b),
@@ -101,18 +101,18 @@ fn write_quoted(s: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "\"")
 }
 
-impl fmt::Display for Value {
+impl fmt::Display for GqlValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Value::Variable(name) => write!(f, "${}", name),
-            Value::Int(num) => write!(f, "{}", *num),
-            Value::Float(val) => write!(f, "{}", *val),
-            Value::String(ref val) => write_quoted(val, f),
-            Value::Boolean(true) => write!(f, "true"),
-            Value::Boolean(false) => write!(f, "false"),
-            Value::Null => write!(f, "null"),
-            Value::Enum(ref name) => write!(f, "{}", name),
-            Value::List(ref items) => {
+            Self::Variable(name) => write!(f, "${}", name),
+            Self::Int(num) => write!(f, "{}", *num),
+            Self::Float(val) => write!(f, "{}", *val),
+            Self::String(ref val) => write_quoted(val, f),
+            Self::Boolean(true) => write!(f, "true"),
+            Self::Boolean(false) => write!(f, "false"),
+            Self::Null => write!(f, "null"),
+            Self::Enum(ref name) => write!(f, "{}", name),
+            Self::List(ref items) => {
                 write!(f, "[")?;
                 if !items.is_empty() {
                     write!(f, "{}", items[0])?;
@@ -123,7 +123,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "]")
             }
-            Value::Object(items) => {
+            Self::Object(items) => {
                 write!(f, "{{")?;
                 let mut first = true;
                 for (name, value) in items {
@@ -138,46 +138,48 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
-            Value::Upload(_) => write!(f, "null"),
+            Self::Upload(_) => write!(f, "null"),
         }
     }
 }
 
-impl From<Value> for serde_json::Value {
-    fn from(value: Value) -> Self {
+impl From<GqlValue> for serde_json::Value {
+    fn from(value: GqlValue) -> Self {
         match value {
-            Value::Null => serde_json::Value::Null,
-            Value::Variable(name) => name.into(),
-            Value::Int(n) => n.into(),
-            Value::Float(n) => n.into(),
-            Value::String(s) => s.into(),
-            Value::Boolean(v) => v.into(),
-            Value::Enum(e) => e.into(),
-            Value::List(values) => values
+            GqlValue::Null => serde_json::Value::Null,
+            GqlValue::Variable(name) => name.into(),
+            GqlValue::Int(n) => n.into(),
+            GqlValue::Float(n) => n.into(),
+            GqlValue::String(s) => s.into(),
+            GqlValue::Boolean(v) => v.into(),
+            GqlValue::Enum(e) => e.into(),
+            GqlValue::List(values) => values
                 .into_iter()
                 .map(Into::into)
                 .collect::<Vec<serde_json::Value>>()
                 .into(),
-            Value::Object(obj) => serde_json::Value::Object(
+            GqlValue::Object(obj) => serde_json::Value::Object(
                 obj.into_iter()
                     .map(|(name, value)| (name, value.into()))
                     .collect(),
             ),
-            Value::Upload(_) => serde_json::Value::Null,
+            GqlValue::Upload(_) => serde_json::Value::Null,
         }
     }
 }
 
-impl From<serde_json::Value> for Value {
+impl From<serde_json::Value> for GqlValue {
     fn from(value: serde_json::Value) -> Self {
         match value {
-            serde_json::Value::Null => Value::Null,
-            serde_json::Value::Bool(n) => Value::Boolean(n),
-            serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
-            serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
-            serde_json::Value::String(s) => Value::String(s),
-            serde_json::Value::Array(ls) => Value::List(ls.into_iter().map(Into::into).collect()),
-            serde_json::Value::Object(obj) => Value::Object(
+            serde_json::Value::Null => GqlValue::Null,
+            serde_json::Value::Bool(n) => GqlValue::Boolean(n),
+            serde_json::Value::Number(n) if n.is_f64() => GqlValue::Float(n.as_f64().unwrap()),
+            serde_json::Value::Number(n) => GqlValue::Int(n.as_i64().unwrap()),
+            serde_json::Value::String(s) => GqlValue::String(s),
+            serde_json::Value::Array(ls) => {
+                GqlValue::List(ls.into_iter().map(Into::into).collect())
+            }
+            serde_json::Value::Object(obj) => GqlValue::Object(
                 obj.into_iter()
                     .map(|(name, value)| (name, value.into()))
                     .collect(),

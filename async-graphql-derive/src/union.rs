@@ -130,7 +130,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.clone_inner(),
                     object: #gql_typename.to_string(),
@@ -140,9 +140,9 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
             fn collect_inline_fields<'a>(
                 &'a self,
                 name: &#crate_name::Positioned<String>,
-                ctx: &#crate_name::ContextSelectionSet<'a>,
+                ctx: &#crate_name::GqlContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
-            ) -> #crate_name::Result<()> {
+            ) -> #crate_name::GqlResult<()> {
                 #(#collect_inline_fields)*
                 Ok(())
             }
@@ -150,7 +150,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::GqlContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, self).await
             }
         }

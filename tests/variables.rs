@@ -1,10 +1,11 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_variables() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
@@ -15,8 +16,8 @@ pub async fn test_variables() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilder::new(
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let query = GqlQueryBuilder::new(
         r#"
             query QueryWithVariables($intVal: Int!, $intListVal: [Int!]!) {
                 intVal(value: $intVal)
@@ -25,7 +26,7 @@ pub async fn test_variables() {
         "#,
     )
     .variables(
-        Variables::parse_from_json(serde_json::json!({
+        GqlVariables::parse_from_json(serde_json::json!({
             "intVal": 10,
              "intListVal": [1, 2, 3, 4, 5],
         }))
@@ -45,14 +46,14 @@ pub async fn test_variables() {
 pub async fn test_variable_default_value() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let resp = schema
         .execute(
             r#"

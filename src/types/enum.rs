@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, Type, Value};
+use crate::{GqlInputValueResult, GqlResult, GqlValue, InputValueError, Type};
 
 #[allow(missing_docs)]
 pub struct EnumItem<T> {
@@ -11,10 +11,10 @@ pub struct EnumItem<T> {
 pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
     fn items() -> &'static [EnumItem<Self>];
 
-    fn parse_enum(value: Value) -> InputValueResult<Self> {
+    fn parse_enum(value: GqlValue) -> GqlInputValueResult<Self> {
         let value = match value {
-            Value::Enum(s) => s,
-            Value::String(s) => s,
+            GqlValue::Enum(s) => s,
+            GqlValue::String(s) => s,
             _ => return Err(InputValueError::ExpectedType(value)),
         };
 
@@ -31,7 +31,7 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
         )))
     }
 
-    fn resolve_enum(&self) -> Result<serde_json::Value> {
+    fn resolve_enum(&self) -> GqlResult<serde_json::Value> {
         let items = Self::items();
         for item in items {
             if item.value == *self {

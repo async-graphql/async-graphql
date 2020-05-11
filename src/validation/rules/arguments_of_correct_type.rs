@@ -3,7 +3,7 @@ use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, QueryPathSegment, Value};
+use crate::{GqlValue, Positioned, QueryPathSegment};
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         &mut self,
         ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        value: &'a Positioned<Value>,
+        value: &'a Positioned<GqlValue>,
     ) {
         if let Some(arg) = self
             .current_args

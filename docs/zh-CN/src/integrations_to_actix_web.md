@@ -1,6 +1,6 @@
 # Actix-web
 
-`Async-graphql-actix-web`提供实现了`actix_web::FromRequest`的`GQLRequest`，它其实是QueryBuilder的包装，你可以调用`GQLRequest::into_inner`把它转换成一个`QueryBuilder`。
+`Async-graphql-actix-web`提供实现了`actix_web::FromRequest`的`GQLRequest`，它其实是GqlQueryBuilder的包装，你可以调用`GQLRequest::into_inner`把它转换成一个`GqlQueryBuilder`。
 
 `WSSubscription`是一个支持Web Socket订阅的Actor。
 
@@ -10,7 +10,7 @@
 
 ```rust
 async fn index(
-    schema: web::Data<Schema>,
+    schema: web::Data<GqlSchema>,
     gql_request: GQLRequest,
 ) -> web::Json<GQLResponse> {
     web::Json(GQLResponse(gql_request.into_inner().execute(&schema).await))
@@ -22,7 +22,7 @@ async fn index(
 
 ```rust
 async fn index_ws(
-    schema: web::Data<Schema>,
+    schema: web::Data<GqlSchema>,
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {

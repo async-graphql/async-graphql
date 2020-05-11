@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use crate::Value;
+use crate::GqlValue;
 
 /// Integer range validator
 pub struct IntRange {
@@ -11,8 +11,8 @@ pub struct IntRange {
 }
 
 impl InputValueValidator for IntRange {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::Int(n) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::Int(n) = value {
             if *n < self.min || *n > self.max {
                 Some(format!(
                     "the value is {}, but the range must be between {} and {}",
@@ -34,8 +34,8 @@ pub struct IntLessThan {
 }
 
 impl InputValueValidator for IntLessThan {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::Int(n) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::Int(n) = value {
             if *n >= self.value {
                 Some(format!(
                     "the value is {}, must be less than {}",
@@ -57,8 +57,8 @@ pub struct IntGreaterThan {
 }
 
 impl InputValueValidator for IntGreaterThan {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::Int(n) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::Int(n) = value {
             if *n <= self.value {
                 Some(format!(
                     "the value is {}, must be greater than {}",
@@ -77,8 +77,8 @@ impl InputValueValidator for IntGreaterThan {
 pub struct IntNonZero {}
 
 impl InputValueValidator for IntNonZero {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::Int(n) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::Int(n) = value {
             if *n == 0 {
                 Some(format!("the value is {}, but must be nonzero", *n,))
             } else {
@@ -97,8 +97,8 @@ pub struct IntEqual {
 }
 
 impl InputValueValidator for IntEqual {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::Int(n) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::Int(n) = value {
             if *n != self.value {
                 Some(format!("the value is {}, must be equal {}", *n, self.value))
             } else {

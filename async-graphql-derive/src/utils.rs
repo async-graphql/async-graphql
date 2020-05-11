@@ -1,4 +1,4 @@
-use async_graphql_parser::Value;
+use async_graphql_parser::GqlValue;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Attribute, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
@@ -12,35 +12,35 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     }
 }
 
-pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream {
+pub fn build_value_repr(crate_name: &TokenStream, value: &GqlValue) -> TokenStream {
     match value {
-        Value::Variable(_) => unreachable!(),
-        Value::Int(n) => {
-            quote! { #crate_name::Value::Int(#n) }
+        GqlValue::Variable(_) => unreachable!(),
+        GqlValue::Int(n) => {
+            quote! { #crate_name::GqlValue::Int(#n) }
         }
-        Value::Float(n) => {
-            quote! { #crate_name::Value::Float(#n) }
+        GqlValue::Float(n) => {
+            quote! { #crate_name::GqlValue::Float(#n) }
         }
-        Value::String(s) => {
-            quote! { #crate_name::Value::String(#s.to_string()) }
+        GqlValue::String(s) => {
+            quote! { #crate_name::GqlValue::String(#s.to_string()) }
         }
-        Value::Boolean(n) => {
-            quote! { #crate_name::Value::Boolean(#n) }
+        GqlValue::Boolean(n) => {
+            quote! { #crate_name::GqlValue::Boolean(#n) }
         }
-        Value::Null => {
-            quote! { #crate_name::Value::Null }
+        GqlValue::Null => {
+            quote! { #crate_name::GqlValue::Null }
         }
-        Value::Enum(n) => {
-            quote! { #crate_name::Value::Enum(#n.to_string()) }
+        GqlValue::Enum(n) => {
+            quote! { #crate_name::GqlValue::Enum(#n.to_string()) }
         }
-        Value::List(ls) => {
+        GqlValue::List(ls) => {
             let members = ls
                 .iter()
                 .map(|v| build_value_repr(crate_name, v))
                 .collect::<Vec<_>>();
-            quote! { #crate_name::Value::List(vec![#(#members),*]) }
+            quote! { #crate_name::GqlValue::List(vec![#(#members),*]) }
         }
-        Value::Object(obj) => {
+        GqlValue::Object(obj) => {
             let members = obj
                 .iter()
                 .map(|(n, v)| {
@@ -54,11 +54,11 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
                 {
                     let mut obj = std::collections::BTreeMap::new();
                     #(#members)*
-                    #crate_name::Value::Object(obj)
+                    #crate_name::GqlValue::Object(obj)
                 }
             }
         }
-        Value::Upload(_) => quote! { #crate_name::Value::Null },
+        GqlValue::Upload(_) => quote! { #crate_name::GqlValue::Null },
     }
 }
 

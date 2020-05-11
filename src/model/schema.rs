@@ -1,13 +1,13 @@
 use crate::model::{__Directive, __Type};
 use crate::registry;
-use async_graphql_derive::Object;
+use async_graphql_derive::GqlObject;
 
 pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
 }
 
 /// A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
-#[Object(internal)]
+#[GqlObject(internal)]
 impl<'a> __Schema<'a> {
     /// A list of all types supported by this server.
     async fn types(&self) -> Vec<__Type<'a>> {

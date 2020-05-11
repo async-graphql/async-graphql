@@ -11,7 +11,7 @@ But you can add optional `#[field]` to add description or rename the field.
 ```rust
 use async_graphql::*;
 
-#[InputObject]
+#[GqlInputObject]
 struct Coordinate {
     latitude: f64,
 
@@ -21,7 +21,7 @@ struct Coordinate {
 
 struct Mutation;
 
-#[Object]
+#[GqlObject]
 impl Mutation {
     async fn users_at_location(&self, coordinate: Coordinate, radius: f64) -> Vec<User> {
         // Writes coordination to database.

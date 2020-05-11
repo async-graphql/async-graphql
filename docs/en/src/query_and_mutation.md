@@ -10,9 +10,9 @@ use async_graphql::*;
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
-    async fn user(&self, username: String) -> FieldResult<Option<User>> {
+    async fn user(&self, username: String) -> GqlFieldResult<Option<User>> {
         // Look up users from the database
     }
 }
@@ -30,7 +30,7 @@ use async_graphql::*;
 
 struct Mutation;
 
-#[Object]
+#[GqlObject]
 impl Mutation {
     async fn signup(&self, username: String, password: String) -> Result<bool> {
         // User signup

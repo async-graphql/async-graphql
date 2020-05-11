@@ -2,7 +2,7 @@ use crate::parser::ast::{Directive, Field};
 use crate::registry::InputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, Value};
+use crate::{GqlValue, Positioned};
 use std::collections::HashMap;
 
 enum ArgsType<'a> {
@@ -57,7 +57,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         &mut self,
         ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        _value: &'a Positioned<Value>,
+        _value: &'a Positioned<GqlValue>,
     ) {
         if let Some((args, arg_type)) = &self.current_args {
             if !args.contains_key(name.as_str()) {

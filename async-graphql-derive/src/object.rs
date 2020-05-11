@@ -82,11 +82,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
-                                        || path.path.segments.last().unwrap().ident != "Context"
+                                        || path.path.segments.last().unwrap().ident != "GqlContext"
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "The Context must be the second argument.",
+                                            "The GqlContext must be the second argument.",
                                         ));
                                     } else {
                                         create_ctx = false;
@@ -100,7 +100,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 if create_ctx {
                     let arg =
-                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::GqlContext<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -149,7 +149,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
-                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                        quote! { -> #crate_name::GqlFieldResult<#inner_ty> },
                     )
                     .expect("invalid result type");
                 }
@@ -257,11 +257,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
-                                        || path.path.segments.last().unwrap().ident != "Context"
+                                        || path.path.segments.last().unwrap().ident != "GqlContext"
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "The Context must be the second argument.",
+                                            "The GqlContext must be the second argument.",
                                         ));
                                     }
 
@@ -275,7 +275,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 if create_ctx {
                     let arg =
-                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::GqlContext<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -327,7 +327,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             quote! {|| #repr }
                         }
                         None => {
-                            quote! { || #crate_name::Value::Null }
+                            quote! { || #crate_name::GqlValue::Null }
                         }
                     };
 
@@ -367,7 +367,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
-                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                        quote! { -> #crate_name::GqlFieldResult<#inner_ty> },
                     )
                     .expect("invalid result type");
                 }
@@ -457,7 +457,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.clone_inner(),
@@ -465,12 +465,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }.into_error(ctx.position()))
             }
 
-            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn find_entity(&self, ctx: &#crate_name::GqlContext<'_>, params: &#crate_name::GqlValue) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 let params = match params {
-                    #crate_name::Value::Object(params) => params,
+                    #crate_name::GqlValue::Object(params) => params,
                     _ => return Err(#crate_name::QueryError::EntityNotFound.into_error(ctx.position())),
                 };
-                let typename = if let Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                let typename = if let Some(#crate_name::GqlValue::String(typename)) = params.get("__typename") {
                     typename
                 } else {
                     return Err(#crate_name::QueryError::TypeNameNotExists.into_error(ctx.position()));
@@ -482,7 +482,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::GqlContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, self).await
             }
         }

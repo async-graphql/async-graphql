@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use crate::Value;
+use crate::GqlValue;
 
 /// List minimum length validator
 pub struct ListMinLength {
@@ -8,8 +8,8 @@ pub struct ListMinLength {
 }
 
 impl InputValueValidator for ListMinLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::List(values) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::List(values) = value {
             if values.len() < self.length {
                 Some(format!(
                     "the value length is {}, but the length must be greater than or equal to {}",
@@ -32,8 +32,8 @@ pub struct ListMaxLength {
 }
 
 impl InputValueValidator for ListMaxLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::List(values) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::List(values) = value {
             if values.len() > self.length {
                 Some(format!(
                     "the value length is {}, but the length must be less than or equal to {}",

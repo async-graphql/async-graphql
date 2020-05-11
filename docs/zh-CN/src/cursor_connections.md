@@ -14,7 +14,7 @@ use async_graphql::*;
 
 struct Integers;
 
-#[DataSource]
+#[GqlDataSource]
 impl DataSource for Integers {
     // 元素类型
     type Element = i32;
@@ -22,7 +22,7 @@ impl DataSource for Integers {
     // 我们不需要扩展边的字段，所以传EmptyEdgeFields
     type EdgeFieldsObj = EmptyEdgeFields;
 
-    async fn query_operation(&self, _ctx: &Context<'_>, operation: &QueryOperation<'_>) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+    async fn query_operation(&self, _ctx: &GqlContext<'_>, operation: &QueryOperation<'_>) -> GqlFieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let (start, end) = match operation {
             // 向前查找
             QueryOperation::First {limit} => {
@@ -65,16 +65,16 @@ impl DataSource for Integers {
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     #[field]
     async fn numbers(&self,
-        ctx: &Context<'_>,
+        ctx: &GqlContext<'_>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> FieldResult<Connection<i32, EmptyEdgeFields>> {
+    ) -> GqlFieldResult<Connection<i32, EmptyEdgeFields>> {
         // 查询
         Integers.query(ctx, after, before, first, last).await
     }

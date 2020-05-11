@@ -6,7 +6,8 @@
 
 use async_graphql::http::GQLResponse;
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema, SubscriptionType,
+    GqlQueryBuilder, GqlSchema, IntoGqlQueryBuilder, IntoGqlQueryBuilderOpts, ObjectType,
+    SubscriptionType,
 };
 use tide::{http::headers, Request, Response, Status, StatusCode};
 
@@ -17,12 +18,13 @@ use tide::{http::headers, Request, Response, Status, StatusCode};
 /// *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
 ///
 /// ```no_run
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 /// use async_std::task;
 /// use tide::Request;
 ///
 /// struct QueryRoot;
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     #[field(desc = "Returns the sum of a and b")]
 ///     async fn add(&self, a: i32, b: i32) -> i32 {
@@ -34,7 +36,7 @@ use tide::{http::headers, Request, Response, Status, StatusCode};
 ///     task::block_on(async {
 ///         let mut app = tide::new();
 ///         app.at("/").post(|req: Request<()>| async move {
-///             let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+///             let schema = GqlSchema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 ///             async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
 ///         });
 ///         app.listen("0.0.0.0:8000").await?;
@@ -45,7 +47,7 @@ use tide::{http::headers, Request, Response, Status, StatusCode};
 /// ```
 pub async fn graphql<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
-    schema: Schema<Query, Mutation, Subscription>,
+    schema: GqlSchema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
 ) -> tide::Result<Response>
 where
@@ -53,24 +55,24 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder,
+    F: Fn(GqlQueryBuilder) -> GqlQueryBuilder,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
 
-/// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
+/// Similar to graphql, but you can set the options `IntoGqlQueryBuilderOpts`.
 pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
-    schema: Schema<Query, Mutation, Subscription>,
+    schema: GqlSchema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
-    opts: IntoQueryBuilderOpts,
+    opts: IntoGqlQueryBuilderOpts,
 ) -> tide::Result<Response>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder,
+    F: Fn(GqlQueryBuilder) -> GqlQueryBuilder,
 {
     let content_type = req
         .header(&headers::CONTENT_TYPE)

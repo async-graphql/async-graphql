@@ -3,7 +3,7 @@ use crate::parser::ast::{
 };
 use crate::validation::utils::{operation_name, referenced_variables, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned, Value};
+use crate::{GqlValue, Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -107,7 +107,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        value: &'a Positioned<Value>,
+        value: &'a Positioned<GqlValue>,
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables

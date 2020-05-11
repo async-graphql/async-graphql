@@ -1,4 +1,4 @@
-use crate::{Pos, Value};
+use crate::{GqlValue, Pos};
 use std::fmt::{Debug, Display};
 
 /// Input Value Error
@@ -8,7 +8,7 @@ pub enum InputValueError {
     Custom(String),
 
     /// The type of input value does not match the expectation.
-    ExpectedType(Value),
+    ExpectedType(GqlValue),
 }
 
 impl<T: Display> From<T> for InputValueError {
@@ -19,14 +19,14 @@ impl<T: Display> From<T> for InputValueError {
 
 impl InputValueError {
     #[allow(missing_docs)]
-    pub fn into_error(self, pos: Pos, expected_type: String) -> Error {
+    pub fn into_error(self, pos: Pos, expected_type: String) -> GqlError {
         match self {
-            InputValueError::Custom(reason) => Error::Query {
+            InputValueError::Custom(reason) => GqlError::Query {
                 pos,
                 path: None,
                 err: QueryError::ParseInputValue { reason },
             },
-            InputValueError::ExpectedType(value) => Error::Query {
+            InputValueError::ExpectedType(value) => GqlError::Query {
                 pos,
                 path: None,
                 err: QueryError::ExpectedInputType {
@@ -38,8 +38,8 @@ impl InputValueError {
     }
 }
 
-/// InputValueResult type
-pub type InputValueResult<T> = std::result::Result<T, InputValueError>;
+/// GqlInputValueResult type
+pub type GqlInputValueResult<T> = std::result::Result<T, InputValueError>;
 
 /// FieldError type
 #[derive(Clone, Debug)]
@@ -47,8 +47,8 @@ pub struct FieldError(pub String, pub Option<serde_json::Value>);
 
 impl FieldError {
     #[doc(hidden)]
-    pub fn into_error(self, pos: Pos) -> Error {
-        Error::Query {
+    pub fn into_error(self, pos: Pos) -> GqlError {
+        GqlError::Query {
             pos,
             path: None,
             err: QueryError::FieldError {
@@ -59,8 +59,8 @@ impl FieldError {
     }
 
     #[doc(hidden)]
-    pub fn into_error_with_path(self, pos: Pos, path: serde_json::Value) -> Error {
-        Error::Query {
+    pub fn into_error_with_path(self, pos: Pos, path: serde_json::Value) -> GqlError {
+        GqlError::Query {
             pos,
             path: Some(path),
             err: QueryError::FieldError {
@@ -71,8 +71,8 @@ impl FieldError {
     }
 }
 
-/// FieldResult type
-pub type FieldResult<T> = std::result::Result<T, FieldError>;
+/// GqlFieldResult type
+pub type GqlFieldResult<T> = std::result::Result<T, FieldError>;
 
 impl<E> From<E> for FieldError
 where
@@ -130,11 +130,11 @@ pub trait ResultExt<T, E>
 where
     Self: Sized,
 {
-    fn extend_err<CB>(self, cb: CB) -> FieldResult<T>
+    fn extend_err<CB>(self, cb: CB) -> GqlFieldResult<T>
     where
         CB: FnOnce(&E) -> serde_json::Value;
 
-    fn extend(self) -> FieldResult<T>;
+    fn extend(self) -> GqlFieldResult<T>;
 }
 
 // This is implemented on E and not &E which means it cannot be used on foreign types.
@@ -143,7 +143,7 @@ impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
 where
     E: ErrorExtensions + Send + Sync + 'static,
 {
-    fn extend_err<C>(self, cb: C) -> FieldResult<T>
+    fn extend_err<C>(self, cb: C) -> GqlFieldResult<T>
     where
         C: FnOnce(&E) -> serde_json::Value,
     {
@@ -153,7 +153,7 @@ where
         }
     }
 
-    fn extend(self) -> FieldResult<T> {
+    fn extend(self) -> GqlFieldResult<T> {
         match self {
             Err(err) => Err(err.extend()),
             Ok(value) => Ok(value),
@@ -174,7 +174,7 @@ pub enum QueryError {
         expect: String,
 
         /// Actual input type
-        actual: Value,
+        actual: GqlValue,
     },
 
     #[error("Failed to parse input value: {reason}")]
@@ -204,10 +204,10 @@ pub enum QueryError {
         object: String,
     },
 
-    #[error("Schema is not configured for mutations.")]
+    #[error("GqlSchema is not configured for mutations.")]
     NotConfiguredMutations,
 
-    #[error("Schema is not configured for subscriptions.")]
+    #[error("GqlSchema is not configured for subscriptions.")]
     NotConfiguredSubscriptions,
 
     #[error("Invalid value for enum \"{ty}\".")]
@@ -281,8 +281,8 @@ pub enum QueryError {
 
 impl QueryError {
     #[doc(hidden)]
-    pub fn into_error(self, pos: Pos) -> Error {
-        Error::Query {
+    pub fn into_error(self, pos: Pos) -> GqlError {
+        GqlError::Query {
             pos,
             path: None,
             err: self,
@@ -332,7 +332,7 @@ pub struct RuleError {
 
 #[allow(missing_docs)]
 #[derive(Debug, Error, PartialEq)]
-pub enum Error {
+pub enum GqlError {
     #[error("Parse error: {0}")]
     Parse(#[from] crate::parser::Error),
 

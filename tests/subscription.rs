@@ -1,4 +1,6 @@
+use async_graphql::prelude::*;
 use async_graphql::*;
+use async_graphql::{EmptyMutation, Pos, QueryError, SimpleBroker};
 use futures::{Stream, StreamExt};
 use std::sync::Arc;
 
@@ -6,18 +8,18 @@ use std::sync::Arc;
 pub async fn test_subscription() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
             futures::stream::iter(start..end)
@@ -28,7 +30,7 @@ pub async fn test_subscription() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     {
         let mut stream = schema
@@ -73,24 +75,24 @@ pub async fn test_subscription() {
 pub async fn test_simple_broker() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     #[derive(Clone)]
     struct Event1 {
         value: i32,
     }
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     #[derive(Clone)]
     struct Event2 {
         value: i32,
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events1(&self) -> impl Stream<Item = Event1> {
             SimpleBroker::<Event1>::subscribe()
@@ -101,7 +103,7 @@ pub async fn test_simple_broker() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream1 = schema
         .create_subscription_stream(
             "subscription { events1 { value } }",
@@ -149,23 +151,23 @@ pub async fn test_simple_broker() {
 pub async fn test_subscription_with_ctx_data() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct MyObject;
 
-    #[Object]
+    #[GqlObject]
     impl MyObject {
-        async fn value(&self, ctx: &Context<'_>) -> i32 {
+        async fn value(&self, ctx: &GqlContext<'_>) -> i32 {
             *ctx.data::<i32>()
         }
     }
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
+        async fn values(&self, ctx: &GqlContext<'_>) -> impl Stream<Item = i32> {
             let value = *ctx.data::<i32>();
             futures::stream::once(async move { value })
         }
@@ -175,7 +177,7 @@ pub async fn test_subscription_with_ctx_data() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     {
         let mut stream = schema
@@ -184,7 +186,7 @@ pub async fn test_subscription_with_ctx_data() {
                 None,
                 Default::default(),
                 Some(Arc::new({
-                    let mut data = Data::default();
+                    let mut data = GqlData::default();
                     data.insert(100i32);
                     data
                 })),
@@ -207,16 +209,16 @@ pub async fn test_subscription_with_ctx_data() {
 pub async fn test_subscription_with_token() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
     struct Token(String);
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+        async fn values(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<impl Stream<Item = i32>> {
             if ctx.data::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
@@ -224,7 +226,7 @@ pub async fn test_subscription_with_token() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     {
         let mut stream = schema
@@ -233,7 +235,7 @@ pub async fn test_subscription_with_token() {
                 None,
                 Default::default(),
                 Some(Arc::new({
-                    let mut data = Data::default();
+                    let mut data = GqlData::default();
                     data.insert(Token("123456".to_string()));
                     data
                 })),
@@ -254,7 +256,7 @@ pub async fn test_subscription_with_token() {
                 None,
                 Default::default(),
                 Some(Arc::new({
-                    let mut data = Data::default();
+                    let mut data = GqlData::default();
                     data.insert(Token("654321".to_string()));
                     data
                 })),
@@ -268,25 +270,25 @@ pub async fn test_subscription_with_token() {
 pub async fn test_subscription_inline_fragment() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
         .create_subscription_stream(
             r#"
@@ -318,30 +320,30 @@ pub async fn test_subscription_inline_fragment() {
 pub async fn test_subscription_fragment() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[Interface(field(name = "a", type = "i32"))]
+    #[GqlInterface(field(name = "a", type = "i32"))]
     enum MyInterface {
         Event(Event),
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
+    let schema = GqlSchema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
         .register_type::<MyInterface>()
         .finish();
     let mut stream = schema
@@ -375,30 +377,30 @@ pub async fn test_subscription_fragment() {
 pub async fn test_subscription_fragment2() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[Interface(field(name = "a", type = "i32"))]
+    #[GqlInterface(field(name = "a", type = "i32"))]
     enum MyInterface {
         Event(Event),
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
+    let schema = GqlSchema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
         .register_type::<MyInterface>()
         .finish();
     let mut stream = schema
@@ -437,9 +439,9 @@ pub async fn test_subscription_error() {
         value: i32,
     }
 
-    #[Object]
+    #[GqlObject]
     impl Event {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> GqlFieldResult<i32> {
             if self.value < 5 {
                 Ok(self.value)
             } else {
@@ -448,19 +450,19 @@ pub async fn test_subscription_error() {
         }
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
             futures::stream::iter((0..10).map(|n| Event { value: n }))
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
         .create_subscription_stream(
             "subscription { events { value } }",
@@ -478,7 +480,7 @@ pub async fn test_subscription_error() {
     }
     assert_eq!(
         stream.next().await,
-        Some(Err(Error::Query {
+        Some(Err(GqlError::Query {
             pos: Pos {
                 line: 1,
                 column: 25
@@ -498,23 +500,23 @@ pub async fn test_subscription_error() {
 pub async fn test_subscription_fieldresult() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
-        async fn values(&self) -> impl Stream<Item = FieldResult<i32>> {
+        async fn values(&self) -> impl Stream<Item = GqlFieldResult<i32>> {
             futures::stream::iter(0..5)
-                .map(FieldResult::Ok)
+                .map(GqlFieldResult::Ok)
                 .chain(futures::stream::once(
                     async move { Err("StreamErr".into()) },
                 ))
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
         .create_subscription_stream("subscription { values }", None, Default::default(), None)
         .await
@@ -527,7 +529,7 @@ pub async fn test_subscription_fieldresult() {
     }
     assert_eq!(
         stream.next().await,
-        Some(Err(Error::Query {
+        Some(Err(GqlError::Query {
             pos: Pos {
                 line: 1,
                 column: 16

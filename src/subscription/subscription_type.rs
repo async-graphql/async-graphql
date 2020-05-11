@@ -1,6 +1,6 @@
 use crate::context::Environment;
 use crate::parser::ast::{Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, ObjectType, Result, Schema, Type};
+use crate::{GqlContext, GqlContextSelectionSet, GqlResult, GqlSchema, ObjectType, Type};
 use futures::{Future, Stream};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -17,23 +17,23 @@ pub trait SubscriptionType: Type {
     #[doc(hidden)]
     async fn create_field_stream<Query, Mutation>(
         &self,
-        ctx: &Context<'_>,
-        schema: &Schema<Query, Mutation, Self>,
+        ctx: &GqlContext<'_>,
+        schema: &GqlSchema<Query, Mutation, Self>,
         environment: Arc<Environment>,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
+    ) -> GqlResult<Pin<Box<dyn Stream<Item = GqlResult<serde_json::Value>> + Send>>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
         Self: Send + Sync + 'static + Sized;
 }
 
-type BoxCreateStreamFuture<'a> = Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>;
+type BoxCreateStreamFuture<'a> = Pin<Box<dyn Future<Output = GqlResult<()>> + Send + 'a>>;
 
 pub fn create_subscription_stream<'a, Query, Mutation, Subscription>(
-    schema: &'a Schema<Query, Mutation, Subscription>,
+    schema: &'a GqlSchema<Query, Mutation, Subscription>,
     environment: Arc<Environment>,
-    ctx: &'a ContextSelectionSet<'_>,
-    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>,
+    ctx: &'a GqlContextSelectionSet<'_>,
+    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = GqlResult<serde_json::Value>> + Send>>>,
 ) -> BoxCreateStreamFuture<'a>
 where
     Query: ObjectType + Send + Sync + 'static,

@@ -7,7 +7,7 @@ The example below defined an object `MyObject`, including field `a` and `b`. `c`
 ```rust
 use async_graphql::*;
 
-#[SimpleObject]
+#[GqlSimpleObject]
 struct MyObject {
     a: i32,
     b: i32,

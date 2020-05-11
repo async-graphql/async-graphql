@@ -1,15 +1,15 @@
 use crate::model::{__Schema, __Type};
 use crate::scalars::Any;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos,
-    QueryError, Result, Type, Value,
+    do_resolve, registry, GqlContext, GqlContextSelectionSet, GqlError, GqlResult, GqlValue,
+    ObjectType, OutputValueType, Pos, QueryError, Type,
 };
-use async_graphql_derive::SimpleObject;
+use async_graphql_derive::GqlSimpleObject;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
 /// Federation service
-#[SimpleObject(internal)]
+#[GqlSimpleObject(internal)]
 struct Service {
     sdl: Option<String>,
 }
@@ -79,10 +79,10 @@ impl<T: Type> Type for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &GqlContext<'_>) -> GqlResult<serde_json::Value> {
         if ctx.name.as_str() == "__schema" {
             if self.disable_introspection {
-                return Err(Error::Query {
+                return Err(GqlError::Query {
                     pos: ctx.position(),
                     path: Some(ctx.path_node.as_ref().unwrap().to_json()),
                     err: QueryError::FieldNotFound {
@@ -102,7 +102,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             )
             .await;
         } else if ctx.name.as_str() == "__type" {
-            let type_name: String = ctx.param_value("name", || Value::Null)?;
+            let type_name: String = ctx.param_value("name", || GqlValue::Null)?;
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &ctx.registry
@@ -114,7 +114,8 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             )
             .await;
         } else if ctx.name.as_str() == "_entities" {
-            let representations: Vec<Any> = ctx.param_value("representations", || Value::Null)?;
+            let representations: Vec<Any> =
+                ctx.param_value("representations", || GqlValue::Null)?;
             let mut res = Vec::new();
             for item in representations {
                 res.push(self.inner.find_entity(ctx, &item.0).await?);
@@ -138,7 +139,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         do_resolve(ctx, self).await
     }
 }

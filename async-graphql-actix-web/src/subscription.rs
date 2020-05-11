@@ -2,7 +2,9 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType, WebSocketTransport};
+use async_graphql::{
+    GqlData, GqlFieldResult, GqlSchema, ObjectType, SubscriptionType, WebSocketTransport,
+};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::SinkExt;
@@ -13,10 +15,11 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Actor for subscription via websocket
 pub struct WSSubscription<Query, Mutation, Subscription> {
-    schema: Schema<Query, Mutation, Subscription>,
+    schema: GqlSchema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::Sender<Bytes>>,
-    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
+    init_context_data:
+        Option<Box<dyn Fn(serde_json::Value) -> GqlFieldResult<GqlData> + Send + Sync>>,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -26,7 +29,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     /// Create an actor for subscription connection via websocket.
-    pub fn new(schema: &Schema<Query, Mutation, Subscription>) -> Self {
+    pub fn new(schema: &GqlSchema<Query, Mutation, Subscription>) -> Self {
         Self {
             schema: schema.clone(),
             hb: Instant::now(),
@@ -38,7 +41,7 @@ where
     /// Set a context data initialization function.
     pub fn init_context_data<F>(self, f: F) -> Self
     where
-        F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
+        F: Fn(serde_json::Value) -> GqlFieldResult<GqlData> + Send + Sync + 'static,
     {
         Self {
             init_context_data: Some(Box::new(f)),

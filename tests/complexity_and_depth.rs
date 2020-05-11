@@ -1,4 +1,5 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription, Pos, QueryError};
 
 #[async_std::test]
 pub async fn test_complexity_and_depth() {
@@ -6,7 +7,7 @@ pub async fn test_complexity_and_depth() {
 
     struct MyObj;
 
-    #[Object]
+    #[GqlObject]
     impl MyObj {
         async fn a(&self) -> i32 {
             1
@@ -21,7 +22,7 @@ pub async fn test_complexity_and_depth() {
         }
     }
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn value(&self) -> i32 {
             1
@@ -33,12 +34,12 @@ pub async fn test_complexity_and_depth() {
     }
 
     let query = "{ a:value b:value c:value }";
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_complexity(2)
         .finish();
     assert_eq!(
         schema.execute(&query).await.unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
             err: QueryError::TooComplex,
@@ -46,7 +47,7 @@ pub async fn test_complexity_and_depth() {
     );
 
     let query = "{ a:value b:value }";
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_complexity(2)
         .finish();
     assert_eq!(
@@ -58,12 +59,12 @@ pub async fn test_complexity_and_depth() {
     );
 
     let query = "{ obj { a b } }";
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_complexity(2)
         .finish();
     assert_eq!(
         schema.execute(&query).await.unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
             err: QueryError::TooComplex,
@@ -71,7 +72,7 @@ pub async fn test_complexity_and_depth() {
     );
 
     let query = "{ obj { a } }";
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_complexity(2)
         .finish();
     assert_eq!(
@@ -91,12 +92,12 @@ pub async fn test_complexity_and_depth() {
                 }
             }
         }"#;
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_depth(2)
         .finish();
     assert_eq!(
         schema.execute(&query).await.unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
             err: QueryError::TooDeep,
@@ -113,7 +114,7 @@ pub async fn test_complexity_and_depth() {
                 }
             }
         }"#;
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .limit_depth(3)
         .finish();
     assert_eq!(

@@ -1,8 +1,9 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_list_type() {
-    #[InputObject]
+    #[GqlInputObject]
     struct MyInput {
         value: Vec<i32>,
     }
@@ -11,7 +12,7 @@ pub async fn test_list_type() {
         value: Vec<i32>,
     }
 
-    #[Object]
+    #[GqlObject]
     impl Root {
         async fn value_vec(&self) -> Vec<i32> {
             self.value.clone()
@@ -34,7 +35,7 @@ pub async fn test_list_type() {
         }
     }
 
-    let schema = Schema::new(
+    let schema = GqlSchema::new(
         Root {
             value: vec![1, 2, 3, 4, 5],
         },

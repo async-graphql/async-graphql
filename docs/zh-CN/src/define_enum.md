@@ -7,7 +7,7 @@
 ```rust
 use async_graphql::*;
 
-#[Enum(desc = "One of the films in the Star Wars Trilogy")]
+#[GqlEnum(desc = "One of the films in the Star Wars Trilogy")]
 pub enum Episode {
     #[item(desc = "Released in 1977.")]
     NewHope,

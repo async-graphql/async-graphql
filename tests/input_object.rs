@@ -1,8 +1,9 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_input_object_default_value() {
-    #[InputObject]
+    #[GqlInputObject]
     struct MyInput {
         #[field(default = "999")]
         a: i32,
@@ -28,7 +29,7 @@ pub async fn test_input_object_default_value() {
         e: Option<i32>,
     }
 
-    #[Object]
+    #[GqlObject]
     impl MyOutput {
         async fn a(&self) -> i32 {
             self.a
@@ -53,7 +54,7 @@ pub async fn test_input_object_default_value() {
 
     struct Root;
 
-    #[Object]
+    #[GqlObject]
     impl Root {
         async fn a(&self, input: MyInput) -> MyOutput {
             MyOutput {
@@ -66,7 +67,7 @@ pub async fn test_input_object_default_value() {
         }
     }
 
-    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Root, EmptyMutation, EmptySubscription);
     let query = format!(
         r#"{{
             a(input:{{e:777}}) {{
@@ -92,7 +93,7 @@ pub async fn test_input_object_default_value() {
 pub async fn test_inputobject_derive_and_item_attributes() {
     use serde_derive::Deserialize;
 
-    #[async_graphql::InputObject]
+    #[GqlInputObject]
     #[derive(Deserialize, PartialEq, Debug)]
     struct MyInputObject {
         #[field]

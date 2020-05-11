@@ -99,14 +99,14 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 if field.is_ref {
                     getters.push(quote! {
                         #[inline]
-                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                        #vis async fn #ident(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlFieldResult<&#ty> {
                             Ok(&self.#ident)
                         }
                     });
                 } else {
                     getters.push(quote! {
                         #[inline]
-                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                        #vis async fn #ident(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlFieldResult<#ty> {
                             Ok(self.#ident.clone())
                         }
                     });
@@ -174,7 +174,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.clone_inner(),
@@ -185,7 +185,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::GqlContextSelectionSet<'_>, _pos: #crate_name::Pos) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, self).await
             }
         }

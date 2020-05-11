@@ -1,8 +1,8 @@
 use crate::extensions::BoxExtension;
 use crate::parser::ast::{Directive, Field, FragmentDefinition, SelectionSet, VariableDefinition};
 use crate::registry::Registry;
-use crate::{InputValueType, QueryError, Result, Schema, Type};
-use crate::{Pos, Positioned, Value};
+use crate::{GqlResult, GqlSchema, InputValueType, QueryError, Type};
+use crate::{GqlValue, Pos, Positioned};
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};
@@ -12,21 +12,21 @@ use std::ops::{Deref, DerefMut};
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
-/// Variables of query
+/// GqlVariables of query
 #[derive(Debug, Clone)]
-pub struct Variables(Value);
+pub struct GqlVariables(GqlValue);
 
-impl Default for Variables {
+impl Default for GqlVariables {
     fn default() -> Self {
-        Self(Value::Object(Default::default()))
+        Self(GqlValue::Object(Default::default()))
     }
 }
 
-impl Deref for Variables {
-    type Target = BTreeMap<String, Value>;
+impl Deref for GqlVariables {
+    type Target = BTreeMap<String, GqlValue>;
 
     fn deref(&self) -> &Self::Target {
-        if let Value::Object(obj) = &self.0 {
+        if let GqlValue::Object(obj) = &self.0 {
             obj
         } else {
             unreachable!()
@@ -34,9 +34,9 @@ impl Deref for Variables {
     }
 }
 
-impl DerefMut for Variables {
+impl DerefMut for GqlVariables {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        if let Value::Object(obj) = &mut self.0 {
+        if let GqlValue::Object(obj) = &mut self.0 {
             obj
         } else {
             unreachable!()
@@ -44,11 +44,11 @@ impl DerefMut for Variables {
     }
 }
 
-impl Variables {
+impl GqlVariables {
     /// Parse variables from JSON object.
-    pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
-        if let Value::Object(obj) = value.into() {
-            Ok(Variables(Value::Object(obj)))
+    pub fn parse_from_json(value: serde_json::Value) -> GqlResult<Self> {
+        if let GqlValue::Object(obj) = value.into() {
+            Ok(GqlVariables(GqlValue::Object(obj)))
         } else {
             Ok(Default::default())
         }
@@ -74,10 +74,10 @@ impl Variables {
             let has_next = it.peek().is_some();
 
             if let Ok(idx) = s.parse::<i32>() {
-                if let Value::List(ls) = current {
+                if let GqlValue::List(ls) = current {
                     if let Some(value) = ls.get_mut(idx as usize) {
                         if !has_next {
-                            *value = Value::Upload(UploadValue {
+                            *value = GqlValue::Upload(UploadValue {
                                 filename,
                                 content_type,
                                 content,
@@ -90,10 +90,10 @@ impl Variables {
                         return;
                     }
                 }
-            } else if let Value::Object(obj) = current {
+            } else if let GqlValue::Object(obj) = current {
                 if let Some(value) = obj.get_mut(s) {
                     if !has_next {
-                        *value = Value::Upload(UploadValue {
+                        *value = GqlValue::Upload(UploadValue {
                             filename,
                             content_type,
                             content,
@@ -112,20 +112,20 @@ impl Variables {
 
 #[derive(Default)]
 /// Schema/Context data
-pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
+pub struct GqlData(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
 
-impl Data {
+impl GqlData {
     #[allow(missing_docs)]
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
         self.0.insert(TypeId::of::<D>(), Box::new(data));
     }
 }
 
-/// Context for `SelectionSet`
-pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Positioned<SelectionSet>>;
+/// GqlContext for `SelectionSet`
+pub type GqlContextSelectionSet<'a> = GqlContextBase<'a, &'a Positioned<SelectionSet>>;
 
-/// Context object for resolve field
-pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
+/// GqlContext object for resolve field
+pub type GqlContext<'a> = GqlContextBase<'a, &'a Positioned<Field>>;
 
 /// The query path segment
 #[derive(Clone)]
@@ -234,22 +234,22 @@ impl std::fmt::Display for ResolveId {
 
 /// Query context
 #[derive(Clone)]
-pub struct ContextBase<'a, T> {
+pub struct GqlContextBase<'a, T> {
     #[allow(missing_docs)]
     pub path_node: Option<QueryPathNode<'a>>,
     pub(crate) resolve_id: ResolveId,
     pub(crate) inc_resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
-    pub(crate) variables: &'a Variables,
+    pub(crate) variables: &'a GqlVariables,
     pub(crate) variable_definitions: &'a [Positioned<VariableDefinition>],
     pub(crate) registry: &'a Registry,
-    pub(crate) data: &'a Data,
-    pub(crate) ctx_data: Option<&'a Data>,
+    pub(crate) data: &'a GqlData,
+    pub(crate) ctx_data: Option<&'a GqlData>,
     pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
 }
 
-impl<'a, T> Deref for ContextBase<'a, T> {
+impl<'a, T> Deref for GqlContextBase<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -259,22 +259,22 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 
 #[doc(hidden)]
 pub struct Environment {
-    pub variables: Variables,
+    pub variables: GqlVariables,
     pub variable_definitions: Vec<Positioned<VariableDefinition>>,
     pub fragments: HashMap<String, FragmentDefinition>,
-    pub ctx_data: Arc<Data>,
+    pub ctx_data: Arc<GqlData>,
 }
 
 impl Environment {
     #[doc(hidden)]
     pub fn create_context<'a, T, Query, Mutation, Subscription>(
         &'a self,
-        schema: &'a Schema<Query, Mutation, Subscription>,
+        schema: &'a GqlSchema<Query, Mutation, Subscription>,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
         inc_resolve_id: &'a AtomicUsize,
-    ) -> ContextBase<'a, T> {
-        ContextBase {
+    ) -> GqlContextBase<'a, T> {
+        GqlContextBase {
             path_node,
             resolve_id: ResolveId::root(),
             inc_resolve_id,
@@ -290,7 +290,7 @@ impl Environment {
     }
 }
 
-impl<'a, T> ContextBase<'a, T> {
+impl<'a, T> GqlContextBase<'a, T> {
     fn get_child_resolve_id(&self) -> ResolveId {
         let id = self
             .inc_resolve_id
@@ -306,8 +306,8 @@ impl<'a, T> ContextBase<'a, T> {
     pub fn with_field(
         &'a self,
         field: &'a Positioned<Field>,
-    ) -> ContextBase<'a, &'a Positioned<Field>> {
-        ContextBase {
+    ) -> GqlContextBase<'a, &'a Positioned<Field>> {
+        GqlContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
                 segment: QueryPathSegment::Name(
@@ -335,8 +335,8 @@ impl<'a, T> ContextBase<'a, T> {
     pub fn with_selection_set(
         &self,
         selection_set: &'a Positioned<SelectionSet>,
-    ) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
-        ContextBase {
+    ) -> GqlContextBase<'a, &'a Positioned<SelectionSet>> {
+        GqlContextBase {
             path_node: self.path_node.clone(),
             extensions: self.extensions,
             item: selection_set,
@@ -351,13 +351,13 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
-    /// Gets the global data defined in the `Context` or `Schema`.
+    /// Gets the global data defined in the `GqlContext` or `GqlSchema`.
     pub fn data<D: Any + Send + Sync>(&self) -> &D {
         self.data_opt::<D>()
             .expect("The specified data type does not exist.")
     }
 
-    /// Gets the global data defined in the `Context` or `Schema`, returns `None` if the specified type data does not exist.
+    /// Gets the global data defined in the `GqlContext` or `GqlSchema`, returns `None` if the specified type data does not exist.
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&D> {
         self.ctx_data
             .and_then(|ctx_data| ctx_data.0.get(&TypeId::of::<D>()))
@@ -365,7 +365,7 @@ impl<'a, T> ContextBase<'a, T> {
             .and_then(|d| d.downcast_ref::<D>())
     }
 
-    fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
+    fn var_value(&self, name: &str, pos: Pos) -> GqlResult<GqlValue> {
         let def = self
             .variable_definitions
             .iter()
@@ -383,20 +383,20 @@ impl<'a, T> ContextBase<'a, T> {
         .into_error(pos))
     }
 
-    fn resolve_input_value(&self, mut value: Value, pos: Pos) -> Result<Value> {
+    fn resolve_input_value(&self, mut value: GqlValue, pos: Pos) -> GqlResult<GqlValue> {
         match value {
-            Value::Variable(var_name) => self.var_value(&var_name, pos),
-            Value::List(ref mut ls) => {
+            GqlValue::Variable(var_name) => self.var_value(&var_name, pos),
+            GqlValue::List(ref mut ls) => {
                 for value in ls {
-                    if let Value::Variable(var_name) = value {
+                    if let GqlValue::Variable(var_name) = value {
                         *value = self.var_value(&var_name, pos)?;
                     }
                 }
                 Ok(value)
             }
-            Value::Object(ref mut obj) => {
+            GqlValue::Object(ref mut obj) => {
                 for value in obj.values_mut() {
-                    if let Value::Variable(var_name) = value {
+                    if let GqlValue::Variable(var_name) = value {
                         *value = self.var_value(&var_name, pos)?;
                     }
                 }
@@ -407,7 +407,7 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> Result<bool> {
+    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> GqlResult<bool> {
         for directive in directives {
             if directive.name.as_str() == "skip" {
                 if let Some(value) = directive.get_argument("if") {
@@ -459,10 +459,10 @@ impl<'a, T> ContextBase<'a, T> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
+impl<'a> GqlContextBase<'a, &'a Positioned<SelectionSet>> {
     #[doc(hidden)]
-    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
-        ContextBase {
+    pub fn with_index(&'a self, idx: usize) -> GqlContextBase<'a, &'a Positioned<SelectionSet>> {
+        GqlContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),
                 segment: QueryPathSegment::Index(idx),
@@ -481,13 +481,13 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
     }
 }
 
-impl<'a> ContextBase<'a, &'a Positioned<Field>> {
+impl<'a> GqlContextBase<'a, &'a Positioned<Field>> {
     #[doc(hidden)]
-    pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
+    pub fn param_value<T: InputValueType, F: FnOnce() -> GqlValue>(
         &self,
         name: &str,
         default: F,
-    ) -> Result<T> {
+    ) -> GqlResult<T> {
         match self.get_argument(name).cloned() {
             Some(value) => {
                 let pos = value.position();

@@ -1,5 +1,5 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value, ID};
-use async_graphql_derive::Scalar;
+use crate::{GqlID, GqlInputValueResult, GqlResult, GqlValue, InputValueError, ScalarType};
+use async_graphql_derive::GqlScalar;
 use std::ops::{Deref, DerefMut};
 
 /// Cursor scalar
@@ -32,33 +32,33 @@ where
     }
 }
 
-impl From<ID> for Cursor {
-    fn from(id: ID) -> Self {
+impl From<GqlID> for Cursor {
+    fn from(id: GqlID) -> Self {
         Cursor(id.into())
     }
 }
 
-#[Scalar(internal)]
+#[GqlScalar(internal)]
 impl ScalarType for Cursor {
     fn type_name() -> &'static str {
         "Cursor"
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Cursor(s)),
+            GqlValue::String(s) => Ok(Cursor(s)),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
-    fn is_valid(value: &Value) -> bool {
+    fn is_valid(value: &GqlValue) -> bool {
         match value {
-            Value::String(_) => true,
+            GqlValue::String(_) => true,
             _ => false,
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(self.0.to_string().into())
     }
 }

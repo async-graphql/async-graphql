@@ -15,12 +15,12 @@ mod bson;
 mod uuid;
 
 pub use any::Any;
-pub use id::ID;
+pub use id::GqlID;
 pub use json::Json;
 
 #[cfg(test)]
 mod tests {
-    use super::ID;
+    use super::GqlID;
     use crate::Type;
     use bson::oid::ObjectId;
     use chrono::{DateTime, Utc};
@@ -43,8 +43,8 @@ mod tests {
         assert_eq!(<String as Type>::type_name(), "String");
         assert_eq!(<String as Type>::qualified_type_name(), "String!");
 
-        assert_eq!(<ID as Type>::type_name(), "ID");
-        assert_eq!(<ID as Type>::qualified_type_name(), "ID!");
+        assert_eq!(<GqlID as Type>::type_name(), "ID");
+        assert_eq!(<GqlID as Type>::qualified_type_name(), "ID!");
 
         assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
         assert_eq!(

@@ -1,7 +1,7 @@
 use crate::context::Environment;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
-    Result, Schema, SubscriptionType, Type,
+    registry, GqlContext, GqlContextSelectionSet, GqlError, GqlResult, GqlSchema, ObjectType,
+    OutputValueType, Pos, QueryError, SubscriptionType, Type,
 };
 use futures::Stream;
 use std::borrow::Cow;
@@ -38,16 +38,16 @@ impl SubscriptionType for EmptySubscription {
 
     async fn create_field_stream<Query, Mutation>(
         &self,
-        _ctx: &Context<'_>,
-        _schema: &Schema<Query, Mutation, Self>,
+        _ctx: &GqlContext<'_>,
+        _schema: &GqlSchema<Query, Mutation, Self>,
         _environment: Arc<Environment>,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
+    ) -> GqlResult<Pin<Box<dyn Stream<Item = GqlResult<serde_json::Value>> + Send>>>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
         Self: Send + Sync + 'static + Sized,
     {
-        Err(Error::Query {
+        Err(GqlError::Query {
             pos: Pos::default(),
             path: None,
             err: QueryError::NotConfiguredSubscriptions,
@@ -57,8 +57,12 @@ impl SubscriptionType for EmptySubscription {
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptySubscription {
-    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        Err(Error::Query {
+    async fn resolve(
+        &self,
+        _ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
+        Err(GqlError::Query {
             pos,
             path: None,
             err: QueryError::NotConfiguredSubscriptions,

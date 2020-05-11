@@ -1,14 +1,15 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_enum_type() {
-    #[Enum]
+    #[GqlEnum]
     enum MyEnum {
         A,
         B,
     }
 
-    #[InputObject]
+    #[GqlInputObject]
     struct MyInput {
         value: MyEnum,
     }
@@ -17,7 +18,7 @@ pub async fn test_enum_type() {
         value: MyEnum,
     }
 
-    #[Object]
+    #[GqlObject]
     impl Root {
         async fn value(&self) -> MyEnum {
             self.value
@@ -32,7 +33,7 @@ pub async fn test_enum_type() {
         }
     }
 
-    let schema = Schema::new(Root { value: MyEnum::A }, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Root { value: MyEnum::A }, EmptyMutation, EmptySubscription);
     let query = format!(
         r#"{{
             value
@@ -54,7 +55,7 @@ pub async fn test_enum_type() {
 pub async fn test_enum_derive_and_item_attributes() {
     use serde_derive::Deserialize;
 
-    #[async_graphql::Enum]
+    #[GqlEnum]
     #[derive(Deserialize, PartialEq, Debug)]
     enum Test {
         #[serde(alias = "Other")]

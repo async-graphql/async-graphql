@@ -17,12 +17,14 @@
 类似下面这样
 
 ```rust
+use async_graphql::prelude::*;
+
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     #[entity]
-    async fn find_user_by_id(&self, id: ID) -> User {
+    async fn find_user_by_id(&self, id: GqlID) -> User {
         User { id }
     }
 }
@@ -31,8 +33,8 @@ impl Query {
 这相当于
 
 ```graphql
-type User @key(id: ID!) {
-    id: ID!,
+type User @key(id: GqlID!) {
+    id: GqlID!,
 }
 ```
 

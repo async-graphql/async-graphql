@@ -6,13 +6,13 @@ use crate::parser::parse_query;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
 
-#[InputObject(internal)]
+#[GqlInputObject(internal)]
 struct TestInput {
     id: i32,
     name: String,
 }
 
-#[Enum(internal)]
+#[GqlEnum(internal)]
 enum DogCommand {
     Sit,
     Heel,
@@ -21,7 +21,7 @@ enum DogCommand {
 
 struct Dog;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl Dog {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -52,7 +52,7 @@ impl Dog {
     }
 }
 
-#[Enum(internal)]
+#[GqlEnum(internal)]
 enum FurColor {
     Brown,
     Black,
@@ -62,7 +62,7 @@ enum FurColor {
 
 struct Cat;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl Cat {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -85,7 +85,7 @@ impl Cat {
     }
 }
 
-#[Union(internal)]
+#[GqlUnion(internal)]
 enum CatOrDog {
     Cat(Cat),
     Dog(Dog),
@@ -93,7 +93,7 @@ enum CatOrDog {
 
 struct Human;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl Human {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -114,7 +114,7 @@ impl Human {
 
 struct Alien;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl Alien {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -129,19 +129,19 @@ impl Alien {
     }
 }
 
-#[Union(internal)]
+#[GqlUnion(internal)]
 enum DogOrHuman {
     Dog(Dog),
     Human(Human),
 }
 
-#[Union(internal)]
+#[GqlUnion(internal)]
 enum HumanOrAlien {
     Human(Human),
     Alien(Alien),
 }
 
-#[Interface(
+#[GqlInterface(
     internal,
     field(
         name = "name",
@@ -156,7 +156,7 @@ enum Being {
     Alien(Alien),
 }
 
-#[Interface(
+#[GqlInterface(
     internal,
     field(
         name = "name",
@@ -169,7 +169,7 @@ enum Pet {
     Cat(Cat),
 }
 
-#[Interface(
+#[GqlInterface(
     internal,
     field(
         name = "name",
@@ -181,13 +181,13 @@ enum Canine {
     Dog(Dog),
 }
 
-#[Interface(internal, field(name = "iq", type = "Option<i32>"))]
+#[GqlInterface(internal, field(name = "iq", type = "Option<i32>"))]
 enum Intelligent {
     Human(Human),
     Alien(Alien),
 }
 
-#[InputObject(internal)]
+#[GqlInputObject(internal)]
 struct ComplexInput {
     required_field: bool,
     int_field: Option<i32>,
@@ -198,7 +198,7 @@ struct ComplexInput {
 
 struct ComplicatedArgs;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl ComplicatedArgs {
     async fn int_arg_field(&self, int_arg: Option<i32>) -> Option<String> {
         unimplemented!()
@@ -224,7 +224,7 @@ impl ComplicatedArgs {
         unimplemented!()
     }
 
-    async fn id_arg_field(&self, id_arg: Option<ID>) -> Option<String> {
+    async fn id_arg_field(&self, id_arg: Option<GqlID>) -> Option<String> {
         unimplemented!()
     }
 
@@ -264,9 +264,9 @@ impl ComplicatedArgs {
 
 pub struct QueryRoot;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl QueryRoot {
-    async fn human(&self, id: Option<ID>) -> Option<Human> {
+    async fn human(&self, id: Option<GqlID>) -> Option<Human> {
         unimplemented!()
     }
 
@@ -313,7 +313,7 @@ impl QueryRoot {
 
 pub struct MutationRoot;
 
-#[Object(internal)]
+#[GqlObject(internal)]
 impl MutationRoot {
     async fn test_input(
         &self,
@@ -325,7 +325,7 @@ impl MutationRoot {
 
 pub struct SubscriptionRoot;
 
-#[Subscription(internal)]
+#[GqlSubscription(internal)]
 impl SubscriptionRoot {}
 
 pub fn expect_passes_rule<'a, V, F>(factory: F, query_source: &str)
@@ -362,7 +362,7 @@ pub fn validate<'a, Query, Mutation, Subscription, V, F>(
     subscription: Subscription,
     factory: F,
     query_source: &str,
-) -> Result<()>
+) -> GqlResult<()>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -370,7 +370,7 @@ where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    let schema = Schema::new(query, mutation, subscription);
+    let schema = GqlSchema::new(query, mutation, subscription);
     let registry = &schema.0.registry;
     let doc = parse_query(query_source).expect("Parse error");
     let mut ctx = VisitorContext::new(
@@ -382,7 +382,7 @@ where
         ::std::mem::transmute(&doc)
     });
     if !ctx.errors.is_empty() {
-        return Err(Error::Rule { errors: ctx.errors });
+        return Err(GqlError::Rule { errors: ctx.errors });
     }
     Ok(())
 }
@@ -401,7 +401,7 @@ pub fn expect_passes_rule_with_schema<'a, Query, Mutation, Subscription, V, F>(
     F: Fn() -> V,
 {
     if let Err(err) = validate(query, mutation, subscription, factory, query_source) {
-        if let Error::Rule { errors } = err {
+        if let GqlError::Rule { errors } = err {
             for err in errors {
                 if let Some(position) = err.locations.first() {
                     print!("[{}:{}] ", position.line, position.column);

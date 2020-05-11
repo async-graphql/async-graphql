@@ -1,23 +1,24 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, WebSocketTransport};
 use futures::{SinkExt, Stream, StreamExt};
 
 #[async_std::test]
 pub async fn test_subscription_ws_transport() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(0..10)
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
 
     sink.send(
@@ -70,14 +71,14 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+        async fn values(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<impl Stream<Item = i32>> {
             if ctx.data::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
@@ -85,7 +86,7 @@ pub async fn test_subscription_ws_transport_with_token() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::new(|value| {
         #[derive(serde_derive::Deserialize)]
@@ -94,7 +95,7 @@ pub async fn test_subscription_ws_transport_with_token() {
         }
 
         let payload: Payload = serde_json::from_value(value).unwrap();
-        let mut data = Data::default();
+        let mut data = GqlData::default();
         data.insert(Token(payload.token));
         Ok(data)
     }));
@@ -151,9 +152,9 @@ pub async fn test_subscription_ws_transport_error() {
         value: i32,
     }
 
-    #[Object]
+    #[GqlObject]
     impl Event {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> GqlFieldResult<i32> {
             if self.value < 5 {
                 Ok(self.value)
             } else {
@@ -162,22 +163,22 @@ pub async fn test_subscription_ws_transport_error() {
         }
     }
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
             futures::stream::iter((0..10).map(|n| Event { value: n }))
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     let (mut sink, mut stream) =
-        schema.subscription_connection(WebSocketTransport::new(|_| Ok(Data::default())));
+        schema.subscription_connection(WebSocketTransport::new(|_| Ok(GqlData::default())));
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({

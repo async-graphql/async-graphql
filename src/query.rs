@@ -1,4 +1,4 @@
-use crate::context::{Data, ResolveId};
+use crate::context::{GqlData, ResolveId};
 use crate::error::ParseRequestError;
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::ast::{
@@ -8,8 +8,8 @@ use crate::parser::parse_query;
 use crate::registry::CacheControl;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    do_resolve, ContextBase, Error, ObjectType, Pos, Positioned, QueryError, Result, Schema,
-    Variables,
+    do_resolve, GqlContextBase, GqlError, GqlResult, GqlSchema, GqlVariables, ObjectType, Pos,
+    Positioned, QueryError,
 };
 use itertools::Itertools;
 use std::any::Any;
@@ -18,9 +18,9 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
 
-/// IntoQueryBuilder options
+/// IntoGqlQueryBuilder options
 #[derive(Default, Clone)]
-pub struct IntoQueryBuilderOpts {
+pub struct IntoGqlQueryBuilderOpts {
     /// A temporary path to store the contents of all files.
     ///
     /// If None, the system temporary path is used.
@@ -35,15 +35,15 @@ pub struct IntoQueryBuilderOpts {
 
 #[allow(missing_docs)]
 #[async_trait::async_trait]
-pub trait IntoQueryBuilder: Sized {
-    async fn into_query_builder(self) -> std::result::Result<QueryBuilder, ParseRequestError> {
+pub trait IntoGqlQueryBuilder: Sized {
+    async fn into_query_builder(self) -> Result<GqlQueryBuilder, ParseRequestError> {
         self.into_query_builder_opts(&Default::default()).await
     }
 
     async fn into_query_builder_opts(
         self,
-        opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<QueryBuilder, ParseRequestError>;
+        opts: &IntoGqlQueryBuilderOpts,
+    ) -> std::result::Result<GqlQueryBuilder, ParseRequestError>;
 }
 
 /// Query response
@@ -60,17 +60,17 @@ pub struct QueryResponse {
 }
 
 /// Query builder
-pub struct QueryBuilder {
+pub struct GqlQueryBuilder {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
-    pub(crate) variables: Variables,
-    pub(crate) ctx_data: Option<Data>,
+    pub(crate) variables: GqlVariables,
+    pub(crate) ctx_data: Option<GqlData>,
 }
 
-impl QueryBuilder {
+impl GqlQueryBuilder {
     /// Create query builder with query source.
-    pub fn new<T: Into<String>>(query_source: T) -> QueryBuilder {
-        QueryBuilder {
+    pub fn new<T: Into<String>>(query_source: T) -> GqlQueryBuilder {
+        GqlQueryBuilder {
             query_source: query_source.into(),
             operation_name: None,
             variables: Default::default(),
@@ -80,25 +80,25 @@ impl QueryBuilder {
 
     /// Specify the operation name.
     pub fn operator_name<T: Into<String>>(self, name: T) -> Self {
-        QueryBuilder {
+        GqlQueryBuilder {
             operation_name: Some(name.into()),
             ..self
         }
     }
 
     /// Specify the variables.
-    pub fn variables(self, variables: Variables) -> Self {
-        QueryBuilder { variables, ..self }
+    pub fn variables(self, variables: GqlVariables) -> Self {
+        GqlQueryBuilder { variables, ..self }
     }
 
-    /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
+    /// Add a context data that can be accessed in the `GqlContext`, you access it with `GqlContext::data`.
     ///
     /// **This data is only valid for this query**
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         if let Some(ctx_data) = &mut self.ctx_data {
             ctx_data.insert(data);
         } else {
-            let mut ctx_data = Data::default();
+            let mut ctx_data = GqlData::default();
             ctx_data.insert(data);
             self.ctx_data = Some(ctx_data);
         }
@@ -120,8 +120,8 @@ impl QueryBuilder {
     /// Execute the query.
     pub async fn execute<Query, Mutation, Subscription>(
         self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Result<QueryResponse>
+        schema: &GqlSchema<Query, Mutation, Subscription>,
+    ) -> GqlResult<QueryResponse>
     where
         Query: ObjectType + Send + Sync,
         Mutation: ObjectType + Send + Sync,
@@ -138,7 +138,7 @@ impl QueryBuilder {
         extensions
             .iter()
             .for_each(|e| e.parse_start(&self.query_source));
-        let document = parse_query(&self.query_source).map_err(Into::<Error>::into)?;
+        let document = parse_query(&self.query_source).map_err(Into::<GqlError>::into)?;
         extensions.iter().for_each(|e| e.parse_end());
 
         // check rules
@@ -168,7 +168,7 @@ impl QueryBuilder {
         let mut fragments = HashMap::new();
         let (selection_set, variable_definitions, is_query) =
             current_operation(&document, self.operation_name.as_deref()).ok_or_else(|| {
-                Error::Query {
+                GqlError::Query {
                     pos: Pos::default(),
                     path: None,
                     err: QueryError::MissingOperation,
@@ -181,7 +181,7 @@ impl QueryBuilder {
             }
         }
 
-        let ctx = ContextBase {
+        let ctx = GqlContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,

@@ -1,21 +1,22 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_union_simple_object() {
-    #[async_graphql::SimpleObject]
+    #[GqlSimpleObject]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -33,7 +34,7 @@ pub async fn test_union_simple_object() {
                 }
             }
         }"#;
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({
@@ -46,21 +47,21 @@ pub async fn test_union_simple_object() {
 
 #[async_std::test]
 pub async fn test_union_simple_object2() {
-    #[async_graphql::SimpleObject]
+    #[GqlSimpleObject]
     struct MyObj {
         #[field(ref)]
         id: i32,
         title: String,
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -78,7 +79,7 @@ pub async fn test_union_simple_object2() {
                 }
             }
         }"#;
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({
@@ -93,7 +94,7 @@ pub async fn test_union_simple_object2() {
 pub async fn test_multiple_unions() {
     struct MyObj;
 
-    #[async_graphql::Object]
+    #[GqlObject]
     impl MyObj {
         async fn value_a(&self) -> i32 {
             1
@@ -108,19 +109,19 @@ pub async fn test_multiple_unions() {
         }
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum UnionA {
         MyObj(MyObj),
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum UnionB {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn union_a(&self) -> UnionA {
             MyObj.into()
@@ -130,7 +131,7 @@ pub async fn test_multiple_unions() {
         }
     }
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .register_type::<UnionA>() // `UnionA` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
@@ -170,7 +171,7 @@ pub async fn test_multiple_unions() {
 pub async fn test_multiple_objects_in_multiple_unions() {
     struct MyObjOne;
 
-    #[async_graphql::Object]
+    #[GqlObject]
     impl MyObjOne {
         async fn value_a(&self) -> i32 {
             1
@@ -187,34 +188,34 @@ pub async fn test_multiple_objects_in_multiple_unions() {
 
     struct MyObjTwo;
 
-    #[async_graphql::Object]
+    #[GqlObject]
     impl MyObjTwo {
         async fn value_a(&self) -> i32 {
             1
         }
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum UnionA {
         MyObjOne(MyObjOne),
         MyObjTwo(MyObjTwo),
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum UnionB {
         MyObjOne(MyObjOne),
     }
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn my_obj(&self) -> Vec<UnionA> {
             vec![MyObjOne.into(), MyObjTwo.into()]
         }
     }
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    let schema = GqlSchema::build(Query, EmptyMutation, EmptySubscription)
         .register_type::<UnionB>() // `UnionB` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
@@ -247,21 +248,21 @@ pub async fn test_multiple_objects_in_multiple_unions() {
 pub async fn test_union_field_result() {
     struct MyObj;
 
-    #[async_graphql::Object]
+    #[GqlObject]
     impl MyObj {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> GqlFieldResult<i32> {
             Ok(10)
         }
     }
 
-    #[async_graphql::Union]
+    #[GqlUnion]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj.into()
@@ -275,7 +276,7 @@ pub async fn test_union_field_result() {
                 }
             }
         }"#;
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({

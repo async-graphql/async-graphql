@@ -1,9 +1,9 @@
 # 错误处理
 
-Resolve函数可以返回一个FieldResult类型，以下是FieldResult的定义：
+Resolve函数可以返回一个GqlFieldResult类型，以下是GqlFieldResult的定义：
 
 ```rust
-type FieldResult<T> = std::result::Result<T, FieldError>;
+type GqlFieldResult<T> = std::result::Result<T, FieldError>;
 ```
 
 任何错误都能够被转换为`FieldError`，并且你还能扩展标准的错误信息。
@@ -15,10 +15,10 @@ use async_graphql::*;
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     #[field]
-    async fn parse_with_extensions(&self, input: String) -> FieldResult<i32> {
+    async fn parse_with_extensions(&self, input: String) -> GqlFieldResult<i32> {
         Ok("234a"
             .parse()
             .map_err(|err| err.extend_with(|_| json!({"code": 400})))?)

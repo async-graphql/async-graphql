@@ -1,10 +1,10 @@
 #![allow(missing_docs)]
 
 use crate::types::connection::cursor::Cursor;
-use async_graphql_derive::SimpleObject;
+use async_graphql_derive::GqlSimpleObject;
 
 /// Information about pagination in a connection
-#[SimpleObject(internal, desc = "Information about pagination in a connection.")]
+#[GqlSimpleObject(internal, desc = "Information about pagination in a connection.")]
 pub struct PageInfo {
     #[field(desc = "When paginating backwards, are there more items?")]
     pub has_previous_page: bool,

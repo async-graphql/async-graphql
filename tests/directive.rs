@@ -1,17 +1,18 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_directive_skip() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {
         pub async fn value(&self) -> i32 {
             10
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let resp = schema
         .execute(
             r#"
@@ -35,14 +36,14 @@ pub async fn test_directive_skip() {
 pub async fn test_directive_include() {
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {
         pub async fn value(&self) -> i32 {
             10
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let resp = schema
         .execute(
             r#"

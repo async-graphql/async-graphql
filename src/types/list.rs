@@ -1,6 +1,6 @@
 use crate::{
-    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Pos, Result,
-    Type, Value,
+    registry, GqlContextSelectionSet, GqlInputValueResult, GqlResult, GqlValue, InputValueType,
+    OutputValueType, Pos, Type,
 };
 use std::borrow::Cow;
 
@@ -20,9 +20,9 @@ impl<T: Type> Type for Vec<T> {
 }
 
 impl<T: InputValueType> InputValueType for Vec<T> {
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         match value {
-            Value::List(values) => {
+            GqlValue::List(values) => {
                 let mut result = Vec::new();
                 for elem_value in values {
                     result.push(InputValueType::parse(elem_value)?);
@@ -37,7 +37,11 @@ impl<T: InputValueType> InputValueType for Vec<T> {
 #[allow(clippy::ptr_arg)]
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         let mut futures = Vec::with_capacity(self.len());
         for (idx, item) in self.iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
@@ -59,7 +63,11 @@ impl<T: Type> Type for &[T] {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         let mut futures = Vec::with_capacity(self.len());
         for (idx, item) in (*self).iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);

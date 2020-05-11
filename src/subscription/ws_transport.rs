@@ -1,8 +1,7 @@
-use crate::context::Data;
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    FieldError, FieldResult, ObjectType, QueryResponse, Result, Schema, SubscriptionStreams,
-    SubscriptionTransport, SubscriptionType, Variables,
+    FieldError, GqlData, GqlFieldResult, GqlResult, GqlSchema, GqlVariables, ObjectType,
+    QueryResponse, SubscriptionStreams, SubscriptionTransport, SubscriptionType,
 };
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -25,13 +24,14 @@ struct OperationMessage {
 pub struct WebSocketTransport {
     id_to_sid: HashMap<String, usize>,
     sid_to_id: HashMap<usize, String>,
-    data: Arc<Data>,
-    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
+    data: Arc<GqlData>,
+    init_context_data:
+        Option<Box<dyn Fn(serde_json::Value) -> GqlFieldResult<GqlData> + Send + Sync>>,
 }
 
 impl WebSocketTransport {
-    /// Creates a websocket transport and sets the function that converts the `payload` of the `connect_init` message to `Data`.
-    pub fn new<F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static>(
+    /// Creates a websocket transport and sets the function that converts the `payload` of the `connect_init` message to `GqlData`.
+    pub fn new<F: Fn(serde_json::Value) -> GqlFieldResult<GqlData> + Send + Sync + 'static>(
         init_context_data: F,
     ) -> Self {
         WebSocketTransport {
@@ -47,7 +47,7 @@ impl SubscriptionTransport for WebSocketTransport {
 
     async fn handle_request<Query, Mutation, Subscription>(
         &mut self,
-        schema: &Schema<Query, Mutation, Subscription>,
+        schema: &GqlSchema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
@@ -79,7 +79,7 @@ impl SubscriptionTransport for WebSocketTransport {
                         if let Ok(request) = serde_json::from_value::<GQLRequest>(payload) {
                             let variables = request
                                 .variables
-                                .map(|value| Variables::parse_from_json(value).ok())
+                                .map(|value| GqlVariables::parse_from_json(value).ok())
                                 .flatten()
                                 .unwrap_or_default();
                             match schema
@@ -132,7 +132,7 @@ impl SubscriptionTransport for WebSocketTransport {
         }
     }
 
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes> {
+    fn handle_response(&mut self, id: usize, res: GqlResult<serde_json::Value>) -> Option<Bytes> {
         if let Some(id) = self.sid_to_id.get(&id) {
             match res {
                 Ok(value) => Some(

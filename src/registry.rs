@@ -1,6 +1,6 @@
 use crate::parser::ast::Type as ParsedType;
 use crate::validators::InputValueValidator;
-use crate::{model, Any, Type as _, Value};
+use crate::{model, Any, GqlValue, Type as _};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
@@ -121,11 +121,12 @@ pub struct EnumValue {
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription, CacheControl};
 ///
 /// struct QueryRoot;
 ///
-/// #[Object(cache_control(max_age = 60))]
+/// #[GqlObject(cache_control(max_age = 60))]
 /// impl QueryRoot {
 ///     #[field(cache_control(max_age = 30))]
 ///     async fn value1(&self) -> i32 {
@@ -140,7 +141,7 @@ pub struct EnumValue {
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     assert_eq!(schema.execute("{ value1 }").await.unwrap().cache_control, CacheControl { public: true, max_age: 30 });
 ///     assert_eq!(schema.execute("{ value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 60 });
 ///     assert_eq!(schema.execute("{ value1 value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 30 });
@@ -196,7 +197,7 @@ pub enum Type {
     Scalar {
         name: String,
         description: Option<&'static str>,
-        is_valid: fn(value: &Value) -> bool,
+        is_valid: fn(value: &GqlValue) -> bool,
     },
     Object {
         name: String,

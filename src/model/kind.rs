@@ -1,7 +1,7 @@
-use async_graphql_derive::Enum;
+use async_graphql_derive::GqlEnum;
 
 /// An enum describing what kind of type a given `__Type` is.
-#[Enum(internal)]
+#[GqlEnum(internal)]
 pub enum __TypeKind {
     /// Indicates this type is a scalar.
     Scalar,

@@ -1,8 +1,8 @@
 use crate::parser::Pos;
 use crate::registry::Registry;
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
-    Result, Value, ID,
+    registry, GqlContext, GqlContextSelectionSet, GqlFieldResult, GqlID, GqlInputValueResult,
+    GqlResult, GqlValue, Positioned, QueryError,
 };
 use std::borrow::Cow;
 use std::future::Future;
@@ -32,12 +32,12 @@ pub trait Type {
     fn create_type_info(registry: &mut registry::Registry) -> String;
 
     /// Returns a `GlobalID` that is unique among all types.
-    fn global_id(id: ID) -> ID {
+    fn global_id(id: GqlID) -> GqlID {
         base64::encode(format!("{}:{}", Self::type_name(), *id)).into()
     }
 
     /// Parse `GlobalID`.
-    fn from_global_id(id: ID) -> Option<ID> {
+    fn from_global_id(id: GqlID) -> Option<GqlID> {
         let v: Vec<&str> = id.splitn(2, ':').collect();
         if v.len() != 2 {
             return None;
@@ -52,19 +52,23 @@ pub trait Type {
 /// Represents a GraphQL input value
 pub trait InputValueType: Type + Sized {
     /// Parse from `Value`
-    fn parse(value: Value) -> InputValueResult<Self>;
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self>;
 }
 
 /// Represents a GraphQL output value
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value>;
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value>;
 }
 
 #[allow(missing_docs)]
 pub type BoxFieldFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
+    Pin<Box<dyn Future<Output = GqlResult<(String, serde_json::Value)>> + 'a + Send>>;
 
 /// Represents a GraphQL object
 #[async_trait::async_trait]
@@ -76,15 +80,15 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value>;
+    async fn resolve_field(&self, ctx: &GqlContext<'_>) -> GqlResult<serde_json::Value>;
 
     /// Collect the fields with the `name` inline object
     fn collect_inline_fields<'a>(
         &'a self,
         name: &Positioned<String>,
-        ctx: &ContextSelectionSet<'a>,
+        ctx: &GqlContextSelectionSet<'a>,
         futures: &mut Vec<BoxFieldFuture<'a>>,
-    ) -> Result<()>
+    ) -> GqlResult<()>
     where
         Self: Send + Sync + Sized,
     {
@@ -103,7 +107,11 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Query entities with params
-    async fn find_entity(&self, ctx: &Context<'_>, _params: &Value) -> Result<serde_json::Value> {
+    async fn find_entity(
+        &self,
+        ctx: &GqlContext<'_>,
+        _params: &GqlValue,
+    ) -> GqlResult<serde_json::Value> {
         Err(QueryError::EntityNotFound.into_error(ctx.position()))
     }
 }
@@ -118,25 +126,26 @@ pub trait InputObjectType: InputValueType {}
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{InputValueError, GqlInputValueResult, ScalarType};
 ///
 /// struct MyInt(i32);
 ///
-/// #[Scalar]
+/// #[GqlScalar]
 /// impl ScalarType for MyInt {
 ///     fn type_name() -> &'static str {
 ///         "MyInt"
 ///     }
 ///
-///     fn parse(value: Value) -> InputValueResult<Self> {
-///         if let Value::Int(n) = value {
+///     fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
+///         if let GqlValue::Int(n) = value {
 ///             Ok(MyInt(n as i32))
 ///         } else {
 ///             Err(InputValueError::ExpectedType(value))
 ///         }
 ///     }
 ///
-///     fn to_json(&self) -> Result<serde_json::Value> {
+///     fn to_json(&self) -> GqlResult<serde_json::Value> {
 ///         Ok(self.0.into())
 ///     }
 /// }
@@ -151,17 +160,17 @@ pub trait ScalarType: Sized + Send {
     }
 
     /// Parse a scalar value, return `Some(Self)` if successful, otherwise return `None`.
-    fn parse(value: Value) -> InputValueResult<Self>;
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self>;
 
     /// Checks for a valid scalar value.
     ///
     /// Implementing this function can find incorrect input values during the verification phase, which can improve performance.
-    fn is_valid(_value: &Value) -> bool {
+    fn is_valid(_value: &GqlValue) -> bool {
         true
     }
 
     /// Convert the scalar value to json value.
-    fn to_json(&self) -> Result<serde_json::Value>;
+    fn to_json(&self) -> GqlResult<serde_json::Value>;
 }
 
 impl<T: Type + Send + Sync> Type for &T {
@@ -177,7 +186,11 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         T::resolve(*self, ctx, pos).await
     }
 }
@@ -196,7 +209,11 @@ impl<T: Type + Send + Sync> Type for Box<T> {
 impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::borrowed_box)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         T::resolve(&*self, ctx, pos).await
     }
 }
@@ -214,12 +231,16 @@ impl<T: Type + Send + Sync> Type for Arc<T> {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         T::resolve(&*self, ctx, pos).await
     }
 }
 
-impl<T: Type> Type for FieldResult<T> {
+impl<T: Type> Type for GqlFieldResult<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -234,12 +255,12 @@ impl<T: Type> Type for FieldResult<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
+impl<T: OutputValueType + Sync> OutputValueType for GqlFieldResult<T> {
     async fn resolve(
         &self,
-        ctx: &ContextSelectionSet<'_>,
+        ctx: &GqlContextSelectionSet<'_>,
         pos: Pos,
-    ) -> crate::Result<serde_json::Value> {
+    ) -> crate::GqlResult<serde_json::Value> {
         match self {
             Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
             Err(err) => Err(err.clone().into_error_with_path(

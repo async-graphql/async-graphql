@@ -1,5 +1,5 @@
 use crate::validators::InputValueValidator;
-use crate::Value;
+use crate::GqlValue;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -10,8 +10,8 @@ pub struct StringMinLength {
 }
 
 impl InputValueValidator for StringMinLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::String(s) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::String(s) = value {
             if s.len() < self.length {
                 Some(format!(
                     "the value length is {}, but the length must be greater than or equal to {}",
@@ -34,8 +34,8 @@ pub struct StringMaxLength {
 }
 
 impl InputValueValidator for StringMaxLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::String(s) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::String(s) = value {
             if s.len() > self.length {
                 Some(format!(
                     "the value length is {}, but the length must be less than or equal to {}",
@@ -59,8 +59,8 @@ static EMAIL_RE: Lazy<Regex> = Lazy::new(|| {
 pub struct Email {}
 
 impl InputValueValidator for Email {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::String(s) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::String(s) = value {
             if !EMAIL_RE.is_match(s) {
                 Some("invalid email format".to_string())
             } else {
@@ -84,8 +84,8 @@ pub struct MAC {
 }
 
 impl InputValueValidator for MAC {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if let Value::String(s) = value {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
+        if let GqlValue::String(s) = value {
             if self.colon {
                 if !MAC_ADDRESS_RE.is_match(s) {
                     Some("invalid email format".to_string())

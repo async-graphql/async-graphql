@@ -1,21 +1,21 @@
 use crate::http::multipart::{Multipart, PartData};
 use crate::http::GQLRequest;
-use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
-use crate::{ParseRequestError, QueryBuilder};
+use crate::query::{IntoGqlQueryBuilder, IntoGqlQueryBuilderOpts};
+use crate::{GqlQueryBuilder, ParseRequestError};
 use futures::{AsyncRead, AsyncReadExt};
 use mime::Mime;
 use std::collections::HashMap;
 
 #[async_trait::async_trait]
-impl<CT, Body> IntoQueryBuilder for (Option<CT>, Body)
+impl<CT, Body> IntoGqlQueryBuilder for (Option<CT>, Body)
 where
     CT: AsRef<str> + Send,
     Body: AsyncRead + Send + Unpin,
 {
     async fn into_query_builder_opts(
         mut self,
-        opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
+        opts: &IntoGqlQueryBuilderOpts,
+    ) -> std::result::Result<GqlQueryBuilder, ParseRequestError> {
         if let Some(boundary) = self
             .0
             .and_then(|value| value.as_ref().parse::<Mime>().ok())

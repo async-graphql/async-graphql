@@ -4,7 +4,7 @@ mod int_validators;
 mod list_validators;
 mod string_validators;
 
-use crate::Value;
+use crate::GqlValue;
 
 pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
 pub use list_validators::{ListMaxLength, ListMinLength};
@@ -15,12 +15,12 @@ pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 /// You can create your own input value validator by implementing this trait.
 ///
 /// ```no_run
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
 /// use async_graphql::validators::{Email, MAC, IntRange};
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     // Input is email address
 ///     async fn value1(&self, #[arg(validator(Email))] email: String) -> i32 {
@@ -45,7 +45,7 @@ where
     /// Check value is valid, returns the reason for the error if it fails, otherwise None.
     ///
     /// If the input type is different from the required type, return None directly, and other validators will find this error.
-    fn is_valid(&self, value: &Value) -> Option<String>;
+    fn is_valid(&self, value: &GqlValue) -> Option<String>;
 }
 
 /// An extension trait for `InputValueValidator`
@@ -76,7 +76,7 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
         self.0.is_valid(value).and(self.1.is_valid(value))
     }
 }
@@ -89,7 +89,7 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
         self.0.is_valid(value).or_else(|| self.1.is_valid(value))
     }
 }
@@ -102,7 +102,7 @@ where
     I: InputValueValidator,
     F: Fn(String) -> String + Send + Sync,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &GqlValue) -> Option<String> {
         self.0.is_valid(value).map(&self.1)
     }
 }

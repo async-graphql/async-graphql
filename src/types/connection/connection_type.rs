@@ -2,8 +2,8 @@ use crate::types::connection::cursor::Cursor;
 use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
-    OutputValueType, Pos, QueryError, Result, Type,
+    do_resolve, registry, EmptyEdgeFields, GqlContext, GqlContextSelectionSet, GqlError, GqlResult,
+    ObjectType, OutputValueType, Pos, QueryError, Type,
 };
 use inflector::Inflector;
 use itertools::Itertools;
@@ -176,7 +176,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     for Connection<T, E>
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &GqlContext<'_>) -> GqlResult<serde_json::Value> {
         if ctx.name.as_str() == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.position())
@@ -194,7 +194,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
             return OutputValueType::resolve(&items, &ctx_obj, ctx.position()).await;
         }
 
-        Err(Error::Query {
+        Err(GqlError::Query {
             pos: ctx.position(),
             path: None,
             err: QueryError::FieldNotFound {
@@ -209,7 +209,11 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
     for Connection<T, E>
 {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         do_resolve(ctx, self).await
     }
 }

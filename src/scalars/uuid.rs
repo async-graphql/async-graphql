@@ -1,21 +1,21 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GqlInputValueResult, GqlResult, GqlValue, InputValueError, ScalarType};
+use async_graphql_derive::GqlScalar;
 use uuid::Uuid;
 
-#[Scalar(internal)]
+#[GqlScalar(internal)]
 impl ScalarType for Uuid {
     fn type_name() -> &'static str {
         "UUID"
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Uuid::parse_str(&s)?),
+            GqlValue::String(s) => Ok(Uuid::parse_str(&s)?),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(self.to_string().into())
     }
 }

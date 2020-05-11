@@ -12,14 +12,14 @@ use async_graphql::*;
 
 struct StringNumber(i64);
 
-#[Scalar]
+#[GqlScalar]
 impl ScalarType for StringNumber {
     fn type_name() -> &'static str {
         // 类型名
         "StringNumber"
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: Value) -> GqlInputValueResult<Self> {
         if let Value::String(value) = value {
             // 解析整数
             value.parse().map(StringNumber)?

@@ -1,9 +1,9 @@
 # Error handling
 
-Resolve can return a `FieldResult`, following is the definition:
+Resolve can return a `GqlFieldResult`, following is the definition:
 
 ```rust
-type FieldResult<T> = std::result::Result<T, FieldError>;
+type GqlFieldResult<T> = std::result::Result<T, FieldError>;
 ```
 
 Any `Error` that implements `std::fmt::Display` can be converted to `FieldError` and you can extend error message.
@@ -16,10 +16,10 @@ use async_graphql::*;
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     #[field]
-    async fn parse_with_extensions(&self, input: String) -> FieldResult<i32> {
+    async fn parse_with_extensions(&self, input: String) -> GqlFieldResult<i32> {
         Ok("234a"
             .parse()
             .map_err(|err| err.extend_with(|_| json!({"code": 400})))?)

@@ -4,7 +4,7 @@ mod edge;
 mod page_info;
 mod slice;
 
-use crate::{Context, FieldResult, ObjectType};
+use crate::{GqlContext, GqlFieldResult, ObjectType};
 
 pub use connection_type::Connection;
 pub use cursor::Cursor;
@@ -92,7 +92,7 @@ pub enum QueryOperation {
 }
 
 /// Empty edge extension object
-#[async_graphql_derive::SimpleObject(internal)]
+#[async_graphql_derive::GqlSimpleObject(internal)]
 pub struct EmptyEdgeFields;
 
 // Temporary struct for to store values for pattern matching
@@ -113,24 +113,26 @@ struct Pagination {
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{Connection, Cursor, DataSource, GqlDataSource, QueryOperation};
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 /// use byteorder::{ReadBytesExt, BE};
 ///
 /// struct QueryRoot;
 ///
-/// #[SimpleObject]
+/// #[GqlSimpleObject]
 /// struct DiffFields {
 ///     diff: i32,
 /// }
 ///
 /// struct Numbers;
 ///
-/// #[DataSource]
+/// #[GqlDataSource]
 /// impl DataSource for Numbers {
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+///     async fn query_operation(&self, ctx: &GqlContext<'_>, operation: &QueryOperation) -> GqlFieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::First {limit} => {
 ///                 let start = 0;
@@ -168,21 +170,21 @@ struct Pagination {
 ///     }
 /// }
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
-///     async fn numbers(&self, ctx: &Context<'_>,
+///     async fn numbers(&self, ctx: &GqlContext<'_>,
 ///         after: Option<Cursor>,
 ///         before: Option<Cursor>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> FieldResult<Connection<i32, DiffFields>> {
+///     ) -> GqlFieldResult<Connection<i32, DiffFields>> {
 ///         Numbers.query(ctx, after, before, first, last).await
 ///     }
 /// }
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
 ///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
 ///         "numbers": {
@@ -210,18 +212,18 @@ pub trait DataSource: Sync + Send {
 
     /// Fields for Edge
     ///
-    /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]`.
+    /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[GqlObject]`.
     type EdgeFieldsObj: ObjectType + Send + Sync;
 
     /// Execute the query.
     async fn query(
         &self,
-        ctx: &Context<'_>,
+        ctx: &GqlContext<'_>,
         after: Option<Cursor>,
         before: Option<Cursor>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+    ) -> GqlFieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let pagination = Pagination {
             first,
             last,
@@ -341,7 +343,7 @@ pub trait DataSource: Sync + Send {
     /// Parses the parameters and executes the query，Usually you just need to implement this method.
     async fn query_operation(
         &self,
-        ctx: &Context<'_>,
+        ctx: &GqlContext<'_>,
         operation: &QueryOperation,
-    ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>>;
+    ) -> GqlFieldResult<Connection<Self::Element, Self::EdgeFieldsObj>>;
 }

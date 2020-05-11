@@ -1,15 +1,15 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::ResolveInfo;
 use crate::parser::ast::{Selection, TypeCondition};
-use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
+use crate::{GqlContextSelectionSet, GqlError, GqlResult, ObjectType, QueryError};
 use futures::{future, TryFutureExt};
 use std::iter::FromIterator;
 
 #[allow(missing_docs)]
 pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
-    ctx: &'a ContextSelectionSet<'a>,
+    ctx: &'a GqlContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
+) -> GqlResult<serde_json::Value> {
     let mut futures = Vec::new();
     collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
@@ -19,12 +19,12 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
 
 #[allow(missing_docs)]
 pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
-    ctx: &ContextSelectionSet<'a>,
+    ctx: &GqlContextSelectionSet<'a>,
     root: &'a T,
     futures: &mut Vec<BoxFieldFuture<'a>>,
-) -> Result<()> {
+) -> GqlResult<()> {
     if ctx.items.is_empty() {
-        return Err(Error::Query {
+        return Err(GqlError::Query {
             pos: ctx.position(),
             path: None,
             err: QueryError::MustHaveSubFields {
@@ -45,7 +45,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     let ctx_field = ctx.with_field(field);
                     let field_name = ctx_field.result_name().to_string();
                     futures.push(Box::pin(
-                        future::ok::<serde_json::Value, Error>(
+                        future::ok::<serde_json::Value, GqlError>(
                             root.introspection_type_name().to_string().into(),
                         )
                         .map_ok(move |value| (field_name, value)),
@@ -73,7 +73,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                 {
                                     Some(ty) => &ty,
                                     None => {
-                                        return Err(Error::Query {
+                                        return Err(GqlError::Query {
                                             pos: field.position(),
                                             path: None,
                                             err: QueryError::FieldNotFound {
@@ -119,7 +119,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         futures,
                     )?;
                 } else {
-                    return Err(Error::Query {
+                    return Err(GqlError::Query {
                         pos: fragment_spread.position(),
                         path: None,
                         err: QueryError::UnknownFragment {

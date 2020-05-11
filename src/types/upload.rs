@@ -1,4 +1,4 @@
-use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use crate::{registry, GqlInputValueResult, GqlValue, InputValueError, InputValueType, Type};
 use async_graphql_parser::UploadValue;
 use std::borrow::Cow;
 use std::io::Read;
@@ -17,11 +17,12 @@ use std::io::Read;
 /// *[Full Example](<https://github.com/async-graphql/examples/blob/master/models/files/src/lib.rs>)*
 ///
 /// ```
+/// use async_graphql::prelude::*;
 /// use async_graphql::Upload;
 ///
 /// struct MutationRoot;
 ///
-/// #[async_graphql::Object]
+/// #[GqlObject]
 /// impl MutationRoot {
 ///     async fn upload(&self, file: Upload) -> bool {
 ///         println!("upload: filename={}", file.filename());
@@ -71,7 +72,7 @@ impl<'a> Type for Upload {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |value| match value {
-                Value::String(s) => s.starts_with("file:"),
+                GqlValue::String(s) => s.starts_with("file:"),
                 _ => false,
             },
         })
@@ -79,8 +80,8 @@ impl<'a> Type for Upload {
 }
 
 impl<'a> InputValueType for Upload {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        if let Value::Upload(upload) = value {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
+        if let GqlValue::Upload(upload) = value {
             Ok(Upload(upload))
         } else {
             Err(InputValueError::ExpectedType(value))

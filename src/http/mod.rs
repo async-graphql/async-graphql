@@ -13,9 +13,10 @@ pub use graphiql_source::graphiql_source;
 pub use playground_source::playground_source;
 pub use stream_body::StreamBody;
 
-use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
+use crate::query::{IntoGqlQueryBuilder, IntoGqlQueryBuilderOpts};
 use crate::{
-    Error, ParseRequestError, Pos, QueryBuilder, QueryError, QueryResponse, Result, Variables,
+    GqlError, GqlQueryBuilder, GqlResult, GqlVariables, ParseRequestError, Pos, QueryError,
+    QueryResponse,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -35,17 +36,17 @@ pub struct GQLRequest {
 }
 
 #[async_trait::async_trait]
-impl IntoQueryBuilder for GQLRequest {
+impl IntoGqlQueryBuilder for GQLRequest {
     async fn into_query_builder_opts(
         self,
-        _opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
-        let mut builder = QueryBuilder::new(self.query);
+        _opts: &IntoGqlQueryBuilderOpts,
+    ) -> std::result::Result<GqlQueryBuilder, ParseRequestError> {
+        let mut builder = GqlQueryBuilder::new(self.query);
         if let Some(operation_name) = self.operation_name {
             builder = builder.operator_name(operation_name);
         }
         if let Some(variables) = self.variables {
-            if let Ok(variables) = Variables::parse_from_json(variables) {
+            if let Ok(variables) = GqlVariables::parse_from_json(variables) {
                 builder = builder.variables(variables);
             }
         }
@@ -54,7 +55,7 @@ impl IntoQueryBuilder for GQLRequest {
 }
 
 /// Serializable GraphQL Response object
-pub struct GQLResponse(pub Result<QueryResponse>);
+pub struct GQLResponse(pub GqlResult<QueryResponse>);
 
 impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
@@ -80,7 +81,7 @@ impl Serialize for GQLResponse {
 }
 
 /// Serializable error type
-pub struct GQLError<'a>(pub &'a Error);
+pub struct GQLError<'a>(pub &'a GqlError);
 
 impl<'a> Serialize for GQLError<'a> {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
@@ -88,7 +89,7 @@ impl<'a> Serialize for GQLError<'a> {
         S: Serializer,
     {
         match self.0 {
-            Error::Parse(err) => {
+            GqlError::Parse(err) => {
                 let mut seq = serializer.serialize_seq(Some(1))?;
                 seq.serialize_element(&serde_json::json! ({
                     "message": err.message,
@@ -96,7 +97,7 @@ impl<'a> Serialize for GQLError<'a> {
                 }))?;
                 seq.end()
             }
-            Error::Query { pos, path, err } => {
+            GqlError::Query { pos, path, err } => {
                 let mut seq = serializer.serialize_seq(Some(1))?;
                 if let QueryError::FieldError {
                     err,
@@ -128,7 +129,7 @@ impl<'a> Serialize for GQLError<'a> {
                 }
                 seq.end()
             }
-            Error::Rule { errors } => {
+            GqlError::Rule { errors } => {
                 let mut seq = serializer.serialize_seq(Some(1))?;
                 for error in errors {
                     seq.serialize_element(&serde_json::json!({
@@ -227,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_field_error_with_extension() {
-        let err = Error::Query {
+        let err = GqlError::Query {
             pos: Pos {
                 line: 10,
                 column: 20,
@@ -259,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_response_error_with_pos() {
-        let resp = GQLResponse(Err(Error::Query {
+        let resp = GQLResponse(Err(GqlError::Query {
             pos: Pos {
                 line: 10,
                 column: 20,

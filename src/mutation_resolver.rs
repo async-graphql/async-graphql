@@ -1,29 +1,29 @@
 use crate::extensions::ResolveInfo;
 use crate::parser::ast::{Selection, TypeCondition};
-use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
+use crate::{GqlContextSelectionSet, GqlError, GqlResult, ObjectType, QueryError};
 use std::future::Future;
 use std::pin::Pin;
 
-type BoxMutationFuture<'a> = Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>;
+type BoxMutationFuture<'a> = Pin<Box<dyn Future<Output = GqlResult<()>> + Send + 'a>>;
 
 #[allow(missing_docs)]
 pub async fn do_mutation_resolve<'a, T: ObjectType + Send + Sync>(
-    ctx: &'a ContextSelectionSet<'a>,
+    ctx: &'a GqlContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
+) -> GqlResult<serde_json::Value> {
     let mut values = serde_json::Map::new();
     do_resolve(ctx, root, &mut values).await?;
     Ok(values.into())
 }
 
 fn do_resolve<'a, T: ObjectType + Send + Sync>(
-    ctx: &'a ContextSelectionSet<'a>,
+    ctx: &'a GqlContextSelectionSet<'a>,
     root: &'a T,
     values: &'a mut serde_json::Map<String, serde_json::Value>,
 ) -> BoxMutationFuture<'a> {
     Box::pin(async move {
         if ctx.items.is_empty() {
-            return Err(Error::Query {
+            return Err(GqlError::Query {
                 pos: ctx.position(),
                 path: None,
                 err: QueryError::MustHaveSubFields {
@@ -64,7 +64,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             {
                                 Some(ty) => &ty,
                                 None => {
-                                    return Err(Error::Query {
+                                    return Err(GqlError::Query {
                                         pos: field.position(),
                                         path: None,
                                         err: QueryError::FieldNotFound {
@@ -107,7 +107,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         )
                         .await?;
                     } else {
-                        return Err(Error::Query {
+                        return Err(GqlError::Query {
                             pos: fragment_spread.position(),
                             path: None,
                             err: QueryError::UnknownFragment {

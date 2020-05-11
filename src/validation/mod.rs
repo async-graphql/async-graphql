@@ -9,7 +9,7 @@ mod test_harness;
 
 use crate::parser::ast::Document;
 use crate::registry::Registry;
-use crate::{CacheControl, Error, Result};
+use crate::{CacheControl, GqlError, GqlResult};
 use visitor::{visit, VisitorContext, VisitorNil};
 
 pub struct CheckResult {
@@ -32,7 +32,7 @@ pub fn check_rules(
     registry: &Registry,
     doc: &Document,
     mode: ValidationMode,
-) -> Result<CheckResult> {
+) -> GqlResult<CheckResult> {
     let mut ctx = VisitorContext::new(registry, doc);
     let mut cache_control = CacheControl::default();
     let mut complexity = 0;
@@ -90,7 +90,7 @@ pub fn check_rules(
     }
 
     if !ctx.errors.is_empty() {
-        return Err(Error::Rule { errors: ctx.errors });
+        return Err(GqlError::Rule { errors: ctx.errors });
     }
     Ok(CheckResult {
         cache_control,

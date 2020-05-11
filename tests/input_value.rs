@@ -1,21 +1,22 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription, Pos, QueryError};
 
 #[async_std::test]
 pub async fn test_input_value_custom_error() {
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         async fn parse_int(&self, _n: i64) -> bool {
             true
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
     let query = r#"{ parseInt(n:"A") }"#;
     assert_eq!(
         schema.execute(&query).await.unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos {
                 line: 1,
                 column: 14

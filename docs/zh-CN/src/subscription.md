@@ -9,7 +9,7 @@ use async_graphql::*;
 
 struct Subscription;
 
-#[Subscription]
+#[GqlSubscription]
 impl Subscription {
     async fn integers(&self, #[arg(default = "1")] step: i32) -> impl Stream<Item = i32> {
         let mut value = 0;

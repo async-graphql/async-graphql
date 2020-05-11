@@ -91,7 +91,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             });
         } else {
             get_fields.push(quote! {
-                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).cloned().unwrap_or(#crate_name::Value::Null))?;
+                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).cloned().unwrap_or(#crate_name::GqlValue::Null))?;
             });
         }
 
@@ -129,10 +129,10 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         }
 
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: #crate_name::GqlValue) -> #crate_name::GqlInputValueResult<Self> {
                 use #crate_name::Type;
 
-                if let #crate_name::Value::Object(obj) = &value {
+                if let #crate_name::GqlValue::Object(obj) = &value {
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })
                 } else {

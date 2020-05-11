@@ -1,5 +1,5 @@
-use async_graphql::guard::Guard;
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{guard::Guard, EmptyMutation, EmptySubscription, Pos, QueryError};
 use futures::{Stream, StreamExt};
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ struct RoleGuard {
 
 #[async_trait::async_trait]
 impl Guard for RoleGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<()> {
         if ctx.data_opt::<Role>() == Some(&self.role) {
             Ok(())
         } else {
@@ -32,7 +32,7 @@ struct UserGuard {
 
 #[async_trait::async_trait]
 impl Guard for UserGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<()> {
         if ctx.data_opt::<Username>().map(|name| &name.0).as_deref() == Some(&self.username) {
             Ok(())
         } else {
@@ -43,7 +43,7 @@ impl Guard for UserGuard {
 
 #[async_std::test]
 pub async fn test_guard() {
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct MyObj {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         value: i32,
@@ -51,7 +51,7 @@ pub async fn test_guard() {
 
     struct Query;
 
-    #[Object]
+    #[GqlObject]
     impl Query {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         async fn value(&self) -> i32 {
@@ -70,7 +70,7 @@ pub async fn test_guard() {
 
     struct Subscription;
 
-    #[Subscription]
+    #[GqlSubscription]
     impl Subscription {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         async fn values(&self) -> impl Stream<Item = i32> {
@@ -78,11 +78,11 @@ pub async fn test_guard() {
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, Subscription);
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Admin)
             .execute(&schema)
             .await
@@ -95,12 +95,12 @@ pub async fn test_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Guest)
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 9 },
             path: Some(serde_json::json!(["obj", "value"])),
             err: QueryError::FieldError {
@@ -112,7 +112,7 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Admin)
             .execute(&schema)
             .await
@@ -125,12 +125,12 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Guest)
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["value"])),
             err: QueryError::FieldError {
@@ -145,9 +145,9 @@ pub async fn test_guard() {
             .create_subscription_stream(
                 "subscription { values }",
                 None,
-                Variables::default(),
+                GqlVariables::default(),
                 Some(Arc::new({
-                    let mut data = Data::default();
+                    let mut data = GqlData::default();
                     data.insert(Role::Admin);
                     data
                 })),
@@ -168,9 +168,9 @@ pub async fn test_guard() {
             .create_subscription_stream(
                 "subscription { values }",
                 None,
-                Variables::default(),
+                GqlVariables::default(),
                 Some(Arc::new({
-                    let mut data = Data::default();
+                    let mut data = GqlData::default();
                     data.insert(Role::Guest);
                     data
                 })),
@@ -178,7 +178,7 @@ pub async fn test_guard() {
             .await
             .err()
             .unwrap(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos {
                 line: 1,
                 column: 16
@@ -200,7 +200,7 @@ pub async fn test_guard() {
             }
         }"#;
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Admin)
             .execute(&schema)
             .await
@@ -222,12 +222,12 @@ pub async fn test_guard() {
             }
         }"#;
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Guest)
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos {
                 line: 2,
                 column: 13
@@ -243,17 +243,17 @@ pub async fn test_guard() {
 
 #[async_std::test]
 pub async fn test_multiple_guards() {
-    #[SimpleObject]
+    #[GqlSimpleObject]
     struct Query {
         #[field(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
         value: i32,
     }
 
-    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Admin)
             .data(Username("test".to_string()))
             .execute(&schema)
@@ -265,13 +265,13 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Guest)
             .data(Username("test".to_string()))
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["value"])),
             err: QueryError::FieldError {
@@ -283,13 +283,13 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Admin)
             .data(Username("test1".to_string()))
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["value"])),
             err: QueryError::FieldError {
@@ -301,13 +301,13 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
+        GqlQueryBuilder::new(query)
             .data(Role::Guest)
             .data(Username("test1".to_string()))
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["value"])),
             err: QueryError::FieldError {
@@ -321,13 +321,13 @@ pub async fn test_multiple_guards() {
 #[async_std::test]
 pub async fn test_guard_forward_arguments() {
     struct UserGuard<'a> {
-        id: &'a ID,
+        id: &'a GqlID,
     }
 
     #[async_trait::async_trait]
     impl<'a> Guard for UserGuard<'a> {
-        async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
-            if ctx.data_opt::<ID>() != Some(self.id) {
+        async fn check(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<()> {
+            if ctx.data_opt::<GqlID>() != Some(self.id) {
                 Err("Forbidden".into())
             } else {
                 Ok(())
@@ -337,20 +337,20 @@ pub async fn test_guard_forward_arguments() {
 
     struct QueryRoot;
 
-    #[Object]
+    #[GqlObject]
     impl QueryRoot {
         #[field(guard(UserGuard(id = "@id")))]
-        async fn user(&self, id: ID) -> ID {
+        async fn user(&self, id: GqlID) -> GqlID {
             id
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("abc"))
+        GqlQueryBuilder::new(query)
+            .data(GqlID::from("abc"))
             .execute(&schema)
             .await
             .unwrap()
@@ -360,12 +360,12 @@ pub async fn test_guard_forward_arguments() {
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("aaa"))
+        GqlQueryBuilder::new(query)
+            .data(GqlID::from("aaa"))
             .execute(&schema)
             .await
             .unwrap_err(),
-        Error::Query {
+        GqlError::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["user"])),
             err: QueryError::FieldError {

@@ -1,6 +1,6 @@
 use crate::model::__Type;
 use crate::registry;
-use async_graphql_derive::Object;
+use async_graphql_derive::GqlObject;
 
 pub struct __InputValue<'a> {
     pub registry: &'a registry::Registry,
@@ -8,7 +8,7 @@ pub struct __InputValue<'a> {
 }
 
 /// Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.
-#[Object(internal)]
+#[GqlObject(internal)]
 impl<'a> __InputValue<'a> {
     async fn name(&self) -> String {
         self.input_value.name.to_string()

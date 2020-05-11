@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
 use crate::parser::ast::OperationDefinition;
-use crate::{registry, Pos, QueryPathSegment, Value};
+use crate::{registry, GqlValue, Pos, QueryPathSegment};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -13,21 +13,21 @@ fn valid_error(path_node: &QueryPathNode, msg: String) -> String {
     format!("\"{}\", {}", path_node, msg)
 }
 
-pub fn referenced_variables(value: &Value) -> Vec<&str> {
+pub fn referenced_variables(value: &GqlValue) -> Vec<&str> {
     let mut vars = Vec::new();
     referenced_variables_to_vec(value, &mut vars);
     vars
 }
 
-fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
+fn referenced_variables_to_vec<'a>(value: &'a GqlValue, vars: &mut Vec<&'a str>) {
     match value {
-        Value::Variable(name) => {
+        GqlValue::Variable(name) => {
             vars.push(name.as_str());
         }
-        Value::List(values) => values
+        GqlValue::List(values) => values
             .iter()
             .for_each(|value| referenced_variables_to_vec(value, vars)),
-        Value::Object(obj) => obj
+        GqlValue::Object(obj) => obj
             .values()
             .for_each(|value| referenced_variables_to_vec(value, vars)),
         _ => {}
@@ -54,23 +54,23 @@ pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&st
 pub fn is_valid_input_value(
     registry: &registry::Registry,
     type_name: &str,
-    value: &Value,
+    value: &GqlValue,
     path_node: QueryPathNode,
 ) -> Option<String> {
-    if let Value::Variable(_) = value {
+    if let GqlValue::Variable(_) = value {
         return None;
     }
 
     match registry::TypeName::create(type_name) {
         registry::TypeName::NonNull(type_name) => match value {
-            Value::Null => Some(valid_error(
+            GqlValue::Null => Some(valid_error(
                 &path_node,
                 format!("expected type \"{}\"", type_name),
             )),
             _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::TypeName::List(type_name) => match value {
-            Value::List(elems) => {
+            GqlValue::List(elems) => {
                 for (idx, elem) in elems.iter().enumerate() {
                     if let Some(reason) = is_valid_input_value(
                         registry,
@@ -89,7 +89,7 @@ pub fn is_valid_input_value(
             _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::TypeName::Named(type_name) => {
-            if let Value::Null = value {
+            if let GqlValue::Null = value {
                 return None;
             }
 
@@ -106,7 +106,7 @@ pub fn is_valid_input_value(
                         }
                     }
                     registry::Type::Enum { enum_values, .. } => match value {
-                        Value::Enum(name) => {
+                        GqlValue::Enum(name) => {
                             if !enum_values.contains_key(name.as_str()) {
                                 Some(valid_error(
                                     &path_node,
@@ -126,7 +126,7 @@ pub fn is_valid_input_value(
                         )),
                     },
                     registry::Type::InputObject { input_fields, .. } => match value {
-                        Value::Object(values) => {
+                        GqlValue::Object(values) => {
                             let mut input_names = values
                                 .keys()
                                 .map(|name| name.as_str())

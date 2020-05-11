@@ -1,4 +1,4 @@
-use crate::{ObjectType, Result, Schema, SubscriptionType};
+use crate::{GqlResult, GqlSchema, ObjectType, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
@@ -9,12 +9,12 @@ use std::pin::Pin;
 
 /// Use to hold all subscription stream for the `SubscriptionConnection`
 pub struct SubscriptionStreams {
-    streams: Slab<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>,
+    streams: Slab<Pin<Box<dyn Stream<Item = GqlResult<serde_json::Value>> + Send>>>,
 }
 
 #[allow(missing_docs)]
 impl SubscriptionStreams {
-    pub fn add<S: Stream<Item = Result<serde_json::Value>> + Send + 'static>(
+    pub fn add<S: Stream<Item = GqlResult<serde_json::Value>> + Send + 'static>(
         &mut self,
         stream: S,
     ) -> usize {
@@ -35,11 +35,11 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
     type Error;
 
     /// Parse the request data here.
-    /// If you have a new subscribe, create a stream with the `Schema::create_subscription_stream`, and then call `SubscriptionStreams::add`.
+    /// If you have a new subscribe, create a stream with the `GqlSchema::create_subscription_stream`, and then call `SubscriptionStreams::add`.
     /// You can return a `Byte`, which will be sent to the client. If it returns an error, the connection will be broken.
     async fn handle_request<Query, Mutation, Subscription>(
         &mut self,
-        schema: &Schema<Query, Mutation, Subscription>,
+        schema: &GqlSchema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
     ) -> std::result::Result<Option<Bytes>, Self::Error>
@@ -49,11 +49,11 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         Subscription: SubscriptionType + Sync + Send + 'static;
 
     /// When a response message is generated, you can convert the message to the format you want here.
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
+    fn handle_response(&mut self, id: usize, res: GqlResult<serde_json::Value>) -> Option<Bytes>;
 }
 
 pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
-    schema: Schema<Query, Mutation, Subscription>,
+    schema: GqlSchema<Query, Mutation, Subscription>,
     transport: T,
 ) -> (
     mpsc::Sender<Bytes>,
@@ -82,7 +82,7 @@ where
 
 type HandleRequestBoxFut<T> = Pin<
     Box<
-        dyn Future<Output = std::result::Result<Option<Bytes>, <T as SubscriptionTransport>::Error>>
+        dyn Future<Output = Result<Option<Bytes>, <T as SubscriptionTransport>::Error>>
             + Send
             + 'static,
     >,
@@ -91,7 +91,7 @@ type HandleRequestBoxFut<T> = Pin<
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
 pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
-    schema: Schema<Query, Mutation, Subscription>,
+    schema: GqlSchema<Query, Mutation, Subscription>,
     transport: T,
     streams: SubscriptionStreams,
     rx_bytes: mpsc::Receiver<Bytes>,
@@ -131,7 +131,8 @@ where
                     Poll::Ready(Some(data)) => {
                         // The following code I think is safe.😁
                         let transport = &mut this.transport as *mut T;
-                        let schema = &this.schema as *const Schema<Query, Mutation, Subscription>;
+                        let schema =
+                            &this.schema as *const GqlSchema<Query, Mutation, Subscription>;
                         let streams = &mut this.streams as *mut SubscriptionStreams;
                         unsafe {
                             this.handle_request_fut = Some(Box::pin((*transport).handle_request(

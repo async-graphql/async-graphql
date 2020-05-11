@@ -4,7 +4,7 @@ use crate::parser::ast::{
 use crate::registry::TypeName;
 use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned, Value};
+use crate::{GqlValue, Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -114,9 +114,9 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         _ctx: &mut VisitorContext<'a>,
         pos: Pos,
         expected_type: &Option<TypeName<'a>>,
-        value: &'a Value,
+        value: &'a GqlValue,
     ) {
-        if let Value::Variable(name) = value {
+        if let GqlValue::Variable(name) = value {
             if let Some(expected_type) = expected_type {
                 if let Some(scope) = &self.current_scope {
                     self.variable_usages

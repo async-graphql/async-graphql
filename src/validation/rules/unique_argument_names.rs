@@ -1,6 +1,6 @@
 use crate::parser::ast::{Directive, Field};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, Value};
+use crate::{GqlValue, Positioned};
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -21,7 +21,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
         &mut self,
         ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        _value: &'a Positioned<Value>,
+        _value: &'a Positioned<GqlValue>,
     ) {
         if !self.names.insert(name) {
             ctx.report_error(

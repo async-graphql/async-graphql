@@ -11,7 +11,7 @@ impl<'a> OutputType<'a> {
     pub fn parse(input: &'a Type) -> Result<Self> {
         let ty = if let Type::Path(p) = input {
             if p.path.segments.last().unwrap().ident == "Result"
-                || p.path.segments.last().unwrap().ident == "FieldResult"
+                || p.path.segments.last().unwrap().ident == "GqlFieldResult"
             {
                 if let PathArguments::AngleBracketed(args) = &p.path.segments[0].arguments {
                     if args.args.is_empty() {

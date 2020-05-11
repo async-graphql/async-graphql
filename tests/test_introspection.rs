@@ -1,7 +1,8 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 /// Is SimpleObject
-#[SimpleObject]
+#[GqlSimpleObject]
 struct SimpleObject {
     /// Value a
     a: i32,
@@ -15,7 +16,7 @@ struct SimpleObject {
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     /// Get a simple object
     async fn simple_object(&self) -> SimpleObject {
@@ -25,7 +26,7 @@ impl Query {
 
 #[async_std::test]
 pub async fn test_introspection() {
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
 
     let res = schema
         .execute(

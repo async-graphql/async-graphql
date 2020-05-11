@@ -105,11 +105,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             (arg, Type::Reference(TypeReference { elem, .. })) => {
                                 if let Type::Path(path) = elem.as_ref() {
                                     if idx != 1
-                                        || path.path.segments.last().unwrap().ident != "Context"
+                                        || path.path.segments.last().unwrap().ident != "GqlContext"
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "The Context must be the second argument.",
+                                            "The GqlContext must be the second argument.",
                                         ));
                                     } else {
                                         create_ctx = false;
@@ -127,7 +127,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 if create_ctx {
                     let arg =
-                        syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
+                        syn::parse2::<FnArg>(quote! { _: &#crate_name::GqlContext<'_> }).unwrap();
                     method.sig.inputs.insert(1, arg);
                 }
 
@@ -178,7 +178,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             let repr = build_value_repr(&crate_name, &default);
                             quote! {|| #repr }
                         }
-                        None => quote! { || #crate_name::Value::Null },
+                        None => quote! { || #crate_name::GqlValue::Null },
                     };
 
                     get_params.push(quote! {
@@ -203,7 +203,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                     method.sig.output = syn::parse2::<ReturnType>(
-                        quote! { -> #crate_name::FieldResult<#inner_ty> },
+                        quote! { -> #crate_name::GqlFieldResult<#inner_ty> },
                     )
                     .expect("invalid result type");
                 }
@@ -325,10 +325,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             #[allow(bare_trait_objects)]
             async fn create_field_stream<Query, Mutation>(
                 &self,
-                ctx: &#crate_name::Context<'_>,
-                schema: &#crate_name::Schema<Query, Mutation, Self>,
+                ctx: &#crate_name::GqlContext<'_>,
+                schema: &#crate_name::GqlSchema<Query, Mutation, Self>,
                 environment: std::sync::Arc<#crate_name::Environment>,
-            ) -> #crate_name::Result<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>>
+            ) -> #crate_name::GqlResult<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::GqlResult<#crate_name::serde_json::Value>> + Send>>>
             where
                 Query: #crate_name::ObjectType + Send + Sync + 'static,
                 Mutation: #crate_name::ObjectType + Send + Sync + 'static,

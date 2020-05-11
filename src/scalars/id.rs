@@ -1,5 +1,5 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GqlInputValueResult, GqlResult, GqlValue, InputValueError, ScalarType};
+use async_graphql_derive::GqlScalar;
 use bson::oid::{self, ObjectId};
 use std::convert::TryFrom;
 use std::num::ParseIntError;
@@ -10,9 +10,9 @@ use uuid::Uuid;
 ///
 /// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct ID(String);
+pub struct GqlID(String);
 
-impl Deref for ID {
+impl Deref for GqlID {
     type Target = String;
 
     fn deref(&self) -> &Self::Target {
@@ -20,79 +20,79 @@ impl Deref for ID {
     }
 }
 
-impl DerefMut for ID {
+impl DerefMut for GqlID {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl<T> From<T> for ID
+impl<T> From<T> for GqlID
 where
     T: std::fmt::Display,
 {
     fn from(value: T) -> Self {
-        ID(value.to_string())
+        GqlID(value.to_string())
     }
 }
 
-impl Into<String> for ID {
+impl Into<String> for GqlID {
     fn into(self) -> String {
         self.0
     }
 }
 
-impl TryFrom<ID> for usize {
+impl TryFrom<GqlID> for usize {
     type Error = ParseIntError;
 
-    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+    fn try_from(id: GqlID) -> std::result::Result<Self, Self::Error> {
         id.0.parse()
     }
 }
 
-impl TryFrom<ID> for Uuid {
+impl TryFrom<GqlID> for Uuid {
     type Error = uuid::Error;
 
-    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+    fn try_from(id: GqlID) -> std::result::Result<Self, Self::Error> {
         Uuid::parse_str(&id.0)
     }
 }
 
-impl TryFrom<ID> for ObjectId {
+impl TryFrom<GqlID> for ObjectId {
     type Error = oid::Error;
 
-    fn try_from(id: ID) -> std::result::Result<Self, oid::Error> {
+    fn try_from(id: GqlID) -> std::result::Result<Self, oid::Error> {
         ObjectId::with_string(&id.0)
     }
 }
 
-impl PartialEq<&str> for ID {
+impl PartialEq<&str> for GqlID {
     fn eq(&self, other: &&str) -> bool {
         self.0.as_str() == *other
     }
 }
 
-#[Scalar(internal)]
-impl ScalarType for ID {
+#[GqlScalar(internal)]
+impl ScalarType for GqlID {
     fn type_name() -> &'static str {
         "ID"
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         match value {
-            Value::Int(n) => Ok(ID(n.to_string())),
-            Value::String(s) => Ok(ID(s)),
+            GqlValue::Int(n) => Ok(GqlID(n.to_string())),
+            GqlValue::String(s) => Ok(GqlID(s)),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
-    fn is_valid(value: &Value) -> bool {
+    fn is_valid(value: &GqlValue) -> bool {
         match value {
-            Value::Int(_) | Value::String(_) => true,
+            GqlValue::Int(_) | GqlValue::String(_) => true,
             _ => false,
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(self.0.clone().into())
     }
 }

@@ -7,7 +7,9 @@ mod subscription;
 use actix_web::dev::{Payload, PayloadStream};
 use actix_web::{http, web, Error, FromRequest, HttpRequest};
 use async_graphql::http::StreamBody;
-use async_graphql::{IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder};
+use async_graphql::{
+    GqlQueryBuilder, IntoGqlQueryBuilder, IntoGqlQueryBuilderOpts, ParseRequestError,
+};
 use futures::channel::mpsc;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
 use std::pin::Pin;
@@ -16,13 +18,13 @@ pub use subscription::WSSubscription;
 
 /// Extractor for GraphQL request
 ///
-/// It's a wrapper of `QueryBuilder`, you can use `GQLRequest::into_inner` unwrap it to `QueryBuilder`.
-/// `async_graphql::IntoQueryBuilderOpts` allows to configure extraction process.
-pub struct GQLRequest(QueryBuilder);
+/// It's a wrapper of `GqlQueryBuilder`, you can use `GQLRequest::into_inner` unwrap it to `GqlQueryBuilder`.
+/// `async_graphql::IntoGqlQueryBuilderOpts` allows to configure extraction process.
+pub struct GQLRequest(GqlQueryBuilder);
 
 impl GQLRequest {
-    /// Unwrap it to `QueryBuilder`.
-    pub fn into_inner(self) -> QueryBuilder {
+    /// Unwrap it to `GqlQueryBuilder`.
+    pub fn into_inner(self) -> GqlQueryBuilder {
         self.0
     }
 }
@@ -30,7 +32,7 @@ impl GQLRequest {
 impl FromRequest for GQLRequest {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<GQLRequest, Error>>>>;
-    type Config = IntoQueryBuilderOpts;
+    type Config = IntoGqlQueryBuilderOpts;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();

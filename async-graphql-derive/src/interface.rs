@@ -139,7 +139,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             None => quote! { None },
         };
 
-        decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
+        decl_params.push(quote! { ctx: &'ctx #crate_name::GqlContext<'ctx> });
         use_params.push(quote! { ctx });
 
         for InterfaceFieldArgument {
@@ -159,7 +159,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                     let repr = build_value_repr(&crate_name, &default);
                     quote! {|| #repr }
                 }
-                None => quote! { || #crate_name::Value::Null },
+                None => quote! { || #crate_name::GqlValue::Null },
             };
             get_params.push(quote! {
                 let #ident: #ty = ctx.param_value(#name, #param_default)?;
@@ -211,7 +211,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         methods.push(quote! {
             #[inline]
-            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::FieldResult<#ty> {
+            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::GqlFieldResult<#ty> {
                 match self {
                     #(#calls,)*
                 }
@@ -304,7 +304,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::GqlContext<'_>) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.clone_inner(),
@@ -315,9 +315,9 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             fn collect_inline_fields<'a>(
                 &'a self,
                 name: &#crate_name::Positioned<String>,
-                ctx: &#crate_name::ContextSelectionSet<'a>,
+                ctx: &#crate_name::GqlContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
-            ) -> #crate_name::Result<()> {
+            ) -> #crate_name::GqlResult<()> {
                 #(#collect_inline_fields)*
                 Ok(())
             }
@@ -325,7 +325,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::GqlContextSelectionSet<'_>, pos: #crate_name::Pos) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, self).await
             }
         }

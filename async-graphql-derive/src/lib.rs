@@ -21,7 +21,7 @@ use syn::{AttributeArgs, DeriveInput, ItemImpl};
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlObject(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
@@ -35,7 +35,7 @@ pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn SimpleObject(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlSimpleObject(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
@@ -49,7 +49,7 @@ pub fn SimpleObject(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Enum(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlEnum(args: TokenStream, input: TokenStream) -> TokenStream {
     let enum_args = match args::Enum::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(enum_args) => enum_args,
         Err(err) => return err.to_compile_error().into(),
@@ -63,7 +63,7 @@ pub fn Enum(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn InputObject(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlInputObject(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::InputObject::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(enum_args) => enum_args,
         Err(err) => return err.to_compile_error().into(),
@@ -77,7 +77,7 @@ pub fn InputObject(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Interface(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlInterface(args: TokenStream, input: TokenStream) -> TokenStream {
     let interface_args = match args::Interface::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(interface_args) => interface_args,
         Err(err) => return err.to_compile_error().into(),
@@ -91,7 +91,7 @@ pub fn Interface(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Union(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlUnion(args: TokenStream, input: TokenStream) -> TokenStream {
     let interface_args = match args::Interface::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(interface_args) => interface_args,
         Err(err) => return err.to_compile_error().into(),
@@ -105,7 +105,7 @@ pub fn Union(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Subscription(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlSubscription(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
@@ -119,7 +119,7 @@ pub fn Subscription(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn DataSource(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlDataSource(args: TokenStream, input: TokenStream) -> TokenStream {
     let datasource_args = match args::DataSource::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(datasource_args) => datasource_args,
         Err(err) => return err.to_compile_error().into(),
@@ -136,7 +136,7 @@ pub fn DataSource(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn GqlScalar(args: TokenStream, input: TokenStream) -> TokenStream {
     let scalar_args = match args::Scalar::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(scalar_args) => scalar_args,
         Err(err) => return err.to_compile_error().into(),
@@ -165,7 +165,7 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         impl #generic #crate_name::InputValueType for #self_ty #where_clause {
-            fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: #crate_name::GqlValue) -> #crate_name::GqlInputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value)
             }
         }
@@ -175,9 +175,9 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         impl #generic #crate_name::OutputValueType for #self_ty #where_clause {
             async fn resolve(
                 &self,
-                _: &#crate_name::ContextSelectionSet<'_>,
+                _: &#crate_name::GqlContextSelectionSet<'_>,
                 _pos: #crate_name::Pos,
-            ) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            ) -> #crate_name::GqlResult<#crate_name::serde_json::Value> {
                 self.to_json()
             }
         }

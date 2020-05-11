@@ -1,14 +1,14 @@
-use crate::{InputValueResult, Result, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GqlInputValueResult, GqlResult, GqlValue, ScalarType};
+use async_graphql_derive::GqlScalar;
 use serde::de::DeserializeOwned;
 
 /// Any scalar
 ///
 /// The `Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Any(pub Value);
+pub struct Any(pub GqlValue);
 
-#[Scalar(internal)]
+#[GqlScalar(internal)]
 impl ScalarType for Any {
     fn type_name() -> &'static str {
         "_Any"
@@ -18,15 +18,15 @@ impl ScalarType for Any {
         Some("The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.")
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         Ok(Self(value))
     }
 
-    fn is_valid(_value: &Value) -> bool {
+    fn is_valid(_value: &GqlValue) -> bool {
         true
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(self.0.clone().into())
     }
 }
@@ -40,7 +40,7 @@ impl Any {
 
 impl<T> From<T> for Any
 where
-    T: Into<Value>,
+    T: Into<GqlValue>,
 {
     fn from(value: T) -> Any {
         Any(value.into())
@@ -53,7 +53,11 @@ mod test {
 
     #[test]
     fn test_conversion_ok() {
-        let value = Value::List(vec![Value::Int(1.into()), Value::Float(2.0), Value::Null]);
+        let value = GqlValue::List(vec![
+            GqlValue::Int(1.into()),
+            GqlValue::Float(2.0),
+            GqlValue::Null,
+        ]);
         let expected = Any(value.clone());
         let output: Any = value.into();
         assert_eq!(output, expected);

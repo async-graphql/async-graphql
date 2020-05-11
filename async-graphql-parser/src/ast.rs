@@ -1,5 +1,5 @@
 use crate::pos::Positioned;
-use crate::value::Value;
+use crate::value::GqlValue;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -22,11 +22,11 @@ impl fmt::Display for Type {
 #[derive(Clone, Debug)]
 pub struct Directive {
     pub name: Positioned<String>,
-    pub arguments: Vec<(Positioned<String>, Positioned<Value>)>,
+    pub arguments: Vec<(Positioned<String>, Positioned<GqlValue>)>,
 }
 
 impl Directive {
-    pub fn get_argument(&self, name: &str) -> Option<&Positioned<Value>> {
+    pub fn get_argument(&self, name: &str) -> Option<&Positioned<GqlValue>> {
         self.arguments
             .iter()
             .find(|item| item.0.as_str() == name)
@@ -99,7 +99,7 @@ pub struct SelectionSet {
 pub struct VariableDefinition {
     pub name: Positioned<String>,
     pub var_type: Positioned<Type>,
-    pub default_value: Option<Positioned<Value>>,
+    pub default_value: Option<Positioned<GqlValue>>,
 }
 
 #[derive(Clone, Debug)]
@@ -113,13 +113,13 @@ pub enum Selection {
 pub struct Field {
     pub alias: Option<Positioned<String>>,
     pub name: Positioned<String>,
-    pub arguments: Vec<(Positioned<String>, Positioned<Value>)>,
+    pub arguments: Vec<(Positioned<String>, Positioned<GqlValue>)>,
     pub directives: Vec<Positioned<Directive>>,
     pub selection_set: Positioned<SelectionSet>,
 }
 
 impl Field {
-    pub fn get_argument(&self, name: &str) -> Option<&Positioned<Value>> {
+    pub fn get_argument(&self, name: &str) -> Option<&Positioned<GqlValue>> {
         self.arguments
             .iter()
             .find(|item| item.0.as_str() == name)

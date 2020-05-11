@@ -1,5 +1,5 @@
-use crate::{InputValueResult, Result, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GqlInputValueResult, GqlResult, GqlValue, ScalarType};
+use async_graphql_derive::GqlScalar;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::ops::{Deref, DerefMut};
@@ -22,17 +22,17 @@ impl<T> DerefMut for Json<T> {
     }
 }
 
-#[Scalar(internal)]
+#[GqlScalar(internal)]
 impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     fn type_name() -> &'static str {
         "JSON"
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         Ok(serde_json::from_value(value.into()).map(Json)?)
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(serde_json::to_value(&self.0).unwrap_or_else(|_| serde_json::Value::Null))
     }
 }
@@ -53,7 +53,7 @@ mod test {
 
         struct Query;
 
-        #[Object(internal)]
+        #[GqlObject(internal)]
         impl Query {
             async fn obj(&self, input: Json<MyStruct>) -> Json<MyStruct> {
                 input
@@ -61,7 +61,7 @@ mod test {
         }
 
         let query = r#"{ obj(input: { a: 1, b: 2, c: { a: 11, b: 22 } } ) }"#;
-        let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+        let schema = GqlSchema::new(Query, EmptyMutation, EmptySubscription);
         assert_eq!(
             schema.execute(&query).await.unwrap().data,
             serde_json::json!({

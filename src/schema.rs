@@ -1,16 +1,15 @@
-use crate::context::Data;
 use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
 use crate::parser::ast::{Definition, OperationDefinition};
 use crate::parser::parse_query;
-use crate::query::QueryBuilder;
+use crate::query::GqlQueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
-    Environment, Error, ObjectType, Pos, QueryError, QueryResponse, Result, SubscriptionStream,
-    SubscriptionType, Type, Variables,
+    Environment, GqlData, GqlError, GqlResult, GqlVariables, ObjectType, Pos, QueryError,
+    QueryResponse, SubscriptionStream, SubscriptionType, Type,
 };
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -20,20 +19,22 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
-pub(crate) struct SchemaInner<Query, Mutation, Subscription> {
+pub(crate) struct GqlSchemaInner<Query, Mutation, Subscription> {
     pub(crate) validation_mode: ValidationMode,
     pub(crate) query: QueryRoot<Query>,
     pub(crate) mutation: Mutation,
     pub(crate) subscription: Subscription,
     pub(crate) registry: Registry,
-    pub(crate) data: Data,
+    pub(crate) data: GqlData,
     pub(crate) complexity: Option<usize>,
     pub(crate) depth: Option<usize>,
     pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 /// Schema builder
-pub struct SchemaBuilder<Query, Mutation, Subscription>(SchemaInner<Query, Mutation, Subscription>);
+pub struct SchemaBuilder<Query, Mutation, Subscription>(
+    GqlSchemaInner<Query, Mutation, Subscription>,
+);
 
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     SchemaBuilder<Query, Mutation, Subscription>
@@ -73,7 +74,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         self
     }
 
-    /// Add a global data that can be accessed in the `Schema`, you access it with `Context::data`.
+    /// Add a global data that can be accessed in the `GqlSchema`, you access it with `GqlContext::data`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.0.data.insert(data);
         self
@@ -86,23 +87,23 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     }
 
     /// Build schema.
-    pub fn finish(self) -> Schema<Query, Mutation, Subscription> {
-        Schema(Arc::new(self.0))
+    pub fn finish(self) -> GqlSchema<Query, Mutation, Subscription> {
+        GqlSchema(Arc::new(self.0))
     }
 }
 
 /// GraphQL schema
-pub struct Schema<Query, Mutation, Subscription>(
-    pub(crate) Arc<SchemaInner<Query, Mutation, Subscription>>,
+pub struct GqlSchema<Query, Mutation, Subscription>(
+    pub(crate) Arc<GqlSchemaInner<Query, Mutation, Subscription>>,
 );
 
-impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscription> {
+impl<Query, Mutation, Subscription> Clone for GqlSchema<Query, Mutation, Subscription> {
     fn clone(&self) -> Self {
-        Schema(self.0.clone())
+        GqlSchema(self.0.clone())
     }
 }
 
-impl<Query, Mutation, Subscription> Schema<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription> GqlSchema<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -194,7 +195,7 @@ where
         // federation
         registry.create_federation_types();
 
-        SchemaBuilder(SchemaInner {
+        SchemaBuilder(GqlSchemaInner {
             validation_mode: ValidationMode::Strict,
             query: QueryRoot {
                 inner: query,
@@ -215,12 +216,12 @@ where
         query: Query,
         mutation: Mutation,
         subscription: Subscription,
-    ) -> Schema<Query, Mutation, Subscription> {
+    ) -> GqlSchema<Query, Mutation, Subscription> {
         Self::build(query, mutation, subscription).finish()
     }
 
     #[doc(hidden)]
-    pub fn data(&self) -> &Data {
+    pub fn data(&self) -> &GqlData {
         &self.0.data
     }
 
@@ -229,9 +230,9 @@ where
         &self.0.registry
     }
 
-    /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
-        QueryBuilder::new(query_source).execute(self).await
+    /// Execute query without create the `GqlQueryBuilder`.
+    pub async fn execute(&self, query_source: &str) -> GqlResult<QueryResponse> {
+        GqlQueryBuilder::new(query_source).execute(self).await
     }
 
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
@@ -239,10 +240,10 @@ where
         &self,
         source: &str,
         operation_name: Option<&str>,
-        variables: Variables,
-        ctx_data: Option<Arc<Data>>,
-    ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let document = parse_query(source).map_err(Into::<Error>::into)?;
+        variables: GqlVariables,
+        ctx_data: Option<Arc<GqlData>>,
+    ) -> GqlResult<impl Stream<Item = GqlResult<serde_json::Value>> + Send> {
+        let document = parse_query(source).map_err(Into::<GqlError>::into)?;
         check_rules(&self.0.registry, &document, self.0.validation_mode)?;
 
         let mut fragments = HashMap::new();

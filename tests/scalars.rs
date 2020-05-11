@@ -1,10 +1,11 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 macro_rules! test_scalars {
     ($test_name:ident, $ty:ty, $value:expr, $res_value:expr) => {
         #[async_std::test]
         pub async fn $test_name() {
-            #[InputObject]
+            #[GqlInputObject]
             struct MyInput {
                 value: $ty,
             }
@@ -13,7 +14,7 @@ macro_rules! test_scalars {
                 value: $ty,
             }
 
-            #[Object]
+            #[GqlObject]
             impl Root {
                 async fn value(&self) -> $ty {
                     self.value
@@ -28,7 +29,7 @@ macro_rules! test_scalars {
                 }
             }
 
-            let schema = Schema::new(Root { value: $value }, EmptyMutation, EmptySubscription);
+            let schema = GqlSchema::new(Root { value: $value }, EmptyMutation, EmptySubscription);
             let json_value: serde_json::Value = $value.into();
             let query = format!("{{ value testArg(input: {0}) testInput(input: {{value: {0}}}) }}", json_value);
             assert_eq!(

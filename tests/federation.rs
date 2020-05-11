@@ -1,15 +1,16 @@
 #![allow(unreachable_code)]
 
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 struct User {
-    id: ID,
+    id: GqlID,
 }
 
-#[Object(extends)]
+#[GqlObject(extends)]
 impl User {
     #[field(external)]
-    async fn id(&self) -> &ID {
+    async fn id(&self) -> &GqlID {
         &self.id
     }
 
@@ -20,7 +21,7 @@ impl User {
 
 struct Review;
 
-#[Object]
+#[GqlObject]
 impl Review {
     async fn body(&self) -> String {
         todo!()
@@ -40,7 +41,7 @@ struct Product {
     upc: String,
 }
 
-#[Object(extends)]
+#[GqlObject(extends)]
 impl Product {
     #[field(external)]
     async fn upc(&self) -> &str {
@@ -54,10 +55,10 @@ impl Product {
 
 struct QueryRoot;
 
-#[Object]
+#[GqlObject]
 impl QueryRoot {
     #[entity]
-    async fn find_user_by_id(&self, id: ID) -> User {
+    async fn find_user_by_id(&self, id: GqlID) -> User {
         User { id }
     }
 
@@ -69,7 +70,7 @@ impl QueryRoot {
 
 #[async_std::test]
 pub async fn test_federation() {
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let query = r#"{
             _entities(representations: [{__typename: "Product", upc: "B00005N5PF"}]) {
                 __typename

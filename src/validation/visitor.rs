@@ -4,7 +4,7 @@ use crate::parser::ast::{
     OperationDefinition, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };
 use crate::registry::{self, Type, TypeName};
-use crate::{Pos, Positioned, Value};
+use crate::{GqlValue, Pos, Positioned};
 use std::collections::HashMap;
 
 pub struct VisitorContext<'a> {
@@ -148,14 +148,14 @@ pub trait Visitor<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         _name: &'a Positioned<String>,
-        _value: &'a Positioned<Value>,
+        _value: &'a Positioned<GqlValue>,
     ) {
     }
     fn exit_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         _name: &'a Positioned<String>,
-        _value: &'a Positioned<Value>,
+        _value: &'a Positioned<GqlValue>,
     ) {
     }
 
@@ -219,7 +219,7 @@ pub trait Visitor<'a> {
         _ctx: &mut VisitorContext<'a>,
         _pos: Pos,
         _expected_type: &Option<TypeName<'a>>,
-        _value: &'a Value,
+        _value: &'a GqlValue,
     ) {
     }
     fn exit_input_value(
@@ -227,7 +227,7 @@ pub trait Visitor<'a> {
         _ctx: &mut VisitorContext<'a>,
         _pos: Pos,
         _expected_type: &Option<TypeName<'a>>,
-        _value: &Value,
+        _value: &GqlValue,
     ) {
     }
 }
@@ -341,7 +341,7 @@ where
         &mut self,
         ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        value: &'a Positioned<Value>,
+        value: &'a Positioned<GqlValue>,
     ) {
         self.0.enter_argument(ctx, name, value);
         self.1.enter_argument(ctx, name, value);
@@ -351,7 +351,7 @@ where
         &mut self,
         ctx: &mut VisitorContext<'a>,
         name: &'a Positioned<String>,
-        value: &'a Positioned<Value>,
+        value: &'a Positioned<GqlValue>,
     ) {
         self.0.exit_argument(ctx, name, value);
         self.1.exit_argument(ctx, name, value);
@@ -495,7 +495,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
             } else {
                 ctx.report_error(
                     vec![mutation.position()],
-                    "Schema is not configured for mutations.",
+                    "GqlSchema is not configured for mutations.",
                 );
             }
         }
@@ -509,7 +509,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
             } else {
                 ctx.report_error(
                     vec![subscription.position()],
-                    "Schema is not configured for subscriptions.",
+                    "GqlSchema is not configured for subscriptions.",
                 );
             }
         }
@@ -598,12 +598,12 @@ fn visit_input_value<'a, V: Visitor<'a>>(
     ctx: &mut VisitorContext<'a>,
     pos: Pos,
     expected_ty: Option<TypeName<'a>>,
-    value: &'a Value,
+    value: &'a GqlValue,
 ) {
     v.enter_input_value(ctx, pos, &expected_ty, value);
 
     match value {
-        Value::List(values) => {
+        GqlValue::List(values) => {
             if let Some(expected_ty) = expected_ty {
                 let elem_ty = expected_ty.unwrap_non_null();
                 if let TypeName::List(expected_ty) = elem_ty {
@@ -613,7 +613,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(
                 }
             }
         }
-        Value::Object(values) => {
+        GqlValue::Object(values) => {
             if let Some(expected_ty) = expected_ty {
                 let expected_ty = expected_ty.unwrap_non_null();
                 if let TypeName::Named(expected_ty) = expected_ty {

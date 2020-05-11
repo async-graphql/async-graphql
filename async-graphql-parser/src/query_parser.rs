@@ -1,6 +1,6 @@
 use crate::ast::*;
 use crate::pos::Positioned;
-use crate::value::Value;
+use crate::value::GqlValue;
 use crate::Pos;
 use pest::error::LineColLocation;
 use pest::iterators::Pair;
@@ -121,7 +121,7 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
 }
 
 /// Parse a graphql value
-pub fn parse_value<T: AsRef<str>>(input: T) -> Result<Value> {
+pub fn parse_value<T: AsRef<str>>(input: T) -> Result<GqlValue> {
     let value_pair: Pair<Rule> = QueryParser::parse(Rule::value, input.as_ref())?
         .next()
         .unwrap();
@@ -206,7 +206,7 @@ fn parse_named_operation_definition(
     })
 }
 
-fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
+fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<GqlValue> {
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::value => return Ok(parse_value2(pair, pc)?),
@@ -322,15 +322,15 @@ fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posit
     unreachable!()
 }
 
-fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
+fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<GqlValue> {
     let pair = pair.into_inner().next().unwrap();
     Ok(match pair.as_rule() {
         Rule::object => parse_object_value(pair, pc)?,
         Rule::array => parse_array_value(pair, pc)?,
-        Rule::variable => Value::Variable(parse_variable(pair, pc)?.into_inner()),
-        Rule::float => Value::Float(pair.as_str().parse().unwrap()),
-        Rule::int => Value::Int(pair.as_str().parse().unwrap()),
-        Rule::string => Value::String({
+        Rule::variable => GqlValue::Variable(parse_variable(pair, pc)?.into_inner()),
+        Rule::float => GqlValue::Float(pair.as_str().parse().unwrap()),
+        Rule::int => GqlValue::Int(pair.as_str().parse().unwrap()),
+        Rule::string => GqlValue::String({
             let start_pos = pair.as_span().start_pos().line_col();
             unquote_string(
                 pair.as_str(),
@@ -340,18 +340,18 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
                 },
             )?
         }),
-        Rule::name => Value::Enum(pair.as_str().to_string()),
-        Rule::boolean => Value::Boolean(match pair.as_str() {
+        Rule::name => GqlValue::Enum(pair.as_str().to_string()),
+        Rule::boolean => GqlValue::Boolean(match pair.as_str() {
             "true" => true,
             "false" => false,
             _ => unreachable!(),
         }),
-        Rule::null => Value::Null,
+        Rule::null => GqlValue::Null,
         _ => unreachable!(),
     })
 }
 
-fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(String, Value)> {
+fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(String, GqlValue)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
@@ -364,7 +364,7 @@ fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(S
     Ok((name.unwrap(), value.unwrap()))
 }
 
-fn parse_object_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
+fn parse_object_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<GqlValue> {
     let mut map = BTreeMap::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
@@ -374,10 +374,10 @@ fn parse_object_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<V
             _ => unreachable!(),
         }
     }
-    Ok(Value::Object(map))
+    Ok(GqlValue::Object(map))
 }
 
-fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
+fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<GqlValue> {
     let mut array = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
@@ -387,13 +387,13 @@ fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Va
             _ => unreachable!(),
         }
     }
-    Ok(Value::List(array))
+    Ok(GqlValue::List(array))
 }
 
 fn parse_pair(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<(Positioned<String>, Positioned<Value>)> {
+) -> Result<(Positioned<String>, Positioned<GqlValue>)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
@@ -414,7 +414,7 @@ fn parse_pair(
 fn parse_arguments(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<Vec<(Positioned<String>, Positioned<Value>)>> {
+) -> Result<Vec<(Positioned<String>, Positioned<GqlValue>)>> {
     let mut arguments = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {

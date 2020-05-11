@@ -96,6 +96,7 @@ mod validation;
 
 pub mod extensions;
 pub mod guard;
+pub mod prelude;
 pub mod validators;
 
 use async_graphql_parser as parser;
@@ -113,17 +114,17 @@ pub mod http;
 
 pub use base::{ScalarType, Type};
 pub use context::{
-    Context, ContextBase, Data, Environment, QueryPathNode, QueryPathSegment, Variables,
+    Environment, GqlContext, GqlContextBase, GqlData, GqlVariables, QueryPathNode, QueryPathSegment,
 };
 pub use error::{
-    Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
+    ErrorExtensions, FieldError, GqlError, GqlFieldResult, GqlInputValueResult, InputValueError,
     ParseRequestError, QueryError, ResultExt,
 };
-pub use parser::{Pos, Positioned, Value};
-pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
+pub use parser::{GqlValue, Pos, Positioned};
+pub use query::{GqlQueryBuilder, IntoGqlQueryBuilder, IntoGqlQueryBuilderOpts, QueryResponse};
 pub use registry::CacheControl;
-pub use scalars::{Any, Json, ID};
-pub use schema::Schema;
+pub use scalars::{Any, GqlID, Json};
+pub use schema::GqlSchema;
 pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
     WebSocketTransport,
@@ -135,11 +136,11 @@ pub use types::{
 pub use validation::ValidationMode;
 
 /// Result type
-pub type Result<T> = std::result::Result<T, Error>;
+pub type GqlResult<T> = std::result::Result<T, GqlError>;
 
 // internal types
 #[doc(hidden)]
-pub use context::ContextSelectionSet;
+pub use context::GqlContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
@@ -193,14 +194,14 @@ pub use types::{EnumItem, EnumType};
 /// - Option<T>, such as `Option<i32>`
 /// - Object and &Object
 /// - Enum
-/// - FieldResult<T, E>, such as `FieldResult<i32, E>`
+/// - GqlFieldResult<T, E>, such as `GqlFieldResult<i32, E>`
 ///
 /// # Context
 ///
 /// You can define a context as an argument to a method, and the context should be the first argument to the method.
 ///
 /// ```ignore
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     async fn value(&self, ctx: &Context<'_>) -> { ... }
 /// }
@@ -209,13 +210,14 @@ pub use types::{EnumItem, EnumType};
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
 /// struct QueryRoot {
 ///     value: i32,
 /// }
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self) -> i32 {
@@ -228,7 +230,7 @@ pub use types::{EnumItem, EnumType};
 ///     }
 ///
 ///     #[field(desc = "value with error")]
-///     async fn value_with_error(&self) -> FieldResult<i32> {
+///     async fn value_with_error(&self) -> GqlFieldResult<i32> {
 ///         Ok(self.value)
 ///     }
 ///
@@ -239,7 +241,7 @@ pub use types::{EnumItem, EnumType};
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{
 ///         value
 ///         valueRef
@@ -256,7 +258,7 @@ pub use types::{EnumItem, EnumType};
 ///     }));
 /// }
 /// ```
-pub use async_graphql_derive::Object;
+pub use async_graphql_derive::GqlObject;
 
 /// Define a GraphQL object
 ///
@@ -286,23 +288,24 @@ pub use async_graphql_derive::Object;
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
-/// #[SimpleObject]
+/// #[GqlSimpleObject]
 /// struct QueryRoot {
 ///     value: i32,
 /// }
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
 /// }
 /// ```
-pub use async_graphql_derive::SimpleObject;
+pub use async_graphql_derive::GqlSimpleObject;
 
 /// Define a GraphQL enum
 ///
@@ -325,9 +328,10 @@ pub use async_graphql_derive::SimpleObject;
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
-/// #[Enum]
+/// #[GqlEnum]
 /// enum MyEnum {
 ///     A,
 ///     #[item(name = "b")] B,
@@ -338,7 +342,7 @@ pub use async_graphql_derive::SimpleObject;
 ///     value2: MyEnum,
 /// }
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value1(&self) -> MyEnum {
@@ -353,12 +357,12 @@ pub use async_graphql_derive::SimpleObject;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value1 value2 }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
 /// ```
-pub use async_graphql_derive::Enum;
+pub use async_graphql_derive::GqlEnum;
 
 /// Define a GraphQL input object
 ///
@@ -381,9 +385,10 @@ pub use async_graphql_derive::Enum;
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
-/// #[InputObject]
+/// #[GqlInputObject]
 /// struct MyInputObject {
 ///     a: i32,
 ///     #[field(default = "10")]
@@ -392,7 +397,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self, input: MyInputObject) -> i32 {
@@ -402,7 +407,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"
 ///     {
 ///         value1: value(input:{a:9, b:3})
@@ -411,7 +416,7 @@ pub use async_graphql_derive::Enum;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// }
 /// ```
-pub use async_graphql_derive::InputObject;
+pub use async_graphql_derive::GqlInputObject;
 
 /// Define a GraphQL interface
 ///
@@ -446,7 +451,7 @@ pub use async_graphql_derive::InputObject;
 /// Define TypeA, TypeB, TypeC... Implement the MyInterface
 ///
 /// ```ignore
-/// #[Interface]
+/// #[GqlInterface]
 /// enum MyInterface {
 ///     TypeA(TypeA),
 ///     TypeB(TypeB),
@@ -458,19 +463,20 @@ pub use async_graphql_derive::InputObject;
 /// # Fields
 ///
 /// The type, name, and parameter fields of the interface must exactly match the type of the
-/// implementation interface, but FieldResult can be omitted.
+/// implementation interface, but GqlFieldResult can be omitted.
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
 /// struct TypeA {
 ///     value: i32,
 /// }
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl TypeA {
 ///     /// Returns data borrowed from the context
-///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> &'a str {
+///     async fn value_a<'a>(&self, ctx: &'a GqlContext<'_>) -> &'a str {
 ///         ctx.data::<String>().as_str()
 ///     }
 ///
@@ -485,7 +491,7 @@ pub use async_graphql_derive::InputObject;
 ///     }
 /// }
 ///
-/// #[Interface(
+/// #[GqlInterface(
 ///     field(name = "value_a", type = "&'ctx str"),
 ///     field(name = "value_b", type = "&i32"),
 ///     field(name = "value_c", type = "i32",
@@ -498,7 +504,7 @@ pub use async_graphql_derive::InputObject;
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     async fn type_a(&self) -> MyInterface {
 ///         TypeA { value: 10 }.into()
@@ -507,7 +513,7 @@ pub use async_graphql_derive::InputObject;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
+///     let schema = GqlSchema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
 ///         typeA {
@@ -525,7 +531,7 @@ pub use async_graphql_derive::InputObject;
 ///     }));
 /// }
 /// ```
-pub use async_graphql_derive::Interface;
+pub use async_graphql_derive::GqlInterface;
 
 /// Define a GraphQL union
 ///
@@ -542,19 +548,20 @@ pub use async_graphql_derive::Interface;
 /// Define TypeA, TypeB, ... as MyUnion
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
-/// #[SimpleObject]
+/// #[GqlSimpleObject]
 /// struct TypeA {
 ///     value_a: i32,
 /// }
 ///
-/// #[SimpleObject]
+/// #[GqlSimpleObject]
 /// struct TypeB {
 ///     value_b: i32
 /// }
 ///
-/// #[Union]
+/// #[GqlUnion]
 /// enum MyUnion {
 ///     TypeA(TypeA),
 ///     TypeB(TypeB),
@@ -562,7 +569,7 @@ pub use async_graphql_derive::Interface;
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {
 ///     async fn all_data(&self) -> Vec<MyUnion> {
 ///         vec![TypeA { value_a: 10 }.into(), TypeB { value_b: 20 }.into()]
@@ -571,7 +578,7 @@ pub use async_graphql_derive::Interface;
 ///
 /// #[async_std::main]
 /// async fn main() {
-///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
+///     let schema = GqlSchema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
 ///         allData {
@@ -591,7 +598,7 @@ pub use async_graphql_derive::Interface;
 ///     }));
 /// }
 /// ```
-pub use async_graphql_derive::Union;
+pub use async_graphql_derive::GqlUnion;
 
 /// Define a GraphQL subscription
 ///
@@ -628,16 +635,16 @@ pub use async_graphql_derive::Union;
 /// # Examples
 ///
 /// ```ignore
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// struct Event {
 ///     value: i32,
 /// }
 ///
 /// struct SubscriptionRoot;
 ///
-/// #[Subscription]
+/// #[GqlSubscription]
 /// impl SubscriptionRoot {
 ///     async fn value(&self, event: &Event, condition: i32) -> bool {
 ///         // Push when value is greater than condition
@@ -645,10 +652,37 @@ pub use async_graphql_derive::Union;
 ///     }
 /// }
 /// ```
-pub use async_graphql_derive::Subscription;
+pub use async_graphql_derive::GqlSubscription;
 
 /// Define a DataSource
-pub use async_graphql_derive::DataSource;
+pub use async_graphql_derive::GqlDataSource;
 
 /// Define a Scalar
-pub use async_graphql_derive::Scalar;
+pub use async_graphql_derive::GqlScalar;
+
+mod deprecated {
+    pub use super::GqlContext as Context;
+    pub use super::GqlContextBase as ContextBase;
+    pub use super::GqlData as Data;
+    pub use super::GqlDataSource as DataSource;
+    pub use super::GqlEnum as Enum;
+    pub use super::GqlError as Error;
+    pub use super::GqlFieldResult as FieldResult;
+    pub use super::GqlID as ID;
+    pub use super::GqlInputObject as InputObject;
+    pub use super::GqlInputValueResult as InputValueResult;
+    pub use super::GqlInterface as Interface;
+    pub use super::GqlObject as Object;
+    pub use super::GqlQueryBuilder as QueryBuilder;
+    pub use super::GqlResult as Result;
+    pub use super::GqlScalar as Scalar;
+    pub use super::GqlSchema as Schema;
+    pub use super::GqlSimpleObject as SimpleObject;
+    pub use super::GqlSubscription as Subscription;
+    pub use super::GqlUnion as Union;
+    pub use super::GqlValue as Value;
+    pub use super::GqlVariables as Variables;
+}
+
+#[doc(hidden)]
+pub use deprecated::*;

@@ -1,8 +1,9 @@
-use async_graphql::*;
+use async_graphql::prelude::*;
+use async_graphql::{EmptyMutation, EmptySubscription};
 
 #[async_std::test]
 pub async fn test_optional_type() {
-    #[InputObject]
+    #[GqlInputObject]
     struct MyInput {
         value: Option<i32>,
     }
@@ -12,7 +13,7 @@ pub async fn test_optional_type() {
         value2: Option<i32>,
     }
 
-    #[Object]
+    #[GqlObject]
     impl Root {
         async fn value1(&self) -> Option<i32> {
             self.value1.clone()
@@ -39,7 +40,7 @@ pub async fn test_optional_type() {
         }
     }
 
-    let schema = Schema::new(
+    let schema = GqlSchema::new(
         Root {
             value1: Some(10),
             value2: None,

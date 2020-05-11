@@ -1,9 +1,9 @@
 use crate::model::__InputValue;
 use crate::registry;
-use async_graphql_derive::{Enum, Object};
+use async_graphql_derive::{GqlEnum, GqlObject};
 
 /// A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.
-#[Enum(internal)]
+#[GqlEnum(internal)]
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum __DirectiveLocation {
@@ -73,7 +73,7 @@ pub struct __Directive<'a> {
 /// A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
 //
 // In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.
-#[Object(internal)]
+#[GqlObject(internal)]
 impl<'a> __Directive<'a> {
     async fn name(&self) -> String {
         self.directive.name.to_string()

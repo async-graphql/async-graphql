@@ -1,6 +1,6 @@
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Pos, Result,
-    Type,
+    do_resolve, registry, GqlContext, GqlContextSelectionSet, GqlResult, ObjectType,
+    OutputValueType, Pos, Type,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -102,7 +102,7 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &GqlContext<'_>) -> GqlResult<serde_json::Value> {
         if ctx.name.as_str() == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(self.node().await, &ctx_obj, ctx.position()).await;
@@ -120,7 +120,11 @@ where
     T: OutputValueType + Send + Sync + 'a,
     E: ObjectType + Sync + Send + 'a,
 {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &GqlContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         do_resolve(ctx, self).await
     }
 }

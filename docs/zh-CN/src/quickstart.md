@@ -23,7 +23,7 @@ use async_graphql::*;
 
 struct Query;
 
-#[Object]
+#[GqlObject]
 impl Query {
     #[field(desc = "Returns the sum of a and b")]
     async fn add(a: i32, b: i32) -> i32 {
@@ -38,7 +38,7 @@ impl Query {
 在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用`EmptyMutation`和`EmptySubscription`来创建Schema，然后调用`Schema::execute`来执行查询。
 
 ```rust
-let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
+let schema = GqlSchema::new(MySchema, EmptyMutation, EmptySubscription);
 let res = schema.execute("{ add(a: 10, b: 20) }");
 ```
 

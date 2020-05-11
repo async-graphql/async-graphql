@@ -1,6 +1,6 @@
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
-    Result, Type,
+    registry, GqlContext, GqlContextSelectionSet, GqlError, GqlResult, ObjectType, OutputValueType,
+    Pos, QueryError, Type,
 };
 use std::borrow::Cow;
 
@@ -11,15 +11,16 @@ use std::borrow::Cow;
 /// # Examples
 ///
 /// ```rust
-/// use async_graphql::*;
+/// use async_graphql::prelude::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription};
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GqlObject]
 /// impl QueryRoot {}
 ///
 /// fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let schema = GqlSchema::new(QueryRoot, EmptyMutation, EmptySubscription);
 /// }
 /// ```
 pub struct EmptyMutation;
@@ -47,15 +48,19 @@ impl ObjectType for EmptyMutation {
         true
     }
 
-    async fn resolve_field(&self, _ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, _ctx: &GqlContext<'_>) -> GqlResult<serde_json::Value> {
         unreachable!()
     }
 }
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptyMutation {
-    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        Err(Error::Query {
+    async fn resolve(
+        &self,
+        _ctx: &GqlContextSelectionSet<'_>,
+        pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
+        Err(GqlError::Query {
             pos,
             path: None,
             err: QueryError::NotConfiguredMutations,

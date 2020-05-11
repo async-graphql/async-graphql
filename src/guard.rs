@@ -1,6 +1,6 @@
 //! Field guards
 
-use crate::{Context, FieldResult};
+use crate::{GqlContext, GqlFieldResult};
 
 /// Field guard
 ///
@@ -8,7 +8,7 @@ use crate::{Context, FieldResult};
 #[async_trait::async_trait]
 pub trait Guard {
     #[allow(missing_docs)]
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()>;
+    async fn check(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<()>;
 }
 
 /// An extension trait for `Guard`
@@ -26,7 +26,7 @@ pub struct GuardAnd<A: Guard, B: Guard>(A, B);
 
 #[async_trait::async_trait]
 impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for GuardAnd<A, B> {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &GqlContext<'_>) -> GqlFieldResult<()> {
         self.0.check(ctx).await?;
         self.1.check(ctx).await
     }

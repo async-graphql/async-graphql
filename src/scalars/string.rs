@@ -1,14 +1,14 @@
 use crate::parser::Pos;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Result,
-    ScalarType, Type, Value,
+    registry, GqlContextSelectionSet, GqlInputValueResult, GqlResult, GqlValue, InputValueError,
+    OutputValueType, ScalarType, Type,
 };
-use async_graphql_derive::Scalar;
+use async_graphql_derive::GqlScalar;
 use std::borrow::Cow;
 
 const STRING_DESC: &str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
 
-#[Scalar(internal)]
+#[GqlScalar(internal)]
 impl ScalarType for String {
     fn type_name() -> &'static str {
         "String"
@@ -18,21 +18,21 @@ impl ScalarType for String {
         Some(STRING_DESC)
     }
 
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: GqlValue) -> GqlInputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(s),
+            GqlValue::String(s) => Ok(s),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
 
-    fn is_valid(value: &Value) -> bool {
+    fn is_valid(value: &GqlValue) -> bool {
         match value {
-            Value::String(_) => true,
+            GqlValue::String(_) => true,
             _ => false,
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
+    fn to_json(&self) -> GqlResult<serde_json::Value> {
         Ok(self.clone().into())
     }
 }
@@ -47,7 +47,7 @@ impl<'a> Type for &'a str {
             name: Self::type_name().to_string(),
             description: Some(STRING_DESC),
             is_valid: |value| match value {
-                Value::String(_) => true,
+                GqlValue::String(_) => true,
                 _ => false,
             },
         })
@@ -56,7 +56,11 @@ impl<'a> Type for &'a str {
 
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
-    async fn resolve(&self, _: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        _: &GqlContextSelectionSet<'_>,
+        _pos: Pos,
+    ) -> GqlResult<serde_json::Value> {
         Ok((*self).into())
     }
 }

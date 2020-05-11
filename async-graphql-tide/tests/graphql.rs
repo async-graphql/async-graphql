@@ -16,7 +16,7 @@ fn quickstart() -> Result<()> {
 
         let server = Task::<Result<()>>::spawn(async move {
             struct QueryRoot;
-            #[Object]
+            #[GqlObject]
             impl QueryRoot {
                 #[field(desc = "Returns the sum of a and b")]
                 async fn add(&self, a: i32, b: i32) -> i32 {
@@ -26,7 +26,7 @@ fn quickstart() -> Result<()> {
 
             let mut app = tide::new();
             app.at("/").post(|req: Request<()>| async move {
-                let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+                let schema = GqlSchema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
                 async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
             });
             app.listen(&listen_addr).await?;
@@ -68,19 +68,19 @@ fn hello() -> Result<()> {
         let server = Task::<Result<()>>::spawn(async move {
             struct Hello(String);
             struct QueryRoot;
-            #[Object]
+            #[GqlObject]
             impl QueryRoot {
                 #[field(desc = "Returns hello")]
-                async fn hello<'a>(&self, ctx: &'a Context<'_>) -> String {
+                async fn hello<'a>(&self, ctx: &'a GqlContext<'_>) -> String {
                     let name = ctx.data_opt::<Hello>().map(|hello| hello.0.as_str());
                     format!("Hello, {}!", name.unwrap_or("world"))
                 }
             }
 
             struct AppState {
-                schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
+                schema: GqlSchema<QueryRoot, EmptyMutation, EmptySubscription>,
             }
-            let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+            let schema = GqlSchema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 
             let app_state = AppState { schema };
             let mut app = tide::with_state(app_state);
@@ -154,10 +154,10 @@ fn upload() -> Result<()> {
 
         let server = Task::<Result<()>>::spawn(async move {
             struct QueryRoot;
-            #[Object]
+            #[GqlObject]
             impl QueryRoot {}
 
-            #[async_graphql::SimpleObject]
+            #[GqlSimpleObject]
             #[derive(Clone)]
             pub struct FileInfo {
                 filename: String,
@@ -165,7 +165,7 @@ fn upload() -> Result<()> {
             }
 
             struct MutationRoot;
-            #[Object]
+            #[GqlObject]
             impl MutationRoot {
                 async fn single_upload(&self, file: Upload) -> FileInfo {
                     println!("single_upload: filename={}", file.filename());
@@ -186,7 +186,7 @@ fn upload() -> Result<()> {
 
             let mut app = tide::new();
             app.at("/").post(|req: Request<()>| async move {
-                let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
+                let schema = GqlSchema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
                 async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
             });
             app.listen(&listen_addr).await?;
