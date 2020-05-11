@@ -166,7 +166,7 @@ impl ScalarType for StringNumber {
         &quot;StringNumber&quot;
     }
 
-    fn parse(value: &amp;Value) -&gt; InputValueResult&lt;Self&gt; {
+    fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = value {
             // Parse the integer value
             value.parse().map(StringNumber)?
