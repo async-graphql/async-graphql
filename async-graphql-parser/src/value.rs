@@ -1,5 +1,19 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::fmt::Formatter;
+use std::io::Read;
+
+pub struct UploadValue {
+    pub filename: String,
+    pub content_type: Option<String>,
+    pub path: Option<Box<dyn Read>>,
+}
+
+impl fmt::Debug for UploadValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!("Upload({})", self.filename)
+    }
+}
 
 /// Represents a GraphQL value
 #[derive(Clone, Debug)]
@@ -14,6 +28,7 @@ pub enum Value {
     Enum(String),
     List(Vec<Value>),
     Object(BTreeMap<String, Value>),
+    Upload(UploadValue),
 }
 
 impl PartialEq for Value {
@@ -54,6 +69,7 @@ impl PartialEq for Value {
                 }
                 true
             }
+            (Upload(a), Upload(b)) => a.filename == b.filename,
             _ => false,
         }
     }
@@ -112,6 +128,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
+            Value::Upload(upload) => write!(f, "null"),
         }
     }
 }
@@ -136,6 +153,7 @@ impl From<Value> for serde_json::Value {
                     .map(|(name, value)| (name, value.into()))
                     .collect(),
             ),
+            Value::Upload(_) => serde_json::Value::Null,
         }
     }
 }

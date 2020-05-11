@@ -10,4 +10,4 @@ mod value;
 
 pub use pos::{Pos, Positioned};
 pub use query_parser::{parse_query, parse_value, Error, Result};
-pub use value::Value;
+pub use value::{UploadValue, Value};

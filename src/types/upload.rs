@@ -1,5 +1,8 @@
 use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use async_graphql_parser::UploadValue;
+use futures::AsyncRead;
 use std::borrow::Cow;
+use std::io::Read;
 use std::path::PathBuf;
 
 /// Uploaded file
@@ -41,15 +44,24 @@ use std::path::PathBuf;
 /// --form 'map={ "0": ["variables.file"] }' \
 /// --form '0=@myFile.txt'
 /// ```
-pub struct Upload {
+pub struct Upload(UploadValue);
+
+impl Upload {
     /// Filename
-    pub filename: String,
+    pub fn filename(&self) -> &str {
+        self.0.filename.as_str()
+    }
 
     /// Content type, such as `application/json`, `image/jpg` ...
-    pub content_type: Option<String>,
+    pub fn content_type(&self) -> Option<&str> {
+        self.0.content_type.as_deref()
+    }
 
-    /// Temporary file path
-    pub path: PathBuf,
+    /// Convert to an asynchronous stream
+    pub fn into_async_read(self) -> impl AsyncRead {}
+
+    /// Convert to a synchronized stream
+    pub fn into_read(self) -> impl Read {}
 }
 
 impl<'a> Type for Upload {
