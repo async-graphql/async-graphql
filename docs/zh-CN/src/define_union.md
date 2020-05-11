@@ -38,5 +38,8 @@ impl Square {
 }
 
 #[Union]
-struct Shape(Circle, Square);
+enum Shape {
+    Circle(Circle),
+    Square(Square),
+}
 ```

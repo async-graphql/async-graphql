@@ -1,14 +1,14 @@
 use async_graphql::*;
 
 #[async_std::test]
-pub async fn test_interface_simple_object() {
+pub async fn test_union_simple_object() {
     #[async_graphql::SimpleObject]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[async_graphql::Interface(field(name = "id", type = "i32"))]
+    #[async_graphql::Union]
     enum Node {
         MyObj(MyObj),
     }
@@ -28,7 +28,7 @@ pub async fn test_interface_simple_object() {
 
     let query = r#"{
             node {
-                ... on Node {
+                ... on MyObj {
                     id
                 }
             }
@@ -45,7 +45,7 @@ pub async fn test_interface_simple_object() {
 }
 
 #[async_std::test]
-pub async fn test_interface_simple_object2() {
+pub async fn test_union_simple_object2() {
     #[async_graphql::SimpleObject]
     struct MyObj {
         #[field(ref)]
@@ -53,7 +53,7 @@ pub async fn test_interface_simple_object2() {
         title: String,
     }
 
-    #[async_graphql::Interface(field(name = "id", type = "&i32"))]
+    #[async_graphql::Union]
     enum Node {
         MyObj(MyObj),
     }
@@ -73,7 +73,7 @@ pub async fn test_interface_simple_object2() {
 
     let query = r#"{
             node {
-                ... on Node {
+                ... on MyObj {
                     id
                 }
             }
@@ -90,7 +90,7 @@ pub async fn test_interface_simple_object2() {
 }
 
 #[async_std::test]
-pub async fn test_multiple_interfaces() {
+pub async fn test_multiple_unions() {
     struct MyObj;
 
     #[async_graphql::Object]
@@ -108,13 +108,13 @@ pub async fn test_multiple_interfaces() {
         }
     }
 
-    #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
-    enum InterfaceA {
+    #[async_graphql::Union]
+    enum UnionA {
         MyObj(MyObj),
     }
 
-    #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
-    enum InterfaceB {
+    #[async_graphql::Union]
+    enum UnionB {
         MyObj(MyObj),
     }
 
@@ -122,31 +122,42 @@ pub async fn test_multiple_interfaces() {
 
     #[Object]
     impl Query {
-        async fn my_obj(&self) -> InterfaceB {
+        async fn union_a(&self) -> UnionA {
+            MyObj.into()
+        }
+        async fn union_b(&self) -> UnionB {
             MyObj.into()
         }
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .register_type::<InterfaceA>() // `InterfaceA` is not directly referenced, so manual registration is required.
+        .register_type::<UnionA>() // `UnionA` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
-            myObj {
-               ... on InterfaceA {
+            unionA {
+               ... on MyObj {
                 valueA
-              }
-              ... on InterfaceB {
                 valueB
-              }
-              ... on MyObj {
                 valueC
               }
             }
+            unionB {
+                ... on MyObj {
+                 valueA
+                 valueB
+                 valueC
+               }
+             }
         }"#;
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({
-            "myObj": {
+            "unionA": {
+                "valueA": 1,
+                "valueB": 2,
+                "valueC": 3,
+            },
+            "unionB": {
                 "valueA": 1,
                 "valueB": 2,
                 "valueC": 3,
@@ -156,7 +167,7 @@ pub async fn test_multiple_interfaces() {
 }
 
 #[async_std::test]
-pub async fn test_multiple_objects_in_multiple_interfaces() {
+pub async fn test_multiple_objects_in_multiple_unions() {
     struct MyObjOne;
 
     #[async_graphql::Object]
@@ -183,14 +194,14 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
         }
     }
 
-    #[async_graphql::Interface(field(name = "value_a", type = "i32"))]
-    enum InterfaceA {
+    #[async_graphql::Union]
+    enum UnionA {
         MyObjOne(MyObjOne),
         MyObjTwo(MyObjTwo),
     }
 
-    #[async_graphql::Interface(field(name = "value_b", type = "i32"))]
-    enum InterfaceB {
+    #[async_graphql::Union]
+    enum UnionB {
         MyObjOne(MyObjOne),
     }
 
@@ -198,26 +209,25 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
 
     #[Object]
     impl Query {
-        async fn my_obj(&self) -> Vec<InterfaceA> {
+        async fn my_obj(&self) -> Vec<UnionA> {
             vec![MyObjOne.into(), MyObjTwo.into()]
         }
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .register_type::<InterfaceB>() // `InterfaceB` is not directly referenced, so manual registration is required.
+        .register_type::<UnionB>() // `UnionB` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
-             myObj {
-                ... on InterfaceA {
-                 valueA
-               }
-               ... on InterfaceB {
-                 valueB
-               }
-               ... on MyObjOne {
-                 valueC
-               }
-             }
+            myObj {
+                ... on MyObjTwo {
+                    valueA
+                }
+                ... on MyObjOne {
+                    valueA
+                    valueB
+                    valueC
+                }
+            }
          }"#;
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
@@ -234,7 +244,7 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
 }
 
 #[async_std::test]
-pub async fn test_interface_field_result() {
+pub async fn test_union_field_result() {
     struct MyObj;
 
     #[async_graphql::Object]
@@ -244,7 +254,7 @@ pub async fn test_interface_field_result() {
         }
     }
 
-    #[async_graphql::Interface(field(name = "value", type = "FieldResult<i32>"))]
+    #[async_graphql::Union]
     enum Node {
         MyObj(MyObj),
     }
@@ -260,7 +270,7 @@ pub async fn test_interface_field_result() {
 
     let query = r#"{
             node {
-                ... on Node {
+                ... on MyObj {
                     value
                 }
             }

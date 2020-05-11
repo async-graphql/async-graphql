@@ -2,24 +2,24 @@ use crate::args;
 use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use proc_macro::TokenStream;
 use quote::quote;
+use std::collections::HashSet;
 use syn::{Data, DeriveInput, Error, Fields, Result, Type};
 
 pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
-    let attrs = &input.attrs;
-    let vis = &input.vis;
     let s = match &input.data {
-        Data::Struct(s) => s,
-        _ => return Err(Error::new_spanned(input, "It should be a struct.")),
-    };
-    let fields = match &s.fields {
-        Fields::Unnamed(fields) => fields,
-        _ => return Err(Error::new_spanned(input, "All fields must be unnamed.")),
+        Data::Enum(s) => s,
+        _ => {
+            return Err(Error::new_spanned(
+                input,
+                "Unions can only be applied to an enum.",
+            ))
+        }
     };
     let mut enum_names = Vec::new();
-    let mut enum_items = Vec::new();
+    let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
     let gql_typename = union_args.name.clone().unwrap_or_else(|| ident.to_string());
     check_reserved_name(&gql_typename, union_args.internal)?;
@@ -36,11 +36,39 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     let mut collect_inline_fields = Vec::new();
     let mut get_introspection_typename = Vec::new();
 
-    for field in &fields.unnamed {
+    for variant in s.variants.iter() {
+        let enum_name = &variant.ident;
+        let field = match &variant.fields {
+            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => fields.unnamed.first().unwrap(),
+            Fields::Unnamed(_) => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Only single value variants are supported",
+                ))
+            }
+            Fields::Unit => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Empty variants are not supported",
+                ))
+            }
+            Fields::Named(_) => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Variants with named fields are not supported",
+                ))
+            }
+        };
         if let Type::Path(p) = &field.ty {
-            let enum_name = &p.path.segments.last().unwrap().ident;
+            // This validates that the field type wasn't already used
+            if enum_items.insert(p) == false {
+                return Err(Error::new_spanned(
+                    field,
+                    "This type already used in another variant",
+                ));
+            }
+
             enum_names.push(enum_name);
-            enum_items.push(quote! { #enum_name(#p) });
             type_into_impls.push(quote! {
                 impl #generics From<#p> for #ident #generics {
                     fn from(obj: #p) -> Self {
@@ -68,8 +96,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     }
 
     let expanded = quote! {
-        #(#attrs)*
-        #vis enum #ident #generics { #(#enum_items),* }
+        #input
 
         #(#type_into_impls)*
 

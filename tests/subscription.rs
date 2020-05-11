@@ -325,7 +325,9 @@ pub async fn test_subscription_fragment() {
     }
 
     #[Interface(field(name = "a", type = "i32"))]
-    struct MyInterface(Event);
+    enum MyInterface {
+        Event(Event),
+    }
 
     #[Object]
     impl QueryRoot {}
@@ -380,7 +382,9 @@ pub async fn test_subscription_fragment2() {
     }
 
     #[Interface(field(name = "a", type = "i32"))]
-    struct MyInterface(Event);
+    enum MyInterface {
+        Event(Event),
+    }
 
     #[Object]
     impl QueryRoot {}
