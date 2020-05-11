@@ -159,9 +159,10 @@
 <h1><a class="header" href="#quickstart" id="quickstart">Quickstart</a></h1>
 <h2><a class="header" href="#add-dependency-libraries" id="add-dependency-libraries">Add dependency libraries</a></h2>
 <pre><code class="language-toml">[dependencies]
-async-graphql = &quot;1.9.0&quot;
-async-graphql-actix-web = &quot;1.0.0&quot; # If you need to integrate into actix-web
-async-graphql-warp = &quot;1.0.0&quot; # If you need to integrate into warp
+async-graphql = &quot;1.11.0&quot;
+async-graphql-actix-web = &quot;1.3.0&quot; # If you need to integrate into actix-web
+async-graphql-warp = &quot;1.3.0&quot; If you need to integrate into warp
+async-graphql-tide = &quot;1.2.0&quot; # If you need to integrate into tide
 </code></pre>
 <h2><a class="header" href="#write-a-schema" id="write-a-schema">Write a Schema</a></h2>
 <p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with <code>#[field]</code> so that the procedure macro provided by <code>Async-graphql</code> can correctly recognize it.</p>
