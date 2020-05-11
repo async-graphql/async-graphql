@@ -529,7 +529,68 @@ pub use async_graphql_derive::Interface;
 
 /// Define a GraphQL union
 ///
-/// It's similar to Interface, but it doesn't have fields.
+///
+/// # Macro parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | Object name               | string   | Y        |
+/// | desc        | Object description        | string   | Y        |
+///
+/// # Define a union
+///
+/// Define TypeA, TypeB, ... as MyUnion
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[SimpleObject]
+/// struct TypeA {
+///     value_a: i32,
+/// }
+///
+/// #[SimpleObject]
+/// struct TypeB {
+///     value_b: i32
+/// }
+///
+/// #[Union]
+/// enum MyUnion {
+///     TypeA(TypeA),
+///     TypeB(TypeB),
+/// }
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     async fn all_data(&self) -> Vec<MyUnion> {
+///         vec![TypeA { value_a: 10 }.into(), TypeB { value_b: 20 }.into()]
+///     }
+/// }
+///
+/// #[async_std::main]
+/// async fn main() {
+///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
+///     let res = schema.execute(r#"
+///     {
+///         allData {
+///             ... on TypeA {
+///                 valueA
+///             }
+///             ... on TypeB {
+///                 valueB
+///             }
+///         }
+///     }"#).await.unwrap().data;
+///     assert_eq!(res, serde_json::json!({
+///         "allData": [
+///             { "valueA": 10 },
+///             { "valueB": 20 },
+///         ]
+///     }));
+/// }
+/// ```
 pub use async_graphql_derive::Union;
 
 /// Define a GraphQL subscription

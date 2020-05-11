@@ -86,7 +86,10 @@ impl Cat {
 }
 
 #[Union(internal)]
-struct CatOrDog(Cat, Dog);
+enum CatOrDog {
+    Cat(Cat),
+    Dog(Dog),
+}
 
 struct Human;
 
@@ -127,10 +130,16 @@ impl Alien {
 }
 
 #[Union(internal)]
-struct DogOrHuman(Dog, Human);
+enum DogOrHuman {
+    Dog(Dog),
+    Human(Human),
+}
 
 #[Union(internal)]
-struct HumanOrAlien(Human, Alien);
+enum HumanOrAlien {
+    Human(Human),
+    Alien(Alien),
+}
 
 #[Interface(
     internal,
