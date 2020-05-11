@@ -1,6 +1,6 @@
 # Apollo Federation
 
-`Apollo Federation` is a `GraphQL` gateway API which can combine multiple GraphQL services, allowing each srvice to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction)。
+`Apollo Federation` is a `GraphQL` API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction)。
 
 `Async-GraphQL` supports all the functionality of `Apollo Federation`, but some modifications to your `Schema` are required.
 
