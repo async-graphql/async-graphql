@@ -37,6 +37,12 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     }
 }
 
+impl From<serde_json::Value> for Json<serde_json::Value> {
+    fn from(value: serde_json::Value) -> Self {
+        Self(value)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::*;
