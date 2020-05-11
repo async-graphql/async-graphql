@@ -6,9 +6,10 @@ Resolve can return a `FieldResult`, following is the definition:
 type FieldResult<T> = std::result::Result<T, FieldError>;
 ```
 
-Any `Error` can be converted to `FieldError` and you can extend error message.
+Any `Error` that implements `std::fmt::Display` can be converted to `FieldError` and you can extend error message.
 
 Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.
+See [ErrorExtensions](error_extensions.md) sections of this book for more details.
 
 ```rust
 use async_graphql::*;
