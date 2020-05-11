@@ -124,11 +124,12 @@ pub fn DataSource(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(datasource_args) => datasource_args,
         Err(err) => return err.to_compile_error().into(),
     };
-    let item_impl = parse_macro_input!(input as ItemImpl);
+    let input2: proc_macro2::TokenStream = input.clone().into();
+    let _item_impl = parse_macro_input!(input as ItemImpl);
     let crate_name = get_crate_name(datasource_args.internal);
     let expanded = quote! {
         #[#crate_name::async_trait::async_trait]
-        #item_impl
+        #input2
     };
     expanded.into()
 }
@@ -140,13 +141,14 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(scalar_args) => scalar_args,
         Err(err) => return err.to_compile_error().into(),
     };
+    let input2: proc_macro2::TokenStream = input.clone().into();
     let item_impl = parse_macro_input!(input as ItemImpl);
     let self_ty = &item_impl.self_ty;
     let generic = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
     let crate_name = get_crate_name(scalar_args.internal);
     let expanded = quote! {
-        #item_impl
+        #input2
 
         impl #generic #crate_name::Type for #self_ty #where_clause {
             fn type_name() -> std::borrow::Cow<'static, str> {
