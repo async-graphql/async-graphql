@@ -155,8 +155,9 @@
 </span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<p>Any <code>Error</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
-<p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.</p>
+<p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
+<p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.
+See <a href="error_extensions.html">ErrorExtensions</a> sections of this book for more details.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
