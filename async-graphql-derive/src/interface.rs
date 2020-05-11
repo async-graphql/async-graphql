@@ -6,26 +6,25 @@ use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
+use std::collections::HashSet;
 use syn::{Data, DeriveInput, Error, Fields, Result, Type};
 
 pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
-    let attrs = &input.attrs;
-    let vis = &input.vis;
     let s = match &input.data {
-        Data::Struct(s) => s,
-        _ => return Err(Error::new_spanned(input, "It should be a struct.")),
-    };
-    let fields = match &s.fields {
-        Fields::Unnamed(fields) => Some(&fields.unnamed),
-        Fields::Unit => None,
-        _ => return Err(Error::new_spanned(input, "All fields must be unnamed.")),
+        Data::Enum(s) => s,
+        _ => {
+            return Err(Error::new_spanned(
+                input,
+                "Interfaces can only be applied to an enum.",
+            ))
+        }
     };
     let extends = interface_args.extends;
     let mut enum_names = Vec::new();
-    let mut enum_items = Vec::new();
+    let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
     let gql_typename = interface_args
         .name
@@ -45,41 +44,67 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut collect_inline_fields = Vec::new();
     let mut get_introspection_typename = Vec::new();
 
-    if let Some(fields) = fields {
-        for field in fields {
-            if let Type::Path(p) = &field.ty {
-                let enum_name = &p.path.segments.last().unwrap().ident;
-                enum_items.push(quote! { #enum_name(#p) });
-                type_into_impls.push(quote! {
-                    impl #generics From<#p> for #ident #generics {
-                        fn from(obj: #p) -> Self {
-                            #ident::#enum_name(obj)
-                        }
-                    }
-                });
-                enum_names.push(enum_name);
-
-                registry_types.push(quote! {
-                    <#p as #crate_name::Type>::create_type_info(registry);
-                    registry.add_implements(&<#p as #crate_name::Type>::type_name(), #gql_typename);
-                });
-
-                possible_types.push(quote! {
-                    possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
-                });
-
-                collect_inline_fields.push(quote! {
-                    if let #ident::#enum_name(obj) = self {
-                        return obj.collect_inline_fields(name, ctx, futures);
-                    }
-                });
-
-                get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
-                })
-            } else {
-                return Err(Error::new_spanned(field, "Invalid type"));
+    for variant in s.variants.iter() {
+        let enum_name = &variant.ident;
+        let field = match &variant.fields {
+            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => fields.unnamed.first().unwrap(),
+            Fields::Unnamed(_) => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Only single value variants are supported",
+                ))
             }
+            Fields::Unit => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Empty variants are not supported",
+                ))
+            }
+            Fields::Named(_) => {
+                return Err(Error::new_spanned(
+                    variant,
+                    "Variants with named fields are not supported",
+                ))
+            }
+        };
+        if let Type::Path(p) = &field.ty {
+            // This validates that the field type wasn't already used
+            if enum_items.insert(p) == false {
+                return Err(Error::new_spanned(
+                    field,
+                    "This type already used in another variant",
+                ));
+            }
+
+            type_into_impls.push(quote! {
+                impl #generics From<#p> for #ident #generics {
+                    fn from(obj: #p) -> Self {
+                        #ident::#enum_name(obj)
+                    }
+                }
+            });
+            enum_names.push(enum_name);
+
+            registry_types.push(quote! {
+                <#p as #crate_name::Type>::create_type_info(registry);
+                registry.add_implements(&<#p as #crate_name::Type>::type_name(), #gql_typename);
+            });
+
+            possible_types.push(quote! {
+                possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
+            });
+
+            collect_inline_fields.push(quote! {
+                if let #ident::#enum_name(obj) = self {
+                    return obj.collect_inline_fields(name, ctx, futures);
+                }
+            });
+
+            get_introspection_typename.push(quote! {
+                #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+            })
+        } else {
+            return Err(Error::new_spanned(field, "Invalid type"));
         }
     }
 
@@ -236,8 +261,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     };
 
     let expanded = quote! {
-        #(#attrs)*
-        #vis enum #ident #generics { #(#enum_items),* }
+        #input
 
         #(#type_into_impls)*
 
