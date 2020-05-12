@@ -45,7 +45,7 @@ Constructing new `FieldError`s by hand quickly becomes tedious. That is why asyn
 two convenience traits for casting your errors to the appropriate `FieldError` with
 extensions.
 
-The easies way to provide extensions to any error is by calling `extend_with` on the error.
+The easiest way to provide extensions to any error is by calling `extend_with` on the error.
 This will on the fly convert any error into a `FieldError` with the given extension.
 
 ```rust
@@ -122,28 +122,6 @@ async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
 
 ```
 
-### Pitfalls
-Rust does not provide stable trait specialization yet.
-That is why `ErrorExtensions` is actually implemented for `&E where E: std::fmt::Display`
-instead of `E: std::fmt::Display` to provide some specialization through
-[Autoref-based stable specialization](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md).
-The disadvantage is that the below code does **NOT** compile:
-
-```rust,ignore,does_not_compile
-async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
-    // does not work because ErrorExtensions is not implemented for ParseIntError
-    Ok("234a".parse().extend_err(|_| json!({"code": 404}))?)
-}
-```
-
-however this does:
-
-```rust,ignore,does_not_compile
-async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
-    // does work because ErrorExtensions is implemented for &ParseIntError
-    Ok("234a".parse().map_err(|ref e| e.extend_with(|_| json!({"code": 404})))?)
-}
-```
 
 
 
@@ -167,14 +145,15 @@ we can chain the extension together.
 ```rust
 use async_graphql::*;
 async fn parse_with_extensions(&self) -> FieldResult<i32> {
-    Ok("234a"
-      .parse()
-      .extend_with(|_| json!({"code": 404}))
-      .extend_with(|_| json!("details": "some more info.."))
-
-      // keys may also overwrite previous keys... 
-      .extend_with(|_| json!({"code": 500}))?)
- }
+    match "234a".parse() {
+        Ok(n) => Ok(n),
+        Err(e) => Err(e
+            .extend_with(|_| json!({"code": 404}))
+            .extend_with(|_| json!({"details": "some more info.."}))
+            // keys may also overwrite previous keys...
+            .extend_with(|_| json!({"code": 500}))),
+    }
+}
 ```
 Expected response:
 
@@ -191,6 +170,32 @@ Expected response:
       }
     }
   ]
+}
+```
+
+### Pitfalls
+Rust does not provide stable trait specialization yet.
+That is why `ErrorExtensions` is actually implemented for `&E where E: std::fmt::Display`
+instead of `E: std::fmt::Display` to provide some specialization through
+[Autoref-based stable specialization](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md).
+The disadvantage is that the below code does **NOT** compile:
+
+```rust,ignore,does_not_compile
+async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
+    // the trait `error::ErrorExtensions` is not implemented
+    // for `std::num::ParseIntError`
+    "234a".parse().extend_err(|_| json!({"code": 404}))
+}
+```
+
+however this does:
+
+```rust,ignore,does_not_compile
+async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
+    // does work because ErrorExtensions is implemented for &ParseIntError
+    "234a"
+      .parse()
+      .map_err(|ref e: ParseIntError| e.extend_with(|_| json!({"code": 404})))
 }
 ```
 
