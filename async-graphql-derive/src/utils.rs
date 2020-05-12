@@ -8,8 +8,7 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
         quote! { crate }
     } else {
-        let name =
-            crate_name("async-graphql").expect("async-graphql is not present in `Cargo.toml`");
+        let name = crate_name("async-graphql").unwrap_or_else(|_| "async_graphql".to_owned());
         let id = Ident::new(&name, Span::call_site());
         quote! { #id }
     }
