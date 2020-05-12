@@ -1,5 +1,6 @@
 use async_graphql_parser::Value;
 use proc_macro2::{Span, TokenStream};
+use proc_macro_crate::crate_name;
 use quote::quote;
 use syn::{Attribute, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
 
@@ -7,7 +8,8 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
         quote! { crate }
     } else {
-        let id = Ident::new("async_graphql", Span::call_site());
+        let name = crate_name("async-graphql").expect("async-graphql is not present in `Cargo.toml`");
+        let id = Ident::new(&name, Span::call_site());
         quote! { #id }
     }
 }
