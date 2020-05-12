@@ -1,5 +1,5 @@
 use crate::utils::{get_rustdoc, parse_guards, parse_validator};
-use async_graphql_parser::{parse_value, Value};
+use async_graphql_parser::{parse_value, ParsedValue};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};
@@ -126,7 +126,7 @@ impl Object {
 pub struct Argument {
     pub name: Option<String>,
     pub desc: Option<String>,
-    pub default: Option<Value>,
+    pub default: Option<ParsedValue>,
     pub validator: TokenStream,
 }
 
@@ -163,12 +163,6 @@ impl Argument {
                             } else if nv.path.is_ident("default") {
                                 if let syn::Lit::Str(lit) = &nv.lit {
                                     match parse_value(&lit.value()) {
-                                        Ok(Value::Variable(_)) => {
-                                            return Err(Error::new_spanned(
-                                                &nv.lit,
-                                                "The default cannot be a variable",
-                                            ))
-                                        }
                                         Ok(value) => default = Some(value),
                                         Err(err) => {
                                             return Err(Error::new_spanned(
@@ -436,7 +430,7 @@ impl EnumItem {
 pub struct InputField {
     pub name: Option<String>,
     pub desc: Option<String>,
-    pub default: Option<Value>,
+    pub default: Option<ParsedValue>,
     pub validator: TokenStream,
 }
 
@@ -480,12 +474,6 @@ impl InputField {
                                 } else if nv.path.is_ident("default") {
                                     if let syn::Lit::Str(lit) = &nv.lit {
                                         match parse_value(&lit.value()) {
-                                            Ok(Value::Variable(_)) => {
-                                                return Err(Error::new_spanned(
-                                                    &lit,
-                                                    "The default cannot be a variable",
-                                                ))
-                                            }
                                             Ok(value) => default = Some(value),
                                             Err(err) => {
                                                 return Err(Error::new_spanned(
@@ -578,7 +566,7 @@ pub struct InterfaceFieldArgument {
     pub name: String,
     pub desc: Option<String>,
     pub ty: Type,
-    pub default: Option<Value>,
+    pub default: Option<ParsedValue>,
 }
 
 impl InterfaceFieldArgument {
@@ -624,12 +612,6 @@ impl InterfaceFieldArgument {
                 } else if nv.path.is_ident("default") {
                     if let syn::Lit::Str(lit) = &nv.lit {
                         match parse_value(&lit.value()) {
-                            Ok(Value::Variable(_)) => {
-                                return Err(Error::new_spanned(
-                                    &nv.lit,
-                                    "The default cannot be a variable",
-                                ))
-                            }
                             Ok(value) => default = Some(value),
                             Err(err) => {
                                 return Err(Error::new_spanned(

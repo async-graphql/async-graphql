@@ -1,7 +1,6 @@
 use crate::context::Data;
 use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
-use crate::parser::ast::{Definition, OperationDefinition};
 use crate::parser::parse_query;
 use crate::query::QueryBuilder;
 use crate::registry::{Directive, InputValue, Registry};
@@ -242,49 +241,32 @@ where
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let document = parse_query(source).map_err(Into::<Error>::into)?;
+        let mut document = parse_query(source).map_err(Into::<Error>::into)?;
         check_rules(&self.0.registry, &document, self.0.validation_mode)?;
 
-        let mut fragments = HashMap::new();
-        let mut subscription = None;
-
-        for definition in document.definitions {
-            match definition.node {
-                Definition::Operation(operation) => {
-                    if let OperationDefinition::Subscription(s) = operation.node {
-                        if subscription.is_none()
-                            && (s.name.as_ref().map(|v| v.as_str()) == operation_name
-                                || operation_name.is_none())
-                        {
-                            subscription = Some(s);
-                        }
-                    }
-                }
-                Definition::Fragment(fragment) => {
-                    fragments.insert(fragment.name.clone_inner(), fragment.into_inner());
-                }
-            }
-        }
-
-        let subscription = subscription
-            .ok_or(if let Some(name) = operation_name {
-                QueryError::UnknownOperationNamed {
+        if !document.retain_operation(operation_name) {
+            return if let Some(name) = operation_name {
+                Err(QueryError::UnknownOperationNamed {
                     name: name.to_string(),
                 }
-                .into_error(Pos::default())
+                .into_error(Pos::default()))
             } else {
-                QueryError::MissingOperation.into_error(Pos::default())
-            })?
-            .into_inner();
+                Err(QueryError::MissingOperation.into_error(Pos::default()))
+            };
+        }
 
         let resolve_id = AtomicUsize::default();
         let environment = Arc::new(Environment {
             variables,
-            variable_definitions: subscription.variable_definitions,
-            fragments,
+            document: Box::new(document),
             ctx_data: ctx_data.unwrap_or_default(),
         });
-        let ctx = environment.create_context(self, None, &subscription.selection_set, &resolve_id);
+        let ctx = environment.create_context(
+            self,
+            None,
+            &environment.document.current_operation().selection_set,
+            &resolve_id,
+        );
         let mut streams = Vec::new();
         create_subscription_stream(self, environment.clone(), &ctx, &mut streams).await?;
         Ok(futures::stream::select_all(streams))

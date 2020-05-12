@@ -40,7 +40,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                if field.name.as_str() == "__typename" {
+                if field.name.node == "__typename" {
                     // Get the typename
                     let ctx_field = ctx.with_field(field);
                     let field_name = ctx_field.result_name().to_string();
@@ -68,7 +68,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                     .registry
                                     .types
                                     .get(T::type_name().as_ref())
-                                    .and_then(|ty| ty.field_by_name(field.name.as_str()))
+                                    .and_then(|ty| ty.field_by_name(field.name.node))
                                     .map(|field| &field.ty)
                                 {
                                     Some(ty) => &ty,
@@ -77,7 +77,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                             pos: field.position(),
                                             path: None,
                                             err: QueryError::FieldNotFound {
-                                                field_name: field.name.clone_inner(),
+                                                field_name: field.name.to_string(),
                                                 object: T::type_name().to_string(),
                                             },
                                         });
@@ -112,7 +112,11 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                if let Some(fragment) = ctx.fragments.get(fragment_spread.fragment_name.as_str()) {
+                if let Some(fragment) = ctx
+                    .document
+                    .fragments()
+                    .get(fragment_spread.fragment_name.node)
+                {
                     collect_fields(
                         &ctx.with_selection_set(&fragment.selection_set),
                         root,
@@ -123,7 +127,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         pos: fragment_spread.position(),
                         path: None,
                         err: QueryError::UnknownFragment {
-                            name: fragment_spread.fragment_name.clone_inner(),
+                            name: fragment_spread.fragment_name.to_string(),
                         },
                     });
                 }

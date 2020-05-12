@@ -80,7 +80,7 @@ impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::Int(n) => Ok(ID(n.to_string())),
-            Value::String(s) => Ok(ID(s)),
+            Value::String(s) => Ok(ID(s.into_owned())),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }

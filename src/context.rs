@@ -1,12 +1,14 @@
 use crate::extensions::BoxExtension;
-use crate::parser::ast::{Directive, Field, FragmentDefinition, SelectionSet, VariableDefinition};
+use crate::parser::ast::{Directive, Field, SelectionSet};
 use crate::registry::Registry;
 use crate::{InputValueType, QueryError, Result, Schema, Type};
 use crate::{Pos, Positioned, Value};
+use async_graphql_parser::ast::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};
-use std::collections::{BTreeMap, HashMap};
+use std::borrow::Cow;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::AtomicUsize;
@@ -23,7 +25,7 @@ impl Default for Variables {
 }
 
 impl Deref for Variables {
-    type Target = BTreeMap<String, Value>;
+    type Target = BTreeMap<Cow<'static, str>, Value>;
 
     fn deref(&self) -> &Self::Target {
         if let Value::Object(obj) = &self.0 {
@@ -242,11 +244,10 @@ pub struct ContextBase<'a, T> {
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
     pub(crate) variables: &'a Variables,
-    pub(crate) variable_definitions: &'a [Positioned<VariableDefinition>],
     pub(crate) registry: &'a Registry,
     pub(crate) data: &'a Data,
     pub(crate) ctx_data: Option<&'a Data>,
-    pub(crate) fragments: &'a HashMap<String, FragmentDefinition>,
+    pub(crate) document: &'a Document,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -260,8 +261,7 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 #[doc(hidden)]
 pub struct Environment {
     pub variables: Variables,
-    pub variable_definitions: Vec<Positioned<VariableDefinition>>,
-    pub fragments: HashMap<String, FragmentDefinition>,
+    pub document: Box<Document>,
     pub ctx_data: Arc<Data>,
 }
 
@@ -281,11 +281,10 @@ impl Environment {
             extensions: &[],
             item,
             variables: &self.variables,
-            variable_definitions: &self.variable_definitions,
             registry: &schema.0.registry,
             data: &schema.0.data,
             ctx_data: Some(&self.ctx_data),
-            fragments: &self.fragments,
+            document: &self.document,
         }
     }
 }
@@ -314,8 +313,8 @@ impl<'a, T> ContextBase<'a, T> {
                     field
                         .alias
                         .as_ref()
-                        .map(|alias| alias.as_str())
-                        .unwrap_or_else(|| field.name.as_str()),
+                        .map(|alias| alias.node)
+                        .unwrap_or_else(|| field.name.node),
                 ),
             }),
             extensions: self.extensions,
@@ -323,11 +322,10 @@ impl<'a, T> ContextBase<'a, T> {
             resolve_id: self.get_child_resolve_id(),
             inc_resolve_id: self.inc_resolve_id,
             variables: self.variables,
-            variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
             ctx_data: self.ctx_data,
-            fragments: self.fragments,
+            document: self.document,
         }
     }
 
@@ -343,11 +341,10 @@ impl<'a, T> ContextBase<'a, T> {
             resolve_id: self.resolve_id,
             inc_resolve_id: &self.inc_resolve_id,
             variables: self.variables,
-            variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
             ctx_data: self.ctx_data,
-            fragments: self.fragments,
+            document: self.document,
         }
     }
 
@@ -367,11 +364,13 @@ impl<'a, T> ContextBase<'a, T> {
 
     fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
         let def = self
+            .document
+            .current_operation()
             .variable_definitions
             .iter()
-            .find(|def| def.name.as_str() == name);
+            .find(|def| def.name.node == name);
         if let Some(def) = def {
-            if let Some(var_value) = self.variables.get(def.name.as_str()) {
+            if let Some(var_value) = self.variables.get(def.name.node) {
                 return Ok(var_value.clone());
             } else if let Some(default) = &def.default_value {
                 return Ok(default.clone_inner());
@@ -409,7 +408,7 @@ impl<'a, T> ContextBase<'a, T> {
     #[doc(hidden)]
     pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> Result<bool> {
         for directive in directives {
-            if directive.name.as_str() == "skip" {
+            if directive.name.node == "skip" {
                 if let Some(value) = directive.get_argument("if") {
                     match InputValueType::parse(
                         self.resolve_input_value(value.clone_inner(), value.position())?,
@@ -428,7 +427,7 @@ impl<'a, T> ContextBase<'a, T> {
                     }
                     .into_error(directive.position()));
                 }
-            } else if directive.name.as_str() == "include" {
+            } else if directive.name.node == "include" {
                 if let Some(value) = directive.get_argument("if") {
                     match InputValueType::parse(
                         self.resolve_input_value(value.clone_inner(), value.position())?,
@@ -449,7 +448,7 @@ impl<'a, T> ContextBase<'a, T> {
                 }
             } else {
                 return Err(QueryError::UnknownDirective {
-                    name: directive.name.clone_inner(),
+                    name: directive.name.to_string(),
                 }
                 .into_error(directive.position()));
             }
@@ -472,11 +471,10 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
             resolve_id: self.get_child_resolve_id(),
             inc_resolve_id: self.inc_resolve_id,
             variables: self.variables,
-            variable_definitions: self.variable_definitions,
             registry: self.registry,
             data: self.data,
             ctx_data: self.ctx_data,
-            fragments: self.fragments,
+            document: self.document,
         }
     }
 }
@@ -515,7 +513,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         self.item
             .alias
             .as_ref()
-            .map(|alias| alias.as_str())
-            .unwrap_or_else(|| self.item.name.as_str())
+            .map(|alias| alias.node)
+            .unwrap_or_else(|| self.item.name.node)
     }
 }

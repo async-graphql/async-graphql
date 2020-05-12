@@ -22,7 +22,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
         ctx: &mut VisitorContext<'a>,
         variable_definition: &'a Positioned<VariableDefinition>,
     ) {
-        if !self.names.insert(variable_definition.name.as_str()) {
+        if !self.names.insert(variable_definition.name.node) {
             ctx.report_error(
                 vec![variable_definition.position()],
                 format!(

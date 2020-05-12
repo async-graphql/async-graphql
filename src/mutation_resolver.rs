@@ -39,7 +39,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         continue;
                     }
 
-                    if field.name.as_str() == "__typename" {
+                    if field.name.node == "__typename" {
                         values.insert(
                             "__typename".to_string(),
                             root.introspection_type_name().to_string().into(),
@@ -59,7 +59,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                                 .registry
                                 .types
                                 .get(T::type_name().as_ref())
-                                .and_then(|ty| ty.field_by_name(field.name.as_str()))
+                                .and_then(|ty| ty.field_by_name(field.name.node))
                                 .map(|field| &field.ty)
                             {
                                 Some(ty) => &ty,
@@ -68,7 +68,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                                         pos: field.position(),
                                         path: None,
                                         err: QueryError::FieldNotFound {
-                                            field_name: field.name.clone_inner(),
+                                            field_name: field.name.to_string(),
                                             object: T::type_name().to_string(),
                                         },
                                     });
@@ -97,8 +97,10 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         continue;
                     }
 
-                    if let Some(fragment) =
-                        ctx.fragments.get(fragment_spread.fragment_name.as_str())
+                    if let Some(fragment) = ctx
+                        .document
+                        .fragments()
+                        .get(fragment_spread.fragment_name.node)
                     {
                         do_resolve(
                             &ctx.with_selection_set(&fragment.selection_set),
@@ -111,7 +113,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             pos: fragment_spread.position(),
                             path: None,
                             err: QueryError::UnknownFragment {
-                                name: fragment_spread.fragment_name.clone_inner(),
+                                name: fragment_spread.fragment_name.to_string(),
                             },
                         });
                     }

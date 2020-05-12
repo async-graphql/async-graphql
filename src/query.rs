@@ -1,19 +1,15 @@
 use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::mutation_resolver::do_mutation_resolve;
-use crate::parser::ast::{
-    Definition, Document, OperationDefinition, SelectionSet, VariableDefinition,
-};
 use crate::parser::parse_query;
 use crate::registry::CacheControl;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    do_resolve, ContextBase, Error, ObjectType, Pos, Positioned, QueryError, Result, Schema,
-    Variables,
+    do_resolve, ContextBase, Error, ObjectType, Pos, QueryError, Result, Schema, Variables,
 };
+use async_graphql_parser::ast::OperationType;
 use itertools::Itertools;
 use std::any::Any;
-use std::collections::HashMap;
 use std::fs::File;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
@@ -138,7 +134,7 @@ impl QueryBuilder {
         extensions
             .iter()
             .for_each(|e| e.parse_start(&self.query_source));
-        let document = parse_query(&self.query_source).map_err(Into::<Error>::into)?;
+        let mut document = parse_query(&self.query_source).map_err(Into::<Error>::into)?;
         extensions.iter().for_each(|e| e.parse_end());
 
         // check rules
@@ -165,20 +161,22 @@ impl QueryBuilder {
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let mut fragments = HashMap::new();
-        let (selection_set, variable_definitions, is_query) =
-            current_operation(&document, self.operation_name.as_deref()).ok_or_else(|| {
-                Error::Query {
+        if !document.retain_operation(self.operation_name.as_deref()) {
+            return if let Some(operation_name) = self.operation_name {
+                Err(Error::Query {
+                    pos: Pos::default(),
+                    path: None,
+                    err: QueryError::UnknownOperationNamed {
+                        name: operation_name,
+                    },
+                })
+            } else {
+                Err(Error::Query {
                     pos: Pos::default(),
                     path: None,
                     err: QueryError::MissingOperation,
-                }
-            })?;
-
-        for definition in &document.definitions {
-            if let Definition::Fragment(fragment) = &definition.node {
-                fragments.insert(fragment.name.clone_inner(), fragment.clone_inner());
-            }
+                })
+            };
         }
 
         let ctx = ContextBase {
@@ -186,21 +184,28 @@ impl QueryBuilder {
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
             extensions: &extensions,
-            item: selection_set,
+            item: &document.current_operation().selection_set,
             variables: &self.variables,
-            variable_definitions,
             registry: &schema.0.registry,
             data: &schema.0.data,
             ctx_data: self.ctx_data.as_ref(),
-            fragments: &fragments,
+            document: &document,
         };
 
         extensions.iter().for_each(|e| e.execution_start());
-        let data = if is_query {
-            do_resolve(&ctx, &schema.0.query).await?
-        } else {
-            do_mutation_resolve(&ctx, &schema.0.mutation).await?
+
+        let data = match document.current_operation().ty {
+            OperationType::Query => do_resolve(&ctx, &schema.0.query).await?,
+            OperationType::Mutation => do_mutation_resolve(&ctx, &schema.0.mutation).await?,
+            OperationType::Subscription => {
+                return Err(Error::Query {
+                    pos: Pos::default(),
+                    path: None,
+                    err: QueryError::NotSupported,
+                })
+            }
         };
+
         extensions.iter().for_each(|e| e.execution_end());
 
         let res = QueryResponse {
@@ -225,55 +230,4 @@ impl QueryBuilder {
         };
         Ok(res)
     }
-}
-
-#[allow(clippy::type_complexity)]
-fn current_operation<'a>(
-    document: &'a Document,
-    operation_name: Option<&str>,
-) -> Option<(
-    &'a Positioned<SelectionSet>,
-    &'a [Positioned<VariableDefinition>],
-    bool,
-)> {
-    for definition in &document.definitions {
-        match &definition.node {
-            Definition::Operation(operation_definition) => match &operation_definition.node {
-                OperationDefinition::SelectionSet(s) => {
-                    return Some((s, &[], true));
-                }
-                OperationDefinition::Query(query)
-                    if query.name.is_none()
-                        || operation_name.is_none()
-                        || query.name.as_ref().map(|name| name.as_str())
-                            == operation_name.as_deref() =>
-                {
-                    return Some((&query.selection_set, &query.variable_definitions, true));
-                }
-                OperationDefinition::Mutation(mutation)
-                    if mutation.name.is_none()
-                        || operation_name.is_none()
-                        || mutation.name.as_ref().map(|name| name.as_str())
-                            == operation_name.as_deref() =>
-                {
-                    return Some((
-                        &mutation.selection_set,
-                        &mutation.variable_definitions,
-                        false,
-                    ));
-                }
-                OperationDefinition::Subscription(subscription)
-                    if subscription.name.is_none()
-                        || operation_name.is_none()
-                        || subscription.name.as_ref().map(|name| name.as_str())
-                            == operation_name.as_deref() =>
-                {
-                    return None;
-                }
-                _ => {}
-            },
-            Definition::Fragment(_) => {}
-        }
-    }
-    None
 }

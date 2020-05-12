@@ -113,7 +113,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 }
 
                 resolvers.push(quote! {
-                    if ctx.name.as_str() == #field_name {
+                    if ctx.name.node == #field_name {
                         #guard
                         let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
@@ -177,7 +177,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone_inner(),
+                    field_name: ctx.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }

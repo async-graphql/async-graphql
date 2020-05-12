@@ -242,7 +242,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         };
 
         resolvers.push(quote! {
-            if ctx.name.as_str() == #name {
+            if ctx.name.node == #name {
                 #(#get_params)*
                 let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                 return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.position()).await;
@@ -307,14 +307,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone_inner(),
+                    field_name: ctx.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }
 
             fn collect_inline_fields<'a>(
                 &'a self,
-                name: &#crate_name::Positioned<String>,
+                name: &str,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {

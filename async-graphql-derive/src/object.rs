@@ -386,7 +386,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
 
                 resolvers.push(quote! {
-                    if ctx.name.as_str() == #field_name {
+                    if ctx.name.node == #field_name {
                         use #crate_name::OutputValueType;
                         #(#get_params)*
                         #guard
@@ -460,7 +460,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone_inner(),
+                    field_name: ctx.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }

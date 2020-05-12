@@ -2,12 +2,15 @@ use crate::ast::*;
 use crate::pos::Positioned;
 use crate::value::Value;
 use crate::Pos;
+use arrayvec::ArrayVec;
 use pest::error::LineColLocation;
 use pest::iterators::Pair;
 use pest::Parser;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::iter::Peekable;
+use std::ops::Deref;
 use std::str::Chars;
 
 #[derive(Parser)]
@@ -95,12 +98,11 @@ impl<'a> PositionCalculator<'a> {
 }
 
 /// Parse a GraphQL query.
-pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
-    let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, input.as_ref())?
-        .next()
-        .unwrap();
+pub fn parse_query<T: Into<String>>(input: T) -> Result<Document> {
+    let source = input.into();
+    let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, &source)?.next().unwrap();
     let mut definitions = Vec::new();
-    let mut pc = PositionCalculator::new(input.as_ref());
+    let mut pc = PositionCalculator::new(&source);
 
     for pair in document_pair.into_inner() {
         match pair.as_rule() {
@@ -117,16 +119,36 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
             _ => unreachable!(),
         }
     }
-    Ok(Document { definitions })
+
+    Ok(Document {
+        source,
+        definitions,
+        fragments: Default::default(),
+        current_operation: None,
+    })
+}
+
+pub struct ParsedValue {
+    #[allow(dead_code)]
+    source: String,
+    value: Value,
+}
+
+impl Deref for ParsedValue {
+    type Target = Value;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
 }
 
 /// Parse a graphql value
-pub fn parse_value<T: AsRef<str>>(input: T) -> Result<Value> {
-    let value_pair: Pair<Rule> = QueryParser::parse(Rule::value, input.as_ref())?
-        .next()
-        .unwrap();
-    let mut pc = PositionCalculator::new(input.as_ref());
-    parse_value2(value_pair, &mut pc)
+pub fn parse_value<T: Into<String>>(input: T) -> Result<ParsedValue> {
+    let source = input.into();
+    let value_pair: Pair<Rule> = QueryParser::parse(Rule::value, &source)?.next().unwrap();
+    let mut pc = PositionCalculator::new(&source);
+    let value = parse_value2(value_pair, &mut pc)?;
+    Ok(ParsedValue { source, value })
 }
 
 fn parse_named_operation_definition(
@@ -157,7 +179,10 @@ fn parse_named_operation_definition(
                 };
             }
             Rule::name => {
-                name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
+                name = Some(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                ));
             }
             Rule::variable_definitions => {
                 variable_definitions = Some(parse_variable_definitions(pair, pc)?);
@@ -221,7 +246,7 @@ fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Type> {
     match pair.as_rule() {
         Rule::nonnull_type => Ok(Type::NonNull(Box::new(parse_type(pair, pc)?))),
         Rule::list_type => Ok(Type::List(Box::new(parse_type(pair, pc)?))),
-        Rule::name => Ok(Type::Named(pair.as_str().to_string())),
+        Rule::name => Ok(Type::Named(to_static_str(pair.as_str()))),
         Rule::type_ => parse_type(pair, pc),
         _ => unreachable!(),
     }
@@ -284,7 +309,10 @@ fn parse_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posi
         match pair.as_rule() {
             Rule::name => {
                 let pos = pc.step(&pair);
-                name = Some(Positioned::new(pair.as_str().to_string(), pos))
+                name = Some(Positioned::new(
+                    to_static_str(to_static_str(pair.as_str())),
+                    pos,
+                ))
             }
             Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
             _ => unreachable!(),
@@ -313,10 +341,16 @@ fn parse_directives(
     Ok(directives)
 }
 
-fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
+fn parse_variable(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<&'static str>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
+            return Ok(Positioned::new(
+                to_static_str(pair.as_str()),
+                pc.step(&pair),
+            ));
         }
     }
     unreachable!()
@@ -333,14 +367,14 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
         Rule::string => Value::String({
             let start_pos = pair.as_span().start_pos().line_col();
             unquote_string(
-                pair.as_str(),
+                to_static_str(pair.as_str()),
                 Pos {
                     line: start_pos.0,
                     column: start_pos.1,
                 },
             )?
         }),
-        Rule::name => Value::Enum(pair.as_str().to_string()),
+        Rule::name => Value::Enum(to_static_str(pair.as_str())),
         Rule::boolean => Value::Boolean(match pair.as_str() {
             "true" => true,
             "false" => false,
@@ -351,12 +385,15 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
     })
 }
 
-fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(String, Value)> {
+fn parse_object_pair(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<(Cow<'static, str>, Value)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(pair.as_str().to_string()),
+            Rule::name => name = Some(Cow::Borrowed(to_static_str(pair.as_str()))),
             Rule::value => value = Some(parse_value2(pair, pc)?),
             _ => unreachable!(),
         }
@@ -393,12 +430,17 @@ fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Va
 fn parse_pair(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<(Positioned<String>, Positioned<Value>)> {
+) -> Result<(Positioned<&'static str>, Positioned<Value>)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::name => {
+                name = Some(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                ))
+            }
             Rule::value => {
                 value = {
                     let pos = pc.step(&pair);
@@ -414,7 +456,7 @@ fn parse_pair(
 fn parse_arguments(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<Vec<(Positioned<String>, Positioned<Value>)>> {
+) -> Result<Vec<(Positioned<&'static str>, Positioned<Value>)>> {
     let mut arguments = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
@@ -425,10 +467,13 @@ fn parse_arguments(
     Ok(arguments)
 }
 
-fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
+fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<&'static str>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
+            return Ok(Positioned::new(
+                to_static_str(pair.as_str()),
+                pc.step(&pair),
+            ));
         }
     }
     unreachable!()
@@ -445,7 +490,12 @@ fn parse_field(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::alias => alias = Some(parse_alias(pair, pc)?),
-            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::name => {
+                name = Some(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                ))
+            }
             Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
@@ -474,7 +524,12 @@ fn parse_fragment_spread(
     let mut directives = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::name => {
+                name = Some(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                ))
+            }
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             _ => unreachable!(),
         }
@@ -496,7 +551,10 @@ fn parse_type_condition(
         if let Rule::name = pair.as_rule() {
             let pos = pc.step(&pair);
             return Ok(Positioned::new(
-                TypeCondition::On(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+                TypeCondition::On(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                )),
                 pos,
             ));
         }
@@ -565,7 +623,12 @@ fn parse_fragment_definition(
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::name => {
+                name = Some(Positioned::new(
+                    to_static_str(pair.as_str()),
+                    pc.step(&pair),
+                ))
+            }
             Rule::type_condition => type_condition = Some(parse_type_condition(pair, pc)?),
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
@@ -584,11 +647,23 @@ fn parse_fragment_definition(
     ))
 }
 
-fn unquote_string(s: &str, pos: Pos) -> Result<String> {
-    let mut res = String::with_capacity(s.len());
+#[inline]
+fn to_static_str(s: &str) -> &'static str {
+    unsafe { (s as *const str).as_ref().unwrap() }
+}
+
+fn unquote_string(s: &'static str, pos: Pos) -> Result<Cow<'static, str>> {
     debug_assert!(s.starts_with('"') && s.ends_with('"'));
-    let mut chars = s[1..s.len() - 1].chars();
-    let mut temp_code_point = String::with_capacity(4);
+    let s = &s[1..s.len() - 1];
+
+    if !s.contains('\\') {
+        return Ok(Cow::Borrowed(to_static_str(s)));
+    }
+
+    let mut chars = s.chars();
+    let mut res = String::with_capacity(s.len());
+    let mut temp_code_point = ArrayVec::<[u8; 4]>::new();
+
     while let Some(c) = chars.next() {
         match c {
             '\\' => {
@@ -603,13 +678,28 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
                         temp_code_point.clear();
                         for _ in 0..4 {
                             match chars.next() {
-                                Some(inner_c) => temp_code_point.push(inner_c),
+                                Some(inner_c) if inner_c.is_digit(16) => {
+                                    temp_code_point.push(inner_c as u8)
+                                }
+                                Some(inner_c) => {
+                                    return Err(Error {
+                                        pos,
+                                        message: format!(
+                                            "{} is not a valid unicode code point",
+                                            inner_c
+                                        ),
+                                    });
+                                }
                                 None => {
                                     return Err(Error {
                                         pos,
                                         message: format!(
-                                            "\\u must have 4 characters after it, only found '{}'",
-                                            temp_code_point
+                                            "{} must have 4 characters after it",
+                                            unsafe {
+                                                std::str::from_utf8_unchecked(
+                                                    temp_code_point.as_slice(),
+                                                )
+                                            }
                                         ),
                                     });
                                 }
@@ -617,14 +707,23 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
                         }
 
                         // convert our hex string into a u32, then convert that into a char
-                        match u32::from_str_radix(&temp_code_point, 16).map(std::char::from_u32) {
+                        match u32::from_str_radix(
+                            unsafe { std::str::from_utf8_unchecked(temp_code_point.as_slice()) },
+                            16,
+                        )
+                        .map(std::char::from_u32)
+                        {
                             Ok(Some(unicode_char)) => res.push(unicode_char),
                             _ => {
                                 return Err(Error {
                                     pos,
                                     message: format!(
                                         "{} is not a valid unicode code point",
-                                        temp_code_point
+                                        unsafe {
+                                            std::str::from_utf8_unchecked(
+                                                temp_code_point.as_slice(),
+                                            )
+                                        }
                                     ),
                                 });
                             }
@@ -642,7 +741,7 @@ fn unquote_string(s: &str, pos: Pos) -> Result<String> {
         }
     }
 
-    Ok(res)
+    Ok(Cow::Owned(res))
 }
 
 #[cfg(test)]

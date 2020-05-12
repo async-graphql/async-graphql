@@ -22,7 +22,7 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
             quote! { #crate_name::Value::Float(#n) }
         }
         Value::String(s) => {
-            quote! { #crate_name::Value::String(#s.to_string()) }
+            quote! { #crate_name::Value::String(#s.to_string().into()) }
         }
         Value::Boolean(n) => {
             quote! { #crate_name::Value::Boolean(#n) }
@@ -46,7 +46,7 @@ pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream 
                 .map(|(n, v)| {
                     let value = build_value_repr(crate_name, v);
                     quote! {
-                        obj.insert(#n.to_string(), #value);
+                        obj.insert(#n.to_string().into(), #value);
                     }
                 })
                 .collect::<Vec<_>>();

@@ -12,14 +12,14 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
             if let Some(registry::Type::Union { .. }) | Some(registry::Type::Interface { .. }) =
                 ctx.parent_type()
             {
-                if field.name.as_str() == "__typename" {
+                if field.name.node == "__typename" {
                     return;
                 }
             }
 
             if parent_type
                 .fields()
-                .and_then(|fields| fields.get(field.name.as_str()))
+                .and_then(|fields| fields.get(field.name.node))
                 .is_none()
             {
                 ctx.report_error(

@@ -12,14 +12,14 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
         ctx: &mut VisitorContext<'a>,
         directive: &'a Positioned<Directive>,
     ) {
-        if let Some(schema_directive) = ctx.registry.directives.get(directive.name.as_str()) {
+        if let Some(schema_directive) = ctx.registry.directives.get(directive.name.node) {
             for arg in schema_directive.args.values() {
                 if TypeName::create(&arg.ty).is_non_null()
                     && arg.default_value.is_none()
                     && directive
                         .arguments
                         .iter()
-                        .find(|(name, _)| name.as_str() == arg.name)
+                        .find(|(name, _)| name.node == arg.name)
                         .is_none()
                 {
                     ctx.report_error(vec![directive.position()],
@@ -41,7 +41,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
                         && field
                             .arguments
                             .iter()
-                            .find(|(name, _)| name.as_str() == arg.name)
+                            .find(|(name, _)| name.node == arg.name)
                             .is_none()
                     {
                         ctx.report_error(vec![field.position()],

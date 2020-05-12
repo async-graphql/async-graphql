@@ -20,7 +20,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         self.current_args = ctx
             .registry
             .directives
-            .get(directive.name.as_str())
+            .get(directive.name.node)
             .map(|d| &d.args);
     }
 
@@ -35,12 +35,12 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<&str>,
         value: &'a Positioned<Value>,
     ) {
         if let Some(arg) = self
             .current_args
-            .and_then(|args| args.get(name.as_str()).map(|input| input))
+            .and_then(|args| args.get(name.node).map(|input| input))
         {
             if let Some(validator) = &arg.validator {
                 if let Some(reason) = validator.is_valid(value) {

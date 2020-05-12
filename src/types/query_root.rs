@@ -80,13 +80,13 @@ impl<T: Type> Type for QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.name.as_str() == "__schema" {
+        if ctx.name.node == "__schema" {
             if self.disable_introspection {
                 return Err(Error::Query {
                     pos: ctx.position(),
                     path: Some(ctx.path_node.as_ref().unwrap().to_json()),
                     err: QueryError::FieldNotFound {
-                        field_name: ctx.name.clone_inner(),
+                        field_name: ctx.name.to_string(),
                         object: Self::type_name().to_string(),
                     },
                 });
@@ -101,7 +101,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 ctx.position(),
             )
             .await;
-        } else if ctx.name.as_str() == "__type" {
+        } else if ctx.name.node == "__type" {
             let type_name: String = ctx.param_value("name", || Value::Null)?;
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
@@ -113,14 +113,14 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 ctx.position(),
             )
             .await;
-        } else if ctx.name.as_str() == "_entities" {
+        } else if ctx.name.node == "_entities" {
             let representations: Vec<Any> = ctx.param_value("representations", || Value::Null)?;
             let mut res = Vec::new();
             for item in representations {
                 res.push(self.inner.find_entity(ctx, &item.0).await?);
             }
             return Ok(res.into());
-        } else if ctx.name.as_str() == "_service" {
+        } else if ctx.name.node == "_service" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &Service {

@@ -20,7 +20,7 @@ impl ScalarType for String {
 
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(s),
+            Value::String(s) => Ok(s.into_owned()),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }

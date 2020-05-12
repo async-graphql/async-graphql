@@ -404,7 +404,7 @@ impl Registry {
         match query_type {
             ParsedType::NonNull(ty) => self.concrete_type_by_parsed_type(ty),
             ParsedType::List(ty) => self.concrete_type_by_parsed_type(ty),
-            ParsedType::Named(name) => self.types.get(name.as_str()),
+            ParsedType::Named(name) => self.types.get(*name),
         }
     }
 

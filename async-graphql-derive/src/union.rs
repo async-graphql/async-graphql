@@ -132,14 +132,14 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
         impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone_inner(),
+                    field_name: ctx.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }
 
             fn collect_inline_fields<'a>(
                 &'a self,
-                name: &#crate_name::Positioned<String>,
+                name: &str,
                 ctx: &#crate_name::ContextSelectionSet<'a>,
                 futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
             ) -> #crate_name::Result<()> {

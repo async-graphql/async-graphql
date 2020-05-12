@@ -22,7 +22,7 @@ pub fn referenced_variables(value: &Value) -> Vec<&str> {
 fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
     match value {
         Value::Variable(name) => {
-            vars.push(name.as_str());
+            vars.push(name);
         }
         Value::List(values) => values
             .iter()
@@ -38,14 +38,13 @@ pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&st
     match operation_definition {
         OperationDefinition::SelectionSet(selection_set) => (None, selection_set.position()),
         OperationDefinition::Query(query) => {
-            (query.name.as_ref().map(|n| n.as_str()), query.position())
+            (query.name.as_ref().map(|n| n.node), query.position())
         }
-        OperationDefinition::Mutation(mutation) => (
-            mutation.name.as_ref().map(|n| n.as_str()),
-            mutation.position(),
-        ),
+        OperationDefinition::Mutation(mutation) => {
+            (mutation.name.as_ref().map(|n| n.node), mutation.position())
+        }
         OperationDefinition::Subscription(subscription) => (
-            subscription.name.as_ref().map(|n| n.as_str()),
+            subscription.name.as_ref().map(|n| n.node),
             subscription.position(),
         ),
     }
@@ -107,7 +106,7 @@ pub fn is_valid_input_value(
                     }
                     registry::Type::Enum { enum_values, .. } => match value {
                         Value::Enum(name) => {
-                            if !enum_values.contains_key(name.as_str()) {
+                            if !enum_values.contains_key(name) {
                                 Some(valid_error(
                                     &path_node,
                                     format!(
@@ -129,7 +128,7 @@ pub fn is_valid_input_value(
                         Value::Object(values) => {
                             let mut input_names = values
                                 .keys()
-                                .map(|name| name.as_str())
+                                .map(|name| name.as_ref())
                                 .collect::<HashSet<_>>();
 
                             for field in input_fields.values() {

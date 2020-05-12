@@ -98,7 +98,8 @@ pub mod extensions;
 pub mod guard;
 pub mod validators;
 
-use async_graphql_parser as parser;
+#[doc(hidden)]
+pub use async_graphql_parser as parser;
 
 #[doc(hidden)]
 pub use anyhow;

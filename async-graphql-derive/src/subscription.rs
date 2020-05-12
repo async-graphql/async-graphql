@@ -217,7 +217,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             #(#schema_args)*
                             args
                         },
-                        ty: <#stream_ty as #crate_name::futures::stream::Stream>::Item::create_type_info(registry),
+                        ty: <<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: Default::default(),
                         external: false,
@@ -236,13 +236,21 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 });
 
                 create_stream.push(quote! {
-                    if ctx.name.as_str() == #field_name {
+                    if ctx.name.node == #field_name {
                         use #crate_name::futures::stream::{StreamExt, TryStreamExt};
 
                         #(#get_params)*
                         #guard
                         let field_name = std::sync::Arc::new(ctx.result_name().to_string());
-                        let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
+
+                        // I think the code here is safe because the lifetime of selection_set is always less than the environment.
+                        let field_selection_set = unsafe {
+                            (&ctx.selection_set
+                                as *const Positioned<#crate_name::parser::ast::SelectionSet>)
+                                .as_ref()
+                                .unwrap()
+                        };
+
                         let schema = schema.clone();
                         let pos = ctx.position();
                         let environment = environment.clone();
@@ -261,7 +269,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             parent: None,
                                             segment: #crate_name::QueryPathSegment::Name(&field_name),
                                         }),
-                                        &*field_selection_set,
+                                        field_selection_set,
                                         &resolve_id,
                                     );
                                     #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
@@ -325,6 +333,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             #[allow(bare_trait_objects)]
             async fn create_field_stream<Query, Mutation>(
                 &self,
+                idx: usize,
                 ctx: &#crate_name::Context<'_>,
                 schema: &#crate_name::Schema<Query, Mutation, Self>,
                 environment: std::sync::Arc<#crate_name::Environment>,
@@ -338,7 +347,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.clone_inner(),
+                    field_name: ctx.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }

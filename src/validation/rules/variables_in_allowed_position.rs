@@ -31,7 +31,7 @@ impl<'a> VariableInAllowedPosition<'a> {
 
         if let Some(usages) = self.variable_usages.get(from) {
             for (var_name, usage_pos, var_type) in usages {
-                if let Some(def) = var_defs.iter().find(|def| def.name.as_str() == *var_name) {
+                if let Some(def) = var_defs.iter().find(|def| def.name.node == *var_name) {
                     let expected_type = match (&def.default_value, &def.var_type.node) {
                         (Some(_), Type::List(_)) => def.var_type.to_string() + "!",
                         (Some(_), Type::Named(_)) => def.var_type.to_string() + "!",
@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.node));
     }
 
     fn enter_variable_definition(
@@ -105,7 +105,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(HashSet::new)
-                .insert(fragment_spread.fragment_name.as_str());
+                .insert(fragment_spread.fragment_name.node);
         }
     }
 
@@ -122,7 +122,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
                     self.variable_usages
                         .entry(scope.clone())
                         .or_insert_with(Vec::new)
-                        .push((name.as_str(), pos, *expected_type));
+                        .push((name, pos, *expected_type));
                 }
             }
         }

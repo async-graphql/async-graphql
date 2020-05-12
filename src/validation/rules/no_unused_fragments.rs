@@ -35,7 +35,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         let mut reachable = HashSet::new();
 
-        for def in &doc.definitions {
+        for def in doc.definitions() {
             if let Definition::Operation(operation_definition) = &def.node {
                 let (name, _) = operation_name(operation_definition);
                 self.find_reachable_fragments(&Scope::Operation(name), &mut reachable);
@@ -66,9 +66,9 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.node));
         self.defined_fragments.insert((
-            fragment_definition.name.as_str(),
+            fragment_definition.name.node,
             fragment_definition.position(),
         ));
     }
@@ -82,7 +82,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push(fragment_spread.fragment_name.as_str());
+                .push(fragment_spread.fragment_name.node);
         }
     }
 }

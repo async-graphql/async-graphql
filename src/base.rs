@@ -1,8 +1,8 @@
 use crate::parser::Pos;
 use crate::registry::Registry;
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
-    Result, Value, ID,
+    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, QueryError, Result,
+    Value, ID,
 };
 use std::borrow::Cow;
 use std::future::Future;
@@ -81,19 +81,19 @@ pub trait ObjectType: OutputValueType {
     /// Collect the fields with the `name` inline object
     fn collect_inline_fields<'a>(
         &'a self,
-        name: &Positioned<String>,
+        name: &str,
         ctx: &ContextSelectionSet<'a>,
         futures: &mut Vec<BoxFieldFuture<'a>>,
     ) -> Result<()>
     where
         Self: Send + Sync + Sized,
     {
-        if name.as_str() == Self::type_name().as_ref()
+        if name == Self::type_name().as_ref()
             || ctx
                 .registry
                 .implements
                 .get(Self::type_name().as_ref())
-                .map(|ty| ty.contains(name.as_str()))
+                .map(|ty| ty.contains(name))
                 .unwrap_or_default()
         {
             crate::collect_fields(ctx, self, futures)

@@ -20,7 +20,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<&str>,
         _value: &'a Positioned<Value>,
     ) {
         if !self.names.insert(name) {

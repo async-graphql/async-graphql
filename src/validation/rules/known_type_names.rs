@@ -13,7 +13,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         let TypeCondition::On(name) = &fragment_definition.type_condition.node;
-        validate_type(ctx, name.as_str(), fragment_definition.position());
+        validate_type(ctx, name.node, fragment_definition.position());
     }
 
     fn enter_variable_definition(
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         if let Some(TypeCondition::On(name)) =
             inline_fragment.type_condition.as_ref().map(|c| &c.node)
         {
-            validate_type(ctx, name.as_str(), inline_fragment.position());
+            validate_type(ctx, name.node, inline_fragment.position());
         }
     }
 }

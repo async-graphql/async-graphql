@@ -10,7 +10,7 @@ pub struct LoneAnonymousOperation {
 impl<'a> Visitor<'a> for LoneAnonymousOperation {
     fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         self.operation_count = Some(
-            doc.definitions
+            doc.definitions()
                 .iter()
                 .filter(|d| match &d.node {
                     Definition::Operation(_) => true,

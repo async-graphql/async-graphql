@@ -38,6 +38,7 @@ impl SubscriptionType for EmptySubscription {
 
     async fn create_field_stream<Query, Mutation>(
         &self,
+        _idx: usize,
         _ctx: &Context<'_>,
         _schema: &Schema<Query, Mutation, Self>,
         _environment: Arc<Environment>,

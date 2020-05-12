@@ -17,6 +17,7 @@ pub trait SubscriptionType: Type {
     #[doc(hidden)]
     async fn create_field_stream<Query, Mutation>(
         &self,
+        idx: usize,
         ctx: &Context<'_>,
         schema: &Schema<Query, Mutation, Self>,
         environment: Arc<Environment>,
@@ -41,7 +42,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static + Sized,
 {
     Box::pin(async move {
-        for selection in &ctx.items {
+        for (idx, selection) in ctx.items.iter().enumerate() {
             match &selection.node {
                 Selection::Field(field) => {
                     if ctx.is_skip(&field.directives)? {
@@ -52,6 +53,7 @@ where
                             .0
                             .subscription
                             .create_field_stream(
+                                idx,
                                 &ctx.with_field(field),
                                 schema,
                                 environment.clone(),
@@ -64,8 +66,10 @@ where
                         continue;
                     }
 
-                    if let Some(fragment) =
-                        ctx.fragments.get(fragment_spread.fragment_name.as_str())
+                    if let Some(fragment) = ctx
+                        .document
+                        .fragments()
+                        .get(fragment_spread.fragment_name.node)
                     {
                         create_subscription_stream(
                             schema,
@@ -84,7 +88,7 @@ where
                     if let Some(TypeCondition::On(name)) =
                         inline_fragment.type_condition.as_ref().map(|v| &v.node)
                     {
-                        if name.as_str() == Subscription::type_name() {
+                        if name.node == Subscription::type_name() {
                             create_subscription_stream(
                                 schema,
                                 environment.clone(),

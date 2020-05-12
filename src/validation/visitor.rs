@@ -23,10 +23,10 @@ impl<'a> VisitorContext<'a> {
             type_stack: Default::default(),
             input_type: Default::default(),
             fragments: doc
-                .definitions
+                .definitions()
                 .iter()
                 .filter_map(|d| match &d.node {
-                    Definition::Fragment(fragment) => Some((fragment.name.as_str(), fragment)),
+                    Definition::Fragment(fragment) => Some((fragment.name.node, fragment)),
                     _ => None,
                 })
                 .collect(),
@@ -147,14 +147,14 @@ pub trait Visitor<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<String>,
+        _name: &'a Positioned<&str>,
         _value: &'a Positioned<Value>,
     ) {
     }
     fn exit_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<String>,
+        _name: &'a Positioned<&str>,
         _value: &'a Positioned<Value>,
     ) {
     }
@@ -340,7 +340,7 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<&str>,
         value: &'a Positioned<Value>,
     ) {
         self.0.enter_argument(ctx, name, value);
@@ -350,7 +350,7 @@ where
     fn exit_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<&str>,
         value: &'a Positioned<Value>,
     ) {
         self.0.exit_argument(ctx, name, value);
@@ -451,14 +451,14 @@ fn visit_definitions<'a, V: Visitor<'a>>(
     ctx: &mut VisitorContext<'a>,
     doc: &'a Document,
 ) {
-    for d in &doc.definitions {
+    for d in doc.definitions() {
         match &d.node {
             Definition::Operation(operation) => {
                 visit_operation_definition(v, ctx, operation);
             }
             Definition::Fragment(fragment) => {
                 let TypeCondition::On(name) = &fragment.type_condition.node;
-                ctx.with_type(ctx.registry.types.get(name.as_str()), |ctx| {
+                ctx.with_type(ctx.registry.types.get(name.node), |ctx| {
                     visit_fragment_definition(v, ctx, fragment)
                 });
             }
@@ -539,7 +539,7 @@ fn visit_selection<'a, V: Visitor<'a>>(
     v.enter_selection(ctx, selection);
     match &selection.node {
         Selection::Field(field) => {
-            if field.name.as_str() != "__typename" {
+            if field.name.node != "__typename" {
                 ctx.with_type(
                     ctx.current_type()
                         .and_then(|ty| ty.field_by_name(&field.name))
@@ -559,7 +559,7 @@ fn visit_selection<'a, V: Visitor<'a>>(
             if let Some(TypeCondition::On(name)) =
                 &inline_fragment.type_condition.as_ref().map(|c| &c.node)
             {
-                ctx.with_type(ctx.registry.types.get(name.as_str()), |ctx| {
+                ctx.with_type(ctx.registry.types.get(name.node), |ctx| {
                     visit_inline_fragment(v, ctx, inline_fragment)
                 });
             }
@@ -580,7 +580,7 @@ fn visit_field<'a, V: Visitor<'a>>(
         let expected_ty = ctx
             .parent_type()
             .and_then(|ty| ty.field_by_name(&field.name))
-            .and_then(|schema_field| schema_field.args.get(name.as_str()))
+            .and_then(|schema_field| schema_field.args.get(name.node))
             .map(|input_ty| TypeName::create(&input_ty.ty));
         ctx.with_input_type(expected_ty, |ctx| {
             visit_input_value(v, ctx, field.position(), expected_ty, value)
@@ -624,7 +624,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(
                     {
                         if let Type::InputObject { input_fields, .. } = ty {
                             for (item_key, item_value) in values {
-                                if let Some(input_value) = input_fields.get(item_key) {
+                                if let Some(input_value) = input_fields.get(item_key.as_ref()) {
                                     visit_input_value(
                                         v,
                                         ctx,
@@ -664,12 +664,12 @@ fn visit_directives<'a, V: Visitor<'a>>(
     for d in directives {
         v.enter_directive(ctx, d);
 
-        let schema_directive = ctx.registry.directives.get(d.name.as_str());
+        let schema_directive = ctx.registry.directives.get(d.name.node);
 
         for (name, value) in &d.arguments {
             v.enter_argument(ctx, name, value);
             let expected_ty = schema_directive
-                .and_then(|schema_directive| schema_directive.args.get(name.as_str()))
+                .and_then(|schema_directive| schema_directive.args.get(name.node))
                 .map(|input_ty| TypeName::create(&input_ty.ty));
             ctx.with_input_type(expected_ty, |ctx| {
                 visit_input_value(v, ctx, d.position(), expected_ty, value)

@@ -103,10 +103,10 @@ where
     E: ObjectType + Sync + Send + 'a,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.name.as_str() == "node" {
+        if ctx.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(self.node().await, &ctx_obj, ctx.position()).await;
-        } else if ctx.name.as_str() == "cursor" {
+        } else if ctx.name.node == "cursor" {
             return Ok(self.cursor().await.into());
         }
 
