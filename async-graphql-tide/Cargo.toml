@@ -15,6 +15,7 @@ categories = ["network-programming", "asynchronous"]
 [dependencies]
 async-graphql = { path = "..", version = "1.11.3" }
 tide = "0.8"
+async-trait = "0.1.30"
 
 [dev-dependencies]
 async-std = "1.5.0"
