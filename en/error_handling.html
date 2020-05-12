@@ -171,7 +171,7 @@ impl Query {
     async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
-            .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
     }
 }
 <span class="boring">}
