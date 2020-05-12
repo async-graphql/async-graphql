@@ -22,7 +22,7 @@ impl Query {
     async fn parse_with_extensions(&self, input: String) -> FieldResult<i32> {
         Ok("234a"
             .parse()
-            .map_err(|err| err.extend_with(|_| json!({"code": 400})))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_| json!({"code": 400})))?)
     }
 }
 ```
