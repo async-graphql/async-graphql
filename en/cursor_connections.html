@@ -152,7 +152,7 @@
 <p>It is simple to define a cursor connection in <code>Async-GraphQL</code></p>
 <ol>
 <li>Implement <code>async_graphql::DataSource</code> and write the <code>query_operation</code> function.</li>
-<li>Call <code>DataSource::query</code> in the field's resolve function and return the result.</li>
+<li>Call <code>DataSource::query</code> in the field's resolver function and return the result.</li>
 </ol>
 <p>Here is a simple data source that returns continuous integers:</p>
 <pre><pre class="playpen"><code class="language-rust">
