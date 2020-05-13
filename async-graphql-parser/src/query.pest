@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "," | "\t" | "\u{feff}" | NEWLINE }
 COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }
 
 // value
-int    = @{ "-"? ~ "0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
+int    = @{ "-"? ~ ("0" | (ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)) }
 float  = @{ "-"? ~ int ~ "." ~ ASCII_DIGIT+ ~ exp? }
 exp    = @{ ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
 
