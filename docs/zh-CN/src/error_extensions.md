@@ -171,7 +171,7 @@ async fn parse_with_extensions(&self) -> FieldResult<i32> {
 }
 ```
 
-### 陷阱
+### 缺陷
 
 Rust的稳定版本还未提供特化功能，这就是为什么`ErrorExtensions`为`&E where E: std::fmt::Display`实现，代替`E：std::fmt::Display`通过提供一些特化功能。
 
