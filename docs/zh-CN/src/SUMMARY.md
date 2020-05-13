@@ -18,6 +18,7 @@
     - [输入值校验器](input_value_validators.md)
     - [查询缓存控制](cache_control.md)
     - [游标连接(Cursor Connections)](cursor_connections.md)
+    - [错误扩展](error_extensions.md)
     - [Apollo Tracing支持](apollo_tracing.md)
 - [集成到WebServer](integrations.md)
     - [Warp](integrations_to_warp.md)

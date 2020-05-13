@@ -2,7 +2,7 @@
 
 ## 查询根对象
 
-查询根对象是一个GraphQL对象，定义类似其它对象。查询对象的所有字段Resolve函数是并发执行的。
+查询根对象是一个GraphQL对象，定义类似其它对象。查询对象的所有字段Resolver函数是并发执行的。
 
 ```rust
 use async_graphql::*;

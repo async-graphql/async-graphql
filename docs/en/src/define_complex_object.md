@@ -2,7 +2,7 @@
 
 Different from `SimpleObject`, `Object` must have Resolve defined for each field in `impl`.
 
-**A Resolve function has to be asynchronous. The first argument has to be `&self`, second being optional `Context` and followed by field arguments.**
+**A resolver function has to be asynchronous. The first argument has to be `&self`, second being optional `Context` and followed by field arguments.**
 
 Resolve is used to get the value of the field. You can query a database and return the result. **The return type of the function is the type of the field.** You can also return a `async_graphql::FieldResult` so to return an error if it occrs and error message will be send to query result.
 

@@ -5,7 +5,7 @@ Relay定义了一套游标连接规范，以提供一致性的分页查询方式
 在`Async-graphql`中定义一个连接非常简单，只需要两步：
 
 1. 实现`async_graphql::DataSource`，重写`query_operation`函数。
-2. 在字段的Resolve函数中调用`DataSource::query`函数并传递响应参数。
+2. 在字段的Resolver函数中调用`DataSource::query`函数并传递响应参数。
 
 下面是一个简单的获取连续整数的数据源：
 

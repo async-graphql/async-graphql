@@ -1,6 +1,6 @@
 # 错误处理
 
-Resolve函数可以返回一个FieldResult类型，以下是FieldResult的定义：
+Resolver函数可以返回一个FieldResult类型，以下是FieldResult的定义：
 
 ```rust
 type FieldResult<T> = std::result::Result<T, FieldError>;

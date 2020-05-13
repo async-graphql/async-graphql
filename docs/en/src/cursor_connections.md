@@ -5,7 +5,7 @@ Relay's cursor connection specification is defined to provide a consistent metho
 It is simple to define a cursor connection in `Async-GraphQL`
 
 1. Implement `async_graphql::DataSource` and write the `query_operation` function.
-2. Call `DataSource::query` in the field's resolve function and return the result.
+2. Call `DataSource::query` in the field's resolver function and return the result.
 
 Here is a simple data source that returns continuous integers:
 
