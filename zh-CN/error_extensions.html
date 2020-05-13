@@ -307,7 +307,7 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
   ]
 }
 </code></pre>
-<h3><a class="header" href="#陷阱" id="陷阱">陷阱</a></h3>
+<h3><a class="header" href="#缺陷" id="缺陷">缺陷</a></h3>
 <p>Rust的稳定版本还未提供特化功能，这就是为什么<code>ErrorExtensions</code>为<code>&amp;E where E: std::fmt::Display</code>实现，代替<code>E：std::fmt::Display</code>通过提供一些特化功能。</p>
 <p><a href="https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md">Autoref-based stable specialization</a>.</p>
 <p>缺点是下面的代码<strong>不能</strong>编译：</p>
