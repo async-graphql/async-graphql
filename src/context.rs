@@ -516,4 +516,9 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             .map(|alias| alias.node)
             .unwrap_or_else(|| self.item.name.node)
     }
+
+    /// Get the position of the current field in the query code.
+    pub fn position(&self) -> Pos {
+        self.pos
+    }
 }
