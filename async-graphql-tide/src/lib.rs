@@ -6,8 +6,8 @@
 
 use async_graphql::http::GQLResponse;
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, ParseRequestError, QueryBuilder, Schema,
-    SubscriptionType,
+    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, ParseRequestError, QueryBuilder,
+    QueryResponse, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
 use tide::{http::headers, Request, Response, Status, StatusCode};
@@ -57,7 +57,7 @@ where
     TideState: Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
-    let query_builder = req.graphql().await.status(StatusCode::BadRequest)?;
+    let query_builder = req.body_graphql().await.status(StatusCode::BadRequest)?;
     let resp = GQLResponse(
         query_builder_configuration(query_builder)
             .execute(&schema)
@@ -81,7 +81,7 @@ where
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
     let query_builder = req
-        .graphql_opts(opts)
+        .body_graphql_opts(opts)
         .await
         .status(StatusCode::BadRequest)?;
     let resp = GQLResponse(
@@ -97,12 +97,12 @@ where
 #[async_trait]
 pub trait RequestExt<State: Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::QueryBuilder`.
-    async fn graphql(self) -> Result<QueryBuilder, ParseRequestError> {
-        self.graphql_opts(Default::default()).await
+    async fn body_graphql(self) -> Result<QueryBuilder, ParseRequestError> {
+        self.body_graphql_opts(Default::default()).await
     }
 
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
-    async fn graphql_opts(
+    async fn body_graphql_opts(
         self,
         opts: IntoQueryBuilderOpts,
     ) -> Result<QueryBuilder, ParseRequestError>;
@@ -110,7 +110,7 @@ pub trait RequestExt<State: Send + Sync + 'static>: Sized {
 
 #[async_trait]
 impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
-    async fn graphql_opts(
+    async fn body_graphql_opts(
         self,
         opts: IntoQueryBuilderOpts,
     ) -> Result<QueryBuilder, ParseRequestError> {
@@ -118,5 +118,18 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
             .header(&headers::CONTENT_TYPE)
             .and_then(|values| values.first().map(|value| value.to_string()));
         (content_type, self).into_query_builder_opts(&opts).await
+    }
+}
+
+/// Tide response extension
+///
+pub trait ResponseExt<State: Send + Sync + 'static>: Sized {
+    /// Set Body as the result of a GraphQL query.
+    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self>;
+}
+
+impl<State: Send + Sync + 'static> ResponseExt<State> for Response {
+    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self> {
+        self.body_json(&GQLResponse(res))
     }
 }
