@@ -84,6 +84,7 @@ extern crate serde_derive;
 mod base;
 mod context;
 mod error;
+mod look_ahead;
 mod model;
 mod mutation_resolver;
 mod query;
@@ -120,6 +121,7 @@ pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
     ParseRequestError, QueryError, ResultExt,
 };
+pub use look_ahead::Lookahead;
 pub use parser::{Pos, Positioned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;

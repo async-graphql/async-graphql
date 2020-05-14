@@ -14,6 +14,8 @@ pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 ///
 /// You can create your own input value validator by implementing this trait.
 ///
+/// # Examples
+///
 /// ```no_run
 /// use async_graphql::*;
 /// use async_graphql::validators::{Email, MAC, IntRange};
