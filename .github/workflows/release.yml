@@ -33,6 +33,9 @@ jobs:
           - name: async-graphql-tide
             registryName: async-graphql-tide
             path: async-graphql-tide
+          - name: async-graphql-lambda
+            registryName: async-graphql-lambda
+            path: async-graphql-lambda
     steps:
       - name: Checkout
         uses: actions/checkout@v2

@@ -1,9 +1,9 @@
 [package]
-name = "async-graphql-actix-web"
-version = "1.4.4"
-authors = ["sunli <scott_s829@163.com>"]
+name = "async-graphql-lambda"
+version = "0.1.0"
+authors = ["Sunli <scott_s829@163.com>"]
 edition = "2018"
-description = "async-graphql for actix-web"
+description = "async-graphql for AWS Lambda"
 publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
@@ -14,11 +14,7 @@ categories = ["network-programming", "asynchronous"]
 
 [dependencies]
 async-graphql = { path = "..", version = "1.12.4" }
-actix-web = "2.0.0"
-actix-web-actors = "2.0.0"
-actix = "0.9.0"
-actix-rt = "1.0.0"
+lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime" }
 futures = "0.3.0"
-mime = "0.3.16"
-bytes = "0.5.4"
-serde_json = "1.0.48"
+http = "0.2"
+async-trait = "0.1.30"

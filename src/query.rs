@@ -11,17 +11,11 @@ use async_graphql_parser::ast::OperationType;
 use itertools::Itertools;
 use std::any::Any;
 use std::fs::File;
-use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
 
 /// IntoQueryBuilder options
 #[derive(Default, Clone)]
 pub struct IntoQueryBuilderOpts {
-    /// A temporary path to store the contents of all files.
-    ///
-    /// If None, the system temporary path is used.
-    pub temp_dir: Option<PathBuf>,
-
     /// Maximum file size.
     pub max_file_size: Option<usize>,
 

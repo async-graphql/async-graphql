@@ -6,7 +6,7 @@ use std::time::Duration;
 use tide::Request;
 
 use async_graphql::*;
-use async_graphql_tide::RequestExt as _;
+use async_graphql_tide::graphql;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -28,7 +28,7 @@ fn quickstart() -> Result<()> {
             let mut app = tide::new();
             app.at("/").post(|req: Request<()>| async move {
                 let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-                req.graphql(schema, |query_builder| query_builder).await
+                graphql(req, schema, |query_builder| query_builder).await
             });
             app.listen(&listen_addr).await?;
 
