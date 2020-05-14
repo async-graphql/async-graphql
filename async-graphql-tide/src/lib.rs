@@ -57,13 +57,7 @@ where
     TideState: Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
-    let query_builder = req.body_graphql().await.status(StatusCode::BadRequest)?;
-    let resp = GQLResponse(
-        query_builder_configuration(query_builder)
-            .execute(&schema)
-            .await,
-    );
-    Ok(Response::new(StatusCode::Ok).body_json(&resp)?)
+    graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
 
 /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
@@ -84,12 +78,13 @@ where
         .body_graphql_opts(opts)
         .await
         .status(StatusCode::BadRequest)?;
-    let resp = GQLResponse(
-        query_builder_configuration(query_builder)
-            .execute(&schema)
-            .await,
-    );
-    Ok(Response::new(StatusCode::Ok).body_json(&resp)?)
+    Ok(Response::new(StatusCode::Ok)
+        .body_graphql(
+            query_builder_configuration(query_builder)
+                .execute(&schema)
+                .await,
+        )
+        .status(StatusCode::InternalServerError)?)
 }
 
 /// Tide request extension
@@ -123,12 +118,12 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
 
 /// Tide response extension
 ///
-pub trait ResponseExt<State: Send + Sync + 'static>: Sized {
+pub trait ResponseExt: Sized {
     /// Set Body as the result of a GraphQL query.
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self>;
 }
 
-impl<State: Send + Sync + 'static> ResponseExt<State> for Response {
+impl ResponseExt for Response {
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self> {
         self.body_json(&GQLResponse(res))
     }
