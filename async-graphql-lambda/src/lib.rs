@@ -28,7 +28,7 @@ impl GQLRequestExt for Request {
         let body = self.body().as_ref();
         let ct = self
             .headers()
-            .get(http::header::CONTENT_TYPE)
+            .get("content-type")
             .and_then(|value| value.to_str().ok());
         (ct, AllowStdIo::new(Cursor::new(body)))
             .into_query_builder_opts(&opts)

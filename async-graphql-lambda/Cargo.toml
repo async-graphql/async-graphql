@@ -16,5 +16,4 @@ categories = ["network-programming", "asynchronous"]
 async-graphql = { path = "..", version = "1.12.4" }
 lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime" }
 futures = "0.3.0"
-http = "0.2"
 async-trait = "0.1.30"
