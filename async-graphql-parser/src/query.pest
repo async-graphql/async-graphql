@@ -6,8 +6,11 @@ int    = @{ "-"? ~ ("0" | (ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)) }
 float  = @{ "-"? ~ int ~ "." ~ ASCII_DIGIT+ ~ exp? }
 exp    = @{ ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
 
-string  = @{ "\"" ~ string_inner ~ "\"" }
-string_inner   = @{ (!("\"" | "\\") ~ ANY)* ~ (escape ~ string_inner)? }
+singleline_string = @{ "\"" ~ singleline_inner ~ "\"" }
+singleline_inner  = @{ (!("\"" | "\\") ~ ANY)* ~ (escape ~ singleline_inner)? }
+multiline_inner   = @{ (!("\"\"\"" | "\\") ~ ANY)* ~ (escape ~ multiline_inner)? }
+multiline_string  = @{ "\"\"\"" ~ multiline_inner ~ "\"\"\"" }
+string            = @{ multiline_string | singleline_string }
 escape  = @{ "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t" | unicode) }
 unicode = @{ "u" ~ ASCII_HEX_DIGIT{4} }
 
@@ -29,7 +32,6 @@ nonnull_type = { (list_type | name) ~ "!" }
 type_ = { nonnull_type | list_type | name }
 
 // query
-
 arguments = { "(" ~ pair* ~ ")" }
 directive = { "@" ~ name ~ arguments? }
 directives = { directive* }
