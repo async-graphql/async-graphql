@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
 use crate::parser::ast::{Directive, Field};
-use crate::registry::InputValue;
+use crate::registry::MetaInputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, QueryPathSegment, Value};
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
-    current_args: Option<&'a HashMap<&'static str, InputValue>>,
+    current_args: Option<&'a HashMap<&'static str, MetaInputValue>>,
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {

@@ -3,15 +3,15 @@ use crate::parser::ast::{
     Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };
-use crate::registry::{self, Type, TypeName};
+use crate::registry::{self, MetaType, MetaTypeName};
 use crate::{Pos, Positioned, Value};
 use std::collections::HashMap;
 
 pub struct VisitorContext<'a> {
     pub registry: &'a registry::Registry,
     pub errors: Vec<RuleError>,
-    type_stack: Vec<Option<&'a registry::Type>>,
-    input_type: Vec<Option<TypeName<'a>>>,
+    type_stack: Vec<Option<&'a registry::MetaType>>,
+    input_type: Vec<Option<MetaTypeName<'a>>>,
     fragments: HashMap<&'a str, &'a Positioned<FragmentDefinition>>,
 }
 
@@ -46,7 +46,7 @@ impl<'a> VisitorContext<'a> {
 
     pub fn with_type<F: FnMut(&mut VisitorContext<'a>)>(
         &mut self,
-        ty: Option<&'a registry::Type>,
+        ty: Option<&'a registry::MetaType>,
         mut f: F,
     ) {
         self.type_stack.push(ty);
@@ -56,7 +56,7 @@ impl<'a> VisitorContext<'a> {
 
     pub fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
         &mut self,
-        ty: Option<TypeName<'a>>,
+        ty: Option<MetaTypeName<'a>>,
         mut f: F,
     ) {
         self.input_type.push(ty);
@@ -64,7 +64,7 @@ impl<'a> VisitorContext<'a> {
         self.input_type.pop();
     }
 
-    pub fn parent_type(&self) -> Option<&'a registry::Type> {
+    pub fn parent_type(&self) -> Option<&'a registry::MetaType> {
         if self.type_stack.len() >= 2 {
             self.type_stack
                 .get(self.type_stack.len() - 2)
@@ -75,7 +75,7 @@ impl<'a> VisitorContext<'a> {
         }
     }
 
-    pub fn current_type(&self) -> Option<&'a registry::Type> {
+    pub fn current_type(&self) -> Option<&'a registry::MetaType> {
         self.type_stack.last().copied().flatten()
     }
 
@@ -218,7 +218,7 @@ pub trait Visitor<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         _pos: Pos,
-        _expected_type: &Option<TypeName<'a>>,
+        _expected_type: &Option<MetaTypeName<'a>>,
         _value: &'a Value,
     ) {
     }
@@ -226,7 +226,7 @@ pub trait Visitor<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         _pos: Pos,
-        _expected_type: &Option<TypeName<'a>>,
+        _expected_type: &Option<MetaTypeName<'a>>,
         _value: &Value,
     ) {
     }
@@ -581,7 +581,7 @@ fn visit_field<'a, V: Visitor<'a>>(
             .parent_type()
             .and_then(|ty| ty.field_by_name(&field.name))
             .and_then(|schema_field| schema_field.args.get(name.node))
-            .map(|input_ty| TypeName::create(&input_ty.ty));
+            .map(|input_ty| MetaTypeName::create(&input_ty.ty));
         ctx.with_input_type(expected_ty, |ctx| {
             visit_input_value(v, ctx, field.position(), expected_ty, value)
         });
@@ -597,7 +597,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
     pos: Pos,
-    expected_ty: Option<TypeName<'a>>,
+    expected_ty: Option<MetaTypeName<'a>>,
     value: &'a Value,
 ) {
     v.enter_input_value(ctx, pos, &expected_ty, value);
@@ -606,9 +606,15 @@ fn visit_input_value<'a, V: Visitor<'a>>(
         Value::List(values) => {
             if let Some(expected_ty) = expected_ty {
                 let elem_ty = expected_ty.unwrap_non_null();
-                if let TypeName::List(expected_ty) = elem_ty {
+                if let MetaTypeName::List(expected_ty) = elem_ty {
                     values.iter().for_each(|value| {
-                        visit_input_value(v, ctx, pos, Some(TypeName::create(expected_ty)), value)
+                        visit_input_value(
+                            v,
+                            ctx,
+                            pos,
+                            Some(MetaTypeName::create(expected_ty)),
+                            value,
+                        )
                     });
                 }
             }
@@ -616,20 +622,20 @@ fn visit_input_value<'a, V: Visitor<'a>>(
         Value::Object(values) => {
             if let Some(expected_ty) = expected_ty {
                 let expected_ty = expected_ty.unwrap_non_null();
-                if let TypeName::Named(expected_ty) = expected_ty {
+                if let MetaTypeName::Named(expected_ty) = expected_ty {
                     if let Some(ty) = ctx
                         .registry
                         .types
-                        .get(TypeName::concrete_typename(expected_ty))
+                        .get(MetaTypeName::concrete_typename(expected_ty))
                     {
-                        if let Type::InputObject { input_fields, .. } = ty {
+                        if let MetaType::InputObject { input_fields, .. } = ty {
                             for (item_key, item_value) in values {
                                 if let Some(input_value) = input_fields.get(item_key.as_ref()) {
                                     visit_input_value(
                                         v,
                                         ctx,
                                         pos,
-                                        Some(TypeName::create(&input_value.ty)),
+                                        Some(MetaTypeName::create(&input_value.ty)),
                                         item_value,
                                     );
                                 }
@@ -670,7 +676,7 @@ fn visit_directives<'a, V: Visitor<'a>>(
             v.enter_argument(ctx, name, value);
             let expected_ty = schema_directive
                 .and_then(|schema_directive| schema_directive.args.get(name.node))
-                .map(|input_ty| TypeName::create(&input_ty.ty));
+                .map(|input_ty| MetaTypeName::create(&input_ty.ty));
             ctx.with_input_type(expected_ty, |ctx| {
                 visit_input_value(v, ctx, d.position(), expected_ty, value)
             });

@@ -99,7 +99,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|registry| registry::Type::Object {
+        registry.create_type::<Self, _>(|registry| registry::MetaType::Object {
             name: Self::type_name().to_string(),
             description: None,
             fields: {
@@ -107,7 +107,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 
                 fields.insert(
                     "pageInfo".to_string(),
-                    registry::Field {
+                    registry::MetaField {
                         name: "pageInfo".to_string(),
                         description: Some("Information to aid in pagination."),
                         args: Default::default(),
@@ -122,7 +122,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 
                 fields.insert(
                     "edges".to_string(),
-                    registry::Field {
+                    registry::MetaField {
                         name: "edges".to_string(),
                         description: Some("A list of edges."),
                         args: Default::default(),
@@ -137,7 +137,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
 
                 fields.insert(
                     "totalCount".to_string(),
-                    registry::Field {
+                    registry::MetaField {
                         name: "totalCount".to_string(),
                         description: Some(r#"A count of the total number of objects in this connection, ignoring pagination. This allows a client to fetch the first five objects by passing "5" as the argument to "first", then fetch the total count so it could display "5 of 83", for example."#),
                         args: Default::default(),
@@ -151,7 +151,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                 );
 
                 let elements_name = T::type_name().to_plural().to_camel_case();
-                fields.insert(elements_name.clone(),registry::Field{
+                fields.insert(elements_name.clone(),registry::MetaField {
                     name: elements_name,
                     description: Some(r#"A list of all of the objects returned in the connection. This is a convenience field provided for quickly exploring the API; rather than querying for "{ edges { node } }" when no edge data is needed, this field can be be used instead. Note that when clients like Relay need to fetch the "cursor" field on the edge to enable efficient pagination, this shortcut cannot be used, and the full "{ edges { node } }" version should be used instead."#),
                     args: Default::default(),

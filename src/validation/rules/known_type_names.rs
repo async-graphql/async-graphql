@@ -1,5 +1,5 @@
 use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
-use crate::registry::TypeName;
+use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 
@@ -23,7 +23,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     ) {
         validate_type(
             ctx,
-            TypeName::concrete_typename(&variable_definition.var_type.to_string()),
+            MetaTypeName::concrete_typename(&variable_definition.var_type.to_string()),
             variable_definition.position(),
         );
     }

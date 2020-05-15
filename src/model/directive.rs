@@ -67,7 +67,7 @@ pub enum __DirectiveLocation {
 
 pub struct __Directive<'a> {
     pub registry: &'a registry::Registry,
-    pub directive: &'a registry::Directive,
+    pub directive: &'a registry::MetaDirective,
 }
 
 /// A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.

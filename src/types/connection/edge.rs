@@ -41,7 +41,7 @@ where
     fn create_type_info(registry: &mut registry::Registry) -> String {
         registry.create_type::<Self, _>(|registry| {
             E::create_type_info(registry);
-            let extra_fields = if let Some(registry::Type::Object { fields, .. }) =
+            let extra_fields = if let Some(registry::MetaType::Object { fields, .. }) =
                 registry.types.remove(E::type_name().as_ref())
             {
                 fields
@@ -49,7 +49,7 @@ where
                 unreachable!()
             };
 
-            registry::Type::Object {
+            registry::MetaType::Object {
                 name: Self::type_name().to_string(),
                 description: Some("An edge in a connection."),
                 fields: {
@@ -57,7 +57,7 @@ where
 
                     fields.insert(
                         "node".to_string(),
-                        registry::Field {
+                        registry::MetaField {
                             name: "node".to_string(),
                             description: Some("The item at the end of the edge"),
                             args: Default::default(),
@@ -72,7 +72,7 @@ where
 
                     fields.insert(
                         "cursor".to_string(),
-                        registry::Field {
+                        registry::MetaField {
                             name: "cursor".to_string(),
                             description: Some("A cursor for use in pagination"),
                             args: Default::default(),

@@ -97,7 +97,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
         fields.push(ident);
         schema_fields.push(quote! {
-            fields.insert(#name.to_string(), #crate_name::registry::InputValue {
+            fields.insert(#name.to_string(), #crate_name::registry::MetaInputValue {
                 name: #name,
                 description: #desc,
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
@@ -116,7 +116,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::InputObject {
+                registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
                     name: #gql_typename.to_string(),
                     description: #desc,
                     input_fields: {

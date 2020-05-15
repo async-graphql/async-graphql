@@ -3,7 +3,7 @@ use crate::extensions::{BoxExtension, Extension};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::query::QueryBuilder;
-use crate::registry::{Directive, InputValue, Registry};
+use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
@@ -134,7 +134,7 @@ where
             },
         };
 
-        registry.add_directive(Directive {
+        registry.add_directive(MetaDirective {
             name: "include",
             description: Some("Directs the executor to include this field or fragment only when the `if` argument is true."),
             locations: vec![
@@ -144,7 +144,7 @@ where
             ],
             args: {
                 let mut args = HashMap::new();
-                args.insert("if", InputValue {
+                args.insert("if", MetaInputValue {
                     name: "if",
                     description: Some("Included when true."),
                     ty: "Boolean!".to_string(),
@@ -155,7 +155,7 @@ where
             }
         });
 
-        registry.add_directive(Directive {
+        registry.add_directive(MetaDirective {
             name: "skip",
             description: Some("Directs the executor to skip this field or fragment when the `if` argument is true."),
             locations: vec![
@@ -165,7 +165,7 @@ where
             ],
             args: {
                 let mut args = HashMap::new();
-                args.insert("if", InputValue {
+                args.insert("if", MetaInputValue {
                     name: "if",
                     description: Some("Skipped when true."),
                     ty: "Boolean!".to_string(),

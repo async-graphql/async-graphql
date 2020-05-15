@@ -115,7 +115,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             }
         });
         schema_enum_items.push(quote! {
-            enum_items.insert(#gql_item_name, #crate_name::registry::EnumValue {
+            enum_items.insert(#gql_item_name, #crate_name::registry::MetaEnumValue {
                 name: #gql_item_name,
                 description: #item_desc,
                 deprecation: #item_deprecation,
@@ -142,7 +142,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
                 registry.create_type::<Self, _>(|registry| {
-                    #crate_name::registry::Type::Enum {
+                    #crate_name::registry::MetaType::Enum {
                         name: #gql_typename.to_string(),
                         description: #desc,
                         enum_values: {

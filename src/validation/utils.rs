@@ -60,15 +60,15 @@ pub fn is_valid_input_value(
         return None;
     }
 
-    match registry::TypeName::create(type_name) {
-        registry::TypeName::NonNull(type_name) => match value {
+    match registry::MetaTypeName::create(type_name) {
+        registry::MetaTypeName::NonNull(type_name) => match value {
             Value::Null => Some(valid_error(
                 &path_node,
                 format!("expected type \"{}\"", type_name),
             )),
             _ => is_valid_input_value(registry, type_name, value, path_node),
         },
-        registry::TypeName::List(type_name) => match value {
+        registry::MetaTypeName::List(type_name) => match value {
             Value::List(elems) => {
                 for (idx, elem) in elems.iter().enumerate() {
                     if let Some(reason) = is_valid_input_value(
@@ -87,14 +87,14 @@ pub fn is_valid_input_value(
             }
             _ => is_valid_input_value(registry, type_name, value, path_node),
         },
-        registry::TypeName::Named(type_name) => {
+        registry::MetaTypeName::Named(type_name) => {
             if let Value::Null = value {
                 return None;
             }
 
             if let Some(ty) = registry.types.get(type_name) {
                 match ty {
-                    registry::Type::Scalar { is_valid, .. } => {
+                    registry::MetaType::Scalar { is_valid, .. } => {
                         if !is_valid(value) {
                             Some(valid_error(
                                 &path_node,
@@ -104,7 +104,7 @@ pub fn is_valid_input_value(
                             None
                         }
                     }
-                    registry::Type::Enum { enum_values, .. } => match value {
+                    registry::MetaType::Enum { enum_values, .. } => match value {
                         Value::Enum(name) => {
                             if !enum_values.contains_key(name) {
                                 Some(valid_error(
@@ -124,7 +124,7 @@ pub fn is_valid_input_value(
                             format!("expected type \"{}\"", type_name),
                         )),
                     },
-                    registry::Type::InputObject { input_fields, .. } => match value {
+                    registry::MetaType::InputObject { input_fields, .. } => match value {
                         Value::Object(values) => {
                             let mut input_names = values
                                 .keys()
@@ -157,7 +157,7 @@ pub fn is_valid_input_value(
                                     ) {
                                         return Some(reason);
                                     }
-                                } else if registry::TypeName::create(&field.ty).is_non_null()
+                                } else if registry::MetaTypeName::create(&field.ty).is_non_null()
                                     && field.default_value.is_none()
                                 {
                                     return Some(valid_error(

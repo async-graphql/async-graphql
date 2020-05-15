@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
-    pub field: &'a registry::Field,
+    pub field: &'a registry::MetaField,
 }
 
 /// Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.

@@ -115,7 +115,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 registry.create_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
-                    #crate_name::registry::Type::Union {
+                    #crate_name::registry::MetaType::Union {
                         name: #gql_typename.to_string(),
                         description: #desc,
                         possible_types: {

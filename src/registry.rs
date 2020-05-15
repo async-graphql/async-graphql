@@ -22,43 +22,43 @@ fn parse_list(type_name: &str) -> Option<&str> {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum TypeName<'a> {
+pub enum MetaTypeName<'a> {
     List(&'a str),
     NonNull(&'a str),
     Named(&'a str),
 }
 
-impl<'a> std::fmt::Display for TypeName<'a> {
+impl<'a> std::fmt::Display for MetaTypeName<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TypeName::Named(name) => write!(f, "{}", name),
-            TypeName::NonNull(name) => write!(f, "{}!", name),
-            TypeName::List(name) => write!(f, "[{}]", name),
+            MetaTypeName::Named(name) => write!(f, "{}", name),
+            MetaTypeName::NonNull(name) => write!(f, "{}!", name),
+            MetaTypeName::List(name) => write!(f, "[{}]", name),
         }
     }
 }
 
-impl<'a> TypeName<'a> {
-    pub fn create(type_name: &str) -> TypeName {
+impl<'a> MetaTypeName<'a> {
+    pub fn create(type_name: &str) -> MetaTypeName {
         if let Some(type_name) = parse_non_null(type_name) {
-            TypeName::NonNull(type_name)
+            MetaTypeName::NonNull(type_name)
         } else if let Some(type_name) = parse_list(type_name) {
-            TypeName::List(type_name)
+            MetaTypeName::List(type_name)
         } else {
-            TypeName::Named(type_name)
+            MetaTypeName::Named(type_name)
         }
     }
 
     pub fn concrete_typename(type_name: &str) -> &str {
-        match TypeName::create(type_name) {
-            TypeName::List(type_name) => Self::concrete_typename(type_name),
-            TypeName::NonNull(type_name) => Self::concrete_typename(type_name),
-            TypeName::Named(type_name) => type_name,
+        match MetaTypeName::create(type_name) {
+            MetaTypeName::List(type_name) => Self::concrete_typename(type_name),
+            MetaTypeName::NonNull(type_name) => Self::concrete_typename(type_name),
+            MetaTypeName::Named(type_name) => type_name,
         }
     }
 
     pub fn is_non_null(&self) -> bool {
-        if let TypeName::NonNull(_) = self {
+        if let MetaTypeName::NonNull(_) = self {
             true
         } else {
             false
@@ -67,20 +67,22 @@ impl<'a> TypeName<'a> {
 
     pub fn unwrap_non_null(&self) -> Self {
         match self {
-            TypeName::NonNull(ty) => TypeName::create(ty),
+            MetaTypeName::NonNull(ty) => MetaTypeName::create(ty),
             _ => *self,
         }
     }
 
-    pub fn is_subtype(&self, sub: &TypeName<'_>) -> bool {
+    pub fn is_subtype(&self, sub: &MetaTypeName<'_>) -> bool {
         match (self, sub) {
-            (TypeName::NonNull(super_type), TypeName::NonNull(sub_type))
-            | (TypeName::Named(super_type), TypeName::NonNull(sub_type)) => {
-                TypeName::create(super_type).is_subtype(&TypeName::create(sub_type))
+            (MetaTypeName::NonNull(super_type), MetaTypeName::NonNull(sub_type))
+            | (MetaTypeName::Named(super_type), MetaTypeName::NonNull(sub_type)) => {
+                MetaTypeName::create(super_type).is_subtype(&MetaTypeName::create(sub_type))
             }
-            (TypeName::Named(super_type), TypeName::Named(sub_type)) => super_type == sub_type,
-            (TypeName::List(super_type), TypeName::List(sub_type)) => {
-                TypeName::create(super_type).is_subtype(&TypeName::create(sub_type))
+            (MetaTypeName::Named(super_type), MetaTypeName::Named(sub_type)) => {
+                super_type == sub_type
+            }
+            (MetaTypeName::List(super_type), MetaTypeName::List(sub_type)) => {
+                MetaTypeName::create(super_type).is_subtype(&MetaTypeName::create(sub_type))
             }
             _ => false,
         }
@@ -88,7 +90,7 @@ impl<'a> TypeName<'a> {
 }
 
 #[derive(Clone)]
-pub struct InputValue {
+pub struct MetaInputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub ty: String,
@@ -97,10 +99,10 @@ pub struct InputValue {
 }
 
 #[derive(Clone)]
-pub struct Field {
+pub struct MetaField {
     pub name: String,
     pub description: Option<&'static str>,
-    pub args: HashMap<&'static str, InputValue>,
+    pub args: HashMap<&'static str, MetaInputValue>,
     pub ty: String,
     pub deprecation: Option<&'static str>,
     pub cache_control: CacheControl,
@@ -110,7 +112,7 @@ pub struct Field {
 }
 
 #[derive(Clone)]
-pub struct EnumValue {
+pub struct MetaEnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub deprecation: Option<&'static str>,
@@ -192,7 +194,7 @@ impl CacheControl {
     }
 }
 
-pub enum Type {
+pub enum MetaType {
     Scalar {
         name: String,
         description: Option<&'static str>,
@@ -201,7 +203,7 @@ pub enum Type {
     Object {
         name: String,
         description: Option<&'static str>,
-        fields: HashMap<String, Field>,
+        fields: HashMap<String, MetaField>,
         cache_control: CacheControl,
         extends: bool,
         keys: Option<Vec<String>>,
@@ -209,7 +211,7 @@ pub enum Type {
     Interface {
         name: String,
         description: Option<&'static str>,
-        fields: HashMap<String, Field>,
+        fields: HashMap<String, MetaField>,
         possible_types: HashSet<String>,
         extends: bool,
         keys: Option<Vec<String>>,
@@ -222,92 +224,92 @@ pub enum Type {
     Enum {
         name: String,
         description: Option<&'static str>,
-        enum_values: HashMap<&'static str, EnumValue>,
+        enum_values: HashMap<&'static str, MetaEnumValue>,
     },
     InputObject {
         name: String,
         description: Option<&'static str>,
-        input_fields: HashMap<String, InputValue>,
+        input_fields: HashMap<String, MetaInputValue>,
     },
 }
 
-impl Type {
-    pub fn field_by_name(&self, name: &str) -> Option<&Field> {
+impl MetaType {
+    pub fn field_by_name(&self, name: &str) -> Option<&MetaField> {
         self.fields().and_then(|fields| fields.get(name))
     }
 
-    pub fn fields(&self) -> Option<&HashMap<String, Field>> {
+    pub fn fields(&self) -> Option<&HashMap<String, MetaField>> {
         match self {
-            Type::Object { fields, .. } => Some(&fields),
-            Type::Interface { fields, .. } => Some(&fields),
+            MetaType::Object { fields, .. } => Some(&fields),
+            MetaType::Interface { fields, .. } => Some(&fields),
             _ => None,
         }
     }
 
     pub fn name(&self) -> &str {
         match self {
-            Type::Scalar { name, .. } => &name,
-            Type::Object { name, .. } => name,
-            Type::Interface { name, .. } => name,
-            Type::Union { name, .. } => name,
-            Type::Enum { name, .. } => name,
-            Type::InputObject { name, .. } => name,
+            MetaType::Scalar { name, .. } => &name,
+            MetaType::Object { name, .. } => name,
+            MetaType::Interface { name, .. } => name,
+            MetaType::Union { name, .. } => name,
+            MetaType::Enum { name, .. } => name,
+            MetaType::InputObject { name, .. } => name,
         }
     }
 
     pub fn is_composite(&self) -> bool {
         match self {
-            Type::Object { .. } => true,
-            Type::Interface { .. } => true,
-            Type::Union { .. } => true,
+            MetaType::Object { .. } => true,
+            MetaType::Interface { .. } => true,
+            MetaType::Union { .. } => true,
             _ => false,
         }
     }
 
     pub fn is_abstract(&self) -> bool {
         match self {
-            Type::Interface { .. } => true,
-            Type::Union { .. } => true,
+            MetaType::Interface { .. } => true,
+            MetaType::Union { .. } => true,
             _ => false,
         }
     }
 
     pub fn is_leaf(&self) -> bool {
         match self {
-            Type::Enum { .. } => true,
-            Type::Scalar { .. } => true,
+            MetaType::Enum { .. } => true,
+            MetaType::Scalar { .. } => true,
             _ => false,
         }
     }
 
     pub fn is_input(&self) -> bool {
         match self {
-            Type::Enum { .. } => true,
-            Type::Scalar { .. } => true,
-            Type::InputObject { .. } => true,
+            MetaType::Enum { .. } => true,
+            MetaType::Scalar { .. } => true,
+            MetaType::InputObject { .. } => true,
             _ => false,
         }
     }
 
     pub fn is_possible_type(&self, type_name: &str) -> bool {
         match self {
-            Type::Interface { possible_types, .. } => possible_types.contains(type_name),
-            Type::Union { possible_types, .. } => possible_types.contains(type_name),
-            Type::Object { name, .. } => name == type_name,
+            MetaType::Interface { possible_types, .. } => possible_types.contains(type_name),
+            MetaType::Union { possible_types, .. } => possible_types.contains(type_name),
+            MetaType::Object { name, .. } => name == type_name,
             _ => false,
         }
     }
 
     pub fn possible_types(&self) -> Option<&HashSet<String>> {
         match self {
-            Type::Interface { possible_types, .. } => Some(possible_types),
-            Type::Union { possible_types, .. } => Some(possible_types),
+            MetaType::Interface { possible_types, .. } => Some(possible_types),
+            MetaType::Union { possible_types, .. } => Some(possible_types),
             _ => None,
         }
     }
 
-    pub fn type_overlap(&self, ty: &Type) -> bool {
-        if self as *const Type == ty as *const Type {
+    pub fn type_overlap(&self, ty: &MetaType) -> bool {
+        if self as *const MetaType == ty as *const MetaType {
             return true;
         }
 
@@ -325,16 +327,16 @@ impl Type {
     }
 }
 
-pub struct Directive {
+pub struct MetaDirective {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub locations: Vec<model::__DirectiveLocation>,
-    pub args: HashMap<&'static str, InputValue>,
+    pub args: HashMap<&'static str, MetaInputValue>,
 }
 
 pub struct Registry {
-    pub types: HashMap<String, Type>,
-    pub directives: HashMap<String, Directive>,
+    pub types: HashMap<String, MetaType>,
+    pub directives: HashMap<String, MetaDirective>,
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
@@ -342,7 +344,7 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn create_type<T: crate::Type, F: FnMut(&mut Registry) -> Type>(
+    pub fn create_type<T: crate::Type, F: FnMut(&mut Registry) -> MetaType>(
         &mut self,
         mut f: F,
     ) -> String {
@@ -350,7 +352,7 @@ impl Registry {
         if !self.types.contains_key(name.as_ref()) {
             self.types.insert(
                 name.to_string(),
-                Type::Object {
+                MetaType::Object {
                     name: "".to_string(),
                     description: None,
                     fields: Default::default(),
@@ -365,7 +367,7 @@ impl Registry {
         T::qualified_type_name()
     }
 
-    pub fn add_directive(&mut self, directive: Directive) {
+    pub fn add_directive(&mut self, directive: MetaDirective) {
         self.directives
             .insert(directive.name.to_string(), directive);
     }
@@ -385,8 +387,8 @@ impl Registry {
 
     pub fn add_keys(&mut self, ty: &str, keys: &str) {
         let all_keys = match self.types.get_mut(ty) {
-            Some(Type::Object { keys: all_keys, .. }) => all_keys,
-            Some(Type::Interface { keys: all_keys, .. }) => all_keys,
+            Some(MetaType::Object { keys: all_keys, .. }) => all_keys,
+            Some(MetaType::Interface { keys: all_keys, .. }) => all_keys,
             _ => return,
         };
         if let Some(all_keys) = all_keys {
@@ -396,11 +398,11 @@ impl Registry {
         }
     }
 
-    pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&Type> {
-        self.types.get(TypeName::concrete_typename(type_name))
+    pub fn concrete_type_by_name(&self, type_name: &str) -> Option<&MetaType> {
+        self.types.get(MetaTypeName::concrete_typename(type_name))
     }
 
-    pub fn concrete_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&Type> {
+    pub fn concrete_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&MetaType> {
         match query_type {
             ParsedType::NonNull(ty) => self.concrete_type_by_parsed_type(ty),
             ParsedType::List(ty) => self.concrete_type_by_parsed_type(ty),
@@ -408,7 +410,7 @@ impl Registry {
         }
     }
 
-    fn create_federation_fields<'a, I: Iterator<Item = &'a Field>>(sdl: &mut String, it: I) {
+    fn create_federation_fields<'a, I: Iterator<Item = &'a MetaField>>(sdl: &mut String, it: I) {
         for field in it {
             if field.name.starts_with("__") {
                 continue;
@@ -431,9 +433,9 @@ impl Registry {
         }
     }
 
-    fn create_federation_type(&self, ty: &Type, sdl: &mut String) {
+    fn create_federation_type(&self, ty: &MetaType, sdl: &mut String) {
         match ty {
-            Type::Object {
+            MetaType::Object {
                 name,
                 fields,
                 extends,
@@ -464,7 +466,7 @@ impl Registry {
                 Self::create_federation_fields(sdl, fields.values());
                 writeln!(sdl, "}}").ok();
             }
-            Type::Interface {
+            MetaType::Interface {
                 name,
                 fields,
                 extends,
@@ -498,10 +500,10 @@ impl Registry {
 
     fn has_entities(&self) -> bool {
         self.types.values().any(|ty| match ty {
-            Type::Object {
+            MetaType::Object {
                 keys: Some(keys), ..
             } => !keys.is_empty(),
-            Type::Interface {
+            MetaType::Interface {
                 keys: Some(keys), ..
             } => !keys.is_empty(),
             _ => false,
@@ -513,12 +515,12 @@ impl Registry {
             .types
             .values()
             .filter_map(|ty| match ty {
-                Type::Object {
+                MetaType::Object {
                     name,
                     keys: Some(keys),
                     ..
                 } if !keys.is_empty() => Some(name.clone()),
-                Type::Interface {
+                MetaType::Interface {
                     name,
                     keys: Some(keys),
                     ..
@@ -529,7 +531,7 @@ impl Registry {
 
         self.types.insert(
             "_Entity".to_string(),
-            Type::Union {
+            MetaType::Union {
                 name: "_Entity".to_string(),
                 description: None,
                 possible_types,
@@ -546,14 +548,14 @@ impl Registry {
 
         self.types.insert(
             "_Service".to_string(),
-            Type::Object {
+            MetaType::Object {
                 name: "_Service".to_string(),
                 description: None,
                 fields: {
                     let mut fields = HashMap::new();
                     fields.insert(
                         "sdl".to_string(),
-                        Field {
+                        MetaField {
                             name: "sdl".to_string(),
                             description: None,
                             args: Default::default(),
@@ -576,10 +578,10 @@ impl Registry {
         self.create_entity_type();
 
         let query_root = self.types.get_mut(&self.query_type).unwrap();
-        if let Type::Object { fields, .. } = query_root {
+        if let MetaType::Object { fields, .. } = query_root {
             fields.insert(
                 "_service".to_string(),
-                Field {
+                MetaField {
                     name: "_service".to_string(),
                     description: None,
                     args: Default::default(),
@@ -594,14 +596,14 @@ impl Registry {
 
             fields.insert(
                 "_entities".to_string(),
-                Field {
+                MetaField {
                     name: "_entities".to_string(),
                     description: None,
                     args: {
                         let mut args = HashMap::new();
                         args.insert(
                             "representations",
-                            InputValue {
+                            MetaInputValue {
                                 name: "representations",
                                 description: None,
                                 ty: "[_Any!]!".to_string(),

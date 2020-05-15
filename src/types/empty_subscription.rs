@@ -19,7 +19,7 @@ impl Type for EmptySubscription {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|_| registry::Type::Object {
+        registry.create_type::<Self, _>(|_| registry::MetaType::Object {
             name: "EmptySubscription".to_string(),
             description: None,
             fields: Default::default(),

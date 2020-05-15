@@ -156,7 +156,7 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                registry.create_type::<#self_ty, _>(|_| #crate_name::registry::Type::Scalar {
+                registry.create_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
                     name: <#self_ty as #crate_name::ScalarType>::type_name().to_string(),
                     description: <#self_ty>::description(),
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),

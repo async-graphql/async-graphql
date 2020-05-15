@@ -310,7 +310,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         .unwrap_or_else(|| quote! {None});
 
                     schema_args.push(quote! {
-                        args.insert(#name, #crate_name::registry::InputValue {
+                        args.insert(#name, #crate_name::registry::MetaInputValue {
                             name: #name,
                             description: #desc,
                             ty: <#ty as #crate_name::Type>::create_type_info(registry),
@@ -339,7 +339,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let schema_ty = ty.value_type();
 
                 schema_fields.push(quote! {
-                    fields.insert(#field_name.to_string(), #crate_name::registry::Field {
+                    fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
                         name: #field_name.to_string(),
                         description: #field_desc,
                         args: {
@@ -437,7 +437,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
-                let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::Type::Object {
+                let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: #gql_typename.to_string(),
                     description: #desc,
                     fields: {

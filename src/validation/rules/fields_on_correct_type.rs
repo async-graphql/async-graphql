@@ -9,8 +9,8 @@ pub struct FieldsOnCorrectType;
 impl<'a> Visitor<'a> for FieldsOnCorrectType {
     fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         if let Some(parent_type) = ctx.parent_type() {
-            if let Some(registry::Type::Union { .. }) | Some(registry::Type::Interface { .. }) =
-                ctx.parent_type()
+            if let Some(registry::MetaType::Union { .. })
+            | Some(registry::MetaType::Interface { .. }) = ctx.parent_type()
             {
                 if field.name.node == "__typename" {
                     return;

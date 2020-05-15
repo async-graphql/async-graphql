@@ -4,7 +4,7 @@ use async_graphql_derive::Object;
 use itertools::Itertools;
 
 enum TypeDetail<'a> {
-    Named(&'a registry::Type),
+    Named(&'a registry::MetaType),
     NonNull(String),
     List(String),
 }
@@ -15,7 +15,7 @@ pub struct __Type<'a> {
 }
 
 impl<'a> __Type<'a> {
-    pub fn new_simple(registry: &'a registry::Registry, ty: &'a registry::Type) -> __Type<'a> {
+    pub fn new_simple(registry: &'a registry::Registry, ty: &'a registry::MetaType) -> __Type<'a> {
         __Type {
             registry,
             detail: TypeDetail::Named(ty),
@@ -23,16 +23,16 @@ impl<'a> __Type<'a> {
     }
 
     pub fn new(registry: &'a registry::Registry, type_name: &str) -> __Type<'a> {
-        match registry::TypeName::create(type_name) {
-            registry::TypeName::NonNull(ty) => __Type {
+        match registry::MetaTypeName::create(type_name) {
+            registry::MetaTypeName::NonNull(ty) => __Type {
                 registry,
                 detail: TypeDetail::NonNull(ty.to_string()),
             },
-            registry::TypeName::List(ty) => __Type {
+            registry::MetaTypeName::List(ty) => __Type {
                 registry,
                 detail: TypeDetail::List(ty.to_string()),
             },
-            registry::TypeName::Named(ty) => __Type {
+            registry::MetaTypeName::Named(ty) => __Type {
                 registry,
                 detail: TypeDetail::Named(&registry.types[ty]),
             },
@@ -48,12 +48,12 @@ impl<'a> __Type<'a> {
     async fn kind(&self) -> __TypeKind {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
-                registry::Type::Scalar { .. } => __TypeKind::Scalar,
-                registry::Type::Object { .. } => __TypeKind::Object,
-                registry::Type::Interface { .. } => __TypeKind::Interface,
-                registry::Type::Union { .. } => __TypeKind::Union,
-                registry::Type::Enum { .. } => __TypeKind::Enum,
-                registry::Type::InputObject { .. } => __TypeKind::InputObject,
+                registry::MetaType::Scalar { .. } => __TypeKind::Scalar,
+                registry::MetaType::Object { .. } => __TypeKind::Object,
+                registry::MetaType::Interface { .. } => __TypeKind::Interface,
+                registry::MetaType::Union { .. } => __TypeKind::Union,
+                registry::MetaType::Enum { .. } => __TypeKind::Enum,
+                registry::MetaType::InputObject { .. } => __TypeKind::InputObject,
             },
             TypeDetail::NonNull(_) => __TypeKind::NonNull,
             TypeDetail::List(_) => __TypeKind::List,
@@ -71,12 +71,18 @@ impl<'a> __Type<'a> {
     async fn description(&self) -> Option<String> {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
-                registry::Type::Scalar { description, .. } => description.map(|s| s.to_string()),
-                registry::Type::Object { description, .. } => description.map(|s| s.to_string()),
-                registry::Type::Interface { description, .. } => description.map(|s| s.to_string()),
-                registry::Type::Union { description, .. } => description.map(|s| s.to_string()),
-                registry::Type::Enum { description, .. } => description.map(|s| s.to_string()),
-                registry::Type::InputObject { description, .. } => {
+                registry::MetaType::Scalar { description, .. } => {
+                    description.map(|s| s.to_string())
+                }
+                registry::MetaType::Object { description, .. } => {
+                    description.map(|s| s.to_string())
+                }
+                registry::MetaType::Interface { description, .. } => {
+                    description.map(|s| s.to_string())
+                }
+                registry::MetaType::Union { description, .. } => description.map(|s| s.to_string()),
+                registry::MetaType::Enum { description, .. } => description.map(|s| s.to_string()),
+                registry::MetaType::InputObject { description, .. } => {
                     description.map(|s| s.to_string())
                 }
             },
@@ -111,7 +117,7 @@ impl<'a> __Type<'a> {
     }
 
     async fn interfaces(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Named(registry::Type::Object { name, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::MetaType::Object { name, .. }) = &self.detail {
             Some(
                 self.registry
                     .implements
@@ -127,14 +133,17 @@ impl<'a> __Type<'a> {
     }
 
     async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Named(registry::Type::Interface { possible_types, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::MetaType::Interface { possible_types, .. }) =
+            &self.detail
+        {
             Some(
                 possible_types
                     .iter()
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
-        } else if let TypeDetail::Named(registry::Type::Union { possible_types, .. }) = &self.detail
+        } else if let TypeDetail::Named(registry::MetaType::Union { possible_types, .. }) =
+            &self.detail
         {
             Some(
                 possible_types
@@ -151,7 +160,7 @@ impl<'a> __Type<'a> {
         &self,
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
-        if let TypeDetail::Named(registry::Type::Enum { enum_values, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::MetaType::Enum { enum_values, .. }) = &self.detail {
             Some(
                 enum_values
                     .values()
@@ -168,7 +177,9 @@ impl<'a> __Type<'a> {
     }
 
     async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
-        if let TypeDetail::Named(registry::Type::InputObject { input_fields, .. }) = &self.detail {
+        if let TypeDetail::Named(registry::MetaType::InputObject { input_fields, .. }) =
+            &self.detail
+        {
             Some(
                 input_fields
                     .values()

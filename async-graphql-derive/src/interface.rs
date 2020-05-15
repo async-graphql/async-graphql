@@ -177,7 +177,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 })
                 .unwrap_or_else(|| quote! {None});
             schema_args.push(quote! {
-                args.insert(#name, #crate_name::registry::InputValue {
+                args.insert(#name, #crate_name::registry::MetaInputValue {
                     name: #name,
                     description: #desc,
                     ty: <#ty as #crate_name::Type>::create_type_info(registry),
@@ -219,7 +219,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         });
 
         schema_fields.push(quote! {
-            fields.insert(#name.to_string(), #crate_name::registry::Field {
+            fields.insert(#name.to_string(), #crate_name::registry::MetaField {
                 name: #name.to_string(),
                 description: #desc,
                 args: {
@@ -282,7 +282,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 registry.create_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
-                    #crate_name::registry::Type::Interface {
+                    #crate_name::registry::MetaType::Interface {
                         name: #gql_typename.to_string(),
                         description: #desc,
                         fields: {

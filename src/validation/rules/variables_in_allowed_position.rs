@@ -1,7 +1,7 @@
 use crate::parser::ast::{
     Document, FragmentDefinition, FragmentSpread, OperationDefinition, Type, VariableDefinition,
 };
-use crate::registry::TypeName;
+use crate::registry::MetaTypeName;
 use crate::validation::utils::{operation_name, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned, Value};
@@ -10,7 +10,7 @@ use std::collections::{HashMap, HashSet};
 #[derive(Default)]
 pub struct VariableInAllowedPosition<'a> {
     spreads: HashMap<Scope<'a>, HashSet<&'a str>>,
-    variable_usages: HashMap<Scope<'a>, Vec<(&'a str, Pos, TypeName<'a>)>>,
+    variable_usages: HashMap<Scope<'a>, Vec<(&'a str, Pos, MetaTypeName<'a>)>>,
     variable_defs: HashMap<Scope<'a>, Vec<&'a Positioned<VariableDefinition>>>,
     current_scope: Option<Scope<'a>>,
 }
@@ -38,7 +38,7 @@ impl<'a> VariableInAllowedPosition<'a> {
                         (_, _) => def.var_type.to_string(),
                     };
 
-                    if !var_type.is_subtype(&TypeName::create(&expected_type)) {
+                    if !var_type.is_subtype(&MetaTypeName::create(&expected_type)) {
                         ctx.report_error(
                             vec![def.position(), *usage_pos],
                             format!(
@@ -113,7 +113,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         &mut self,
         _ctx: &mut VisitorContext<'a>,
         pos: Pos,
-        expected_type: &Option<TypeName<'a>>,
+        expected_type: &Option<MetaTypeName<'a>>,
         value: &'a Value,
     ) {
         if let Value::Variable(name) = value {

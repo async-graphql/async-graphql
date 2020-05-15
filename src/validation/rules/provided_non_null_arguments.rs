@@ -1,5 +1,5 @@
 use crate::parser::ast::{Directive, Field};
-use crate::registry::TypeName;
+use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -14,7 +14,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
     ) {
         if let Some(schema_directive) = ctx.registry.directives.get(directive.name.node) {
             for arg in schema_directive.args.values() {
-                if TypeName::create(&arg.ty).is_non_null()
+                if MetaTypeName::create(&arg.ty).is_non_null()
                     && arg.default_value.is_none()
                     && directive
                         .arguments
@@ -36,7 +36,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(schema_field) = parent_type.field_by_name(&field.name) {
                 for arg in schema_field.args.values() {
-                    if TypeName::create(&arg.ty).is_non_null()
+                    if MetaTypeName::create(&arg.ty).is_non_null()
                         && arg.default_value.is_none()
                         && field
                             .arguments

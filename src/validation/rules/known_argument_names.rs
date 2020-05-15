@@ -1,5 +1,5 @@
 use crate::parser::ast::{Directive, Field};
-use crate::registry::InputValue;
+use crate::registry::MetaInputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, Value};
@@ -15,7 +15,7 @@ enum ArgsType<'a> {
 
 #[derive(Default)]
 pub struct KnownArgumentNames<'a> {
-    current_args: Option<(&'a HashMap<&'static str, InputValue>, ArgsType<'a>)>,
+    current_args: Option<(&'a HashMap<&'static str, MetaInputValue>, ArgsType<'a>)>,
 }
 
 impl<'a> KnownArgumentNames<'a> {
