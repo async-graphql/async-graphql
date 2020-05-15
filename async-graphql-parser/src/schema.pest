@@ -1,0 +1,31 @@
+WHITESPACE = _{ " " | "," | "\t" | "\u{feff}" | NEWLINE }
+COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }
+
+// value
+int    = @{ "-"? ~ ("0" | (ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)) }
+float  = @{ "-"? ~ int ~ "." ~ ASCII_DIGIT+ ~ exp? }
+exp    = @{ ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
+
+string  = @{ "\"" ~ string_inner ~ "\"" }
+string_inner   = @{ (!("\"" | "\\") ~ ANY)* ~ (escape ~ string_inner)? }
+escape  = @{ "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t" | unicode) }
+unicode = @{ "u" ~ ASCII_HEX_DIGIT{4} }
+
+boolean = { "true" | "false" }
+null = { "null" }
+name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
+variable = { "$" ~ name }
+
+array = { "[" ~ value* ~ "]" }
+
+pair = { name ~ ":" ~ value }
+object = { "{" ~ pair* ~ "}" }
+
+value = { object | array | variable | float | int | string | null | boolean | name }
+
+// type
+list_type = { "[" ~ type_ ~ "]" }
+nonnull_type = { (list_type | name) ~ "!" }
+type_ = { nonnull_type | list_type | name }
+
+// type system

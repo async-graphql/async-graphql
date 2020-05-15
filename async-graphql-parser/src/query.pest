@@ -29,7 +29,6 @@ nonnull_type = { (list_type | name) ~ "!" }
 type_ = { nonnull_type | list_type | name }
 
 // query
-
 arguments = { "(" ~ pair* ~ ")" }
 directive = { "@" ~ name ~ arguments? }
 directives = { directive* }
