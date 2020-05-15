@@ -6,6 +6,8 @@ mod floats;
 mod id;
 mod integers;
 mod json;
+mod naive_date;
+mod naive_time;
 mod string;
 mod url;
 
@@ -23,7 +25,7 @@ mod tests {
     use super::ID;
     use crate::Type;
     use bson::oid::ObjectId;
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
     use uuid::Uuid;
 
     #[test]
@@ -45,6 +47,12 @@ mod tests {
 
         assert_eq!(<ID as Type>::type_name(), "ID");
         assert_eq!(<ID as Type>::qualified_type_name(), "ID!");
+
+        assert_eq!(<NaiveDate as Type>::type_name(), "NaiveDate");
+        assert_eq!(<NaiveDate as Type>::qualified_type_name(), "NaiveDate!");
+
+        assert_eq!(<NaiveTime as Type>::type_name(), "NaiveTime");
+        assert_eq!(<NaiveTime as Type>::qualified_type_name(), "NaiveTime!");
 
         assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
         assert_eq!(
