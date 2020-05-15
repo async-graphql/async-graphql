@@ -1,5 +1,5 @@
 use crate::context::QueryPathNode;
-use crate::parser::ast::{Directive, Field};
+use crate::parser::query::{Directive, Field};
 use crate::registry::MetaInputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};

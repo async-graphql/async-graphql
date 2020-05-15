@@ -1,5 +1,5 @@
 use crate::model::__DirectiveLocation;
-use crate::parser::ast::{
+use crate::parser::query::{
     Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
 };
 use crate::validation::visitor::{Visitor, VisitorContext};

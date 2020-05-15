@@ -1,4 +1,4 @@
-use crate::parser::ast::{Field, SelectionSet};
+use crate::parser::query::{Field, SelectionSet};
 use crate::registry::MetaType;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{CacheControl, Positioned};

@@ -1,4 +1,4 @@
-use crate::parser::ast::Field;
+use crate::parser::query::Field;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{registry, Positioned};

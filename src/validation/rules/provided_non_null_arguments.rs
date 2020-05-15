@@ -1,4 +1,4 @@
-use crate::parser::ast::{Directive, Field};
+use crate::parser::query::{Directive, Field};
 use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;

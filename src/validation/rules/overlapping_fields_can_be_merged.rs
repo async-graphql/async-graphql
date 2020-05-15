@@ -1,4 +1,4 @@
-use crate::parser::ast::{Field, Selection, SelectionSet};
+use crate::parser::query::{Field, Selection, SelectionSet};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashMap;

@@ -1,4 +1,4 @@
-use crate::parser::ast::{
+use crate::parser::query::{
     Document, FragmentDefinition, FragmentSpread, OperationDefinition, Type, VariableDefinition,
 };
 use crate::registry::MetaTypeName;

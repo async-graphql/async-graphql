@@ -1,4 +1,4 @@
-use crate::parser::ast::Type as ParsedType;
+use crate::parser::query::Type as ParsedType;
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
 use std::collections::{HashMap, HashSet};

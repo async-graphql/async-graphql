@@ -1,5 +1,5 @@
 use crate::context::QueryPathNode;
-use crate::parser::ast::OperationDefinition;
+use crate::parser::query::OperationDefinition;
 use crate::{registry, Pos, QueryPathSegment, Value};
 use std::collections::HashSet;
 

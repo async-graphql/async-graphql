@@ -1,8 +1,8 @@
 use crate::extensions::BoxExtension;
-use crate::parser::ast::{Directive, Field, SelectionSet};
+use crate::parser::query::{Directive, Field, SelectionSet};
 use crate::registry::Registry;
 use crate::{InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Schema, Type, Value};
-use async_graphql_parser::ast::Document;
+use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};

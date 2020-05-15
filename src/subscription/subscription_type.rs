@@ -1,5 +1,5 @@
 use crate::context::Environment;
-use crate::parser::ast::{Selection, TypeCondition};
+use crate::parser::query::{Selection, TypeCondition};
 use crate::{Context, ContextSelectionSet, ObjectType, Result, Schema, Type};
 use futures::{Future, Stream};
 use std::pin::Pin;

@@ -1,4 +1,4 @@
-use crate::parser::ast::FragmentSpread;
+use crate::parser::query::FragmentSpread;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 

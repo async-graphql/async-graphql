@@ -1,4 +1,4 @@
-use crate::parser::ast::{FragmentDefinition, InlineFragment, TypeCondition};
+use crate::parser::query::{FragmentDefinition, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 

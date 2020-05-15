@@ -1,4 +1,4 @@
-use crate::parser::ast::{
+use crate::parser::query::{
     Definition, Document, FragmentDefinition, FragmentSpread, OperationDefinition,
 };
 use crate::validation::utils::{operation_name, Scope};

@@ -7,7 +7,7 @@ use crate::validation::{check_rules, CheckResult};
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryError, Result, Schema, Variables,
 };
-use async_graphql_parser::ast::OperationType;
+use async_graphql_parser::query::OperationType;
 use itertools::Itertools;
 use std::any::Any;
 use std::fs::File;

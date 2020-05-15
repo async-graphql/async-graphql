@@ -1,4 +1,4 @@
-use crate::parser::ast::{Definition, Document, OperationDefinition};
+use crate::parser::query::{Definition, Document, OperationDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 

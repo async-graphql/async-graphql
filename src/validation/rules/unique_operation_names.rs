@@ -1,4 +1,4 @@
-use crate::parser::ast::{Mutation, OperationDefinition, Query, Subscription};
+use crate::parser::query::{Mutation, OperationDefinition, Query, Subscription};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashSet;

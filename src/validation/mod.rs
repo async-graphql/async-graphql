@@ -7,7 +7,7 @@ mod visitors;
 #[cfg(test)]
 mod test_harness;
 
-use crate::parser::ast::Document;
+use crate::parser::query::Document;
 use crate::registry::Registry;
 use crate::{CacheControl, Error, Result};
 use visitor::{visit, VisitorContext, VisitorNil};

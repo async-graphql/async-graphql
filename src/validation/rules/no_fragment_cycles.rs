@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::parser::ast::{Document, FragmentDefinition, FragmentSpread};
+use crate::parser::query::{Document, FragmentDefinition, FragmentSpread};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};

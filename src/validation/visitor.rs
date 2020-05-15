@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::parser::ast::{
+use crate::parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };

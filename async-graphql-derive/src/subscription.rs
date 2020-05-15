@@ -246,7 +246,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         // I think the code here is safe because the lifetime of selection_set is always less than the environment.
                         let field_selection_set = unsafe {
                             (&ctx.selection_set
-                                as *const #crate_name::Positioned<#crate_name::parser::ast::SelectionSet>)
+                                as *const #crate_name::Positioned<#crate_name::parser::query::SelectionSet>)
                                 .as_ref()
                                 .unwrap()
                         };

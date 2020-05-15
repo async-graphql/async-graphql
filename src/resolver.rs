@@ -1,6 +1,6 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::ResolveInfo;
-use crate::parser::ast::{Selection, TypeCondition};
+use crate::parser::query::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
 use std::iter::FromIterator;

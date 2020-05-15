@@ -1,5 +1,5 @@
 use crate::extensions::ResolveInfo;
-use crate::parser::ast::{Selection, TypeCondition};
+use crate::parser::query::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use std::future::Future;
 use std::pin::Pin;

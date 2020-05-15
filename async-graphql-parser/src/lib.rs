@@ -3,8 +3,8 @@ extern crate pest_derive;
 #[macro_use]
 extern crate thiserror;
 
-pub mod ast;
 mod pos;
+pub mod query;
 mod query_parser;
 mod value;
 

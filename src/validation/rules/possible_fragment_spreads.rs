@@ -1,4 +1,4 @@
-use crate::parser::ast::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
+use crate::parser::query::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashMap;

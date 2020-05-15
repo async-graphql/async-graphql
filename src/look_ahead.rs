@@ -1,4 +1,4 @@
-use async_graphql_parser::ast::{Document, Field, Selection, SelectionSet};
+use async_graphql_parser::query::{Document, Field, Selection, SelectionSet};
 
 /// A selection performed by a query
 pub struct Lookahead<'a> {
