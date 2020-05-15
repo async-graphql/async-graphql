@@ -1,5 +1,18 @@
 use crate::pos::Positioned;
-use crate::ParsedValue;
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug)]
+#[allow(missing_docs)]
+pub enum Value {
+    Null,
+    Int(i64),
+    Float(f64),
+    String(String),
+    Boolean(bool),
+    Enum(String),
+    List(Vec<Value>),
+    Object(BTreeMap<String, Value>),
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Type {
@@ -16,16 +29,13 @@ pub struct Document {
 #[derive(Debug)]
 pub enum Definition {
     SchemaDefinition(Positioned<SchemaDefinition>),
-    TypeDefinition {
-        extend: bool,
-        description: Positioned<String>,
-        definition: Positioned<TypeDefinition>,
-    },
+    TypeDefinition(Positioned<TypeDefinition>),
     DirectiveDefinition(Positioned<DirectiveDefinition>),
 }
 
 #[derive(Debug)]
 pub struct SchemaDefinition {
+    pub extend: bool,
     pub directives: Vec<Positioned<Directive>>,
     pub query: Option<Positioned<String>>,
     pub mutation: Option<Positioned<String>>,
@@ -44,12 +54,16 @@ pub enum TypeDefinition {
 
 #[derive(Debug)]
 pub struct ScalarType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub directives: Vec<Positioned<Directive>>,
 }
 
 #[derive(Debug)]
 pub struct ObjectType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub implements_interfaces: Vec<Positioned<String>>,
     pub directives: Vec<Positioned<Directive>>,
@@ -70,12 +84,14 @@ pub struct InputValue {
     pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub ty: Positioned<Type>,
-    pub default_value: Option<ParsedValue>,
+    pub default_value: Option<Positioned<Value>>,
     pub directives: Vec<Positioned<Directive>>,
 }
 
 #[derive(Debug)]
 pub struct InterfaceType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub directives: Vec<Positioned<Directive>>,
     pub fields: Vec<Positioned<Field>>,
@@ -83,13 +99,17 @@ pub struct InterfaceType {
 
 #[derive(Debug)]
 pub struct UnionType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub directives: Vec<Positioned<Directive>>,
-    pub types: Vec<Positioned<String>>,
+    pub members: Vec<Positioned<String>>,
 }
 
 #[derive(Debug)]
 pub struct EnumType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub directives: Vec<Positioned<Directive>>,
     pub values: Vec<Positioned<EnumValue>>,
@@ -104,6 +124,8 @@ pub struct EnumValue {
 
 #[derive(Debug)]
 pub struct InputObjectType {
+    pub extend: bool,
+    pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
     pub directives: Vec<Positioned<Directive>>,
     pub fields: Vec<Positioned<InputValue>>,
@@ -145,5 +167,5 @@ pub struct DirectiveDefinition {
 #[derive(Debug)]
 pub struct Directive {
     pub name: Positioned<String>,
-    pub arguments: Vec<(Positioned<String>, Positioned<ParsedValue>)>,
+    pub arguments: Vec<(Positioned<String>, Positioned<Value>)>,
 }

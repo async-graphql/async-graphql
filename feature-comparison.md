@@ -8,10 +8,10 @@ Comparing Features of Other Rust GraphQL Implementations
 |----------------|---------------|-----------------|
 | async/await    | 👍            | ⛔️              |
 | Rustfmt friendly(No DSL) | 👍          | ⛔️  |
-| Boilerplate    | less          | some            |
+| Boilerplate    | Less          | Some            |         
+| Type Safety    | 👍            | 👍               |
 | Query          | 👍            | 👍              |
 | Mutation       | 👍            | 👍               |
-| Type Safety    | 👍            | 👍               |
 | Interfaces     | 👍            | 👍               |
 | Union          | 👍            | 👍               |
 | Dataloading    | 👍            | 👍               |

@@ -2,7 +2,7 @@ use crate::pos::Positioned;
 use crate::query::*;
 use crate::utils::{to_static_str, unquote_string, PositionCalculator};
 use crate::value::Value;
-use crate::{Error, Pos};
+use crate::Result;
 use pest::iterators::Pair;
 use pest::Parser;
 use std::borrow::Cow;
@@ -13,9 +13,6 @@ use std::ops::Deref;
 #[derive(Parser)]
 #[grammar = "query.pest"]
 struct QueryParser;
-
-/// Parser result
-pub type Result<T> = std::result::Result<T, Error>;
 
 /// Parse a GraphQL query.
 pub fn parse_query<T: Into<String>>(input: T) -> Result<Document> {
@@ -291,14 +288,8 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
         Rule::float => Value::Float(pair.as_str().parse().unwrap()),
         Rule::int => Value::Int(pair.as_str().parse().unwrap()),
         Rule::string => Value::String({
-            let start_pos = pair.as_span().start_pos().line_col();
-            unquote_string(
-                to_static_str(pair.as_str()),
-                Pos {
-                    line: start_pos.0,
-                    column: start_pos.1,
-                },
-            )?
+            let pos = pc.step(&pair);
+            unquote_string(pair.as_str(), pos)?
         }),
         Rule::name => Value::Enum(to_static_str(pair.as_str())),
         Rule::boolean => Value::Boolean(match pair.as_str() {
@@ -331,9 +322,7 @@ fn parse_object_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<V
     let mut map = BTreeMap::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::pair => {
-                map.extend(std::iter::once(parse_object_pair(pair, pc)?));
-            }
+            Rule::pair => map.extend(std::iter::once(parse_object_pair(pair, pc)?)),
             _ => unreachable!(),
         }
     }
@@ -344,9 +333,7 @@ fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Va
     let mut array = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::value => {
-                array.push(parse_value2(pair, pc)?);
-            }
+            Rule::value => array.push(parse_value2(pair, pc)?),
             _ => unreachable!(),
         }
     }

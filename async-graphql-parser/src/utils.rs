@@ -60,9 +60,14 @@ pub fn to_static_str(s: &str) -> &'static str {
     unsafe { (s as *const str).as_ref().unwrap() }
 }
 
-pub fn unquote_string(s: &'static str, pos: Pos) -> Result<Cow<'static, str>> {
-    debug_assert!(s.starts_with('"') && s.ends_with('"'));
-    let s = &s[1..s.len() - 1];
+pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
+    let s = if s.starts_with(r#"""""#) {
+        &s[3..s.len() - 3]
+    } else if s.starts_with('"') {
+        &s[1..s.len() - 1]
+    } else {
+        unreachable!()
+    };
 
     if !s.contains('\\') {
         return Ok(Cow::Borrowed(to_static_str(s)));

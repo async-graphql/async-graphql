@@ -30,3 +30,6 @@ impl<R: RuleType> From<pest::error::Error<R>> for Error {
         }
     }
 }
+
+/// Parser result
+pub type Result<T> = std::result::Result<T, Error>;
