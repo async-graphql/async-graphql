@@ -9,12 +9,12 @@ mod naive_date;
 mod naive_time;
 mod string;
 
+#[cfg(feature = "bson")]
+mod bson;
 #[cfg(feature = "chrono_tz")]
 mod chrono_tz;
 #[cfg(feature = "uuid")]
 mod url;
-#[cfg(feature = "bson")]
-mod bson;
 #[cfg(feature = "uuid")]
 mod uuid;
 
