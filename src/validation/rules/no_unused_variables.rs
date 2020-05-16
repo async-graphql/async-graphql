@@ -87,7 +87,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.node));
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
 
     fn enter_variable_definition(
@@ -98,7 +98,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
                 vars.insert((
-                    variable_definition.name.node,
+                    variable_definition.name.as_str(),
                     variable_definition.position(),
                 ));
             }
@@ -108,7 +108,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<&str>,
+        _name: &'a Positioned<String>,
         value: &'a Positioned<Value>,
     ) {
         if let Some(ref scope) = self.current_scope {
@@ -128,7 +128,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push(fragment_spread.fragment_name.node);
+                .push(fragment_spread.fragment_name.as_str());
         }
     }
 }

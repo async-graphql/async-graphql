@@ -33,9 +33,9 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
                     let output_name = field
                         .alias
                         .as_ref()
-                        .map(|name| name.node)
-                        .unwrap_or_else(|| field.name.node);
-                    self.add_output(output_name, field);
+                        .map(|name| name.as_str())
+                        .unwrap_or_else(|| field.name.as_str());
+                    self.add_output(&output_name, field);
                 }
                 Selection::InlineFragment(inline_fragment) => {
                     self.find(&inline_fragment.selection_set);
@@ -66,7 +66,7 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
             }
 
             for (name, value) in &prev_field.arguments {
-                match field.get_argument(name.node)
+                match field.get_argument(name.as_str())
                 {
                     Some(other_value) if value == other_value => {}
                     _=> self.ctx.report_error(

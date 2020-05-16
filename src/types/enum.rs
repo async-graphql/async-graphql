@@ -14,7 +14,7 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
     fn parse_enum(value: Value) -> InputValueResult<Self> {
         let value = match &value {
             Value::Enum(s) => s,
-            Value::String(s) => s.as_ref(),
+            Value::String(s) => s.as_str(),
             _ => return Err(InputValueError::ExpectedType(value)),
         };
 

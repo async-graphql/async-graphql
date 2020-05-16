@@ -1,11 +1,10 @@
 use crate::pos::Positioned;
 use crate::query::*;
-use crate::utils::{to_static_str, unquote_string, PositionCalculator};
+use crate::utils::{unquote_string, PositionCalculator};
 use crate::value::Value;
 use crate::Result;
 use pest::iterators::Pair;
 use pest::Parser;
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::ops::Deref;
@@ -15,11 +14,12 @@ use std::ops::Deref;
 struct QueryParser;
 
 /// Parse a GraphQL query.
-pub fn parse_query<T: Into<String>>(input: T) -> Result<Document> {
-    let source = input.into();
-    let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, &source)?.next().unwrap();
+pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
+    let document_pair: Pair<Rule> = QueryParser::parse(Rule::document, input.as_ref())?
+        .next()
+        .unwrap();
     let mut definitions = Vec::new();
-    let mut pc = PositionCalculator::new(&source);
+    let mut pc = PositionCalculator::new(input.as_ref());
 
     for pair in document_pair.into_inner() {
         match pair.as_rule() {
@@ -38,7 +38,6 @@ pub fn parse_query<T: Into<String>>(input: T) -> Result<Document> {
     }
 
     Ok(Document {
-        source,
         definitions,
         fragments: Default::default(),
         current_operation: None,
@@ -102,10 +101,7 @@ fn parse_named_operation_definition(
                 };
             }
             Rule::name => {
-                name = Some(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                ));
+                name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
             }
             Rule::variable_definitions => {
                 variable_definitions = Some(parse_variable_definitions(pair, pc)?);
@@ -169,7 +165,7 @@ fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Type> {
     match pair.as_rule() {
         Rule::nonnull_type => Ok(Type::NonNull(Box::new(parse_type(pair, pc)?))),
         Rule::list_type => Ok(Type::List(Box::new(parse_type(pair, pc)?))),
-        Rule::name => Ok(Type::Named(to_static_str(pair.as_str()))),
+        Rule::name => Ok(Type::Named(pair.as_str().to_string())),
         Rule::type_ => parse_type(pair, pc),
         _ => unreachable!(),
     }
@@ -232,10 +228,7 @@ fn parse_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posi
         match pair.as_rule() {
             Rule::name => {
                 let pos = pc.step(&pair);
-                name = Some(Positioned::new(
-                    to_static_str(to_static_str(pair.as_str())),
-                    pos,
-                ))
+                name = Some(Positioned::new(pair.as_str().to_string(), pos))
             }
             Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
             _ => unreachable!(),
@@ -264,16 +257,10 @@ fn parse_directives(
     Ok(directives)
 }
 
-fn parse_variable(
-    pair: Pair<Rule>,
-    pc: &mut PositionCalculator,
-) -> Result<Positioned<&'static str>> {
+fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Positioned::new(
-                to_static_str(pair.as_str()),
-                pc.step(&pair),
-            ));
+            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
         }
     }
     unreachable!()
@@ -291,7 +278,7 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
             let pos = pc.step(&pair);
             unquote_string(pair.as_str(), pos)?
         }),
-        Rule::name => Value::Enum(to_static_str(pair.as_str())),
+        Rule::name => Value::Enum(pair.as_str().to_string()),
         Rule::boolean => Value::Boolean(match pair.as_str() {
             "true" => true,
             "false" => false,
@@ -302,15 +289,12 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
     })
 }
 
-fn parse_object_pair(
-    pair: Pair<Rule>,
-    pc: &mut PositionCalculator,
-) -> Result<(Cow<'static, str>, Value)> {
+fn parse_object_pair(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<(String, Value)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => name = Some(Cow::Borrowed(to_static_str(pair.as_str()))),
+            Rule::name => name = Some(pair.as_str().to_string()),
             Rule::value => value = Some(parse_value2(pair, pc)?),
             _ => unreachable!(),
         }
@@ -343,17 +327,12 @@ fn parse_array_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Va
 fn parse_pair(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<(Positioned<&'static str>, Positioned<Value>)> {
+) -> Result<(Positioned<String>, Positioned<Value>)> {
     let mut name = None;
     let mut value = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => {
-                name = Some(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                ))
-            }
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
             Rule::value => {
                 value = {
                     let pos = pc.step(&pair);
@@ -369,7 +348,7 @@ fn parse_pair(
 fn parse_arguments(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<Vec<(Positioned<&'static str>, Positioned<Value>)>> {
+) -> Result<Vec<(Positioned<String>, Positioned<Value>)>> {
     let mut arguments = Vec::new();
     for pair in pair.into_inner() {
         match pair.as_rule() {
@@ -380,13 +359,10 @@ fn parse_arguments(
     Ok(arguments)
 }
 
-fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<&'static str>> {
+fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
     for pair in pair.into_inner() {
         if let Rule::name = pair.as_rule() {
-            return Ok(Positioned::new(
-                to_static_str(pair.as_str()),
-                pc.step(&pair),
-            ));
+            return Ok(Positioned::new(pair.as_str().to_string(), pc.step(&pair)));
         }
     }
     unreachable!()
@@ -403,12 +379,7 @@ fn parse_field(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::alias => alias = Some(parse_alias(pair, pc)?),
-            Rule::name => {
-                name = Some(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                ))
-            }
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
             Rule::arguments => arguments = Some(parse_arguments(pair, pc)?),
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),
@@ -437,12 +408,7 @@ fn parse_fragment_spread(
     let mut directives = None;
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => {
-                name = Some(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                ))
-            }
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             _ => unreachable!(),
         }
@@ -464,10 +430,7 @@ fn parse_type_condition(
         if let Rule::name = pair.as_rule() {
             let pos = pc.step(&pair);
             return Ok(Positioned::new(
-                TypeCondition::On(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                )),
+                TypeCondition::On(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
                 pos,
             ));
         }
@@ -536,12 +499,7 @@ fn parse_fragment_definition(
 
     for pair in pair.into_inner() {
         match pair.as_rule() {
-            Rule::name => {
-                name = Some(Positioned::new(
-                    to_static_str(pair.as_str()),
-                    pc.step(&pair),
-                ))
-            }
+            Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
             Rule::type_condition => type_condition = Some(parse_type_condition(pair, pc)?),
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             Rule::selection_set => selection_set = Some(parse_selection_set(pair, pc)?),

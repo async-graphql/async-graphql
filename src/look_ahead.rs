@@ -42,7 +42,9 @@ fn find<'a>(
                 }
             }
             Selection::FragmentSpread(fragment_spread) => {
-                if let Some(fragment) = document.fragments().get(fragment_spread.fragment_name.node)
+                if let Some(fragment) = document
+                    .fragments()
+                    .get(fragment_spread.fragment_name.as_str())
                 {
                     if let Some(field) = find(document, &fragment.selection_set.node, name) {
                         return Some(field);

@@ -68,7 +68,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                     .registry
                                     .types
                                     .get(T::type_name().as_ref())
-                                    .and_then(|ty| ty.field_by_name(field.name.node))
+                                    .and_then(|ty| ty.field_by_name(field.name.as_str()))
                                     .map(|field| &field.ty)
                                 {
                                     Some(ty) => &ty,
@@ -115,7 +115,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 if let Some(fragment) = ctx
                     .document
                     .fragments()
-                    .get(fragment_spread.fragment_name.node)
+                    .get(fragment_spread.fragment_name.as_str())
                 {
                     collect_fields(
                         &ctx.with_selection_set(&fragment.selection_set),

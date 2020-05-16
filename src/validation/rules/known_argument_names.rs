@@ -41,7 +41,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         self.current_args = ctx
             .registry
             .directives
-            .get(directive.name.node)
+            .get(directive.name.as_str())
             .map(|d| (&d.args, ArgsType::Directive(&directive.name)));
     }
 
@@ -56,11 +56,11 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<&str>,
+        name: &'a Positioned<String>,
         _value: &'a Positioned<Value>,
     ) {
         if let Some((args, arg_type)) = &self.current_args {
-            if !args.contains_key(name.node) {
+            if !args.contains_key(name.as_str()) {
                 match arg_type {
                     ArgsType::Field {
                         field_name,

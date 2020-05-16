@@ -206,7 +206,7 @@ fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> {
         Rule::int => Value::Int(pair.as_str().parse().unwrap()),
         Rule::string => Value::String({
             let pos = pc.step(&pair);
-            unquote_string(pair.as_str(), pos).map(|s| s.to_string())?
+            unquote_string(pair.as_str(), pos)?
         }),
         Rule::name => Value::Enum(pair.to_string()),
         Rule::boolean => Value::Boolean(match pair.as_str() {

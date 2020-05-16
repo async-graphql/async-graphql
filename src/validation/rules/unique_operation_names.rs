@@ -31,7 +31,7 @@ impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
         };
 
         if let Some(name) = name {
-            if !self.names.insert(name.node) {
+            if !self.names.insert(name.as_str()) {
                 ctx.report_error(
                     vec![name.position()],
                     format!("There can only be one operation named \"{}\"", name),

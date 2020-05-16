@@ -66,9 +66,9 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.node));
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
         self.defined_fragments.insert((
-            fragment_definition.name.node,
+            fragment_definition.name.as_str(),
             fragment_definition.position(),
         ));
     }
@@ -82,7 +82,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push(fragment_spread.fragment_name.node);
+                .push(fragment_spread.fragment_name.as_str());
         }
     }
 }

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -31,14 +30,14 @@ impl Clone for UploadValue {
 #[allow(missing_docs)]
 pub enum Value {
     Null,
-    Variable(&'static str),
+    Variable(String),
     Int(i64),
     Float(f64),
-    String(Cow<'static, str>),
+    String(String),
     Boolean(bool),
-    Enum(&'static str),
+    Enum(String),
     List(Vec<Value>),
-    Object(BTreeMap<Cow<'static, str>, Value>),
+    Object(BTreeMap<String, Value>),
     Upload(UploadValue),
 }
 
@@ -161,7 +160,7 @@ impl From<Value> for serde_json::Value {
                 .into(),
             Value::Object(obj) => serde_json::Value::Object(
                 obj.into_iter()
-                    .map(|(name, value)| (name.to_string(), value.into()))
+                    .map(|(name, value)| (name, value.into()))
                     .collect(),
             ),
             Value::Upload(_) => serde_json::Value::Null,
@@ -176,11 +175,11 @@ impl From<serde_json::Value> for Value {
             serde_json::Value::Bool(n) => Value::Boolean(n),
             serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
             serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
-            serde_json::Value::String(s) => Value::String(Cow::Owned(s)),
+            serde_json::Value::String(s) => Value::String(s),
             serde_json::Value::Array(ls) => Value::List(ls.into_iter().map(Into::into).collect()),
             serde_json::Value::Object(obj) => Value::Object(
                 obj.into_iter()
-                    .map(|(name, value)| (Cow::Owned(name), value.into()))
+                    .map(|(name, value)| (name, value.into()))
                     .collect(),
             ),
         }

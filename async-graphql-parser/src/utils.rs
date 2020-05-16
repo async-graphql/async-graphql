@@ -2,7 +2,6 @@ use crate::{Error, Pos, Result};
 use arrayvec::ArrayVec;
 use pest::iterators::Pair;
 use pest::RuleType;
-use std::borrow::Cow;
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -55,12 +54,7 @@ impl<'a> PositionCalculator<'a> {
     }
 }
 
-#[inline]
-pub fn to_static_str(s: &str) -> &'static str {
-    unsafe { (s as *const str).as_ref().unwrap() }
-}
-
-pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
+pub fn unquote_string(s: &str, pos: Pos) -> Result<String> {
     let s = if s.starts_with(r#"""""#) {
         &s[3..s.len() - 3]
     } else if s.starts_with('"') {
@@ -68,10 +62,6 @@ pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
     } else {
         unreachable!()
     };
-
-    if !s.contains('\\') {
-        return Ok(Cow::Borrowed(to_static_str(s)));
-    }
 
     let mut chars = s.chars();
     let mut res = String::with_capacity(s.len());
@@ -108,11 +98,8 @@ pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
                                         pos,
                                         message: format!(
                                             "{} must have 4 characters after it",
-                                            unsafe {
-                                                std::str::from_utf8_unchecked(
-                                                    temp_code_point.as_slice(),
-                                                )
-                                            }
+                                            std::str::from_utf8(temp_code_point.as_slice())
+                                                .unwrap()
                                         ),
                                     });
                                 }
@@ -121,7 +108,7 @@ pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
 
                         // convert our hex string into a u32, then convert that into a char
                         match u32::from_str_radix(
-                            unsafe { std::str::from_utf8_unchecked(temp_code_point.as_slice()) },
+                            std::str::from_utf8(temp_code_point.as_slice()).unwrap(),
                             16,
                         )
                         .map(std::char::from_u32)
@@ -132,11 +119,7 @@ pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
                                     pos,
                                     message: format!(
                                         "{} is not a valid unicode code point",
-                                        unsafe {
-                                            std::str::from_utf8_unchecked(
-                                                temp_code_point.as_slice(),
-                                            )
-                                        }
+                                        std::str::from_utf8(temp_code_point.as_slice()).unwrap()
                                     ),
                                 });
                             }
@@ -154,5 +137,5 @@ pub fn unquote_string(s: &str, pos: Pos) -> Result<Cow<'static, str>> {
         }
     }
 
-    Ok(Cow::Owned(res))
+    Ok(res)
 }

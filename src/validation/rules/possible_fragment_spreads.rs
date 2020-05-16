@@ -13,7 +13,8 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
         for d in doc.definitions() {
             if let Definition::Fragment(fragment) = &d.node {
                 let TypeCondition::On(type_name) = &fragment.type_condition.node;
-                self.fragment_types.insert(fragment.name.node, type_name);
+                self.fragment_types
+                    .insert(fragment.name.as_str(), type_name);
             }
         }
     }
@@ -23,7 +24,10 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
         ctx: &mut VisitorContext<'a>,
         fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
-        if let Some(fragment_type) = self.fragment_types.get(fragment_spread.fragment_name.node) {
+        if let Some(fragment_type) = self
+            .fragment_types
+            .get(fragment_spread.fragment_name.as_str())
+        {
             if let Some(current_type) = ctx.current_type() {
                 if let Some(on_type) = ctx.registry.types.get(*fragment_type) {
                     if !current_type.type_overlap(on_type) {
@@ -49,7 +53,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
             if let Some(TypeCondition::On(fragment_type)) =
                 &inline_fragment.type_condition.as_ref().map(|c| &c.node)
             {
-                if let Some(on_type) = ctx.registry.types.get(fragment_type.node) {
+                if let Some(on_type) = ctx.registry.types.get(fragment_type.as_str()) {
                     if !parent_type.type_overlap(&on_type) {
                         ctx.report_error(
                             vec![inline_fragment.position()],

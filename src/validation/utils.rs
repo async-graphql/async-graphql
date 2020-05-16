@@ -38,13 +38,14 @@ pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&st
     match operation_definition {
         OperationDefinition::SelectionSet(selection_set) => (None, selection_set.position()),
         OperationDefinition::Query(query) => {
-            (query.name.as_ref().map(|n| n.node), query.position())
+            (query.name.as_ref().map(|n| n.as_str()), query.position())
         }
-        OperationDefinition::Mutation(mutation) => {
-            (mutation.name.as_ref().map(|n| n.node), mutation.position())
-        }
+        OperationDefinition::Mutation(mutation) => (
+            mutation.name.as_ref().map(|n| n.as_str()),
+            mutation.position(),
+        ),
         OperationDefinition::Subscription(subscription) => (
-            subscription.name.as_ref().map(|n| n.node),
+            subscription.name.as_ref().map(|n| n.as_str()),
             subscription.position(),
         ),
     }
@@ -106,7 +107,7 @@ pub fn is_valid_input_value(
                     }
                     registry::MetaType::Enum { enum_values, .. } => match value {
                         Value::Enum(name) => {
-                            if !enum_values.contains_key(name) {
+                            if !enum_values.contains_key(name.as_str()) {
                                 Some(valid_error(
                                     &path_node,
                                     format!(

@@ -6,7 +6,6 @@ use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use std::any::{Any, TypeId};
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
@@ -24,7 +23,7 @@ impl Default for Variables {
 }
 
 impl Deref for Variables {
-    type Target = BTreeMap<Cow<'static, str>, Value>;
+    type Target = BTreeMap<String, Value>;
 
     fn deref(&self) -> &Self::Target {
         if let Value::Object(obj) = &self.0 {
@@ -312,8 +311,8 @@ impl<'a, T> ContextBase<'a, T> {
                     field
                         .alias
                         .as_ref()
-                        .map(|alias| alias.node)
-                        .unwrap_or_else(|| field.name.node),
+                        .map(|alias| alias.as_str())
+                        .unwrap_or_else(|| field.name.as_str()),
                 ),
             }),
             extensions: self.extensions,
@@ -369,7 +368,7 @@ impl<'a, T> ContextBase<'a, T> {
             .iter()
             .find(|def| def.name.node == name);
         if let Some(def) = def {
-            if let Some(var_value) = self.variables.get(def.name.node) {
+            if let Some(var_value) = self.variables.get(def.name.as_str()) {
                 return Ok(var_value.clone());
             } else if let Some(default) = &def.default_value {
                 return Ok(default.clone_inner());
@@ -512,8 +511,8 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         self.item
             .alias
             .as_ref()
-            .map(|alias| alias.node)
-            .unwrap_or_else(|| self.item.name.node)
+            .map(|alias| alias.as_str())
+            .unwrap_or_else(|| self.item.name.as_str())
     }
 
     /// Get the position of the current field in the query code.

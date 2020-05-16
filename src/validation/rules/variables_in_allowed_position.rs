@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.node));
+        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
     }
 
     fn enter_variable_definition(
@@ -105,7 +105,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(HashSet::new)
-                .insert(fragment_spread.fragment_name.node);
+                .insert(fragment_spread.fragment_name.as_str());
         }
     }
 

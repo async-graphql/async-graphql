@@ -176,9 +176,9 @@ where
                                 bytes = srx.next() => {
                                     if let Some(bytes) = bytes {
                                         if tx
-                                            .send(Message::text(unsafe {
-                                                String::from_utf8_unchecked(bytes.to_vec())
-                                            }))
+                                            .send(Message::text(
+                                                String::from_utf8(bytes.to_vec()).unwrap()
+                                            ))
                                             .await
                                             .is_err()
                                         {
@@ -241,9 +241,9 @@ where
                                 bytes = srx.next() => {
                                     if let Some(bytes) = bytes {
                                         if tx
-                                            .send(Message::text(unsafe {
-                                                String::from_utf8_unchecked(bytes.to_vec())
-                                            }))
+                                            .send(Message::text(
+                                                String::from_utf8(bytes.to_vec()).unwrap()
+                                            ))
                                             .await
                                             .is_err()
                                         {

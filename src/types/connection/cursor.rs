@@ -46,7 +46,7 @@ impl ScalarType for Cursor {
 
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Cursor(s.into_owned())),
+            Value::String(s) => Ok(Cursor(s)),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }

@@ -69,7 +69,7 @@ where
                     if let Some(fragment) = ctx
                         .document
                         .fragments()
-                        .get(fragment_spread.fragment_name.node)
+                        .get(fragment_spread.fragment_name.as_str())
                     {
                         create_subscription_stream(
                             schema,
