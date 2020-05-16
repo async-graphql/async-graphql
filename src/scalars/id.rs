@@ -1,10 +1,10 @@
 use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
 use async_graphql_derive::Scalar;
+#[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
 use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
-use uuid::Uuid;
 
 /// ID scalar
 ///
@@ -49,14 +49,16 @@ impl TryFrom<ID> for usize {
     }
 }
 
-impl TryFrom<ID> for Uuid {
+#[cfg(feature = "uuid")]
+impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;
 
     fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
-        Uuid::parse_str(&id.0)
+        uuid::Uuid::parse_str(&id.0)
     }
 }
 
+#[cfg(feature = "bson")]
 impl TryFrom<ID> for ObjectId {
     type Error = oid::Error;
 
