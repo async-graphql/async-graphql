@@ -127,6 +127,8 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     fn handle(&mut self, data: Bytes, ctx: &mut Self::Context) {
-        ctx.text(std::str::from_utf8(&data).ok().unwrap_or_default());
+        if let Ok(text) = std::str::from_utf8(&data) {
+            ctx.text(text);
+        }
     }
 }

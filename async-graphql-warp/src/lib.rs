@@ -175,14 +175,11 @@ where
                             select! {
                                 bytes = srx.next() => {
                                     if let Some(bytes) = bytes {
-                                        if tx
-                                            .send(Message::text(
-                                                String::from_utf8(bytes.to_vec()).unwrap()
-                                            ))
-                                            .await
-                                            .is_err()
-                                        {
-                                            return;
+                                        if let Ok(text) = String::from_utf8(bytes.to_vec()) {
+                                            if tx.send(Message::text(text)).await.is_err()
+                                            {
+                                                return;
+                                            }
                                         }
                                     } else {
                                         return;
@@ -203,8 +200,8 @@ where
                 })
             },
         ).map(|reply| {
-            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-        })
+        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+    })
         .boxed()
 }
 
@@ -240,14 +237,10 @@ where
                             select! {
                                 bytes = srx.next() => {
                                     if let Some(bytes) = bytes {
-                                        if tx
-                                            .send(Message::text(
-                                                String::from_utf8(bytes.to_vec()).unwrap()
-                                            ))
-                                            .await
-                                            .is_err()
-                                        {
-                                            return;
+                                        if let Ok(text) = String::from_utf8(bytes.to_vec()) {
+                                            if tx.send(Message::text(text)).await.is_err() {
+                                                return;
+                                            }
                                         }
                                     } else {
                                         return;
