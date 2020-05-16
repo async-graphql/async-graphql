@@ -4,13 +4,16 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::needless_doctest_main)]
 
-use async_graphql::http::GQLResponse;
+use async_graphql::http::{GQLRequest, GQLResponse};
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, ParseRequestError, QueryBuilder,
     QueryResponse, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
-use tide::{http::headers, Request, Response, Status, StatusCode};
+use tide::{
+    http::{headers, Method},
+    Request, Response, Status, StatusCode,
+};
 
 /// GraphQL request handler
 ///
@@ -109,10 +112,19 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
         self,
         opts: IntoQueryBuilderOpts,
     ) -> Result<QueryBuilder, ParseRequestError> {
-        let content_type = self
-            .header(&headers::CONTENT_TYPE)
-            .and_then(|values| values.first().map(|value| value.to_string()));
-        (content_type, self).into_query_builder_opts(&opts).await
+        if self.method() == Method::Get {
+            match self.query::<GQLRequest>() {
+                Ok(gql_request) => gql_request.into_query_builder_opts(&opts).await,
+                Err(_) => Err(ParseRequestError::Io(std::io::Error::from(
+                    std::io::ErrorKind::InvalidInput,
+                ))),
+            }
+        } else {
+            let content_type = self
+                .header(&headers::CONTENT_TYPE)
+                .and_then(|values| values.first().map(|value| value.to_string()));
+            (content_type, self).into_query_builder_opts(&opts).await
+        }
     }
 }
 
