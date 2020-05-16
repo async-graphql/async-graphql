@@ -223,7 +223,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 name: #name.to_string(),
                 description: #desc,
                 args: {
-                    let mut args = std::collections::HashMap::new();
+                    let mut args = #crate_name::indexmap::IndexMap::new();
                     #(#schema_args)*
                     args
                 },
@@ -286,12 +286,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                         name: #gql_typename.to_string(),
                         description: #desc,
                         fields: {
-                            let mut fields = std::collections::HashMap::new();
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
                             #(#schema_fields)*
                             fields
                         },
                         possible_types: {
-                            let mut possible_types = std::collections::HashSet::new();
+                            let mut possible_types = #crate_name::indexmap::IndexSet::new();
                             #(#possible_types)*
                             possible_types
                         },

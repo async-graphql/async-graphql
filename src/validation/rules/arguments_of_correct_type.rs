@@ -4,11 +4,11 @@ use crate::registry::MetaInputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, QueryPathSegment, Value};
-use std::collections::HashMap;
+use indexmap::map::IndexMap;
 
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
-    current_args: Option<&'a HashMap<&'static str, MetaInputValue>>,
+    current_args: Option<&'a IndexMap<&'static str, MetaInputValue>>,
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {

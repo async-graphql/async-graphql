@@ -5,10 +5,10 @@ use crate::{
     do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
     OutputValueType, Pos, QueryError, Result, Type,
 };
+use indexmap::map::IndexMap;
 use inflector::Inflector;
 use itertools::Itertools;
 use std::borrow::Cow;
-use std::collections::HashMap;
 
 /// Connection type
 ///
@@ -103,7 +103,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
             name: Self::type_name().to_string(),
             description: None,
             fields: {
-                let mut fields = HashMap::new();
+                let mut fields = IndexMap::new();
 
                 fields.insert(
                     "pageInfo".to_string(),

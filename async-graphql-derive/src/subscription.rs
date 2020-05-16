@@ -213,7 +213,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         name: #field_name.to_string(),
                         description: #field_desc,
                         args: {
-                            let mut args = std::collections::HashMap::new();
+                            let mut args = #crate_name::indexmap::IndexMap::new();
                             #(#schema_args)*
                             args
                         },
@@ -316,7 +316,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     name: #gql_typename.to_string(),
                     description: #desc,
                     fields: {
-                        let mut fields = std::collections::HashMap::new();
+                        let mut fields = #crate_name::indexmap::IndexMap::new();
                         #(#schema_fields)*
                         fields
                     },

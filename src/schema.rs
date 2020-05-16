@@ -14,8 +14,8 @@ use crate::{
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
+use indexmap::map::IndexMap;
 use std::any::Any;
-use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -143,7 +143,7 @@ where
                 __DirectiveLocation::INLINE_FRAGMENT
             ],
             args: {
-                let mut args = HashMap::new();
+                let mut args = IndexMap::new();
                 args.insert("if", MetaInputValue {
                     name: "if",
                     description: Some("Included when true."),
@@ -164,7 +164,7 @@ where
                 __DirectiveLocation::INLINE_FRAGMENT
             ],
             args: {
-                let mut args = HashMap::new();
+                let mut args = IndexMap::new();
                 args.insert("if", MetaInputValue {
                     name: "if",
                     description: Some("Skipped when true."),

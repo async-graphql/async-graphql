@@ -1,6 +1,8 @@
 use crate::parser::query::Type as ParsedType;
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
+use indexmap::map::IndexMap;
+use indexmap::set::IndexSet;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
@@ -102,7 +104,7 @@ pub struct MetaInputValue {
 pub struct MetaField {
     pub name: String,
     pub description: Option<&'static str>,
-    pub args: HashMap<&'static str, MetaInputValue>,
+    pub args: IndexMap<&'static str, MetaInputValue>,
     pub ty: String,
     pub deprecation: Option<&'static str>,
     pub cache_control: CacheControl,
@@ -203,7 +205,7 @@ pub enum MetaType {
     Object {
         name: String,
         description: Option<&'static str>,
-        fields: HashMap<String, MetaField>,
+        fields: IndexMap<String, MetaField>,
         cache_control: CacheControl,
         extends: bool,
         keys: Option<Vec<String>>,
@@ -211,25 +213,25 @@ pub enum MetaType {
     Interface {
         name: String,
         description: Option<&'static str>,
-        fields: HashMap<String, MetaField>,
-        possible_types: HashSet<String>,
+        fields: IndexMap<String, MetaField>,
+        possible_types: IndexSet<String>,
         extends: bool,
         keys: Option<Vec<String>>,
     },
     Union {
         name: String,
         description: Option<&'static str>,
-        possible_types: HashSet<String>,
+        possible_types: IndexSet<String>,
     },
     Enum {
         name: String,
         description: Option<&'static str>,
-        enum_values: HashMap<&'static str, MetaEnumValue>,
+        enum_values: IndexMap<&'static str, MetaEnumValue>,
     },
     InputObject {
         name: String,
         description: Option<&'static str>,
-        input_fields: HashMap<String, MetaInputValue>,
+        input_fields: IndexMap<String, MetaInputValue>,
     },
 }
 
@@ -238,7 +240,7 @@ impl MetaType {
         self.fields().and_then(|fields| fields.get(name))
     }
 
-    pub fn fields(&self) -> Option<&HashMap<String, MetaField>> {
+    pub fn fields(&self) -> Option<&IndexMap<String, MetaField>> {
         match self {
             MetaType::Object { fields, .. } => Some(&fields),
             MetaType::Interface { fields, .. } => Some(&fields),
@@ -300,7 +302,7 @@ impl MetaType {
         }
     }
 
-    pub fn possible_types(&self) -> Option<&HashSet<String>> {
+    pub fn possible_types(&self) -> Option<&IndexSet<String>> {
         match self {
             MetaType::Interface { possible_types, .. } => Some(possible_types),
             MetaType::Union { possible_types, .. } => Some(possible_types),
@@ -331,7 +333,7 @@ pub struct MetaDirective {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub locations: Vec<model::__DirectiveLocation>,
-    pub args: HashMap<&'static str, MetaInputValue>,
+    pub args: IndexMap<&'static str, MetaInputValue>,
 }
 
 pub struct Registry {
@@ -552,7 +554,7 @@ impl Registry {
                 name: "_Service".to_string(),
                 description: None,
                 fields: {
-                    let mut fields = HashMap::new();
+                    let mut fields = IndexMap::new();
                     fields.insert(
                         "sdl".to_string(),
                         MetaField {
@@ -600,7 +602,7 @@ impl Registry {
                     name: "_entities".to_string(),
                     description: None,
                     args: {
-                        let mut args = HashMap::new();
+                        let mut args = IndexMap::new();
                         args.insert(
                             "representations",
                             MetaInputValue {

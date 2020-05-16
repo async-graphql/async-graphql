@@ -20,17 +20,14 @@ impl<'a> __Field<'a> {
     }
 
     async fn args(&self) -> Vec<__InputValue<'a>> {
-        let mut args = self
-            .field
+        self.field
             .args
             .values()
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 input_value,
             })
-            .collect_vec();
-        args.sort_by(|a, b| a.input_value.name.cmp(b.input_value.name));
-        args
+            .collect_vec()
     }
 
     #[field(name = "type")]

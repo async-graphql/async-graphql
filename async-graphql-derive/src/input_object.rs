@@ -120,7 +120,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                     name: #gql_typename.to_string(),
                     description: #desc,
                     input_fields: {
-                        let mut fields = std::collections::HashMap::new();
+                        let mut fields = #crate_name::indexmap::IndexMap::new();
                         #(#schema_fields)*
                         fields
                     }

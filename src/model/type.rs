@@ -96,8 +96,8 @@ impl<'a> __Type<'a> {
         #[arg(default = "false")] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
         if let TypeDetail::Named(ty) = &self.detail {
-            ty.fields().and_then(|fields| {
-                let mut fields = fields
+            ty.fields().map(|fields| {
+                fields
                     .values()
                     .filter(|field| {
                         (include_deprecated || field.deprecation.is_none())
@@ -107,9 +107,7 @@ impl<'a> __Type<'a> {
                         registry: self.registry,
                         field,
                     })
-                    .collect_vec();
-                fields.sort_by(|a, b| a.field.name.cmp(&b.field.name));
-                Some(fields)
+                    .collect_vec()
             })
         } else {
             None

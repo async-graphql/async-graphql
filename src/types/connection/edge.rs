@@ -2,8 +2,8 @@ use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Pos, Result,
     Type,
 };
+use indexmap::map::IndexMap;
 use std::borrow::Cow;
-use std::collections::HashMap;
 
 pub struct Edge<'a, T, E> {
     pub cursor: &'a str,
@@ -53,7 +53,7 @@ where
                 name: Self::type_name().to_string(),
                 description: Some("An edge in a connection."),
                 fields: {
-                    let mut fields = HashMap::new();
+                    let mut fields = IndexMap::new();
 
                     fields.insert(
                         "node".to_string(),

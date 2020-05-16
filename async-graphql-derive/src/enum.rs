@@ -146,7 +146,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                         name: #gql_typename.to_string(),
                         description: #desc,
                         enum_values: {
-                            let mut enum_items = std::collections::HashMap::new();
+                            let mut enum_items = #crate_name::indexmap::IndexMap::new();
                             #(#schema_enum_items)*
                             enum_items
                         },

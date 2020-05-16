@@ -119,7 +119,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                         name: #gql_typename.to_string(),
                         description: #desc,
                         possible_types: {
-                            let mut possible_types = std::collections::HashSet::new();
+                            let mut possible_types = #crate_name::indexmap::IndexSet::new();
                             #(#possible_types)*
                             possible_types
                         }

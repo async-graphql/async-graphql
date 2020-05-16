@@ -3,7 +3,7 @@ use crate::registry::MetaInputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, Value};
-use std::collections::HashMap;
+use indexmap::map::IndexMap;
 
 enum ArgsType<'a> {
     Directive(&'a str),
@@ -15,7 +15,7 @@ enum ArgsType<'a> {
 
 #[derive(Default)]
 pub struct KnownArgumentNames<'a> {
-    current_args: Option<(&'a HashMap<&'static str, MetaInputValue>, ArgsType<'a>)>,
+    current_args: Option<(&'a IndexMap<&'static str, MetaInputValue>, ArgsType<'a>)>,
 }
 
 impl<'a> KnownArgumentNames<'a> {

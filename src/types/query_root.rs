@@ -5,8 +5,8 @@ use crate::{
     QueryError, Result, Type, Value,
 };
 use async_graphql_derive::SimpleObject;
+use indexmap::map::IndexMap;
 use std::borrow::Cow;
-use std::collections::HashMap;
 
 /// Federation service
 #[SimpleObject(internal)]
@@ -51,7 +51,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     name: "__type".to_string(),
                     description: Some("Request the type information of a single type."),
                     args: {
-                        let mut args = HashMap::new();
+                        let mut args = IndexMap::new();
                         args.insert(
                             "name",
                             registry::MetaInputValue {
