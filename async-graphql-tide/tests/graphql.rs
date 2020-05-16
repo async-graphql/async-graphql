@@ -3,10 +3,8 @@ use serde_json::json;
 use smol::{Task, Timer};
 use std::io::Read;
 use std::time::Duration;
-use tide::Request;
 
 use async_graphql::*;
-use async_graphql_tide::graphql;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -16,6 +14,9 @@ fn quickstart() -> Result<()> {
         let listen_addr = test_utils::find_listen_addr().await;
 
         let server = Task::<Result<()>>::spawn(async move {
+            use async_graphql_tide::{RequestExt, ResponseExt};
+            use tide::{http::StatusCode, Request, Response, Status};
+
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
@@ -25,11 +26,16 @@ fn quickstart() -> Result<()> {
                 }
             }
 
-            let mut app = tide::new();
-            app.at("/").post(|req: Request<()>| async move {
+            async fn graphql(req: Request<()>) -> tide::Result<Response> {
                 let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-                graphql(req, schema, |query_builder| query_builder).await
-            });
+                let query_builder = req.body_graphql().await.status(StatusCode::BadRequest)?;
+                Ok(Response::new(StatusCode::Ok)
+                    .body_graphql(query_builder.execute(&schema).await)
+                    .status(StatusCode::InternalServerError)?)
+            }
+
+            let mut app = tide::new();
+            app.at("/").post(graphql).get(graphql);
             app.listen(&listen_addr).await?;
 
             Ok(())
@@ -38,6 +44,7 @@ fn quickstart() -> Result<()> {
         let client = Task::<Result<()>>::spawn(async move {
             Timer::after(Duration::from_millis(300)).await;
 
+            //
             let resp = reqwest::Client::new()
                 .post(format!("http://{}", listen_addr).as_str())
                 .body(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
@@ -47,7 +54,25 @@ fn quickstart() -> Result<()> {
 
             assert_eq!(resp.status(), reqwest::StatusCode::OK);
             let string = resp.text().await?;
-            println!("{}", string);
+            println!("via post {}", string);
+
+            assert_eq!(string, json!({"data": {"add": 30}}).to_string());
+
+            //
+            let resp = reqwest::Client::new()
+                .get(
+                    format!(
+                        "http://{}?query=%7B%20add%28a%3A%2010%2C%20b%3A%2020%29%20%7D",
+                        listen_addr
+                    )
+                    .as_str(),
+                )
+                .send()
+                .await?;
+
+            assert_eq!(resp.status(), reqwest::StatusCode::OK);
+            let string = resp.text().await?;
+            println!("via get {}", string);
 
             assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
@@ -67,6 +92,8 @@ fn hello() -> Result<()> {
         let listen_addr = test_utils::find_listen_addr().await;
 
         let server = Task::<Result<()>>::spawn(async move {
+            use tide::Request;
+
             struct Hello(String);
             struct QueryRoot;
             #[Object]
@@ -154,6 +181,8 @@ fn upload() -> Result<()> {
         let listen_addr = test_utils::find_listen_addr().await;
 
         let server = Task::<Result<()>>::spawn(async move {
+            use tide::Request;
+
             struct QueryRoot;
             #[Object]
             impl QueryRoot {}
