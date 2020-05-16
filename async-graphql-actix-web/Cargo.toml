@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.12.8" }
+async-graphql = { path = "..", version = "1.12.9" }
 actix-web = "2.0.0"
 actix-web-actors = "2.0.0"
 actix = "0.9.0"
