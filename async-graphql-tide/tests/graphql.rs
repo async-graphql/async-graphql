@@ -207,8 +207,8 @@ fn upload() -> Result<()> {
                     };
 
                     let mut content = String::new();
-                    file.into_read().read_to_string(&mut content).ok();
-                    assert_eq!(content, "test\r\n".to_owned());
+                    file.into_read().read_to_string(&mut content).unwrap();
+                    assert_eq!(content, "test".to_owned());
 
                     file_info
                 }

@@ -2,10 +2,8 @@
 
 mod graphiql_source;
 mod into_query_builder;
-mod multipart;
 mod playground_source;
 mod stream_body;
-mod token_reader;
 
 use itertools::Itertools;
 

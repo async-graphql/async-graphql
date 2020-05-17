@@ -7,11 +7,10 @@ mod subscription;
 use actix_web::dev::{Payload, PayloadStream};
 use actix_web::{http, web, Error, FromRequest, HttpRequest};
 use async_graphql::http::StreamBody;
-use async_graphql::{IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder};
+use async_graphql::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder};
 use futures::channel::mpsc;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
 use std::pin::Pin;
-
 pub use subscription::WSSubscription;
 
 /// Extractor for GraphQL request
@@ -56,12 +55,7 @@ impl FromRequest for GQLRequest {
             (content_type, StreamBody::new(rx))
                 .into_query_builder_opts(&config)
                 .map_ok(GQLRequest)
-                .map_err(|err| match err {
-                    ParseRequestError::TooManyFiles | ParseRequestError::TooLarge => {
-                        actix_web::error::ErrorPayloadTooLarge(err)
-                    }
-                    _ => actix_web::error::ErrorBadRequest(err),
-                })
+                .map_err(actix_web::error::ErrorBadRequest)
                 .await
         })
     }
