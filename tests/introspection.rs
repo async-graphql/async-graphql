@@ -92,7 +92,6 @@ impl ScalarType for TestScalar {
     }
 }
 
-
 /// Is SimpleObject
 /// and some more ```lorem ipsum```
 #[SimpleObject]
@@ -511,8 +510,6 @@ pub async fn test_introspection_depraction() {
     assert_eq!(res, res_json);
 }
 
-
-
 #[async_std::test]
 pub async fn test_introspection_type_kind() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
@@ -671,8 +668,6 @@ pub async fn test_introspection_type_kind() {
 
     assert_eq!(res, res_json);
 }
-
-
 
 #[async_std::test]
 pub async fn test_introspection_scalar() {
@@ -1192,4 +1187,3 @@ pub async fn test_introspection_full() {
 
     assert_eq!(res, res_json)
 }
-
