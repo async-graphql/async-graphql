@@ -17,6 +17,8 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Check with clippy
         run: cargo clippy --all
+      - name: Build without features
+        run: cargo build --no-default-features
       - name: Build
         run: cargo build --all --verbose
       - name: Run tests

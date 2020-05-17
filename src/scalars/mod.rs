@@ -1,6 +1,5 @@
 mod any;
 mod bool;
-mod chrono_tz;
 mod datetime;
 mod floats;
 mod id;
@@ -9,10 +8,13 @@ mod json;
 mod naive_date;
 mod naive_time;
 mod string;
-mod url;
 
 #[cfg(feature = "bson")]
 mod bson;
+#[cfg(feature = "chrono_tz")]
+mod chrono_tz;
+#[cfg(feature = "uuid")]
+mod url;
 #[cfg(feature = "uuid")]
 mod uuid;
 
