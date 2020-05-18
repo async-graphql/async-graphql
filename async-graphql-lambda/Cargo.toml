@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.12.11" }
+async-graphql = { path = "..", version = "1.12.12" }
 lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime" }
 futures = "0.3.0"
 async-trait = "0.1.30"
