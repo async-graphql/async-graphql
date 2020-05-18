@@ -3,6 +3,7 @@ use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
@@ -421,7 +422,23 @@ impl Registry {
                 continue;
             }
 
-            write!(sdl, "\t{}: {}", field.name, field.ty).ok();
+            if !field.args.is_empty() {
+                write!(
+                    sdl,
+                    "\t{}({}): {}",
+                    field.name,
+                    field
+                        .args
+                        .values()
+                        .map(|arg| federation_input_value(arg))
+                        .join(""),
+                    field.ty
+                )
+                .ok();
+            } else {
+                write!(sdl, "\t{}: {}", field.name, field.ty).ok();
+            }
+
             if field.external {
                 write!(sdl, " @external").ok();
             }
@@ -437,6 +454,12 @@ impl Registry {
 
     fn create_federation_type(&self, ty: &MetaType, sdl: &mut String) {
         match ty {
+            MetaType::Scalar { name, .. } => {
+                const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID", "Any"];
+                if !SYSTEM_SCALARS.contains(&name.as_str()) {
+                    writeln!(sdl, "scalar {}", name).ok();
+                }
+            }
             MetaType::Object {
                 name,
                 fields,
@@ -488,13 +511,52 @@ impl Registry {
                 Self::create_federation_fields(sdl, fields.values());
                 writeln!(sdl, "}}").ok();
             }
-            _ => {}
+            MetaType::Enum {
+                name, enum_values, ..
+            } => {
+                write!(sdl, "enum {} ", name).ok();
+                writeln!(sdl, "{{").ok();
+                for value in enum_values.values() {
+                    writeln!(sdl, "{}", value.name).ok();
+                }
+                writeln!(sdl, "}}").ok();
+            }
+            MetaType::InputObject {
+                name, input_fields, ..
+            } => {
+                write!(sdl, "input {} ", name).ok();
+                writeln!(sdl, "{{").ok();
+                for field in input_fields.values() {
+                    writeln!(sdl, "{}", federation_input_value(&field)).ok();
+                }
+                writeln!(sdl, "}}").ok();
+            }
+            MetaType::Union {
+                name,
+                possible_types,
+                ..
+            } => {
+                writeln!(
+                    sdl,
+                    "union {} = {}",
+                    name,
+                    possible_types.iter().join(" | ")
+                )
+                .ok();
+            }
         }
     }
 
     pub fn create_federation_sdl(&self) -> String {
         let mut sdl = String::new();
         for ty in self.types.values() {
+            if ty.name().starts_with("__") {
+                continue;
+            }
+            const FEDERATION_TYPES: &[&str] = &["_Any", "_Entity", "_Service"];
+            if FEDERATION_TYPES.contains(&ty.name()) {
+                continue;
+            }
             self.create_federation_type(ty, &mut sdl);
         }
         sdl
@@ -624,5 +686,16 @@ impl Registry {
                 },
             );
         }
+    }
+}
+
+fn federation_input_value(input_value: &MetaInputValue) -> String {
+    if let Some(default_value) = &input_value.default_value {
+        format!(
+            "{}: {} = {}",
+            input_value.name, input_value.ty, default_value
+        )
+    } else {
+        format!("{}: {}", input_value.name, input_value.ty)
     }
 }
