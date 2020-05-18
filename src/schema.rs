@@ -11,6 +11,7 @@ use crate::{
     Environment, Error, ObjectType, Pos, QueryError, QueryResponse, Result, SubscriptionStream,
     SubscriptionType, Type, Variables,
 };
+use async_graphql_parser::query::OperationType;
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
@@ -253,6 +254,10 @@ where
             } else {
                 Err(QueryError::MissingOperation.into_error(Pos::default()))
             };
+        }
+
+        if document.current_operation().ty != OperationType::Subscription {
+            return Err(QueryError::NotSupported.into_error(Pos::default()));
         }
 
         let resolve_id = AtomicUsize::default();
