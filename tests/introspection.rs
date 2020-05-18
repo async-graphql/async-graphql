@@ -144,6 +144,8 @@ struct Mutation;
 #[Object(desc = "Global mutation")]
 impl Mutation {
     /// simple_mutation description
+    /// line2
+    /// line3
     async fn simple_mutation(&self, _input: SimpleInput) -> SimpleObject {
         unimplemented!()
     }
@@ -919,7 +921,7 @@ pub async fn test_introspection_mutation() {
             "description": "Global mutation",
             "fields": [
               {
-                "description": "simple_mutation description",
+                "description": "simple_mutation description\nline2\nline3",
                 "name": "simpleMutation",
                 "type": {
                   "kind": "NON_NULL",

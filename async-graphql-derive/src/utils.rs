@@ -222,17 +222,25 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
 }
 
 pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
+    let mut full_docs = String::new();
     for attr in attrs {
         match attr.parse_meta()? {
             Meta::NameValue(nv) if nv.path.is_ident("doc") => {
                 if let Lit::Str(doc) = nv.lit {
                     let doc = doc.value();
                     let doc_str = doc.trim();
-                    return Ok(Some(doc_str.to_string()));
+                    if !full_docs.is_empty() {
+                        full_docs += "\n";
+                    }
+                    full_docs += doc_str;
                 }
             }
             _ => {}
         }
     }
-    Ok(None)
+    Ok(if full_docs.is_empty() {
+        None
+    } else {
+        Some(full_docs)
+    })
 }
