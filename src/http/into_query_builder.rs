@@ -8,6 +8,17 @@ use multer::{Constraints, Multipart, SizeLimit};
 use std::collections::HashMap;
 use std::io::{Seek, SeekFrom, Write};
 
+impl From<multer::Error> for ParseRequestError {
+    fn from(err: multer::Error) -> Self {
+        match err {
+            multer::Error::FieldSizeExceeded { .. } | multer::Error::StreamSizeExceeded { .. } => {
+                ParseRequestError::PayloadTooLarge
+            }
+            _ => ParseRequestError::InvalidMultipart(err),
+        }
+    }
+}
+
 #[async_trait::async_trait]
 impl<CT, Body> IntoQueryBuilder for (Option<CT>, Body)
 where
@@ -53,26 +64,16 @@ where
             let mut builder = None;
             let mut map = None;
 
-            while let Some(mut field) = multipart
-                .next_field()
-                .await
-                .map_err(|err| ParseRequestError::InvalidMultipart(err.to_string()))?
-            {
+            while let Some(mut field) = multipart.next_field().await? {
                 match field.name() {
                     Some("operations") => {
-                        let request_str = field
-                            .text()
-                            .await
-                            .map_err(|err| ParseRequestError::InvalidMultipart(err.to_string()))?;
+                        let request_str = field.text().await?;
                         let request: GQLRequest = serde_json::from_str(&request_str)
                             .map_err(ParseRequestError::InvalidRequest)?;
                         builder = Some(request.into_query_builder().await?);
                     }
                     Some("map") => {
-                        let map_str = field
-                            .text()
-                            .await
-                            .map_err(|err| ParseRequestError::InvalidMultipart(err.to_string()))?;
+                        let map_str = field.text().await?;
                         map = Some(
                             serde_json::from_str::<HashMap<String, Vec<String>>>(&map_str)
                                 .map_err(ParseRequestError::InvalidFilesMap)?,

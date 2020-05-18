@@ -303,7 +303,7 @@ pub enum ParseRequestError {
     InvalidFilesMap(serde_json::Error),
 
     #[error("Invalid multipart data")]
-    InvalidMultipart(String),
+    InvalidMultipart(multer::Error),
 
     #[error("Missing \"operators\" part")]
     MissingOperatorsPart,
@@ -316,6 +316,9 @@ pub enum ParseRequestError {
 
     #[error("Missing files")]
     MissingFiles,
+
+    #[error("Payload too large")]
+    PayloadTooLarge,
 }
 
 #[derive(Debug, PartialEq)]
