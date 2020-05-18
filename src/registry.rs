@@ -482,6 +482,11 @@ impl Registry {
                     write!(sdl, "extend ").ok();
                 }
                 write!(sdl, "type {} ", name).ok();
+                if let Some(implements) = self.implements.get(name) {
+                    if !implements.is_empty() {
+                        write!(sdl, "implements {}", implements.iter().join(" & ")).ok();
+                    }
+                }
                 if let Some(keys) = keys {
                     for key in keys {
                         write!(sdl, "@key(fields: \"{}\") ", key).ok();
