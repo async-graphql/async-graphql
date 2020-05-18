@@ -208,72 +208,72 @@ impl Subscription {
 //     assert_eq!(res, res_json)
 // }
 
-#[async_std::test]
-pub async fn test_introspection_documentation() {
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-
-    let query = r#"
-    {
-        __type(name: "SimpleObject") {
-            name
-            description
-            fields {
-                name
-                description
-            }
-        }
-   }
-   "#;
-
-    let res_json = serde_json::json!({
-        "__type": {
-            "name": "SimpleObject",
-            "description": "Is SimpleObject",
-            "fields": [
-              {
-                "name": "a",
-                "description": "Value a with # 'some' `markdown`\".\""
-              },
-              {
-                "name": "b",
-                "description": "Value b description"
-              },
-              {
-                "name": "c",
-                "description": "Value c description"
-              },
-              {
-                "name": "d",
-                "description": ""
-              },
-              {
-                "name": "f",
-                "description": null
-              },
-              {
-                "name": "g",
-                "description": null
-              },
-              {
-                "name": "h",
-                "description": null
-              },
-              {
-                "name": "i",
-                "description": null
-              },
-              {
-                "name": "j",
-                "description": null
-              }
-            ]
-        }
-    });
-
-    let res = schema.execute(query).await.unwrap().data;
-
-    assert_eq!(res, res_json)
-}
+// #[async_std::test]
+// pub async fn test_introspection_documentation() {
+//     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+//
+//     let query = r#"
+//     {
+//         __type(name: "SimpleObject") {
+//             name
+//             description
+//             fields {
+//                 name
+//                 description
+//             }
+//         }
+//    }
+//    "#;
+//
+//     let res_json = serde_json::json!({
+//         "__type": {
+//             "name": "SimpleObject",
+//             "description": "Is SimpleObject",
+//             "fields": [
+//               {
+//                 "name": "a",
+//                 "description": "Value a with # 'some' `markdown`\".\""
+//               },
+//               {
+//                 "name": "b",
+//                 "description": "Value b description"
+//               },
+//               {
+//                 "name": "c",
+//                 "description": "Value c description"
+//               },
+//               {
+//                 "name": "d",
+//                 "description": ""
+//               },
+//               {
+//                 "name": "f",
+//                 "description": null
+//               },
+//               {
+//                 "name": "g",
+//                 "description": null
+//               },
+//               {
+//                 "name": "h",
+//                 "description": null
+//               },
+//               {
+//                 "name": "i",
+//                 "description": null
+//               },
+//               {
+//                 "name": "j",
+//                 "description": null
+//               }
+//             ]
+//         }
+//     });
+//
+//     let res = schema.execute(query).await.unwrap().data;
+//
+//     assert_eq!(res, res_json)
+// }
 
 #[async_std::test]
 pub async fn test_introspection_depraction() {
@@ -990,202 +990,202 @@ pub async fn test_introspection_subscription() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
-pub async fn test_introspection_full() {
-    let schema = Schema::new(Query, EmptyMutation, Subscription);
-
-    let query = r#"
-    {
-        __type(name: "SimpleObject") {
-            kind
-            name
-            description
-            fields(includeDeprecated: true) {
-                name
-                description
-                args { name }
-                type { name kind ofType { name kind } }
-                isDeprecated
-                deprecationReason
-            }
-            interfaces { name }
-            possibleTypes { name }
-            enumValues { name }
-            inputFields { name }
-            ofType { name }
-        }
-   }
-   "#;
-
-    let res_json = serde_json::json!({
-        "__type": {
-            "kind": "OBJECT",
-            "name": "SimpleObject",
-            "description": "Is SimpleObject",
-            "fields": [
-              {
-                "name": "a",
-                "description": "Value a with # 'some' `markdown`\".\"",
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "Int",
-                    "kind": "SCALAR"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "b",
-                "description": "Value b description",
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "String",
-                    "kind": "SCALAR"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "c",
-                "description": "Value c description",
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "ID",
-                    "kind": "SCALAR"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "d",
-                "description": "",
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "SimpleOption",
-                    "kind": "OBJECT"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "e",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "Boolean",
-                    "kind": "SCALAR"
-                  }
-                },
-                "isDeprecated": true,
-                "deprecationReason": "Field e is deprecated"
-              },
-              {
-                "name": "f",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "TestEnum",
-                    "kind": "ENUM"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "g",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "TestInterface",
-                    "kind": "INTERFACE"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "h",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "TestUnion",
-                    "kind": "UNION"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "i",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "SimpleList",
-                    "kind": "OBJECT"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              },
-              {
-                "name": "j",
-                "description": null,
-                "args": [],
-                "type": {
-                  "name": null,
-                  "kind": "NON_NULL",
-                  "ofType": {
-                    "name": "TestScalar",
-                    "kind": "SCALAR"
-                  }
-                },
-                "isDeprecated": false,
-                "deprecationReason": null
-              }
-            ],
-            "interfaces": [],
-            "possibleTypes": null,
-            "enumValues": null,
-            "inputFields": null,
-            "ofType": null
-        }
-    });
-
-    let res = schema.execute(query).await.unwrap().data;
-
-    // pretty print result
-    // println!("{}", serde_json::to_string_pretty(&res).unwrap());
-
-    assert_eq!(res, res_json)
-}
+// #[async_std::test]
+// pub async fn test_introspection_full() {
+//     let schema = Schema::new(Query, EmptyMutation, Subscription);
+//
+//     let query = r#"
+//     {
+//         __type(name: "SimpleObject") {
+//             kind
+//             name
+//             description
+//             fields(includeDeprecated: true) {
+//                 name
+//                 description
+//                 args { name }
+//                 type { name kind ofType { name kind } }
+//                 isDeprecated
+//                 deprecationReason
+//             }
+//             interfaces { name }
+//             possibleTypes { name }
+//             enumValues { name }
+//             inputFields { name }
+//             ofType { name }
+//         }
+//    }
+//    "#;
+//
+//     let res_json = serde_json::json!({
+//         "__type": {
+//             "kind": "OBJECT",
+//             "name": "SimpleObject",
+//             "description": "Is SimpleObject",
+//             "fields": [
+//               {
+//                 "name": "a",
+//                 "description": "Value a with # 'some' `markdown`\".\"",
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "Int",
+//                     "kind": "SCALAR"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "b",
+//                 "description": "Value b description",
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "String",
+//                     "kind": "SCALAR"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "c",
+//                 "description": "Value c description",
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "ID",
+//                     "kind": "SCALAR"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "d",
+//                 "description": "",
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "SimpleOption",
+//                     "kind": "OBJECT"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "e",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "Boolean",
+//                     "kind": "SCALAR"
+//                   }
+//                 },
+//                 "isDeprecated": true,
+//                 "deprecationReason": "Field e is deprecated"
+//               },
+//               {
+//                 "name": "f",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "TestEnum",
+//                     "kind": "ENUM"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "g",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "TestInterface",
+//                     "kind": "INTERFACE"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "h",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "TestUnion",
+//                     "kind": "UNION"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "i",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "SimpleList",
+//                     "kind": "OBJECT"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               },
+//               {
+//                 "name": "j",
+//                 "description": null,
+//                 "args": [],
+//                 "type": {
+//                   "name": null,
+//                   "kind": "NON_NULL",
+//                   "ofType": {
+//                     "name": "TestScalar",
+//                     "kind": "SCALAR"
+//                   }
+//                 },
+//                 "isDeprecated": false,
+//                 "deprecationReason": null
+//               }
+//             ],
+//             "interfaces": [],
+//             "possibleTypes": null,
+//             "enumValues": null,
+//             "inputFields": null,
+//             "ofType": null
+//         }
+//     });
+//
+//     let res = schema.execute(query).await.unwrap().data;
+//
+//     // pretty print result
+//     // println!("{}", serde_json::to_string_pretty(&res).unwrap());
+//
+//     assert_eq!(res, res_json)
+// }

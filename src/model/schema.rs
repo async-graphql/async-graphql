@@ -1,6 +1,7 @@
 use crate::model::{__Directive, __Type};
 use crate::registry;
 use async_graphql_derive::Object;
+use itertools::Itertools;
 
 pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
@@ -11,11 +12,14 @@ pub struct __Schema<'a> {
 impl<'a> __Schema<'a> {
     /// A list of all types supported by this server.
     async fn types(&self) -> Vec<__Type<'a>> {
-        self.registry
+        let mut types = self
+            .registry
             .types
             .values()
-            .map(|ty| __Type::new_simple(self.registry, ty))
-            .collect()
+            .map(|ty| (ty.name(), __Type::new_simple(self.registry, ty)))
+            .collect_vec();
+        types.sort_by(|a, b| a.0.cmp(b.0));
+        types.into_iter().map(|(_, ty)| ty).collect()
     }
 
     /// The type that query operations will be rooted at.
@@ -46,13 +50,16 @@ impl<'a> __Schema<'a> {
 
     /// A list of all directives supported by this server.
     async fn directives(&self) -> Vec<__Directive<'a>> {
-        self.registry
+        let mut directives = self
+            .registry
             .directives
             .values()
             .map(|directive| __Directive {
                 registry: &self.registry,
                 directive,
             })
-            .collect()
+            .collect_vec();
+        directives.sort_by(|a, b| a.directive.name.cmp(b.directive.name));
+        directives
     }
 }
