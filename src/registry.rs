@@ -467,17 +467,10 @@ impl Registry {
                 keys,
                 ..
             } => {
-                if name.starts_with("__") {
-                    return;
-                }
-                if name == "_Service" {
-                    return;
-                }
-                if fields.len() == 4 {
+                if name == &self.query_type && fields.len() == 4 {
                     // Is empty query root, only __schema, __type, _service, _entities fields
                     return;
                 }
-
                 if *extends {
                     write!(sdl, "extend ").ok();
                 }
