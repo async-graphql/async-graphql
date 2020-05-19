@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-tide"
-version = "1.4.15"
+version = "1.4.16"
 authors = ["vkill <vkill.net@gmail.com>"]
 edition = "2018"
 description = "async-graphql for tide"
@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.12.15" }
+async-graphql = { path = "..", version = "1.12.16" }
 tide = "0.8"
 async-trait = "0.1.30"
 serde_json = "1.0.51"
