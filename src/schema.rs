@@ -8,8 +8,8 @@ use crate::subscription::{create_connection, create_subscription_stream, Subscri
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
-    Environment, Error, ObjectType, Pos, QueryError, QueryResponse, Result, SubscriptionStream,
-    SubscriptionType, Type, Variables,
+    Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result, SubscriptionStream,
+    SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::query::OperationType;
 use bytes::Bytes;
@@ -17,48 +17,47 @@ use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;
 use std::any::Any;
+use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
-pub(crate) struct SchemaInner<Query, Mutation, Subscription> {
-    pub(crate) validation_mode: ValidationMode,
-    pub(crate) query: QueryRoot<Query>,
-    pub(crate) mutation: Mutation,
-    pub(crate) subscription: Subscription,
-    pub(crate) registry: Registry,
-    pub(crate) data: Data,
-    pub(crate) complexity: Option<usize>,
-    pub(crate) depth: Option<usize>,
-    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
-}
-
 /// Schema builder
-pub struct SchemaBuilder<Query, Mutation, Subscription>(SchemaInner<Query, Mutation, Subscription>);
+pub struct SchemaBuilder<Query, Mutation, Subscription> {
+    validation_mode: ValidationMode,
+    query: QueryRoot<Query>,
+    mutation: Mutation,
+    subscription: Subscription,
+    registry: Registry,
+    data: Data,
+    complexity: Option<usize>,
+    depth: Option<usize>,
+    extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+}
 
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     SchemaBuilder<Query, Mutation, Subscription>
 {
     /// You can use this function to register types that are not directly referenced.
     pub fn register_type<T: Type>(mut self) -> Self {
-        T::create_type_info(&mut self.0.registry);
+        T::create_type_info(&mut self.registry);
         self
     }
 
     /// Disable introspection query
     pub fn disable_introspection(mut self) -> Self {
-        self.0.query.disable_introspection = true;
+        self.query.disable_introspection = true;
         self
     }
 
     /// Set limit complexity, Default no limit.
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
-        self.0.complexity = Some(complexity);
+        self.complexity = Some(complexity);
         self
     }
 
     /// Set limit complexity, Default no limit.
     pub fn limit_depth(mut self, depth: usize) -> Self {
-        self.0.depth = Some(depth);
+        self.depth = Some(depth);
         self
     }
 
@@ -67,38 +66,90 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         mut self,
         extension_factory: F,
     ) -> Self {
-        self.0
-            .extensions
+        self.extensions
             .push(Box::new(move || Box::new(extension_factory())));
         self
     }
 
     /// Add a global data that can be accessed in the `Schema`, you access it with `Context::data`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
-        self.0.data.insert(data);
+        self.data.insert(data);
         self
     }
 
     /// Set the validation mode, default is `ValidationMode::Strict`.
     pub fn validation_mode(mut self, validation_mode: ValidationMode) -> Self {
-        self.0.validation_mode = validation_mode;
+        self.validation_mode = validation_mode;
         self
     }
 
     /// Build schema.
     pub fn finish(self) -> Schema<Query, Mutation, Subscription> {
-        Schema(Arc::new(self.0))
+        Schema(Arc::new(SchemaInner {
+            validation_mode: self.validation_mode,
+            query: self.query,
+            mutation: self.mutation,
+            subscription: self.subscription,
+            complexity: self.complexity,
+            depth: self.depth,
+            extensions: self.extensions,
+            env: SchemaEnv(Arc::new(SchemaEnvInner {
+                registry: self.registry,
+                data: self.data,
+            })),
+        }))
     }
 }
 
+#[doc(hidden)]
+pub struct SchemaEnvInner {
+    pub registry: Registry,
+    pub data: Data,
+}
+
+#[doc(hidden)]
+#[derive(Clone)]
+pub struct SchemaEnv(Arc<SchemaEnvInner>);
+
+impl Deref for SchemaEnv {
+    type Target = SchemaEnvInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[doc(hidden)]
+pub struct SchemaInner<Query, Mutation, Subscription> {
+    pub(crate) validation_mode: ValidationMode,
+    pub(crate) query: QueryRoot<Query>,
+    pub(crate) mutation: Mutation,
+    pub(crate) subscription: Subscription,
+    pub(crate) complexity: Option<usize>,
+    pub(crate) depth: Option<usize>,
+    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+    pub(crate) env: SchemaEnv,
+}
+
 /// GraphQL schema
-pub struct Schema<Query, Mutation, Subscription>(
-    pub(crate) Arc<SchemaInner<Query, Mutation, Subscription>>,
-);
+pub struct Schema<Query, Mutation, Subscription>(Arc<SchemaInner<Query, Mutation, Subscription>>);
 
 impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscription> {
     fn clone(&self) -> Self {
         Schema(self.0.clone())
+    }
+}
+
+impl<Query, Mutation, Subscription> Deref for Schema<Query, Mutation, Subscription>
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+{
+    type Target = SchemaInner<Query, Mutation, Subscription>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -177,11 +228,19 @@ where
             }
         });
 
+        registry.add_directive(MetaDirective {
+            name: "defer",
+            description: None,
+            locations: vec![__DirectiveLocation::FIELD],
+            args: Default::default(),
+        });
+
         // register scalars
         bool::create_type_info(&mut registry);
         i32::create_type_info(&mut registry);
         f32::create_type_info(&mut registry);
         String::create_type_info(&mut registry);
+        ID::create_type_info(&mut registry);
 
         QueryRoot::<Query>::create_type_info(&mut registry);
         if !Mutation::is_empty() {
@@ -194,7 +253,7 @@ where
         // federation
         registry.create_federation_types();
 
-        SchemaBuilder(SchemaInner {
+        SchemaBuilder {
             validation_mode: ValidationMode::Strict,
             query: QueryRoot {
                 inner: query,
@@ -207,7 +266,7 @@ where
             complexity: None,
             depth: None,
             extensions: Default::default(),
-        })
+        }
     }
 
     /// Create a schema
@@ -217,16 +276,6 @@ where
         subscription: Subscription,
     ) -> Schema<Query, Mutation, Subscription> {
         Self::build(query, mutation, subscription).finish()
-    }
-
-    #[doc(hidden)]
-    pub fn data(&self) -> &Data {
-        &self.0.data
-    }
-
-    #[doc(hidden)]
-    pub fn registry(&self) -> &Registry {
-        &self.0.registry
     }
 
     /// Execute query without create the `QueryBuilder`.
@@ -243,7 +292,7 @@ where
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
         let mut document = parse_query(source).map_err(Into::<Error>::into)?;
-        check_rules(&self.0.registry, &document, self.0.validation_mode)?;
+        check_rules(&self.env.registry, &document, self.0.validation_mode)?;
 
         if !document.retain_operation(operation_name) {
             return if let Some(name) = operation_name {
@@ -261,19 +310,16 @@ where
         }
 
         let resolve_id = AtomicUsize::default();
-        let environment = Arc::new(Environment {
-            variables,
-            document: Box::new(document),
-            ctx_data: ctx_data.unwrap_or_default(),
-        });
-        let ctx = environment.create_context(
-            self,
+        let env = QueryEnv::new(variables, document, ctx_data.unwrap_or_default());
+        let ctx = env.create_context(
+            &self.env,
             None,
-            &environment.document.current_operation().selection_set,
+            &env.document.current_operation().selection_set,
             &resolve_id,
+            None,
         );
         let mut streams = Vec::new();
-        create_subscription_stream(self, environment.clone(), &ctx, &mut streams).await?;
+        create_subscription_stream(self, env.clone(), &ctx, &mut streams).await?;
         Ok(futures::stream::select_all(streams))
     }
 

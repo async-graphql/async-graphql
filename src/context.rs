@@ -1,14 +1,19 @@
 use crate::extensions::BoxExtension;
 use crate::parser::query::{Directive, Field, SelectionSet};
-use crate::registry::Registry;
-use crate::{InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Schema, Type, Value};
+use crate::schema::SchemaEnv;
+use crate::{
+    InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result, Type, Value,
+};
 use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
+use futures::Future;
+use parking_lot::Mutex;
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
+use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -232,6 +237,27 @@ impl std::fmt::Display for ResolveId {
     }
 }
 
+#[doc(hidden)]
+pub type BoxDeferFuture =
+    Pin<Box<dyn Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static>>;
+
+#[doc(hidden)]
+#[derive(Default)]
+pub struct DeferList(pub Mutex<Vec<BoxDeferFuture>>);
+
+impl DeferList {
+    pub(crate) fn into_inner(self) -> Vec<BoxDeferFuture> {
+        self.0.into_inner()
+    }
+
+    pub(crate) fn append<F>(&self, fut: F)
+    where
+        F: Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static,
+    {
+        self.0.lock().push(Box::pin(fut));
+    }
+}
+
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
@@ -241,11 +267,9 @@ pub struct ContextBase<'a, T> {
     pub(crate) inc_resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
     pub(crate) item: T,
-    pub(crate) variables: &'a Variables,
-    pub(crate) registry: &'a Registry,
-    pub(crate) data: &'a Data,
-    pub(crate) ctx_data: Option<&'a Data>,
-    pub(crate) document: &'a Document,
+    pub(crate) schema_env: &'a SchemaEnv,
+    pub(crate) query_env: &'a QueryEnv,
+    pub(crate) defer_list: Option<&'a DeferList>,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -257,20 +281,42 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 }
 
 #[doc(hidden)]
-pub struct Environment {
+pub struct QueryEnvInner {
     pub variables: Variables,
-    pub document: Box<Document>,
+    pub document: Document,
     pub ctx_data: Arc<Data>,
 }
 
-impl Environment {
+#[doc(hidden)]
+#[derive(Clone)]
+pub struct QueryEnv(Arc<QueryEnvInner>);
+
+impl Deref for QueryEnv {
+    type Target = QueryEnvInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl QueryEnv {
     #[doc(hidden)]
-    pub fn create_context<'a, T, Query, Mutation, Subscription>(
+    pub fn new(variables: Variables, document: Document, ctx_data: Arc<Data>) -> QueryEnv {
+        QueryEnv(Arc::new(QueryEnvInner {
+            variables,
+            document,
+            ctx_data,
+        }))
+    }
+
+    #[doc(hidden)]
+    pub fn create_context<'a, T>(
         &'a self,
-        schema: &'a Schema<Query, Mutation, Subscription>,
+        schema_env: &'a SchemaEnv,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
         inc_resolve_id: &'a AtomicUsize,
+        defer_list: Option<&'a DeferList>,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
@@ -278,11 +324,9 @@ impl Environment {
             inc_resolve_id,
             extensions: &[],
             item,
-            variables: &self.variables,
-            registry: &schema.0.registry,
-            data: &schema.0.data,
-            ctx_data: Some(&self.ctx_data),
-            document: &self.document,
+            schema_env,
+            query_env: self,
+            defer_list,
         }
     }
 }
@@ -319,11 +363,9 @@ impl<'a, T> ContextBase<'a, T> {
             item: field,
             resolve_id: self.get_child_resolve_id(),
             inc_resolve_id: self.inc_resolve_id,
-            variables: self.variables,
-            registry: self.registry,
-            data: self.data,
-            ctx_data: self.ctx_data,
-            document: self.document,
+            schema_env: self.schema_env,
+            query_env: self.query_env,
+            defer_list: self.defer_list,
         }
     }
 
@@ -338,11 +380,9 @@ impl<'a, T> ContextBase<'a, T> {
             item: selection_set,
             resolve_id: self.resolve_id,
             inc_resolve_id: &self.inc_resolve_id,
-            variables: self.variables,
-            registry: self.registry,
-            data: self.data,
-            ctx_data: self.ctx_data,
-            document: self.document,
+            schema_env: self.schema_env,
+            query_env: self.query_env,
+            defer_list: self.defer_list,
         }
     }
 
@@ -354,21 +394,24 @@ impl<'a, T> ContextBase<'a, T> {
 
     /// Gets the global data defined in the `Context` or `Schema`, returns `None` if the specified type data does not exist.
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&D> {
-        self.ctx_data
-            .and_then(|ctx_data| ctx_data.0.get(&TypeId::of::<D>()))
-            .or_else(|| self.data.0.get(&TypeId::of::<D>()))
+        self.query_env
+            .ctx_data
+            .0
+            .get(&TypeId::of::<D>())
+            .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
     }
 
     fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
         let def = self
+            .query_env
             .document
             .current_operation()
             .variable_definitions
             .iter()
             .find(|def| def.name.node == name);
         if let Some(def) = def {
-            if let Some(var_value) = self.variables.get(def.name.as_str()) {
+            if let Some(var_value) = self.query_env.variables.get(def.name.as_str()) {
                 return Ok(var_value.clone());
             } else if let Some(default) = &def.default_value {
                 return Ok(default.clone_inner());
@@ -444,15 +487,15 @@ impl<'a, T> ContextBase<'a, T> {
                     }
                     .into_error(directive.position()));
                 }
-            } else {
-                return Err(QueryError::UnknownDirective {
-                    name: directive.name.to_string(),
-                }
-                .into_error(directive.position()));
             }
         }
 
         Ok(false)
+    }
+
+    #[doc(hidden)]
+    pub fn is_defer(&self, directives: &[Positioned<Directive>]) -> bool {
+        directives.iter().any(|d| d.name.node == "defer")
     }
 }
 
@@ -468,11 +511,9 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
             item: self.item,
             resolve_id: self.get_child_resolve_id(),
             inc_resolve_id: self.inc_resolve_id,
-            variables: self.variables,
-            registry: self.registry,
-            data: self.data,
-            ctx_data: self.ctx_data,
-            document: self.document,
+            schema_env: self.schema_env,
+            query_env: self.query_env,
+            defer_list: self.defer_list,
         }
     }
 }
@@ -559,7 +600,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// ```
     pub fn look_ahead(&self) -> Lookahead {
         Lookahead {
-            document: self.document,
+            document: &self.query_env.document,
             field: Some(&self.item.node),
         }
     }

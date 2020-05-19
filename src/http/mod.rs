@@ -209,6 +209,7 @@ mod tests {
     #[test]
     fn test_response_data() {
         let resp = GQLResponse(Ok(QueryResponse {
+            path: None,
             data: json!({"ok": true}),
             extensions: None,
             cache_control: Default::default(),

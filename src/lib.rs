@@ -117,7 +117,7 @@ pub mod http;
 
 pub use base::{ScalarType, Type};
 pub use context::{
-    Context, ContextBase, Data, Environment, QueryPathNode, QueryPathSegment, Variables,
+    Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, Variables,
 };
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
@@ -128,14 +128,14 @@ pub use parser::{Pos, Positioned, Value};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};
-pub use schema::{Schema, SchemaBuilder};
+pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
     WebSocketTransport,
 };
 pub use types::{
-    Connection, Cursor, DataSource, EmptyEdgeFields, EmptyMutation, EmptySubscription, PageInfo,
-    QueryOperation, Upload,
+    Connection, Cursor, DataSource, Deferred, EmptyEdgeFields, EmptyMutation, EmptySubscription,
+    PageInfo, QueryOperation, Upload,
 };
 pub use validation::ValidationMode;
 

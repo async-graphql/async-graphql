@@ -65,6 +65,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                 path_node: ctx_field.path_node.as_ref().unwrap(),
                                 parent_type: &T::type_name(),
                                 return_type: match ctx_field
+                                    .schema_env
                                     .registry
                                     .types
                                     .get(T::type_name().as_ref())
@@ -113,6 +114,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 }
 
                 if let Some(fragment) = ctx
+                    .query_env
                     .document
                     .fragments()
                     .get(fragment_spread.fragment_name.as_str())

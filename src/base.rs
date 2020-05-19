@@ -90,6 +90,7 @@ pub trait ObjectType: OutputValueType {
     {
         if name == Self::type_name().as_ref()
             || ctx
+                .schema_env
                 .registry
                 .implements
                 .get(Self::type_name().as_ref())

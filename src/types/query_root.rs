@@ -95,7 +95,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &__Schema {
-                    registry: &ctx.registry,
+                    registry: &ctx.schema_env.registry,
                 },
                 &ctx_obj,
                 ctx.position(),
@@ -105,10 +105,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             let type_name: String = ctx.param_value("name", || Value::Null)?;
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
-                &ctx.registry
+                &ctx.schema_env
+                    .registry
                     .types
                     .get(&type_name)
-                    .map(|ty| __Type::new_simple(ctx.registry, ty)),
+                    .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
                 &ctx_obj,
                 ctx.position(),
             )
@@ -124,7 +125,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &Service {
-                    sdl: Some(ctx.registry.create_federation_sdl()),
+                    sdl: Some(ctx.schema_env.registry.create_federation_sdl()),
                 },
                 &ctx_obj,
                 ctx.position(),

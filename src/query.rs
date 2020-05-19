@@ -1,17 +1,20 @@
-use crate::context::{Data, ResolveId};
+use crate::context::{Data, DeferList, ResolveId};
 use crate::error::ParseRequestError;
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
 use crate::registry::CacheControl;
 use crate::validation::{check_rules, CheckResult};
 use crate::{
-    do_resolve, ContextBase, Error, ObjectType, Pos, QueryError, Result, Schema, Variables,
+    do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
+    SubscriptionType, Variables,
 };
 use async_graphql_parser::query::OperationType;
+use futures::{Stream, StreamExt};
 use itertools::Itertools;
 use std::any::Any;
 use std::fs::File;
 use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
 
 /// IntoQueryBuilder options
 #[derive(Default, Clone)]
@@ -39,6 +42,9 @@ pub trait IntoQueryBuilder: Sized {
 /// Query response
 #[derive(Debug)]
 pub struct QueryResponse {
+    /// Path for subsequent response
+    pub path: Option<serde_json::Value>,
+
     /// Data of query result
     pub data: serde_json::Value,
 
@@ -47,6 +53,38 @@ pub struct QueryResponse {
 
     /// Cache control value
     pub cache_control: CacheControl,
+}
+
+impl QueryResponse {
+    pub(crate) fn merge(&mut self, resp: QueryResponse) {
+        if let Some(serde_json::Value::Array(items)) = resp.path {
+            let mut p = &mut self.data;
+            for item in items {
+                match item {
+                    serde_json::Value::String(name) => {
+                        if let serde_json::Value::Object(obj) = p {
+                            if let Some(next) = obj.get_mut(&name) {
+                                p = next;
+                                continue;
+                            }
+                        }
+                        return;
+                    }
+                    serde_json::Value::Number(idx) => {
+                        if let serde_json::Value::Array(array) = p {
+                            if let Some(next) = array.get_mut(idx.as_i64().unwrap() as usize) {
+                                p = next;
+                                continue;
+                            }
+                        }
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+            *p = resp.data;
+        }
+    }
 }
 
 /// Query builder
@@ -107,18 +145,52 @@ impl QueryBuilder {
             .set_upload(var_path, filename, content_type, content);
     }
 
-    /// Execute the query.
-    pub async fn execute<Query, Mutation, Subscription>(
+    /// Execute the query, returns a stream, the first result being the query result,
+    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
+    /// in the query will there be subsequent incremental results.
+    pub async fn execute_stream<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Result<QueryResponse>
+    ) -> impl Stream<Item = Result<QueryResponse>>
     where
-        Query: ObjectType + Send + Sync,
-        Mutation: ObjectType + Send + Sync,
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        let schema = schema.clone();
+        let stream = async_stream::try_stream! {
+            let (first_resp, defer_list) = self.execute_first(&schema).await?;
+            yield first_resp;
+
+            let mut current_defer_list = defer_list.into_inner();
+
+            loop {
+                let mut new_defer_list = Vec::new();
+                for defer in current_defer_list {
+                    let mut res = defer.await?;
+                    new_defer_list.extend((res.1).into_inner());
+                    yield res.0;
+                }
+                if new_defer_list.is_empty() {
+                    break;
+                }
+                current_defer_list = new_defer_list;
+            }
+        };
+        Box::pin(stream)
+    }
+
+    async fn execute_first<'a, Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Result<(QueryResponse, DeferList)>
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         // create extension instances
         let extensions = schema
-            .0
             .extensions
             .iter()
             .map(|factory| factory())
@@ -137,17 +209,17 @@ impl QueryBuilder {
             cache_control,
             complexity,
             depth,
-        } = check_rules(&schema.0.registry, &document, schema.0.validation_mode)?;
+        } = check_rules(&schema.env.registry, &document, schema.validation_mode)?;
         extensions.iter().for_each(|e| e.validation_end());
 
         // check limit
-        if let Some(limit_complexity) = schema.0.complexity {
+        if let Some(limit_complexity) = schema.complexity {
             if complexity > limit_complexity {
                 return Err(QueryError::TooComplex.into_error(Pos::default()));
             }
         }
 
-        if let Some(limit_depth) = schema.0.depth {
+        if let Some(limit_depth) = schema.depth {
             if depth > limit_depth {
                 return Err(QueryError::TooDeep.into_error(Pos::default()));
             }
@@ -173,24 +245,28 @@ impl QueryBuilder {
             };
         }
 
+        let env = QueryEnv::new(
+            self.variables,
+            document,
+            Arc::new(self.ctx_data.unwrap_or_default()),
+        );
+        let defer_list = DeferList::default();
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
             extensions: &extensions,
-            item: &document.current_operation().selection_set,
-            variables: &self.variables,
-            registry: &schema.0.registry,
-            data: &schema.0.data,
-            ctx_data: self.ctx_data.as_ref(),
-            document: &document,
+            item: &env.document.current_operation().selection_set,
+            schema_env: &schema.env,
+            query_env: &env,
+            defer_list: Some(&defer_list),
         };
 
         extensions.iter().for_each(|e| e.execution_start());
 
-        let data = match document.current_operation().ty {
-            OperationType::Query => do_resolve(&ctx, &schema.0.query).await?,
-            OperationType::Mutation => do_mutation_resolve(&ctx, &schema.0.mutation).await?,
+        let data = match &env.document.current_operation().ty {
+            OperationType::Query => do_resolve(&ctx, &schema.query).await?,
+            OperationType::Mutation => do_mutation_resolve(&ctx, &schema.mutation).await?,
             OperationType::Subscription => {
                 return Err(Error::Query {
                     pos: Pos::default(),
@@ -203,6 +279,7 @@ impl QueryBuilder {
         extensions.iter().for_each(|e| e.execution_end());
 
         let res = QueryResponse {
+            path: None,
             data,
             extensions: if !extensions.is_empty() {
                 Some(
@@ -222,6 +299,24 @@ impl QueryBuilder {
             },
             cache_control,
         };
-        Ok(res)
+        Ok((res, defer_list))
+    }
+
+    /// Execute the query, always return a complete result.
+    pub async fn execute<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Result<QueryResponse>
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        let mut stream = self.execute_stream(schema).await;
+        let mut resp = stream.next().await.unwrap()?;
+        while let Some(resp_part) = stream.next().await.transpose()? {
+            resp.merge(resp_part);
+        }
+        Ok(resp)
     }
 }

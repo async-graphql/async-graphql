@@ -1,12 +1,11 @@
-use crate::context::Environment;
+use crate::context::QueryEnv;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
-    Result, Schema, SubscriptionType, Type,
+    registry, Context, ContextSelectionSet, Error, OutputValueType, Pos, QueryError, Result,
+    SchemaEnv, SubscriptionType, Type,
 };
 use futures::Stream;
 use std::borrow::Cow;
 use std::pin::Pin;
-use std::sync::Arc;
 
 /// Empty subscription
 ///
@@ -36,16 +35,14 @@ impl SubscriptionType for EmptySubscription {
         true
     }
 
-    async fn create_field_stream<Query, Mutation>(
+    async fn create_field_stream(
         &self,
         _idx: usize,
         _ctx: &Context<'_>,
-        _schema: &Schema<Query, Mutation, Self>,
-        _environment: Arc<Environment>,
+        _schema_env: SchemaEnv,
+        _query_env: QueryEnv,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
     where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
         Self: Send + Sync + 'static + Sized,
     {
         Err(Error::Query {

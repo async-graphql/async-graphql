@@ -371,10 +371,10 @@ where
     F: Fn() -> V,
 {
     let schema = Schema::new(query, mutation, subscription);
-    let registry = &schema.0.registry;
+    let registry = &schema.env.registry;
     let doc = parse_query(query_source).expect("Parse error");
     let mut ctx = VisitorContext::new(
-        unsafe { ::std::mem::transmute(&schema.0.registry) },
+        unsafe { ::std::mem::transmute(&schema.env.registry) },
         unsafe { ::std::mem::transmute(&doc) },
     );
     let mut visitor = factory();
