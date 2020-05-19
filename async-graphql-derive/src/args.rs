@@ -848,22 +848,53 @@ impl DataSource {
 
 pub struct Scalar {
     pub internal: bool,
+    pub name: Option<String>,
+    pub desc: Option<String>,
 }
 
 impl Scalar {
     pub fn parse(args: AttributeArgs) -> Result<Self> {
         let mut internal = false;
+        let mut name = None;
+        let mut desc = None;
 
         for arg in args {
             match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
+                NestedMeta::Meta(Meta::Path(p)) => {
+                    if p.is_ident("internal") {
+                        internal = true;
+                    }
+                }
+                NestedMeta::Meta(Meta::NameValue(nv)) => {
+                    if nv.path.is_ident("name") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            name = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'name' should be a string.",
+                            ));
+                        }
+                    } else if nv.path.is_ident("desc") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            desc = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'desc' should be a string.",
+                            ));
+                        }
+                    }
                 }
                 _ => {}
             }
         }
 
-        Ok(Self { internal })
+        Ok(Self {
+            internal,
+            name,
+            desc,
+        })
     }
 }
 

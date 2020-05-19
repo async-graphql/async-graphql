@@ -22,12 +22,9 @@ impl<T> DerefMut for Json<T> {
     }
 }
 
-#[Scalar(internal)]
+/// A scalar that can represent any JSON value.
+#[Scalar(internal, name = "JSON")]
 impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
-    fn type_name() -> &'static str {
-        "JSON"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         Ok(serde_json::from_value(value.into()).map(Json)?)
     }

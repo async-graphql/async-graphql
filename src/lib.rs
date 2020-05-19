@@ -656,4 +656,12 @@ pub use async_graphql_derive::Subscription;
 pub use async_graphql_derive::DataSource;
 
 /// Define a Scalar
+///
+/// # Macro parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | Scalar name               | string   | Y        |
+/// | desc        | Scalar description        | string   | Y        |
+///
 pub use async_graphql_derive::Scalar;

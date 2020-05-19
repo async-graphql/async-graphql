@@ -75,10 +75,6 @@ struct TestScalar(i32);
 
 #[Scalar(desc = "Test scalar")]
 impl ScalarType for TestScalar {
-    fn type_name() -> &'static str {
-        "TestScalar"
-    }
-
     fn parse(_value: Value) -> InputValueResult<Self> {
         Ok(TestScalar(42))
     }
@@ -689,7 +685,7 @@ pub async fn test_introspection_scalar() {
         "__type": {
             "kind": "SCALAR",
             "name": "TestScalar",
-            "description": null,
+            "description": "Test scalar",
         }
     });
 

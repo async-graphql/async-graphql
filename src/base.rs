@@ -124,10 +124,6 @@ pub trait InputObjectType: InputValueType {}
 ///
 /// #[Scalar]
 /// impl ScalarType for MyInt {
-///     fn type_name() -> &'static str {
-///         "MyInt"
-///     }
-///
 ///     fn parse(value: Value) -> InputValueResult<Self> {
 ///         if let Value::Int(n) = value {
 ///             Ok(MyInt(n as i32))
@@ -142,14 +138,6 @@ pub trait InputObjectType: InputValueType {}
 /// }
 /// ```
 pub trait ScalarType: Sized + Send {
-    /// The type name of a scalar.
-    fn type_name() -> &'static str;
-
-    /// The description of a scalar.
-    fn description() -> Option<&'static str> {
-        None
-    }
-
     /// Parse a scalar value, return `Some(Self)` if successful, otherwise return `None`.
     fn parse(value: Value) -> InputValueResult<Self>;
 

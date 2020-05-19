@@ -5,10 +5,6 @@ use chrono::{DateTime, Utc};
 
 #[Scalar(internal)]
 impl ScalarType for ObjectId {
-    fn type_name() -> &'static str {
-        "ObjectId"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(ObjectId::with_string(&s)?),
@@ -21,12 +17,8 @@ impl ScalarType for ObjectId {
     }
 }
 
-#[Scalar(internal)]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for UtcDateTime {
-    fn type_name() -> &'static str {
-        "DateTime"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         DateTime::<Utc>::parse(value).map(UtcDateTime::from)
     }

@@ -4,16 +4,9 @@ use async_graphql_derive::Scalar;
 macro_rules! impl_float_scalars {
     ($($ty:ty),*) => {
         $(
-        #[Scalar(internal)]
+        /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
+        #[Scalar(internal, name = "Float")]
         impl ScalarType for $ty {
-            fn type_name() -> &'static str {
-                "Float"
-            }
-
-            fn description() -> Option<&'static str> {
-                Some("The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).")
-            }
-
             fn parse(value: Value) -> InputValueResult<Self> {
                 match value {
                     Value::Int(n) => Ok(n as Self),

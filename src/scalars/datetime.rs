@@ -5,12 +5,8 @@ use chrono::{DateTime, TimeZone, Utc};
 /// Implement the DateTime<Utc> scalar
 ///
 /// The input/output is a string in RFC3339 format.
-#[Scalar(internal)]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for DateTime<Utc> {
-    fn type_name() -> &'static str {
-        "DateTime"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),

@@ -40,10 +40,6 @@ impl From<ID> for Cursor {
 
 #[Scalar(internal)]
 impl ScalarType for Cursor {
-    fn type_name() -> &'static str {
-        "Cursor"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Cursor(s)),

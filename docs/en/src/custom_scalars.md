@@ -14,11 +14,6 @@ struct StringNumber(i64);
 
 #[Scalar]
 impl ScalarType for StringNumber {
-    fn type_name() -> &'static str {
-        // Name of type
-        "StringNumber"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(value) = value {
             // Parse the integer value

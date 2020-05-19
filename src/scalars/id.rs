@@ -75,10 +75,6 @@ impl PartialEq<&str> for ID {
 
 #[Scalar(internal)]
 impl ScalarType for ID {
-    fn type_name() -> &'static str {
-        "ID"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::Int(n) => Ok(ID(n.to_string())),

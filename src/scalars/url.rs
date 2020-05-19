@@ -4,10 +4,6 @@ use url::Url;
 
 #[Scalar(internal)]
 impl ScalarType for Url {
-    fn type_name() -> &'static str {
-        "Url"
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Url::parse(&s)?),

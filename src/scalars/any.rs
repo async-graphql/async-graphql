@@ -8,16 +8,9 @@ use serde::de::DeserializeOwned;
 #[derive(Clone, PartialEq, Debug)]
 pub struct Any(pub Value);
 
-#[Scalar(internal)]
+/// The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.
+#[Scalar(internal, name = "_Any")]
 impl ScalarType for Any {
-    fn type_name() -> &'static str {
-        "_Any"
-    }
-
-    fn description() -> Option<&'static str> {
-        Some("The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.")
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         Ok(Self(value))
     }

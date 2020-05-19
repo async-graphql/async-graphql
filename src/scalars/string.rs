@@ -6,18 +6,9 @@ use crate::{
 use async_graphql_derive::Scalar;
 use std::borrow::Cow;
 
-const STRING_DESC: &str = "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.";
-
+/// The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
 #[Scalar(internal)]
 impl ScalarType for String {
-    fn type_name() -> &'static str {
-        "String"
-    }
-
-    fn description() -> Option<&'static str> {
-        Some(STRING_DESC)
-    }
-
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(s),
@@ -43,14 +34,7 @@ impl<'a> Type for &'a str {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|_| registry::MetaType::Scalar {
-            name: Self::type_name().to_string(),
-            description: Some(STRING_DESC),
-            is_valid: |value| match value {
-                Value::String(_) => true,
-                _ => false,
-            },
-        })
+        <String as Type>::create_type_info(registry)
     }
 }
 
