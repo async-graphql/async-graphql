@@ -976,11 +976,6 @@ struct StringNumber(i64);
 
 #[Scalar]
 impl ScalarType for StringNumber {
-    fn type_name() -&gt; &amp;'static str {
-        // 类型名
-        &quot;StringNumber&quot;
-    }
-
     fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = value {
             // 解析整数
