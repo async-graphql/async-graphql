@@ -44,7 +44,7 @@ regex = "1.3.5"
 tracing = "0.1.13"
 indexmap = "1.3.2"
 async-stream = "0.2.1"
-multer = "1.0.3"
+multer = "1.2.0"
 bson = { version = "0.14.1", optional = true }
 uuid = { version = "0.8.1", optional = true }
 url = { version = "2.1.1", optional = true }

@@ -52,10 +52,10 @@ where
                     if let (Some(max_file_size), Some(max_num_files)) =
                         (opts.max_file_size, opts.max_file_size)
                     {
-                        limit = limit.whole_stream(max_file_size * max_num_files);
+                        limit = limit.whole_stream((max_file_size * max_num_files) as u64);
                     }
                     if let Some(max_file_size) = opts.max_file_size {
-                        limit = limit.per_field(max_file_size);
+                        limit = limit.per_field(max_file_size as u64);
                     }
                     limit
                 }),
