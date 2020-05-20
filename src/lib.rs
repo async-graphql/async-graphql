@@ -75,6 +75,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::needless_doctest_main)]
 #![allow(clippy::needless_lifetimes)]
+#![recursion_limit = "256"]
 
 #[macro_use]
 extern crate thiserror;

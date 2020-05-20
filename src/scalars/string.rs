@@ -1,9 +1,9 @@
-use crate::parser::Pos;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Result,
-    ScalarType, Type, Value,
+    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Positioned,
+    Result, ScalarType, Type, Value,
 };
 use async_graphql_derive::Scalar;
+use async_graphql_parser::query::Field;
 use std::borrow::Cow;
 
 /// The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
@@ -40,7 +40,11 @@ impl<'a> Type for &'a str {
 
 #[async_trait::async_trait]
 impl<'a> OutputValueType for &'a str {
-    async fn resolve(&self, _: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        _: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
         Ok((*self).into())
     }
 }

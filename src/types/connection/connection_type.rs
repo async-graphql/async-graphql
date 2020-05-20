@@ -3,8 +3,9 @@ use crate::types::connection::edge::Edge;
 use crate::types::connection::page_info::PageInfo;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
-    OutputValueType, Pos, QueryError, Result, Type,
+    OutputValueType, Positioned, QueryError, Result, Type,
 };
+use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
 use inflector::Inflector;
 use itertools::Itertools;
@@ -179,19 +180,17 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.node == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.position())
-                .await;
+            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.position()).await;
+            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "totalCount" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.position())
-                .await;
+            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
-            return OutputValueType::resolve(&items, &ctx_obj, ctx.position()).await;
+            return OutputValueType::resolve(&items, &ctx_obj, ctx.item).await;
         }
 
         Err(Error::Query {
@@ -209,7 +208,11 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
 impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
     for Connection<T, E>
 {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
         do_resolve(ctx, self).await
     }
 }

@@ -58,7 +58,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
             async fn resolve(
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,
-                _pos: #crate_name::Pos,
+                _field: &#crate_name::Positioned<#crate_name::parser::query::Field>
             ) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 self.to_json()
             }

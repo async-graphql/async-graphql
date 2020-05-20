@@ -1,7 +1,8 @@
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos, QueryError,
-    Result, Type,
+    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Positioned,
+    QueryError, Result, Type,
 };
+use async_graphql_parser::query::Field;
 use std::borrow::Cow;
 
 /// Empty mutation
@@ -54,9 +55,13 @@ impl ObjectType for EmptyMutation {
 
 #[async_trait::async_trait]
 impl OutputValueType for EmptyMutation {
-    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        _ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
         Err(Error::Query {
-            pos,
+            pos: field.position(),
             path: None,
             err: QueryError::NotConfiguredMutations,
         })

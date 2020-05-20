@@ -1,7 +1,8 @@
 use crate::{
-    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Pos, Result,
-    Type, Value,
+    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Positioned,
+    Result, Type, Value,
 };
+use async_graphql_parser::query::Field;
 use std::borrow::Cow;
 
 impl<T: Type> Type for Option<T> {
@@ -30,10 +31,13 @@ impl<T: InputValueType> InputValueType for Option<T> {
 
 #[async_trait::async_trait]
 impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> where
-    {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> where {
         if let Some(inner) = self {
-            OutputValueType::resolve(inner, ctx, pos).await
+            OutputValueType::resolve(inner, ctx, field).await
         } else {
             Ok(serde_json::Value::Null)
         }

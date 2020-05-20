@@ -242,7 +242,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         #(#get_params)*
                         #guard
                         let field_name = std::sync::Arc::new(ctx.result_name().to_string());
-                        let field_selection_set = std::sync::Arc::new(ctx.selection_set.clone());
+                        let field = std::sync::Arc::new(ctx.item.clone());
 
                         let pos = ctx.position();
                         let schema_env = schema_env.clone();
@@ -252,7 +252,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             move |msg| {
                                 let schema_env = schema_env.clone();
                                 let query_env = query_env.clone();
-                                let field_selection_set = field_selection_set.clone();
+                                let field = field.clone();
                                 let field_name = field_name.clone();
                                 async move {
                                     let resolve_id = std::sync::atomic::AtomicUsize::default();
@@ -262,11 +262,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             parent: None,
                                             segment: #crate_name::QueryPathSegment::Name(&field_name),
                                         }),
-                                        &*field_selection_set,
+                                        &field.selection_set,
                                         &resolve_id,
                                         None,
                                     );
-                                    #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, pos).await
+                                    #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await
                                 }
                             }
                         })

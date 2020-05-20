@@ -1,10 +1,11 @@
 use crate::model::{__Schema, __Type};
 use crate::scalars::Any;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Pos,
-    QueryError, Result, Type, Value,
+    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
+    Positioned, QueryError, Result, Type, Value,
 };
 use async_graphql_derive::SimpleObject;
+use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -84,7 +85,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             if self.disable_introspection {
                 return Err(Error::Query {
                     pos: ctx.position(),
-                    path: Some(ctx.path_node.as_ref().unwrap().to_json()),
+                    path: Some(ctx.path_node.as_ref().unwrap().to_json().into()),
                     err: QueryError::FieldNotFound {
                         field_name: ctx.name.to_string(),
                         object: Self::type_name().to_string(),
@@ -98,7 +99,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     registry: &ctx.schema_env.registry,
                 },
                 &ctx_obj,
-                ctx.position(),
+                ctx.item,
             )
             .await;
         } else if ctx.name.node == "__type" {
@@ -111,7 +112,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     .get(&type_name)
                     .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
                 &ctx_obj,
-                ctx.position(),
+                ctx.item,
             )
             .await;
         } else if ctx.name.node == "_entities" {
@@ -128,7 +129,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                     sdl: Some(ctx.schema_env.registry.create_federation_sdl()),
                 },
                 &ctx_obj,
-                ctx.position(),
+                ctx.item,
             )
             .await;
         }
@@ -139,7 +140,11 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _pos: Pos) -> Result<serde_json::Value> {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
         do_resolve(ctx, self).await
     }
 }

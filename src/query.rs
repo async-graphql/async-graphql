@@ -43,7 +43,7 @@ pub trait IntoQueryBuilder: Sized {
 #[derive(Debug)]
 pub struct QueryResponse {
     /// Path for subsequent response
-    pub path: Option<serde_json::Value>,
+    pub path: Option<Vec<serde_json::Value>>,
 
     /// Data of query result
     pub data: serde_json::Value,
@@ -56,34 +56,42 @@ pub struct QueryResponse {
 }
 
 impl QueryResponse {
-    pub(crate) fn merge(&mut self, resp: QueryResponse) {
-        if let Some(serde_json::Value::Array(items)) = resp.path {
-            let mut p = &mut self.data;
-            for item in items {
-                match item {
-                    serde_json::Value::String(name) => {
-                        if let serde_json::Value::Object(obj) = p {
-                            if let Some(next) = obj.get_mut(&name) {
-                                p = next;
-                                continue;
-                            }
-                        }
-                        return;
-                    }
-                    serde_json::Value::Number(idx) => {
-                        if let serde_json::Value::Array(array) = p {
-                            if let Some(next) = array.get_mut(idx.as_i64().unwrap() as usize) {
-                                p = next;
-                                continue;
-                            }
-                        }
-                        return;
-                    }
-                    _ => {}
-                }
-            }
-            *p = resp.data;
+    pub(crate) fn apply_path_prefix(mut self, mut prefix: Vec<serde_json::Value>) -> Self {
+        if let Some(path) = &mut self.path {
+            prefix.extend(path.drain(..));
+            *path = prefix;
+        } else {
+            self.path = Some(prefix);
         }
+        self
+    }
+
+    pub(crate) fn merge(&mut self, resp: QueryResponse) {
+        let mut p = &mut self.data;
+        for item in resp.path.unwrap_or_default() {
+            match item {
+                serde_json::Value::String(name) => {
+                    if let serde_json::Value::Object(obj) = p {
+                        if let Some(next) = obj.get_mut(&name) {
+                            p = next;
+                            continue;
+                        }
+                    }
+                    return;
+                }
+                serde_json::Value::Number(idx) => {
+                    if let serde_json::Value::Array(array) = p {
+                        if let Some(next) = array.get_mut(idx.as_i64().unwrap() as usize) {
+                            p = next;
+                            continue;
+                        }
+                    }
+                    return;
+                }
+                _ => {}
+            }
+        }
+        *p = resp.data;
     }
 }
 
@@ -162,19 +170,26 @@ impl QueryBuilder {
             let (first_resp, defer_list) = self.execute_first(&schema).await?;
             yield first_resp;
 
-            let mut current_defer_list = defer_list.into_inner();
+            let mut current_defer_list = Vec::new();
+            for fut in defer_list.futures.into_inner() {
+                current_defer_list.push((defer_list.path_prefix.clone(), fut));
+            }
 
             loop {
-                let mut new_defer_list = Vec::new();
-                for defer in current_defer_list {
-                    let mut res = defer.await?;
-                    new_defer_list.extend((res.1).into_inner());
-                    yield res.0;
+                let mut next_defer_list = Vec::new();
+                for (path_prefix, defer) in current_defer_list {
+                    let (res, mut defer_list) = defer.await?;
+                    for fut in defer_list.futures.into_inner() {
+                        let mut next_path_prefix = path_prefix.clone();
+                        next_path_prefix.extend(defer_list.path_prefix.clone());
+                        next_defer_list.push((next_path_prefix, fut));
+                    }
+                    yield res.apply_path_prefix(path_prefix);
                 }
-                if new_defer_list.is_empty() {
+                if next_defer_list.is_empty() {
                     break;
                 }
-                current_defer_list = new_defer_list;
+                current_defer_list = next_defer_list;
             }
         };
         Box::pin(stream)
@@ -250,7 +265,10 @@ impl QueryBuilder {
             document,
             Arc::new(self.ctx_data.unwrap_or_default()),
         );
-        let defer_list = DeferList::default();
+        let defer_list = DeferList {
+            path_prefix: Vec::new(),
+            futures: Default::default(),
+        };
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),

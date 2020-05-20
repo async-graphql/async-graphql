@@ -1,9 +1,9 @@
-use crate::parser::Pos;
 use crate::registry::Registry;
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, QueryError, Result,
-    Value, ID,
+    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
+    Result, Value, ID,
 };
+use async_graphql_parser::query::Field;
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
@@ -59,7 +59,11 @@ pub trait InputValueType: Type + Sized {
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `serde_json::Value`.
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value>;
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value>;
 }
 
 #[allow(missing_docs)]
@@ -166,8 +170,12 @@ impl<T: Type + Send + Sync> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        T::resolve(*self, ctx, pos).await
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
+        T::resolve(*self, ctx, field).await
     }
 }
 
@@ -185,8 +193,12 @@ impl<T: Type + Send + Sync> Type for Box<T> {
 impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     #[allow(clippy::borrowed_box)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        T::resolve(&*self, ctx, pos).await
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
+        T::resolve(&*self, ctx, field).await
     }
 }
 
@@ -203,8 +215,12 @@ impl<T: Type + Send + Sync> Type for Arc<T> {
 #[async_trait::async_trait]
 impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        T::resolve(&*self, ctx, pos).await
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> Result<serde_json::Value> {
+        T::resolve(&*self, ctx, field).await
     }
 }
 
@@ -227,15 +243,15 @@ impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
-        pos: Pos,
+        field: &Positioned<Field>,
     ) -> crate::Result<serde_json::Value> {
         match self {
-            Ok(value) => Ok(OutputValueType::resolve(value, ctx, pos).await?),
+            Ok(value) => Ok(OutputValueType::resolve(value, ctx, field).await?),
             Err(err) => Err(err.clone().into_error_with_path(
-                pos,
+                field.position(),
                 match &ctx.path_node {
                     Some(path) => path.to_json(),
-                    None => serde_json::Value::Null,
+                    None => Vec::new(),
                 },
             )),
         }

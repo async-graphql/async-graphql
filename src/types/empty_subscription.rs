@@ -1,8 +1,5 @@
 use crate::context::QueryEnv;
-use crate::{
-    registry, Context, ContextSelectionSet, Error, OutputValueType, Pos, QueryError, Result,
-    SchemaEnv, SubscriptionType, Type,
-};
+use crate::{registry, Context, Error, Pos, QueryError, Result, SchemaEnv, SubscriptionType, Type};
 use futures::Stream;
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -47,17 +44,6 @@ impl SubscriptionType for EmptySubscription {
     {
         Err(Error::Query {
             pos: Pos::default(),
-            path: None,
-            err: QueryError::NotConfiguredSubscriptions,
-        })
-    }
-}
-
-#[async_trait::async_trait]
-impl OutputValueType for EmptySubscription {
-    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, pos: Pos) -> Result<serde_json::Value> {
-        Err(Error::Query {
-            pos,
             path: None,
             err: QueryError::NotConfiguredSubscriptions,
         })

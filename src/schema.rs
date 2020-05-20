@@ -283,6 +283,16 @@ where
         QueryBuilder::new(query_source).execute(self).await
     }
 
+    /// Execute the query without create the `QueryBuilder`, returns a stream, the first result being the query result,
+    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
+    /// in the query will there be subsequent incremental results.
+    pub async fn execute_stream(
+        &self,
+        query_source: &str,
+    ) -> impl Stream<Item = Result<QueryResponse>> {
+        QueryBuilder::new(query_source).execute_stream(self).await
+    }
+
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
     pub async fn create_subscription_stream(
         &self,

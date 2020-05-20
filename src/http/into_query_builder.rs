@@ -96,7 +96,6 @@ where
                                     let mut file =
                                         tempfile::tempfile().map_err(ParseRequestError::Io)?;
                                     while let Some(chunk) = field.chunk().await.unwrap() {
-                                        println!("{:?}", chunk);
                                         file.write(&chunk).map_err(ParseRequestError::Io)?;
                                     }
                                     file.seek(SeekFrom::Start(0))?;

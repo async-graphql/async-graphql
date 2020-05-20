@@ -59,10 +59,14 @@ impl FieldError {
     }
 
     #[doc(hidden)]
-    pub fn into_error_with_path(self, pos: Pos, path: serde_json::Value) -> Error {
+    pub fn into_error_with_path(self, pos: Pos, path: Vec<serde_json::Value>) -> Error {
         Error::Query {
             pos,
-            path: Some(path),
+            path: if !path.is_empty() {
+                Some(path.into())
+            } else {
+                None
+            },
             err: QueryError::FieldError {
                 err: self.0,
                 extended_error: self.1,

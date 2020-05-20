@@ -196,7 +196,7 @@ impl<'a> QueryPathNode<'a> {
     }
 
     #[doc(hidden)]
-    pub fn to_json(&self) -> serde_json::Value {
+    pub fn to_json(&self) -> Vec<serde_json::Value> {
         let mut path: Vec<serde_json::Value> = Vec::new();
         self.for_each(|segment| {
             path.push(match segment {
@@ -204,7 +204,7 @@ impl<'a> QueryPathNode<'a> {
                 QueryPathSegment::Name(name) => (*name).to_string().into(),
             })
         });
-        path.into()
+        path
     }
 }
 
@@ -242,19 +242,17 @@ pub type BoxDeferFuture =
     Pin<Box<dyn Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static>>;
 
 #[doc(hidden)]
-#[derive(Default)]
-pub struct DeferList(pub Mutex<Vec<BoxDeferFuture>>);
+pub struct DeferList {
+    pub path_prefix: Vec<serde_json::Value>,
+    pub futures: Mutex<Vec<BoxDeferFuture>>,
+}
 
 impl DeferList {
-    pub(crate) fn into_inner(self) -> Vec<BoxDeferFuture> {
-        self.0.into_inner()
-    }
-
     pub(crate) fn append<F>(&self, fut: F)
     where
         F: Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static,
     {
-        self.0.lock().push(Box::pin(fut));
+        self.futures.lock().push(Box::pin(fut));
     }
 }
 
@@ -266,7 +264,8 @@ pub struct ContextBase<'a, T> {
     pub(crate) resolve_id: ResolveId,
     pub(crate) inc_resolve_id: &'a AtomicUsize,
     pub(crate) extensions: &'a [BoxExtension],
-    pub(crate) item: T,
+    #[doc(hidden)]
+    pub item: T,
     pub(crate) schema_env: &'a SchemaEnv,
     pub(crate) query_env: &'a QueryEnv,
     pub(crate) defer_list: Option<&'a DeferList>,
