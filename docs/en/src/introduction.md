@@ -12,3 +12,18 @@ I like GraphQL and Rust. I've been using `Juniper`, which solves the problem of 
 
 As I write this document today (April 15, 2020), a month and a half after I started `Async-graphql` development, it has surpassed my goal of becoming a fully functional graphql server library.
 
+
+## Examples
+
+If you are just getting started, we recommend checking out our examples at:
+[https://github.com/async-graphql/examples](https://github.com/async-graphql/examples)
+
+To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgresql, you can also check out a real-world example at:
+[https://github.com/phated/twentyfive-stars](https://github.com/phated/twentyfive-stars)
+
+## Benchmarks
+
+```bash
+git clone https://github.com/async-graphql/benchmark
+cargo run --release
+```
