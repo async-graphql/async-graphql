@@ -8,7 +8,7 @@ impl<'a, T: Sync> DataSource for &'a [T] {
     type EdgeFieldsObj = EmptyEdgeFields;
 
     async fn query_operation(
-        &self,
+        &mut self,
         _ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {

@@ -154,7 +154,7 @@ pub use subscription::{
 };
 pub use types::{
     Connection, Cursor, DataSource, Deferred, EmptyEdgeFields, EmptyMutation, EmptySubscription,
-    PageInfo, QueryOperation, Streamed, Upload,
+    PageInfo, QueryOperation, StreamDataSource, Streamed, Upload,
 };
 pub use validation::ValidationMode;
 

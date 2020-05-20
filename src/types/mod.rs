@@ -9,7 +9,9 @@ mod query_root;
 mod streamed;
 mod upload;
 
-pub use connection::{Connection, Cursor, DataSource, EmptyEdgeFields, PageInfo, QueryOperation};
+pub use connection::{
+    Connection, Cursor, DataSource, EmptyEdgeFields, PageInfo, QueryOperation, StreamDataSource,
+};
 pub use deferred::Deferred;
 pub use empty_mutation::EmptyMutation;
 pub use empty_subscription::EmptySubscription;
