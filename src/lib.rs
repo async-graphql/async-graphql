@@ -71,6 +71,22 @@
 //! * [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
 //! * [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
 //! * [Apollo Federation](https://www.apollographql.com/docs/apollo-server/federation/introduction)
+//!
+//! ## Examples
+//!
+//! If you are just getting started, we recommend checking out our examples at:
+//! [https://github.com/async-graphql/examples](https://github.com/async-graphql/examples)
+//!
+//! To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgresql, you can also check out a real-world example at:
+//! [https://github.com/phated/twentyfive-stars](https://github.com/phated/twentyfive-stars)
+//!
+//! ## Benchmarks
+//!
+//! ```shell script
+//! git clone https://github.com/async-graphql/benchmark
+//! cargo run --release
+//! ```
+//!
 
 #![warn(missing_docs)]
 #![allow(clippy::needless_doctest_main)]
