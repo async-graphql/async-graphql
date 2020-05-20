@@ -156,7 +156,7 @@ impl QueryBuilder {
     /// Execute the query, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream<Query, Mutation, Subscription>(
+    pub fn execute_stream<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> impl Stream<Item = Result<QueryResponse>>
@@ -330,7 +330,7 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let mut stream = self.execute_stream(schema).await;
+        let mut stream = self.execute_stream(schema);
         let mut resp = stream.next().await.unwrap()?;
         while let Some(resp_part) = stream.next().await.transpose()? {
             resp.merge(resp_part);

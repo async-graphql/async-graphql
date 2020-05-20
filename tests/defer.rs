@@ -63,7 +63,7 @@ pub async fn test_defer() {
         })
     );
 
-    let mut stream = schema.execute_stream(&query).await;
+    let mut stream = schema.execute_stream(&query);
     assert_eq!(
         stream.next().await.unwrap().unwrap().data,
         serde_json::json!({
