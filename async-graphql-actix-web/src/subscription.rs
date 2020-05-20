@@ -15,7 +15,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
-    sink: Option<mpsc::Sender<Bytes>>,
+    sink: Option<mpsc::UnboundedSender<Bytes>>,
     init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
 }
 

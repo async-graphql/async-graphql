@@ -338,7 +338,7 @@ where
         &self,
         transport: T,
     ) -> (
-        mpsc::Sender<Bytes>,
+        mpsc::UnboundedSender<Bytes>,
         SubscriptionStream<Query, Mutation, Subscription, T>,
     ) {
         create_connection(self.clone(), transport)

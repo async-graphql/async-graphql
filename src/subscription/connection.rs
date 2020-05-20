@@ -56,7 +56,7 @@ pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
 ) -> (
-    mpsc::Sender<Bytes>,
+    mpsc::UnboundedSender<Bytes>,
     SubscriptionStream<Query, Mutation, Subscription, T>,
 )
 where
@@ -64,7 +64,7 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Sync + Send + 'static,
 {
-    let (tx_bytes, rx_bytes) = mpsc::channel(8);
+    let (tx_bytes, rx_bytes) = mpsc::unbounded();
     (
         tx_bytes,
         SubscriptionStream {
@@ -94,7 +94,7 @@ pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTran
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
     streams: SubscriptionStreams,
-    rx_bytes: mpsc::Receiver<Bytes>,
+    rx_bytes: mpsc::UnboundedReceiver<Bytes>,
     handle_request_fut: Option<HandleRequestBoxFut<T>>,
     waker: AtomicWaker,
 }
