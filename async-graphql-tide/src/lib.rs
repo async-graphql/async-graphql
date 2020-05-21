@@ -10,8 +10,9 @@ use async_graphql::{
     QueryResponse, Schema, StreamResponse, SubscriptionType,
 };
 use async_trait::async_trait;
+use futures::channel::mpsc;
 use futures::io::BufReader;
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt};
 use tide::{
     http::{headers, Method},
     Body, Request, Response, Status, StatusCode,
@@ -149,10 +150,22 @@ impl ResponseExt for Response {
         match res {
             StreamResponse::Single(res) => self.body_graphql(res),
             StreamResponse::Stream(stream) => {
-                let r = BufReader::new(StreamBody::new(Box::pin(
+                // Body::from_reader required Sync, however StreamResponse does not have Sync.
+                // I created an issue and got a reply that this might be fixed in the future.
+                // https://github.com/http-rs/http-types/pull/144
+                // Now I can only use forwarding to solve the problem.
+                let mut stream = StreamBody::new(Box::pin(
                     multipart_stream(stream).map(Result::Ok::<_, std::io::Error>),
-                )));
-                self.set_body(Body::from_reader(r, None));
+                ));
+                let (mut tx, rx) = mpsc::channel(0);
+                async_std::task::spawn(async move {
+                    while let Some(item) = stream.next().await {
+                        if tx.send(item).await.is_err() {
+                            return;
+                        }
+                    }
+                });
+                self.set_body(Body::from_reader(BufReader::new(rx), None));
                 Ok(self.set_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed"))
             }
         }

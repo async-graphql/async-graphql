@@ -20,12 +20,6 @@ impl<S> StreamBody<S> {
     }
 }
 
-// TODO: I think that the response stream of the http server does not need `Sync`, because it is impossible
-// to have multiple threads reading at the same time. I created a PR to tide, if he agrees to merge, then
-// I can remove this unsafe.
-// https://github.com/http-rs/http-types/pull/144
-unsafe impl<S> Sync for StreamBody<S> {}
-
 impl<S, E, D> AsyncRead for StreamBody<S>
 where
     D: Buf,

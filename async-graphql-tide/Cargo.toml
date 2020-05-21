@@ -18,8 +18,8 @@ tide = "0.8.1"
 async-trait = "0.1.30"
 serde_json = "1.0.51"
 futures = "0.3.4"
+async-std = "1.5.0"
 
 [dev-dependencies]
-async-std = "1.5.0"
 smol = { version = "0.1", features = ["tokio02"] }
 reqwest = "0.10.4"
