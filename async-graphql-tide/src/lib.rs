@@ -154,9 +154,8 @@ impl ResponseExt for Response {
                 // I created an issue and got a reply that this might be fixed in the future.
                 // https://github.com/http-rs/http-types/pull/144
                 // Now I can only use forwarding to solve the problem.
-                let mut stream = StreamBody::new(Box::pin(
-                    multipart_stream(stream).map(Result::Ok::<_, std::io::Error>),
-                ));
+                let mut stream =
+                    Box::pin(multipart_stream(stream).map(Result::Ok::<_, std::io::Error>));
                 let (mut tx, rx) = mpsc::channel(0);
                 async_std::task::spawn(async move {
                     while let Some(item) = stream.next().await {
@@ -165,7 +164,7 @@ impl ResponseExt for Response {
                         }
                     }
                 });
-                self.set_body(Body::from_reader(BufReader::new(rx), None));
+                self.set_body(Body::from_reader(BufReader::new(StreamBody::new(rx)), None));
                 Ok(self.set_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed"))
             }
         }
