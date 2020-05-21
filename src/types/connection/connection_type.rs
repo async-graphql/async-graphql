@@ -17,7 +17,7 @@ use std::borrow::Cow;
 /// If the `T` type is `OutputValueType`, you can return the value as a field function directly,
 /// otherwise you can use the `Connection::map` function to convert to a type that implements `OutputValueType`.
 /// `E` is an extension object type that extends the edge fields.
-pub struct Connection<T, E: ObjectType + Sync + Send = EmptyEdgeFields> {
+pub struct Connection<T, E: ObjectType + Send = EmptyEdgeFields> {
     /// The total number of records.
     pub total_count: Option<usize>,
 
@@ -28,7 +28,7 @@ pub struct Connection<T, E: ObjectType + Sync + Send = EmptyEdgeFields> {
     pub nodes: Vec<(Cursor, E, T)>,
 }
 
-impl<T, E: ObjectType + Sync + Send> Connection<T, E> {
+impl<T, E: ObjectType + Send> Connection<T, E> {
     /// Create a connection object.
     pub fn new(
         total_count: Option<usize>,

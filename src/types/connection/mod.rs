@@ -10,7 +10,6 @@ use crate::{Context, FieldResult, ObjectType};
 pub use connection_type::Connection;
 pub use cursor::Cursor;
 pub use page_info::PageInfo;
-pub use stream::StreamDataSource;
 
 /// Connection query operation
 #[derive(Debug, Clone)]
@@ -207,14 +206,14 @@ struct Pagination {
 /// }
 /// ```
 #[async_trait::async_trait]
-pub trait DataSource: Sync + Send {
+pub trait DataSource: Send {
     /// Record type
     type Element;
 
     /// Fields for Edge
     ///
     /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]`.
-    type EdgeFieldsObj: ObjectType + Send + Sync;
+    type EdgeFieldsObj: ObjectType + Send;
 
     /// Execute the query.
     async fn query(

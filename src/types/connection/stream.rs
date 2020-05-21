@@ -1,10 +1,20 @@
-use crate::types::connection::{EmptyEdgeFields, QueryOperation};
+use crate::types::connection::QueryOperation;
 use crate::{Connection, Context, Cursor, DataSource, FieldResult, ObjectType};
-use futures::{Stream, StreamExt};
+use futures::{stream::BoxStream, StreamExt};
 use std::collections::VecDeque;
-use std::pin::Pin;
 
-/// Utility struct to convert a Stream to a Connection
+struct State<T, E>
+where
+    T: Send,
+    E: ObjectType + Send,
+{
+    has_seen_before: bool,
+    has_prev_page: bool,
+    has_next_page: bool,
+    edges: VecDeque<(Cursor, E, T)>,
+}
+
+/// You can use a Pin<Box<Stream<Item = (Cursor, E, T)>>> as a datasource
 ///
 /// # Examples
 ///
@@ -23,14 +33,14 @@ use std::pin::Pin;
 ///         first: Option<i32>,
 ///         last: Option<i32>
 ///     ) -> FieldResult<Connection<&str>> {
-///         let edges_stream = futures::stream::iter(vec!["a", "b", "c", "d", "e", "f"])
+///         let mut edges_stream = futures::stream::iter(vec!["a", "b", "c", "d", "e", "f"])
 ///             .map(|node| {
 ///                 let cursor: Cursor = node.to_owned().into();
 ///                 (cursor, EmptyEdgeFields, node)
-///             });
+///             })
+///             .boxed();
 ///
-///         let mut source: StreamDataSource<_> = edges_stream.into();
-///         source.query(ctx, after, before, first, last).await
+///         edges_stream.query(ctx, after, before, first, last).await
 ///     }
 /// }
 ///
@@ -38,76 +48,44 @@ use std::pin::Pin;
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.execute("{ streamConnection(first: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
-///         "streamConnection": {
-///             "edges": [
-///                 { "node": "a" },
-///                 { "node": "b" }
-///             ]
-///         },
-///     }));
+///     assert_eq!(
+///         schema
+///             .execute("{ streamConnection(first: 2) { edges { node } } }")
+///             .await
+///             .unwrap()
+///             .data,
+///         serde_json::json!({
+///             "streamConnection": {
+///                 "edges": [
+///                     { "node": "a" },
+///                     { "node": "b" }
+///                 ]
+///             },
+///         })
+///     );
 ///
-///     assert_eq!(schema.execute("{ streamConnection(last: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
-///         "streamConnection": {
-///             "edges": [
-///                 { "node": "e" },
-///                 { "node": "f" }
-///             ]
-///         },
-///     }));
+///     assert_eq!(
+///         schema
+///             .execute("{ streamConnection(last: 2) { edges { node } } }")
+///             .await
+///             .unwrap()
+///             .data,
+///         serde_json::json!({
+///             "streamConnection": {
+///                 "edges": [
+///                     { "node": "e" },
+///                     { "node": "f" }
+///                 ]
+///             },
+///         })
+///     );
 /// }
 /// ```
-pub struct StreamDataSource<'a, T, E = EmptyEdgeFields>
-where
-    T: Send + Sync + 'a,
-    E: ObjectType + Send + Sync + 'a,
-{
-    stream: Pin<Box<dyn Stream<Item = (Cursor, E, T)> + Send + Sync + 'a>>,
-}
-
-impl<'a, T, E> StreamDataSource<'a, T, E>
-where
-    T: Send + Sync + 'a,
-    E: ObjectType + Send + Sync + 'a,
-{
-    /// Creates a StreamDataSource from an `Iterator` of edges.
-    pub fn from_iter<I>(iter: I) -> Self
-    where
-        I: Iterator<Item = (Cursor, E, T)> + Send + Sync + 'a,
-    {
-        futures::stream::iter(iter).into()
-    }
-}
-
-impl<'a, S: Stream, T, E> From<S> for StreamDataSource<'a, T, E>
-where
-    S: Stream<Item = (Cursor, E, T)> + Send + Sync + 'a,
-    T: Send + Sync + 'a,
-    E: ObjectType + Send + Sync + 'a,
-{
-    fn from(stream: S) -> Self {
-        StreamDataSource {
-            stream: Box::pin(stream),
-        }
-    }
-}
-
-struct State<T, E>
-where
-    T: Send + Sync,
-    E: ObjectType + Send + Sync,
-{
-    has_seen_before: bool,
-    has_prev_page: bool,
-    has_next_page: bool,
-    edges: VecDeque<(Cursor, E, T)>,
-}
-
 #[async_trait::async_trait]
-impl<'a, T, E> DataSource for StreamDataSource<'a, T, E>
+impl<'a, T, E> DataSource for BoxStream<'a, (Cursor, E, T)>
 where
-    T: Send + Sync + 'a,
-    E: ObjectType + Send + Sync + 'a,
+    T: Send + 'a,
+    E: ObjectType + Send + 'a,
 {
     type Element = T;
     type EdgeFieldsObj = E;
@@ -117,7 +95,7 @@ where
         _ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
-        let stream = std::mem::replace(&mut self.stream, Box::pin(futures::stream::empty()));
+        let stream = std::mem::replace(self, futures::stream::empty().boxed());
 
         let state = State::<Self::Element, Self::EdgeFieldsObj> {
             has_seen_before: false,
