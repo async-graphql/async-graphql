@@ -3,17 +3,6 @@ use crate::{Connection, Context, Cursor, DataSource, FieldResult, ObjectType};
 use futures::{stream::BoxStream, StreamExt};
 use std::collections::VecDeque;
 
-struct State<T, E>
-where
-    T: Send,
-    E: ObjectType + Send,
-{
-    has_seen_before: bool,
-    has_prev_page: bool,
-    has_next_page: bool,
-    edges: VecDeque<(Cursor, E, T)>,
-}
-
 /// You can use a Pin<Box<Stream<Item = (Cursor, E, T)>>> as a datasource
 ///
 /// # Examples
@@ -95,93 +84,88 @@ where
         _ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
-        let stream = std::mem::replace(self, futures::stream::empty().boxed());
+        let mut count: usize = 0;
+        let mut has_seen_before = false;
+        let mut has_prev_page = false;
+        let mut has_next_page = false;
+        let mut edges = VecDeque::new();
 
-        let state = State::<Self::Element, Self::EdgeFieldsObj> {
-            has_seen_before: false,
-            has_prev_page: false,
-            has_next_page: false,
-            edges: VecDeque::new(),
-        };
+        while let Some(edge) = self.next().await {
+            count += 1;
 
-        let state = stream
-            .fold(state, move |mut state, (cursor, fields, node)| {
-                if state.has_seen_before {
-                    return futures::future::ready(state);
+            if has_seen_before {
+                continue;
+            }
+
+            match operation {
+                QueryOperation::After { after }
+                | QueryOperation::Between { after, .. }
+                | QueryOperation::FirstAfter { after, .. }
+                | QueryOperation::FirstBetween { after, .. }
+                | QueryOperation::LastAfter { after, .. }
+                | QueryOperation::LastBetween { after, .. } => {
+                    if *after == edge.0 {
+                        has_prev_page = true;
+                        has_next_page = false;
+                        edges.clear();
+
+                        continue;
+                    }
                 }
+                _ => {}
+            }
 
-                match operation {
-                    QueryOperation::After { after }
-                    | QueryOperation::Between { after, .. }
-                    | QueryOperation::FirstAfter { after, .. }
-                    | QueryOperation::FirstBetween { after, .. }
-                    | QueryOperation::LastAfter { after, .. }
-                    | QueryOperation::LastBetween { after, .. } => {
-                        if *after == cursor {
-                            state.has_prev_page = true;
-                            state.has_next_page = false;
-                            state.edges.clear();
+            match operation {
+                QueryOperation::Before { before }
+                | QueryOperation::Between { before, .. }
+                | QueryOperation::FirstBefore { before, .. }
+                | QueryOperation::FirstBetween { before, .. }
+                | QueryOperation::LastBefore { before, .. }
+                | QueryOperation::LastBetween { before, .. } => {
+                    if *before == edge.0 {
+                        has_seen_before = true;
+                        has_next_page = true;
 
-                            return futures::future::ready(state);
-                        }
+                        continue;
                     }
-                    _ => {}
                 }
+                _ => {}
+            }
 
-                match operation {
-                    QueryOperation::Before { before }
-                    | QueryOperation::Between { before, .. }
-                    | QueryOperation::FirstBefore { before, .. }
-                    | QueryOperation::FirstBetween { before, .. }
-                    | QueryOperation::LastBefore { before, .. }
-                    | QueryOperation::LastBetween { before, .. } => {
-                        if *before == cursor {
-                            state.has_seen_before = true;
-                            state.has_next_page = true;
-
-                            return futures::future::ready(state);
-                        }
-                    }
-                    _ => {}
-                }
-
-                match operation {
-                    QueryOperation::First { limit }
-                    | QueryOperation::FirstAfter { limit, .. }
-                    | QueryOperation::FirstBefore { limit, .. }
-                    | QueryOperation::FirstBetween { limit, .. } => {
-                        if state.edges.len() < *limit {
-                            state.edges.push_back((cursor, fields, node))
-                        } else {
-                            state.has_next_page = true;
-                        }
-                    }
-
-                    QueryOperation::Last { limit }
-                    | QueryOperation::LastAfter { limit, .. }
-                    | QueryOperation::LastBefore { limit, .. }
-                    | QueryOperation::LastBetween { limit, .. } => {
-                        if state.edges.len() >= *limit {
-                            state.has_prev_page = true;
-                            state.edges.pop_front();
-                        }
-                        state.edges.push_back((cursor, fields, node));
-                    }
-
-                    _ => {
-                        state.edges.push_back((cursor, fields, node));
+            match operation {
+                QueryOperation::First { limit }
+                | QueryOperation::FirstAfter { limit, .. }
+                | QueryOperation::FirstBefore { limit, .. }
+                | QueryOperation::FirstBetween { limit, .. } => {
+                    if edges.len() < *limit {
+                        edges.push_back(edge)
+                    } else {
+                        has_next_page = true;
                     }
                 }
 
-                futures::future::ready(state)
-            })
-            .await;
+                QueryOperation::Last { limit }
+                | QueryOperation::LastAfter { limit, .. }
+                | QueryOperation::LastBefore { limit, .. }
+                | QueryOperation::LastBetween { limit, .. } => {
+                    if edges.len() >= *limit {
+                        has_prev_page = true;
+                        edges.pop_front();
+                    }
+                    edges.push_back(edge);
+                }
+
+                _ => {
+                    edges.push_back(edge);
+                }
+            }
+        }
 
         Ok(Connection::new(
-            None,
-            state.has_prev_page,
-            state.has_next_page,
-            state.edges.into(),
+            Some(count),
+            has_prev_page,
+            has_next_page,
+            edges.into(),
         ))
     }
 }

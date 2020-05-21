@@ -46,6 +46,7 @@ pub mod stream {
                 first: $first
                 last: $last
             ) {
+                totalCount
                 pageInfo {
                     hasPreviousPage
                     hasNextPage
@@ -75,6 +76,7 @@ pub mod stream {
             query.execute(&schema).await.unwrap().data,
             serde_json::json!({
                 "streamConnection": {
+                    "totalCount": 6,
                     "pageInfo": {
                         "hasPreviousPage": has_prev_page,
                         "hasNextPage": has_next_page,
