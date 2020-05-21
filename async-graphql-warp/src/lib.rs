@@ -6,8 +6,8 @@
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, Schema,
-    SubscriptionType, WebSocketTransport,
+    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
+    QueryResponse, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
@@ -16,6 +16,7 @@ use std::sync::Arc;
 use warp::filters::ws::Message;
 use warp::filters::BoxedFilter;
 use warp::reject::Reject;
+use warp::reply::Response;
 use warp::{Filter, Rejection, Reply};
 
 /// Bad request error
@@ -41,9 +42,9 @@ impl Reject for BadRequest {}
 /// ```no_run
 ///
 /// use async_graphql::*;
+/// use async_graphql_warp::*;
 /// use warp::{Filter, Reply};
 /// use std::convert::Infallible;
-/// use async_graphql::http::GQLResponse;
 ///
 /// struct QueryRoot;
 ///
@@ -59,8 +60,7 @@ impl Reject for BadRequest {}
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
-///         let resp = builder.execute(&schema).await;
-///         Ok::<_, Infallible>(warp::reply::json(&GQLResponse(resp)).into_response())
+///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await).into_response())
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
@@ -123,6 +123,7 @@ where
 ///
 /// ```no_run
 /// use async_graphql::*;
+/// use async_graphql_warp::*;
 /// use warp::Filter;
 /// use futures::{Stream, StreamExt};
 /// use std::time::Duration;
@@ -265,3 +266,42 @@ where
     })
         .boxed()
 }
+
+/// GraphQL reply
+pub struct GQLResponse(async_graphql::Result<QueryResponse>);
+
+impl From<async_graphql::Result<QueryResponse>> for GQLResponse {
+    fn from(resp: async_graphql::Result<QueryResponse>) -> Self {
+        GQLResponse(resp)
+    }
+}
+
+impl Reply for GQLResponse {
+    fn into_response(self) -> Response {
+        warp::reply::with_header(
+            warp::reply::json(&async_graphql::http::GQLResponse(self.0)),
+            "content-type",
+            "application/json",
+        )
+        .into_response()
+    }
+}
+
+// Waiting for this release: https://github.com/hyperium/hyper/commit/042c770603a212f22387807efe4fc672959df40c
+// /// GraphQL streaming reply
+// pub struct GQLResponseStream(StreamResponse);
+//
+// impl From<StreamResponse> for GQLResponseStream {
+//     fn from(resp: StreamResponse) -> Self {
+//         GQLResponseStream(resp)
+//     }
+// }
+//
+// impl Reply for GQLResponseStream {
+//     fn into_response(self) -> Response {
+//         match self.0 {
+//             StreamResponse::Single(resp) => GQLResponse(resp).into_response(),
+//             StreamResponse::Stream()
+//         }
+//     }
+// }

@@ -77,8 +77,8 @@ impl FromRequest for GQLRequest {
 pub struct GQLResponse(async_graphql::Result<QueryResponse>);
 
 impl From<async_graphql::Result<QueryResponse>> for GQLResponse {
-    fn from(res: async_graphql::Result<QueryResponse>) -> Self {
-        GQLResponse(res)
+    fn from(resp: async_graphql::Result<QueryResponse>) -> Self {
+        GQLResponse(resp)
     }
 }
 
