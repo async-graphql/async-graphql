@@ -11,15 +11,13 @@ where
     stream: Pin<Box<dyn Stream<Item = (Cursor, E, T)> + Send + Sync + 'a>>,
 }
 
-impl<'a, T, E> StreamDataSource<'a, T, E>
+impl<'a, S, T, E> From<S> for StreamDataSource<'a, T, E>
 where
+    S: Stream<Item = (Cursor, E, T)> + Send + Sync + 'a,
     T: Send + Sync + 'a,
     E: ObjectType + Send + Sync + 'a,
 {
-    pub fn new<S>(stream: S) -> Self
-    where
-        S: Stream<Item = (Cursor, E, T)> + Send + Sync + 'a,
-    {
+    fn from(stream: S) -> Self {
         StreamDataSource {
             stream: Box::pin(stream),
         }

@@ -22,7 +22,7 @@ impl DataSource for Integers {
     // 我们不需要扩展边的字段，所以传EmptyEdgeFields
     type EdgeFieldsObj = EmptyEdgeFields;
 
-    async fn query_operation(&self, _ctx: &Context<'_>, operation: &QueryOperation<'_>) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+    async fn query_operation(&mut self, _ctx: &Context<'_>, operation: &QueryOperation<'_>) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
         let (start, end) = match operation {
             // 向前查找
             QueryOperation::First {limit} => {

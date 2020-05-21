@@ -133,7 +133,7 @@ struct Pagination {
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+///     async fn query_operation(&mut self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::First {limit} => {
 ///                 let start = 0;

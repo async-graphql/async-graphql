@@ -15,7 +15,7 @@ pub mod stream {
             first: Option<i32>,
             last: Option<i32>,
         ) -> FieldResult<Connection<String>> {
-            let stream = futures::stream::iter(vec![
+            let mut source: StreamDataSource<_> = futures::stream::iter(vec![
                 "a".to_owned(),
                 "b".to_owned(),
                 "c".to_owned(),
@@ -26,9 +26,9 @@ pub mod stream {
             .map(|node| {
                 let cursor: Cursor = node.clone().into();
                 (cursor, EmptyEdgeFields, node)
-            });
+            })
+            .into();
 
-            let mut source = StreamDataSource::new(stream);
             source.query(ctx, after, before, first, last).await
         }
     }
