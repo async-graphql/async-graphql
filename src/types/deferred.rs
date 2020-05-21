@@ -8,7 +8,7 @@ use std::sync::atomic::AtomicUsize;
 
 /// Deferred type
 ///
-/// Allows to defer the type of results returned, Only takes effect when the @defer directive exists on the field.
+/// Allows to defer the type of results returned, only takes effect when the @defer directive exists on the field.
 pub struct Deferred<T: Type + Send + Sync + Clone + 'static>(T);
 
 impl<T: Type + Send + Sync + Clone + 'static> From<T> for Deferred<T> {

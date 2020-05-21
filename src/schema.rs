@@ -235,6 +235,13 @@ where
             args: Default::default(),
         });
 
+        registry.add_directive(MetaDirective {
+            name: "stream",
+            description: None,
+            locations: vec![__DirectiveLocation::FIELD],
+            args: Default::default(),
+        });
+
         // register scalars
         bool::create_type_info(&mut registry);
         i32::create_type_info(&mut registry);

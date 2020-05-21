@@ -81,10 +81,12 @@ impl QueryResponse {
                 }
                 serde_json::Value::Number(idx) => {
                     if let serde_json::Value::Array(array) = p {
-                        if let Some(next) = array.get_mut(idx.as_i64().unwrap() as usize) {
-                            p = next;
-                            continue;
+                        let idx = idx.as_i64().unwrap() as usize;
+                        while array.len() <= idx {
+                            array.push(serde_json::Value::Null);
                         }
+                        p = array.get_mut(idx as usize).unwrap();
+                        continue;
                     }
                     return;
                 }
