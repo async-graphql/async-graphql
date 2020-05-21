@@ -1,5 +1,6 @@
 pub mod stream {
     use async_graphql::*;
+    use futures::StreamExt;
     use serde_json::json;
 
     struct Root;
@@ -21,11 +22,13 @@ pub mod stream {
                 "d".to_owned(),
                 "e".to_owned(),
                 "f".to_owned(),
-            ]);
-
-            let mut source = StreamDataSource::new(stream, |s: &String| {
-                futures::future::ready(s.clone().into())
+            ])
+            .map(|node| {
+                let cursor: Cursor = node.clone().into();
+                (cursor, EmptyEdgeFields, node)
             });
+
+            let mut source = StreamDataSource::new(stream);
             source.query(ctx, after, before, first, last).await
         }
     }
