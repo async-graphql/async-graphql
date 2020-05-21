@@ -643,7 +643,7 @@ impl DataSource for Integers {
     // 我们不需要扩展边的字段，所以传EmptyEdgeFields
     type EdgeFieldsObj = EmptyEdgeFields;
 
-    async fn query_operation(&amp;self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
+    async fn query_operation(&amp;mut self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
         let (start, end) = match operation {
             // 向前查找
             QueryOperation::First {limit} =&gt; {

@@ -170,7 +170,7 @@ impl DataSource for Integers {
     // We don't need to extend the edge fields, so this can be empty
     type EdgeFieldsObj = EmptyEdgeFields;
 
-    async fn query_operation(&amp;self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
+    async fn query_operation(&amp;mut self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
         let (start, end) = match operation {
             // Look from beginning up to limit
             QueryOperation::First {limit} =&gt; {
