@@ -190,7 +190,7 @@ impl QueryBuilder {
         let schema = schema.clone();
         match self.execute_first(&schema).await {
             Ok((first_resp, defer_list)) if defer_list.futures.lock().is_empty() => {
-                return StreamResponse::Single(Ok(first_resp));
+                StreamResponse::Single(Ok(first_resp))
             }
             Err(err) => StreamResponse::Single(Err(err)),
             Ok((first_resp, defer_list)) => {

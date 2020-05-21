@@ -4,15 +4,17 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::needless_doctest_main)]
 
-use async_graphql::http::{GQLRequest, GQLResponse};
+use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody};
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, ParseRequestError, QueryBuilder,
-    QueryResponse, Schema, SubscriptionType,
+    QueryResponse, Schema, StreamResponse, SubscriptionType,
 };
 use async_trait::async_trait;
+use futures::io::BufReader;
+use futures::StreamExt;
 use tide::{
     http::{headers, Method},
-    Request, Response, Status, StatusCode,
+    Body, Request, Response, Status, StatusCode,
 };
 
 /// GraphQL request handler
@@ -131,12 +133,28 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
 /// Tide response extension
 ///
 pub trait ResponseExt: Sized {
-    /// Set Body as the result of a GraphQL query.
+    /// Set body as the result of a GraphQL query.
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self>;
+
+    /// Set body as the result of a GraphQL streaming query.
+    fn body_graphql_stream(self, res: StreamResponse) -> serde_json::Result<Self>;
 }
 
 impl ResponseExt for Response {
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self> {
         self.body_json(&GQLResponse(res))
+    }
+
+    fn body_graphql_stream(mut self, res: StreamResponse) -> serde_json::Result<Self> {
+        match res {
+            StreamResponse::Single(res) => self.body_graphql(res),
+            StreamResponse::Stream(stream) => {
+                let r = BufReader::new(StreamBody::new(Box::pin(
+                    multipart_stream(stream).map(Result::Ok::<_, std::io::Error>),
+                )));
+                self.set_body(Body::from_reader(r, None));
+                Ok(self.set_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed"))
+            }
+        }
     }
 }

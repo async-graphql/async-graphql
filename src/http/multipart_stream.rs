@@ -4,9 +4,7 @@ use bytes::{buf::BufExt, Buf, Bytes};
 use futures::{Stream, StreamExt};
 
 /// Create a multipart response data stream.
-pub fn multipart_stream(
-    s: impl Stream<Item = Result<QueryResponse>> + Unpin + 'static,
-) -> impl Stream<Item = Bytes> {
+pub fn multipart_stream(s: impl Stream<Item = Result<QueryResponse>>) -> impl Stream<Item = Bytes> {
     s.map(|res| serde_json::to_vec(&GQLResponse(res)).unwrap())
         .map(|data| {
             Bytes::from(format!(

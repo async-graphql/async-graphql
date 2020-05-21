@@ -44,7 +44,6 @@ fn quickstart() -> Result<()> {
         let client = Task::<Result<()>>::spawn(async move {
             Timer::after(Duration::from_millis(300)).await;
 
-            //
             let resp = reqwest::Client::new()
                 .post(format!("http://{}", listen_addr).as_str())
                 .body(r#"{"query":"{ add(a: 10, b: 20) }"}"#)

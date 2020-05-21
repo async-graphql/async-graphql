@@ -111,9 +111,8 @@ impl Responder for GQLResponseStream {
         match self.0 {
             StreamResponse::Single(resp) => GQLResponse(resp).respond_to(req),
             StreamResponse::Stream(stream) => {
-                let body = BodyStream::new(
-                    multipart_stream(stream).map(|item| Result::<_, Infallible>::Ok(item)),
-                );
+                let body =
+                    BodyStream::new(multipart_stream(stream).map(Result::<_, Infallible>::Ok));
                 let res = HttpResponse::build(StatusCode::OK)
                     .content_type("multipart/mixed; boundary=\"-\"")
                     .body(body);
