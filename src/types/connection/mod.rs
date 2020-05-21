@@ -3,6 +3,7 @@ mod cursor;
 mod edge;
 mod page_info;
 mod slice;
+mod stream;
 
 use crate::{Context, FieldResult, ObjectType};
 
@@ -11,6 +12,7 @@ pub use cursor::Cursor;
 pub use page_info::PageInfo;
 
 /// Connection query operation
+#[derive(Debug, Clone)]
 pub enum QueryOperation {
     /// Return all results
     None,
@@ -130,7 +132,7 @@ struct Pagination {
 ///     type Element = i32;
 ///     type EdgeFieldsObj = DiffFields;
 ///
-///     async fn query_operation(&self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
+///     async fn query_operation(&mut self, ctx: &Context<'_>, operation: &QueryOperation) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
 ///         let (start, end) = match operation {
 ///             QueryOperation::First {limit} => {
 ///                 let start = 0;
@@ -204,18 +206,18 @@ struct Pagination {
 /// }
 /// ```
 #[async_trait::async_trait]
-pub trait DataSource: Sync + Send {
+pub trait DataSource: Send {
     /// Record type
     type Element;
 
     /// Fields for Edge
     ///
     /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]`.
-    type EdgeFieldsObj: ObjectType + Send + Sync;
+    type EdgeFieldsObj: ObjectType + Send;
 
     /// Execute the query.
     async fn query(
-        &self,
+        &mut self,
         ctx: &Context<'_>,
         after: Option<Cursor>,
         before: Option<Cursor>,
@@ -340,7 +342,7 @@ pub trait DataSource: Sync + Send {
 
     /// Parses the parameters and executes the query，Usually you just need to implement this method.
     async fn query_operation(
-        &self,
+        &mut self,
         ctx: &Context<'_>,
         operation: &QueryOperation,
     ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>>;
