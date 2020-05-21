@@ -3,7 +3,6 @@ use futures::StreamExt;
 
 #[async_std::test]
 pub async fn test_defer() {
-    #[derive(Clone)]
     struct MyObj;
 
     #[Object]
@@ -96,7 +95,6 @@ pub async fn test_defer() {
 #[async_std::test]
 pub async fn test_stream() {
     #[SimpleObject]
-    #[derive(Clone)]
     struct MyObj {
         value: i32,
     }
