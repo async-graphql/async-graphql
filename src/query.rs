@@ -13,6 +13,7 @@ use futures::{Stream, StreamExt};
 use itertools::Itertools;
 use std::any::Any;
 use std::fs::File;
+use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -97,6 +98,25 @@ impl QueryResponse {
     }
 }
 
+/// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
+pub enum StreamResponse {
+    /// There is no `@defer` or `@stream` directive in the query, this is the final result.
+    Single(Result<QueryResponse>),
+
+    /// Streaming responses.
+    Stream(Pin<Box<dyn Stream<Item = Result<QueryResponse>> + Send + 'static>>),
+}
+
+impl StreamResponse {
+    /// Convert to a stream.
+    pub fn into_stream(self) -> impl Stream<Item = Result<QueryResponse>> + Send + 'static {
+        match self {
+            StreamResponse::Single(resp) => Box::pin(futures::stream::once(async move { resp })),
+            StreamResponse::Stream(stream) => stream,
+        }
+    }
+}
+
 /// Query builder
 pub struct QueryBuilder {
     pub(crate) query_source: String,
@@ -158,43 +178,50 @@ impl QueryBuilder {
     /// Execute the query, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub fn execute_stream<Query, Mutation, Subscription>(
+    pub async fn execute_stream<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-    ) -> impl Stream<Item = Result<QueryResponse>>
+    ) -> StreamResponse
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let schema = schema.clone();
-        let stream = async_stream::try_stream! {
-            let (first_resp, defer_list) = self.execute_first(&schema).await?;
-            yield first_resp;
-
-            let mut current_defer_list = Vec::new();
-            for fut in defer_list.futures.into_inner() {
-                current_defer_list.push((defer_list.path_prefix.clone(), fut));
+        match self.execute_first(&schema).await {
+            Ok((first_resp, defer_list)) if defer_list.futures.lock().is_empty() => {
+                return StreamResponse::Single(Ok(first_resp));
             }
+            Err(err) => StreamResponse::Single(Err(err)),
+            Ok((first_resp, defer_list)) => {
+                let stream = async_stream::try_stream! {
+                    yield first_resp;
 
-            loop {
-                let mut next_defer_list = Vec::new();
-                for (path_prefix, defer) in current_defer_list {
-                    let (res, mut defer_list) = defer.await?;
+                    let mut current_defer_list = Vec::new();
                     for fut in defer_list.futures.into_inner() {
-                        let mut next_path_prefix = path_prefix.clone();
-                        next_path_prefix.extend(defer_list.path_prefix.clone());
-                        next_defer_list.push((next_path_prefix, fut));
+                        current_defer_list.push((defer_list.path_prefix.clone(), fut));
                     }
-                    yield res.apply_path_prefix(path_prefix);
-                }
-                if next_defer_list.is_empty() {
-                    break;
-                }
-                current_defer_list = next_defer_list;
+
+                    loop {
+                        let mut next_defer_list = Vec::new();
+                        for (path_prefix, defer) in current_defer_list {
+                            let (res, mut defer_list) = defer.await?;
+                            for fut in defer_list.futures.into_inner() {
+                                let mut next_path_prefix = path_prefix.clone();
+                                next_path_prefix.extend(defer_list.path_prefix.clone());
+                                next_defer_list.push((next_path_prefix, fut));
+                            }
+                            yield res.apply_path_prefix(path_prefix);
+                        }
+                        if next_defer_list.is_empty() {
+                            break;
+                        }
+                        current_defer_list = next_defer_list;
+                    }
+                };
+                StreamResponse::Stream(Box::pin(stream))
             }
-        };
-        Box::pin(stream)
+        }
     }
 
     async fn execute_first<'a, Query, Mutation, Subscription>(
@@ -332,11 +359,16 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let mut stream = self.execute_stream(schema);
-        let mut resp = stream.next().await.unwrap()?;
-        while let Some(resp_part) = stream.next().await.transpose()? {
-            resp.merge(resp_part);
+        let resp = self.execute_stream(schema).await;
+        match resp {
+            StreamResponse::Single(res) => res,
+            StreamResponse::Stream(mut stream) => {
+                let mut resp = stream.next().await.unwrap()?;
+                while let Some(resp_part) = stream.next().await.transpose()? {
+                    resp.merge(resp_part);
+                }
+                Ok(resp)
+            }
         }
-        Ok(resp)
     }
 }

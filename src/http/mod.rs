@@ -2,12 +2,14 @@
 
 mod graphiql_source;
 mod into_query_builder;
+mod multipart_stream;
 mod playground_source;
 mod stream_body;
 
 use itertools::Itertools;
 
 pub use graphiql_source::graphiql_source;
+pub use multipart_stream::multipart_stream;
 pub use playground_source::playground_source;
 pub use stream_body::StreamBody;
 

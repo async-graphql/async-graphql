@@ -142,7 +142,9 @@ pub use error::{
 };
 pub use look_ahead::Lookahead;
 pub use parser::{Pos, Positioned, Value};
-pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
+pub use query::{
+    IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse, StreamResponse,
+};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};

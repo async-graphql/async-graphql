@@ -8,14 +8,15 @@ use actix_web::body::BodyStream;
 use actix_web::dev::{Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::StreamBody;
+use async_graphql::http::{multipart_stream, StreamBody};
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse,
+    StreamResponse,
 };
-use bytes::{buf::BufExt, Buf, Bytes};
 use futures::channel::mpsc;
 use futures::future::Ready;
-use futures::{Future, SinkExt, Stream, StreamExt, TryFutureExt};
+use futures::{Future, SinkExt, StreamExt, TryFutureExt};
+use std::convert::Infallible;
 use std::pin::Pin;
 pub use subscription::WSSubscription;
 
@@ -94,43 +95,30 @@ impl Responder for GQLResponse {
 }
 
 /// Responder for GraphQL response stream
-pub struct GQLResponseStream<S: Stream<Item = async_graphql::Result<QueryResponse>>>(S);
+pub struct GQLResponseStream(StreamResponse);
 
-impl<S: Stream<Item = async_graphql::Result<QueryResponse>> + 'static> From<S>
-    for GQLResponseStream<S>
-{
-    fn from(stream: S) -> Self {
-        GQLResponseStream(stream)
+impl From<StreamResponse> for GQLResponseStream {
+    fn from(resp: StreamResponse) -> Self {
+        GQLResponseStream(resp)
     }
 }
 
-impl<S: Stream<Item = async_graphql::Result<QueryResponse>> + Unpin + 'static> Responder
-    for GQLResponseStream<S>
-{
+impl Responder for GQLResponseStream {
     type Error = Error;
     type Future = Ready<Result<HttpResponse, Error>>;
 
-    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        let body = BodyStream::new(
-            self.0
-                .map(|res| serde_json::to_vec(&async_graphql::http::GQLResponse(res)).unwrap())
-                .map(|data| {
-                    Ok::<_, std::convert::Infallible>(
-                        Bytes::from(format!(
-                            "\r\n---\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
-                            data.len()
-                        ))
-                        .chain(Bytes::from(data))
-                        .to_bytes(),
-                    )
-                })
-                .chain(futures::stream::once(futures::future::ok(
-                    Bytes::from_static(b"\r\n-----\r\n"),
-                ))),
-        );
-        let res = HttpResponse::build(StatusCode::OK)
-            .content_type("multipart/mixed; boundary=\"-\"")
-            .body(body);
-        futures::future::ok(res)
+    fn respond_to(self, req: &HttpRequest) -> Self::Future {
+        match self.0 {
+            StreamResponse::Single(resp) => GQLResponse(resp).respond_to(req),
+            StreamResponse::Stream(stream) => {
+                let body = BodyStream::new(
+                    multipart_stream(stream).map(|item| Result::<_, Infallible>::Ok(item)),
+                );
+                let res = HttpResponse::build(StatusCode::OK)
+                    .content_type("multipart/mixed; boundary=\"-\"")
+                    .body(body);
+                futures::future::ok(res)
+            }
+        }
     }
 }

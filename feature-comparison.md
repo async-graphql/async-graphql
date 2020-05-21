@@ -24,6 +24,7 @@ Comparing Features of Other Rust GraphQL Implementations
 | Field guard | 👍              | ⛔️               |
 | Multipart request(upload file) | 👍 | ⛔️               |
 | Subscription   | 👍            | ⛔️               |
+| @defer/@stream | 👍            | ⛔️               |
 | Opentracing     | 👍         | ⛔️               |
 | Apollo Federation | 👍         | ⛔️               |
 | Apollo Tracing | 👍         | ⛔️               |
