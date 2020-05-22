@@ -15,8 +15,6 @@ mod bson;
 mod chrono_tz;
 #[cfg(feature = "uuid")]
 mod url;
-#[cfg(feature = "uuid")]
-mod uuid;
 
 pub use any::Any;
 pub use id::ID;
