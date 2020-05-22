@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-parser"
-version = "1.13.1"
+version = "1.13.2"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "GraphQL query parser for async-graphql"
