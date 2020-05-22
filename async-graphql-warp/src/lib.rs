@@ -43,7 +43,7 @@ impl Reject for BadRequest {}
 ///
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::{Filter, Reply};
+/// use warp::Filter;
 /// use std::convert::Infallible;
 ///
 /// struct QueryRoot;
@@ -60,7 +60,7 @@ impl Reject for BadRequest {}
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
-///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await).into_response())
+///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }

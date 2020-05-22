@@ -1,21 +1,22 @@
 use crate::context::Data;
-use crate::extensions::{BoxExtension, Extension};
+use crate::extensions::{BoxExtension, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::query::{QueryBuilder, StreamResponse};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
-use crate::validation::{check_rules, ValidationMode};
+use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result, SubscriptionStream,
-    SubscriptionType, Type, Variables, ID,
+    CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
+    SubscriptionStream, SubscriptionType, Type, Variables, ID,
 };
-use async_graphql_parser::query::OperationType;
+use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;
+use itertools::Itertools;
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
@@ -285,6 +286,15 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
+    pub(crate) fn create_extensions(&self) -> Extensions {
+        Extensions(
+            self.extensions
+                .iter()
+                .map(|factory| factory())
+                .collect_vec(),
+        )
+    }
+
     /// Execute query without create the `QueryBuilder`.
     pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
         QueryBuilder::new(query_source).execute(self).await
@@ -297,6 +307,47 @@ where
         QueryBuilder::new(query_source).execute_stream(self).await
     }
 
+    pub(crate) fn prepare_query(
+        &self,
+        source: &str,
+    ) -> Result<(Document, CacheControl, Extensions)> {
+        // create extension instances
+        let extensions = self.create_extensions();
+
+        extensions.parse_start(source);
+        let document = extensions.log_error(parse_query(source).map_err(Into::<Error>::into))?;
+        extensions.parse_end();
+
+        // check rules
+        extensions.validation_start();
+        let CheckResult {
+            cache_control,
+            complexity,
+            depth,
+        } = extensions.log_error(check_rules(
+            &self.env.registry,
+            &document,
+            self.validation_mode,
+        ))?;
+        extensions.validation_end();
+
+        // check limit
+        if let Some(limit_complexity) = self.complexity {
+            if complexity > limit_complexity {
+                return extensions
+                    .log_error(Err(QueryError::TooComplex.into_error(Pos::default())));
+            }
+        }
+
+        if let Some(limit_depth) = self.depth {
+            if depth > limit_depth {
+                return extensions.log_error(Err(QueryError::TooDeep.into_error(Pos::default())));
+            }
+        }
+
+        Ok((document, cache_control, extensions))
+    }
+
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
     pub async fn create_subscription_stream(
         &self,
@@ -305,26 +356,30 @@ where
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let mut document = parse_query(source).map_err(Into::<Error>::into)?;
-        check_rules(&self.env.registry, &document, self.0.validation_mode)?;
+        let (mut document, _, extensions) = self.prepare_query(source)?;
 
         if !document.retain_operation(operation_name) {
-            return if let Some(name) = operation_name {
+            return extensions.log_error(if let Some(name) = operation_name {
                 Err(QueryError::UnknownOperationNamed {
                     name: name.to_string(),
                 }
                 .into_error(Pos::default()))
             } else {
                 Err(QueryError::MissingOperation.into_error(Pos::default()))
-            };
+            });
         }
 
         if document.current_operation().ty != OperationType::Subscription {
-            return Err(QueryError::NotSupported.into_error(Pos::default()));
+            return extensions.log_error(Err(QueryError::NotSupported.into_error(Pos::default())));
         }
 
         let resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(variables, document, ctx_data.unwrap_or_default());
+        let env = QueryEnv::new(
+            extensions,
+            variables,
+            document,
+            ctx_data.unwrap_or_default(),
+        );
         let ctx = env.create_context(
             &self.env,
             None,
@@ -333,7 +388,9 @@ where
             None,
         );
         let mut streams = Vec::new();
-        create_subscription_stream(self, env.clone(), &ctx, &mut streams).await?;
+        ctx.query_env
+            .extensions
+            .log_error(create_subscription_stream(self, env.clone(), &ctx, &mut streams).await)?;
         Ok(futures::stream::select_all(streams))
     }
 

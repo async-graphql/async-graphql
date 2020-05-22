@@ -1,13 +1,22 @@
 //! Extensions for schema
 
 mod apollo_tracing;
+mod logger;
 mod tracing;
 
-pub use self::tracing::Tracing;
 use crate::context::{QueryPathNode, ResolveId};
-pub use apollo_tracing::ApolloTracing;
+use crate::Result;
+
+pub use self::apollo_tracing::ApolloTracing;
+pub use self::logger::Logger;
+pub use self::tracing::Tracing;
+use crate::Error;
+use serde_json::Value;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
+
+#[doc(hidden)]
+pub struct Extensions(pub(crate) Vec<BoxExtension>);
 
 /// Parameters for `Extension::resolve_field_start`
 pub struct ResolveInfo<'a> {
@@ -52,13 +61,86 @@ pub trait Extension: Sync + Send + 'static {
     fn execution_end(&self) {}
 
     /// Called at the begin of the resolve field.
-    fn resolve_field_start(&self, info: &ResolveInfo<'_>) {}
+    fn resolve_start(&self, info: &ResolveInfo<'_>) {}
 
     /// Called at the end of the resolve field.
-    fn resolve_field_end(&self, resolve_id: ResolveId) {}
+    fn resolve_end(&self, info: &ResolveInfo<'_>) {}
+
+    /// Called when an error occurs.
+    fn error(&self, err: &Error) {}
 
     /// Get the results
     fn result(&self) -> Option<serde_json::Value> {
         None
+    }
+}
+
+impl Extensions {
+    pub(crate) fn log_error<T>(&self, res: Result<T>) -> Result<T> {
+        if let Err(err) = &res {
+            self.error(err);
+        }
+        res
+    }
+}
+
+impl Extension for Extensions {
+    fn parse_start(&self, query_source: &str) {
+        self.0.iter().for_each(|e| e.parse_start(query_source));
+    }
+
+    fn parse_end(&self) {
+        self.0.iter().for_each(|e| e.parse_end());
+    }
+
+    fn validation_start(&self) {
+        self.0.iter().for_each(|e| e.validation_start());
+    }
+
+    fn validation_end(&self) {
+        self.0.iter().for_each(|e| e.validation_end());
+    }
+
+    fn execution_start(&self) {
+        self.0.iter().for_each(|e| e.execution_start());
+    }
+
+    fn execution_end(&self) {
+        self.0.iter().for_each(|e| e.execution_end());
+    }
+
+    fn resolve_start(&self, info: &ResolveInfo<'_>) {
+        self.0.iter().for_each(|e| e.resolve_start(info));
+    }
+
+    fn resolve_end(&self, resolve_id: &ResolveInfo<'_>) {
+        self.0.iter().for_each(|e| e.resolve_end(resolve_id));
+    }
+
+    fn error(&self, err: &Error) {
+        self.0.iter().for_each(|e| e.error(err));
+    }
+
+    fn result(&self) -> Option<Value> {
+        if !self.0.is_empty() {
+            let value = self
+                .0
+                .iter()
+                .filter_map(|e| {
+                    if let Some(name) = e.name() {
+                        e.result().map(|res| (name.to_string(), res))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<serde_json::Map<_, _>>();
+            if value.is_empty() {
+                None
+            } else {
+                Some(value.into())
+            }
+        } else {
+            None
+        }
     }
 }

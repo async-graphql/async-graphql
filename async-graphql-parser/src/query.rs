@@ -37,6 +37,7 @@ impl Directive {
 
 pub type FragmentsMap = HashMap<String, Positioned<FragmentDefinition>>;
 
+/// Query operation type
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperationType {
     Query,

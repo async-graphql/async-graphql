@@ -1,4 +1,3 @@
-use crate::context::ResolveId;
 use crate::extensions::{Extension, ResolveInfo};
 use chrono::{DateTime, Utc};
 use parking_lot::Mutex;
@@ -85,7 +84,7 @@ impl Extension for ApolloTracing {
         self.inner.lock().end_time = Utc::now();
     }
 
-    fn resolve_field_start(&self, info: &ResolveInfo<'_>) {
+    fn resolve_start(&self, info: &ResolveInfo<'_>) {
         let mut inner = self.inner.lock();
         inner.pending_resolves.insert(
             info.resolve_id.current,
@@ -99,9 +98,9 @@ impl Extension for ApolloTracing {
         );
     }
 
-    fn resolve_field_end(&self, resolve_id: ResolveId) {
+    fn resolve_end(&self, info: &ResolveInfo<'_>) {
         let mut inner = self.inner.lock();
-        if let Some(pending_resolve) = inner.pending_resolves.remove(&resolve_id.current) {
+        if let Some(pending_resolve) = inner.pending_resolves.remove(&info.resolve_id.current) {
             let start_offset = (pending_resolve.start_time - inner.start_time)
                 .num_nanoseconds()
                 .unwrap();

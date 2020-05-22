@@ -1,4 +1,3 @@
-use crate::context::ResolveId;
 use crate::extensions::{Extension, ResolveInfo};
 use crate::QueryPathSegment;
 use parking_lot::Mutex;
@@ -43,7 +42,7 @@ impl Extension for Tracing {
         }
     }
 
-    fn resolve_field_start(&self, info: &ResolveInfo<'_>) {
+    fn resolve_start(&self, info: &ResolveInfo<'_>) {
         let mut inner = self.inner.lock();
         let parent_span = info
             .resolve_id
@@ -76,8 +75,8 @@ impl Extension for Tracing {
         }
     }
 
-    fn resolve_field_end(&self, resolve_id: ResolveId) {
-        if let Some(id) = self.inner.lock().fields.remove(&resolve_id.current) {
+    fn resolve_end(&self, info: &ResolveInfo<'_>) {
+        if let Some(id) = self.inner.lock().fields.remove(&info.resolve_id.current) {
             tracing::dispatcher::get_default(|d| d.exit(&id));
         }
     }

@@ -1,16 +1,14 @@
 use crate::context::{Data, DeferList, ResolveId};
 use crate::error::ParseRequestError;
+use crate::extensions::Extension;
 use crate::mutation_resolver::do_mutation_resolve;
-use crate::parser::parse_query;
 use crate::registry::CacheControl;
-use crate::validation::{check_rules, CheckResult};
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
     SubscriptionType, Variables,
 };
 use async_graphql_parser::query::OperationType;
 use futures::{Stream, StreamExt};
-use itertools::Itertools;
 use std::any::Any;
 use std::fs::File;
 use std::pin::Pin;
@@ -50,7 +48,7 @@ pub struct QueryResponse {
     pub data: serde_json::Value,
 
     /// Extensions result
-    pub extensions: Option<serde_json::Map<String, serde_json::Value>>,
+    pub extensions: Option<serde_json::Value>,
 
     /// Cache control value
     pub cache_control: CacheControl,
@@ -233,46 +231,12 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        // create extension instances
-        let extensions = schema
-            .extensions
-            .iter()
-            .map(|factory| factory())
-            .collect_vec();
-
-        // parse query source
-        extensions
-            .iter()
-            .for_each(|e| e.parse_start(&self.query_source));
-        let mut document = parse_query(&self.query_source).map_err(Into::<Error>::into)?;
-        extensions.iter().for_each(|e| e.parse_end());
-
-        // check rules
-        extensions.iter().for_each(|e| e.validation_start());
-        let CheckResult {
-            cache_control,
-            complexity,
-            depth,
-        } = check_rules(&schema.env.registry, &document, schema.validation_mode)?;
-        extensions.iter().for_each(|e| e.validation_end());
-
-        // check limit
-        if let Some(limit_complexity) = schema.complexity {
-            if complexity > limit_complexity {
-                return Err(QueryError::TooComplex.into_error(Pos::default()));
-            }
-        }
-
-        if let Some(limit_depth) = schema.depth {
-            if depth > limit_depth {
-                return Err(QueryError::TooDeep.into_error(Pos::default()));
-            }
-        }
+        let (mut document, cache_control, extensions) = schema.prepare_query(&self.query_source)?;
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
         if !document.retain_operation(self.operation_name.as_deref()) {
-            return if let Some(operation_name) = self.operation_name {
+            return extensions.log_error(if let Some(operation_name) = self.operation_name {
                 Err(Error::Query {
                     pos: Pos::default(),
                     path: None,
@@ -286,10 +250,11 @@ impl QueryBuilder {
                     path: None,
                     err: QueryError::MissingOperation,
                 })
-            };
+            });
         }
 
         let env = QueryEnv::new(
+            extensions,
             self.variables,
             document,
             Arc::new(self.ctx_data.unwrap_or_default()),
@@ -302,14 +267,13 @@ impl QueryBuilder {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
-            extensions: &extensions,
             item: &env.document.current_operation().selection_set,
             schema_env: &schema.env,
             query_env: &env,
             defer_list: Some(&defer_list),
         };
 
-        extensions.iter().for_each(|e| e.execution_start());
+        env.extensions.execution_start();
 
         let data = match &env.document.current_operation().ty {
             OperationType::Query => do_resolve(&ctx, &schema.query).await?,
@@ -323,27 +287,12 @@ impl QueryBuilder {
             }
         };
 
-        extensions.iter().for_each(|e| e.execution_end());
+        env.extensions.execution_end();
 
         let res = QueryResponse {
             path: None,
             data,
-            extensions: if !extensions.is_empty() {
-                Some(
-                    extensions
-                        .iter()
-                        .filter_map(|e| {
-                            if let Some(name) = e.name() {
-                                e.result().map(|res| (name.to_string(), res))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<serde_json::Map<_, _>>(),
-                )
-            } else {
-                None
-            },
+            extensions: env.extensions.result(),
             cache_control,
         };
         Ok((res, defer_list))
