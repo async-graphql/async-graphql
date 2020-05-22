@@ -389,6 +389,12 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the specified data type does not exist.
     pub fn data<D: Any + Send + Sync>(&self) -> &D {
         self.data_opt::<D>()
             .expect("The specified data type does not exist.")
