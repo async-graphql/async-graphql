@@ -1,96 +1,135 @@
-use crate::types::connection::cursor::Cursor;
-use crate::types::connection::edge::Edge;
-use crate::types::connection::page_info::PageInfo;
+use crate::connection::edge::Edge;
+use crate::connection::page_info::PageInfo;
+use crate::types::connection::{CursorType, EmptyEdgeFields};
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, EmptyEdgeFields, Error, ObjectType,
+    do_resolve, registry, Context, ContextSelectionSet, Error, FieldResult, ObjectType,
     OutputValueType, Positioned, QueryError, Result, Type,
 };
 use async_graphql_parser::query::Field;
+use futures::{Stream, TryStreamExt};
 use indexmap::map::IndexMap;
 use inflector::Inflector;
 use itertools::Itertools;
 use std::borrow::Cow;
 
-/// Connection type
-///
-/// Connection is the result of a query for `DataSource`,
-/// If the `T` type is `OutputValueType`, you can return the value as a field function directly,
-/// otherwise you can use the `Connection::map` function to convert to a type that implements `OutputValueType`.
-/// `E` is an extension object type that extends the edge fields.
-pub struct Connection<T, E: ObjectType + Send = EmptyEdgeFields> {
-    /// The total number of records.
-    pub total_count: Option<usize>,
-
-    /// Information about pagination in a connection.
-    pub page_info: PageInfo,
-
-    /// All records of the current page.
-    pub nodes: Vec<(Cursor, E, T)>,
+/// The record type output by the data source
+pub struct Record<C, E, T> {
+    cursor: C,
+    edge: E,
+    element: T,
 }
 
-impl<T, E: ObjectType + Send> Connection<T, E> {
-    /// Create a connection object.
-    pub fn new(
-        total_count: Option<usize>,
+impl<C, E, T> Record<C, E, T> {
+    pub fn new(cursor: C, edge: E, element: T) -> Self {
+        Self {
+            cursor,
+            edge,
+            element,
+        }
+    }
+}
+
+impl<C, T> Record<C, EmptyEdgeFields, T> {
+    pub fn new_without_edge_fields(cursor: C, element: T) -> Self {
+        Self {
+            cursor,
+            edge: EmptyEdgeFields,
+            element,
+        }
+    }
+}
+
+/// Connection type
+///
+/// Connection is the result of a query for `DataSource`.
+pub struct Connection<T, E: ObjectType + Send = EmptyEdgeFields> {
+    /// The total number of records.
+    pub(crate) total_count: Option<usize>,
+
+    /// Information about pagination in a connection.
+    pub(crate) page_info: PageInfo,
+
+    /// All records of the current page.
+    pub(crate) nodes: Vec<Record<String, E, T>>,
+}
+
+impl<T: OutputValueType + Send, E: ObjectType + Send> Connection<T, E> {
+    pub fn empty() -> Self {
+        Connection {
+            total_count: None,
+            page_info: PageInfo {
+                has_previous_page: false,
+                has_next_page: false,
+                start_cursor: None,
+                end_cursor: None,
+            },
+            nodes: Vec::new(),
+        }
+    }
+
+    pub fn new<C>(
+        nodes: Vec<Record<C, E, T>>,
         has_previous_page: bool,
         has_next_page: bool,
-        nodes: Vec<(Cursor, E, T)>,
-    ) -> Self {
+        total_count: Option<usize>,
+    ) -> Connection<T, E>
+    where
+        C: CursorType,
+    {
+        let nodes = nodes
+            .into_iter()
+            .map(|record| Record {
+                cursor: record.cursor.encode_cursor(),
+                edge: record.edge,
+                element: record.element,
+            })
+            .collect_vec();
         Connection {
             total_count,
             page_info: PageInfo {
                 has_previous_page,
                 has_next_page,
-                start_cursor: nodes.first().map(|(cursor, _, _)| cursor.clone()),
-                end_cursor: nodes.last().map(|(cursor, _, _)| cursor.clone()),
+                start_cursor: nodes.first().map(|record| record.cursor.clone()),
+                end_cursor: nodes.last().map(|record| record.cursor.clone()),
             },
             nodes,
         }
     }
 
-    /// Convert node type.
-    pub fn map<O, F>(self, mut f: F) -> Connection<O, E>
+    pub async fn new_from_stream<C, S>(
+        stream: S,
+        has_previous_page: bool,
+        has_next_page: bool,
+        total_count: Option<usize>,
+    ) -> FieldResult<Connection<T, E>>
     where
-        F: FnMut(T) -> O,
+        C: CursorType,
+        S: Stream<Item = FieldResult<Record<C, E, T>>> + Unpin,
     {
-        Connection {
-            total_count: self.total_count,
-            page_info: self.page_info,
-            nodes: self
-                .nodes
-                .into_iter()
-                .map(|(cursor, edge_type, node)| (cursor, edge_type, f(node)))
-                .collect(),
-        }
+        Ok(Self::new(
+            stream.try_collect::<Vec<_>>().await?,
+            has_previous_page,
+            has_next_page,
+            total_count,
+        ))
     }
 
-    #[doc(hidden)]
-    #[inline]
-    pub async fn page_info(&self) -> &PageInfo {
-        &self.page_info
-    }
-
-    #[doc(hidden)]
-    #[inline]
-    pub async fn edges(&self) -> Option<Vec<Option<Edge<'_, T, E>>>> {
-        Some(
-            self.nodes
-                .iter()
-                .map(|(cursor, extra_type, node)| {
-                    Some(Edge {
-                        cursor,
-                        extra_type,
-                        node,
-                    })
-                })
-                .collect_vec(),
+    pub fn new_from_iter<C, I>(
+        iter: I,
+        has_previous_page: bool,
+        has_next_page: bool,
+        total_count: Option<usize>,
+    ) -> Connection<T, E>
+    where
+        C: CursorType,
+        I: IntoIterator<Item = Record<C, E, T>>,
+    {
+        Self::new(
+            iter.into_iter().collect(),
+            has_previous_page,
+            has_next_page,
+            total_count,
         )
-    }
-
-    #[doc(hidden)]
-    #[inline]
-    pub async fn total_count(&self) -> Option<i32> {
-        self.total_count.map(|n| n as i32)
     }
 }
 
@@ -180,16 +219,36 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.node == "pageInfo" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(self.page_info().await, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.page_info, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.edges().await, &ctx_obj, ctx.item).await;
+            let edges = self
+                .nodes
+                .iter()
+                .map(|record| {
+                    Some(Edge {
+                        cursor: &record.cursor,
+                        extra_type: &record.edge,
+                        node: &record.element,
+                    })
+                })
+                .collect_vec();
+            return OutputValueType::resolve(&edges, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "totalCount" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.total_count().await, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(
+                &self.total_count.map(|n| n as i32),
+                &ctx_obj,
+                ctx.item,
+            )
+            .await;
         } else if ctx.name.node == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            let items = self.nodes.iter().map(|(_, _, item)| item).collect_vec();
+            let items = self
+                .nodes
+                .iter()
+                .map(|record| &record.element)
+                .collect_vec();
             return OutputValueType::resolve(&items, &ctx_obj, ctx.item).await;
         }
 

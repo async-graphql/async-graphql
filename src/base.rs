@@ -38,14 +38,19 @@ pub trait Type {
 
     /// Parse `GlobalID`.
     fn from_global_id(id: ID) -> Option<ID> {
-        let v: Vec<&str> = id.splitn(2, ':').collect();
-        if v.len() != 2 {
-            return None;
-        }
-        if v[0] != Self::type_name() {
-            return None;
-        }
-        Some(v[1].to_string().into())
+        base64::decode(id.as_str())
+            .ok()
+            .and_then(|data| String::from_utf8(data).ok())
+            .and_then(|id| {
+                let v: Vec<&str> = id.splitn(2, ':').collect();
+                if v.len() != 2 {
+                    return None;
+                }
+                if v[0] != Self::type_name() {
+                    return None;
+                }
+                Some(v[1].to_string().into())
+            })
     }
 }
 

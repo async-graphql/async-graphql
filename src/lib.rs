@@ -154,10 +154,7 @@ pub use subscription::{
     SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
     WebSocketTransport,
 };
-pub use types::{
-    Connection, Cursor, DataSource, Deferred, EmptyEdgeFields, EmptyMutation, EmptySubscription,
-    PageInfo, QueryOperation, Streamed, Upload,
-};
+pub use types::{connection, Deferred, EmptyMutation, EmptySubscription, Streamed, Upload};
 pub use validation::ValidationMode;
 
 /// Result type

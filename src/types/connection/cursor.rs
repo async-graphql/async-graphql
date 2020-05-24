@@ -1,60 +1,27 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value, ID};
-use async_graphql_derive::Scalar;
-use std::ops::{Deref, DerefMut};
+use byteorder::{ReadBytesExt, BE};
+use std::fmt::Display;
 
-/// Cursor scalar
+/// Cursor type
 ///
 /// A custom scalar that serializes as a string.
 /// https://relay.dev/graphql/connections.htm#sec-Cursor
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct Cursor(String);
+pub trait CursorType: Sized {
+    type DecodeError: Display;
 
-impl Deref for Cursor {
-    type Target = String;
+    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError>;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+    fn encode_cursor(self) -> String;
 }
 
-impl DerefMut for Cursor {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+impl CursorType for usize {
+    type DecodeError = anyhow::Error;
 
-impl<T> From<T> for Cursor
-where
-    T: std::fmt::Display,
-{
-    fn from(value: T) -> Self {
-        Cursor(value.to_string())
-    }
-}
-
-impl From<ID> for Cursor {
-    fn from(id: ID) -> Self {
-        Cursor(id.into())
-    }
-}
-
-#[Scalar(internal)]
-impl ScalarType for Cursor {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::String(s) => Ok(Cursor(s)),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
+    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+        let data = base64::decode(s)?;
+        Ok(data.as_slice().read_u32::<BE>()? as usize)
     }
 
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::String(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.to_string().into())
+    fn encode_cursor(self) -> String {
+        base64::encode((self as u32).to_be_bytes())
     }
 }

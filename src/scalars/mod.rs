@@ -26,7 +26,6 @@ mod tests {
     use crate::Type;
     use bson::oid::ObjectId;
     use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
-    use uuid::Uuid;
 
     #[test]
     fn test_scalar_type() {
