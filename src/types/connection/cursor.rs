@@ -1,4 +1,6 @@
+use crate::ID;
 use byteorder::{ReadBytesExt, BE};
+use std::convert::Infallible;
 use std::fmt::Display;
 
 /// Cursor type
@@ -23,5 +25,29 @@ impl CursorType for usize {
 
     fn encode_cursor(self) -> String {
         base64::encode((self as u32).to_be_bytes())
+    }
+}
+
+impl CursorType for String {
+    type DecodeError = Infallible;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+        Ok(s.to_string())
+    }
+
+    fn encode_cursor(self) -> String {
+        self.clone()
+    }
+}
+
+impl CursorType for ID {
+    type DecodeError = Infallible;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+        Ok(s.to_string().into())
+    }
+
+    fn encode_cursor(self) -> String {
+        self.to_string()
     }
 }
