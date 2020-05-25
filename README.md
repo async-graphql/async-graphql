@@ -1,4 +1,4 @@
-# The GraphQL server library implemented by rust 
+# A GraphQL server library implemented in Rust 
 
 <div align="center">
   <!-- CI -->
