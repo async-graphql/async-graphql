@@ -12,7 +12,7 @@ pub trait CursorType: Sized {
 
     fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError>;
 
-    fn encode_cursor(self) -> String;
+    fn encode_cursor(&self) -> String;
 }
 
 impl CursorType for usize {
@@ -23,8 +23,8 @@ impl CursorType for usize {
         Ok(data.as_slice().read_u32::<BE>()? as usize)
     }
 
-    fn encode_cursor(self) -> String {
-        base64::encode((self as u32).to_be_bytes())
+    fn encode_cursor(&self) -> String {
+        base64::encode((*self as u32).to_be_bytes())
     }
 }
 
@@ -35,7 +35,7 @@ impl CursorType for String {
         Ok(s.to_string())
     }
 
-    fn encode_cursor(self) -> String {
+    fn encode_cursor(&self) -> String {
         self.clone()
     }
 }
@@ -47,7 +47,7 @@ impl CursorType for ID {
         Ok(s.to_string().into())
     }
 
-    fn encode_cursor(self) -> String {
+    fn encode_cursor(&self) -> String {
         self.to_string()
     }
 }

@@ -1,4 +1,4 @@
-use crate::connection::{Connection, DataSource, EmptyEdgeFields, Record};
+use crate::connection::{Connection, DataSource, Edge, EmptyEdgeFields};
 use crate::{Context, FieldResult, OutputValueType};
 
 #[async_trait::async_trait]
@@ -17,7 +17,7 @@ where
         before: Option<usize>,
         first: Option<usize>,
         last: Option<usize>,
-    ) -> FieldResult<Connection<Self::ElementType, Self::EdgeFieldsType>> {
+    ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>> {
         let mut start = 0usize;
         let mut end = self.len();
 
@@ -48,7 +48,7 @@ where
             slice
                 .iter()
                 .enumerate()
-                .map(|(idx, item)| Record::new_without_edge_fields(start + idx, item)),
+                .map(|(idx, item)| Edge::new(start + idx, item)),
             start > 0,
             end < self.len(),
             Some(self.len()),

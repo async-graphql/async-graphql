@@ -12,48 +12,26 @@ use inflector::Inflector;
 use itertools::Itertools;
 use std::borrow::Cow;
 
-/// The record type output by the data source
-pub struct Record<C, E, T> {
-    cursor: C,
-    edge: E,
-    element: T,
-}
-
-impl<C, E, T> Record<C, E, T> {
-    pub fn new(cursor: C, edge: E, element: T) -> Self {
-        Self {
-            cursor,
-            edge,
-            element,
-        }
-    }
-}
-
-impl<C, T> Record<C, EmptyEdgeFields, T> {
-    pub fn new_without_edge_fields(cursor: C, element: T) -> Self {
-        Self {
-            cursor,
-            edge: EmptyEdgeFields,
-            element,
-        }
-    }
-}
-
 /// Connection type
 ///
 /// Connection is the result of a query for `DataSource`.
-pub struct Connection<T, E: ObjectType + Send = EmptyEdgeFields> {
-    /// The total number of records.
+pub struct Connection<C: CursorType, T, E: ObjectType + Send = EmptyEdgeFields> {
+    /// The total number of edges.
     pub(crate) total_count: Option<usize>,
 
     /// Information about pagination in a connection.
     pub(crate) page_info: PageInfo,
 
-    /// All records of the current page.
-    pub(crate) nodes: Vec<Record<String, E, T>>,
+    /// All edges of the current page.
+    pub(crate) edges: Vec<Edge<C, T, E>>,
 }
 
-impl<T: OutputValueType + Send, E: ObjectType + Send> Connection<T, E> {
+impl<C, T, E> Connection<C, T, E>
+where
+    C: CursorType,
+    T: OutputValueType + Send,
+    E: ObjectType + Send,
+{
     pub fn empty() -> Self {
         Connection {
             total_count: None,
@@ -63,48 +41,36 @@ impl<T: OutputValueType + Send, E: ObjectType + Send> Connection<T, E> {
                 start_cursor: None,
                 end_cursor: None,
             },
-            nodes: Vec::new(),
+            edges: Vec::new(),
         }
     }
 
-    pub fn new<C>(
-        nodes: Vec<Record<C, E, T>>,
+    pub fn new(
+        nodes: Vec<Edge<C, T, E>>,
         has_previous_page: bool,
         has_next_page: bool,
         total_count: Option<usize>,
-    ) -> Connection<T, E>
-    where
-        C: CursorType,
-    {
-        let nodes = nodes
-            .into_iter()
-            .map(|record| Record {
-                cursor: record.cursor.encode_cursor(),
-                edge: record.edge,
-                element: record.element,
-            })
-            .collect_vec();
+    ) -> Connection<C, T, E> {
         Connection {
             total_count,
             page_info: PageInfo {
                 has_previous_page,
                 has_next_page,
-                start_cursor: nodes.first().map(|record| record.cursor.clone()),
-                end_cursor: nodes.last().map(|record| record.cursor.clone()),
+                start_cursor: nodes.first().map(|record| record.cursor.encode_cursor()),
+                end_cursor: nodes.last().map(|record| record.cursor.encode_cursor()),
             },
-            nodes,
+            edges: nodes,
         }
     }
 
-    pub async fn new_from_stream<C, S>(
+    pub async fn new_from_stream<S>(
         stream: S,
         has_previous_page: bool,
         has_next_page: bool,
         total_count: Option<usize>,
-    ) -> FieldResult<Connection<T, E>>
+    ) -> FieldResult<Connection<C, T, E>>
     where
-        C: CursorType,
-        S: Stream<Item = FieldResult<Record<C, E, T>>> + Unpin,
+        S: Stream<Item = FieldResult<Edge<C, T, E>>> + Unpin,
     {
         Ok(Self::new(
             stream.try_collect::<Vec<_>>().await?,
@@ -114,15 +80,14 @@ impl<T: OutputValueType + Send, E: ObjectType + Send> Connection<T, E> {
         ))
     }
 
-    pub fn new_from_iter<C, I>(
+    pub fn new_from_iter<I>(
         iter: I,
         has_previous_page: bool,
         has_next_page: bool,
         total_count: Option<usize>,
-    ) -> Connection<T, E>
+    ) -> Connection<C, T, E>
     where
-        C: CursorType,
-        I: IntoIterator<Item = Record<C, E, T>>,
+        I: IntoIterator<Item = Edge<C, T, E>>,
     {
         Self::new(
             iter.into_iter().collect(),
@@ -133,7 +98,12 @@ impl<T: OutputValueType + Send, E: ObjectType + Send> Connection<T, E> {
     }
 }
 
-impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Connection<T, E> {
+impl<C, T, E> Type for Connection<C, T, E>
+where
+    C: CursorType,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
+{
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("{}Connection", T::type_name()))
     }
@@ -156,7 +126,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         cache_control: Default::default(),
                         external: false,
                         requires: None,
-                        provides: None
+                        provides: None,
                     },
                 );
 
@@ -166,12 +136,12 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         name: "edges".to_string(),
                         description: Some("A list of edges."),
                         args: Default::default(),
-                        ty: <Option::<Vec<Option<Edge<T,E>>>> as Type>::create_type_info(registry),
+                        ty: <Option::<Vec<Option<Edge<C,T, E>>>> as Type>::create_type_info(registry),
                         deprecation: None,
                         cache_control: Default::default(),
                         external: false,
                         requires: None,
-                        provides: None
+                        provides: None,
                     },
                 );
 
@@ -186,12 +156,12 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                         cache_control: Default::default(),
                         external: false,
                         requires: None,
-                        provides: None
+                        provides: None,
                     },
                 );
 
                 let elements_name = T::type_name().to_plural().to_camel_case();
-                fields.insert(elements_name.clone(),registry::MetaField {
+                fields.insert(elements_name.clone(), registry::MetaField {
                     name: elements_name,
                     description: Some(r#"A list of all of the objects returned in the connection. This is a convenience field provided for quickly exploring the API; rather than querying for "{ edges { node } }" when no edge data is needed, this field can be be used instead. Note that when clients like Relay need to fetch the "cursor" field on the edge to enable efficient pagination, this shortcut cannot be used, and the full "{ edges { node } }" version should be used instead."#),
                     args: Default::default(),
@@ -200,21 +170,24 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> Type for Con
                     cache_control: Default::default(),
                     external: false,
                     requires: None,
-                    provides: None
+                    provides: None,
                 });
 
                 fields
             },
             cache_control: Default::default(),
             extends: false,
-            keys: None
+            keys: None,
         })
     }
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
-    for Connection<T, E>
+impl<C, T, E> ObjectType for Connection<C, T, E>
+where
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.node == "pageInfo" {
@@ -222,18 +195,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
             return OutputValueType::resolve(&self.page_info, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            let edges = self
-                .nodes
-                .iter()
-                .map(|record| {
-                    Some(Edge {
-                        cursor: &record.cursor,
-                        extra_type: &record.edge,
-                        node: &record.element,
-                    })
-                })
-                .collect_vec();
-            return OutputValueType::resolve(&edges, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "totalCount" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
@@ -245,7 +207,7 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
         } else if ctx.name.node == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             let items = self
-                .nodes
+                .edges
                 .iter()
                 .map(|record| &record.element)
                 .collect_vec();
@@ -257,15 +219,18 @@ impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> ObjectType
             path: None,
             err: QueryError::FieldNotFound {
                 field_name: ctx.name.to_string(),
-                object: Connection::<T, E>::type_name().to_string(),
+                object: Connection::<C, T, E>::type_name().to_string(),
             },
         })
     }
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync, E: ObjectType + Sync + Send> OutputValueType
-    for Connection<T, E>
+impl<C, T, E> OutputValueType for Connection<C, T, E>
+where
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
 {
     async fn resolve(
         &self,

@@ -7,8 +7,9 @@ mod page_info;
 mod slice;
 
 use crate::{Context, FieldResult, ObjectType, OutputValueType};
-pub use connection_type::{Connection, Record};
+pub use connection_type::Connection;
 pub use cursor::CursorType;
+pub use edge::Edge;
 pub use page_info::PageInfo;
 use std::fmt::Display;
 
@@ -45,7 +46,7 @@ pub struct EmptyEdgeFields;
 ///         before: Option<usize>,
 ///         first: Option<usize>,
 ///         last: Option<usize>,
-///      ) -> FieldResult<Connection<Self::ElementType, Self::EdgeFieldsType>> {
+///      ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>> {
 ///         let mut start = after.map(|after| after + 1).unwrap_or(0);
 ///         let mut end = before.unwrap_or(10000);
 ///         if let Some(first) = first {
@@ -59,7 +60,7 @@ pub struct EmptyEdgeFields;
 ///             };
 ///         }
 ///         Ok(Connection::new_from_iter(
-///             (start..end).into_iter().map(|n| Record::new_without_edge_fields(n, n as i32)),
+///             (start..end).into_iter().map(|n| Edge::new(n, n as i32)),
 ///             start > 0,
 ///             end < 10000,
 ///             Some(10000),
@@ -74,7 +75,7 @@ pub struct EmptyEdgeFields;
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> FieldResult<Connection<i32>> {
+///     ) -> FieldResult<Connection<usize, i32>> {
 ///         Numbers.query(ctx, after, before, first, last).await
 ///     }
 /// }
@@ -123,7 +124,7 @@ pub trait DataSource {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> FieldResult<Connection<Self::ElementType, Self::EdgeFieldsType>>
+    ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>>
     where
         <Self::CursorType as CursorType>::DecodeError: Display + Send + Sync + 'static,
     {
@@ -170,5 +171,5 @@ pub trait DataSource {
         before: Option<Self::CursorType>,
         first: Option<usize>,
         last: Option<usize>,
-    ) -> FieldResult<Connection<Self::ElementType, Self::EdgeFieldsType>>;
+    ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>>;
 }

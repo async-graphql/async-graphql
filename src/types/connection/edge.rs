@@ -1,3 +1,5 @@
+use crate::connection::EmptyEdgeFields;
+use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
     Result, Type,
@@ -6,34 +8,38 @@ use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
-pub struct Edge<'a, T, E> {
-    pub cursor: &'a str,
-    pub node: &'a T,
-    pub extra_type: &'a E,
+/// The edge type output by the data source
+pub struct Edge<C, T, E> {
+    pub cursor: C,
+    pub element: T,
+    pub additional_fields: E,
 }
 
-impl<'a, T, E> Edge<'a, T, E>
-where
-    T: OutputValueType + Send + Sync + 'a,
-    E: ObjectType + Sync + Send + 'a,
-{
-    #[doc(hidden)]
-    #[inline]
-    pub async fn node(&self) -> &T {
-        self.node
-    }
-
-    #[doc(hidden)]
-    #[inline]
-    pub async fn cursor(&self) -> &str {
-        self.cursor
+impl<C, T, E> Edge<C, T, E> {
+    pub fn new_with_additional_fields(cursor: C, element: T, additional_fields: E) -> Self {
+        Self {
+            cursor,
+            additional_fields,
+            element,
+        }
     }
 }
 
-impl<'a, T, E> Type for Edge<'a, T, E>
+impl<C: CursorType, T> Edge<C, T, EmptyEdgeFields> {
+    pub fn new(cursor: C, element: T) -> Self {
+        Self {
+            cursor,
+            element,
+            additional_fields: EmptyEdgeFields,
+        }
+    }
+}
+
+impl<C, T, E> Type for Edge<C, T, E>
 where
-    T: OutputValueType + Send + Sync + 'a,
-    E: ObjectType + Sync + Send + 'a,
+    C: CursorType,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("{}Edge", T::type_name()))
@@ -98,28 +104,30 @@ where
 }
 
 #[async_trait::async_trait]
-impl<'a, T, E> ObjectType for Edge<'a, T, E>
+impl<C, T, E> ObjectType for Edge<C, T, E>
 where
-    T: OutputValueType + Send + Sync + 'a,
-    E: ObjectType + Sync + Send + 'a,
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(self.node().await, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.element, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "cursor" {
-            return Ok(self.cursor().await.into());
+            return Ok(self.cursor.encode_cursor().into());
         }
 
-        self.extra_type.resolve_field(ctx).await
+        self.additional_fields.resolve_field(ctx).await
     }
 }
 
 #[async_trait::async_trait]
-impl<'a, T, E> OutputValueType for Edge<'a, T, E>
+impl<C, T, E> OutputValueType for Edge<C, T, E>
 where
-    T: OutputValueType + Send + Sync + 'a,
-    E: ObjectType + Sync + Send + 'a,
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
 {
     async fn resolve(
         &self,
