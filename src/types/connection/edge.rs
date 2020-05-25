@@ -2,7 +2,7 @@ use crate::connection::EmptyEdgeFields;
 use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
-    Result, Type,
+    QueryError, Result, Type,
 };
 use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
@@ -115,7 +115,17 @@ where
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(&self.element, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "cursor" {
-            return Ok(self.cursor.encode_cursor().into());
+            return Ok(self
+                .cursor
+                .encode_cursor()
+                .map_err(|err| {
+                    QueryError::FieldError {
+                        err: err.to_string(),
+                        extended_error: None,
+                    }
+                    .into_error(ctx.position())
+                })?
+                .into());
         }
 
         self.additional_fields.resolve_field(ctx).await

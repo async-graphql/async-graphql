@@ -82,13 +82,13 @@ pub async fn test_slice_datasource() {
     .await;
 
     do_test(
-        json!({ "after": 1usize.encode_cursor(), "before": null, "first": 2, "last": null }),
+        json!({ "after": 1usize.encode_cursor().unwrap(), "before": null, "first": 2, "last": null }),
         (true, true, &["c", "d"]),
     )
     .await;
 
     do_test(
-        json!({ "after": 1usize.encode_cursor(), "before": null, "first": 6, "last": null }),
+        json!({ "after": 1usize.encode_cursor().unwrap(), "before": null, "first": 6, "last": null }),
         (true, true, &["c", "d", "e", "f", "g", "h"]),
     )
     .await;
@@ -106,13 +106,13 @@ pub async fn test_slice_datasource() {
     .await;
 
     do_test(
-        json!({ "after": null, "before": 1usize.encode_cursor(), "first": 10, "last": null }),
+        json!({ "after": null, "before": 1usize.encode_cursor().unwrap(), "first": 10, "last": null }),
         (false, true, &["a"]),
     )
     .await;
 
     do_test(
-        json!({ "after": null, "before": 1usize.encode_cursor(), "first": null, "last": 10 }),
+        json!({ "after": null, "before": 1usize.encode_cursor().unwrap(), "first": null, "last": 10 }),
         (false, true, &["a"]),
     )
     .await;

@@ -1,13 +1,13 @@
 //! Types for Relay-compliant server
 
-mod connection_type;
+mod connection;
 mod cursor;
 mod edge;
 mod page_info;
 mod slice;
 
 use crate::{Context, FieldResult, ObjectType, OutputValueType};
-pub use connection_type::Connection;
+pub use connection::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
 pub use page_info::PageInfo;
@@ -59,12 +59,12 @@ pub struct EmptyEdgeFields;
 ///                 end - last
 ///             };
 ///         }
-///         Ok(Connection::new_from_iter(
+///         Connection::new_from_iter(
 ///             (start..end).into_iter().map(|n| Edge::new(n, n as i32)),
 ///             start > 0,
 ///             end < 10000,
 ///             Some(10000),
-///         ))
+///         )
 ///     }
 /// }
 ///
@@ -111,9 +111,9 @@ pub trait DataSource {
     /// Record type
     type ElementType: OutputValueType + Send;
 
-    /// Fields for Edge
+    /// Additional fields for edge
     ///
-    /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]`.
+    /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]` or `#[SimpleObject]`.
     type EdgeFieldsType: ObjectType + Send;
 
     /// Parses the parameters and executes the query.
@@ -126,7 +126,7 @@ pub trait DataSource {
         last: Option<i32>,
     ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>>
     where
-        <Self::CursorType as CursorType>::DecodeError: Display + Send + Sync + 'static,
+        <Self::CursorType as CursorType>::Error: Display + Send + Sync + 'static,
     {
         if first.is_some() && last.is_some() {
             return Err(

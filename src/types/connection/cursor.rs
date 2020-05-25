@@ -8,46 +8,46 @@ use std::fmt::Display;
 /// A custom scalar that serializes as a string.
 /// https://relay.dev/graphql/connections.htm#sec-Cursor
 pub trait CursorType: Sized {
-    type DecodeError: Display;
+    type Error: Display;
 
-    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError>;
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error>;
 
-    fn encode_cursor(&self) -> String;
+    fn encode_cursor(&self) -> Result<String, Self::Error>;
 }
 
 impl CursorType for usize {
-    type DecodeError = anyhow::Error;
+    type Error = anyhow::Error;
 
-    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         let data = base64::decode(s)?;
         Ok(data.as_slice().read_u32::<BE>()? as usize)
     }
 
-    fn encode_cursor(&self) -> String {
-        base64::encode((*self as u32).to_be_bytes())
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(base64::encode((*self as u32).to_be_bytes()))
     }
 }
 
 impl CursorType for String {
-    type DecodeError = Infallible;
+    type Error = Infallible;
 
-    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         Ok(s.to_string())
     }
 
-    fn encode_cursor(&self) -> String {
-        self.clone()
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(self.clone())
     }
 }
 
 impl CursorType for ID {
-    type DecodeError = Infallible;
+    type Error = Infallible;
 
-    fn decode_cursor(s: &str) -> Result<Self, Self::DecodeError> {
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         Ok(s.to_string().into())
     }
 
-    fn encode_cursor(&self) -> String {
-        self.to_string()
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(self.to_string())
     }
 }

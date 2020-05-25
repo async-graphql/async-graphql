@@ -28,7 +28,7 @@ pub struct Connection<C: CursorType, T, E: ObjectType + Send = EmptyEdgeFields> 
 
 impl<C, T, E> Connection<C, T, E>
 where
-    C: CursorType,
+    C: CursorType + Send,
     T: OutputValueType + Send,
     E: ObjectType + Send,
 {
@@ -50,17 +50,23 @@ where
         has_previous_page: bool,
         has_next_page: bool,
         total_count: Option<usize>,
-    ) -> Connection<C, T, E> {
-        Connection {
+    ) -> FieldResult<Connection<C, T, E>> {
+        Ok(Connection {
             total_count,
             page_info: PageInfo {
                 has_previous_page,
                 has_next_page,
-                start_cursor: nodes.first().map(|record| record.cursor.encode_cursor()),
-                end_cursor: nodes.last().map(|record| record.cursor.encode_cursor()),
+                start_cursor: match nodes.first() {
+                    Some(edge) => Some(edge.cursor.encode_cursor().map_err(|err| err.to_string())?),
+                    None => None,
+                },
+                end_cursor: match nodes.last() {
+                    Some(edge) => Some(edge.cursor.encode_cursor().map_err(|err| err.to_string())?),
+                    None => None,
+                },
             },
             edges: nodes,
-        }
+        })
     }
 
     pub async fn new_from_stream<S>(
@@ -77,7 +83,7 @@ where
             has_previous_page,
             has_next_page,
             total_count,
-        ))
+        )?)
     }
 
     pub fn new_from_iter<I>(
@@ -85,7 +91,7 @@ where
         has_previous_page: bool,
         has_next_page: bool,
         total_count: Option<usize>,
-    ) -> Connection<C, T, E>
+    ) -> FieldResult<Connection<C, T, E>>
     where
         I: IntoIterator<Item = Edge<C, T, E>>,
     {

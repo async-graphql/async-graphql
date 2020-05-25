@@ -44,7 +44,7 @@ where
             start = end - last.min(slice.len());
         }
 
-        let connection = Connection::new_from_iter(
+        Connection::new_from_iter(
             slice
                 .iter()
                 .enumerate()
@@ -52,7 +52,6 @@ where
             start > 0,
             end < self.len(),
             Some(self.len()),
-        );
-        Ok(connection)
+        )
     }
 }
