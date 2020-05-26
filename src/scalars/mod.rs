@@ -8,12 +8,13 @@ mod json;
 mod naive_date;
 mod naive_time;
 mod string;
+mod uuid;
 
 #[cfg(feature = "bson")]
 mod bson;
 #[cfg(feature = "chrono_tz")]
 mod chrono_tz;
-#[cfg(feature = "uuid")]
+#[cfg(feature = "url")]
 mod url;
 
 pub use any::Any;
@@ -60,11 +61,8 @@ mod tests {
             "DateTime!"
         );
 
-        #[cfg(feature = "uuid")]
-        {
-            assert_eq!(<Uuid as Type>::type_name(), "UUID");
-            assert_eq!(<Uuid as Type>::qualified_type_name(), "UUID!");
-        }
+        assert_eq!(<Uuid as Type>::type_name(), "UUID");
+        assert_eq!(<Uuid as Type>::qualified_type_name(), "UUID!");
 
         #[cfg(feature = "bson")]
         {

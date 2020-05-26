@@ -49,7 +49,6 @@ impl TryFrom<ID> for usize {
     }
 }
 
-#[cfg(feature = "uuid")]
 impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;
 
