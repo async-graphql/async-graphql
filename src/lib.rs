@@ -151,8 +151,7 @@ pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use subscription::{
-    SimpleBroker, SubscriptionStream, SubscriptionStreams, SubscriptionTransport,
-    WebSocketTransport,
+    SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
 pub use types::{
     Connection, Cursor, DataSource, Deferred, EmptyEdgeFields, EmptyMutation, EmptySubscription,

@@ -9,7 +9,7 @@ use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
     CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
-    SubscriptionStream, SubscriptionType, Type, Variables, ID,
+    SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
@@ -400,7 +400,7 @@ where
         transport: T,
     ) -> (
         mpsc::UnboundedSender<Bytes>,
-        SubscriptionStream<Query, Mutation, Subscription, T>,
+        impl Stream<Item = Bytes> + Unpin,
     ) {
         create_connection(self.clone(), transport)
     }

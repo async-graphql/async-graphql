@@ -57,7 +57,7 @@ pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport
     transport: T,
 ) -> (
     mpsc::UnboundedSender<Bytes>,
-    SubscriptionStream<Query, Mutation, Subscription, T>,
+    impl Stream<Item = Bytes> + Unpin,
 )
 where
     Query: ObjectType + Sync + Send + 'static,
@@ -67,7 +67,7 @@ where
     let (tx_bytes, rx_bytes) = mpsc::unbounded();
     (
         tx_bytes,
-        SubscriptionStream {
+        Box::pin(SubscriptionStream {
             schema,
             transport,
             streams: SubscriptionStreams {
@@ -76,7 +76,7 @@ where
             rx_bytes,
             handle_request_fut: None,
             waker: AtomicWaker::new(),
-        },
+        }),
     )
 }
 
@@ -90,7 +90,7 @@ type HandleRequestBoxFut<T> = Pin<
 
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
-pub struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
+struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
     schema: Schema<Query, Mutation, Subscription>,
     transport: T,
     streams: SubscriptionStreams,
