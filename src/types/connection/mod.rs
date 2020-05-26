@@ -1,13 +1,13 @@
 //! Types for Relay-compliant server
 
-mod connection;
+mod connection_type;
 mod cursor;
 mod edge;
 mod page_info;
 mod slice;
 
 use crate::{Context, FieldResult, ObjectType, OutputValueType};
-pub use connection::Connection;
+pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
 pub use page_info::PageInfo;
