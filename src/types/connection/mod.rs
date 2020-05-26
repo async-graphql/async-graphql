@@ -34,11 +34,16 @@ pub struct EmptyEdgeFields;
 ///
 /// struct Numbers;
 ///
+/// #[SimpleObject]
+/// struct Diff {
+///     diff: i32,
+/// }
+///
 /// #[DataSource]
 /// impl DataSource for Numbers {
 ///     type CursorType = usize;
 ///     type ElementType = i32;
-///     type EdgeFieldsType = EmptyEdgeFields;
+///     type EdgeFieldsType = Diff;
 ///
 ///     async fn execute_query(&self,
 ///         ctx: &Context<'_>,
@@ -60,7 +65,8 @@ pub struct EmptyEdgeFields;
 ///             };
 ///         }
 ///         Connection::new_from_iter(
-///             (start..end).into_iter().map(|n| Edge::new(n, n as i32)),
+///             (start..end).into_iter().map(|n|
+///                 Edge::new_with_additional_fields(n, n as i32, Diff{ diff: (10000 - n) as i32 })),
 ///             start > 0,
 ///             end < 10000,
 ///             Some(10000),
@@ -75,7 +81,7 @@ pub struct EmptyEdgeFields;
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> FieldResult<Connection<usize, i32>> {
+///     ) -> FieldResult<Connection<usize, i32, Diff>> {
 ///         Numbers.query(ctx, after, before, first, last).await
 ///     }
 /// }
@@ -84,20 +90,20 @@ pub struct EmptyEdgeFields;
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
-///                 {"node": 0},
-///                 {"node": 1}
+///                 {"node": 0, "diff": 10000},
+///                 {"node": 1, "diff": 9999},
 ///             ]
 ///         },
 ///     }));
 ///
-///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node } } }").await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
-///                 {"node": 9998},
-///                 {"node": 9999}
+///                 {"node": 9998, "diff": 2},
+///                 {"node": 9999, "diff": 1},
 ///             ]
 ///         },
 ///     }));

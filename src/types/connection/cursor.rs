@@ -8,10 +8,13 @@ use std::fmt::Display;
 /// A custom scalar that serializes as a string.
 /// https://relay.dev/graphql/connections.htm#sec-Cursor
 pub trait CursorType: Sized {
+    /// Error type for `encode_cursor` and `decode_cursor`.
     type Error: Display;
 
+    /// Decode cursor from string.
     fn decode_cursor(s: &str) -> Result<Self, Self::Error>;
 
+    /// Encode cursor to string.
     fn encode_cursor(&self) -> Result<String, Self::Error>;
 }
 

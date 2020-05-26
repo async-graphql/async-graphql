@@ -32,6 +32,7 @@ where
     T: OutputValueType + Send,
     E: ObjectType + Send,
 {
+    /// Create a new connection that does not contain any edges.
     pub fn empty() -> Self {
         Connection {
             total_count: None,
@@ -45,6 +46,7 @@ where
         }
     }
 
+    /// Create a new connection with `Vec<Edge<C, T, E>>`.
     pub fn new(
         nodes: Vec<Edge<C, T, E>>,
         has_previous_page: bool,
@@ -69,6 +71,7 @@ where
         })
     }
 
+    /// Create a new connection with `Stream<Item = FieldResult<Edge<C, T, E>>>`.
     pub async fn new_from_stream<S>(
         stream: S,
         has_previous_page: bool,
@@ -86,6 +89,7 @@ where
         )?)
     }
 
+    /// Create a new connection with `IntoIterator<Item = Edge<C, T, E>>`.
     pub fn new_from_iter<I>(
         iter: I,
         has_previous_page: bool,
@@ -212,11 +216,7 @@ where
             .await;
         } else if ctx.name.node == T::type_name().to_plural().to_camel_case() {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            let items = self
-                .edges
-                .iter()
-                .map(|record| &record.element)
-                .collect_vec();
+            let items = self.edges.iter().map(|record| &record.node).collect_vec();
             return OutputValueType::resolve(&items, &ctx_obj, ctx.item).await;
         }
 

@@ -10,26 +10,28 @@ use std::borrow::Cow;
 
 /// The edge type output by the data source
 pub struct Edge<C, T, E> {
-    pub cursor: C,
-    pub element: T,
-    pub additional_fields: E,
+    pub(crate) cursor: C,
+    pub(crate) node: T,
+    pub(crate) additional_fields: E,
 }
 
 impl<C, T, E> Edge<C, T, E> {
+    /// Create a new edge, it can have some additional fields.
     pub fn new_with_additional_fields(cursor: C, element: T, additional_fields: E) -> Self {
         Self {
             cursor,
             additional_fields,
-            element,
+            node: element,
         }
     }
 }
 
 impl<C: CursorType, T> Edge<C, T, EmptyEdgeFields> {
+    /// Create a new edge.
     pub fn new(cursor: C, element: T) -> Self {
         Self {
             cursor,
-            element,
+            node: element,
             additional_fields: EmptyEdgeFields,
         }
     }
@@ -113,7 +115,7 @@ where
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
-            return OutputValueType::resolve(&self.element, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item).await;
         } else if ctx.name.node == "cursor" {
             return Ok(self
                 .cursor
