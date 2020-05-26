@@ -12,7 +12,7 @@ struct Coordinate {
     latitude: f64,
 
     #[field(desc = "...")]
-    longitude: f64
+    longitude: f64,
 }
 
 struct Mutation;

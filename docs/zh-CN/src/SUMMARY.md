@@ -11,6 +11,7 @@
     - [接口(Interface)](define_interface.md)
     - [联合(Union)](define_union.md)
     - [输入对象(InputObject)](define_input_object.md)
+    - [默认值](default_value.md)
 - [定义模式(Schema)](define_schema.md)
     - [查询和变更](query_and_mutation.md)
     - [订阅](subscription.md)
