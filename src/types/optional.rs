@@ -27,6 +27,13 @@ impl<T: InputValueType> InputValueType for Option<T> {
             _ => Ok(Some(T::parse(value)?)),
         }
     }
+
+    fn to_value(&self) -> Value {
+        match self {
+            Some(value) => value.to_value(),
+            None => Value::Null,
+        }
+    }
 }
 
 #[async_trait::async_trait]

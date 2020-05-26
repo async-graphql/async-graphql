@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value, ID};
+use crate::{InputValueError, InputValueResult, ScalarType, Value, ID};
 use async_graphql_derive::Scalar;
 use std::ops::{Deref, DerefMut};
 
@@ -54,7 +54,7 @@ impl ScalarType for Cursor {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.to_string().into())
+    fn to_value(&self) -> Value {
+        Value::String(self.0.to_string())
     }
 }

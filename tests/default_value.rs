@@ -6,7 +6,7 @@ pub async fn test_default_value_arg() {
 
     #[Object]
     impl Query {
-        async fn value(&self, #[arg(default = "100")] input: i32) -> i32 {
+        async fn value(&self, #[arg(default = 100)] input: i32) -> i32 {
             input
         }
     }
@@ -34,7 +34,7 @@ pub async fn test_default_value_arg() {
 pub async fn test_default_value_inputobject() {
     #[InputObject]
     struct MyInput {
-        #[field(default = "100")]
+        #[field(default = 100)]
         value: i32,
     }
 

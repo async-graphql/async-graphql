@@ -33,6 +33,10 @@ impl<T: InputValueType> InputValueType for Vec<T> {
             _ => Ok(vec![InputValueType::parse(value)?]),
         }
     }
+
+    fn to_value(&self) -> Value {
+        Value::List(self.iter().map(InputValueType::to_value).collect())
+    }
 }
 
 #[allow(clippy::ptr_arg)]

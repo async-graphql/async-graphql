@@ -257,7 +257,7 @@ pub use types::{EnumItem, EnumType};
 ///         Ok(self.value)
 ///     }
 ///
-///     async fn value_with_arg(&self, #[arg(default = "1")] a: i32) -> i32 {
+///     async fn value_with_arg(&self, #[arg(default = 1)] a: i32) -> i32 {
 ///         a
 ///     }
 /// }
@@ -411,7 +411,7 @@ pub use async_graphql_derive::Enum;
 /// #[InputObject]
 /// struct MyInputObject {
 ///     a: i32,
-///     #[field(default = "10")]
+///     #[field(default = 10)]
 ///     b: i32,
 /// }
 ///

@@ -6,8 +6,6 @@ use crate::Result;
 use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::BTreeMap;
-use std::fmt;
-use std::ops::Deref;
 
 #[derive(Parser)]
 #[grammar = "query.pest"]
@@ -42,35 +40,6 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<Document> {
         fragments: Default::default(),
         current_operation: None,
     })
-}
-
-pub struct ParsedValue {
-    #[allow(dead_code)]
-    source: String,
-    value: Value,
-}
-
-impl fmt::Debug for ParsedValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
-impl Deref for ParsedValue {
-    type Target = Value;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
-/// Parse a graphql value
-pub fn parse_value<T: Into<String>>(input: T) -> Result<ParsedValue> {
-    let source = input.into();
-    let value_pair: Pair<Rule> = QueryParser::parse(Rule::value, &source)?.next().unwrap();
-    let mut pc = PositionCalculator::new(&source);
-    let value = parse_value2(value_pair, &mut pc)?;
-    Ok(ParsedValue { source, value })
 }
 
 fn parse_named_operation_definition(

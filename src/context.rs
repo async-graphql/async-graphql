@@ -532,13 +532,13 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
 
 impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     #[doc(hidden)]
-    pub fn param_value<T: InputValueType, F: FnOnce() -> Value>(
+    pub fn param_value<T: InputValueType>(
         &self,
         name: &str,
-        default: F,
+        default: Option<fn() -> T>,
     ) -> Result<T> {
-        match self.get_argument(name).cloned() {
-            Some(value) => {
+        match (self.get_argument(name).cloned(), default) {
+            (Some(value), _) => {
                 let pos = value.position();
                 let value = self.resolve_input_value(value.into_inner(), pos)?;
                 match InputValueType::parse(value) {
@@ -546,16 +546,9 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
                     Err(err) => Err(err.into_error(pos, T::qualified_type_name())),
                 }
             }
-            None => {
-                let value = default();
-                match InputValueType::parse(value) {
-                    Ok(res) => Ok(res),
-                    Err(err) => {
-                        // The default value has no valid location.
-                        Err(err.into_error(Pos::default(), T::qualified_type_name()))
-                    }
-                }
-            }
+            (None, Some(default)) => Ok(default()),
+            (None, None) => InputValueType::parse(Value::Null)
+                .map_err(|err| err.into_error(Pos::default(), T::qualified_type_name())),
         }
     }
 

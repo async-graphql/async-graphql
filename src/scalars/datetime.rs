@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -14,7 +14,7 @@ impl ScalarType for DateTime<Utc> {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.to_rfc3339().into())
+    fn to_value(&self) -> Value {
+        Value::String(self.to_rfc3339())
     }
 }

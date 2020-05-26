@@ -53,6 +53,9 @@ pub trait Type {
 pub trait InputValueType: Type + Sized {
     /// Parse from `Value`
     fn parse(value: Value) -> InputValueResult<Self>;
+
+    /// Convert to `Value` for introspection
+    fn to_value(&self) -> Value;
 }
 
 /// Represents a GraphQL output value
@@ -137,8 +140,8 @@ pub trait InputObjectType: InputValueType {}
 ///         }
 ///     }
 ///
-///     fn to_json(&self) -> Result<serde_json::Value> {
-///         Ok(self.0.into())
+///     fn to_value(&self) -> Value {
+///         Value::Int(self.0)
 ///     }
 /// }
 /// ```
@@ -153,8 +156,8 @@ pub trait ScalarType: Sized + Send {
         true
     }
 
-    /// Convert the scalar value to json value.
-    fn to_json(&self) -> Result<serde_json::Value>;
+    /// Convert the scalar to `Value`.
+    fn to_value(&self) -> Value;
 }
 
 impl<T: Type + Send + Sync> Type for &T {

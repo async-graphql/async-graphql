@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 macro_rules! impl_float_scalars {
@@ -22,8 +22,8 @@ macro_rules! impl_float_scalars {
                 }
             }
 
-            fn to_json(&self) -> Result<serde_json::Value> {
-                Ok((*self).into())
+            fn to_value(&self) -> Value {
+                Value::Float(*self as f64)
             }
         }
         )*

@@ -1,4 +1,4 @@
-use crate::{InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use serde::de::DeserializeOwned;
 
@@ -19,15 +19,15 @@ impl ScalarType for Any {
         true
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.clone().into())
+    fn to_value(&self) -> Value {
+        self.0.clone()
     }
 }
 
 impl Any {
     /// Parse this `Any` value to T by `serde_json`.
     pub fn parse_value<T: DeserializeOwned>(&self) -> std::result::Result<T, serde_json::Error> {
-        serde_json::from_value(self.to_json().unwrap())
+        serde_json::from_value(self.to_value().into())
     }
 }
 

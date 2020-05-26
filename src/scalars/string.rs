@@ -23,8 +23,8 @@ impl ScalarType for String {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.clone().into())
+    fn to_value(&self) -> Value {
+        Value::String(self.clone())
     }
 }
 

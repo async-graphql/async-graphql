@@ -159,12 +159,16 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
                 #crate_name::EnumType::parse_enum(value)
             }
+
+            fn to_value(&self) -> #crate_name::Value {
+                #crate_name::EnumType::to_value(self)
+            }
         }
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputValueType for #ident {
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::query::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::EnumType::resolve_enum(self)
+                Ok(#crate_name::EnumType::to_value(self).into())
             }
         }
     };

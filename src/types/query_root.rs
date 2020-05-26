@@ -2,7 +2,7 @@ use crate::model::{__Schema, __Type};
 use crate::scalars::Any;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
-    Positioned, QueryError, Result, Type, Value,
+    Positioned, QueryError, Result, Type,
 };
 use async_graphql_derive::SimpleObject;
 use async_graphql_parser::query::Field;
@@ -103,7 +103,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             )
             .await;
         } else if ctx.name.node == "__type" {
-            let type_name: String = ctx.param_value("name", || Value::Null)?;
+            let type_name: String = ctx.param_value("name", None)?;
             let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
             return OutputValueType::resolve(
                 &ctx.schema_env
@@ -116,7 +116,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             )
             .await;
         } else if ctx.name.node == "_entities" {
-            let representations: Vec<Any> = ctx.param_value("representations", || Value::Null)?;
+            let representations: Vec<Any> = ctx.param_value("representations", None)?;
             let mut res = Vec::new();
             for item in representations {
                 res.push(self.inner.find_entity(ctx, &item.0).await?);

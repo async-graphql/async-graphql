@@ -4,20 +4,20 @@ use async_graphql::*;
 pub async fn test_input_object_default_value() {
     #[InputObject]
     struct MyInput {
-        #[field(default = "999")]
+        #[field(default = 999)]
         a: i32,
 
-        #[field(default = "[1, 2, 3]")]
+        #[field(default_with = "vec![1, 2, 3]")]
         b: Vec<i32>,
 
-        #[field(default = "\"abc\"")]
+        #[field(default = "abc")]
         c: String,
 
-        #[field(default = "999")]
-        d: Option<i32>,
+        #[field(default = 999)]
+        d: i32,
 
-        #[field(default = "999")]
-        e: Option<i32>,
+        #[field(default = 999)]
+        e: i32,
     }
 
     struct MyOutput {
@@ -60,8 +60,8 @@ pub async fn test_input_object_default_value() {
                 a: input.a,
                 b: input.b,
                 c: input.c,
-                d: input.d,
-                e: input.e,
+                d: Some(input.d),
+                e: Some(input.e),
             }
         }
     }
