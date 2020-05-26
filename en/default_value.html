@@ -3,11 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>简单对象(SimpleObject) - Async-graphql教程</title>
+        <title>Default value - Async-graphql Book</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <meta name="description" content="Async-graphql使用手册">
+        <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html" class="active"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> 游标连接(Cursor Connections)</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing支持</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.2.</strong> 自定义扩展</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> 自定义订阅传输协议</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="default_value.html" class="active"><strong aria-hidden="true">3.7.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.2.</strong> Custom extensions</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> Custom subscription transport</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -113,7 +113,7 @@
                         
                     </div>
 
-                    <h1 class="menu-title">Async-graphql教程</h1>
+                    <h1 class="menu-title">Async-graphql Book</h1>
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -147,25 +147,65 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#简单对象simpleobject" id="简单对象simpleobject">简单对象(SimpleObject)</a></h1>
-<p>简单对象是把Rust结构的所有字段都直接映射到GraphQL对象，不支持定义单独的Resolver函数。</p>
-<p>下面的例子定义了一个名称为MyObject的对象，包含字段<code>a</code>和<code>b</code>，<code>c</code>由于标记为<code>#[field(skip)]</code>，所以不会映射到GraphQL。</p>
-<p><strong><code>a</code>和<code>b</code>字段都有描述信息，这会反映在GraphQL的内省信息中，它们采用了rustdoc和属性两种不同的写法，这两种写法<code>async-graphql</code>都支持。当两种写法同时存在时，属性的优先级更高。</strong></p>
+                        <h1><a class="header" href="#default-value" id="default-value">Default value</a></h1>
+<p>You can define default values for input value types.
+The following shows how to define default values for different types.</p>
+<h2><a class="header" href="#object-field" id="object-field">Object field</a></h2>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[SimpleObject]
-struct MyObject {
-    /// Value a
-    a: i32,
-    
-    #[field(desc = &quot;Value b&quot;)]
-    b: i32,
+struct Query;
 
-    #[field(skip)]
-    c: i32,
+fn my_default() -&gt; i32 {
+    30
+}
+
+#[Object]
+impl Query {
+    // The default value of the value parameter is 0, it will call i32::default()
+    fn test1(&amp;self, #[arg(default)] value: i32) {}
+    
+    // The default value of the value parameter is 10
+    fn test2(&amp;self, #[arg(default = 10)] value: i32) {}
+
+    // The default value of the value parameter uses the return result of the my_default function, the value is 30.
+    fn test3(&amp;self, #[arg(default_with = &quot;my_default()&quot;)] value: i32) {}
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#interface-field" id="interface-field">Interface field</a></h2>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[Interface(
+    field(name = &quot;test1&quot;, arg(name = &quot;value&quot;, default)),
+    field(name = &quot;test2&quot;, arg(name = &quot;value&quot;, default = 10)),
+    field(name = &quot;test3&quot;, arg(name = &quot;value&quot;, default = &quot;my_default()&quot;)),
+)]
+enum MyInterface {
+    MyObj(MyObj),
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2><a class="header" href="#input-object-field" id="input-object-field">Input object field</a></h2>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+struct MyInputObject {
+    #[field(default)]
+    value1: i32,
+    
+    #[field(default = 10)]
+    value2: i32,
+
+    #[field(default = &quot;my_default()&quot;)]
+    value3: i32,
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -175,13 +215,13 @@ struct MyObject {
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="typesystem.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="define_input_object.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="define_complex_object.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="define_schema.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -193,13 +233,13 @@ struct MyObject {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="typesystem.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="define_input_object.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="define_complex_object.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="define_schema.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
