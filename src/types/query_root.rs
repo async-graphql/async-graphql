@@ -10,7 +10,7 @@ use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
 /// Federation service
-#[SimpleObject(internal)]
+#[SimpleObject(internal, name = "_Service")]
 struct Service {
     sdl: Option<String>,
 }
