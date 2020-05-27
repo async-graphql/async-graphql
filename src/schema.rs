@@ -316,7 +316,7 @@ where
 
         extensions.parse_start(source);
         let document = extensions.log_error(parse_query(source).map_err(Into::<Error>::into))?;
-        extensions.parse_end();
+        extensions.parse_end(source, &document);
 
         // check rules
         extensions.validation_start();

@@ -11,6 +11,7 @@ pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 pub use self::tracing::Tracing;
 use crate::Error;
+use async_graphql_parser::query::Document;
 use serde_json::Value;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
@@ -46,7 +47,7 @@ pub trait Extension: Sync + Send + 'static {
     fn parse_start(&self, query_source: &str) {}
 
     /// Called at the end of the parse.
-    fn parse_end(&self) {}
+    fn parse_end(&self, query_source: &str, document: &Document) {}
 
     /// Called at the begin of the validation.
     fn validation_start(&self) {}
@@ -89,8 +90,10 @@ impl Extension for Extensions {
         self.0.iter().for_each(|e| e.parse_start(query_source));
     }
 
-    fn parse_end(&self) {
-        self.0.iter().for_each(|e| e.parse_end());
+    fn parse_end(&self, query_source: &str, document: &Document) {
+        self.0
+            .iter()
+            .for_each(|e| e.parse_end(query_source, document));
     }
 
     fn validation_start(&self) {
