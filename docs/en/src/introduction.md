@@ -8,10 +8,15 @@ You can define a Schema in Rust and procedural macros will automatically generat
 
 I like GraphQL and Rust. I've been using `Juniper`, which solves the problem of implementing a GraphQL server with Rust. But Juniper had several problems, the most important of which is that it didn't support async/await at the time. So I decided to make this library for myself.
 
-## Progress
+## Stability: Unstable & Experimental
 
-As I write this document today (April 15, 2020), a month and a half after I started `Async-graphql` development, it has surpassed my goal of becoming a fully functional graphql server library.
+__This project doesn't currently follow SemVer, and there can be breaking changes on any version numbers. We will begin following SemVer once the project reaches v2.0.0__
 
+Even though this project is above v1.0.0, we are rapidly changing and improving the API. This has caused versioning problems that aren't easily resolved because the project became popular very quickly (it was only started in March 2020).
+
+We currently plan to start following SemVer once we reach the v2.0.0 release, which will happen once the API starts to stabilize. Unfortunately, we don't currently have the timeline for this.
+
+If things don't seem to be compiling after an upgrade, it is likely you'll need to dive into compiler errors to update some syntax that changed. Feel free to open an issue if something seems weird!
 
 ## Examples
 
