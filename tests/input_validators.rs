@@ -7,7 +7,7 @@ pub async fn test_string_min_length() {
 
     #[Object]
     impl Query1 {
-        async fn test(&self, #[arg(validator(StringMinLength(length = "6")))] id: String) -> bool {
+        async fn test(&self, #[arg(validator(StringMinLength(length = "6")))] _id: String) -> bool {
             true
         }
     }
