@@ -1,7 +1,8 @@
 use crate::connection::{Connection, DataSource, Edge, EmptyFields};
 use crate::{Context, FieldResult, OutputValueType};
+use async_graphql_derive::DataSource;
 
-#[async_trait::async_trait]
+#[DataSource(internal)]
 impl<'a, T> DataSource for &'a [T]
 where
     T: OutputValueType + Send + Sync + 'a,
@@ -11,6 +12,7 @@ where
     type ConnectionFieldsType = EmptyFields;
     type EdgeFieldsType = EmptyFields;
 
+    #[allow(clippy::suspicious_else_formatting)]
     async fn execute_query(
         &self,
         _ctx: &Context<'_>,
@@ -35,6 +37,7 @@ where
             }
             start = after + 1;
         }
+
         if let Some(before) = before {
             if before == 0 {
                 return Ok(Connection::new(false, false));
