@@ -21,7 +21,7 @@ impl DataSource for Integers {
     type CursorType = usize;
 
     // Type for response
-    type Element = i32;
+    type NodeType = i32;
 
     // We don't need to extend the connection fields, so this can be empty
     type ConnectionFieldsType = EmptyFields;

@@ -21,7 +21,7 @@ impl DataSource for Integers {
     type CursorType = usize;
 
     // 元素类型
-    type Element = i32;
+    type NodeType = i32;
 
     // 我们不需要扩展连接的字段，所以传EmptyFields
     type ConnectionFieldsType = EmptyFields;

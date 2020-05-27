@@ -8,7 +8,7 @@ where
     T: OutputValueType + Send + Sync + 'a,
 {
     type CursorType = usize;
-    type ElementType = &'a T;
+    type NodeType = &'a T;
     type ConnectionFieldsType = EmptyFields;
     type EdgeFieldsType = EmptyFields;
 
@@ -23,7 +23,7 @@ where
     ) -> FieldResult<
         Connection<
             Self::CursorType,
-            Self::ElementType,
+            Self::NodeType,
             Self::ConnectionFieldsType,
             Self::EdgeFieldsType,
         >,

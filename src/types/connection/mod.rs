@@ -42,7 +42,7 @@ pub struct EmptyFields;
 /// #[DataSource]
 /// impl DataSource for Numbers {
 ///     type CursorType = usize;
-///     type ElementType = i32;
+///     type NodeType = i32;
 ///     type ConnectionFieldsType = EmptyFields;
 ///     type EdgeFieldsType = Diff;
 ///
@@ -52,7 +52,7 @@ pub struct EmptyFields;
 ///         before: Option<usize>,
 ///         first: Option<usize>,
 ///         last: Option<usize>,
-///      ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::ConnectionFieldsType, Self::EdgeFieldsType>> {
+///      ) -> FieldResult<Connection<Self::CursorType, Self::NodeType, Self::ConnectionFieldsType, Self::EdgeFieldsType>> {
 ///         let mut start = after.map(|after| after + 1).unwrap_or(0);
 ///         let mut end = before.unwrap_or(10000);
 ///         if let Some(first) = first {
@@ -115,7 +115,7 @@ pub trait DataSource {
     type CursorType: CursorType + Send + Sync;
 
     /// Record type
-    type ElementType: OutputValueType + Send;
+    type NodeType: OutputValueType + Send;
 
     /// Additional fields for connection
     ///
@@ -140,7 +140,7 @@ pub trait DataSource {
     ) -> FieldResult<
         Connection<
             Self::CursorType,
-            Self::ElementType,
+            Self::NodeType,
             Self::ConnectionFieldsType,
             Self::EdgeFieldsType,
         >,
@@ -194,7 +194,7 @@ pub trait DataSource {
     ) -> FieldResult<
         Connection<
             Self::CursorType,
-            Self::ElementType,
+            Self::NodeType,
             Self::ConnectionFieldsType,
             Self::EdgeFieldsType,
         >,

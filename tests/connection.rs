@@ -135,7 +135,7 @@ pub async fn test_datasource_additional_fields() {
     #[DataSource]
     impl DataSource for Numbers {
         type CursorType = usize;
-        type ElementType = i32;
+        type NodeType = i32;
         type ConnectionFieldsType = ConnectionFields;
         type EdgeFieldsType = Diff;
 
@@ -149,7 +149,7 @@ pub async fn test_datasource_additional_fields() {
         ) -> FieldResult<
             Connection<
                 Self::CursorType,
-                Self::ElementType,
+                Self::NodeType,
                 Self::ConnectionFieldsType,
                 Self::EdgeFieldsType,
             >,
