@@ -114,6 +114,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
     for InterfaceField {
         name,
+        method,
         desc,
         ty,
         args,
@@ -123,8 +124,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         requires,
     } in &interface_args.fields
     {
-        let method_name = Ident::new(name, Span::call_site());
-        let name = name.to_camel_case();
+        let (name, method_name) = if let Some(method) = method {
+            (name.to_string(), Ident::new(method, Span::call_site()))
+        } else {
+            let method_name = Ident::new(&name, Span::call_site());
+            (name.to_camel_case(), method_name)
+        };
         let mut calls = Vec::new();
         let mut use_params = Vec::new();
         let mut decl_params = Vec::new();

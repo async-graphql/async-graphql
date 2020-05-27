@@ -275,3 +275,52 @@ pub async fn test_interface_field_result() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_interface_field_method() {
+    struct A;
+
+    #[Object]
+    impl A {
+        #[field(name = "created_at")]
+        pub async fn created_at(&self) -> i32 {
+            1
+        }
+    }
+
+    struct B;
+
+    #[Object]
+    impl B {
+        #[field(name = "created_at")]
+        pub async fn created_at(&self) -> i32 {
+            2
+        }
+    }
+
+    #[Interface(field(name = "created_at", method = "created_at", type = "i32"))]
+    enum MyInterface {
+        A(A),
+        B(B),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(&self) -> MyInterface {
+            A.into()
+        }
+    }
+
+    let query = "{ test { created_at } }";
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "test": {
+                "created_at": 1,
+            }
+        })
+    );
+}

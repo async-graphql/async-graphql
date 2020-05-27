@@ -452,6 +452,7 @@ pub use async_graphql_derive::InputObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | N        |
+/// | method      | Method name               | string   | Y        |
 /// | type        | Field type                | string   | N        |
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
