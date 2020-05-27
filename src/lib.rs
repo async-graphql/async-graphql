@@ -142,7 +142,7 @@ pub use context::{
 };
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
-    ParseRequestError, QueryError, ResultExt,
+    ParseRequestError, QueryError, ResultExt, RuleError,
 };
 pub use look_ahead::Lookahead;
 pub use parser::{Pos, Positioned, Value};

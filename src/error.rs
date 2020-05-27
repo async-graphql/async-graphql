@@ -325,6 +325,7 @@ pub enum ParseRequestError {
     PayloadTooLarge,
 }
 
+#[allow(missing_docs)]
 #[derive(Debug, PartialEq)]
 pub struct RuleError {
     pub locations: Vec<Pos>,

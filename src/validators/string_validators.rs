@@ -88,12 +88,12 @@ impl InputValueValidator for MAC {
         if let Value::String(s) = value {
             if self.colon {
                 if !MAC_ADDRESS_RE.is_match(s) {
-                    Some("invalid email format".to_string())
+                    Some("invalid MAC format".to_string())
                 } else {
                     None
                 }
             } else if !MAC_ADDRESS_NO_COLON_RE.is_match(s) {
-                Some("invalid email format".to_string())
+                Some("invalid MAC format".to_string())
             } else {
                 None
             }

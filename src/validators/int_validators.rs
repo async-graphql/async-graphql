@@ -100,7 +100,10 @@ impl InputValueValidator for IntEqual {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
             if *n != self.value {
-                Some(format!("the value is {}, must be equal to {}", *n, self.value))
+                Some(format!(
+                    "the value is {}, must be equal to {}",
+                    *n, self.value
+                ))
             } else {
                 None
             }
