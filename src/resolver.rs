@@ -3,7 +3,6 @@ use crate::extensions::{Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
-use std::iter::FromIterator;
 
 #[allow(missing_docs)]
 pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
@@ -13,7 +12,18 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     let mut futures = Vec::new();
     collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
-    let map = serde_json::Map::from_iter(res);
+    let mut map = serde_json::Map::new();
+    for (name, value) in res {
+        match (map.remove(&name), value) {
+            (Some(serde_json::Value::Object(mut a)), serde_json::Value::Object(b)) => {
+                a.extend(b);
+                map.insert(name, a.into());
+            }
+            (_, b) => {
+                map.insert(name, b);
+            }
+        }
+    }
     Ok(map.into())
 }
 
