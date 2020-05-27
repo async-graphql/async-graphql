@@ -72,7 +72,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             .default
             .as_ref()
             .map(|value| {
-                quote! {Some( #crate_name::InputValueType::to_value(&#value).to_string() )}
+                quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
             })
             .unwrap_or_else(|| quote! {None});
 
@@ -149,8 +149,5 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
         impl #crate_name::InputObjectType for #ident {}
     };
-    if gql_typename == "MyInput222" {
-        println!("{}", expanded);
-    }
     Ok(expanded.into())
 }

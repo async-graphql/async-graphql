@@ -223,7 +223,7 @@ pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
     if let Lit::Str(str) = lit {
         let str = str.value();
         let tokens: TokenStream = str.parse()?;
-        Ok(quote! { #tokens })
+        Ok(quote! { (#tokens) })
     } else {
         Err(Error::new_spanned(
             &lit,
