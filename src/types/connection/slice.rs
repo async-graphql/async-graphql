@@ -1,4 +1,4 @@
-use crate::connection::{Connection, DataSource, Edge, EmptyEdgeFields};
+use crate::connection::{Connection, DataSource, Edge, EmptyFields};
 use crate::{Context, FieldResult, OutputValueType};
 
 #[async_trait::async_trait]
@@ -8,7 +8,8 @@ where
 {
     type CursorType = usize;
     type ElementType = &'a T;
-    type EdgeFieldsType = EmptyEdgeFields;
+    type ConnectionFieldsType = EmptyFields;
+    type EdgeFieldsType = EmptyFields;
 
     async fn execute_query(
         &self,
@@ -17,19 +18,26 @@ where
         before: Option<usize>,
         first: Option<usize>,
         last: Option<usize>,
-    ) -> FieldResult<Connection<Self::CursorType, Self::ElementType, Self::EdgeFieldsType>> {
+    ) -> FieldResult<
+        Connection<
+            Self::CursorType,
+            Self::ElementType,
+            Self::ConnectionFieldsType,
+            Self::EdgeFieldsType,
+        >,
+    > {
         let mut start = 0usize;
         let mut end = self.len();
 
         if let Some(after) = after {
             if after >= self.len() {
-                return Ok(Connection::empty());
+                return Ok(Connection::new(false, false));
             }
             start = after + 1;
         }
         if let Some(before) = before {
             if before == 0 {
-                return Ok(Connection::empty());
+                return Ok(Connection::new(false, false));
             }
             end = before;
         }
@@ -44,14 +52,13 @@ where
             start = end - last.min(slice.len());
         }
 
-        Connection::new_from_iter(
+        let mut connection = Connection::new(start > 0, end < self.len());
+        connection.append(
             slice
                 .iter()
                 .enumerate()
-                .map(|(idx, item)| Edge::new(start + idx, item)),
-            start > 0,
-            end < self.len(),
-            Some(self.len()),
-        )
+                .map(|(idx, item)| Ok(Edge::new(start + idx, item))),
+        )?;
+        Ok(connection)
     }
 }

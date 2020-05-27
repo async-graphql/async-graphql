@@ -1,4 +1,4 @@
-use crate::connection::EmptyEdgeFields;
+use crate::connection::EmptyFields;
 use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
@@ -26,13 +26,13 @@ impl<C, T, E> Edge<C, T, E> {
     }
 }
 
-impl<C: CursorType, T> Edge<C, T, EmptyEdgeFields> {
+impl<C: CursorType, T> Edge<C, T, EmptyFields> {
     /// Create a new edge.
     pub fn new(cursor: C, element: T) -> Self {
         Self {
             cursor,
             node: element,
-            additional_fields: EmptyEdgeFields,
+            additional_fields: EmptyFields,
         }
     }
 }
@@ -50,7 +50,7 @@ where
     fn create_type_info(registry: &mut registry::Registry) -> String {
         registry.create_type::<Self, _>(|registry| {
             E::create_type_info(registry);
-            let extra_fields = if let Some(registry::MetaType::Object { fields, .. }) =
+            let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
                 registry.types.remove(E::type_name().as_ref())
             {
                 fields
@@ -94,7 +94,7 @@ where
                         },
                     );
 
-                    fields.extend(extra_fields);
+                    fields.extend(additional_fields);
                     fields
                 },
                 cache_control: Default::default(),

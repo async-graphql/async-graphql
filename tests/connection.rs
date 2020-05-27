@@ -37,7 +37,6 @@ pub async fn test_slice_datasource() {
                 first: $first
                 last: $last
             ) {
-                totalCount
                 pageInfo {
                     hasPreviousPage
                     hasNextPage
@@ -64,7 +63,6 @@ pub async fn test_slice_datasource() {
             query.execute(&schema).await.unwrap().data,
             serde_json::json!({
                 "values": {
-                    "totalCount": 26,
                     "pageInfo": {
                         "hasPreviousPage": has_prev_page,
                         "hasNextPage": has_next_page,
