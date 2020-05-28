@@ -8,10 +8,10 @@ Therefore, the `Object`'s fields' type, arguments must match with the `Interface
 `Async-graphql` implemented auto conversion from `Object` to `Interface`, you only need to call `Into::into`.
 
 Interface fields names transforms to camelCase in schema definition.
-If you need e.g. snake_cased field name, there is `method` argument in field.
+If you need e.g. snake_cased GraphQL field name, you can use both the `name` and `method` attribute.
 
-- When the `name` and `method` exist together, the `name` is the graphql name and the `method` is the rust method name.
-- When only `name` exists, `name.to_camel_case()` is the graphql name and the `name` is the rust method name.
+- When the `name` and `method` exist together, the `name` is the GraphQL field name and the `method` is the resolver function name.
+- When only `name` exists, `name.to_camel_case()` is the GraphQL field name and the `name` is the resolver function name.
 
 ```rust
 use async_graphql::*;
