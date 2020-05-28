@@ -13,6 +13,7 @@ use async_trait::async_trait;
 use futures::channel::mpsc;
 use futures::io::BufReader;
 use futures::{SinkExt, StreamExt};
+use std::str::FromStr;
 use tide::{
     http::{headers, Method},
     Body, Request, Response, Status, StatusCode,
@@ -143,7 +144,7 @@ pub trait ResponseExt: Sized {
 
 impl ResponseExt for Response {
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self> {
-        self.body_json(&GQLResponse(res))
+        add_cache_control(self, &res).body_json(&GQLResponse(res))
     }
 
     fn body_graphql_stream(mut self, res: StreamResponse) -> serde_json::Result<Self> {
@@ -169,4 +170,15 @@ impl ResponseExt for Response {
             }
         }
     }
+}
+
+fn add_cache_control(http_resp: Response, resp: &async_graphql::Result<QueryResponse>) -> Response {
+    if let Ok(QueryResponse { cache_control, .. }) = resp {
+        if let Some(cache_control) = cache_control.value() {
+            if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
+                return http_resp.set_header(header, cache_control);
+            }
+        }
+    }
+    http_resp
 }

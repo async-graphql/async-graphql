@@ -5,7 +5,7 @@
 mod subscription;
 
 use actix_web::body::BodyStream;
-use actix_web::dev::{Payload, PayloadStream};
+use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 use async_graphql::http::{multipart_stream, StreamBody};
@@ -87,9 +87,11 @@ impl Responder for GQLResponse {
     type Future = Ready<Result<HttpResponse, Error>>;
 
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        let res = HttpResponse::build(StatusCode::OK)
-            .content_type("application/json")
-            .body(serde_json::to_string(&async_graphql::http::GQLResponse(self.0)).unwrap());
+        let mut res = HttpResponse::build(StatusCode::OK);
+        res.content_type("application/json");
+        add_cache_control(&mut res, &self.0);
+        let res =
+            res.body(serde_json::to_string(&async_graphql::http::GQLResponse(self.0)).unwrap());
         futures::future::ok(res)
     }
 }
@@ -113,11 +115,21 @@ impl Responder for GQLResponseStream {
             StreamResponse::Stream(stream) => {
                 let body =
                     BodyStream::new(multipart_stream(stream).map(Result::<_, Infallible>::Ok));
-                let res = HttpResponse::build(StatusCode::OK)
-                    .content_type("multipart/mixed; boundary=\"-\"")
-                    .body(body);
-                futures::future::ok(res)
+                let mut res = HttpResponse::build(StatusCode::OK);
+                res.content_type("multipart/mixed; boundary=\"-\"");
+                futures::future::ok(res.body(body))
             }
+        }
+    }
+}
+
+fn add_cache_control(
+    builder: &mut HttpResponseBuilder,
+    resp: &async_graphql::Result<QueryResponse>,
+) {
+    if let Ok(QueryResponse { cache_control, .. }) = resp {
+        if let Some(cache_control) = cache_control.value() {
+            builder.header("cache-control", cache_control);
         }
     }
 }
