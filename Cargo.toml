@@ -63,5 +63,5 @@ members = [
     "async-graphql-actix-web",
     "async-graphql-warp",
     "async-graphql-tide",
-    "async-graphql-lambda",
+#    "async-graphql-lambda",
 ]
