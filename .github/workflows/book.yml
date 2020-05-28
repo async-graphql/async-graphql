@@ -3,7 +3,7 @@ name: Book
 on:
   push:
     branches:
-      - master
+      - release
     paths:
       - 'docs/**'
 
