@@ -21,10 +21,10 @@ impl<T: Type> Type for Option<T> {
 }
 
 impl<T: InputValueType> InputValueType for Option<T> {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
+    fn parse(value: Option<Value>) -> InputValueResult<Self> {
+        match value.unwrap_or_default() {
             Value::Null => Ok(None),
-            _ => Ok(Some(T::parse(value)?)),
+            value => Ok(Some(T::parse(Some(value))?)),
         }
     }
 

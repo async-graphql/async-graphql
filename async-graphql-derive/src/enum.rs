@@ -156,8 +156,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
-                #crate_name::EnumType::parse_enum(value)
+            fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+                #crate_name::EnumType::parse_enum(value.unwrap_or_default())
             }
 
             fn to_value(&self) -> #crate_name::Value {

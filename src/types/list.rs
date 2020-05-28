@@ -21,16 +21,16 @@ impl<T: Type> Type for Vec<T> {
 }
 
 impl<T: InputValueType> InputValueType for Vec<T> {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
+    fn parse(value: Option<Value>) -> InputValueResult<Self> {
+        match value.unwrap_or_default() {
             Value::List(values) => {
                 let mut result = Vec::new();
                 for elem_value in values {
-                    result.push(InputValueType::parse(elem_value)?);
+                    result.push(InputValueType::parse(Some(elem_value))?);
                 }
                 Ok(result)
             }
-            _ => Ok(vec![InputValueType::parse(value)?]),
+            value => Ok(vec![InputValueType::parse(Some(value))?]),
         }
     }
 

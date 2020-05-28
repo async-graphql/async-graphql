@@ -34,8 +34,8 @@ pub trait Type {
 
 /// Represents a GraphQL input value
 pub trait InputValueType: Type + Sized {
-    /// Parse from `Value`
-    fn parse(value: Value) -> InputValueResult<Self>;
+    /// Parse from `Value`，None represent undefined.
+    fn parse(value: Option<Value>) -> InputValueResult<Self>;
 
     /// Convert to `Value` for introspection
     fn to_value(&self) -> Value;
