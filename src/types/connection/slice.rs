@@ -1,156 +1,67 @@
-use crate::types::connection::{EmptyEdgeFields, QueryOperation};
-use crate::{Connection, Context, DataSource, FieldResult};
-use byteorder::{ReadBytesExt, BE};
+use crate::connection::{Connection, DataSource, Edge, EmptyFields};
+use crate::{Context, FieldResult, OutputValueType};
+use async_graphql_derive::DataSource;
 
-#[async_trait::async_trait]
-impl<'a, T: Sync> DataSource for &'a [T] {
-    type Element = &'a T;
-    type EdgeFieldsObj = EmptyEdgeFields;
+#[DataSource(internal)]
+impl<'a, T> DataSource for &'a [T]
+where
+    T: OutputValueType + Send + Sync + 'a,
+{
+    type CursorType = usize;
+    type NodeType = &'a T;
+    type ConnectionFieldsType = EmptyFields;
+    type EdgeFieldsType = EmptyFields;
 
-    async fn query_operation(
-        &mut self,
+    #[allow(clippy::suspicious_else_formatting)]
+    async fn execute_query(
+        &self,
         _ctx: &Context<'_>,
-        operation: &QueryOperation,
-    ) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
-        let (start, end) = match operation {
-            QueryOperation::None => {
-                let start = 0;
-                let end = self.len();
-                (start, end)
-            }
-            QueryOperation::After { after } => {
-                let start = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let end = self.len();
-                (start, end)
-            }
-            QueryOperation::Before { before } => {
-                let end = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                let start = 0;
-                (start, end)
-            }
-            QueryOperation::Between { after, before } => {
-                let start = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let end = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                (start, end)
-            }
-            QueryOperation::First { limit } => {
-                let start = 0;
-                let end = (start + *limit).min(self.len());
-                (start, end)
-            }
-            QueryOperation::FirstAfter { after, limit } => {
-                let start = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let end = (start + *limit).min(self.len());
-                (start, end)
-            }
-            QueryOperation::FirstBefore { before, limit } => {
-                let end_cursor = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                let start = (end_cursor - *limit).max(0);
-                let end = (start + *limit).min(end_cursor);
-                (start, end)
-            }
-            QueryOperation::FirstBetween {
-                after,
-                before,
-                limit,
-            } => {
-                let start = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let end_cursor = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                let end = (start + *limit).min(end_cursor);
-                (start, end)
-            }
-            QueryOperation::Last { limit } => {
-                let end = self.len();
-                let start = (end - *limit).max(0);
-                (start, end)
-            }
-            QueryOperation::LastAfter { after, limit } => {
-                let end = self.len();
-                let start_cursor = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let start = (end - *limit).max(start_cursor);
-                (start, end)
-            }
-            QueryOperation::LastBefore { before, limit } => {
-                let end = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                let start = (end - *limit).max(0);
-                (start, end)
-            }
-            QueryOperation::LastBetween {
-                after,
-                before,
-                limit,
-            } => {
-                let start_cursor = base64::decode(after.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| (idx + 1) as usize)
-                    .unwrap_or(0);
-                let end = base64::decode(before.to_string())
-                    .ok()
-                    .and_then(|data| data.as_slice().read_u32::<BE>().ok())
-                    .map(|idx| idx as usize)
-                    .unwrap_or_else(|| self.len());
-                let start = (end - *limit).max(start_cursor);
-                (start, end)
-            }
-            QueryOperation::Invalid => {
-                let start = 0;
-                let end = 0;
-                (start, end)
-            }
-        };
+        after: Option<usize>,
+        before: Option<usize>,
+        first: Option<usize>,
+        last: Option<usize>,
+    ) -> FieldResult<
+        Connection<
+            Self::CursorType,
+            Self::NodeType,
+            Self::ConnectionFieldsType,
+            Self::EdgeFieldsType,
+        >,
+    > {
+        let mut start = 0usize;
+        let mut end = self.len();
 
-        let mut nodes = Vec::with_capacity(end - start);
-        if nodes.capacity() != 0 {
-            for (idx, item) in self[start..end].iter().enumerate() {
-                nodes.push((
-                    base64::encode((idx as u32).to_be_bytes()).into(),
-                    EmptyEdgeFields,
-                    item,
-                ));
+        if let Some(after) = after {
+            if after >= self.len() {
+                return Ok(Connection::new(false, false));
             }
+            start = after + 1;
         }
 
-        Ok(Connection::new(None, start > 0, end < self.len(), nodes))
+        if let Some(before) = before {
+            if before == 0 {
+                return Ok(Connection::new(false, false));
+            }
+            end = before;
+        }
+
+        let mut slice = &self[start..end];
+
+        if let Some(first) = first {
+            slice = &slice[..first.min(slice.len())];
+            end -= first.min(slice.len());
+        } else if let Some(last) = last {
+            slice = &slice[slice.len() - last.min(slice.len())..];
+            start = end - last.min(slice.len());
+        }
+
+        let mut connection = Connection::new(start > 0, end < self.len());
+        connection.append(
+            slice
+                .iter()
+                .enumerate()
+                .map(|(idx, item)| Ok(Edge::new(start + idx, item))),
+        )?;
+        Ok(connection)
     }
 }

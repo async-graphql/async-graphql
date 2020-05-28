@@ -1,58 +1,47 @@
-pub mod stream {
-    use async_graphql::*;
-    use futures::StreamExt;
-    use serde_json::json;
+use async_graphql::connection::*;
+use async_graphql::*;
+use serde_json::json;
 
-    struct Root;
+#[async_std::test]
+pub async fn test_slice_datasource() {
+    struct Query;
 
     #[Object]
-    impl Root {
-        async fn stream_connection(
+    impl Query {
+        async fn values(
             &self,
             ctx: &Context<'_>,
-            after: Option<Cursor>,
-            before: Option<Cursor>,
+            after: Option<String>,
+            before: Option<String>,
             first: Option<i32>,
             last: Option<i32>,
-        ) -> FieldResult<Connection<String>> {
-            futures::stream::iter(vec![
-                "a".to_owned(),
-                "b".to_owned(),
-                "c".to_owned(),
-                "d".to_owned(),
-                "e".to_owned(),
-                "f".to_owned(),
-            ])
-            .map(|node| {
-                let cursor: Cursor = node.clone().into();
-                (cursor, EmptyEdgeFields, node)
-            })
-            .boxed()
-            .query(ctx, after, before, first, last)
-            .await
+        ) -> FieldResult<Connection<usize, &&str>> {
+            const ROWS: &[&str] = &[
+                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p",
+                "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+            ];
+            ROWS.query(ctx, after, before, first, last).await
         }
     }
 
     static QUERY: &str = r#"
         query(
-            $after: Cursor
-            $before: Cursor
+            $after: String
+            $before: String
             $first: Int
             $last: Int
         ) {
-            streamConnection(
+            values(
                 after: $after
                 before: $before
                 first: $first
                 last: $last
             ) {
-                totalCount
                 pageInfo {
                     hasPreviousPage
                     hasNextPage
                 }
                 edges {
-                    cursor
                     node
                 }
             }
@@ -61,22 +50,19 @@ pub mod stream {
 
     async fn do_test(
         vars: serde_json::Value,
-        (has_prev_page, has_next_page, edges): (bool, bool, &[&str]),
+        (has_prev_page, has_next_page, nodes): (bool, bool, &[&str]),
     ) {
-        let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
-
+        let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
         let query = QueryBuilder::new(QUERY).variables(Variables::parse_from_json(vars).unwrap());
-
-        let edges = edges
+        let edges = nodes
             .iter()
-            .map(|s| json!({ "cursor": s.to_owned(), "node": s.to_owned() }))
+            .map(|s| json!({ "node": s.to_owned() }))
             .collect::<Vec<_>>();
 
         assert_eq!(
             query.execute(&schema).await.unwrap().data,
             serde_json::json!({
-                "streamConnection": {
-                    "totalCount": 6,
+                "values": {
                     "pageInfo": {
                         "hasPreviousPage": has_prev_page,
                         "hasNextPage": has_next_page,
@@ -87,201 +73,159 @@ pub mod stream {
         );
     }
 
-    #[async_std::test]
-    pub async fn test_connection_stream_none() {
-        do_test(
-            json!({ "after": null, "before": null, "first": null, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
+    do_test(
+        json!({ "after": null, "before": null, "first": 2, "last": null }),
+        (false, true, &["a", "b"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": 1usize.encode_cursor().unwrap(), "before": null, "first": 2, "last": null }),
+        (true, true, &["c", "d"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": 1usize.encode_cursor().unwrap(), "before": null, "first": 6, "last": null }),
+        (true, true, &["c", "d", "e", "f", "g", "h"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": null, "before": null, "first": 3, "last": null }),
+        (false, true, &["a", "b", "c"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": null, "before": null, "first": null, "last": 3 }),
+        (true, false, &["x", "y", "z"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": null, "before": 1usize.encode_cursor().unwrap(), "first": 10, "last": null }),
+        (false, true, &["a"]),
+    )
+    .await;
+
+    do_test(
+        json!({ "after": null, "before": 1usize.encode_cursor().unwrap(), "first": null, "last": 10 }),
+        (false, true, &["a"]),
+    )
+    .await;
+}
+
+#[async_std::test]
+pub async fn test_datasource_additional_fields() {
+    struct QueryRoot;
+
+    struct Numbers;
+
+    #[SimpleObject]
+    struct ConnectionFields {
+        total_count: i32,
     }
 
-    #[async_std::test]
-    pub async fn test_connection_stream_after() {
-        do_test(
-            json!({ "after": "b", "before": null, "first": null, "last": null }),
-            (true, false, &["c", "d", "e", "f"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "x", "before": null, "first": null, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
+    #[SimpleObject]
+    struct Diff {
+        diff: i32,
     }
 
-    #[async_std::test]
-    pub async fn test_connection_stream_before() {
-        do_test(
-            json!({ "after": null, "before": "e", "first": null, "last": null }),
-            (false, true, &["a", "b", "c", "d"]),
-        )
-        .await;
+    #[DataSource]
+    impl DataSource for Numbers {
+        type CursorType = usize;
+        type NodeType = i32;
+        type ConnectionFieldsType = ConnectionFields;
+        type EdgeFieldsType = Diff;
 
-        do_test(
-            json!({ "after": null, "before": "x", "first": null, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
+        async fn execute_query(
+            &self,
+            _ctx: &Context<'_>,
+            after: Option<usize>,
+            before: Option<usize>,
+            first: Option<usize>,
+            last: Option<usize>,
+        ) -> FieldResult<
+            Connection<
+                Self::CursorType,
+                Self::NodeType,
+                Self::ConnectionFieldsType,
+                Self::EdgeFieldsType,
+            >,
+        > {
+            let mut start = after.map(|after| after + 1).unwrap_or(0);
+            let mut end = before.unwrap_or(10000);
+            if let Some(first) = first {
+                end = (start + first).min(end);
+            }
+            if let Some(last) = last {
+                start = if last > end - start { end } else { end - last };
+            }
+            let mut connection = Connection::new_with_additional_fields(
+                start > 0,
+                end < 10000,
+                ConnectionFields { total_count: 10000 },
+            );
+            connection.append((start..end).into_iter().map(|n| {
+                Ok(Edge::new_with_additional_fields(
+                    n,
+                    n as i32,
+                    Diff {
+                        diff: (10000 - n) as i32,
+                    },
+                ))
+            }))?;
+            Ok(connection)
+        }
     }
 
-    #[async_std::test]
-    pub async fn test_connection_stream_between() {
-        do_test(
-            json!({ "after": "b", "before": "e", "first": null, "last": null }),
-            (true, true, &["c", "d"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "x", "before": "e", "first": null, "last": null }),
-            (false, true, &["a", "b", "c", "d"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "b", "before": "x", "first": null, "last": null }),
-            (true, false, &["c", "d", "e", "f"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "x", "before": "x", "first": null, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
+    #[Object]
+    impl QueryRoot {
+        async fn numbers(
+            &self,
+            ctx: &Context<'_>,
+            after: Option<String>,
+            before: Option<String>,
+            first: Option<i32>,
+            last: Option<i32>,
+        ) -> FieldResult<Connection<usize, i32, ConnectionFields, Diff>> {
+            Numbers.query(ctx, after, before, first, last).await
+        }
     }
 
-    #[async_std::test]
-    pub async fn test_connection_stream_first() {
-        do_test(
-            json!({ "after": null, "before": null, "first": 2, "last": null }),
-            (false, true, &["a", "b"]),
-        )
-        .await;
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 
-        do_test(
-            json!({ "after": null, "before": null, "first": 6, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
+    assert_eq!(
+        schema
+            .execute("{ numbers(first: 2) { totalCount edges { node diff } } }")
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({
+            "numbers": {
+                "totalCount": 10000,
+                "edges": [
+                    {"node": 0, "diff": 10000},
+                    {"node": 1, "diff": 9999},
+                ]
+            },
+        })
+    );
 
-        do_test(
-            json!({ "after": null, "before": null, "first": 10, "last": null }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_first_after() {
-        do_test(
-            json!({ "after": "b", "before": null, "first": 2, "last": null }),
-            (true, true, &["c", "d"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "b", "before": null, "first": 6, "last": null }),
-            (true, false, &["c", "d", "e", "f"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_first_before() {
-        do_test(
-            json!({ "after": null, "before": "e", "first": 2, "last": null }),
-            (false, true, &["a", "b"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": null, "before": "e", "first": 6, "last": null }),
-            (false, true, &["a", "b", "c", "d"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_first_between() {
-        do_test(
-            json!({ "after": "a", "before": "f", "first": 2, "last": null }),
-            (true, true, &["b", "c"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "a", "before": "f", "first": 6, "last": null }),
-            (true, true, &["b", "c", "d", "e"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_last() {
-        do_test(
-            json!({ "after": null, "before": null, "first": null, "last": 2 }),
-            (true, false, &["e", "f"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": null, "before": null, "first": null, "last": 6 }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": null, "before": null, "first": null, "last": 10 }),
-            (false, false, &["a", "b", "c", "d", "e", "f"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_last_after() {
-        do_test(
-            json!({ "after": "b", "before": null, "first": null, "last": 2 }),
-            (true, false, &["e", "f"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "b", "before": null, "first": null, "last": 6 }),
-            (true, false, &["c", "d", "e", "f"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_last_before() {
-        do_test(
-            json!({ "after": null, "before": "e", "first": null, "last": 2 }),
-            (true, true, &["c", "d"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": null, "before": "e", "first": null, "last": 6 }),
-            (false, true, &["a", "b", "c", "d"]),
-        )
-        .await;
-    }
-
-    #[async_std::test]
-    pub async fn test_connection_stream_last_between() {
-        do_test(
-            json!({ "after": "a", "before": "f", "first": null, "last": 2 }),
-            (true, true, &["d", "e"]),
-        )
-        .await;
-
-        do_test(
-            json!({ "after": "a", "before": "f", "first": null, "last": 6 }),
-            (true, true, &["b", "c", "d", "e"]),
-        )
-        .await;
-    }
+    assert_eq!(
+        schema
+            .execute("{ numbers(last: 2) { edges { node diff } } }")
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({
+            "numbers": {
+                "edges": [
+                    {"node": 9998, "diff": 2},
+                    {"node": 9999, "diff": 1},
+                ]
+            },
+        })
+    );
 }

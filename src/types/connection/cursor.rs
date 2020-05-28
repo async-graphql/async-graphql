@@ -1,60 +1,56 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value, ID};
-use async_graphql_derive::Scalar;
-use std::ops::{Deref, DerefMut};
+use crate::ID;
+use byteorder::{ReadBytesExt, BE};
+use std::convert::Infallible;
+use std::fmt::Display;
 
-/// Cursor scalar
+/// Cursor type
 ///
 /// A custom scalar that serializes as a string.
 /// https://relay.dev/graphql/connections.htm#sec-Cursor
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct Cursor(String);
+pub trait CursorType: Sized {
+    /// Error type for `encode_cursor` and `decode_cursor`.
+    type Error: Display;
 
-impl Deref for Cursor {
-    type Target = String;
+    /// Decode cursor from string.
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error>;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    /// Encode cursor to string.
+    fn encode_cursor(&self) -> Result<String, Self::Error>;
+}
+
+impl CursorType for usize {
+    type Error = anyhow::Error;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        let data = base64::decode(s)?;
+        Ok(data.as_slice().read_u32::<BE>()? as usize)
+    }
+
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(base64::encode((*self as u32).to_be_bytes()))
     }
 }
 
-impl DerefMut for Cursor {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl CursorType for String {
+    type Error = Infallible;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        Ok(s.to_string())
+    }
+
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(self.clone())
     }
 }
 
-impl<T> From<T> for Cursor
-where
-    T: std::fmt::Display,
-{
-    fn from(value: T) -> Self {
-        Cursor(value.to_string())
-    }
-}
+impl CursorType for ID {
+    type Error = Infallible;
 
-impl From<ID> for Cursor {
-    fn from(id: ID) -> Self {
-        Cursor(id.into())
-    }
-}
-
-#[Scalar(internal)]
-impl ScalarType for Cursor {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::String(s) => Ok(Cursor(s)),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        Ok(s.to_string().into())
     }
 
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::String(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::String(self.0.to_string())
+    fn encode_cursor(&self) -> Result<String, Self::Error> {
+        Ok(self.to_string())
     }
 }

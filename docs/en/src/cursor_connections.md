@@ -4,61 +4,57 @@ Relay's cursor connection specification is defined to provide a consistent metho
 
 It is simple to define a cursor connection in `Async-GraphQL`
 
-1. Implement `async_graphql::DataSource` and write the `query_operation` function.
+1. Implement `async_graphql::DataSource` and write the `execute_query` function.
 2. Call `DataSource::query` in the field's resolver function and return the result.
 
 Here is a simple data source that returns continuous integers:
 
 ```rust
 use async_graphql::*;
+use async_graphql::connection::*;
 
 struct Integers;
 
 #[DataSource]
 impl DataSource for Integers {
+    // Type for cursor
+    type CursorType = usize;
+
     // Type for response
-    type Element = i32;
+    type NodeType = i32;
+
+    // We don't need to extend the connection fields, so this can be empty
+    type ConnectionFieldsType = EmptyFields;
 
     // We don't need to extend the edge fields, so this can be empty
-    type EdgeFieldsObj = EmptyEdgeFields;
+    type EdgeFieldsType = EmptyFields;
 
-    async fn query_operation(&mut self, _ctx: &Context<'_>, operation: &QueryOperation<'_>) -> FieldResult<Connection<Self::Element, Self::EdgeFieldsObj>> {
-        let (start, end) = match operation {
-            // Look from beginning up to limit
-            QueryOperation::First {limit} => {
-                let start = 0;
-                let end = start + *limit as i32;
-                (start, end)
-            }
-            QueryOperation::FirstAfter {after, limit} => {
-                // Look after number up to limit
-                let start = after.parse::<i32>()
-                    .ok()
-                    .map(|after| after + 1)
-                    .unwrap_or(0);
-                (start, end + start + *limit)
-            }
-            // Look backward from last element up to limit
-            QueryOperation::Last {limit} => {
-                let end = 0;
-                let start = end - *limit as i32;
-                (start, end)
-            }
-            QueryOperation::LastBefore {before, limit} => {
-                // Look before number up to limit
-                let end = before.parse::<i32>()
-                    .ok()
-                    .unwrap_or(0);
-                (end - *limit, end)
-            }
-            // TODO: Need to handle all conditions
-            _ => (0, 10)
-        };
-
-        // Create nodes. Each node is a tuple containing three values: the cursor, extended edge object, and node value
-        let nodes = (start..end).into_iter().map(|n| (n.to_string(), EmptyEdgeFields, n)).collect();
-
-        Ok(Connection::new(None, true, true, nodes))
+    async fn execute_query(
+        &mut self, 
+        _ctx: &Context<'_>, 
+        after: Option<usize>, 
+        before: Option<usize>, 
+        first: Option<usize>, 
+        last: Option<usize>,
+    ) -> FieldResult<Connection<usize, i32, EmptyFields, EmptyFields>> {
+        let mut start = after.map(|after| after + 1).unwrap_or(0);
+        let mut end = before.unwrap_or(10000);
+        if let Some(first) = first {
+            end = (start + first).min(end);
+        }
+        if let Some(last) = last {
+            start = if last > end - start {
+                 end
+            } else {
+                end - last
+            };
+        }
+        let mut connection = Connection::new(start > 0, end < 10000);
+        connection.append(
+            (start..end).into_iter().map(|n|
+                Ok(Edge::new_with_additional_fields(n, n as i32, EmptyFields)),
+        )?;
+        Ok(connection)
     }
 }
 
@@ -73,8 +69,7 @@ impl Query {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> FieldResult<Connection<i32, EmptyEdgeFields>> {
-        // Make the query
+    ) -> FieldResult<Connection<usize, i32, EmptyFields, EmptyFields>> {
         Integers.query(ctx, after, before, first, last).await
     }
 }

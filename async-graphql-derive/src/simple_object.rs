@@ -99,6 +99,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 if field.is_ref {
                     getters.push(quote! {
                         #[inline]
+                        #[allow(missing_docs)]
                         #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
                             Ok(&self.#ident)
                         }
@@ -106,6 +107,7 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                 } else {
                     getters.push(quote! {
                         #[inline]
+                        #[allow(missing_docs)]
                         #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
                             Ok(self.#ident.clone())
                         }

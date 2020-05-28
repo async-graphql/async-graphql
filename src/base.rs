@@ -1,7 +1,7 @@
 use crate::registry::Registry;
 use crate::{
     registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
-    Result, Value, ID,
+    Result, Value,
 };
 use async_graphql_parser::query::Field;
 use std::borrow::Cow;
@@ -30,23 +30,6 @@ pub trait Type {
 
     /// Create type information in the registry and return qualified typename.
     fn create_type_info(registry: &mut registry::Registry) -> String;
-
-    /// Returns a `GlobalID` that is unique among all types.
-    fn global_id(id: ID) -> ID {
-        base64::encode(format!("{}:{}", Self::type_name(), *id)).into()
-    }
-
-    /// Parse `GlobalID`.
-    fn from_global_id(id: ID) -> Option<ID> {
-        let v: Vec<&str> = id.splitn(2, ':').collect();
-        if v.len() != 2 {
-            return None;
-        }
-        if v[0] != Self::type_name() {
-            return None;
-        }
-        Some(v[1].to_string().into())
-    }
 }
 
 /// Represents a GraphQL input value
