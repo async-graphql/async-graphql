@@ -451,7 +451,7 @@ pub use async_graphql_derive::InputObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | N        |
-/// | method      | Method name               | string   | Y        |
+/// | method      | Rust resolver method name. If specified, `name` will not be camelCased in schema definition | string | Y |
 /// | type        | Field type                | string   | N        |
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
@@ -508,6 +508,12 @@ pub use async_graphql_derive::InputObject;
 ///     async fn value_c(&self, a: i32, b: i32) -> i32 {
 ///         a + b
 ///     }
+///
+///     /// Disabled name transformation, don't forget "method" argument in interface!
+///     #[field(name = "value_d")]
+///     async fn value_d(&self) -> i32 {
+///         &self.value + 1
+///     }
 /// }
 ///
 /// #[Interface(
@@ -516,6 +522,7 @@ pub use async_graphql_derive::InputObject;
 ///     field(name = "value_c", type = "i32",
 ///         arg(name = "a", type = "i32"),
 ///         arg(name = "b", type = "i32")),
+///     field(name = "value_d", method = "value_d", type = "i32"),
 /// )]
 /// enum MyInterface {
 ///     TypeA(TypeA)
@@ -539,13 +546,15 @@ pub use async_graphql_derive::InputObject;
 ///             valueA
 ///             valueB
 ///             valueC(a: 3, b: 2)
+///             value_d
 ///         }
 ///     }"#).await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",
 ///             "valueB": 10,
-///             "valueC": 5
+///             "valueC": 5,
+///             "value_d": 11
 ///         }
 ///     }));
 /// }

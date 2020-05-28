@@ -7,6 +7,12 @@ Therefore, the `Object`'s fields' type, arguments must match with the `Interface
 
 `Async-graphql` implemented auto conversion from `Object` to `Interface`, you only need to call `Into::into`.
 
+Interface fields names transforms to camelCase in schema definition.
+If you need e.g. snake_cased field name, there is `method` argument in field.
+
+- When the `name` and `method` exist together, the `name` is the graphql name and the `method` is the rust method name.
+- When only `name` exists, `name.to_camel_case()` is the graphql name and the `name` is the rust method name.
+
 ```rust
 use async_graphql::*;
 
@@ -23,6 +29,11 @@ impl Circle {
     async fn scale(&self, s: f32) -> Shape {
         Circle { radius: self.radius * s }.into()
     }
+
+    #[field(name = "short_description")]
+    async fn short_description(&self) -> String {
+        "Circle".to_string()
+    }
 }
 
 struct Square {
@@ -38,11 +49,17 @@ impl Square {
     async fn scale(&self, s: f32) -> Shape {
         Square { width: self.width * s }.into()
     }
+
+    #[field(name = "short_description")]
+    async fn short_description(&self) -> String {
+        "Square".to_string()
+    }
 }
 
 #[Interface(
     field(name = "area", type = "f32"),
     field(name = "scale", type = "Shape", arg(name = "s", type = "f32"))
+    field(name = "short_description", method = "short_description", type = "String")
 )]
 enum Shape {
     Circle(Circle),
