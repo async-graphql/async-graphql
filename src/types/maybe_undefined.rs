@@ -3,7 +3,47 @@ use std::borrow::Cow;
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///
-/// Spec: https://spec.graphql.org/June2018/#sec-Null-Value
+/// **Reference:** <https://spec.graphql.org/June2018/#sec-Null-Value>
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// struct Query;
+///
+/// #[Object]
+/// impl Query {
+///     async fn value1(&self, input: MaybeUndefined<i32>) -> i32 {
+///         if input.is_null() {
+///             1
+///         } else if input.is_undefined() {
+///             2
+///         } else {
+///             input.take().unwrap()
+///         }
+///     }
+/// }
+///
+/// #[async_std::main]
+/// async fn main() {
+///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+///     let query = r#"
+///         {
+///             v1:value1(input: 99)
+///             v2:value1(input: null)
+///             v3:value1()
+///         }"#;
+///     assert_eq!(
+///         schema.execute(&query).await.unwrap().data,
+///         serde_json::json!({
+///             "v1": 99,
+///             "v2": 1,
+///             "v3": 2,
+///         })
+///     );
+/// }
+/// ```
 #[allow(missing_docs)]
 pub enum MaybeUndefined<T> {
     Undefined,
