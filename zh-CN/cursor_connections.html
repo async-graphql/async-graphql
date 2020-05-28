@@ -151,7 +151,7 @@
 <p>Relay定义了一套游标连接规范，以提供一致性的分页查询方式，具体的规范文档请参考<a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
 <p>在<code>Async-graphql</code>中定义一个连接非常简单，只需要两步：</p>
 <ol>
-<li>实现<code>async_graphql::DataSource</code>，重写<code>query_operation</code>函数。</li>
+<li>实现<code>async_graphql::DataSource</code>，重写<code>execute_query</code>函数。</li>
 <li>在字段的Resolver函数中调用<code>DataSource::query</code>函数并传递响应参数。</li>
 </ol>
 <p>下面是一个简单的获取连续整数的数据源：</p>
@@ -159,55 +159,50 @@
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
+use async_graphql::connection::*;
 
 struct Integers;
 
 #[DataSource]
 impl DataSource for Integers {
+    // 游标类型
+    type CursorType = usize;
+
     // 元素类型
-    type Element = i32;
+    type NodeType = i32;
 
-    // 我们不需要扩展边的字段，所以传EmptyEdgeFields
-    type EdgeFieldsObj = EmptyEdgeFields;
+    // 我们不需要扩展连接的字段，所以传EmptyFields
+    type ConnectionFieldsType = EmptyFields;
 
-    async fn query_operation(&amp;mut self, _ctx: &amp;Context&lt;'_&gt;, operation: &amp;QueryOperation&lt;'_&gt;) -&gt; FieldResult&lt;Connection&lt;Self::Element, Self::EdgeFieldsObj&gt;&gt; {
-        let (start, end) = match operation {
-            // 向前查找
-            QueryOperation::First {limit} =&gt; {
-                let start = 0;
-                let end = start + *limit as i32;
-                (start, end)
-            }
-            QueryOperation::FirstAfter {after, limit} =&gt; {
-                // 起始数字，从after+1开始
-                let start = after.parse::&lt;i32&gt;()
-                    .ok()
-                    .map(|after| after + 1)
-                    .unwrap_or(0);
-                (start, end + start + *limit)
-            }
-            // 向后查找
-            QueryOperation::Last {limit} =&gt; {
-                let end = 0;
-                let start = end - *limit as i32;
-                (start, end)
-            }
-            QueryOperation::LastBefore {before, limit} =&gt; {
-                // 结束数字
-                let end = before.parse::&lt;i32&gt;()
-                    .ok()
-                    .unwrap_or(0);
-                (end - *limit, end)
-            }
-            // TODO: 建议处理所有条件
-            _ =&gt; (0, 10)
-        };
+    // 我们不需要扩展边的字段，所以传EmptyFields
+    type EdgeFieldsType = EmptyFields;
 
-        // 创建节点，每个节点都是一个包含三个值的元组，依次是游标，扩展边对象，节点值
-        let nodes = (start..end).into_iter().map(|n| (n.to_string(), EmptyEdgeFields, n)).collect();
-
-        // 创建Connection并返回
-        Ok(Connection::new(None, true, true, nodes))
+    async fn execute_query(
+        &amp;mut self, 
+        _ctx: &amp;Context&lt;'_&gt;, 
+        after: Option&lt;usize&gt;, 
+        before: Option&lt;usize&gt;, 
+        first: Option&lt;usize&gt;, 
+        last: Option&lt;usize&gt;,
+    ) -&gt; FieldResult&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
+        let mut start = after.map(|after| after + 1).unwrap_or(0);
+        let mut end = before.unwrap_or(10000);
+        if let Some(first) = first {
+            end = (start + first).min(end);
+        }
+        if let Some(last) = last {
+            start = if last &gt; end - start {
+                 end
+            } else {
+                end - last
+            };
+        }
+        let mut connection = Connection::new(start &gt; 0, end &lt; 10000);
+        connection.append(
+            (start..end).into_iter().map(|n|
+                Ok(Edge::new_with_additional_fields(n, n as i32, EmptyFields)),
+        )?;
+        Ok(connection)
     }
 }
 
@@ -222,8 +217,7 @@ impl Query {
         before: Option&lt;String&gt;,
         first: Option&lt;i32&gt;,
         last: Option&lt;i32&gt;,
-    ) -&gt; FieldResult&lt;Connection&lt;i32, EmptyEdgeFields&gt;&gt; {
-        // 查询
+    ) -&gt; FieldResult&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
         Integers.query(ctx, after, before, first, last).await
     }
 }
