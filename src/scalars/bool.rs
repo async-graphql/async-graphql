@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 /// The `Boolean` scalar type represents `true` or `false`.
@@ -18,7 +18,7 @@ impl ScalarType for bool {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok((*self).into())
+    fn to_value(&self) -> Value {
+        Value::Boolean(*self)
     }
 }

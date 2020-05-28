@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
 macro_rules! impl_integer_scalars {
@@ -21,8 +21,8 @@ macro_rules! impl_integer_scalars {
                 }
             }
 
-            fn to_json(&self) -> Result<serde_json::Value> {
-                Ok((*self).into())
+            fn to_value(&self) -> Value {
+                Value::Int(*self as i32)
             }
         }
         )*
@@ -52,8 +52,8 @@ macro_rules! impl_int64_scalars {
                 }
             }
 
-            fn to_json(&self) -> Result<serde_json::Value> {
-                Ok(self.to_string().into())
+            fn to_value(&self) -> Value {
+                Value::String(self.to_string())
             }
         }
         )*

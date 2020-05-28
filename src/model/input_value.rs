@@ -24,6 +24,6 @@ impl<'a> __InputValue<'a> {
     }
 
     async fn default_value(&self) -> Option<String> {
-        self.input_value.default_value.map(|s| s.to_string())
+        self.input_value.default_value.clone()
     }
 }

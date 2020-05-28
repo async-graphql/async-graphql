@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use chrono::NaiveDate;
 
@@ -11,7 +11,7 @@ impl ScalarType for NaiveDate {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.format("%Y-%m-%d").to_string().into())
+    fn to_value(&self) -> Value {
+        Value::String(self.format("%Y-%m-%d").to_string())
     }
 }

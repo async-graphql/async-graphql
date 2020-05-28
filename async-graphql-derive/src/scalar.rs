@@ -50,6 +50,10 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
             fn parse(value: #crate_name::Value) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value)
             }
+
+            fn to_value(&self) -> Value {
+                <#self_ty as #crate_name::ScalarType>::to_value(self)
+            }
         }
 
         #[allow(clippy::ptr_arg)]
@@ -60,7 +64,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
                 _: &#crate_name::ContextSelectionSet<'_>,
                 _field: &#crate_name::Positioned<#crate_name::parser::query::Field>
             ) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                self.to_json()
+                Ok(#crate_name::ScalarType::to_value(self).into())
             }
         }
     };

@@ -97,7 +97,7 @@ pub struct MetaInputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub ty: String,
-    pub default_value: Option<&'static str>,
+    pub default_value: Option<String>,
     pub validator: Option<Arc<dyn InputValueValidator>>,
 }
 

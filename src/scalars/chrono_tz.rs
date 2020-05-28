@@ -12,7 +12,7 @@ impl ScalarType for Tz {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(Tz::name(self).into())
+    fn to_value(&self) -> Value {
+        Value::String(Tz::name(self))
     }
 }

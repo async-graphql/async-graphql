@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{build_value_repr, check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -51,6 +51,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .unwrap_or_else(|| quote! {None});
 
     let mut get_fields = Vec::new();
+    let mut put_fields = Vec::new();
     let mut fields = Vec::new();
     let mut schema_fields = Vec::new();
 
@@ -67,25 +68,20 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             .as_ref()
             .map(|s| quote! {Some(#s)})
             .unwrap_or_else(|| quote! {None});
-        let default = field_args
+        let schema_default = field_args
             .default
             .as_ref()
-            .map(|v| {
-                let s = v.to_string();
-                quote! {Some(#s)}
+            .map(|value| {
+                quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
             })
             .unwrap_or_else(|| quote! {None});
 
         if let Some(default) = &field_args.default {
-            let default_repr = build_value_repr(&crate_name, default);
             get_fields.push(quote! {
-                let #ident:#ty = {
+                let #ident: #ty = {
                     match obj.get(#name) {
                         Some(value) => #crate_name::InputValueType::parse(value.clone())?,
-                        None => {
-                            let default = #default_repr;
-                            #crate_name::InputValueType::parse(default)?
-                        }
+                        None => #default,
                     }
                 };
             });
@@ -95,13 +91,17 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             });
         }
 
+        put_fields.push(quote! {
+            map.insert(#name.to_string(), #crate_name::InputValueType::to_value(&self.#ident));
+        });
+
         fields.push(ident);
         schema_fields.push(quote! {
             fields.insert(#name.to_string(), #crate_name::registry::MetaInputValue {
                 name: #name,
                 description: #desc,
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
-                default_value: #default,
+                default_value: #schema_default,
                 validator: #validator,
             });
         })
@@ -138,6 +138,12 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 } else {
                     Err(#crate_name::InputValueError::ExpectedType(value))
                 }
+            }
+
+            fn to_value(&self) -> #crate_name::Value {
+                let mut map = std::collections::BTreeMap::new();
+                #(#put_fields)*
+                #crate_name::Value::Object(map)
             }
         }
 

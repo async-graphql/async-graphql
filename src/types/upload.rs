@@ -86,4 +86,8 @@ impl<'a> InputValueType for Upload {
             Err(InputValueError::ExpectedType(value))
         }
     }
+
+    fn to_value(&self) -> Value {
+        Value::Null
+    }
 }

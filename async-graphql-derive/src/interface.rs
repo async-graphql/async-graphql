@@ -1,7 +1,7 @@
 use crate::args;
 use crate::args::{InterfaceField, InterfaceFieldArgument};
 use crate::output_type::OutputType;
-use crate::utils::{build_value_repr, check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -114,6 +114,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
     for InterfaceField {
         name,
+        method,
         desc,
         ty,
         args,
@@ -123,8 +124,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         requires,
     } in &interface_args.fields
     {
-        let method_name = Ident::new(name, Span::call_site());
-        let name = name.to_camel_case();
+        let (name, method_name) = if let Some(method) = method {
+            (name.to_string(), Ident::new(method, Span::call_site()))
+        } else {
+            let method_name = Ident::new(&name, Span::call_site());
+            (name.to_camel_case(), method_name)
+        };
         let mut calls = Vec::new();
         let mut use_params = Vec::new();
         let mut decl_params = Vec::new();
@@ -154,15 +159,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
 
-            let param_default = match &default {
-                Some(default) => {
-                    let repr = build_value_repr(&crate_name, &default);
-                    quote! {|| #repr }
-                }
-                None => quote! { || #crate_name::Value::Null },
+            let get_default = match default {
+                Some(default) => quote! { Some(|| -> #ty { #default }) },
+                None => quote! { None },
             };
             get_params.push(quote! {
-                let #ident: #ty = ctx.param_value(#name, #param_default)?;
+                let #ident: #ty = ctx.param_value(#name, #get_default)?;
             });
 
             let desc = desc
@@ -171,9 +173,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 .unwrap_or_else(|| quote! {None});
             let schema_default = default
                 .as_ref()
-                .map(|v| {
-                    let s = v.to_string();
-                    quote! {Some(#s)}
+                .map(|value| {
+                    quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
                 })
                 .unwrap_or_else(|| quote! {None});
             schema_args.push(quote! {

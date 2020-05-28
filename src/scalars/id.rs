@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 #[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
@@ -49,7 +49,6 @@ impl TryFrom<ID> for usize {
     }
 }
 
-#[cfg(feature = "uuid")]
 impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;
 
@@ -90,7 +89,7 @@ impl ScalarType for ID {
         }
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.clone().into())
+    fn to_value(&self) -> Value {
+        Value::String(self.0.clone())
     }
 }

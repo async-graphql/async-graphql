@@ -1,4 +1,3 @@
-use async_graphql_parser::Value;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::crate_name;
 use quote::quote;
@@ -11,56 +10,6 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         let name = crate_name("async-graphql").unwrap_or_else(|_| "async_graphql".to_owned());
         let id = Ident::new(&name, Span::call_site());
         quote! { #id }
-    }
-}
-
-pub fn build_value_repr(crate_name: &TokenStream, value: &Value) -> TokenStream {
-    match value {
-        Value::Variable(_) => unreachable!(),
-        Value::Int(n) => {
-            quote! { #crate_name::Value::Int(#n) }
-        }
-        Value::Float(n) => {
-            quote! { #crate_name::Value::Float(#n) }
-        }
-        Value::String(s) => {
-            quote! { #crate_name::Value::String(#s.to_string().into()) }
-        }
-        Value::Boolean(n) => {
-            quote! { #crate_name::Value::Boolean(#n) }
-        }
-        Value::Null => {
-            quote! { #crate_name::Value::Null }
-        }
-        Value::Enum(n) => {
-            quote! { #crate_name::Value::Enum(#n.to_string()) }
-        }
-        Value::List(ls) => {
-            let members = ls
-                .iter()
-                .map(|v| build_value_repr(crate_name, v))
-                .collect::<Vec<_>>();
-            quote! { #crate_name::Value::List(vec![#(#members),*]) }
-        }
-        Value::Object(obj) => {
-            let members = obj
-                .iter()
-                .map(|(n, v)| {
-                    let value = build_value_repr(crate_name, v);
-                    quote! {
-                        obj.insert(#n.to_string().into(), #value);
-                    }
-                })
-                .collect::<Vec<_>>();
-            quote! {
-                {
-                    let mut obj = std::collections::BTreeMap::new();
-                    #(#members)*
-                    #crate_name::Value::Object(obj)
-                }
-            }
-        }
-        Value::Upload(_) => quote! { #crate_name::Value::Null },
     }
 }
 
@@ -243,4 +192,42 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
     } else {
         Some(full_docs)
     })
+}
+
+pub fn parse_default(lit: &Lit) -> Result<TokenStream> {
+    match lit {
+        Lit::Str(value) =>{
+            let value = value.value();
+            Ok(quote!({ #value.to_string() }))
+        }
+        Lit::Int(value) => {
+            let value = value.base10_parse::<i32>()?;
+            Ok(quote!({ #value as i32 }))
+        }
+        Lit::Float(value) => {
+            let value = value.base10_parse::<f64>()?;
+            Ok(quote!({ #value as f64 }))
+        }
+        Lit::Bool(value) => {
+            let value = value.value;
+            Ok(quote!({ #value }))
+        }
+        _ => Err(Error::new_spanned(
+            lit,
+            "The default value type only be string, integer, float and boolean, other types should use default_with",
+        )),
+    }
+}
+
+pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
+    if let Lit::Str(str) = lit {
+        let str = str.value();
+        let tokens: TokenStream = str.parse()?;
+        Ok(quote! { (#tokens) })
+    } else {
+        Err(Error::new_spanned(
+            &lit,
+            "Attribute 'default' should be a string.",
+        ))
+    }
 }

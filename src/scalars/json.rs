@@ -1,11 +1,11 @@
-use crate::{InputValueResult, Result, ScalarType, Value};
+use crate::{InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Json<T>(pub T);
 
 impl<T> Deref for Json<T> {
@@ -29,8 +29,10 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
         Ok(serde_json::from_value(value.into()).map(Json)?)
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(serde_json::to_value(&self.0).unwrap_or_else(|_| serde_json::Value::Null))
+    fn to_value(&self) -> Value {
+        serde_json::to_value(&self.0)
+            .unwrap_or_else(|_| serde_json::Value::Null)
+            .into()
     }
 }
 

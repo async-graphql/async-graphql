@@ -83,8 +83,8 @@ impl ScalarType for TestScalar {
         true
     }
 
-    fn to_json(&self) -> Result<serde_json::Value> {
-        Ok(self.0.clone().into())
+    fn to_value(&self) -> Value {
+        Value::Int(self.0.clone())
     }
 }
 
@@ -152,10 +152,7 @@ struct Subscription;
 #[Subscription(desc = "Global subscription")]
 impl Subscription {
     /// simple_subscription description
-    async fn simple_subscription(
-        &self,
-        #[arg(default = "1")] step: i32,
-    ) -> impl Stream<Item = i32> {
+    async fn simple_subscription(&self, #[arg(default = 1)] step: i32) -> impl Stream<Item = i32> {
         stream::once(step)
     }
 }

@@ -31,7 +31,7 @@ impl Clone for UploadValue {
 pub enum Value {
     Null,
     Variable(String),
-    Int(i64),
+    Int(i32),
     Float(f64),
     String(String),
     Boolean(bool),
@@ -174,7 +174,7 @@ impl From<serde_json::Value> for Value {
             serde_json::Value::Null => Value::Null,
             serde_json::Value::Bool(n) => Value::Boolean(n),
             serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
-            serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap()),
+            serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap() as i32),
             serde_json::Value::String(s) => Value::String(s),
             serde_json::Value::Array(ls) => Value::List(ls.into_iter().map(Into::into).collect()),
             serde_json::Value::Object(obj) => Value::Object(
