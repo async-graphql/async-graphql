@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-lambda"
-version = "1.13.5"
+version = "1.14.0"
 authors = ["Sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "async-graphql for AWS Lambda"
@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "=1.13.5" }
+async-graphql = { path = "..", version = "1.14.0" }
 lambda_http = { git = "https://github.com/awslabs/aws-lambda-rust-runtime" }
 futures = "0.3.0"
 async-trait = "0.1.30"
