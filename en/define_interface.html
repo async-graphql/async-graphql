@@ -153,6 +153,12 @@
 The wrapper will forward Resolve to the <code>Object</code> that implemented this <code>Interface</code>.
 Therefore, the <code>Object</code>'s fields' type, arguments must match with the <code>Interface</code>'s.</p>
 <p><code>Async-graphql</code> implemented auto conversion from <code>Object</code> to <code>Interface</code>, you only need to call <code>Into::into</code>.</p>
+<p>Interface fields names transforms to camelCase in schema definition.
+If you need e.g. snake_cased GraphQL field name, you can use both the <code>name</code> and <code>method</code> attribute.</p>
+<ul>
+<li>When the <code>name</code> and <code>method</code> exist together, the <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
+<li>When only <code>name</code> exists, <code>name.to_camel_case()</code> is the GraphQL field name and the <code>name</code> is the resolver function name.</li>
+</ul>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -171,6 +177,11 @@ impl Circle {
     async fn scale(&amp;self, s: f32) -&gt; Shape {
         Circle { radius: self.radius * s }.into()
     }
+
+    #[field(name = &quot;short_description&quot;)]
+    async fn short_description(&amp;self) -&gt; String {
+        &quot;Circle&quot;.to_string()
+    }
 }
 
 struct Square {
@@ -186,11 +197,17 @@ impl Square {
     async fn scale(&amp;self, s: f32) -&gt; Shape {
         Square { width: self.width * s }.into()
     }
+
+    #[field(name = &quot;short_description&quot;)]
+    async fn short_description(&amp;self) -&gt; String {
+        &quot;Square&quot;.to_string()
+    }
 }
 
 #[Interface(
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
+    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, type = &quot;String&quot;)
 )]
 enum Shape {
     Circle(Circle),

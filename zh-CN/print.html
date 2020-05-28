@@ -336,6 +336,12 @@ pub enum Episode {
 <h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
 <p>接口用于抽象具有特定字段集合的对象，<code>Async-graphql</code>内部实现实际上是一个包装器，包装器转发接口上定义的Resolver函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。</p>
 <p><code>Async-graphql</code>自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用<code>Into::into</code>。</p>
+<p>接口字段的<code>name</code>属性表示转发的Resolver函数，并且它将被转换为驼峰命名作为字段名称。
+如果你需要自定义GraphQL接口字段名称，可以同时使用<code>name</code>和<code>method</code>属性。</p>
+<ul>
+<li>当<code>name</code>和<code>method</code>属性同时存在时，<code>name</code>是GraphQL接口字段名，而<code>method</code>是Resolver函数名。</li>
+<li>当只有<code>name</code>存在时, 转换为驼峰命名后的<code>name</code>是GraphQL接口字段名，而<code>name</code>是Resolver函数名。</li>
+</ul>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -354,6 +360,11 @@ impl Circle {
     async fn scale(&amp;self, s: f32) -&gt; Shape {
         Circle { radius: self.radius * s }.into()
     }
+
+    #[field(name = &quot;short_description&quot;)]
+    async fn short_description(&amp;self) -&gt; String {
+        &quot;Circle&quot;.to_string()
+    }
 }
 
 struct Square {
@@ -369,11 +380,17 @@ impl Square {
     async fn scale(&amp;self, s: f32) -&gt; Shape {
         Square { width: self.width * s }.into()
     }
+
+    #[field(name = &quot;short_description&quot;)]
+    async fn short_description(&amp;self) -&gt; String {
+        &quot;Square&quot;.to_string()
+    }
 }
 
 #[Interface(
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
+    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, type = &quot;String&quot;)
 )]
 enum Shape {
     Circle(Circle),
