@@ -51,7 +51,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
                 <#self_ty as #crate_name::ScalarType>::parse(value)
             }
 
-            fn to_value(&self) -> Value {
+            fn to_value(&self) -> #crate_name::Value {
                 <#self_ty as #crate_name::ScalarType>::to_value(self)
             }
         }
