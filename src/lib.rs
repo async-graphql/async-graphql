@@ -450,8 +450,8 @@ pub use async_graphql_derive::InputObject;
 ///
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
-/// | name        | Field name (in Object)    | string   | N        |
-/// | method      | Field name (in GraphQL)   | string   | Y        |
+/// | name        | Field name                | string   | N        |
+/// | method      | Rust resolver method name. If specified, `name` will not be camelCased in schema definition | string | Y |
 /// | type        | Field type                | string   | N        |
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |

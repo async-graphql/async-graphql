@@ -10,6 +10,9 @@ Therefore, the `Object`'s fields' type, arguments must match with the `Interface
 Interface fields names transforms to camelCase in schema definition.
 If you need e.g. snake_cased field name, there is `method` argument in field.
 
+- When the `name` and `method` exist together, the `name` is the graphql name and the `method` is the rust method name.
+- When only `name` exists, `name.to_camel_case()` is the graphql name and the `name` is the rust method name.
+
 ```rust
 use async_graphql::*;
 
