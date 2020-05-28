@@ -79,7 +79,8 @@ impl<'a> Type for Upload {
 }
 
 impl<'a> InputValueType for Upload {
-    fn parse(value: Value) -> InputValueResult<Self> {
+    fn parse(value: Option<Value>) -> InputValueResult<Self> {
+        let value = value.unwrap_or_default();
         if let Value::Upload(upload) = value {
             Ok(Upload(upload))
         } else {

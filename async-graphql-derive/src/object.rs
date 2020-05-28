@@ -126,7 +126,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
                     key_getter.push(quote! {
                         params.get(#name).and_then(|value| {
-                            let value: Option<#ty> = #crate_name::InputValueType::parse(value.clone()).ok();
+                            let value: Option<#ty> = #crate_name::InputValueType::parse(Some(value.clone())).ok();
                             value
                         })
                     });

@@ -153,7 +153,9 @@ pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
-pub use types::{connection, Deferred, EmptyMutation, EmptySubscription, Streamed, Upload};
+pub use types::{
+    connection, Deferred, EmptyMutation, EmptySubscription, MaybeUndefined, Streamed, Upload,
+};
 pub use validation::ValidationMode;
 
 /// Result type

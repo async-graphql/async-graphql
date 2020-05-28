@@ -459,9 +459,9 @@ impl<'a, T> ContextBase<'a, T> {
         for directive in directives {
             if directive.name.node == "skip" {
                 if let Some(value) = directive.get_argument("if") {
-                    match InputValueType::parse(
+                    match InputValueType::parse(Some(
                         self.resolve_input_value(value.clone_inner(), value.position())?,
-                    ) {
+                    )) {
                         Ok(true) => return Ok(true),
                         Ok(false) => {}
                         Err(err) => {
@@ -478,9 +478,9 @@ impl<'a, T> ContextBase<'a, T> {
                 }
             } else if directive.name.node == "include" {
                 if let Some(value) = directive.get_argument("if") {
-                    match InputValueType::parse(
+                    match InputValueType::parse(Some(
                         self.resolve_input_value(value.clone_inner(), value.position())?,
-                    ) {
+                    )) {
                         Ok(false) => return Ok(true),
                         Ok(true) => {}
                         Err(err) => {
@@ -537,18 +537,23 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         name: &str,
         default: Option<fn() -> T>,
     ) -> Result<T> {
-        match (self.get_argument(name).cloned(), default) {
-            (Some(value), _) => {
-                let pos = value.position();
-                let value = self.resolve_input_value(value.into_inner(), pos)?;
-                match InputValueType::parse(value) {
-                    Ok(res) => Ok(res),
-                    Err(err) => Err(err.into_error(pos, T::qualified_type_name())),
-                }
+        let value = self.get_argument(name).cloned();
+        if let Some(default) = default {
+            if value.is_none() {
+                return Ok(default());
             }
-            (None, Some(default)) => Ok(default()),
-            (None, None) => InputValueType::parse(Value::Null)
-                .map_err(|err| err.into_error(Pos::default(), T::qualified_type_name())),
+        }
+        let pos = value
+            .as_ref()
+            .map(|value| value.position())
+            .unwrap_or_default();
+        let resolved_value = match value {
+            Some(value) => Some(self.resolve_input_value(value.into_inner(), pos)?),
+            None => None,
+        };
+        match InputValueType::parse(resolved_value) {
+            Ok(res) => Ok(res),
+            Err(err) => Err(err.into_error(pos, T::qualified_type_name())),
         }
     }
 
