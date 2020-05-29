@@ -60,8 +60,8 @@ where
             slice
                 .iter()
                 .enumerate()
-                .map(|(idx, item)| Ok(Edge::new(start + idx, item))),
-        )?;
+                .map(|(idx, item)| Edge::new(start + idx, item)),
+        );
         Ok(connection)
     }
 }

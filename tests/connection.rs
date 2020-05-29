@@ -168,14 +168,14 @@ pub async fn test_datasource_additional_fields() {
                 ConnectionFields { total_count: 10000 },
             );
             connection.append((start..end).into_iter().map(|n| {
-                Ok(Edge::new_with_additional_fields(
+                Edge::new_with_additional_fields(
                     n,
                     n as i32,
                     Diff {
                         diff: (10000 - n) as i32,
                     },
-                ))
-            }))?;
+                )
+            }));
             Ok(connection)
         }
     }
