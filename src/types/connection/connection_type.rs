@@ -20,7 +20,7 @@ pub struct Connection<
     EE: ObjectType + Send = EmptyFields,
 > {
     /// All edges of the current page.
-    pub(crate) edges: Vec<Edge<C, T, EE>>,
+    edges: Vec<Edge<C, T, EE>>,
     additional_fields: EC,
     has_previous_page: bool,
     has_next_page: bool,
