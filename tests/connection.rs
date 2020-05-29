@@ -162,13 +162,13 @@ pub async fn test_datasource_additional_fields() {
             if let Some(last) = last {
                 start = if last > end - start { end } else { end - last };
             }
-            let mut connection = Connection::new_with_additional_fields(
+            let mut connection = Connection::with_additional_fields(
                 start > 0,
                 end < 10000,
                 ConnectionFields { total_count: 10000 },
             );
             connection.append((start..end).into_iter().map(|n| {
-                Edge::new_with_additional_fields(
+                Edge::with_additional_fields(
                     n,
                     n as i32,
                     Diff {
