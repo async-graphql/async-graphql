@@ -121,7 +121,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> KnownDirectives {
         KnownDirectives::default()
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn with_no_directives() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo {
@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn with_known_directives() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn with_unknown_directive() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -176,7 +176,7 @@ mod tests {
 
     #[test]
     fn with_many_unknown_directives() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn with_well_placed_directives() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo {
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn with_misplaced_directives() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo @include(if: true) {

@@ -37,7 +37,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueVariableNames<'a> {
         UniqueVariableNames::default()
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn unique_variable_names() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query A($x: Int, $y: String) { __typename }
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn duplicate_variable_names() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query A($x: Int, $x: Int, $x: String) { __typename }

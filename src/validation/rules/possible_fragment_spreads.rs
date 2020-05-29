@@ -74,7 +74,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> PossibleFragmentSpreads<'a> {
         PossibleFragmentSpreads::default()
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn of_the_same_object() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment objectWithinObject on Dog { ...dogFragment }
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn of_the_same_object_with_inline_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment objectWithinObjectAnon on Dog { ... on Dog { barkVolume } }
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn object_into_an_implemented_interface() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment objectWithinInterface on Pet { ...dogFragment }
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn object_into_containing_union() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment objectWithinUnion on CatOrDog { ...dogFragment }
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn union_into_contained_object() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment unionWithinObject on Dog { ...catOrDogFragment }
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn union_into_overlapping_interface() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment unionWithinInterface on Pet { ...catOrDogFragment }
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn union_into_overlapping_union() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment unionWithinUnion on DogOrHuman { ...catOrDogFragment }
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn interface_into_implemented_object() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment interfaceWithinObject on Dog { ...petFragment }
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn interface_into_overlapping_interface() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment interfaceWithinInterface on Pet { ...beingFragment }
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn interface_into_overlapping_interface_in_inline_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment interfaceWithinInterface on Pet { ... on Being { name } }
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn interface_into_overlapping_union() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment interfaceWithinUnion on CatOrDog { ...petFragment }
@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn different_object_into_object() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidObjectWithinObject on Cat { ...dogFragment }
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn different_object_into_object_in_inline_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidObjectWithinObjectAnon on Cat {
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn object_into_not_implementing_interface() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidObjectWithinInterface on Pet { ...humanFragment }
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn object_into_not_containing_union() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidObjectWithinUnion on CatOrDog { ...humanFragment }
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn union_into_not_contained_object() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidUnionWithinObject on Human { ...catOrDogFragment }
@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn union_into_non_overlapping_interface() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidUnionWithinInterface on Pet { ...humanOrAlienFragment }
@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn union_into_non_overlapping_union() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidUnionWithinUnion on CatOrDog { ...humanOrAlienFragment }
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn interface_into_non_implementing_object() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidInterfaceWithinObject on Cat { ...intelligentFragment }
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn interface_into_non_overlapping_interface() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidInterfaceWithinInterface on Pet {
@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn interface_into_non_overlapping_interface_in_inline_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidInterfaceWithinInterfaceAnon on Pet {
@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn interface_into_non_overlapping_union() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment invalidInterfaceWithinUnion on HumanOrAlien { ...petFragment }

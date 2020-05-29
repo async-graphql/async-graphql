@@ -59,7 +59,7 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> ProvidedNonNullArguments {
         ProvidedNonNullArguments
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_arguments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn arg_on_optional_arg() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn no_arg_on_optional_arg() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn multiple_args() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn multiple_args_reverse_order() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn no_args_on_multiple_optional() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn one_arg_on_multiple_optional() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn second_arg_on_multiple_optional() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn muliple_reqs_on_mixed_list() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -193,7 +193,7 @@ mod tests {
 
     #[test]
     fn multiple_reqs_and_one_opt_on_mixed_list() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn all_reqs_on_opts_on_mixed_list() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn missing_one_non_nullable_argument() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
             {
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn missing_multiple_non_nullable_arguments() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
             {
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn incorrect_value_and_missing_argument() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
             {
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn ignores_unknown_directives() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn with_directives_of_valid_types() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
             {
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn with_directive_with_missing_types() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
             {

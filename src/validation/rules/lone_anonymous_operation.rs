@@ -55,7 +55,7 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> LoneAnonymousOperation {
         LoneAnonymousOperation::default()
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn no_operations() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment fragA on Type {
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn one_anon_operation() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn multiple_named_operations() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo {
@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn anon_operation_with_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn multiple_anon_operations() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn anon_operation_with_a_mutation() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {

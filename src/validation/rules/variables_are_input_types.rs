@@ -32,7 +32,7 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> VariablesAreInputTypes {
         VariablesAreInputTypes
@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn input_types_are_valid() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     fn output_types_are_invalid() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {

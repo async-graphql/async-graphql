@@ -132,7 +132,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> VariableInAllowedPosition<'a> {
         VariableInAllowedPosition::default()
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn boolean_into_boolean_within_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -170,7 +170,7 @@ mod tests {
         "#,
         );
 
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($booleanArg: Boolean)
@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($nonNullBooleanArg: Boolean!)
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_boolean_within_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           fragment booleanArgFrag on ComplicatedArgs {
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_with_default() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($intArg: Int = 1)
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn string_list_into_string_list() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($stringListVar: [String])
@@ -251,7 +251,7 @@ mod tests {
 
     #[test]
     fn non_null_string_list_into_string_list() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($stringListVar: [String!])
@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list_in_item_position() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($stringVar: String)
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn non_null_string_into_string_list_in_item_position() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($stringVar: String!)
@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($complexVar: ComplexInput)
@@ -311,7 +311,7 @@ mod tests {
 
     #[test]
     fn complex_input_into_complex_input_in_field_position() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn non_null_boolean_into_non_null_boolean_in_directive() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($boolVar: Boolean!)
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn boolean_in_non_null_in_directive_with_default() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Query($boolVar: Boolean = false)
@@ -352,7 +352,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Query($intArg: Int) {
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment nonNullIntArgFieldFrag on ComplicatedArgs {
@@ -383,7 +383,7 @@ mod tests {
 
     #[test]
     fn int_into_non_null_int_within_nested_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment outerFrag on ComplicatedArgs {
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn string_over_boolean() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn string_into_string_list() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Query($stringVar: String) {
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn boolean_into_non_null_boolean_in_directive() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Query($boolVar: Boolean) {
@@ -443,7 +443,7 @@ mod tests {
 
     #[test]
     fn string_into_non_null_boolean_in_directive() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Query($stringVar: String) {

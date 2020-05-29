@@ -136,7 +136,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> NoUnusedVariables<'a> {
         NoUnusedVariables::default()
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_deeply_in_inline_fragments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn uses_all_variables_in_fragments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_fragment_in_multiple_operations() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String) {
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn variable_used_by_recursive_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo($a: String) {
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn variable_not_used() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query ($a: String, $b: String, $c: String) {
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_1() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_in_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn multiple_variables_not_used_2() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($a: String, $b: String, $c: String) {
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_unreferenced_fragment() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($b: String) {
@@ -347,7 +347,7 @@ mod tests {
 
     #[test]
     fn variable_not_used_by_fragment_used_by_other_operation() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query Foo($b: String) {

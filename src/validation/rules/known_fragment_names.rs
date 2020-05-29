@@ -23,7 +23,7 @@ impl<'a> Visitor<'a> for KnownFragmentNames {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> KnownFragmentNames {
         KnownFragmentNames::default()
@@ -31,7 +31,7 @@ mod tests {
 
     #[test]
     fn known() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn unknown() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {

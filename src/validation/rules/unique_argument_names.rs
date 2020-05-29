@@ -39,7 +39,7 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueArgumentNames<'a> {
         UniqueArgumentNames::default()
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn no_arguments_on_field() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn no_arguments_on_directive() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn argument_on_field() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn argument_on_directive() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_two_fields() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_field_and_directive() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn same_argument_on_two_directives() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn multiple_field_arguments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn multiple_directive_arguments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn duplicate_field_arguments() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_field_arguments() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn duplicate_directive_arguments() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn many_duplicate_directive_arguments() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {

@@ -39,7 +39,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> DefaultValuesOfCorrectType {
         DefaultValuesOfCorrectType
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn variables_with_no_default_values() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query NullableValues($a: Int, $b: String, $c: ComplexInput) {
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn required_variables_without_default_values() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query RequiredValues($a: Int!, $b: String!) {
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn variables_with_valid_default_values() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query WithDefaultValues(
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn no_required_variables_with_default_values() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn variables_with_invalid_default_values() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query InvalidDefaultValues(
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn complex_variables_missing_required_field() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query MissingRequiredField($a: ComplexInput = {intField: 3}) {
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn list_variables_with_invalid_item() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           query InvalidItem($a: [String] = ["one", 2]) {

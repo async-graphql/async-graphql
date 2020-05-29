@@ -92,6 +92,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![allow(clippy::needless_lifetimes)]
 #![recursion_limit = "256"]
+#![forbid(unsafe_code)]
 
 #[macro_use]
 extern crate thiserror;

@@ -29,7 +29,7 @@ impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::validation::test_harness::{expect_fails_rule, expect_passes_rule};
+    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueFragmentNames<'a> {
         UniqueFragmentNames::default()
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn no_fragments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn one_fragment() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn many_fragments() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn inline_fragments_always_unique() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           {
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn fragment_and_operation_named_the_same() {
-        expect_passes_rule(
+        expect_passes_rule!(
             factory,
             r#"
           query Foo {
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           {
@@ -149,7 +149,7 @@ mod tests {
 
     #[test]
     fn fragments_named_the_same_no_reference() {
-        expect_fails_rule(
+        expect_fails_rule!(
             factory,
             r#"
           fragment fragA on Dog {

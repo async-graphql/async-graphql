@@ -2,9 +2,10 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
-use crate::parser::parse_query;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
+use async_graphql_parser::query::Document;
+use once_cell::sync::Lazy;
 
 #[InputObject(internal)]
 struct TestInput {
@@ -329,84 +330,31 @@ impl MutationRoot {
     }
 }
 
-pub struct SubscriptionRoot;
+static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, EmptySubscription>> =
+    Lazy::new(|| Schema::new(QueryRoot, MutationRoot, EmptySubscription));
 
-#[Subscription(internal)]
-impl SubscriptionRoot {}
-
-pub fn expect_passes_rule<'a, V, F>(factory: F, query_source: &str)
+pub fn validate<'a, V, F>(doc: &'a Document, factory: F) -> Result<()>
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    expect_passes_rule_with_schema(
-        QueryRoot,
-        MutationRoot,
-        SubscriptionRoot,
-        factory,
-        query_source,
-    );
-}
-
-pub fn expect_fails_rule<'a, V, F>(factory: F, query_source: &str)
-where
-    V: Visitor<'a> + 'a,
-    F: Fn() -> V,
-{
-    expect_fails_rule_with_schema(
-        QueryRoot,
-        MutationRoot,
-        SubscriptionRoot,
-        factory,
-        query_source,
-    );
-}
-
-pub fn validate<'a, Query, Mutation, Subscription, V, F>(
-    query: Query,
-    mutation: Mutation,
-    subscription: Subscription,
-    factory: F,
-    query_source: &str,
-) -> Result<()>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-    V: Visitor<'a> + 'a,
-    F: Fn() -> V,
-{
-    let schema = Schema::new(query, mutation, subscription);
+    let schema = &*TEST_HARNESS;
     let registry = &schema.env.registry;
-    let doc = parse_query(query_source).expect("Parse error");
-    let mut ctx = VisitorContext::new(
-        unsafe { ::std::mem::transmute(&schema.env.registry) },
-        unsafe { ::std::mem::transmute(&doc) },
-    );
+    let mut ctx = VisitorContext::new(registry, doc);
     let mut visitor = factory();
-    visit(&mut visitor, &mut ctx, unsafe {
-        ::std::mem::transmute(&doc)
-    });
+    visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {
         return Err(Error::Rule { errors: ctx.errors });
     }
     Ok(())
 }
 
-pub fn expect_passes_rule_with_schema<'a, Query, Mutation, Subscription, V, F>(
-    query: Query,
-    mutation: Mutation,
-    subscription: Subscription,
-    factory: F,
-    query_source: &str,
-) where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a Document, factory: F)
+where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if let Err(err) = validate(query, mutation, subscription, factory, query_source) {
+    if let Err(err) = validate(doc, factory) {
         if let Error::Rule { errors } = err {
             for err in errors {
                 if let Some(position) = err.locations.first() {
@@ -419,20 +367,30 @@ pub fn expect_passes_rule_with_schema<'a, Query, Mutation, Subscription, V, F>(
     }
 }
 
-pub fn expect_fails_rule_with_schema<'a, Query, Mutation, Subscription, V, F>(
-    query: Query,
-    mutation: Mutation,
-    subscription: Subscription,
-    factory: F,
-    query_source: &str,
-) where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+#[macro_export]
+#[doc(hidden)]
+macro_rules! expect_passes_rule {
+    ($factory:expr, $query_source:literal $(,)*) => {
+        let doc = crate::parser::parse_query($query_source).expect("Parse error");
+        crate::validation::test_harness::expect_passes_rule_(&doc, $factory);
+    };
+}
+
+pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a Document, factory: F)
+where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if let Ok(_) = validate(query, mutation, subscription, factory, query_source) {
+    if let Ok(_) = validate(doc, factory) {
         panic!("Expected rule to fail, but no errors were found");
     }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! expect_fails_rule {
+    ($factory:expr, $query_source:literal $(,)*) => {
+        let doc = crate::parser::parse_query($query_source).expect("Parse error");
+        crate::validation::test_harness::expect_fails_rule_(&doc, $factory);
+    };
 }
