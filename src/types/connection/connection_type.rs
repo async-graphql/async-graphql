@@ -13,12 +13,7 @@ use std::borrow::Cow;
 /// Connection type
 ///
 /// Connection is the result of a query for `DataSource`.
-pub struct Connection<
-    C: CursorType,
-    T,
-    EC: ObjectType + Send = EmptyFields,
-    EE: ObjectType + Send = EmptyFields,
-> {
+pub struct Connection<C, T, EC = EmptyFields, EE = EmptyFields> {
     /// All edges of the current page.
     edges: Vec<Edge<C, T, EE>>,
     additional_fields: EC,
@@ -26,12 +21,7 @@ pub struct Connection<
     has_next_page: bool,
 }
 
-impl<C, T, EE> Connection<C, T, EmptyFields, EE>
-where
-    C: CursorType + Send,
-    T: OutputValueType + Send,
-    EE: ObjectType + Send,
-{
+impl<C, T, EE> Connection<C, T, EmptyFields, EE> {
     /// Create a new connection.
     pub fn new(has_previous_page: bool, has_next_page: bool) -> Self {
         Connection {
@@ -43,13 +33,7 @@ where
     }
 }
 
-impl<C, T, EC, EE> Connection<C, T, EC, EE>
-where
-    C: CursorType + Send,
-    T: OutputValueType + Send,
-    EC: ObjectType + Send,
-    EE: ObjectType + Send,
-{
+impl<C, T, EC, EE> Connection<C, T, EC, EE> {
     /// Create a new connection, it can have some additional fields.
     pub fn with_additional_fields(
         has_previous_page: bool,
@@ -65,13 +49,36 @@ where
     }
 }
 
-impl<C, T, EC, EE> Connection<C, T, EC, EE>
-where
-    C: CursorType,
-    T: OutputValueType + Send + Sync,
-    EC: ObjectType + Sync + Send,
-    EE: ObjectType + Sync + Send,
-{
+impl<C, T, EC, EE> Connection<C, T, EC, EE> {
+    /// Convert the edge type and return a new `Connection`.
+    pub fn map<T2, EE2, F>(self, mut f: F) -> Connection<C, T2, EC, EE2>
+    where
+        F: FnMut(Edge<C, T, EE>) -> Edge<C, T2, EE2>,
+    {
+        let mut new_edges = Vec::with_capacity(self.edges.len());
+        for edge in self.edges {
+            new_edges.push(f(edge));
+        }
+        Connection {
+            edges: new_edges,
+            additional_fields: self.additional_fields,
+            has_previous_page: self.has_previous_page,
+            has_next_page: self.has_next_page,
+        }
+    }
+
+    /// Convert the node type and return a new `Connection`.
+    pub fn map_node<T2, F>(self, mut f: F) -> Connection<C, T2, EC, EE>
+    where
+        F: FnMut(T) -> T2,
+    {
+        self.map(|edge| Edge {
+            cursor: edge.cursor,
+            node: f(edge.node),
+            additional_fields: edge.additional_fields,
+        })
+    }
+
     /// Append edges with `IntoIterator<Item = Edge<C, T, EE>>`
     pub fn append<I>(&mut self, iter: I)
     where
