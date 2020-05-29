@@ -2,7 +2,7 @@ use crate::{ObjectType, Result, Schema, SubscriptionType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use slab::Slab;
 use std::future::Future;
 use std::pin::Pin;
@@ -54,7 +54,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
 
 pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
-    transport: T,
+    mut transport: T,
 ) -> (
     mpsc::UnboundedSender<Bytes>,
     impl Stream<Item = Bytes> + Unpin,
@@ -65,42 +65,51 @@ where
     Subscription: SubscriptionType + Sync + Send + 'static,
 {
     let (tx_bytes, rx_bytes) = mpsc::unbounded();
-    (
-        tx_bytes,
-        Box::pin(SubscriptionStream {
-            schema,
-            transport,
-            streams: SubscriptionStreams {
-                streams: Default::default(),
-            },
+    let stream = async_stream::stream! {
+        let mut streams = SubscriptionStreams {
+            streams: Default::default(),
+        };
+        let mut inner_stream = SubscriptionStream {
+            schema: &schema,
+            transport: Some(&mut transport),
+            streams: Some(&mut streams),
             rx_bytes,
             handle_request_fut: None,
             waker: AtomicWaker::new(),
-        }),
-    )
+        };
+        while let Some(data) = inner_stream.next().await {
+            yield data;
+        }
+    };
+    (tx_bytes, Box::pin(stream))
 }
 
-type HandleRequestBoxFut<T> = Pin<
+type HandleRequestBoxFut<'a, T> = Pin<
     Box<
-        dyn Future<Output = std::result::Result<Option<Bytes>, <T as SubscriptionTransport>::Error>>
-            + Send
-            + 'static,
+        dyn Future<
+                Output = (
+                    std::result::Result<Option<Bytes>, <T as SubscriptionTransport>::Error>,
+                    &'a mut T,
+                    &'a mut SubscriptionStreams,
+                ),
+            > + Send
+            + 'a,
     >,
 >;
 
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
-struct SubscriptionStream<Query, Mutation, Subscription, T: SubscriptionTransport> {
-    schema: Schema<Query, Mutation, Subscription>,
-    transport: T,
-    streams: SubscriptionStreams,
+struct SubscriptionStream<'a, Query, Mutation, Subscription, T: SubscriptionTransport> {
+    schema: &'a Schema<Query, Mutation, Subscription>,
+    transport: Option<&'a mut T>,
+    streams: Option<&'a mut SubscriptionStreams>,
     rx_bytes: mpsc::UnboundedReceiver<Bytes>,
-    handle_request_fut: Option<HandleRequestBoxFut<T>>,
+    handle_request_fut: Option<HandleRequestBoxFut<'a, T>>,
     waker: AtomicWaker,
 }
 
-impl<Query, Mutation, Subscription, T> Stream
-    for SubscriptionStream<Query, Mutation, Subscription, T>
+impl<'a, Query, Mutation, Subscription, T> Stream
+    for SubscriptionStream<'a, Query, Mutation, Subscription, T>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -116,30 +125,28 @@ where
             // receive bytes
             if let Some(handle_request_fut) = &mut this.handle_request_fut {
                 match handle_request_fut.as_mut().poll(cx) {
-                    Poll::Ready(Ok(bytes)) => {
+                    Poll::Ready((Ok(bytes), transport, streams)) => {
+                        this.transport = Some(transport);
+                        this.streams = Some(streams);
                         this.handle_request_fut = None;
                         if let Some(bytes) = bytes {
                             return Poll::Ready(Some(bytes));
                         }
                         continue;
                     }
-                    Poll::Ready(Err(_)) => return Poll::Ready(None),
+                    Poll::Ready((Err(_), _, _)) => return Poll::Ready(None),
                     Poll::Pending => {}
                 }
             } else {
                 match Pin::new(&mut this.rx_bytes).poll_next(cx) {
                     Poll::Ready(Some(data)) => {
-                        // The following code I think is safe.😁
-                        let transport = &mut this.transport as *mut T;
-                        let schema = &this.schema as *const Schema<Query, Mutation, Subscription>;
-                        let streams = &mut this.streams as *mut SubscriptionStreams;
-                        unsafe {
-                            this.handle_request_fut = Some(Box::pin((*transport).handle_request(
-                                &*schema,
-                                &mut *streams,
-                                data,
-                            )));
-                        }
+                        let transport = this.transport.take().unwrap();
+                        let schema = this.schema;
+                        let streams = this.streams.take().unwrap();
+                        this.handle_request_fut = Some(Box::pin(async move {
+                            let res = transport.handle_request(schema, streams, data).await;
+                            (res, transport, streams)
+                        }));
                         this.waker.wake();
                         continue;
                     }
@@ -149,31 +156,35 @@ where
             }
 
             // receive msg
-            if !this.streams.streams.is_empty() {
-                let mut closed = Vec::new();
+            if let (Some(streams), Some(transport)) = (&mut this.streams, &mut this.transport) {
+                if !streams.streams.is_empty() {
+                    let mut closed = Vec::new();
 
-                for (id, incoming_stream) in &mut this.streams.streams {
-                    match incoming_stream.as_mut().poll_next(cx) {
-                        Poll::Ready(Some(res)) => {
-                            if res.is_err() {
+                    for (id, incoming_stream) in &mut streams.streams {
+                        match incoming_stream.as_mut().poll_next(cx) {
+                            Poll::Ready(Some(res)) => {
+                                if res.is_err() {
+                                    closed.push(id);
+                                }
+                                if let Some(bytes) = transport.handle_response(id, res) {
+                                    return Poll::Ready(Some(bytes));
+                                }
+                            }
+                            Poll::Ready(None) => {
                                 closed.push(id);
                             }
-                            if let Some(bytes) = this.transport.handle_response(id, res) {
-                                return Poll::Ready(Some(bytes));
-                            }
+                            Poll::Pending => {}
                         }
-                        Poll::Ready(None) => {
-                            closed.push(id);
-                        }
-                        Poll::Pending => {}
                     }
-                }
 
-                closed.iter().for_each(|id| this.streams.remove(*id));
-                this.waker.register(cx.waker());
-                return Poll::Pending;
+                    closed.iter().for_each(|id| streams.remove(*id));
+                    this.waker.register(cx.waker());
+                    return Poll::Pending;
+                } else {
+                    this.waker.register(cx.waker());
+                    return Poll::Pending;
+                }
             } else {
-                this.waker.register(cx.waker());
                 return Poll::Pending;
             }
         }
