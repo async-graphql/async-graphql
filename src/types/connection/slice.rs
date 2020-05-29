@@ -1,12 +1,9 @@
 use crate::connection::{Connection, DataSource, Edge, EmptyFields};
-use crate::{Context, FieldResult, OutputValueType};
+use crate::{Context, FieldResult};
 use async_graphql_derive::DataSource;
 
 #[DataSource(internal)]
-impl<'a, T> DataSource for &'a [T]
-where
-    T: OutputValueType + Send + Sync + 'a,
-{
+impl<'a, T: Send + Sync> DataSource for &'a [T] {
     type CursorType = usize;
     type NodeType = &'a T;
     type ConnectionFieldsType = EmptyFields;

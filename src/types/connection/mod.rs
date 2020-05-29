@@ -6,7 +6,7 @@ mod edge;
 mod page_info;
 mod slice;
 
-use crate::{Context, FieldResult, ObjectType, OutputValueType};
+use crate::{Context, FieldResult};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
@@ -115,19 +115,19 @@ pub trait DataSource {
     type CursorType: CursorType + Send + Sync;
 
     /// Record type
-    type NodeType: OutputValueType + Send;
+    type NodeType;
 
     /// Additional fields for connection
     ///
     /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]` or `#[SimpleObject]`.
     ///
-    type ConnectionFieldsType: ObjectType + Send;
+    type ConnectionFieldsType;
 
     /// Additional fields for edge
     ///
     /// Is a type that implements `ObjectType` and can be defined by the procedure macro `#[Object]` or `#[SimpleObject]`.
     ///
-    type EdgeFieldsType: ObjectType + Send;
+    type EdgeFieldsType;
 
     /// Parses the parameters and executes the query.
     async fn query(
