@@ -51,7 +51,7 @@ where
     EE: ObjectType + Send,
 {
     /// Create a new connection, it can have some additional fields.
-    pub fn new_with_additional_fields(
+    pub fn with_additional_fields(
         has_previous_page: bool,
         has_next_page: bool,
         additional_fields: EC,

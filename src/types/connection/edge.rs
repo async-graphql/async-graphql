@@ -17,7 +17,7 @@ pub struct Edge<C, T, E> {
 
 impl<C, T, E> Edge<C, T, E> {
     /// Create a new edge, it can have some additional fields.
-    pub fn new_with_additional_fields(cursor: C, node: T, additional_fields: E) -> Self {
+    pub fn with_additional_fields(cursor: C, node: T, additional_fields: E) -> Self {
         Self {
             cursor,
             additional_fields,
