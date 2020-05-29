@@ -1,3 +1,7 @@
+//! Async-graphql integration with AWS lambda
+//!
+#![forbid(unsafe_code)]
+
 use async_graphql::{IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder};
 use futures::io::AllowStdIo;
 use lambda_http::Request;

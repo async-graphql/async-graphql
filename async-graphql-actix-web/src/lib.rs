@@ -1,6 +1,7 @@
 //! Async-graphql integration with Actix-web
 
 #![warn(missing_docs)]
+#![forbid(unsafe_code)]
 
 mod subscription;
 

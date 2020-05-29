@@ -32,6 +32,10 @@
 * [Cargo package](https://crates.io/crates/async-graphql)
 * Minimum supported Rust version: 1.42 or later
 
+## Safety
+
+This crate uses #![forbid(unsafe_code)] to ensure everything is implemented in 100% Safe Rust.
+
 ## Stability: Unstable & Experimental
 
 __This project doesn't currently follow SemVer, and there can be breaking changes on any version numbers. We will begin following SemVer once the project reaches v2.0.0__

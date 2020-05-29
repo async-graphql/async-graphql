@@ -1,4 +1,5 @@
 #![allow(clippy::cognitive_complexity)]
+#![forbid(unsafe_code)]
 
 extern crate proc_macro;
 

@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::needless_doctest_main)]
+#![forbid(unsafe_code)]
 
 use async_graphql::http::StreamBody;
 use async_graphql::{

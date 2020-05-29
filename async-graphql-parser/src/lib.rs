@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 #[macro_use]
 extern crate pest_derive;
 #[macro_use]
