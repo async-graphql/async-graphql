@@ -12,7 +12,7 @@ impl InputValueValidator for ListMinLength {
         if let Value::List(values) = value {
             if values.len() < self.length as usize {
                 Some(format!(
-                    "the value length is {}, but the length must be greater than or equal to {}",
+                    "the value length is {}, must be greater than or equal to {}",
                     values.len(),
                     self.length
                 ))
@@ -36,7 +36,7 @@ impl InputValueValidator for ListMaxLength {
         if let Value::List(values) = value {
             if values.len() > self.length as usize {
                 Some(format!(
-                    "the value length is {}, but the length must be less than or equal to {}",
+                    "the value length is {}, must be less than or equal to {}",
                     values.len(),
                     self.length
                 ))
