@@ -10,13 +10,13 @@ I like GraphQL and Rust. I've been using `Juniper`, which solves the problem of 
 
 ## Stability: Unstable & Experimental
 
-__This project doesn't currently follow SemVer, and there can be breaking changes on any version numbers. We will begin following SemVer once the project reaches v2.0.0__
+__This project doesn't currently follow [Semantic Versioning (SemVer)](https://semver.org/), and there can be breaking changes on any version numbers. We will begin following SemVer once the project reaches `v2.0.0`__
 
-Even though this project is above v1.0.0, we are rapidly changing and improving the API. This has caused versioning problems that aren't easily resolved because the project became popular very quickly (it was only started in March 2020).
+Even though this project is above `v1.0.0`, we are rapidly changing and improving the API. This has caused versioning problems that aren't easily resolved because the project became popular very quickly (it was only started in March 2020).
 
-We currently plan to start following SemVer once we reach the v2.0.0 release, which will happen once the API starts to stabilize. Unfortunately, we don't currently have the timeline for this.
+We currently plan to start following SemVer once we reach the `v2.0.0` release, which will happen once the API starts to stabilize. Unfortunately, we don't currently have the timeline for this.
 
-If things don't seem to be compiling after an upgrade, it is likely you'll need to dive into compiler errors to update some syntax that changed. Feel free to open an issue if something seems weird!
+In accordance with Rust's policy on pre-`1.0.0` crates, we will try to keep breaking changes limited to minor version changes, but if things don't seem to be compiling after an upgrade, it is likely you'll need to dive into compiler errors to update some syntax that changed. Feel free to open an [issue](https://github.com/async-graphql/async-graphql/issues) if something seems weird!
 
 ## Examples
 
