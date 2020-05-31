@@ -70,3 +70,107 @@ pub async fn test_variable_default_value() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_variable_in_input_object() {
+    #[InputObject]
+    struct MyInput {
+        value: i32,
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn test(&self, input: MyInput) -> i32 {
+            input.value
+        }
+
+        async fn test2(&self, input: Vec<MyInput>) -> i32 {
+            input.iter().map(|item| item.value).sum()
+        }
+    }
+
+    struct MutationRoot;
+
+    #[Object]
+    impl MutationRoot {
+        async fn test(&self, input: MyInput) -> i32 {
+            input.value
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+
+    // test query
+    {
+        let query = r#"
+        query TestQuery($value: Int!) {
+            test(input: {value: $value })
+        }"#;
+        let resp = QueryBuilder::new(query)
+            .variables(
+                Variables::parse_from_json(serde_json::json!({
+                    "value": 10,
+                }))
+                .unwrap(),
+            )
+            .execute(&schema)
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.data,
+            serde_json::json!({
+                "test": 10,
+            })
+        );
+    }
+
+    // test query2
+    {
+        let query = r#"
+        query TestQuery($value: Int!) {
+            test2(input: [{value: $value }, {value: $value }])
+        }"#;
+        let resp = QueryBuilder::new(query)
+            .variables(
+                Variables::parse_from_json(serde_json::json!({
+                    "value": 3,
+                }))
+                .unwrap(),
+            )
+            .execute(&schema)
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.data,
+            serde_json::json!({
+                "test2": 6,
+            })
+        );
+    }
+
+    // test mutation
+    {
+        let query = r#"
+        mutation TestMutation($value: Int!) {
+            test(input: {value: $value })
+        }"#;
+        let resp = QueryBuilder::new(query)
+            .variables(
+                Variables::parse_from_json(serde_json::json!({
+                    "value": 10,
+                }))
+                .unwrap(),
+            )
+            .execute(&schema)
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.data,
+            serde_json::json!({
+                "test": 10,
+            })
+        );
+    }
+}

@@ -431,26 +431,25 @@ impl<'a, T> ContextBase<'a, T> {
         .into_error(pos))
     }
 
-    fn resolve_input_value(&self, mut value: Value, pos: Pos) -> Result<Value> {
+    fn resolve_input_value(&self, value: &mut Value, pos: Pos) -> Result<()> {
         match value {
-            Value::Variable(var_name) => self.var_value(&var_name, pos),
+            Value::Variable(var_name) => {
+                *value = self.var_value(&var_name, pos)?;
+                Ok(())
+            }
             Value::List(ref mut ls) => {
                 for value in ls {
-                    if let Value::Variable(var_name) = value {
-                        *value = self.var_value(&var_name, pos)?;
-                    }
+                    self.resolve_input_value(value, pos)?;
                 }
-                Ok(value)
+                Ok(())
             }
             Value::Object(ref mut obj) => {
                 for value in obj.values_mut() {
-                    if let Value::Variable(var_name) = value {
-                        *value = self.var_value(&var_name, pos)?;
-                    }
+                    self.resolve_input_value(value, pos)?;
                 }
-                Ok(value)
+                Ok(())
             }
-            _ => Ok(value),
+            _ => Ok(()),
         }
     }
 
@@ -459,9 +458,9 @@ impl<'a, T> ContextBase<'a, T> {
         for directive in directives {
             if directive.name.node == "skip" {
                 if let Some(value) = directive.get_argument("if") {
-                    match InputValueType::parse(Some(
-                        self.resolve_input_value(value.clone_inner(), value.position())?,
-                    )) {
+                    let mut inner_value = value.clone_inner();
+                    self.resolve_input_value(&mut inner_value, value.pos)?;
+                    match InputValueType::parse(Some(inner_value)) {
                         Ok(true) => return Ok(true),
                         Ok(false) => {}
                         Err(err) => {
@@ -478,9 +477,9 @@ impl<'a, T> ContextBase<'a, T> {
                 }
             } else if directive.name.node == "include" {
                 if let Some(value) = directive.get_argument("if") {
-                    match InputValueType::parse(Some(
-                        self.resolve_input_value(value.clone_inner(), value.position())?,
-                    )) {
+                    let mut inner_value = value.clone_inner();
+                    self.resolve_input_value(&mut inner_value, value.pos)?;
+                    match InputValueType::parse(Some(inner_value)) {
                         Ok(false) => return Ok(true),
                         Ok(true) => {}
                         Err(err) => {
@@ -547,11 +546,16 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             .as_ref()
             .map(|value| value.position())
             .unwrap_or_default();
-        let resolved_value = match value {
-            Some(value) => Some(self.resolve_input_value(value.into_inner(), pos)?),
+        let value = match value {
+            Some(value) => {
+                let mut new_value = value.into_inner();
+                self.resolve_input_value(&mut new_value, pos)?;
+                Some(new_value)
+            }
             None => None,
         };
-        match InputValueType::parse(resolved_value) {
+
+        match InputValueType::parse(value) {
             Ok(res) => Ok(res),
             Err(err) => Err(err.into_error(pos, T::qualified_type_name())),
         }

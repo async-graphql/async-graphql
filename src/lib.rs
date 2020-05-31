@@ -91,6 +91,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::needless_doctest_main)]
 #![allow(clippy::needless_lifetimes)]
+#![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
 #![forbid(unsafe_code)]
 
