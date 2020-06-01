@@ -92,7 +92,11 @@ where
     B: InputValueValidator,
 {
     fn is_valid(&self, value: &Value) -> Option<String> {
-        self.0.is_valid(value).or_else(|| self.1.is_valid(value))
+        if let Some(_) = self.0.is_valid(value) {
+            self.1.is_valid(value)
+        } else {
+            None
+        }
     }
 }
 
