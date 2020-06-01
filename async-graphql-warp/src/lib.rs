@@ -5,14 +5,17 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::StreamBody;
+use async_graphql::http::{multipart_stream, StreamBody};
 use async_graphql::{
     Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
-    QueryResponse, Schema, SubscriptionType, WebSocketTransport,
+    QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
+use hyper::header::HeaderValue;
+use hyper::Body;
+use std::convert::Infallible;
 use std::sync::Arc;
 use warp::filters::ws::Message;
 use warp::filters::BoxedFilter;
@@ -301,21 +304,29 @@ impl Reply for GQLResponse {
     }
 }
 
-// Waiting for this release: https://github.com/hyperium/hyper/commit/042c770603a212f22387807efe4fc672959df40c
-// /// GraphQL streaming reply
-// pub struct GQLResponseStream(StreamResponse);
-//
-// impl From<StreamResponse> for GQLResponseStream {
-//     fn from(resp: StreamResponse) -> Self {
-//         GQLResponseStream(resp)
-//     }
-// }
-//
-// impl Reply for GQLResponseStream {
-//     fn into_response(self) -> Response {
-//         match self.0 {
-//             StreamResponse::Single(resp) => GQLResponse(resp).into_response(),
-//             StreamResponse::Stream()
-//         }
-//     }
-// }
+/// GraphQL streaming reply
+pub struct GQLResponseStream(StreamResponse);
+
+impl From<StreamResponse> for GQLResponseStream {
+    fn from(resp: StreamResponse) -> Self {
+        GQLResponseStream(resp)
+    }
+}
+
+impl Reply for GQLResponseStream {
+    fn into_response(self) -> Response {
+        match self.0 {
+            StreamResponse::Single(resp) => GQLResponse(resp).into_response(),
+            StreamResponse::Stream(stream) => {
+                let mut resp = Response::new(Body::wrap_stream(
+                    multipart_stream(stream).map(Result::<_, Infallible>::Ok),
+                ));
+                resp.headers_mut().insert(
+                    "content-type",
+                    HeaderValue::from_static("multipart/mixed; boundary=\"-\""),
+                );
+                resp
+            }
+        }
+    }
+}
