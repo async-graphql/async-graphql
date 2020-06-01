@@ -471,6 +471,11 @@ impl Registry {
                     // Is empty query root, only __schema, __type, _service, _entities fields
                     return;
                 }
+                if let Some(subscription_type) = &self.subscription_type {
+                    if name == subscription_type {
+                        return;
+                    }
+                }
                 if *extends {
                     write!(sdl, "extend ").ok();
                 }
