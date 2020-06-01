@@ -116,7 +116,7 @@ fn hello() -> Result<()> {
                 let schema = req.state().schema.clone();
                 let name = &req
                     .header(&"name".parse().unwrap())
-                    .and_then(|values| values.first().map(|value| value.to_string()));
+                    .and_then(|values| values.get(0).map(|value| value.to_string()));
 
                 async_graphql_tide::graphql(req, schema, |mut query_builder| {
                     if let Some(name) = name {

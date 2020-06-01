@@ -127,7 +127,7 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
         } else {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)
-                .and_then(|values| values.first().map(|value| value.to_string()));
+                .and_then(|values| values.get(0).map(|value| value.to_string()));
             (content_type, self).into_query_builder_opts(&opts).await
         }
     }
