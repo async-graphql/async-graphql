@@ -8,7 +8,7 @@ Resolve is used to get the value of the field. You can query a database and retu
 
 When querying a database, you may need a global data base connection pool.
 When creating `Schema`,  you can use `SchemaBuilder::data` to setup `Schema` data, and `Context::data` to setup `Context`data.
-The following `value_from_db` function showed how to retrive a database connection from `Context`.
+The following `value_from_db` function showed how to retrieve a database connection from `Context`.
 
 ```rust
 use async_graphql::*;
