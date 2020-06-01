@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, Criterion, black_box};
-use simple::{Q, run, parse, serialize, GQLResponse};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use simple::{parse, run, serialize, GQLResponse, Q};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("run", |b| b.iter(|| run(black_box(Q))));

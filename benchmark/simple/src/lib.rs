@@ -1,7 +1,7 @@
 use async_graphql::*;
-pub use http::GQLResponse;
 use async_graphql_parser::{parse_query, query::Document};
 use async_std::task;
+pub use http::GQLResponse;
 
 pub struct QueryRoot;
 
@@ -78,9 +78,7 @@ lazy_static::lazy_static! {
 }
 
 pub fn run(q: &str) -> Result<QueryResponse> {
-    task::block_on(async {
-        S.execute(q).await
-    })
+    task::block_on(async { S.execute(q).await })
 }
 
 pub fn parse(q: &str) -> Document {
