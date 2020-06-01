@@ -239,10 +239,10 @@ struct MyObject {
 <h1><a class="header" href="#object" id="object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have Resolve defined for each field in <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, second being optional <code>Context</code> and followed by field arguments.</strong></p>
-<p>Resolve is used to get the value of the field. You can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> so to return an error if it occrs and error message will be send to query result.</p>
+<p>Resolve is used to get the value of the field. You can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> so to return an error if it occurs an error message will be sent to query result.</p>
 <p>When querying a database, you may need a global data base connection pool.
 When creating <code>Schema</code>,  you can use <code>SchemaBuilder::data</code> to setup <code>Schema</code> data, and <code>Context::data</code> to setup <code>Context</code>data.
-The following <code>value_from_db</code> function showed how to retrive a database connection from <code>Context</code>.</p>
+The following <code>value_from_db</code> function showed how to retrieve a database connection from <code>Context</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -270,7 +270,7 @@ impl MyObject {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#context" id="context">Context</a></h1>
-<p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you need to explictly state the lifetime of the argument.</strong></p>
+<p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
@@ -1118,7 +1118,7 @@ impl ScalarType for StringNumber {
 <p>The <code>provides</code> property indicates the fields provided by a service. </p>
 </li>
 </ul>
-<p>The definition of a root Query type is slighly different. An entity search function must be defined. For example:</p>
+<p>The definition of a root Query type is slightly different. An entity search function must be defined. For example:</p>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
