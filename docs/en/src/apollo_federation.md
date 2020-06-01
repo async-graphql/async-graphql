@@ -10,7 +10,7 @@
 
 - The `provides` property indicates the fields provided by a service. 
 
-The definition of a root Query type is slighly different. An entity search function must be defined. For example:
+The definition of a root Query type is slightly different. An entity search function must be defined. For example:
 
 ```rust
 struct Query;
