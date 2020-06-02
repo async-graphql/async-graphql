@@ -3,6 +3,10 @@ use async_graphql::{ObjectType, QueryResponse, Schema, SubscriptionType};
 use async_graphql_parser::{parse_query, query::Document};
 use async_std::task;
 
+#[cfg(feature = "jemalloc")]
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 pub fn run<Query, Mutation, Subscription>(
     s: &Schema<Query, Mutation, Subscription>,
     q: &str,
