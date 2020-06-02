@@ -64,4 +64,5 @@ members = [
     "async-graphql-warp",
     "async-graphql-tide",
 #    "async-graphql-lambda",
+    "benchmark",
 ]
