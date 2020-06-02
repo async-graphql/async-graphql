@@ -788,13 +788,12 @@ struct Query;
 impl Query {
     #[field]
     async fn numbers(&amp;self,
-        ctx: &amp;Context&lt;'_&gt;,
         after: Option&lt;String&gt;,
         before: Option&lt;String&gt;,
         first: Option&lt;i32&gt;,
         last: Option&lt;i32&gt;,
     ) -&gt; FieldResult&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
-        Integers.query(ctx, after, before, first, last).await
+        Integers.query(after, before, first, last).await
     }
 }
 
