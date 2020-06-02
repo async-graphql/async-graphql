@@ -5,7 +5,7 @@ use serde::Serialize;
 use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub struct Json<T>(pub T);
 
 impl<T> Deref for Json<T> {
