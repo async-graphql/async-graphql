@@ -10,11 +10,15 @@ futures = "0.3.4"
 serde_json = "*"
 async-graphql-parser = { path = "../async-graphql-parser" }
 async-graphql = { path = ".." }
+jemallocator = { version = "0.3.2", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
 simple = { path = "simple" }
 chat = { path = "chat" }
+
+[features]
+jemalloc = ["jemallocator"]
 
 [[bench]]
 name = "simple"
