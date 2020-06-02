@@ -15,7 +15,7 @@ impl InputValueValidator for IntRange {
         if let Value::Int(n) = value {
             if *n < self.min || *n > self.max {
                 Some(format!(
-                    "the value is {}, but the range must be between {} and {}",
+                    "the value is {}, must be between {} and {}",
                     *n, self.min, self.max
                 ))
             } else {
@@ -80,7 +80,7 @@ impl InputValueValidator for IntNonZero {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
             if *n == 0 {
-                Some(format!("the value is {}, but must be nonzero", *n,))
+                Some(format!("the value is {}, must be nonzero", *n,))
             } else {
                 None
             }
@@ -100,7 +100,10 @@ impl InputValueValidator for IntEqual {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
             if *n != self.value {
-                Some(format!("the value is {}, must be equal {}", *n, self.value))
+                Some(format!(
+                    "the value is {}, must be equal to {}",
+                    *n, self.value
+                ))
             } else {
                 None
             }
