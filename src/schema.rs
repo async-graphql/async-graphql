@@ -33,6 +33,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     complexity: Option<usize>,
     depth: Option<usize>,
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+    enable_federation: bool,
 }
 
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
@@ -84,8 +85,19 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         self
     }
 
+    /// Enable federation, which is automatically enabled if the Query has least one entity definition.
+    pub fn enable_federation(mut self) -> Self {
+        self.enable_federation = true;
+        self
+    }
+
     /// Build schema.
-    pub fn finish(self) -> Schema<Query, Mutation, Subscription> {
+    pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
+        // federation
+        if self.enable_federation || self.registry.has_entities() {
+            self.registry.create_federation_types();
+        }
+
         Schema(Arc::new(SchemaInner {
             validation_mode: self.validation_mode,
             query: self.query,
@@ -258,9 +270,6 @@ where
             Subscription::create_type_info(&mut registry);
         }
 
-        // federation
-        registry.create_federation_types();
-
         SchemaBuilder {
             validation_mode: ValidationMode::Strict,
             query: QueryRoot {
@@ -274,6 +283,7 @@ where
             complexity: None,
             depth: None,
             extensions: Default::default(),
+            enable_federation: false,
         }
     }
 

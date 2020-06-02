@@ -565,7 +565,7 @@ impl Registry {
         sdl
     }
 
-    fn has_entities(&self) -> bool {
+    pub(crate) fn has_entities(&self) -> bool {
         self.types.values().any(|ty| match ty {
             MetaType::Object {
                 keys: Some(keys), ..
@@ -607,10 +607,6 @@ impl Registry {
     }
 
     pub fn create_federation_types(&mut self) {
-        if !self.has_entities() {
-            return;
-        }
-
         Any::create_type_info(self);
 
         self.types.insert(
