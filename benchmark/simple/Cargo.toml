@@ -1,0 +1,13 @@
+[package]
+name = "simple"
+version = "0.1.0"
+authors = ["Ivan Plesskih <terma95@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+async-graphql = { path = "../.." }
+async-std = { version = "1.5.0", features = ["attributes"] }
+futures = "0.3.4"
+serde_json = "*"
+lazy_static = "*"
+async-graphql-parser = { path = "../../async-graphql-parser" }

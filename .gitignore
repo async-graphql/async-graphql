@@ -3,3 +3,5 @@ Cargo.lock
 .idea
 .DS_Store
 node_modules
+
+benchmark/target
