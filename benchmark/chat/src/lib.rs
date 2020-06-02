@@ -48,7 +48,7 @@ lazy_static::lazy_static! {
     pub static ref USER: UserData = UserData {
         id: "123".to_string(),
         is_operator: false,
-        phone: 79123273936,
+        phone: 79_123_273_936,
         join_date: "today".to_string(),
         state: "ACTIVE".to_string(),
     };
