@@ -6,10 +6,11 @@ mod edge;
 mod page_info;
 mod slice;
 
-use crate::{Context, FieldResult};
+use crate::FieldResult;
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
+use futures::Future;
 pub use page_info::PageInfo;
 use std::fmt::Display;
 
@@ -47,7 +48,6 @@ pub struct EmptyFields;
 ///     type EdgeFieldsType = Diff;
 ///
 ///     async fn execute_query(&self,
-///         ctx: &Context<'_>,
 ///         after: Option<usize>,
 ///         before: Option<usize>,
 ///         first: Option<usize>,
@@ -76,13 +76,13 @@ pub struct EmptyFields;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     async fn numbers(&self, ctx: &Context<'_>,
+///     async fn numbers(&self,
 ///         after: Option<String>,
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
 ///     ) -> FieldResult<Connection<usize, i32, EmptyFields, Diff>> {
-///         Numbers.query(ctx, after, before, first, last).await
+///         Numbers.query(after, before, first, last).await
 ///     }
 /// }
 ///
@@ -132,7 +132,6 @@ pub trait DataSource {
     /// Parses the parameters and executes the query.
     async fn query(
         &self,
-        ctx: &Context<'_>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
@@ -148,45 +147,15 @@ pub trait DataSource {
     where
         <Self::CursorType as CursorType>::Error: Display + Send + Sync + 'static,
     {
-        if first.is_some() && last.is_some() {
-            return Err(
-                "The \"first\" and \"last\" parameters cannot exist at the same time".into(),
-            );
-        }
-
-        let first = match first {
-            Some(first) if first < 0 => {
-                return Err("The \"first\" parameter must be a non-negative number".into())
-            }
-            Some(first) => Some(first as usize),
-            None => None,
-        };
-
-        let last = match last {
-            Some(last) if last < 0 => {
-                return Err("The \"last\" parameter must be a non-negative number".into())
-            }
-            Some(last) => Some(last as usize),
-            None => None,
-        };
-
-        let before = match before {
-            Some(before) => Some(Self::CursorType::decode_cursor(&before)?),
-            None => None,
-        };
-
-        let after = match after {
-            Some(after) => Some(Self::CursorType::decode_cursor(&after)?),
-            None => None,
-        };
-
-        self.execute_query(ctx, after, before, first, last).await
+        query(after, before, first, last, |after, before, first, last| {
+            self.execute_query(after, before, first, last)
+        })
+        .await
     }
 
     /// Execute query
     async fn execute_query(
         &self,
-        ctx: &Context<'_>,
         after: Option<Self::CursorType>,
         before: Option<Self::CursorType>,
         first: Option<usize>,
@@ -199,4 +168,51 @@ pub trait DataSource {
             Self::EdgeFieldsType,
         >,
     >;
+}
+
+/// If you don't want to implement DataSource, you can also use this function to query data directly.
+pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R>(
+    after: Option<String>,
+    before: Option<String>,
+    first: Option<i32>,
+    last: Option<i32>,
+    mut f: F,
+) -> FieldResult<Connection<Cursor, Node, ConnectionFields, EdgeFields>>
+where
+    Cursor: CursorType + Send + Sync,
+    <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
+    F: FnMut(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
+    R: Future<Output = FieldResult<Connection<Cursor, Node, ConnectionFields, EdgeFields>>>,
+{
+    if first.is_some() && last.is_some() {
+        return Err("The \"first\" and \"last\" parameters cannot exist at the same time".into());
+    }
+
+    let first = match first {
+        Some(first) if first < 0 => {
+            return Err("The \"first\" parameter must be a non-negative number".into())
+        }
+        Some(first) => Some(first as usize),
+        None => None,
+    };
+
+    let last = match last {
+        Some(last) if last < 0 => {
+            return Err("The \"last\" parameter must be a non-negative number".into())
+        }
+        Some(last) => Some(last as usize),
+        None => None,
+    };
+
+    let before = match before {
+        Some(before) => Some(Cursor::decode_cursor(&before)?),
+        None => None,
+    };
+
+    let after = match after {
+        Some(after) => Some(Cursor::decode_cursor(&after)?),
+        None => None,
+    };
+
+    f(after, before, first, last).await
 }

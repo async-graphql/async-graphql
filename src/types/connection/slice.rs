@@ -1,5 +1,5 @@
 use crate::connection::{Connection, DataSource, Edge, EmptyFields};
-use crate::{Context, FieldResult};
+use crate::FieldResult;
 use async_graphql_derive::DataSource;
 
 #[DataSource(internal)]
@@ -12,7 +12,6 @@ impl<'a, T: Send + Sync> DataSource for &'a [T] {
     #[allow(clippy::suspicious_else_formatting)]
     async fn execute_query(
         &self,
-        _ctx: &Context<'_>,
         after: Option<usize>,
         before: Option<usize>,
         first: Option<usize>,

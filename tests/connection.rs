@@ -10,7 +10,6 @@ pub async fn test_slice_datasource() {
     impl Query {
         async fn values(
             &self,
-            ctx: &Context<'_>,
             after: Option<String>,
             before: Option<String>,
             first: Option<i32>,
@@ -20,7 +19,7 @@ pub async fn test_slice_datasource() {
                 "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p",
                 "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
             ];
-            ROWS.query(ctx, after, before, first, last).await
+            ROWS.query(after, before, first, last).await
         }
     }
 
@@ -141,7 +140,6 @@ pub async fn test_datasource_additional_fields() {
 
         async fn execute_query(
             &self,
-            _ctx: &Context<'_>,
             after: Option<usize>,
             before: Option<usize>,
             first: Option<usize>,
@@ -184,13 +182,12 @@ pub async fn test_datasource_additional_fields() {
     impl QueryRoot {
         async fn numbers(
             &self,
-            ctx: &Context<'_>,
             after: Option<String>,
             before: Option<String>,
             first: Option<i32>,
             last: Option<i32>,
         ) -> FieldResult<Connection<usize, i32, ConnectionFields, Diff>> {
-            Numbers.query(ctx, after, before, first, last).await
+            Numbers.query(after, before, first, last).await
         }
     }
 

@@ -79,7 +79,7 @@ where
     B: InputValueValidator,
 {
     fn is_valid(&self, value: &Value) -> Option<String> {
-        self.0.is_valid(value).or(self.1.is_valid(value))
+        self.0.is_valid(value).or_else(|| self.1.is_valid(value))
     }
 }
 
