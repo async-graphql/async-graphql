@@ -45,6 +45,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
             if let Some(entity) = args::Entity::parse(&crate_name, &method.attrs)? {
+                if method.sig.asyncness.is_none() {
+                    return Err(Error::new_spanned(&method, "Must be asynchronous"));
+                }
+
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {

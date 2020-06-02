@@ -14,14 +14,14 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     let res = futures::future::try_join_all(futures).await?;
     let mut map = serde_json::Map::new();
     for (name, value) in res {
-        match (map.remove(&name), value) {
-            (Some(serde_json::Value::Object(mut a)), serde_json::Value::Object(b)) => {
+        if let serde_json::Value::Object(b) = value {
+            if let Some(serde_json::Value::Object(a)) = map.get_mut(&name) {
                 a.extend(b);
-                map.insert(name, a.into());
+            } else {
+                map.insert(name, b.into());
             }
-            (_, b) => {
-                map.insert(name, b);
-            }
+        } else {
+            map.insert(name, value);
         }
     }
     Ok(map.into())
