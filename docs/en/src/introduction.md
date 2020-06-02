@@ -28,7 +28,11 @@ To see how you would create a Relay-compliant server using async-graphql, warp, 
 
 ## Benchmarks
 
-```bash
-git clone https://github.com/async-graphql/benchmark
-cargo run --release
+Ensure that there is no CPU-heavy process in background!
+
+```shell script
+cd benchmark
+cargo bench
 ```
+
+Now HTML report is available at `benchmark/target/criterion/report`

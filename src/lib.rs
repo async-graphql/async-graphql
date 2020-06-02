@@ -82,10 +82,14 @@
 //!
 //! ## Benchmarks
 //!
+//! Ensure that there is no CPU-heavy process in background!
+//!
 //! ```shell script
-//! git clone https://github.com/async-graphql/benchmark
-//! cargo run --release
+//! cd benchmark
+//! cargo bench
 //! ```
+//!
+//! Now HTML report is available at `benchmark/target/criterion/report`
 //!
 
 #![warn(missing_docs)]
