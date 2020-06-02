@@ -4,10 +4,22 @@ version = "1.14.11"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 
+[dependencies]
+async-std = { version = "1.5.0", features = ["attributes"] }
+futures = "0.3.4"
+serde_json = "*"
+async-graphql-parser = { path = "../async-graphql-parser" }
+async-graphql = { path = ".." }
+
 [dev-dependencies]
 criterion = "0.3"
 simple = { path = "simple" }
+chat = { path = "chat" }
 
 [[bench]]
 name = "simple"
+harness = false
+
+[[bench]]
+name = "chat"
 harness = false
