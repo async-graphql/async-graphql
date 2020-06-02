@@ -1,7 +1,4 @@
 use async_graphql::*;
-use async_graphql_parser::{parse_query, query::Document};
-use async_std::task;
-pub use http::GQLResponse;
 
 pub struct QueryRoot;
 
@@ -38,6 +35,11 @@ impl MyObj {
     }
 }
 
+lazy_static::lazy_static! {
+    pub static ref S: Schema<QueryRoot, EmptyMutation, EmptySubscription> = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    // static ref D: Document = parse_query(Q).unwrap();
+}
+
 pub const Q: &str = r#"{
     valueI32 obj {
         valueI32 valueList obj {
@@ -71,28 +73,3 @@ pub const Q: &str = r#"{
         }
     }
 }"#;
-
-lazy_static::lazy_static! {
-    static ref S: Schema<QueryRoot, EmptyMutation, EmptySubscription> = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    // static ref D: Document = parse_query(Q).unwrap();
-}
-
-pub fn run(q: &str) -> Result<QueryResponse> {
-    task::block_on(async { S.execute(q).await })
-}
-
-pub fn parse(q: &str) -> Document {
-    parse_query(q).unwrap()
-}
-
-// pub fn validate() {
-//     check_rules(&S.env.registry, &D, S.validation_mode).unwrap();
-// }
-//
-// pub fn resolve() {
-//     do_resolve(...).unwrap();
-// }
-
-pub fn serialize(r: &GQLResponse) -> String {
-    serde_json::to_string(&r).unwrap()
-}

@@ -63,6 +63,8 @@ cargo bench
 
 Now HTML report is available at `benchmark/target/criterion/report`
 
+Read more here: https://bheisler.github.io/criterion.rs/book/criterion_rs.html
+
 ## Features
 
 * Fully support async/await
