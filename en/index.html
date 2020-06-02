@@ -163,9 +163,11 @@
 <p>To see how you would create a Relay-compliant server using async-graphql, warp, diesel &amp; postgresql, you can also check out a real-world example at:
 <a href="https://github.com/phated/twentyfive-stars">https://github.com/phated/twentyfive-stars</a></p>
 <h2><a class="header" href="#benchmarks" id="benchmarks">Benchmarks</a></h2>
-<pre><code class="language-bash">git clone https://github.com/async-graphql/benchmark
-cargo run --release
+<p>Ensure that there is no CPU-heavy process in background!</p>
+<pre><code class="language-shellscript">cd benchmark
+cargo bench
 </code></pre>
+<p>Now HTML report is available at <code>benchmark/target/criterion/report</code></p>
 
                     </main>
 
