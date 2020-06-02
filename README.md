@@ -46,6 +46,22 @@ We currently plan to start following SemVer once we reach the `v2.0.0` release, 
 
 In accordance with Rust's policy on pre-`1.0.0` crates, we will try to keep breaking changes limited to minor version changes, but if things don't seem to be compiling after an upgrade, it is likely you'll need to dive into compiler errors to update some syntax that changed. Feel free to open an [issue](https://github.com/async-graphql/async-graphql/issues) if something seems weird!
 
+## Features
+
+* Fully support async/await
+* Type safety
+* Rustfmt friendly (Procedural Macro)
+* Custom scalar
+* Minimal overhead
+* Easy integration (hyper, actix_web, tide ...)
+* Upload files (Multipart request)
+* Subscription (WebSocket transport)
+* Custom extension
+* Apollo Tracing extension
+* Limit query complexity/depth
+* Error Extensions
+* Apollo Federation
+
 ## Examples
 
 If you are just getting started, we recommend checking out our examples at: https://github.com/async-graphql/examples
@@ -64,22 +80,6 @@ cargo bench
 Now HTML report is available at `benchmark/target/criterion/report`
 
 Read more here: https://bheisler.github.io/criterion.rs/book/criterion_rs.html
-
-## Features
-
-* Fully support async/await
-* Type safety
-* Rustfmt friendly (Procedural Macro)
-* Custom scalar
-* Minimal overhead
-* Easy integration (hyper, actix_web, tide ...)
-* Upload files (Multipart request)
-* Subscription (WebSocket transport)
-* Custom extension
-* Apollo Tracing extension
-* Limit query complexity/depth
-* Error Extensions
-* Apollo Federation
 
 ## Integrations
 
