@@ -74,7 +74,18 @@ Ensure that there is no CPU-heavy process in background!
 
 ```shell script
 cd benchmark
+
+#measure all with system malloc
 cargo bench
+
+#measure only chat run
+cargo bench -- "chat run"
+
+#measure all with jemalloc
+cargo bench --features jemalloc
+
+#measure only simple run with jemalloc 
+cargo bench --features jemalloc -- "simple run"
 ```
 
 Now HTML report is available at `benchmark/target/criterion/report`
