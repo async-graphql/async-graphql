@@ -52,7 +52,7 @@ pub trait PostGuardExt<T: Send + Sync>: PostGuard<T> + Sized {
 
 impl<T: PostGuard<R>, R: Send + Sync> PostGuardExt<R> for T {}
 
-/// PostGuard for `GuardExt<T>::and`
+/// PostGuard for `PostGuardExt<T>::and`
 pub struct PostAnd<T: Send + Sync, A: PostGuard<T>, B: PostGuard<T>>(A, B, PhantomData<T>);
 
 #[async_trait::async_trait]
