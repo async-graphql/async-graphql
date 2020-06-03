@@ -1,4 +1,7 @@
-use crate::utils::{get_rustdoc, parse_default, parse_default_with, parse_guards, parse_validator};
+use crate::utils::{
+    get_rustdoc, parse_default, parse_default_with, parse_guards, parse_post_guards,
+    parse_validator,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};
@@ -196,6 +199,7 @@ pub struct Field {
     pub requires: Option<String>,
     pub is_ref: bool,
     pub guard: Option<TokenStream>,
+    pub post_guard: Option<TokenStream>,
 }
 
 impl Field {
@@ -209,11 +213,13 @@ impl Field {
         let mut requires = None;
         let mut is_ref = false;
         let mut guard = None;
+        let mut post_guard = None;
 
         for attr in attrs {
             match attr.parse_meta()? {
                 Meta::List(ls) if ls.path.is_ident("field") => {
                     guard = parse_guards(crate_name, &ls)?;
+                    post_guard = parse_post_guards(crate_name, &ls)?;
                     for meta in &ls.nested {
                         match meta {
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
@@ -300,6 +306,7 @@ impl Field {
             requires,
             is_ref,
             guard,
+            post_guard,
         }))
     }
 }
@@ -881,20 +888,17 @@ impl Scalar {
     }
 }
 
-pub struct Entity {
-    pub guard: Option<TokenStream>,
-}
+pub struct Entity {}
 
 impl Entity {
-    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
+    pub fn parse(_crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
         for attr in attrs {
             match attr.parse_meta()? {
                 Meta::List(ls) if ls.path.is_ident("entity") => {
-                    let guard = parse_guards(crate_name, &ls)?;
-                    return Ok(Some(Self { guard }));
+                    return Ok(Some(Self {}));
                 }
                 Meta::Path(p) if p.is_ident("entity") => {
-                    return Ok(Some(Self { guard: None }));
+                    return Ok(Some(Self {}));
                 }
                 _ => {}
             }

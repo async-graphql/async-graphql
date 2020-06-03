@@ -1,7 +1,5 @@
-use async_graphql::guard::Guard;
+use async_graphql::guard::PostGuard;
 use async_graphql::*;
-use futures::{Stream, StreamExt};
-use std::sync::Arc;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
@@ -14,8 +12,8 @@ struct RoleGuard {
 }
 
 #[async_trait::async_trait]
-impl Guard for RoleGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+impl PostGuard<i32> for RoleGuard {
+    async fn check(&self, ctx: &Context<'_>, _result: &i32) -> FieldResult<()> {
         if ctx.data_opt::<Role>() == Some(&self.role) {
             Ok(())
         } else {
@@ -24,16 +22,36 @@ impl Guard for RoleGuard {
     }
 }
 
+#[SimpleObject]
+struct MyObj {
+    #[field(post_guard(UserGuard(username = r#""test""#, value = "88")))]
+    value: i32,
+}
+
 struct Username(String);
 
 struct UserGuard {
+    value: i32,
     username: String,
 }
 
 #[async_trait::async_trait]
-impl Guard for UserGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
-        if ctx.data_opt::<Username>().map(|name| &name.0).as_deref() == Some(&self.username) {
+impl PostGuard<i32> for UserGuard {
+    async fn check(&self, ctx: &Context<'_>, result: &i32) -> FieldResult<()> {
+        assert_eq!(*result, self.value);
+        if ctx.data_opt::<Username>().as_ref().map(|s| s.0.as_str()) == Some(&self.username) {
+            Ok(())
+        } else {
+            Err("Forbidden".into())
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl PostGuard<MyObj> for UserGuard {
+    async fn check(&self, ctx: &Context<'_>, result: &MyObj) -> FieldResult<()> {
+        assert_eq!(result.value, self.value);
+        if ctx.data_opt::<Username>().as_ref().map(|s| s.0.as_str()) == Some(&self.username) {
             Ok(())
         } else {
             Err("Forbidden".into())
@@ -42,86 +60,40 @@ impl Guard for UserGuard {
 }
 
 #[async_std::test]
-pub async fn test_guard() {
-    #[SimpleObject]
-    struct MyObj {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
-        value: i32,
-    }
-
+pub async fn test_post_guard() {
     struct Query;
 
     #[Object]
     impl Query {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
+        #[field(post_guard(UserGuard(username = r#""test""#, value = "99")))]
         async fn value(&self) -> i32 {
-            1
+            99
         }
 
         async fn obj(&self) -> MyObj {
-            MyObj { value: 99 }
+            MyObj { value: 88 }
         }
     }
 
-    struct Subscription;
-
-    #[Subscription]
-    impl Subscription {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
-        async fn values(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(vec![1, 2, 3])
-        }
-    }
-
-    let schema = Schema::new(Query, EmptyMutation, Subscription);
-
-    let query = "{ obj { value } }";
-    assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .execute(&schema)
-            .await
-            .unwrap()
-            .data,
-        serde_json::json!({
-            "obj": {"value": 99}
-        })
-    );
-
-    let query = "{ obj { value } }";
-    assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .execute(&schema)
-            .await
-            .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 9 },
-            path: Some(serde_json::json!(["obj", "value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
-    );
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
     let query = "{ value }";
     assert_eq!(
         QueryBuilder::new(query)
-            .data(Role::Admin)
+            .data(Username("test".to_string()))
             .execute(&schema)
             .await
             .unwrap()
             .data,
         serde_json::json!({
-            "value": 1,
+            "value": 99
         })
     );
 
     let query = "{ value }";
     assert_eq!(
         QueryBuilder::new(query)
-            .data(Role::Guest)
+            .data(Username("test1".to_string()))
             .execute(&schema)
             .await
             .unwrap_err(),
@@ -135,50 +107,29 @@ pub async fn test_guard() {
         }
     );
 
+    let query = "{ obj { value } }";
     assert_eq!(
-        schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Variables::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Role::Admin);
-                    data
-                })),
-            )
+        QueryBuilder::new(query)
+            .data(Username("test".to_string()))
+            .execute(&schema)
             .await
             .unwrap()
-            .collect::<Vec<_>>()
-            .await,
-        vec![
-            Ok(serde_json::json! ({"values": 1})),
-            Ok(serde_json::json! ({"values": 2})),
-            Ok(serde_json::json! ({"values": 3}))
-        ]
+            .data,
+        serde_json::json!({
+            "obj": { "value": 88 }
+        })
     );
 
+    let query = "{ obj { value } }";
     assert_eq!(
-        schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Variables::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Role::Guest);
-                    data
-                })),
-            )
+        QueryBuilder::new(query)
+            .data(Username("test1".to_string()))
+            .execute(&schema)
             .await
-            .err()
-            .unwrap(),
+            .unwrap_err(),
         Error::Query {
-            pos: Pos {
-                line: 1,
-                column: 16
-            },
-            path: Some(serde_json::json!(["values"])),
+            pos: Pos { line: 1, column: 9 },
+            path: Some(serde_json::json!(["obj", "value"])),
             err: QueryError::FieldError {
                 err: "Forbidden".to_string(),
                 extended_error: None,
@@ -188,10 +139,13 @@ pub async fn test_guard() {
 }
 
 #[async_std::test]
-pub async fn test_multiple_guards() {
+pub async fn test_multiple_post_guards() {
     #[SimpleObject]
     struct Query {
-        #[field(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
+        #[field(post_guard(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#, value = "10")
+        ))]
         value: i32,
     }
 
@@ -265,14 +219,15 @@ pub async fn test_multiple_guards() {
 }
 
 #[async_std::test]
-pub async fn test_guard_forward_arguments() {
+pub async fn test_post_guard_forward_arguments() {
     struct UserGuard {
         id: ID,
     }
 
     #[async_trait::async_trait]
-    impl Guard for UserGuard {
-        async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    impl PostGuard<ID> for UserGuard {
+        async fn check(&self, ctx: &Context<'_>, result: &ID) -> FieldResult<()> {
+            assert_eq!(result.as_str(), "haha");
             if ctx.data_opt::<ID>() != Some(&self.id) {
                 Err("Forbidden".into())
             } else {
@@ -285,9 +240,9 @@ pub async fn test_guard_forward_arguments() {
 
     #[Object]
     impl QueryRoot {
-        #[field(guard(UserGuard(id = "@id")))]
-        async fn user(&self, id: ID) -> ID {
-            id
+        #[field(post_guard(UserGuard(id = "@_id")))]
+        async fn user(&self, _id: ID) -> ID {
+            "haha".into()
         }
     }
 
@@ -301,7 +256,7 @@ pub async fn test_guard_forward_arguments() {
             .await
             .unwrap()
             .data,
-        serde_json::json!({"user": "abc"})
+        serde_json::json!({"user": "haha"})
     );
 
     let query = r#"{ user(id: "abc") }"#;

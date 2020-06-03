@@ -133,8 +133,8 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
                                 if let Lit::Str(value) = &nv.lit {
                                     let value_str = value.value();
                                     if value_str.starts_with('@') {
-                                        let id = Ident::new(&value_str[1..], value.span());
-                                        params.push(quote! { #name: &#id });
+                                        let getter_name = get_param_getter_ident(&value_str[1..]);
+                                        params.push(quote! { #name: #getter_name()? });
                                     } else {
                                         let expr = syn::parse_str::<Expr>(&value_str)?;
                                         params.push(quote! { #name: (#expr).into() });
@@ -156,6 +156,60 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
                         } else {
                             guards =
                                 Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
+                        }
+                    } else {
+                        return Err(Error::new_spanned(item, "Invalid guard"));
+                    }
+                }
+
+                return Ok(guards);
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+pub fn parse_post_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<TokenStream>> {
+    for arg in &args.nested {
+        if let NestedMeta::Meta(Meta::List(ls)) = arg {
+            if ls.path.is_ident("post_guard") {
+                let mut guards = None;
+
+                for item in &ls.nested {
+                    if let NestedMeta::Meta(Meta::List(ls)) = item {
+                        let ty = &ls.path;
+                        let mut params = Vec::new();
+                        for attr in &ls.nested {
+                            if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
+                                let name = &nv.path;
+                                if let Lit::Str(value) = &nv.lit {
+                                    let value_str = value.value();
+                                    if value_str.starts_with('@') {
+                                        let getter_name = get_param_getter_ident(&value_str[1..]);
+                                        params.push(quote! { #name: #getter_name()? });
+                                    } else {
+                                        let expr = syn::parse_str::<Expr>(&value_str)?;
+                                        params.push(quote! { #name: (#expr).into() });
+                                    }
+                                } else {
+                                    return Err(Error::new_spanned(
+                                        &nv.lit,
+                                        "Value must be string literal",
+                                    ));
+                                }
+                            } else {
+                                return Err(Error::new_spanned(attr, "Invalid property for guard"));
+                            }
+                        }
+
+                        let guard = quote! { #ty { #(#params),* } };
+                        if guards.is_none() {
+                            guards = Some(guard);
+                        } else {
+                            guards = Some(
+                                quote! { #crate_name::guard::PostGuardExt::and(#guard, #guards) },
+                            );
                         }
                     } else {
                         return Err(Error::new_spanned(item, "Invalid guard"));
@@ -230,4 +284,8 @@ pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
             "Attribute 'default' should be a string.",
         ))
     }
+}
+
+pub fn get_param_getter_ident(name: &str) -> Ident {
+    Ident::new(&format!("__{}_getter", name), Span::call_site())
 }
