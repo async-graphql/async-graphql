@@ -17,6 +17,7 @@ use async_graphql::{
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
+use http::Method;
 use std::convert::Infallible;
 use std::pin::Pin;
 pub use subscription::WSSubscription;
@@ -41,36 +42,50 @@ impl FromRequest for GQLRequest {
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
-        let content_type = req
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok())
-            .map(|value| value.to_string());
 
-        let (mut tx, rx) = mpsc::channel(16);
+        if req.method() == Method::GET {
+            let res = web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
+            Box::pin(async move {
+                let gql_request = res?;
+                gql_request
+                    .into_inner()
+                    .into_query_builder_opts(&config)
+                    .map_ok(GQLRequest)
+                    .map_err(actix_web::error::ErrorBadRequest)
+                    .await
+            })
+        } else {
+            let content_type = req
+                .headers()
+                .get(http::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .map(|value| value.to_string());
 
-        // Because Payload is !Send, so forward it to mpsc::Sender
-        let mut payload = web::Payload(payload.take());
-        actix_rt::spawn(async move {
-            while let Some(item) = payload.next().await {
-                if tx.send(item).await.is_err() {
-                    return;
-                }
-            }
-        });
+            let (mut tx, rx) = mpsc::channel(16);
 
-        Box::pin(async move {
-            (content_type, StreamBody::new(rx))
-                .into_query_builder_opts(&config)
-                .map_ok(GQLRequest)
-                .map_err(|err| match err {
-                    ParseRequestError::PayloadTooLarge => {
-                        actix_web::error::ErrorPayloadTooLarge(err)
+            // Because Payload is !Send, so forward it to mpsc::Sender
+            let mut payload = web::Payload(payload.take());
+            actix_rt::spawn(async move {
+                while let Some(item) = payload.next().await {
+                    if tx.send(item).await.is_err() {
+                        return;
                     }
-                    _ => actix_web::error::ErrorBadRequest(err),
-                })
-                .await
-        })
+                }
+            });
+
+            Box::pin(async move {
+                (content_type, StreamBody::new(rx))
+                    .into_query_builder_opts(&config)
+                    .map_ok(GQLRequest)
+                    .map_err(|err| match err {
+                        ParseRequestError::PayloadTooLarge => {
+                            actix_web::error::ErrorPayloadTooLarge(err)
+                        }
+                        _ => actix_web::error::ErrorBadRequest(err),
+                    })
+                    .await
+            })
+        }
     }
 }
 
