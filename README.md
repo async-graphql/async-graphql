@@ -34,7 +34,7 @@
 
 ## Safety
 
-This crate uses #![forbid(unsafe_code)] to ensure everything is implemented in 100% Safe Rust.
+This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in 100% Safe Rust.
 
 ## Stability: Unstable & Experimental
 
