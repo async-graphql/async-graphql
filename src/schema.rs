@@ -244,14 +244,22 @@ where
         registry.add_directive(MetaDirective {
             name: "defer",
             description: None,
-            locations: vec![__DirectiveLocation::FIELD],
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT,
+            ],
             args: Default::default(),
         });
 
         registry.add_directive(MetaDirective {
             name: "stream",
             description: None,
-            locations: vec![__DirectiveLocation::FIELD],
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT,
+            ],
             args: Default::default(),
         });
 
