@@ -59,6 +59,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .as_ref()
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
+                let features = field.features;
 
                 if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(
@@ -203,6 +204,27 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         quote! { -> #crate_name::FieldResult<#inner_ty> },
                     )
                     .expect("invalid result type");
+                }
+
+                if !features.is_empty() {
+                    let block = &method.block;
+                    let error_message = format!(
+                        "`{}` is only available if the features `{}` are enabled",
+                        field_name,
+                        features.join(",")
+                    );
+                    let new_block = quote!({
+                        #[cfg(not(all(#(feature = #features),*)))]
+                        {
+                            return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+                        }
+                        #[cfg(all(#(feature = #features),*))]
+                        {
+                            #block
+                        }
+                    });
+
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                 }
 
                 schema_fields.push(quote! {

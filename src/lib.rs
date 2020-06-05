@@ -656,6 +656,7 @@ pub use async_graphql_derive::Union;
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | feature       | It's like a `#[cfg(feature = "foo")]` attribute but instead of not compiling this field it will just return a proper `FieldError` to tell you this feature is not enabled | string ("feature1,feature2") | Y |
 ///
 /// # Field argument parameters
 ///
