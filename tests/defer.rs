@@ -60,6 +60,26 @@ pub async fn test_defer() {
         })
     );
 
+    let query = r#"
+    {
+        value
+        obj {
+          ...MyObjFragment @defer(label: "test")
+        }
+    }
+    fragment MyObjFragment on MyObj {
+        value
+    }"#;
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "value": 10,
+            "obj": {
+                "value": 20,
+            }
+        })
+    );
+
     let query = r#"{
         value @defer
         obj @defer {

@@ -249,7 +249,20 @@ where
                 __DirectiveLocation::FRAGMENT_SPREAD,
                 __DirectiveLocation::INLINE_FRAGMENT,
             ],
-            args: Default::default(),
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "label",
+                    MetaInputValue {
+                        name: "label",
+                        description: Some("Relay fragment label"),
+                        ty: "String".to_string(),
+                        default_value: None,
+                        validator: None,
+                    },
+                );
+                args
+            },
         });
 
         registry.add_directive(MetaDirective {
@@ -260,7 +273,20 @@ where
                 __DirectiveLocation::FRAGMENT_SPREAD,
                 __DirectiveLocation::INLINE_FRAGMENT,
             ],
-            args: Default::default(),
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "label",
+                    MetaInputValue {
+                        name: "label",
+                        description: Some("Relay fragment label"),
+                        ty: "String".to_string(),
+                        default_value: None,
+                        validator: None,
+                    },
+                );
+                args
+            },
         });
 
         // register scalars
