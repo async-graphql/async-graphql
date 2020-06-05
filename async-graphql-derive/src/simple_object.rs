@@ -99,22 +99,64 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     .post_guard
                     .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?; });
 
-                if field.is_ref {
-                    getters.push(quote! {
-                        #[inline]
-                        #[allow(missing_docs)]
-                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
-                            Ok(&self.#ident)
-                        }
-                    });
+
+                let features = &field.features;
+                if features.is_empty() {
+                    if field.is_ref {
+                        getters.push(quote! {
+                            #[inline]
+                            #[allow(missing_docs)]
+                            #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                                Ok(&self.#ident)
+                            }
+                        });
+                    } else {
+                        getters.push(quote! {
+                            #[inline]
+                            #[allow(missing_docs)]
+                            #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                                Ok(self.#ident.clone())
+                            }
+                        });
+                    }
                 } else {
-                    getters.push(quote! {
-                        #[inline]
-                        #[allow(missing_docs)]
-                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
-                            Ok(self.#ident.clone())
-                        }
-                    });
+                    let error_message = format!(
+                        "`{}` is only available if the features `{}` are enabled",
+                        field_name,
+                        features.join(",")
+                    );
+
+                    if field.is_ref {
+                        getters.push(quote! {
+                            #[inline]
+                            #[allow(missing_docs)]
+                            #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                                #[cfg(not(all(#(feature = #features),*)))]
+                                {
+                                    return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+                                }
+                                #[cfg(all(#(feature = #features),*))]
+                                {
+                                    Ok(&self.#ident)
+                                }
+                            }
+                        });
+                    } else {
+                        getters.push(quote! {
+                            #[inline]
+                            #[allow(missing_docs)]
+                            #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                                #[cfg(not(all(#(feature = #features),*)))]
+                                {
+                                    return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+                                }
+                                #[cfg(all(#(feature = #features),*))]
+                                {
+                                    Ok(self.#ident.clone())
+                                }
+                            }
+                        });
+                    }
                 }
 
                 resolvers.push(quote! {
