@@ -552,6 +552,6 @@ pub fn playground_source<T: Serialize>(config: &T) -> String {
 #[serde(rename_all = "camelCase")]
 pub struct GraphQLPlaygroundConfig {
     pub endpoint: String,
-    pub subscription_endpoint: String,
-    pub headers: HashMap<String, String>,
+    pub subscription_endpoint: Option<String>,
+    pub headers: Option<HashMap<String, String>>,
 }
