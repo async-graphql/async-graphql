@@ -93,7 +93,7 @@ where
     let opts = Arc::new(opts);
     warp::any()
         .and(warp::method())
-        .and(warp::query::raw().or(warp::any().map(|| String::new())).unify())
+        .and(warp::query::raw().or(warp::any().map(String::new)).unify())
         .and(warp::header::optional::<String>("content-type"))
         .and(warp::body::stream())
         .and(warp::any().map(move || opts.clone()))
