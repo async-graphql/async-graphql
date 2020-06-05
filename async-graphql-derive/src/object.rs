@@ -376,9 +376,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     let new_block = quote!({
                         #[cfg(not(all(#(feature = #features),*)))]
                         {
-                            return Err(anyhow!(
-                            #error_message
-                            )).map_err(std::convert::Into::into);
+                            return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
                         }
                         #[cfg(all(#(feature = #features),*))]
                         {
