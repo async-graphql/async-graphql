@@ -1,6 +1,6 @@
 use crate::context::{Data, DeferList, ResolveId};
 use crate::error::ParseRequestError;
-use crate::extensions::Extension;
+use crate::extensions::{BoxExtension, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
 use crate::{
@@ -141,6 +141,7 @@ pub struct QueryBuilder {
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Option<Data>,
+    extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 impl QueryBuilder {
@@ -151,6 +152,7 @@ impl QueryBuilder {
             operation_name: None,
             variables: Default::default(),
             ctx_data: None,
+            extensions: Default::default(),
         }
     }
 
@@ -165,6 +167,16 @@ impl QueryBuilder {
     /// Specify the variables.
     pub fn variables(self, variables: Variables) -> Self {
         QueryBuilder { variables, ..self }
+    }
+
+    /// Add an extension
+    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
+        mut self,
+        extension_factory: F,
+    ) -> Self {
+        self.extensions
+            .push(Box::new(move || Box::new(extension_factory())));
+        self
     }
 
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
@@ -259,7 +271,8 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let (mut document, cache_control, extensions) = schema.prepare_query(&self.query_source)?;
+        let (mut document, cache_control, extensions) =
+            schema.prepare_query(&self.query_source, &self.extensions)?;
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
