@@ -550,7 +550,7 @@ pub fn playground_source<T: Serialize>(config: &T) -> String {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GraphqlPlaygroundConfig {
+pub struct GraphQLPlaygroundConfig {
     pub endpoint: String,
     pub subscription_endpoint: String,
     pub headers: HashMap<String, String>,
