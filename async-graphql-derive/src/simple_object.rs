@@ -99,7 +99,6 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     .post_guard
                     .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?; });
 
-
                 let features = &field.features;
                 if features.is_empty() {
                     if field.is_ref {

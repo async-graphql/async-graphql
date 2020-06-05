@@ -285,7 +285,6 @@ impl Field {
                                             .value()
                                             .to_string()
                                             .split(',')
-                                            .into_iter()
                                             .map(|s| s.trim().to_string())
                                             .collect();
                                     } else {
