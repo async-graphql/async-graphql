@@ -200,6 +200,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
                 let external = field.external;
+                let features = field.features;
                 let requires = match &field.requires {
                     Some(requires) => quote! { Some(#requires) },
                     None => quote! { None },
@@ -364,6 +365,26 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         quote! { -> #crate_name::FieldResult<#inner_ty> },
                     )
                     .expect("invalid result type");
+                }
+                if !features.is_empty() {
+                    let block = &method.block;
+                    let error_message = format!(
+                        "`{}` is only available if the features `{}` are enabled",
+                        field_name,
+                        features.join(",")
+                    );
+                    let new_block = quote!({
+                        #[cfg(not(all(#(feature = #features),*)))]
+                        {
+                            return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+                        }
+                        #[cfg(all(#(feature = #features),*))]
+                        {
+                            #block
+                        }
+                    });
+
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                 }
                 let resolve_obj = quote! {
                     {
