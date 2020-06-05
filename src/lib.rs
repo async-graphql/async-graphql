@@ -204,6 +204,7 @@ pub use types::{EnumItem, EnumType};
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | feature       | It's like a `#[cfg(feature = "foo")]` attribute but instead of not compiling this field it will just return a proper `FieldError` to tell you this feature is not enabled | string ("feature1,feature2") | Y |
 ///
 /// # Field argument parameters
 ///
