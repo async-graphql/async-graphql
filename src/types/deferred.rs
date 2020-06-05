@@ -76,6 +76,7 @@ impl<T: OutputValueType + Send + Sync + 'static> OutputValueType for Deferred<T>
 
                         Ok((
                             QueryResponse {
+                                label: None,
                                 path: Some(path_prefix),
                                 data,
                                 extensions: None,
