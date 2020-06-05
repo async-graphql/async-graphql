@@ -141,6 +141,7 @@ impl SubscriptionTransport for WebSocketTransport {
                         id: Some(id.clone()),
                         payload: Some(
                             serde_json::to_value(GQLResponse(Ok(QueryResponse {
+                                label: None,
                                 path: None,
                                 data: value,
                                 extensions: None,

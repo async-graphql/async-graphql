@@ -93,16 +93,22 @@ where
     let opts = Arc::new(opts);
     warp::any()
         .and(warp::method())
-        .and(warp::query::raw())
+        .and(warp::query::raw().or(warp::any().map(String::new)).unify())
         .and(warp::header::optional::<String>("content-type"))
         .and(warp::body::stream())
         .and(warp::any().map(move || opts.clone()))
         .and(warp::any().map(move || schema.clone()))
         .and_then(
-            |method, query: String, content_type, body, opts: Arc<IntoQueryBuilderOpts>, schema| async move {
+            |method,
+             query: String,
+             content_type,
+             body,
+             opts: Arc<IntoQueryBuilderOpts>,
+             schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest = serde_urlencoded::from_str(&query)
-                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                    let gql_request: GQLRequest =
+                        serde_urlencoded::from_str(&query)
+                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let builder = gql_request
                         .into_query_builder_opts(&opts)
                         .await

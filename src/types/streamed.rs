@@ -87,6 +87,7 @@ impl<T: OutputValueType + Send + Sync + 'static> OutputValueType for Streamed<T>
 
                             Ok((
                                 QueryResponse {
+                                    label: None,
                                     path: Some(path_prefix),
                                     data,
                                     extensions: None,

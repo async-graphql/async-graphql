@@ -296,15 +296,6 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
-    pub(crate) fn create_extensions(&self) -> Extensions {
-        Extensions(
-            self.extensions
-                .iter()
-                .map(|factory| factory())
-                .collect_vec(),
-        )
-    }
-
     /// Execute query without create the `QueryBuilder`.
     pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
         QueryBuilder::new(query_source).execute(self).await
@@ -320,9 +311,17 @@ where
     pub(crate) fn prepare_query(
         &self,
         source: &str,
+        query_extensions: &[Box<dyn Fn() -> BoxExtension + Send + Sync>],
     ) -> Result<(Document, CacheControl, Extensions)> {
         // create extension instances
-        let extensions = self.create_extensions();
+        let extensions = Extensions(
+            self.0
+                .extensions
+                .iter()
+                .chain(query_extensions)
+                .map(|factory| factory())
+                .collect_vec(),
+        );
 
         extensions.parse_start(source);
         let document = extensions.log_error(parse_query(source).map_err(Into::<Error>::into))?;
@@ -366,7 +365,7 @@ where
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let (mut document, _, extensions) = self.prepare_query(source)?;
+        let (mut document, _, extensions) = self.prepare_query(source, &Vec::new())?;
 
         if !document.retain_operation(operation_name) {
             return extensions.log_error(if let Some(name) = operation_name {

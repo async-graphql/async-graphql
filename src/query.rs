@@ -1,6 +1,6 @@
 use crate::context::{Data, DeferList, ResolveId};
 use crate::error::ParseRequestError;
-use crate::extensions::Extension;
+use crate::extensions::{BoxExtension, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
 use crate::{
@@ -9,7 +9,9 @@ use crate::{
 };
 use async_graphql_parser::query::OperationType;
 use futures::{Stream, StreamExt};
+use itertools::Itertools;
 use std::any::Any;
+use std::borrow::Cow;
 use std::fs::File;
 use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
@@ -41,6 +43,11 @@ pub trait IntoQueryBuilder: Sized {
 /// Query response
 #[derive(Debug)]
 pub struct QueryResponse {
+    /// Label for RelayModernQueryExecutor
+    ///
+    /// https://github.com/facebook/relay/blob/2859aa8df4df7d4d6d9eef4c9dc1134286773710/packages/relay-runtime/store/RelayModernQueryExecutor.js#L1267
+    pub label: Option<String>,
+
     /// Path for subsequent response
     pub path: Option<Vec<serde_json::Value>>,
 
@@ -62,6 +69,19 @@ impl QueryResponse {
         } else {
             self.path = Some(prefix);
         }
+
+        self.label = self.path.as_ref().map(|path| {
+            path.iter()
+                .map(|value| {
+                    if let serde_json::Value::String(s) = value {
+                        Cow::Borrowed(s.as_str())
+                    } else {
+                        Cow::Owned(value.to_string())
+                    }
+                })
+                .join("$")
+        });
+
         self
     }
 
@@ -121,6 +141,7 @@ pub struct QueryBuilder {
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Option<Data>,
+    extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 impl QueryBuilder {
@@ -131,6 +152,7 @@ impl QueryBuilder {
             operation_name: None,
             variables: Default::default(),
             ctx_data: None,
+            extensions: Default::default(),
         }
     }
 
@@ -145,6 +167,16 @@ impl QueryBuilder {
     /// Specify the variables.
     pub fn variables(self, variables: Variables) -> Self {
         QueryBuilder { variables, ..self }
+    }
+
+    /// Add an extension
+    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
+        mut self,
+        extension_factory: F,
+    ) -> Self {
+        self.extensions
+            .push(Box::new(move || Box::new(extension_factory())));
+        self
     }
 
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
@@ -209,7 +241,15 @@ impl QueryBuilder {
                                 next_path_prefix.extend(defer_list.path_prefix.clone());
                                 next_defer_list.push((next_path_prefix, fut));
                             }
-                            yield res.apply_path_prefix(path_prefix);
+                            let mut new_res = res.apply_path_prefix(path_prefix);
+                            new_res.label = new_res.path.as_ref().map(|path| path.iter().map(|value| {
+                                if let serde_json::Value::String(s) = value {
+                                    s.to_string()
+                                } else {
+                                    value.to_string()
+                                }
+                            }).join("$"));
+                            yield new_res;
                         }
                         if next_defer_list.is_empty() {
                             break;
@@ -231,7 +271,8 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let (mut document, cache_control, extensions) = schema.prepare_query(&self.query_source)?;
+        let (mut document, cache_control, extensions) =
+            schema.prepare_query(&self.query_source, &self.extensions)?;
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
@@ -290,6 +331,7 @@ impl QueryBuilder {
         env.extensions.execution_end();
 
         let res = QueryResponse {
+            label: None,
             path: None,
             data,
             extensions: env.extensions.result(),
