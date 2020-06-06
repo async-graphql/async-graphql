@@ -250,7 +250,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 create_stream.push(quote! {
                     if ctx.name.node == #field_name {
-                        use #crate_name::futures::stream::{StreamExt, TryStreamExt};
+                        use #crate_name::futures::{StreamExt, TryStreamExt};
 
                         #(#get_params)*
                         #guard
@@ -348,8 +348,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             where
                 Self: Send + Sync + 'static + Sized,
             {
-                use #crate_name::futures::StreamExt;
-
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.to_string(),
