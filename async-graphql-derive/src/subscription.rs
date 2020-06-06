@@ -1,6 +1,8 @@
 use crate::args;
 use crate::output_type::OutputType;
-use crate::utils::{check_reserved_name, get_crate_name, get_param_getter_ident, get_rustdoc};
+use crate::utils::{
+    check_reserved_name, feature_block, get_crate_name, get_param_getter_ident, get_rustdoc,
+};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -206,26 +208,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .expect("invalid result type");
                 }
 
-                if !features.is_empty() {
-                    let block = &method.block;
-                    let error_message = format!(
-                        "`{}` is only available if the features `{}` are enabled",
-                        field_name,
-                        features.join(",")
-                    );
-                    let new_block = quote!({
-                        #[cfg(not(all(#(feature = #features),*)))]
-                        {
-                            return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
-                        }
-                        #[cfg(all(#(feature = #features),*))]
-                        {
-                            #block
-                        }
-                    });
-
-                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
-                }
+                method.block =
+                    syn::parse2::<Block>(feature_block(&crate_name, &features, &field_name, {
+                        let block = &method.block;
+                        quote! { #block }
+                    }))
+                    .expect("invalid block");
 
                 schema_fields.push(quote! {
                     fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
