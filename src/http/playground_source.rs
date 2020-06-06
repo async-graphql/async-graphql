@@ -1,8 +1,8 @@
+use serde::Serialize;
+use std::collections::HashMap;
+
 /// Generate the page for GraphQL Playground
-pub fn playground_source(
-    graphql_endpoint_url: &str,
-    subscription_endpoint: Option<&str>,
-) -> String {
+pub fn playground_source<T: Serialize>(config: &T) -> String {
     r##"
 <!DOCTYPE html>
 
@@ -537,14 +537,21 @@ pub fn playground_source(
       const root = document.getElementById('root');
       root.classList.add('playgroundIn');
 
-      GraphQLPlayground.init(root, { endpoint: GRAPHQL_URL, subscriptionEndpoint: GRAPHQL_SUBSCRIPTION_URL })
+      GraphQLPlayground.init(root, GRAPHQL_PLAYGROUND_CONFIG)
     })
   </script>
 </body>
 </html>
-  "##.replace("GRAPHQL_URL", &format!("'{}'", graphql_endpoint_url))
-        .replace("GRAPHQL_SUBSCRIPTION_URL", &match subscription_endpoint {
-            Some(url) => format!("'{}'", url),
-            None => "null".to_string()
+  "##.replace("GRAPHQL_PLAYGROUND_CONFIG", &match serde_json::to_string(config) {
+            Ok(str) => str,
+            _ => "{}".to_string()
         })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GraphQLPlaygroundConfig {
+    pub endpoint: String,
+    pub subscription_endpoint: Option<String>,
+    pub headers: Option<HashMap<String, String>>,
 }

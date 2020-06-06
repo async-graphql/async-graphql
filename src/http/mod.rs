@@ -10,7 +10,7 @@ use itertools::Itertools;
 
 pub use graphiql_source::graphiql_source;
 pub use multipart_stream::multipart_stream;
-pub use playground_source::playground_source;
+pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
 use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
