@@ -41,13 +41,25 @@ fn parse_nested_validator(
                 for nested_meta in &ls.nested {
                     validators.push(parse_nested_validator(crate_name, nested_meta)?);
                 }
-                Ok(validators                    .into_iter()                    .fold(None, |acc, item| match acc {                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::and(#prev, #item) }),                        None => Some(item),                    })                    .unwrap())
+                Ok(validators
+                    .into_iter()
+                    .fold(None, |acc, item| match acc {
+                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::and(#prev, #item) }),
+                        None => Some(item),
+                    })
+                    .unwrap())
             } else if ls.path.is_ident("or") {
                 let mut validators = Vec::new();
                 for nested_meta in &ls.nested {
                     validators.push(parse_nested_validator(crate_name, nested_meta)?);
                 }
-                Ok(validators                    .into_iter()                    .fold(None, |acc, item| match acc {                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::or(#prev, #item) }),                        None => Some(item),                    })                    .unwrap())
+                Ok(validators
+                    .into_iter()
+                    .fold(None, |acc, item| match acc {
+                        Some(prev) => Some(quote! { #crate_name::validators::InputValueValidatorExt::or(#prev, #item) }),
+                        None => Some(item),
+                    })
+                    .unwrap())
             } else {
                 let ty = &ls.path;
                 for item in &ls.nested {
@@ -83,7 +95,8 @@ pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<Toke
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
             if ls.path.is_ident("validator") {
                 if ls.nested.len() > 1 {
-                    return Err(Error::new_spanned(ls,                                                  "Only one validator can be defined. You can connect combine validators with `and` or `or`"));
+                    return Err(Error::new_spanned(ls,
+                                                  "Only one validator can be defined. You can connect combine validators with `and` or `or`"));
                 }
                 if ls.nested.is_empty() {
                     return Err(Error::new_spanned(
@@ -219,7 +232,28 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
     })
 }
 pub fn parse_default(lit: &Lit) -> Result<TokenStream> {
-    match lit {        Lit::Str(value) =>{            let value = value.value();            Ok(quote!({ #value.to_string() }))        }        Lit::Int(value) => {            let value = value.base10_parse::<i32>()?;            Ok(quote!({ #value as i32 }))        }        Lit::Float(value) => {            let value = value.base10_parse::<f64>()?;            Ok(quote!({ #value as f64 }))        }        Lit::Bool(value) => {            let value = value.value;            Ok(quote!({ #value }))        }        _ => Err(Error::new_spanned(            lit,            "The default value type only be string, integer, float and boolean, other types should use default_with",        )),    }
+    match lit {
+        Lit::Str(value) =>{
+            let value = value.value();
+            Ok(quote!({ #value.to_string() }))
+        }
+        Lit::Int(value) => {
+            let value = value.base10_parse::<i32>()?;
+            Ok(quote!({ #value as i32 }))
+        }
+        Lit::Float(value) => {
+            let value = value.base10_parse::<f64>()?;
+            Ok(quote!({ #value as f64 }))
+        }
+        Lit::Bool(value) => {
+            let value = value.value;
+            Ok(quote!({ #value }))
+        }
+        _ => Err(Error::new_spanned(
+            lit,
+            "The default value type only be string, integer, float and boolean, other types should use default_with",
+        )),
+    }
 }
 pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
     if let Lit::Str(str) = lit {
@@ -248,7 +282,16 @@ pub fn feature_block(
             field_name,
             features.join(",")
         );
-        quote!({            #[cfg(not(all(#(feature = #features),*)))]            {                return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);            }            #[cfg(all(#(feature = #features),*))]            {                #block            }        })
+        quote!({
+            #[cfg(not(all(#(feature = #features),*)))]
+            {
+                return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+            }
+            #[cfg(all(#(feature = #features),*))]
+            {
+                #block
+            }
+        })
     } else {
         block
     }
