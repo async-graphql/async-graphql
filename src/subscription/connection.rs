@@ -22,7 +22,9 @@ impl SubscriptionStreams {
     }
 
     pub fn remove(&mut self, id: usize) {
-        self.streams.remove(id);
+        if self.streams.contains(id) {
+            self.streams.remove(id);
+        }
     }
 }
 
