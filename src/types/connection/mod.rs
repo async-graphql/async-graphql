@@ -248,7 +248,7 @@ pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R>(
     before: Option<String>,
     first: Option<i32>,
     last: Option<i32>,
-    mut f: F,
+    f: F,
 ) -> FieldResult<Connection<Cursor, Node, ConnectionFields, EdgeFields>>
 where
     Cursor: CursorType + Send + Sync,

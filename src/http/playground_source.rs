@@ -548,10 +548,16 @@ pub fn playground_source<T: Serialize>(config: &T) -> String {
         })
 }
 
+/// Config for GraphQL Playground
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphQLPlaygroundConfig {
+    /// Query endpoint
     pub endpoint: String,
+
+    /// Subscription endpoint, for example: `ws://localhost:8000`
     pub subscription_endpoint: Option<String>,
+
+    /// HTTP headers
     pub headers: Option<HashMap<String, String>>,
 }
