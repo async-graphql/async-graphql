@@ -1,6 +1,6 @@
 use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
-use bson::{oid::ObjectId, UtcDateTime};
+use bson::{oid::ObjectId, DateTime as UtcDateTime};
 use chrono::{DateTime, Utc};
 
 #[Scalar(internal)]
