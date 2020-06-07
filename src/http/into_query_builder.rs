@@ -63,6 +63,7 @@ where
 
             let mut builder = None;
             let mut map = None;
+            let mut files = Vec::new();
 
             while let Some(mut field) = multipart.next_field().await? {
                 match field.name() {
@@ -80,52 +81,50 @@ where
                         );
                     }
                     _ => {
-                        let builder = match &mut builder {
-                            Some(builder) => builder,
-                            None => return Err(ParseRequestError::MissingOperatorsPart),
-                        };
-                        let map = match &mut map {
-                            Some(map) => map,
-                            None => return Err(ParseRequestError::MissingMapPart),
-                        };
-                        if let Some(name) = field.name() {
+                        if let Some(name) = field.name().map(ToString::to_string) {
                             if let Some(filename) = field.file_name().map(ToString::to_string) {
-                                if let Some(var_paths) = map.remove(name) {
-                                    let content_type =
-                                        field.content_type().map(|mime| mime.to_string());
-                                    let mut file =
-                                        tempfile::tempfile().map_err(ParseRequestError::Io)?;
-                                    while let Some(chunk) = field.chunk().await.unwrap() {
-                                        file.write(&chunk).map_err(ParseRequestError::Io)?;
-                                    }
-                                    file.seek(SeekFrom::Start(0))?;
-                                    for var_path in var_paths {
-                                        builder.set_upload(
-                                            &var_path,
-                                            filename.clone(),
-                                            content_type.clone(),
-                                            file.try_clone().unwrap(),
-                                        );
-                                    }
+                                let content_type =
+                                    field.content_type().map(|mime| mime.to_string());
+                                let mut file =
+                                    tempfile::tempfile().map_err(ParseRequestError::Io)?;
+                                while let Some(chunk) = field.chunk().await.unwrap() {
+                                    file.write(&chunk).map_err(ParseRequestError::Io)?;
                                 }
+                                file.seek(SeekFrom::Start(0))?;
+                                files.push((name, filename, content_type, file));
                             }
                         }
                     }
                 }
             }
 
-            if let Some(map) = &map {
-                if !map.is_empty() {
-                    return Err(ParseRequestError::MissingFiles);
-                }
-            } else {
-                return Err(ParseRequestError::MissingMapPart);
-            }
-
-            Ok(match builder {
+            let mut builder = match builder {
                 Some(builder) => builder,
                 None => return Err(ParseRequestError::MissingOperatorsPart),
-            })
+            };
+            let map = match &mut map {
+                Some(map) => map,
+                None => return Err(ParseRequestError::MissingMapPart),
+            };
+
+            for (name, filename, content_type, file) in files {
+                if let Some(var_paths) = map.remove(&name) {
+                    for var_path in var_paths {
+                        builder.set_upload(
+                            &var_path,
+                            filename.clone(),
+                            content_type.clone(),
+                            file.try_clone().unwrap(),
+                        );
+                    }
+                }
+            }
+
+            if !map.is_empty() {
+                return Err(ParseRequestError::MissingFiles);
+            }
+
+            Ok(builder)
         } else {
             let mut data = Vec::new();
             self.1
