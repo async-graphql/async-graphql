@@ -15,7 +15,7 @@ fn quickstart() -> Result<()> {
 
         let server = Task::<Result<()>>::spawn(async move {
             use async_graphql_tide::{RequestExt, ResponseExt};
-            use tide::{http::StatusCode, Request, Response, Status};
+            use tide::{http::StatusCode, Request, Response};
 
             struct QueryRoot;
             #[Object]
@@ -28,10 +28,9 @@ fn quickstart() -> Result<()> {
 
             async fn graphql(req: Request<()>) -> tide::Result<Response> {
                 let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-                let query_builder = req.body_graphql().await.status(StatusCode::BadRequest)?;
+                let query_builder = req.body_graphql().await?;
                 Ok(Response::new(StatusCode::Ok)
-                    .body_graphql(query_builder.execute(&schema).await)
-                    .status(StatusCode::InternalServerError)?)
+                    .body_graphql(query_builder.execute(&schema).await)?)
             }
 
             let mut app = tide::new();

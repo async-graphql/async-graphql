@@ -7,8 +7,8 @@
 
 use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody};
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, ParseRequestError, QueryBuilder,
-    QueryResponse, Schema, StreamResponse, SubscriptionType,
+    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
+    StreamResponse, SubscriptionType,
 };
 use async_trait::async_trait;
 use futures::channel::mpsc;
@@ -82,17 +82,12 @@ where
     TideState: Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
-    let query_builder = req
-        .body_graphql_opts(opts)
-        .await
-        .status(StatusCode::BadRequest)?;
-    Ok(Response::new(StatusCode::Ok)
-        .body_graphql(
-            query_builder_configuration(query_builder)
-                .execute(&schema)
-                .await,
-        )
-        .status(StatusCode::InternalServerError)?)
+    let query_builder = req.body_graphql_opts(opts).await?;
+    Response::new(StatusCode::Ok).body_graphql(
+        query_builder_configuration(query_builder)
+            .execute(&schema)
+            .await,
+    )
 }
 
 /// Tide request extension
@@ -100,35 +95,29 @@ where
 #[async_trait]
 pub trait RequestExt<State: Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::QueryBuilder`.
-    async fn body_graphql(self) -> Result<QueryBuilder, ParseRequestError> {
+    async fn body_graphql(self) -> tide::Result<QueryBuilder> {
         self.body_graphql_opts(Default::default()).await
     }
 
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
-    async fn body_graphql_opts(
-        self,
-        opts: IntoQueryBuilderOpts,
-    ) -> Result<QueryBuilder, ParseRequestError>;
+    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder>;
 }
 
 #[async_trait]
 impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
-    async fn body_graphql_opts(
-        self,
-        opts: IntoQueryBuilderOpts,
-    ) -> Result<QueryBuilder, ParseRequestError> {
+    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder> {
         if self.method() == Method::Get {
-            match self.query::<GQLRequest>() {
-                Ok(gql_request) => gql_request.into_query_builder_opts(&opts).await,
-                Err(_) => Err(ParseRequestError::Io(std::io::Error::from(
-                    std::io::ErrorKind::InvalidInput,
-                ))),
-            }
+            let gql_request: GQLRequest = self.query::<GQLRequest>()?;
+            let builder = gql_request
+                .into_query_builder_opts(&opts)
+                .await
+                .status(StatusCode::BadRequest)?;
+            Ok(builder)
         } else {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)
                 .and_then(|values| values.get(0).map(|value| value.to_string()));
-            (content_type, self).into_query_builder_opts(&opts).await
+            Ok((content_type, self).into_query_builder_opts(&opts).await?)
         }
     }
 }
@@ -137,18 +126,20 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
 ///
 pub trait ResponseExt: Sized {
     /// Set body as the result of a GraphQL query.
-    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self>;
+    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> tide::Result<Self>;
 
     /// Set body as the result of a GraphQL streaming query.
-    fn body_graphql_stream(self, res: StreamResponse) -> serde_json::Result<Self>;
+    fn body_graphql_stream(self, res: StreamResponse) -> tide::Result<Self>;
 }
 
 impl ResponseExt for Response {
-    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> serde_json::Result<Self> {
-        add_cache_control(self, &res).body_json(&GQLResponse(res))
+    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> tide::Result<Self> {
+        let mut resp = add_cache_control(self, &res);
+        resp.set_body(Body::from_json(&GQLResponse(res))?);
+        Ok(resp)
     }
 
-    fn body_graphql_stream(mut self, res: StreamResponse) -> serde_json::Result<Self> {
+    fn body_graphql_stream(mut self, res: StreamResponse) -> tide::Result<Self> {
         match res {
             StreamResponse::Single(res) => self.body_graphql(res),
             StreamResponse::Stream(stream) => {
@@ -167,17 +158,22 @@ impl ResponseExt for Response {
                     }
                 });
                 self.set_body(Body::from_reader(BufReader::new(StreamBody::new(rx)), None));
-                Ok(self.set_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed"))
+                self.insert_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed");
+                Ok(self)
             }
         }
     }
 }
 
-fn add_cache_control(http_resp: Response, resp: &async_graphql::Result<QueryResponse>) -> Response {
+fn add_cache_control(
+    mut http_resp: Response,
+    resp: &async_graphql::Result<QueryResponse>,
+) -> Response {
     if let Ok(QueryResponse { cache_control, .. }) = resp {
         if let Some(cache_control) = cache_control.value() {
             if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
-                return http_resp.set_header(header, cache_control);
+                http_resp.insert_header(header, cache_control);
+                return http_resp;
             }
         }
     }
