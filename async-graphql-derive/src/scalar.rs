@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Error, ItemImpl, Result, Type};
@@ -18,7 +18,6 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| self_name.clone());
-    check_reserved_name(&gql_typename, scalar_args.internal)?;
     let desc = scalar_args
         .desc
         .clone()

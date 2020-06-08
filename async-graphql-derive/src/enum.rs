@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -62,7 +62,6 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     }
 
     let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
-    check_reserved_name(&gql_typename, enum_args.internal)?;
 
     let desc = enum_args
         .desc

@@ -1,7 +1,7 @@
 use crate::args;
 use crate::args::{InterfaceField, InterfaceFieldArgument};
 use crate::output_type::OutputType;
-use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -30,7 +30,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
-    check_reserved_name(&gql_typename, interface_args.internal)?;
 
     let desc = interface_args
         .desc
