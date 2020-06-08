@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use proc_macro::TokenStream;
 use quote::quote;
 use std::collections::HashSet;
@@ -22,7 +22,6 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
     let gql_typename = union_args.name.clone().unwrap_or_else(|| ident.to_string());
-    check_reserved_name(&gql_typename, union_args.internal)?;
 
     let desc = union_args
         .desc

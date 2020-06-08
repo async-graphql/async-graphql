@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{check_reserved_name, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -41,7 +41,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
-    check_reserved_name(&gql_typename, object_args.internal)?;
 
     let desc = object_args
         .desc

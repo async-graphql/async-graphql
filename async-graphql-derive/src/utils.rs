@@ -11,24 +11,6 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         quote! { #id }
     }
 }
-pub fn check_reserved_name(name: &str, internal: bool) -> Result<()> {
-    if internal {
-        return Ok(());
-    }
-    if name.ends_with("Connection") {
-        Err(Error::new(
-            Span::call_site(),
-            "The name ending with 'Connection' is reserved",
-        ))
-    } else if name == "PageInfo" {
-        Err(Error::new(
-            Span::call_site(),
-            "The name 'PageInfo' is reserved",
-        ))
-    } else {
-        Ok(())
-    }
-}
 fn parse_nested_validator(
     crate_name: &TokenStream,
     nested_meta: &NestedMeta,
