@@ -55,7 +55,9 @@ impl Upload {
         self.0.content_type.as_deref()
     }
 
-    /// Convert to a read
+    /// Convert to a `Read`.
+    ///
+    /// **Note**: this is a *synchronous/blocking* reader.
     pub fn into_read(self) -> impl Read + Sync + Send + 'static {
         self.0.content
     }
