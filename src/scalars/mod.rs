@@ -55,10 +55,10 @@ mod tests {
         assert_eq!(<NaiveTime as Type>::type_name(), "NaiveTime");
         assert_eq!(<NaiveTime as Type>::qualified_type_name(), "NaiveTime!");
 
-        assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
+        assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTimeUtc");
         assert_eq!(
             <DateTime::<Utc> as Type>::qualified_type_name(),
-            "DateTime!"
+            "DateTimeUtc!"
         );
 
         assert_eq!(<Uuid as Type>::type_name(), "UUID");
