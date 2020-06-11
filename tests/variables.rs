@@ -72,6 +72,69 @@ pub async fn test_variable_default_value() {
 }
 
 #[async_std::test]
+pub async fn test_variable_no_value() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn int_val(&self, value: Option<i32>) -> i32 {
+            value.unwrap_or(10)
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let query = QueryBuilder::new(
+        r#"
+            query QueryWithVariables($intVal: Int) {
+                intVal(value: $intVal)
+            }
+        "#,
+    )
+    .variables(Variables::parse_from_json(serde_json::json!({})).unwrap());
+    let resp = query.execute(&schema).await.unwrap();
+    assert_eq!(
+        resp.data,
+        serde_json::json!({
+            "intVal": 10,
+        })
+    );
+}
+
+#[async_std::test]
+pub async fn test_variable_null() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn int_val(&self, value: Option<i32>) -> i32 {
+            value.unwrap_or(10)
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let query = QueryBuilder::new(
+        r#"
+            query QueryWithVariables($intVal: Int) {
+                intVal(value: $intVal)
+            }
+        "#,
+    )
+    .variables(
+        Variables::parse_from_json(serde_json::json!({
+            "intVal": null,
+        }))
+        .unwrap(),
+    );
+    let resp = query.execute(&schema).await.unwrap();
+    assert_eq!(
+        resp.data,
+        serde_json::json!({
+            "intVal": 10,
+        })
+    );
+}
+
+#[async_std::test]
 pub async fn test_variable_in_input_object() {
     #[InputObject]
     struct MyInput {

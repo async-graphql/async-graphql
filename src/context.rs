@@ -424,6 +424,16 @@ impl<'a, T> ContextBase<'a, T> {
             } else if let Some(default) = &def.default_value {
                 return Ok(default.clone_inner());
             }
+            match def.var_type.deref() {
+                &async_graphql_parser::query::Type::Named(_)
+                | &async_graphql_parser::query::Type::List(_) => {
+                    // Nullable types can default to null when not given.
+                    return Ok(Value::Null);
+                }
+                &async_graphql_parser::query::Type::NonNull(_) => {
+                    // Strict types can not.
+                }
+            }
         }
         Err(QueryError::VarNotDefined {
             var_name: name.to_string(),
