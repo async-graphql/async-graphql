@@ -55,7 +55,7 @@ pub async fn test_enum_derive_and_item_attributes() {
     use serde_derive::Deserialize;
 
     #[async_graphql::Enum]
-    #[derive(Deserialize, PartialEq, Debug)]
+    #[derive(Deserialize, Debug)]
     enum Test {
         #[serde(alias = "Other")]
         Real,

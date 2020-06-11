@@ -8,8 +8,6 @@ use syn::{Data, DeriveInput, Error, Result};
 pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
-    let attrs = &input.attrs;
-    let vis = &input.vis;
     let s = match &input.data {
         Data::Struct(s) => s,
         _ => return Err(Error::new_spanned(input, "It should be a struct.")),
@@ -30,12 +28,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             #vis #ident: #ty
         });
     }
-    let new_struct = quote! {
-        #(#attrs)*
-        #vis struct #ident {
-            #(#struct_fields),*
-        }
-    };
 
     let gql_typename = object_args
         .name
@@ -107,8 +99,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
     }
 
     let expanded = quote! {
-        #new_struct
-
         impl #crate_name::Type for #ident {
             fn type_name() -> std::borrow::Cow<'static, str> {
                 std::borrow::Cow::Borrowed(#gql_typename)

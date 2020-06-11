@@ -22,3 +22,4 @@ syn = { version = "1.0.20", features = ["full", "extra-traits"] }
 quote = "1.0.3"
 Inflector = "0.11.4"
 proc-macro-crate = "0.1.4"
+itertools = "0.9.0"

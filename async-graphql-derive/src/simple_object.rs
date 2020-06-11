@@ -5,7 +5,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Error, Fields, Result};
 
-pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<TokenStream> {
+pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let ident = &input.ident;
     let generics = &input.generics;
@@ -23,21 +23,21 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
-    let s = match &mut input.data {
+    let s = match &input.data {
         Data::Struct(e) => e,
         _ => return Err(Error::new_spanned(input, "It should be a struct")),
     };
     let mut getters = Vec::new();
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
-    let fields = match &mut s.fields {
+    let fields = match &s.fields {
         Fields::Named(fields) => Some(fields),
         Fields::Unit => None,
         _ => return Err(Error::new_spanned(input, "All fields must be named.")),
     };
 
     if let Some(fields) = fields {
-        for item in &mut fields.named {
+        for item in &fields.named {
             if let Some(field) = args::Field::parse(&crate_name, &item.attrs)? {
                 let field_name = field
                     .name
@@ -139,15 +139,6 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
                     }
                 });
             }
-
-            if let Some((idx, _)) = item
-                .attrs
-                .iter()
-                .enumerate()
-                .find(|(_, a)| a.path.is_ident("field"))
-            {
-                item.attrs.remove(idx);
-            }
         }
     }
 
@@ -163,8 +154,6 @@ pub fn generate(object_args: &args::Object, input: &mut DeriveInput) -> Result<T
     };
 
     let expanded = quote! {
-        #input
-
         impl #generics #ident #where_clause {
             #(#getters)*
         }

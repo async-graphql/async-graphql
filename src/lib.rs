@@ -336,6 +336,50 @@ pub use async_graphql_derive::Object;
 /// ```
 pub use async_graphql_derive::SimpleObject;
 
+/// Derive a GraphQL enum
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[derive(GQLEnum, Eq, PartialEq, Copy, Clone)]
+/// #[graphql(name = "Enum1")]
+/// enum MyEnum {
+///     One,
+///     Two,
+/// }
+/// ```
+pub use async_graphql_derive::GQLEnum;
+
+/// Derive a GraphQL input object
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+/// #[derive(GQLInputObject)]
+/// #[graphql(name = "MyInput1")]
+/// struct MyInput {
+///     value: i32,
+/// }
+/// ```
+pub use async_graphql_derive::GQLInputObject;
+
+/// Derive a GraphQL simple object
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+/// #[derive(GQLSimpleObject)]
+/// #[graphql(name = "MyObj1")]
+/// struct MyObj {
+///     value: i32,
+/// }
+/// ```
+pub use async_graphql_derive::GQLSimpleObject;
+
 /// Define a GraphQL enum
 ///
 /// # Macro parameters

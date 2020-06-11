@@ -1,7 +1,12 @@
+use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::crate_name;
 use quote::quote;
-use syn::{Attribute, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
+use syn::{
+    Attribute, AttributeArgs, DeriveInput, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta,
+    Result,
+};
+
 pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
         quote! { crate }
@@ -11,6 +16,41 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         quote! { #id }
     }
 }
+
+pub fn add_container_attrs(
+    derive: TokenStream,
+    container_attrs: AttributeArgs,
+    item: TokenStream,
+) -> Result<TokenStream> {
+    let internal = container_attrs.iter().any(|meta| {
+        if let NestedMeta::Meta(Meta::Path(p)) = meta {
+            p.is_ident("internal")
+        } else {
+            false
+        }
+    });
+    let crate_name = get_crate_name(internal);
+    let expanded = quote! {
+       #[derive(#crate_name::#derive)]
+       #[graphql(#(#container_attrs),*)]
+       #item
+    };
+    Ok(expanded)
+}
+
+pub fn parse_derive(input: TokenStream) -> Result<(proc_macro::TokenStream, DeriveInput)> {
+    let mut input: DeriveInput = syn::parse2(input)?;
+    let attrs = &mut input.attrs;
+    let pos = attrs
+        .iter()
+        .find_position(|attr| attr.path.is_ident("graphql"))
+        .unwrap()
+        .0;
+    let attribute = attrs.remove(pos);
+    let args = attribute.parse_args::<TokenStream>()?;
+    Ok((args.into(), input))
+}
+
 fn parse_nested_validator(
     crate_name: &TokenStream,
     nested_meta: &NestedMeta,
@@ -72,6 +112,7 @@ fn parse_nested_validator(
         }
     }
 }
+
 pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<TokenStream> {
     for arg in &args.nested {
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
@@ -93,6 +134,7 @@ pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<Toke
     }
     Ok(quote! {None})
 }
+
 pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<TokenStream>> {
     for arg in &args.nested {
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
@@ -141,6 +183,7 @@ pub fn parse_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<
     }
     Ok(None)
 }
+
 pub fn parse_post_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Option<TokenStream>> {
     for arg in &args.nested {
         if let NestedMeta::Meta(Meta::List(ls)) = arg {
@@ -190,6 +233,7 @@ pub fn parse_post_guards(crate_name: &TokenStream, args: &MetaList) -> Result<Op
     }
     Ok(None)
 }
+
 pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
     let mut full_docs = String::new();
     for attr in attrs {
@@ -213,6 +257,7 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> Result<Option<String>> {
         Some(full_docs)
     })
 }
+
 pub fn parse_default(lit: &Lit) -> Result<TokenStream> {
     match lit {
         Lit::Str(value) =>{
@@ -237,6 +282,7 @@ pub fn parse_default(lit: &Lit) -> Result<TokenStream> {
         )),
     }
 }
+
 pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
     if let Lit::Str(str) = lit {
         let str = str.value();
@@ -249,9 +295,11 @@ pub fn parse_default_with(lit: &Lit) -> Result<TokenStream> {
         ))
     }
 }
+
 pub fn get_param_getter_ident(name: &str) -> Ident {
     Ident::new(&format!("__{}_getter", name), Span::call_site())
 }
+
 pub fn feature_block(
     crate_name: &TokenStream,
     features: &[String],
