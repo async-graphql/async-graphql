@@ -95,8 +95,6 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     }
 
     let expanded = quote! {
-        #input
-
         #(#type_into_impls)*
 
         impl #generics #crate_name::Type for #ident #generics {

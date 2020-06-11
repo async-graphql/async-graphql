@@ -261,8 +261,6 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     };
 
     let expanded = quote! {
-        #input
-
         #(#type_into_impls)*
 
         impl #generics #ident #generics {

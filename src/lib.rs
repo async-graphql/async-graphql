@@ -170,8 +170,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 // internal types
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
+
 #[doc(hidden)]
 pub mod registry;
+
 #[doc(hidden)]
 pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
 #[doc(hidden)]
@@ -613,6 +615,9 @@ pub use async_graphql_derive::InputObject;
 /// ```
 pub use async_graphql_derive::Interface;
 
+/// Derive a GraphQL interface
+pub use async_graphql_derive::GQLInterface;
+
 /// Define a GraphQL union
 ///
 ///
@@ -678,6 +683,9 @@ pub use async_graphql_derive::Interface;
 /// }
 /// ```
 pub use async_graphql_derive::Union;
+
+/// Derive a GraphQL interface
+pub use async_graphql_derive::GQLUnion;
 
 /// Define a GraphQL subscription
 ///
