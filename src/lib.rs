@@ -684,7 +684,7 @@ pub use async_graphql_derive::GQLInterface;
 /// ```
 pub use async_graphql_derive::Union;
 
-/// Derive a GraphQL interface
+/// Derive a GraphQL union
 pub use async_graphql_derive::GQLUnion;
 
 /// Define a GraphQL subscription
