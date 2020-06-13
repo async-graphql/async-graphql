@@ -362,4 +362,10 @@ impl QueryBuilder {
             }
         }
     }
+
+    /// Get query source
+    #[inline]
+    pub fn query_source(&self) -> &str {
+        &self.query_source
+    }
 }
