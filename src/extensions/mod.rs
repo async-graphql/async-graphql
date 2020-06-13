@@ -5,7 +5,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::Result;
+use crate::{Result, Variables};
 
 pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
@@ -44,91 +44,95 @@ pub trait Extension: Sync + Send + 'static {
     }
 
     /// Called at the begin of the parse.
-    fn parse_start(&self, query_source: &str) {}
+    fn parse_start(&mut self, query_source: &str, variables: &Variables) {}
 
     /// Called at the end of the parse.
-    fn parse_end(&self, query_source: &str, document: &Document) {}
+    fn parse_end(&mut self, document: &Document) {}
 
     /// Called at the begin of the validation.
-    fn validation_start(&self) {}
+    fn validation_start(&mut self) {}
 
     /// Called at the end of the validation.
-    fn validation_end(&self) {}
+    fn validation_end(&mut self) {}
 
     /// Called at the begin of the execution.
-    fn execution_start(&self) {}
+    fn execution_start(&mut self) {}
 
     /// Called at the end of the execution.
-    fn execution_end(&self) {}
+    fn execution_end(&mut self) {}
 
     /// Called at the begin of the resolve field.
-    fn resolve_start(&self, info: &ResolveInfo<'_>) {}
+    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {}
 
     /// Called at the end of the resolve field.
-    fn resolve_end(&self, info: &ResolveInfo<'_>) {}
+    fn resolve_end(&mut self, info: &ResolveInfo<'_>) {}
 
     /// Called when an error occurs.
-    fn error(&self, err: &Error) {}
+    fn error(&mut self, err: &Error) {}
 
     /// Get the results
-    fn result(&self) -> Option<serde_json::Value> {
+    fn result(&mut self) -> Option<serde_json::Value> {
         None
     }
 }
 
-impl Extensions {
-    pub(crate) fn log_error<T>(&self, res: Result<T>) -> Result<T> {
-        if let Err(err) = &res {
-            self.error(err);
+pub(crate) trait ErrorLogger {
+    fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self;
+}
+
+impl<T> ErrorLogger for Result<T> {
+    fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self {
+        if let Err(err) = &self {
+            extensions.lock().error(err);
         }
-        res
+        self
     }
 }
 
 impl Extension for Extensions {
-    fn parse_start(&self, query_source: &str) {
-        self.0.iter().for_each(|e| e.parse_start(query_source));
-    }
-
-    fn parse_end(&self, query_source: &str, document: &Document) {
+    fn parse_start(&mut self, query_source: &str, variables: &Variables) {
         self.0
-            .iter()
-            .for_each(|e| e.parse_end(query_source, document));
+            .iter_mut()
+            .for_each(|e| e.parse_start(query_source, variables));
     }
 
-    fn validation_start(&self) {
-        self.0.iter().for_each(|e| e.validation_start());
+    fn parse_end(&mut self, document: &Document) {
+        self.0.iter_mut().for_each(|e| e.parse_end(document));
     }
 
-    fn validation_end(&self) {
-        self.0.iter().for_each(|e| e.validation_end());
+    fn validation_start(&mut self) {
+        self.0.iter_mut().for_each(|e| e.validation_start());
     }
 
-    fn execution_start(&self) {
-        self.0.iter().for_each(|e| e.execution_start());
+    fn validation_end(&mut self) {
+        self.0.iter_mut().for_each(|e| e.validation_end());
     }
 
-    fn execution_end(&self) {
-        self.0.iter().for_each(|e| e.execution_end());
+    fn execution_start(&mut self) {
+        self.0.iter_mut().for_each(|e| e.execution_start());
     }
 
-    fn resolve_start(&self, info: &ResolveInfo<'_>) {
-        self.0.iter().for_each(|e| e.resolve_start(info));
+    fn execution_end(&mut self) {
+        self.0.iter_mut().for_each(|e| e.execution_end());
     }
 
-    fn resolve_end(&self, resolve_id: &ResolveInfo<'_>) {
-        self.0.iter().for_each(|e| e.resolve_end(resolve_id));
+    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
+        self.0.iter_mut().for_each(|e| e.resolve_start(info));
     }
 
-    fn error(&self, err: &Error) {
-        self.0.iter().for_each(|e| e.error(err));
+    fn resolve_end(&mut self, resolve_id: &ResolveInfo<'_>) {
+        self.0.iter_mut().for_each(|e| e.resolve_end(resolve_id));
     }
 
-    fn result(&self) -> Option<Value> {
+    fn error(&mut self, err: &Error) {
+        self.0.iter_mut().for_each(|e| e.error(err));
+    }
+
+    fn result(&mut self) -> Option<Value> {
         if !self.0.is_empty() {
             let value = self
                 .0
-                .iter()
+                .iter_mut()
                 .filter_map(|e| {
                     if let Some(name) = e.name() {
                         e.result().map(|res| (name.to_string(), res))

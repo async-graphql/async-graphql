@@ -1,6 +1,6 @@
 use crate::context::{Data, DeferList, ResolveId};
 use crate::error::ParseRequestError;
-use crate::extensions::{BoxExtension, Extension};
+use crate::extensions::{BoxExtension, ErrorLogger, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::registry::CacheControl;
 use crate::{
@@ -272,12 +272,12 @@ impl QueryBuilder {
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let (mut document, cache_control, extensions) =
-            schema.prepare_query(&self.query_source, &self.extensions)?;
+            schema.prepare_query(&self.query_source, &self.variables, &self.extensions)?;
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
         if !document.retain_operation(self.operation_name.as_deref()) {
-            return extensions.log_error(if let Some(operation_name) = self.operation_name {
+            return if let Some(operation_name) = self.operation_name {
                 Err(Error::Query {
                     pos: Pos::default(),
                     path: None,
@@ -291,7 +291,8 @@ impl QueryBuilder {
                     path: None,
                     err: QueryError::MissingOperation,
                 })
-            });
+            }
+            .log_error(&extensions);
         }
 
         let env = QueryEnv::new(
@@ -314,8 +315,7 @@ impl QueryBuilder {
             defer_list: Some(&defer_list),
         };
 
-        env.extensions.execution_start();
-
+        env.extensions.lock().execution_start();
         let data = match &env.document.current_operation().ty {
             OperationType::Query => do_resolve(&ctx, &schema.query).await?,
             OperationType::Mutation => do_mutation_resolve(&ctx, &schema.mutation).await?,
@@ -328,13 +328,12 @@ impl QueryBuilder {
             }
         };
 
-        env.extensions.execution_end();
-
+        env.extensions.lock().execution_end();
         let res = QueryResponse {
             label: None,
             path: None,
             data,
-            extensions: env.extensions.result(),
+            extensions: env.extensions.lock().result(),
             cache_control,
         };
         Ok((res, defer_list))

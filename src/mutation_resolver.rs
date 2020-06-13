@@ -1,4 +1,4 @@
-use crate::extensions::{Extension, ResolveInfo};
+use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use std::future::Future;
@@ -76,14 +76,22 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         },
                     };
 
-                    ctx_field.query_env.extensions.resolve_start(&resolve_info);
-                    let value = ctx_field
+                    ctx_field
                         .query_env
                         .extensions
-                        .log_error(root.resolve_field(&ctx_field).await)?;
+                        .lock()
+                        .resolve_start(&resolve_info);
+                    let value = root
+                        .resolve_field(&ctx_field)
+                        .await
+                        .log_error(&ctx.query_env.extensions)?;
                     values.insert(field_name, value);
 
-                    ctx_field.query_env.extensions.resolve_end(&resolve_info);
+                    ctx_field
+                        .query_env
+                        .extensions
+                        .lock()
+                        .resolve_end(&resolve_info);
                 }
                 Selection::FragmentSpread(fragment_spread) => {
                     if ctx.is_skip(&fragment_spread.directives)? {

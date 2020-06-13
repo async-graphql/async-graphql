@@ -11,6 +11,7 @@ use futures::Future;
 use parking_lot::Mutex;
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
@@ -36,6 +37,12 @@ impl Deref for Variables {
         } else {
             unreachable!()
         }
+    }
+}
+
+impl Display for Variables {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -280,7 +287,7 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 
 #[doc(hidden)]
 pub struct QueryEnvInner {
-    pub extensions: Extensions,
+    pub extensions: spin::Mutex<Extensions>,
     pub variables: Variables,
     pub document: Document,
     pub ctx_data: Arc<Data>,
@@ -301,7 +308,7 @@ impl Deref for QueryEnv {
 impl QueryEnv {
     #[doc(hidden)]
     pub fn new(
-        extensions: Extensions,
+        extensions: spin::Mutex<Extensions>,
         variables: Variables,
         document: Document,
         ctx_data: Arc<Data>,

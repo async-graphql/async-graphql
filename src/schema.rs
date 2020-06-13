@@ -1,5 +1,5 @@
 use crate::context::Data;
-use crate::extensions::{BoxExtension, Extension, Extensions};
+use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::query::{QueryBuilder, StreamResponse};
@@ -311,46 +311,46 @@ where
     pub(crate) fn prepare_query(
         &self,
         source: &str,
+        variables: &Variables,
         query_extensions: &[Box<dyn Fn() -> BoxExtension + Send + Sync>],
-    ) -> Result<(Document, CacheControl, Extensions)> {
+    ) -> Result<(Document, CacheControl, spin::Mutex<Extensions>)> {
         // create extension instances
-        let extensions = Extensions(
+        let extensions = spin::Mutex::new(Extensions(
             self.0
                 .extensions
                 .iter()
                 .chain(query_extensions)
                 .map(|factory| factory())
                 .collect_vec(),
-        );
+        ));
 
-        extensions.parse_start(source);
-        let document = extensions.log_error(parse_query(source).map_err(Into::<Error>::into))?;
-        extensions.parse_end(source, &document);
+        extensions.lock().parse_start(source, &variables);
+        let document = parse_query(source)
+            .map_err(Into::<Error>::into)
+            .log_error(&extensions)?;
+        extensions.lock().parse_end(&document);
 
         // check rules
-        extensions.validation_start();
+        extensions.lock().validation_start();
         let CheckResult {
             cache_control,
             complexity,
             depth,
-        } = extensions.log_error(check_rules(
-            &self.env.registry,
-            &document,
-            self.validation_mode,
-        ))?;
-        extensions.validation_end();
+        } = check_rules(&self.env.registry, &document, self.validation_mode)
+            .log_error(&extensions)?;
+        extensions.lock().validation_end();
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if complexity > limit_complexity {
-                return extensions
-                    .log_error(Err(QueryError::TooComplex.into_error(Pos::default())));
+                return Err(QueryError::TooComplex.into_error(Pos::default()))
+                    .log_error(&extensions);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if depth > limit_depth {
-                return extensions.log_error(Err(QueryError::TooDeep.into_error(Pos::default())));
+                return Err(QueryError::TooDeep.into_error(Pos::default())).log_error(&extensions);
             }
         }
 
@@ -365,21 +365,22 @@ where
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let (mut document, _, extensions) = self.prepare_query(source, &Vec::new())?;
+        let (mut document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
 
         if !document.retain_operation(operation_name) {
-            return extensions.log_error(if let Some(name) = operation_name {
+            return if let Some(name) = operation_name {
                 Err(QueryError::UnknownOperationNamed {
                     name: name.to_string(),
                 }
                 .into_error(Pos::default()))
             } else {
                 Err(QueryError::MissingOperation.into_error(Pos::default()))
-            });
+            }
+            .log_error(&extensions);
         }
 
         if document.current_operation().ty != OperationType::Subscription {
-            return extensions.log_error(Err(QueryError::NotSupported.into_error(Pos::default())));
+            return Err(QueryError::NotSupported.into_error(Pos::default())).log_error(&extensions);
         }
 
         let resolve_id = AtomicUsize::default();
@@ -397,9 +398,9 @@ where
             None,
         );
         let mut streams = Vec::new();
-        ctx.query_env
-            .extensions
-            .log_error(create_subscription_stream(self, env.clone(), &ctx, &mut streams).await)?;
+        create_subscription_stream(self, env.clone(), &ctx, &mut streams)
+            .await
+            .log_error(&ctx.query_env.extensions)?;
         Ok(futures::stream::select_all(streams))
     }
 

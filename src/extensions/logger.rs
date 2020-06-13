@@ -1,27 +1,36 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::Error;
+use crate::{Error, Variables};
 use async_graphql_parser::query::{Definition, Document, OperationDefinition, Selection};
 use itertools::Itertools;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::borrow::Cow;
 use uuid::Uuid;
 
 /// Logger extension
 pub struct Logger {
     id: Uuid,
-    enabled: AtomicBool,
+    enabled: bool,
+    query: String,
+    variables: Variables,
 }
 
 impl Default for Logger {
     fn default() -> Self {
         Self {
             id: Uuid::new_v4(),
-            enabled: AtomicBool::new(true),
+            enabled: true,
+            query: String::new(),
+            variables: Default::default(),
         }
     }
 }
 
 impl Extension for Logger {
-    fn parse_end(&self, query_source: &str, document: &Document) {
+    fn parse_start(&mut self, query_source: &str, variables: &Variables) {
+        self.query = query_source.replace(char::is_whitespace, "");
+        self.variables = variables.clone();
+    }
+
+    fn parse_end(&mut self, document: &Document) {
         let mut is_schema = false;
 
         for definition in document.definitions() {
@@ -46,37 +55,49 @@ impl Extension for Logger {
         }
 
         if is_schema {
-            self.enabled.store(false, Ordering::Relaxed);
+            self.enabled = false;
             return;
         }
 
-        info!(target: "async-graphql", "query, id: {}, source: \"{}\"", self.id, query_source);
+        info!(target: "async-graphql", "[Query] id: \"{}\", query: \"{}\", variables: {}", self.id, &self.query, self.variables);
     }
 
-    fn resolve_start(&self, info: &ResolveInfo<'_>) {
-        if !self.enabled.load(Ordering::Relaxed) {
+    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
+        if !self.enabled {
             return;
         }
-        trace!(target: "async-graphql", "resolve start, id: {}, path: \"{}\"", self.id, info.path_node);
+        trace!(target: "async-graphql", "[ResolveStart] id: \"{}\", path: \"{}\"", self.id, info.path_node);
     }
 
-    fn resolve_end(&self, info: &ResolveInfo<'_>) {
-        if !self.enabled.load(Ordering::Relaxed) {
+    fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
+        if !self.enabled {
             return;
         }
-        trace!(target: "async-graphql", "resolve end, id: {}, path: \"{}\"", self.id, info.path_node);
+        trace!(target: "async-graphql", "[ResolveEnd] id: \"{}\", path: \"{}\"", self.id, info.path_node);
     }
 
-    fn error(&self, err: &Error) {
+    fn error(&mut self, err: &Error) {
         match err {
             Error::Parse(err) => {
-                error!(target: "async-graphql", "parse error, id: {}, [{}:{}] {}", self.id, err.pos.line, err.pos.column, err)
+                error!(target: "async-graphql", "[ParseError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, err.pos.line, err.pos.column, self.query, self.variables, err)
             }
             Error::Query { pos, path, err } => {
                 if let Some(path) = path {
-                    error!(target: "async-graphql", "query error, id: {}, path: \"{}\", [{}:{}] {}", self.id, path, pos.line, pos.column, err)
+                    let path = if let serde_json::Value::Array(values) = path {
+                        values
+                            .iter()
+                            .filter_map(|value| match value {
+                                serde_json::Value::String(s) => Some(Cow::Borrowed(s.as_str())),
+                                serde_json::Value::Number(n) => Some(Cow::Owned(n.to_string())),
+                                _ => None,
+                            })
+                            .join(".")
+                    } else {
+                        String::new()
+                    };
+                    error!(target: "async-graphql", "[QueryError] id: \"{}\", path: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, path, pos.line, pos.column, self.query, self.variables, err)
                 } else {
-                    error!(target: "async-graphql", "query error, id: {}, [{}:{}] {}", self.id, pos.line, pos.column, err)
+                    error!(target: "async-graphql", "[QueryError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, pos.line, pos.column, self.query, self.variables, err)
                 }
             }
             Error::Rule { errors } => {
@@ -86,7 +107,7 @@ impl Extension for Logger {
                         .iter()
                         .map(|pos| format!("{}:{}", pos.line, pos.column))
                         .join(", ");
-                    error!(target: "async-graphql", "validation error, id: {}, [{}] {}", self.id, locations, error.message)
+                    error!(target: "async-graphql", "[ValidationError] id: \"{}\", pos: [{}], query: \"{}\", variables: {}, {}", self.id, locations, self.query, self.variables, error.message)
                 }
             }
         }

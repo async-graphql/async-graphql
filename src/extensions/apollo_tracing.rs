@@ -1,6 +1,6 @@
 use crate::extensions::{Extension, ResolveInfo};
+use crate::Variables;
 use chrono::{DateTime, Utc};
-use parking_lot::Mutex;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::collections::BTreeMap;
@@ -44,14 +44,18 @@ impl Serialize for ResolveStat {
     }
 }
 
-struct Inner {
+/// Apollo tracing extension for performance tracing
+///
+/// Apollo Tracing works by including data in the extensions field of the GraphQL response, which is reserved by the GraphQL spec for extra information that a server wants to return. That way, you have access to performance traces alongside the data returned by your query.
+/// It’s already supported by `Apollo Engine`, and we’re excited to see what other kinds of integrations people can build on top of this format.
+pub struct ApolloTracing {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     pending_resolves: BTreeMap<usize, PendingResolve>,
     resolves: Vec<ResolveStat>,
 }
 
-impl Default for Inner {
+impl Default for ApolloTracing {
     fn default() -> Self {
         Self {
             start_time: Utc::now(),
@@ -62,31 +66,21 @@ impl Default for Inner {
     }
 }
 
-/// Apollo tracing extension for performance tracing
-///
-/// Apollo Tracing works by including data in the extensions field of the GraphQL response, which is reserved by the GraphQL spec for extra information that a server wants to return. That way, you have access to performance traces alongside the data returned by your query.
-/// It’s already supported by `Apollo Engine`, and we’re excited to see what other kinds of integrations people can build on top of this format.
-#[derive(Default)]
-pub struct ApolloTracing {
-    inner: Mutex<Inner>,
-}
-
 impl Extension for ApolloTracing {
     fn name(&self) -> Option<&'static str> {
         Some("tracing")
     }
 
-    fn parse_start(&self, _query_source: &str) {
-        self.inner.lock().start_time = Utc::now();
+    fn parse_start(&mut self, _query_source: &str, _variables: &Variables) {
+        self.start_time = Utc::now();
     }
 
-    fn execution_end(&self) {
-        self.inner.lock().end_time = Utc::now();
+    fn execution_end(&mut self) {
+        self.end_time = Utc::now();
     }
 
-    fn resolve_start(&self, info: &ResolveInfo<'_>) {
-        let mut inner = self.inner.lock();
-        inner.pending_resolves.insert(
+    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
+        self.pending_resolves.insert(
             info.resolve_id.current,
             PendingResolve {
                 path: info.path_node.to_json().into(),
@@ -98,13 +92,12 @@ impl Extension for ApolloTracing {
         );
     }
 
-    fn resolve_end(&self, info: &ResolveInfo<'_>) {
-        let mut inner = self.inner.lock();
-        if let Some(pending_resolve) = inner.pending_resolves.remove(&info.resolve_id.current) {
-            let start_offset = (pending_resolve.start_time - inner.start_time)
+    fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
+        if let Some(pending_resolve) = self.pending_resolves.remove(&info.resolve_id.current) {
+            let start_offset = (pending_resolve.start_time - self.start_time)
                 .num_nanoseconds()
                 .unwrap();
-            inner.resolves.push(ResolveStat {
+            self.resolves.push(ResolveStat {
                 pending_resolve,
                 start_offset,
                 end_time: Utc::now(),
@@ -112,18 +105,16 @@ impl Extension for ApolloTracing {
         }
     }
 
-    fn result(&self) -> Option<serde_json::Value> {
-        let mut inner = self.inner.lock();
-        inner
-            .resolves
+    fn result(&mut self) -> Option<serde_json::Value> {
+        self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
         Some(serde_json::json!({
             "version": 1,
-            "startTime": inner.start_time.to_rfc3339(),
-            "endTime": inner.end_time.to_rfc3339(),
-            "duration": (inner.end_time - inner.start_time).num_nanoseconds(),
+            "startTime": self.start_time.to_rfc3339(),
+            "endTime": self.end_time.to_rfc3339(),
+            "duration": (self.end_time - self.start_time).num_nanoseconds(),
             "execution": {
-                "resolvers": inner.resolves
+                "resolvers": self.resolves
             }
         }))
     }

@@ -1,5 +1,5 @@
 use crate::base::BoxFieldFuture;
-use crate::extensions::{Extension, ResolveInfo};
+use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
@@ -95,15 +95,23 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                             },
                         };
 
-                        ctx_field.query_env.extensions.resolve_start(&resolve_info);
+                        ctx_field
+                            .query_env
+                            .extensions
+                            .lock()
+                            .resolve_start(&resolve_info);
 
-                        let res = ctx_field.query_env.extensions.log_error(
-                            root.resolve_field(&ctx_field)
-                                .map_ok(move |value| (field_name, value))
-                                .await,
-                        )?;
+                        let res = root
+                            .resolve_field(&ctx_field)
+                            .map_ok(move |value| (field_name, value))
+                            .await
+                            .log_error(&ctx_field.query_env.extensions)?;
 
-                        ctx_field.query_env.extensions.resolve_end(&resolve_info);
+                        ctx_field
+                            .query_env
+                            .extensions
+                            .lock()
+                            .resolve_end(&resolve_info);
                         Ok(res)
                     }
                 }))
