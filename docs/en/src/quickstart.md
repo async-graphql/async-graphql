@@ -26,7 +26,7 @@ struct Query;
 #[Object]
 impl Query {
     #[field(desc = "Returns the sum of a and b")]
-    async fn add(a: i32, b: i32) -> i32 {
+    async fn add(&self, a: i32, b: i32) -> i32 {
         a + b
     }
 }
@@ -38,7 +38,7 @@ impl Query {
 In our example, there is only Query without Mutation and Subscription, so we create the Schema with `EmptyMutation` and `EmptySubscription`, and then call `Schema::execute` to execute the Query.
 
 ```rust
-let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
+let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute("{ add(a: 10, b: 20) }");
 ```
 
@@ -47,7 +47,7 @@ let res = schema.execute("{ add(a: 10, b: 20) }");
 Query returns `async_graphql::Result` with `async_graphql::http::GQLResponse ` wrapped, can be directly converted to JSON.
 
 ```rust
-let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
+let json = serde_json::to_string(&async_graphql::http::GQLResponse(res));
 ```
 
 ## Web server integration
