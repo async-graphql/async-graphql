@@ -19,8 +19,6 @@ pub struct EmptyFields;
 
 /// Parses the parameters and executes the query.
 ///
-/// If you don't want to implement `DataSource`, you can also use this function to query data directly.
-///
 /// # Examples
 ///
 /// ```rust

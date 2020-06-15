@@ -742,9 +742,6 @@ pub use async_graphql_derive::GQLUnion;
 /// ```
 pub use async_graphql_derive::Subscription;
 
-/// Define a DataSource
-pub use async_graphql_derive::DataSource;
-
 /// Define a Scalar
 ///
 /// # Macro parameters

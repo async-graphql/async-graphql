@@ -2,7 +2,7 @@ use async_graphql::connection::*;
 use async_graphql::*;
 
 #[async_std::test]
-pub async fn test_datasource_additional_fields() {
+pub async fn test_connection_additional_fields() {
     struct QueryRoot;
 
     #[SimpleObject]

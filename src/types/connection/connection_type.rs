@@ -12,7 +12,7 @@ use std::borrow::Cow;
 
 /// Connection type
 ///
-/// Connection is the result of a query for `DataSource`.
+/// Connection is the result of a query for `connection::query`.
 pub struct Connection<C, T, EC = EmptyFields, EE = EmptyFields> {
     /// All edges of the current page.
     edges: Vec<Edge<C, T, EE>>,

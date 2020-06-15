@@ -832,27 +832,6 @@ impl Interface {
     }
 }
 
-pub struct DataSource {
-    pub internal: bool,
-}
-
-impl DataSource {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self { internal })
-    }
-}
-
 pub struct Scalar {
     pub internal: bool,
     pub name: Option<String>,
