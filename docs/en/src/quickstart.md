@@ -47,7 +47,7 @@ let res = schema.execute("{ add(a: 10, b: 20) }");
 Query returns `async_graphql::Result` with `async_graphql::http::GQLResponse ` wrapped, can be directly converted to JSON.
 
 ```rust
-let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
+let json = serde_json::to_string(&async_graphql::http::GQLResponse(res));
 ```
 
 ## Web server integration
