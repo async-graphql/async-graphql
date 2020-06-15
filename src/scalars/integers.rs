@@ -134,12 +134,17 @@ impl ScalarType for i64 {
     }
 }
 
-/// The `Int64` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^64) and 2^64 - 1.
-#[Scalar(internal, name = "Int64")]
+/// The `UInt64` scalar type represents non-fractional signed whole numeric values. Int can represent values between 0 and 2^64.
+#[Scalar(internal, name = "UInt64")]
 impl ScalarType for u32 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::Int(n) => Ok(n as Self),
+            Value::Int(n) => {
+                if n < 0 {
+                    return Err(InputValueError::Custom("Expect a positive number.".into()));
+                }
+                Ok(n as Self)
+            }
             Value::String(s) => Ok(s.parse()?),
             _ => Err(InputValueError::ExpectedType(value)),
         }
@@ -157,12 +162,17 @@ impl ScalarType for u32 {
     }
 }
 
-/// The `Int64` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^64) and 2^64 - 1.
-#[Scalar(internal, name = "Int64")]
+/// The `UInt64` scalar type represents non-fractional signed whole numeric values. Int can represent values between 0 and 2^64.
+#[Scalar(internal, name = "UInt64")]
 impl ScalarType for u64 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::Int(n) => Ok(n as Self),
+            Value::Int(n) => {
+                if n < 0 {
+                    return Err(InputValueError::Custom("Expect a positive number.".into()));
+                }
+                Ok(n as Self)
+            }
             Value::String(s) => Ok(s.parse()?),
             _ => Err(InputValueError::ExpectedType(value)),
         }
