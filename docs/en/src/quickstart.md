@@ -38,7 +38,7 @@ impl Query {
 In our example, there is only Query without Mutation and Subscription, so we create the Schema with `EmptyMutation` and `EmptySubscription`, and then call `Schema::execute` to execute the Query.
 
 ```rust
-let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
+let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute("{ add(a: 10, b: 20) }");
 ```
 
