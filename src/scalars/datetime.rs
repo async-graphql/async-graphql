@@ -1,6 +1,6 @@
 use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 /// Implement the DateTime<Utc> scalar
 ///
@@ -8,8 +8,10 @@ use chrono::{DateTime, TimeZone, Utc};
 #[Scalar(internal, name = "DateTimeUtc")]
 impl ScalarType for DateTime<Utc> {
     fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::String(s) => Ok(Utc.datetime_from_str(&s, "%+")?),
+        match &value {
+            Value::String(s) => s
+                .parse::<DateTime<Utc>>()
+                .map_err(|_| InputValueError::ExpectedType(value)),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
