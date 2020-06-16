@@ -9,9 +9,7 @@ use chrono::{DateTime, Utc};
 impl ScalarType for DateTime<Utc> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
-            Value::String(s) => s
-                .parse::<DateTime<Utc>>()
-                .map_err(|_| InputValueError::ExpectedType(value)),
+            Value::String(s) => Ok(s.parse::<DateTime<Utc>>()?),
             _ => Err(InputValueError::ExpectedType(value)),
         }
     }
