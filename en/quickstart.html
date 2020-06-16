@@ -169,7 +169,7 @@ struct Query;
 #[Object]
 impl Query {
     #[field(desc = &quot;Returns the sum of a and b&quot;)]
-    async fn add(a: i32, b: i32) -&gt; i32 {
+    async fn add(&amp;self, a: i32, b: i32) -&gt; i32 {
         a + b
     }
 }
@@ -181,7 +181,7 @@ impl Query {
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>let schema = Schema::new(MySchema, EmptyMutation, EmptySubscription);
+</span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <span class="boring">}
 </span></code></pre></pre>
@@ -190,7 +190,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
-</span>let json = serde_json::to_vec(async_graphql::http::GQLResponse(res));
+</span>let json = serde_json::to_string(&amp;async_graphql::http::GQLResponse(res));
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#web-server-integration" id="web-server-integration">Web server integration</a></h2>
