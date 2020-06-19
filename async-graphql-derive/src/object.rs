@@ -114,19 +114,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let mut keys = Vec::new();
                 let mut keys_str = String::new();
                 let mut requires_getter = Vec::new();
-                let mut one_key = false;
+                let all_key = args.iter().all(|(_, _, arg)| !arg.key);
 
                 if args.is_empty() {
                     return Err(Error::new_spanned(
                         method,
                         "Entity need to have at least one key.",
                     ));
-                } else if args.len() == 1 {
-                    one_key = true;
                 }
 
                 for (ident, ty, args::Argument { name, key, .. }) in &args {
-                    let is_key = one_key || *key;
+                    let is_key = all_key || *key;
                     let name = name
                         .clone()
                         .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
