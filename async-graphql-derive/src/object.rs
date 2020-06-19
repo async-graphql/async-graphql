@@ -113,29 +113,51 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let mut use_keys = Vec::new();
                 let mut keys = Vec::new();
                 let mut keys_str = String::new();
+                let mut requires_getter = Vec::new();
+                let mut one_key = false;
 
-                for (ident, ty, args::Argument { name, .. }) in &args {
+                if args.is_empty() {
+                    return Err(Error::new_spanned(
+                        method,
+                        "Entity need to have at least one key.",
+                    ));
+                } else if args.len() == 1 {
+                    one_key = true;
+                }
+
+                for (ident, ty, args::Argument { name, key, .. }) in &args {
+                    let is_key = one_key || *key;
                     let name = name
                         .clone()
                         .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
 
-                    if !keys_str.is_empty() {
-                        keys_str.push(' ');
-                    }
-                    keys_str.push_str(&name);
+                    if is_key {
+                        if !keys_str.is_empty() {
+                            keys_str.push(' ');
+                        }
+                        keys_str.push_str(&name);
 
-                    key_pat.push(quote! {
-                        Some(#ident)
-                    });
-                    key_getter.push(quote! {
-                        params.get(#name).and_then(|value| {
-                            let value: Option<#ty> = #crate_name::InputValueType::parse(Some(value.clone())).ok();
-                            value
-                        })
-                    });
-                    keys.push(name);
-                    use_keys.push(ident);
+                        key_pat.push(quote! {
+                            Some(#ident)
+                        });
+                        key_getter.push(quote! {
+                            params.get(#name).and_then(|value| {
+                                let value: Option<#ty> = #crate_name::InputValueType::parse(Some(value.clone())).ok();
+                                value
+                            })
+                        });
+                        keys.push(name);
+                        use_keys.push(ident);
+                    } else {
+                        // requires
+                        requires_getter.push(quote! {
+                            let #ident: #ty = #crate_name::InputValueType::parse(params.get(#name).cloned()).
+                                map_err(|err| err.into_error(ctx.position(), <#ty as #crate_name::Type>::qualified_type_name()))?;
+                        });
+                        use_keys.push(ident);
+                    }
                 }
+
                 add_keys.push(quote! { registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), #keys_str); });
                 create_entity_types.push(
                     quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); },
@@ -163,6 +185,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     quote! {
                         if typename == &<#entity_type as #crate_name::Type>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
+                                #(#requires_getter)*
                                 let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                                 return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, ctx.item).await;
                             }
@@ -290,6 +313,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         desc,
                         default,
                         validator,
+                        ..
                     },
                 ) in args
                 {

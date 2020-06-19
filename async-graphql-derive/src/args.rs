@@ -130,6 +130,7 @@ pub struct Argument {
     pub desc: Option<String>,
     pub default: Option<TokenStream>,
     pub validator: TokenStream,
+    pub key: bool, // for entity
 }
 
 impl Argument {
@@ -138,6 +139,7 @@ impl Argument {
         let mut desc = None;
         let mut default = None;
         let mut validator = quote! { None };
+        let mut key = false;
 
         for attr in attrs {
             match attr.parse_meta()? {
@@ -146,6 +148,8 @@ impl Argument {
                         if let NestedMeta::Meta(Meta::Path(p)) = meta {
                             if p.is_ident("default") {
                                 default = Some(quote! { Default::default() });
+                            } else if p.is_ident("key") {
+                                key = true;
                             }
                         } else if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
                             if nv.path.is_ident("name") {
@@ -185,6 +189,7 @@ impl Argument {
             desc,
             default,
             validator,
+            key,
         })
     }
 }

@@ -143,6 +143,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         desc,
                         default,
                         validator,
+                        ..
                     },
                 ) in args
                 {
