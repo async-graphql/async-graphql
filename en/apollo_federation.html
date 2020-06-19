@@ -161,7 +161,7 @@
 <p>The <code>provides</code> property indicates the fields provided by a service. </p>
 </li>
 </ul>
-<p>The definition of a root Query type is slightly different. An entity search function must be defined. For example:</p>
+<h2><a class="header" href="#entity-lookup-function" id="entity-lookup-function">Entity lookup function</a></h2>
 <pre><pre class="playpen"><code class="language-rust">
 <span class="boring">#![allow(unused_variables)]
 </span><span class="boring">fn main() {
@@ -171,16 +171,36 @@
 impl Query {
     #[entity]
     async fn find_user_by_id(&amp;self, id: ID) -&gt; User {
-        User { id }
+        User { ... }
+    }
+
+    #[entity]
+    async fn find_user_by_id_with_username(&amp;self, #[arg(key)] id: ID, username: String) -&gt; User {
+        User { ... }
+    }
+
+    #[entity]
+    async fn find_user_by_id_and_username(&amp;self, id: ID, username: String) -&gt; User {
+        User { ... }
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>This is equivalent to:</p>
-<pre><code class="language-graphql">type User @key(id: ID!) {
-    id: ID!,
-}
-</code></pre>
+<p><strong>Notice the difference between these three lookup functions, which are all looking for the <code>User</code> object.</strong></p>
+<ul>
+<li>
+<p>find_user_by_id</p>
+<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>。</p>
+</li>
+<li>
+<p>find_user_by_id_with_username</p>
+<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>, and the <code>username</code> field value of the <code>User</code> object is requested。</p>
+</li>
+<li>
+<p>find_user_by_id_and_username</p>
+<p>Use <code>id</code> and <code>username</code> to find an <code>User</code> object, the keys for <code>User</code> are <code>id</code> and <code>username</code>。</p>
+</li>
+</ul>
 <p>For a complete example, refer to: https://github.com/async-graphql/examples/tree/master/federation</p>
 
                     </main>
