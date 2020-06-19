@@ -12,9 +12,7 @@
 
 - 字段的`provides`属性表示解析该字段值需要依赖该类型的字段集。
 
-类型的key属性定义稍有不同，必须在查询根类型上定义一个实体查找函数。
-
-类似下面这样
+## 实体查找函数
 
 ```rust
 struct Query;
@@ -23,19 +21,33 @@ struct Query;
 impl Query {
     #[entity]
     async fn find_user_by_id(&self, id: ID) -> User {
-        User { id }
+        User { ... }
+    }
+
+    #[entity]
+    async fn find_user_by_id_with_username(&self, #[arg(key)] id: ID, username: String) -> User {
+        User { ... }
+    }
+
+    #[entity]
+    async fn find_user_by_id_and_username(&self, id: ID, username: String) -> User {
+        User { ... }
     }
 }
 ```
 
-这相当于
+**注意这三个查找函数的不同，他们都是查找User对象。**
 
-```graphql
-type User @key(id: ID!) {
-    id: ID!,
-}
-```
+- find_user_by_id
 
-你必须在这个实体查找函数中根据key来创建对应的对象。
+    使用`id`查找`User`对象，`User`对象的key是`id`。
+
+- find_user_by_id_with_username
+
+    使用`id`查找`User`对象，`User`对象的key是`id`，并且请求`User`对象的`username`字段值。
+
+- find_user_by_id_and_username
+
+    使用`id`和`username`查找`User`对象，`User`对象的key是`id`和`username`。
 
 完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation
