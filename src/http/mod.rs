@@ -42,7 +42,7 @@ impl IntoQueryBuilder for GQLRequest {
     ) -> std::result::Result<QueryBuilder, ParseRequestError> {
         let mut builder = QueryBuilder::new(self.query);
         if let Some(operation_name) = self.operation_name {
-            builder = builder.operator_name(operation_name);
+            builder = builder.operation_name(operation_name);
         }
         if let Some(variables) = self.variables {
             if let Ok(variables) = Variables::parse_from_json(variables) {

@@ -157,7 +157,7 @@ impl QueryBuilder {
     }
 
     /// Specify the operation name.
-    pub fn operator_name<T: Into<String>>(self, name: T) -> Self {
+    pub fn operation_name<T: Into<String>>(self, name: T) -> Self {
         QueryBuilder {
             operation_name: Some(name.into()),
             ..self
