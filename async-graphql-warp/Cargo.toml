@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.14.0" }
+async-graphql = { path = "..", version = "=1.16.0" }
 warp = "0.2.2"
 futures = "0.3.0"
 bytes = "0.5.4"
