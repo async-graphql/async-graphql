@@ -72,7 +72,6 @@ mod tests {
         struct MyObj {
             a: i32,
             b: i32,
-            #[field(ref)]
             detail: Detail,
         }
 

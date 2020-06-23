@@ -48,7 +48,6 @@ pub async fn test_union_simple_object() {
 pub async fn test_union_simple_object2() {
     #[async_graphql::SimpleObject]
     struct MyObj {
-        #[field(ref)]
         id: i32,
         title: String,
     }

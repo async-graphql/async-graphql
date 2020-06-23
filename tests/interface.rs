@@ -8,7 +8,7 @@ pub async fn test_interface_simple_object() {
         title: String,
     }
 
-    #[async_graphql::Interface(field(name = "id", type = "i32"))]
+    #[async_graphql::Interface(field(name = "id", type = "&i32"))]
     enum Node {
         MyObj(MyObj),
     }
@@ -48,7 +48,6 @@ pub async fn test_interface_simple_object() {
 pub async fn test_interface_simple_object2() {
     #[async_graphql::SimpleObject]
     struct MyObj {
-        #[field(ref)]
         id: i32,
         title: String,
     }

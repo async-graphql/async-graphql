@@ -99,7 +99,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?; });
 
                 let features = &field.features;
-                getters.push(if field.is_ref {
+                getters.push(if !field.owned {
                     let block = feature_block(
                         &crate_name,
                         &features,

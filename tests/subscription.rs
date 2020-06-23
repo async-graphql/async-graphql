@@ -324,7 +324,7 @@ pub async fn test_subscription_fragment() {
         b: i32,
     }
 
-    #[Interface(field(name = "a", type = "i32"))]
+    #[Interface(field(name = "a", type = "&i32"))]
     enum MyInterface {
         Event(Event),
     }
@@ -381,7 +381,7 @@ pub async fn test_subscription_fragment2() {
         b: i32,
     }
 
-    #[Interface(field(name = "a", type = "i32"))]
+    #[Interface(field(name = "a", type = "&i32"))]
     enum MyInterface {
         Event(Event),
     }

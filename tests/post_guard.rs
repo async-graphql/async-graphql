@@ -24,7 +24,7 @@ impl PostGuard<i32> for RoleGuard {
 
 #[SimpleObject]
 struct MyObj {
-    #[field(post_guard(UserGuard(username = r#""test""#, value = "88")))]
+    #[field(owned, post_guard(UserGuard(username = r#""test""#, value = "88")))]
     value: i32,
 }
 

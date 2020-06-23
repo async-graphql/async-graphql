@@ -609,7 +609,6 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// struct MyObj {
     ///     a: i32,
     ///     b: i32,
-    ///     #[field(ref)]
     ///     detail: Detail,
     /// }
     ///

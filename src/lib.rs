@@ -310,6 +310,7 @@ pub use async_graphql_derive::Object;
 /// | name          | Field name                | string   | Y        |
 /// | desc          | Field description         | string   | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | owned         | Field resolver return a ownedship value  | bool   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
@@ -398,7 +399,6 @@ pub use async_graphql_derive::GQLSimpleObject;
 /// | name        | Item name                 | string   | Y        |
 /// | desc        | Item description          | string   | Y        |
 /// | deprecation | Item deprecation reason   | string   | Y        |
-/// | ref         | The resolver function returns a borrowing value  | bool   | Y        |
 ///
 /// # Examples
 ///
