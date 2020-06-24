@@ -128,7 +128,7 @@ pub fn parse_validator(crate_name: &TokenStream, args: &MetaList) -> Result<Toke
                     ));
                 }
                 let validator = parse_nested_validator(crate_name, &ls.nested[0])?;
-                return Ok(quote! { Some(std::sync::Arc::new(#validator)) });
+                return Ok(quote! { Some(::std::sync::Arc::new(#validator)) });
             }
         }
     }
@@ -315,7 +315,7 @@ pub fn feature_block(
         quote!({
             #[cfg(not(all(#(feature = #features),*)))]
             {
-                return Err(#crate_name::FieldError::from(#error_message)).map_err(std::convert::Into::into);
+                return Err(#crate_name::FieldError::from(#error_message)).map_err(::std::convert::Into::into);
             }
             #[cfg(all(#(feature = #features),*))]
             {

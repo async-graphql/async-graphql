@@ -98,11 +98,11 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
         #(#type_into_impls)*
 
         impl #generics #crate_name::Type for #ident #generics {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> ::std::borrow::Cow<'static, str> {
+               ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn introspection_type_name(&self) -> std::borrow::Cow<'static, str> {
+            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, str> {
                 match self {
                     #(#get_introspection_typename),*
                 }

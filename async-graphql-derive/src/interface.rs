@@ -268,11 +268,11 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         }
 
         impl #generics #crate_name::Type for #ident #generics {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> ::std::borrow::Cow<'static, str> {
+                ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn introspection_type_name(&self) -> std::borrow::Cow<'static, str> {
+            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, str> {
                 #introspection_type_name
             }
 

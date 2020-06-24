@@ -100,8 +100,8 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
     let expanded = quote! {
         impl #crate_name::Type for #ident {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> ::std::borrow::Cow<'static, str> {
+                ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
@@ -130,7 +130,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             }
 
             fn to_value(&self) -> #crate_name::Value {
-                let mut map = std::collections::BTreeMap::new();
+                let mut map = ::std::collections::BTreeMap::new();
                 #(#put_fields)*
                 #crate_name::Value::Object(map)
             }

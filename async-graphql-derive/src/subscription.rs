@@ -252,8 +252,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                         #(#get_params)*
                         #guard
-                        let field_name = std::sync::Arc::new(ctx.result_name().to_string());
-                        let field = std::sync::Arc::new(ctx.item.clone());
+                        let field_name = ::std::sync::Arc::new(ctx.result_name().to_string());
+                        let field = ::std::sync::Arc::new(ctx.item.clone());
 
                         let pos = ctx.position();
                         let schema_env = schema_env.clone();
@@ -266,7 +266,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                 let field = field.clone();
                                 let field_name = field_name.clone();
                                 async move {
-                                    let resolve_id = std::sync::atomic::AtomicUsize::default();
+                                    let resolve_id = ::std::sync::atomic::AtomicUsize::default();
                                     let ctx_selection_set = query_env.create_context(
                                         &schema_env,
                                         Some(#crate_name::QueryPathNode {
@@ -311,8 +311,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         #item_impl
 
         impl #generics #crate_name::Type for #self_ty #where_clause {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> ::std::borrow::Cow<'static, str> {
+                ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             #[allow(bare_trait_objects)]
@@ -342,7 +342,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::Context<'_>,
                 schema_env: #crate_name::SchemaEnv,
                 query_env: #crate_name::QueryEnv,
-            ) -> #crate_name::Result<std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>>
+            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>>
             where
                 Self: Send + Sync + 'static + Sized,
             {

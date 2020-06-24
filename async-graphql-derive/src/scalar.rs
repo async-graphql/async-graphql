@@ -32,8 +32,8 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
         #item_impl
 
         impl #generic #crate_name::Type for #self_ty #where_clause {
-            fn type_name() -> std::borrow::Cow<'static, str> {
-                std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> ::std::borrow::Cow<'static, str> {
+                ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
