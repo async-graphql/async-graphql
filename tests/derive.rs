@@ -8,9 +8,17 @@ pub async fn test_derive() {
         A,
     }
 
+    // Infers the name based on Rust name
     #[derive(GQLEnum, Eq, Copy, PartialEq, Clone)]
-    #[graphql(name = "MyEnumDerive1")]
     enum MyEnumDerive {
+        #[cfg_attr(feature = "bson", item(name = "A1"))]
+        A,
+    }
+
+    // Can be renamed with graphql(name = ..) attribute
+    #[derive(GQLEnum, Eq, Copy, PartialEq, Clone)]
+    #[graphql(name = "MyEnumDerive")]
+    enum MyEnumDeriveRenamed {
         #[cfg_attr(feature = "bson", item(name = "A1"))]
         A,
     }
@@ -21,9 +29,17 @@ pub async fn test_derive() {
         value: i32,
     }
 
+    // Infers the name based on Rust name
     #[derive(GQLInputObject)]
-    #[graphql(name = "MyInputObjDerive1")]
     struct MyInputObjDerive {
+        #[cfg_attr(feature = "bson", field(default))]
+        value: i32,
+    }
+
+    // Can be renamed with graphql(name = ..) attribute
+    #[derive(GQLInputObject)]
+    #[graphql(name = "MyInputObjDerive")]
+    struct MyInputObjDeriveRenamed {
         #[cfg_attr(feature = "bson", field(default))]
         value: i32,
     }
@@ -34,9 +50,17 @@ pub async fn test_derive() {
         value: i32,
     }
 
+    // Infers the name based on Rust name
     #[derive(GQLInputObject)]
-    #[graphql(name = "MySimpleObjDerive1")]
     struct MySimpleObjDerive {
+        #[cfg_attr(feature = "bson", field(name = "value1"))]
+        value: i32,
+    }
+
+    // Can be renamed with graphql(name = ..) attribute
+    #[derive(GQLInputObject)]
+    #[graphql(name = "MySimpleObjDerive")]
+    struct MySimpleObjDeriveRenamed {
         #[cfg_attr(feature = "bson", field(name = "value1"))]
         value: i32,
     }
