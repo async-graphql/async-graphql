@@ -310,6 +310,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -332,10 +333,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::SubscriptionType for #self_ty #where_clause {
-            #[allow(unused_variables)]
-            #[allow(bare_trait_objects)]
             async fn create_field_stream(
                 &self,
                 idx: usize,

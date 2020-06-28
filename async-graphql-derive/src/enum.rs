@@ -75,12 +75,14 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     }
 
     let expanded = quote! {
+        #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::EnumType for #ident {
             fn items() -> &'static [#crate_name::EnumItem<#ident>] {
                 &[#(#items),*]
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -101,6 +103,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
             fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 #crate_name::EnumType::parse_enum(value.unwrap_or_default())

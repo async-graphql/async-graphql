@@ -76,6 +76,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             }
 
             type_into_impls.push(quote! {
+                #[allow(clippy::all, clippy::pedantic)]
                 impl #generics From<#p> for #ident #generics {
                     fn from(obj: #p) -> Self {
                         #ident::#enum_name(obj)
@@ -263,10 +264,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let expanded = quote! {
         #(#type_into_impls)*
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generics #ident #generics {
             #(#methods)*
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #ident #generics {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -300,6 +303,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
@@ -321,6 +325,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::query::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {

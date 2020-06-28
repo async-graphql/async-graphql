@@ -99,6 +99,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
     }
 
     let expanded = quote! {
+        #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -117,6 +118,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
             fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 use #crate_name::Type;

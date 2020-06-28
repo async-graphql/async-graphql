@@ -31,6 +31,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
     let expanded = quote! {
         #item_impl
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generic #crate_name::Type for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -45,6 +46,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generic #crate_name::InputValueType for #self_ty #where_clause {
             fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value.unwrap_or_default())
@@ -55,7 +57,7 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
             }
         }
 
-        #[allow(clippy::ptr_arg)]
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputValueType for #self_ty #where_clause {
             async fn resolve(

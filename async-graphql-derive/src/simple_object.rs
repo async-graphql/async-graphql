@@ -154,10 +154,12 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     };
 
     let expanded = quote! {
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generics #ident #where_clause {
             #(#getters)*
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #ident #generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -179,6 +181,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::ObjectType for #ident #generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
@@ -190,6 +193,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             }
         }
 
+        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::query::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
