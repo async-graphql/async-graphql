@@ -121,8 +121,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
             fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
-                use #crate_name::Type;
-
                 if let Some(#crate_name::Value::Object(obj)) = value {
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })

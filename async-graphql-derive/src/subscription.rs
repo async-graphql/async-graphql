@@ -248,8 +248,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 create_stream.push(quote! {
                     if ctx.name.node == #field_name {
-                        use #crate_name::futures::{StreamExt, TryStreamExt};
-
                         #(#get_params)*
                         #guard
                         let field_name = ::std::sync::Arc::new(ctx.result_name().to_string());
@@ -258,7 +256,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         let pos = ctx.position();
                         let schema_env = schema_env.clone();
                         let query_env = query_env.clone();
-                        let stream = #create_field_stream.then({
+                        let stream = #crate_name::futures::StreamExt::then(#create_field_stream, {
                             let field_name = field_name.clone();
                             move |msg| {
                                 let schema_env = schema_env.clone();
@@ -280,9 +278,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                     #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await
                                 }
                             }
-                        })
-                        .map_ok(move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }))
-                        .scan(true, |state, item| {
+                        });
+                        let stream = #crate_name::futures::TryStreamExt::map_ok(stream, move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }));
+                        let stream = #crate_name::futures::StreamExt::scan(stream, true, |state, item| {
                             if !*state {
                                 return #crate_name::futures::future::ready(None);
                             }

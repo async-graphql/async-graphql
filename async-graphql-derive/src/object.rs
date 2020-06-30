@@ -417,13 +417,12 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 resolvers.push(quote! {
                     if ctx.name.node == #field_name {
-                        use #crate_name::OutputValueType;
                         #(#get_params)*
                         #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
                         let res = #resolve_obj;
                         #post_guard
-                        return OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
+                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
                     }
                 });
 
