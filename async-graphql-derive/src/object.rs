@@ -4,6 +4,7 @@ use crate::utils::{feature_block, get_crate_name, get_param_getter_ident, get_ru
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ext::IdentExt;
 use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
 
 pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
@@ -127,7 +128,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     let is_key = all_key || *key;
                     let name = name
                         .clone()
-                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
+                        .unwrap_or_else(|| ident.ident.unraw().to_string().to_camel_case());
 
                     if is_key {
                         if !keys_str.is_empty() {
@@ -208,7 +209,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_name = field
                     .name
                     .clone()
-                    .unwrap_or_else(|| method.sig.ident.to_string().to_camel_case());
+                    .unwrap_or_else(|| method.sig.ident.unraw().to_string().to_camel_case());
                 let field_desc = field
                     .desc
                     .as_ref()
@@ -317,7 +318,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 {
                     let name = name
                         .clone()
-                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
+                        .unwrap_or_else(|| ident.ident.unraw().to_string().to_camel_case());
                     let desc = desc
                         .as_ref()
                         .map(|s| quote! {Some(#s)})
@@ -488,6 +489,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[allow(clippy::all, clippy::pedantic)]
+        #[allow(unused_braces, unused_variables)]
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
@@ -498,7 +500,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }.into_error(ctx.position()))
             }
 
-            #[allow(unused_variables)]
             async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 let params = match params {
                     #crate_name::Value::Object(params) => params,

@@ -4,6 +4,7 @@ use crate::utils::{feature_block, get_crate_name, get_param_getter_ident, get_ru
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ext::IdentExt;
 use syn::{
     Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeImplTrait,
     TypeReference,
@@ -47,7 +48,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let field_name = field
                     .name
                     .clone()
-                    .unwrap_or_else(|| method.sig.ident.to_string().to_camel_case());
+                    .unwrap_or_else(|| method.sig.ident.unraw().to_string().to_camel_case());
                 let field_desc = field
                     .desc
                     .as_ref()
@@ -149,7 +150,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 {
                     let name = name
                         .clone()
-                        .unwrap_or_else(|| ident.ident.to_string().to_camel_case());
+                        .unwrap_or_else(|| ident.ident.unraw().to_string().to_camel_case());
                     let desc = desc
                         .as_ref()
                         .map(|s| quote! {Some(#s)})

@@ -3,6 +3,7 @@ use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ext::IdentExt;
 use syn::{Data, DeriveInput, Error, Result};
 
 pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<TokenStream> {
@@ -53,7 +54,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         let validator = &field_args.validator;
         let name = field_args
             .name
-            .unwrap_or_else(|| ident.to_string().to_camel_case());
+            .unwrap_or_else(|| ident.unraw().to_string().to_camel_case());
         let desc = field_args
             .desc
             .as_ref()

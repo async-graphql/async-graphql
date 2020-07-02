@@ -3,6 +3,7 @@ use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ext::IdentExt;
 use syn::{Data, DeriveInput, Error, Result};
 
 pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStream> {
@@ -47,7 +48,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         let gql_item_name = item_args
             .name
             .take()
-            .unwrap_or_else(|| variant.ident.to_string().to_screaming_snake_case());
+            .unwrap_or_else(|| variant.ident.unraw().to_string().to_screaming_snake_case());
         let item_deprecation = item_args
             .deprecation
             .as_ref()

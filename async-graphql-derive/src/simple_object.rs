@@ -3,6 +3,7 @@ use crate::utils::{feature_block, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::ext::IdentExt;
 use syn::{Data, DeriveInput, Error, Fields, Result};
 
 pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
@@ -39,10 +40,14 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     if let Some(fields) = fields {
         for item in &fields.named {
             if let Some(field) = args::Field::parse(&crate_name, &item.attrs)? {
-                let field_name = field
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| item.ident.as_ref().unwrap().to_string().to_camel_case());
+                let field_name = field.name.clone().unwrap_or_else(|| {
+                    item.ident
+                        .as_ref()
+                        .unwrap()
+                        .unraw()
+                        .to_string()
+                        .to_camel_case()
+                });
                 let field_desc = field
                     .desc
                     .as_ref()
