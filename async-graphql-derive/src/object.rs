@@ -488,7 +488,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             }
         }
 
-        #[allow(clippy::all, clippy::pedantic)]
+        #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
         #[allow(unused_braces, unused_variables)]
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty #where_clause {

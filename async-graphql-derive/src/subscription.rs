@@ -334,6 +334,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
+        #[allow(unused_braces, unused_variables)]
         impl #crate_name::SubscriptionType for #self_ty #where_clause {
             async fn create_field_stream(
                 &self,
