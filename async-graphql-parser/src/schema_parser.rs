@@ -475,6 +475,7 @@ fn parse_interface_type(
     let mut description = None;
     let mut extend = false;
     let mut name = None;
+    let mut implements_interfaces = None;
     let mut directives = None;
     let mut fields = None;
 
@@ -485,6 +486,9 @@ fn parse_interface_type(
             }
             Rule::extend => extend = true,
             Rule::name => name = Some(Positioned::new(pair.as_str().to_string(), pc.step(&pair))),
+            Rule::implements_interfaces => {
+                implements_interfaces = Some(parse_implements_interfaces(pair, pc)?)
+            }
             Rule::directives => directives = Some(parse_directives(pair, pc)?),
             Rule::fields_definition => fields = Some(parse_fields_definition(pair, pc)?),
             _ => unreachable!(),
@@ -496,6 +500,7 @@ fn parse_interface_type(
             extend,
             description,
             name: name.unwrap(),
+            implements_interfaces: implements_interfaces.unwrap_or_default(),
             directives: directives.unwrap_or_default(),
             fields: fields.unwrap_or_default(),
         },

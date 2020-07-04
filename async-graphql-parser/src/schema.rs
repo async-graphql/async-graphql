@@ -93,6 +93,7 @@ pub struct InterfaceType {
     pub extend: bool,
     pub description: Option<Positioned<String>>,
     pub name: Positioned<String>,
+    pub implements_interfaces: Vec<Positioned<String>>,
     pub directives: Vec<Positioned<Directive>>,
     pub fields: Vec<Positioned<Field>>,
 }
