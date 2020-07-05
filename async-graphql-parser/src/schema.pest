@@ -46,7 +46,7 @@ arguments_definition = { "(" ~ input_value_definition* ~ ")" }
 field_definition = { string? ~ name ~ arguments_definition? ~ ":" ~ type_ ~ directives? }
 fields_definition = { "{" ~ field_definition* ~ "}" }
 object_type_definition = { string? ~ extend? ~ "type" ~ name ~ implements_interfaces? ~ directives? ~ fields_definition? }
-interface_type_definition = { string? ~ extend? ~ "interface" ~ name ~ directives? ~ fields_definition? }
+interface_type_definition = { string? ~ extend? ~ "interface" ~ name ~ implements_interfaces? ~ directives? ~ fields_definition? }
 union_member_types = { "=" ~ "|"? ~ name ~ ("|" ~ name)* }
 union_type_definition = { string? ~ extend? ~ "union" ~ name ~ directives? ~ union_member_types? }
 enum_value_definition = { string? ~ name ~ directives? }
