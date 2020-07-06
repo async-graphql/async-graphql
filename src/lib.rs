@@ -549,8 +549,8 @@ pub use async_graphql_derive::InputObject;
 /// #[Object]
 /// impl TypeA {
 ///     /// Returns data borrowed from the context
-///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> &'a str {
-///         ctx.data::<String>().as_str()
+///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> FieldResult<&'a str> {
+///         Ok(ctx.data::<String>()?.as_str())
 ///     }
 ///
 ///     /// Returns data borrowed self
