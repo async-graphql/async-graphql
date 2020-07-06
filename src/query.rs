@@ -40,6 +40,19 @@ pub trait IntoQueryBuilder: Sized {
     ) -> std::result::Result<QueryBuilder, ParseRequestError>;
 }
 
+#[allow(missing_docs)]
+#[async_trait::async_trait]
+pub trait IntoBatchQueryBuilder: Sized {
+    async fn into_batch_query_builder(self) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
+        self.into_batch_query_builder_opts(&Default::default()).await
+    }
+
+    async fn into_batch_query_builder_opts(
+        self,
+        opts: &IntoQueryBuilderOpts,
+    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError>;
+}
+
 /// Query response
 #[derive(Debug)]
 pub struct QueryResponse {
@@ -142,6 +155,33 @@ pub struct QueryBuilder {
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Option<Data>,
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+}
+
+/// Query builder for batch requests
+pub enum BatchQueryBuilder {
+    /// Single query
+    Single(QueryBuilder),
+    /// Batch query
+    Batch(Vec<QueryBuilder>),
+}
+
+impl BatchQueryBuilder{
+    pub(crate) fn set_upload(
+        &mut self,
+        var_path: &str,
+        filename: String,
+        content_type: Option<String>,
+        content: File,
+    ) -> std::result::Result<(), ParseRequestError> {
+        match self {
+            BatchQueryBuilder::Single(builder) => Ok(builder.set_upload(var_path, filename, content_type, content)),
+            BatchQueryBuilder::Batch(builders) => {
+                let mut it = var_path.split('.').peekable();
+                let idx = it.next().ok_or(ParseRequestError::BatchUploadIndexMissing)?.parse::<usize>().or(Err(ParseRequestError::BatchUploadIndexMissing))?;
+                Ok(builders.get_mut(idx).ok_or(ParseRequestError::BatchUploadIndexIncorrect)?.set_upload(var_path, filename, content_type, content))
+            }
+        }
+    }
 }
 
 impl QueryBuilder {

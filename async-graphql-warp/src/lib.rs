@@ -7,7 +7,7 @@
 
 use async_graphql::http::{multipart_stream, GQLRequest, StreamBody};
 use async_graphql::{
-    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
+    Data, FieldResult, IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
     QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
@@ -110,7 +110,7 @@ where
                         serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let builder = gql_request
-                        .into_query_builder_opts(&opts)
+                        .into_batch_query_builder_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     Ok::<_, Rejection>((schema, builder))

@@ -5,9 +5,9 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody};
+use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody, BatchGQLRequest};
 use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
+    IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema,
     StreamResponse, SubscriptionType,
 };
 use async_trait::async_trait;
@@ -63,7 +63,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder + Send,
+    F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
@@ -80,7 +80,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder + Send,
+    F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
 {
     let query_builder = req.body_graphql_opts(opts).await?;
     Response::new(StatusCode::Ok).body_graphql(
@@ -95,21 +95,21 @@ where
 #[async_trait]
 pub trait RequestExt<State: Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::QueryBuilder`.
-    async fn body_graphql(self) -> tide::Result<QueryBuilder> {
+    async fn body_graphql(self) -> tide::Result<BatchQueryBuilder> {
         self.body_graphql_opts(Default::default()).await
     }
 
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
-    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder>;
+    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<BatchQueryBuilder>;
 }
 
 #[async_trait]
 impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
-    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder> {
+    async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<BatchQueryBuilder> {
         if self.method() == Method::Get {
-            let gql_request: GQLRequest = self.query::<GQLRequest>()?;
+            let gql_request: BatchGQLRequest = self.query::<BatchGQLRequest>()?;
             let builder = gql_request
-                .into_query_builder_opts(&opts)
+                .into_batch_query_builder_opts(&opts)
                 .await
                 .status(StatusCode::BadRequest)?;
             Ok(builder)

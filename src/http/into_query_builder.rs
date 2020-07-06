@@ -1,6 +1,6 @@
-use crate::http::GQLRequest;
-use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
-use crate::{ParseRequestError, QueryBuilder};
+use crate::http::BatchGQLRequest;
+use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts};
+use crate::{ParseRequestError, BatchQueryBuilder};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use mime::Mime;
@@ -20,15 +20,15 @@ impl From<multer::Error> for ParseRequestError {
 }
 
 #[async_trait::async_trait]
-impl<CT, Body> IntoQueryBuilder for (Option<CT>, Body)
+impl<CT, Body> IntoBatchQueryBuilder for (Option<CT>, Body)
 where
     CT: AsRef<str> + Send,
     Body: AsyncRead + Send + Unpin + 'static,
 {
-    async fn into_query_builder_opts(
+    async fn into_batch_query_builder_opts(
         mut self,
         opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
+    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
         if let Some(boundary) = self
             .0
             .and_then(|value| value.as_ref().parse::<Mime>().ok())
@@ -69,9 +69,9 @@ where
                 match field.name() {
                     Some("operations") => {
                         let request_str = field.text().await?;
-                        let request: GQLRequest = serde_json::from_str(&request_str)
+                        let request: BatchGQLRequest = serde_json::from_str(&request_str)
                             .map_err(ParseRequestError::InvalidRequest)?;
-                        builder = Some(request.into_query_builder().await?);
+                        builder = Some(request.into_batch_query_builder().await?);
                     }
                     Some("map") => {
                         let map_str = field.text().await?;
@@ -115,7 +115,7 @@ where
                             filename.clone(),
                             content_type.clone(),
                             file.try_clone().unwrap(),
-                        );
+                        )?;
                     }
                 }
             }
@@ -131,9 +131,9 @@ where
                 .read_to_end(&mut data)
                 .await
                 .map_err(ParseRequestError::Io)?;
-            let gql_request: GQLRequest =
+            let gql_request: BatchGQLRequest =
                 serde_json::from_slice(&data).map_err(ParseRequestError::InvalidRequest)?;
-            gql_request.into_query_builder().await
+            gql_request.into_batch_query_builder().await
         }
     }
 }

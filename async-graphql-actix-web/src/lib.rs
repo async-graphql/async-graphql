@@ -9,11 +9,8 @@ use actix_web::body::BodyStream;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::{multipart_stream, StreamBody};
-use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse,
-    StreamResponse,
-};
+use async_graphql::http::{multipart_stream, StreamBody, BatchGQLRequest};
+use async_graphql::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse, StreamResponse, BatchQueryBuilder};
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
@@ -24,13 +21,13 @@ pub use subscription::WSSubscription;
 
 /// Extractor for GraphQL request
 ///
-/// It's a wrapper of `QueryBuilder`, you can use `GQLRequest::into_inner` unwrap it to `QueryBuilder`.
-/// `async_graphql::IntoQueryBuilderOpts` allows to configure extraction process.
-pub struct GQLRequest(QueryBuilder);
+/// It's a wrapper of `BatchQueryBuilder`, you can use `GQLRequest::into_inner` unwrap it to `BatchQueryBuilder`.
+/// `async_graphql::IntoBatchQueryBuilderOpts` allows to configure extraction process.
+pub struct GQLRequest(BatchQueryBuilder);
 
 impl GQLRequest {
     /// Unwrap it to `QueryBuilder`.
-    pub fn into_inner(self) -> QueryBuilder {
+    pub fn into_inner(self) -> BatchQueryBuilder {
         self.0
     }
 }
@@ -44,12 +41,12 @@ impl FromRequest for GQLRequest {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
 
         if req.method() == Method::GET {
-            let res = web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
+            let res = web::Query::<async_graphql::http::BatchGQLRequest>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
                 gql_request
                     .into_inner()
-                    .into_query_builder_opts(&config)
+                    .into_batch_query_builder_opts(&config)
                     .map_ok(GQLRequest)
                     .map_err(actix_web::error::ErrorBadRequest)
                     .await

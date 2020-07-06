@@ -13,12 +13,12 @@ pub use multipart_stream::multipart_stream;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
+use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, BatchQueryBuilder, IntoQueryBuilder};
 use crate::{
     Error, ParseRequestError, Pos, QueryBuilder, QueryError, QueryResponse, Result, Variables,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Serialize, Serializer};
+use serde::{Serialize, Serializer, Deserialize, de};
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -50,6 +50,48 @@ impl IntoQueryBuilder for GQLRequest {
             }
         }
         Ok(builder)
+    }
+}
+
+/// Batch support for GraphQL requests, which is either a single query, or an array of queries
+#[derive(Deserialize, Clone, PartialEq, Debug)]
+#[serde(untagged)]
+pub enum BatchGQLRequest {
+    /// Single query
+    Single(GQLRequest),
+    /// Non-empty array of queries
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
+    Batch(Vec<GQLRequest>)
+}
+
+fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
+    where
+        D: de::Deserializer<'de>,
+        T: Deserialize<'de>,
+{
+    use de::Error as _;
+
+    let v = Vec::<T>::deserialize(deserializer)?;
+    if v.is_empty() {
+        Err(D::Error::invalid_length(0, &"a positive integer"))
+    } else {
+        Ok(v)
+    }
+}
+
+#[async_trait::async_trait]
+impl IntoBatchQueryBuilder for BatchGQLRequest {
+    async fn into_batch_query_builder_opts(
+        self,
+        _opts: &IntoQueryBuilderOpts,
+    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
+        match self {
+            BatchGQLRequest::Single(request) => Ok(BatchQueryBuilder::Single(request.into_query_builder_opts(_opts).await?)),
+            BatchGQLRequest::Batch(requests) => {
+                let futures = requests.into_iter().map(|request| request.into_query_builder_opts(_opts));
+                Ok(BatchQueryBuilder::Batch(futures::future::try_join_all(futures).await?))
+            }
+        }
     }
 }
 
@@ -179,6 +221,22 @@ mod tests {
         assert!(request.variables.is_none());
         assert!(request.operation_name.is_none());
         assert_eq!(request.query, "{ a b c }");
+    }
+
+    #[test]
+    fn test_batch_request() {
+        let request: BatchGQLRequest = serde_json::from_value(json! ([{
+            "query": "{ a b c }"
+        }, {
+            "query": "{ d e f }"
+        }]))
+            .unwrap();
+        if let BatchGQLRequest::Batch(requests) = request {
+            assert_eq!(requests[0].query, "{ a b c }");
+            assert_eq!(requests[1].query, "{ d e f }");
+        } else {
+            panic!("Batch query not parsed as a batch")
+        }
     }
 
     #[test]

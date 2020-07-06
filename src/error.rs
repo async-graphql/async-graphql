@@ -323,6 +323,12 @@ pub enum ParseRequestError {
 
     #[error("Payload too large")]
     PayloadTooLarge,
+
+    #[error("Missing request index for file upload inside batch query")]
+    BatchUploadIndexMissing,
+
+    #[error("Missing request index for file upload inside batch query")]
+    BatchUploadIndexIncorrect,
 }
 
 #[allow(missing_docs)]
