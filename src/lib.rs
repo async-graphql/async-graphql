@@ -34,15 +34,15 @@
 //!
 //! ## Features
 //!
-//! * Fully support async/await
+//! * Fully supports async/await
 //! * Type safety
 //! * Rustfmt friendly (Procedural Macro)
-//! * Custom scalar
+//! * Custom scalars
 //! * Minimal overhead
 //! * Easy integration (hyper, actix_web, tide ...)
 //! * Upload files (Multipart request)
-//! * Subscription (WebSocket transport)
-//! * Custom extension
+//! * Subscriptions (WebSocket transport)
+//! * Custom extensions
 //! * Apollo Tracing extension
 //! * Limit query complexity/depth
 //! * Error Extensions
@@ -210,12 +210,14 @@ pub use types::{EnumItem, EnumType};
 ///
 /// # Field argument parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Argument name             | string   | Y        |
-/// | desc        | Argument description      | string   | Y        |
-/// | default     | Argument default value    | string   | Y        |
-/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|------------ |----------|
+/// | name         | Argument name                            | string      | Y        |
+/// | desc         | Argument description                     | string      | Y        |
+/// | default      | Use `Default::default` for default value | none        | Y        |
+/// | default      | Argument default value                   | literal     | Y        |
+/// | default_with | Expression to generate default value     | code string | Y        |
+/// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # The field returns the value type
 ///
@@ -449,12 +451,14 @@ pub use async_graphql_derive::Enum;
 ///
 /// # Field parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Field name                | string   | Y        |
-/// | desc        | Field description         | string   | Y        |
-/// | default     | Field default value       | string   | Y        |
-/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
+/// | Attribute    | description                              | Type     | Optional |
+/// |--------------|------------------------------------------|----------|----------|
+/// | name         | Field name                               | string   | Y        |
+/// | desc         | Field description                        | string   | Y        |
+/// | default      | Use `Default::default` for default value | none        | Y        |
+/// | default      | Argument default value                   | literal     | Y        |
+/// | default_with | Expression to generate default value     | code string | Y        |
+/// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # Examples
 ///
@@ -513,12 +517,14 @@ pub use async_graphql_derive::InputObject;
 ///
 /// # Field argument parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Argument name             | string   | N        |
-/// | type        | Argument type             | string   | N        |
-/// | desc        | Argument description      | string   | Y        |
-/// | default     | Argument default value    | string   | Y        |
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|-------------|----------|
+/// | name         | Argument name                            | string      | N        |
+/// | type         | Argument type                            | string      | N        |
+/// | desc         | Argument description                     | string      | Y        |
+/// | default      | Use `Default::default` for default value | none        | Y        |
+/// | default      | Argument default value                   | literal     | Y        |
+/// | default_with | Expression to generate default value     | code string | Y        |
 ///
 /// # Define an interface
 ///
@@ -713,12 +719,14 @@ pub use async_graphql_derive::GQLUnion;
 ///
 /// # Field argument parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Argument name             | string   | Y        |
-/// | desc        | Argument description      | string   | Y        |
-/// | default     | Argument default value    | string   | Y        |
-/// | validator   | Input value validator     | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|-------------|----------|
+/// | name         | Argument name                            | string      | Y        |
+/// | desc         | Argument description                     | string      | Y        |
+/// | default      | Use `Default::default` for default value | none        | Y        |
+/// | default      | Argument default value                   | literal     | Y        |
+/// | default_with | Expression to generate default value     | code string | Y        |
+/// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
 /// # Examples
 ///
