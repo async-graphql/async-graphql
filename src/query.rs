@@ -74,6 +74,13 @@ pub struct QueryResponse {
     pub cache_control: CacheControl,
 }
 
+/// Batch Query response
+#[derive(Debug)]
+pub enum BatchQueryResponse {
+    Single(QueryResponse),
+    Batch(Vec<QueryResponse>)
+}
+
 impl QueryResponse {
     pub(crate) fn apply_path_prefix(mut self, mut prefix: Vec<serde_json::Value>) -> Self {
         if let Some(path) = &mut self.path {
@@ -129,6 +136,16 @@ impl QueryResponse {
     }
 }
 
+
+/// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
+pub enum BatchStreamResponse {
+    /// Single response
+    Single(StreamResponse),
+
+    /// Batch response
+    Batch(Vec<StreamResponse>),
+}
+
 /// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
 pub enum StreamResponse {
     /// There is no `@defer` or `@stream` directive in the query, this is the final result.
@@ -177,8 +194,50 @@ impl BatchQueryBuilder{
             BatchQueryBuilder::Single(builder) => Ok(builder.set_upload(var_path, filename, content_type, content)),
             BatchQueryBuilder::Batch(builders) => {
                 let mut it = var_path.split('.').peekable();
+                // First part of the name in a batch query with uploads is the index of the query
+                // https://github.com/jaydenseric/graphql-multipart-request-spec
                 let idx = it.next().ok_or(ParseRequestError::BatchUploadIndexMissing)?.parse::<usize>().or(Err(ParseRequestError::BatchUploadIndexMissing))?;
-                Ok(builders.get_mut(idx).ok_or(ParseRequestError::BatchUploadIndexIncorrect)?.set_upload(var_path, filename, content_type, content))
+                Ok(builders.get_mut(idx).ok_or(ParseRequestError::BatchUploadIndexIncorrect)?.set_upload(it.join("").as_str(), filename, content_type, content))
+            }
+        }
+    }
+
+    /// Execute the query, returns a stream, the first result being the query result,
+    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
+    /// in the query will there be subsequent incremental results.
+    pub async fn execute_stream<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> BatchStreamResponse
+        where
+            Query: ObjectType + Send + Sync + 'static,
+            Mutation: ObjectType + Send + Sync + 'static,
+            Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        match self {
+            BatchQueryBuilder::Single(builder) => BatchStreamResponse::Single(builder.execute_stream(schema).await),
+            BatchQueryBuilder::Batch(builders) => {
+                let futures = builders.into_iter().map(|builder| builder.execute_stream(schema));
+                BatchStreamResponse::Batch(futures::future::join_all(futures).await)
+            }
+        }
+    }
+
+    /// Execute the query, always return a complete result.
+    pub async fn execute<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Result<BatchQueryResponse>
+        where
+            Query: ObjectType + Send + Sync + 'static,
+            Mutation: ObjectType + Send + Sync + 'static,
+            Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        match self {
+            BatchQueryBuilder::Single(builder) => Ok(BatchQueryResponse::Single(builder.execute(schema).await?)),
+            BatchQueryBuilder::Batch(builders) => {
+                let futures = builders.into_iter().map(|builder| builder.execute(schema));
+                Ok(BatchQueryResponse::Batch(futures::future::try_join_all(futures).await?))
             }
         }
     }

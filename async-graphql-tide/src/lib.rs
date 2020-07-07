@@ -5,7 +5,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody, BatchGQLRequest};
+use async_graphql::http::{multipart_stream, GQLResponse, StreamBody, BatchGQLRequest};
 use async_graphql::{
     IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema,
     StreamResponse, SubscriptionType,
