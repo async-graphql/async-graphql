@@ -75,10 +75,13 @@ pub struct QueryResponse {
 }
 
 /// Batch Query response
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
 pub enum BatchQueryResponse {
-    Single(QueryResponse),
-    Batch(Vec<QueryResponse>)
+    /// Respond with a single object
+    Single(Result<QueryResponse>),
+    /// Respond with an array of responses
+    Batch(Vec<Result<QueryResponse>>)
 }
 
 impl QueryResponse {
@@ -227,17 +230,17 @@ impl BatchQueryBuilder{
     pub async fn execute<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Result<BatchQueryResponse>
+    ) -> BatchQueryResponse
         where
             Query: ObjectType + Send + Sync + 'static,
             Mutation: ObjectType + Send + Sync + 'static,
             Subscription: SubscriptionType + Send + Sync + 'static,
     {
         match self {
-            BatchQueryBuilder::Single(builder) => Ok(BatchQueryResponse::Single(builder.execute(schema).await?)),
+            BatchQueryBuilder::Single(builder) => BatchQueryResponse::Single(builder.execute(schema).await),
             BatchQueryBuilder::Batch(builders) => {
                 let futures = builders.into_iter().map(|builder| builder.execute(schema));
-                Ok(BatchQueryResponse::Batch(futures::future::try_join_all(futures).await?))
+                BatchQueryResponse::Batch(futures::future::join_all(futures).await)
             }
         }
     }

@@ -151,7 +151,7 @@ pub use error::{
 pub use look_ahead::Lookahead;
 pub use parser::{Pos, Positioned, Value};
 pub use query::{
-    IntoQueryBuilder, IntoBatchQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, BatchQueryBuilder, QueryResponse, StreamResponse,
+    IntoQueryBuilder, IntoBatchQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, BatchQueryBuilder, BatchQueryResponse, QueryResponse, StreamResponse, BatchStreamResponse
 };
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, ID};

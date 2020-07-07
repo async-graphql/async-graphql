@@ -5,11 +5,8 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, GQLRequest, StreamBody};
-use async_graphql::{
-    Data, FieldResult, IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
-    QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport,
-};
+use async_graphql::http::{multipart_stream, GQLRequest, StreamBody, BatchGQLRequest};
+use async_graphql::{Data, FieldResult, IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport, BatchQueryBuilder};
 use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
@@ -71,7 +68,7 @@ impl Reject for BadRequest {}
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -84,7 +81,7 @@ where
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -106,7 +103,7 @@ where
              opts: Arc<IntoQueryBuilderOpts>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest =
+                    let gql_request: BatchGQLRequest =
                         serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let builder = gql_request
@@ -116,7 +113,7 @@ where
                     Ok::<_, Rejection>((schema, builder))
                 } else {
                     let builder = (content_type, StreamBody::new(body))
-                        .into_query_builder_opts(&opts)
+                        .into_batch_query_builder_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     Ok::<_, Rejection>((schema, builder))

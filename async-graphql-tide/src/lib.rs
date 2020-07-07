@@ -6,10 +6,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{multipart_stream, GQLResponse, StreamBody, BatchGQLRequest};
-use async_graphql::{
-    IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema,
-    StreamResponse, SubscriptionType,
-};
+use async_graphql::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema, StreamResponse, SubscriptionType, BatchQueryResponse, BatchStreamResponse};
 use async_trait::async_trait;
 use futures::channel::mpsc;
 use futures::io::BufReader;
@@ -117,7 +114,7 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)
                 .and_then(|values| values.get(0).map(|value| value.to_string()));
-            Ok((content_type, self).into_query_builder_opts(&opts).await?)
+            Ok((content_type, self).into_batch_query_builder_opts(&opts).await?)
         }
     }
 }
@@ -126,56 +123,58 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
 ///
 pub trait ResponseExt: Sized {
     /// Set body as the result of a GraphQL query.
-    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> tide::Result<Self>;
+    fn body_graphql(self, res: BatchQueryResponse) -> tide::Result<Self>;
 
     /// Set body as the result of a GraphQL streaming query.
-    fn body_graphql_stream(self, res: StreamResponse) -> tide::Result<Self>;
+    fn body_graphql_stream(self, res: BatchStreamResponse) -> tide::Result<Self>;
 }
 
 impl ResponseExt for Response {
-    fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> tide::Result<Self> {
+    fn body_graphql(self, res: BatchQueryResponse) -> tide::Result<Self> {
         let mut resp = add_cache_control(self, &res);
-        resp.set_body(Body::from_json(&GQLResponse(res))?);
+        resp.set_body(Body::from_json(&res)?);
         Ok(resp)
     }
 
-    fn body_graphql_stream(mut self, res: StreamResponse) -> tide::Result<Self> {
-        match res {
-            StreamResponse::Single(res) => self.body_graphql(res),
-            StreamResponse::Stream(stream) => {
-                // Body::from_reader required Sync, however StreamResponse does not have Sync.
-                // I created an issue and got a reply that this might be fixed in the future.
-                // https://github.com/http-rs/http-types/pull/144
-                // Now I can only use forwarding to solve the problem.
-                let mut stream =
-                    Box::pin(multipart_stream(stream).map(Result::Ok::<_, std::io::Error>));
-                let (mut tx, rx) = mpsc::channel(0);
-                async_std::task::spawn(async move {
-                    while let Some(item) = stream.next().await {
-                        if tx.send(item).await.is_err() {
-                            return;
-                        }
-                    }
-                });
-                self.set_body(Body::from_reader(BufReader::new(StreamBody::new(rx)), None));
-                self.insert_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed");
-                Ok(self)
-            }
-        }
+    fn body_graphql_stream(mut self, res: BatchStreamResponse) -> tide::Result<Self> {
+        todo!()
+        // match res {
+        //     StreamResponse::Single(res) => self.body_graphql(res),
+        //     StreamResponse::Stream(stream) => {
+        //         // Body::from_reader required Sync, however StreamResponse does not have Sync.
+        //         // I created an issue and got a reply that this might be fixed in the future.
+        //         // https://github.com/http-rs/http-types/pull/144
+        //         // Now I can only use forwarding to solve the problem.
+        //         let mut stream =
+        //             Box::pin(multipart_stream(stream).map(Result::Ok::<_, std::io::Error>));
+        //         let (mut tx, rx) = mpsc::channel(0);
+        //         async_std::task::spawn(async move {
+        //             while let Some(item) = stream.next().await {
+        //                 if tx.send(item).await.is_err() {
+        //                     return;
+        //                 }
+        //             }
+        //         });
+        //         self.set_body(Body::from_reader(BufReader::new(StreamBody::new(rx)), None));
+        //         self.insert_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed");
+        //         Ok(self)
+        //     }
+        // }
     }
 }
 
 fn add_cache_control(
     mut http_resp: Response,
-    resp: &async_graphql::Result<QueryResponse>,
+    resp: &BatchQueryResponse,
 ) -> Response {
-    if let Ok(QueryResponse { cache_control, .. }) = resp {
-        if let Some(cache_control) = cache_control.value() {
-            if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
-                http_resp.insert_header(header, cache_control);
-                return http_resp;
-            }
-        }
-    }
-    http_resp
+    todo!()
+    // if let Ok(QueryResponse { cache_control, .. }) = resp {
+    //     if let Some(cache_control) = cache_control.value() {
+    //         if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
+    //             http_resp.insert_header(header, cache_control);
+    //             return http_resp;
+    //         }
+    //     }
+    // }
+    // http_resp
 }

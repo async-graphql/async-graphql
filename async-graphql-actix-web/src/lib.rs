@@ -72,7 +72,7 @@ impl FromRequest for GQLRequest {
 
             Box::pin(async move {
                 (content_type, StreamBody::new(rx))
-                    .into_query_builder_opts(&config)
+                    .into_batch_query_builder_opts(&config)
                     .map_ok(GQLRequest)
                     .map_err(|err| match err {
                         ParseRequestError::PayloadTooLarge => {
