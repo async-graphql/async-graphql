@@ -157,7 +157,7 @@ pub async fn test_subscription_with_ctx_data() {
     #[Object]
     impl MyObject {
         async fn value(&self, ctx: &Context<'_>) -> i32 {
-            *ctx.data::<i32>()
+            *ctx.data_unchecked::<i32>()
         }
     }
 
@@ -166,7 +166,7 @@ pub async fn test_subscription_with_ctx_data() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
-            let value = *ctx.data::<i32>();
+            let value = *ctx.data_unchecked::<i32>();
             futures::stream::once(async move { value })
         }
 
@@ -217,7 +217,7 @@ pub async fn test_subscription_with_token() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
-            if ctx.data::<Token>().0 != "123456" {
+            if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
             Ok(futures::stream::once(async move { 100 }))

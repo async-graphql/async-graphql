@@ -2,7 +2,8 @@ use crate::extensions::Extensions;
 use crate::parser::query::{Directive, Field, SelectionSet};
 use crate::schema::SchemaEnv;
 use crate::{
-    InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result, Type, Value,
+    FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result,
+    Type, Value,
 };
 use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
@@ -399,12 +400,20 @@ impl<'a, T> ContextBase<'a, T> {
     ///
     /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
     ///
+    /// Returns a FieldError if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
+        self.data_opt::<D>()
+            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
     /// # Panics
     ///
     /// It will panic if the specified data type does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> &D {
+    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &D {
         self.data_opt::<D>()
-            .expect("The specified data type does not exist.")
+            .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
     }
 
     /// Gets the global data defined in the `Context` or `Schema`, returns `None` if the specified type data does not exist.
