@@ -2,6 +2,7 @@ use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 #[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
@@ -9,7 +10,7 @@ use std::ops::{Deref, DerefMut};
 /// ID scalar
 ///
 /// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ID(String);
 
 impl Deref for ID {
