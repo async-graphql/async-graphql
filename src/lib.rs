@@ -154,7 +154,7 @@ pub use query::{
     IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse, StreamResponse,
 };
 pub use registry::CacheControl;
-pub use scalars::{Any, Json, ID};
+pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
