@@ -186,6 +186,26 @@ impl MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#为同一类型实现多次object" id="为同一类型实现多次object">为同一类型实现多次Object</a></h2>
+<p>通常我们在Rust中可以为同一类型创建多个实现，但由于过程宏的限制，无法为同一个类型创建多个Object实现。例如，下面的代码将无法通过编译。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl MyObject {
+    async fn field1(&amp;self) -&gt; i32 {
+        todo!()
+    }
+}
+
+#[Object]
+impl MyObject {
+    async fn field2(&amp;self) -&gt; i32 {
+        todo!()    
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

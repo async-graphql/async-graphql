@@ -279,6 +279,26 @@ impl MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#implement-object-multiple-times-for-the-same-type" id="implement-object-multiple-times-for-the-same-type">Implement Object multiple times for the same type</a></h2>
+<p>Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl MyObject {
+    async fn field1(&amp;self) -&gt; i32 {
+        todo!()
+    }
+}
+
+#[Object]
+impl MyObject {
+    async fn field2(&amp;self) -&gt; i32 {
+        todo!()    
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#context" id="context">Context</a></h1>
 <p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
