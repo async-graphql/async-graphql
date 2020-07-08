@@ -7,12 +7,19 @@
         
         <meta name="robots" content="noindex" />
         
+        
+
+
+        <!-- Custom HTML head -->
+        
+
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
         <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
@@ -21,8 +28,9 @@
 
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+        
+        <link rel="stylesheet" href="fonts/fonts.css">
+        
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
@@ -38,7 +46,7 @@
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
             var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
@@ -182,8 +190,8 @@ async-graphql-tide = &quot;1.2.0&quot; # If you need to integrate into tide
 <p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with <code>#[field]</code> so that the procedure macro provided by <code>Async-graphql</code> can correctly recognize it.</p>
 <p><code>Async-graphql</code> implements the mapping of common data types to GraphQL types, such as <code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, etc. Also, you can <a href="custom_scalars.html">extend these base types</a>, which are called scalars in the GraphQL.</p>
 <p>Here is a simple example where we provide just one query that returns the sum of <code>a</code> and <code>b</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -201,8 +209,8 @@ impl Query {
 </span></code></pre></pre>
 <h2><a class="header" href="#execute-the-query" id="execute-the-query">Execute the query</a></h2>
 <p>In our example, there is only Query without Mutation and Subscription, so we create the Schema with <code>EmptyMutation</code> and <code>EmptySubscription</code>, and then call <code>Schema::execute</code> to execute the Query.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
@@ -210,8 +218,8 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 </span></code></pre></pre>
 <h2><a class="header" href="#output-the-query-results-as-json" id="output-the-query-results-as-json">Output the query results as JSON</a></h2>
 <p>Query returns <code>async_graphql::Result</code> with <code>async_graphql::http::GQLResponse </code> wrapped, can be directly converted to JSON.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let json = serde_json::to_string(&amp;async_graphql::http::GQLResponse(res));
 <span class="boring">}
@@ -223,8 +231,8 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
 <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
 <p><code>SimpleObject</code> directly map all field of a struct to GraphQL object, you cannot define a resolver function on it.</p>
 <p>The example below defined an object <code>MyObject</code>, including field <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -245,8 +253,8 @@ struct MyObject {
 <p>When querying a database, you may need a global data base connection pool.
 When creating <code>Schema</code>,  you can use <code>SchemaBuilder::data</code> to setup <code>Schema</code> data, and <code>Context::data</code> to setup <code>Context</code>data.
 The following <code>value_from_db</code> function showed how to retrieve a database connection from <code>Context</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -265,7 +273,7 @@ impl MyObject {
         ctx: &amp;Context&lt;'_&gt;,
         #[arg(desc = &quot;Id of object&quot;)] id: i64
     ) -&gt; FieldResult&lt;String&gt; {
-        let conn = ctx.data::&lt;DbPool&gt;().take();
+        let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
     }
 }
@@ -274,8 +282,8 @@ impl MyObject {
 <h1><a class="header" href="#context" id="context">Context</a></h1>
 <p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -283,19 +291,19 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn borrow_from_context_data&lt;'ctx'&gt;(
+    async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
         ctx: &amp;'ctx Context&lt;'_&gt;
-    ) -&gt; &amp;'ctx String {
-        ctx.data::&lt;String&gt;
+    ) -&gt; FieldResult&lt;&amp;'ctx String&gt; {
+        ctx.data::&lt;String&gt;()
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#error-handling" id="error-handling">Error handling</a></h1>
 <p>Resolve can return a <code>FieldResult</code>, following is the definition:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
 <span class="boring">}
@@ -303,8 +311,8 @@ impl Query {
 <p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
 <p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.
 See <a href="error_extensions.html">ErrorExtensions</a> sections of this book for more details.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -324,8 +332,8 @@ impl Query {
 <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
 <p>It's easy to define an <code>Enum</code>, here we have an example:</p>
 <p><strong>Async-graphql can automatically change the name of each item to GraphQL's CONSTANT_CASE convension, you can also use <code>name</code> to rename.</strong></p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -355,8 +363,8 @@ If you need e.g. snake_cased GraphQL field name, you can use both the <code>name
 <li>When the <code>name</code> and <code>method</code> exist together, the <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
 <li>When only <code>name</code> exists, <code>name.to_camel_case()</code> is the GraphQL field name and the <code>name</code> is the resolver function name.</li>
 </ul>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -416,8 +424,8 @@ enum Shape {
 The implemention is quite similar for <code>Async-graphql</code>.
 From <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -465,8 +473,8 @@ The definition of <code>InputObject</code> is similar to <a href="define_simple_
 However, <code>SimpleObject</code> can only be used for output and <code>InputObject</code> can only be used as input.</p>
 <p><code>InputObject</code> don't need a <code>#[field]</code> for each field, every field is <code>InputValue</code>.
 But you can add optional <code>#[field]</code> to add description or rename the field.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -493,8 +501,8 @@ impl Mutation {
 <p>You can define default values for input value types.
 The following shows how to define default values for different types.</p>
 <h2><a class="header" href="#object-field" id="object-field">Object field</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -518,8 +526,8 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#interface-field" id="interface-field">Interface field</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -534,8 +542,8 @@ enum MyInterface {
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#input-object-field" id="input-object-field">Input object field</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -557,8 +565,8 @@ struct MyInputObject {
 <h1><a class="header" href="#query-and-mutation" id="query-and-mutation">Query and Mutation</a></h1>
 <h2><a class="header" href="#query-root-object" id="query-root-object">Query root object</a></h2>
 <p>The query root object is a GraphQL object with a definition similar to other objects. resolver functions for all fields of the query object are executed concurrently.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -576,8 +584,8 @@ impl Query {
 <h2><a class="header" href="#mutation-root-object" id="mutation-root-object">Mutation root object</a></h2>
 <p>The mutation root object is also a GraphQL object, but it executes sequentially. One mutation following from another will only be executed only after the first mutation is completed.</p>
 <p>The following mutation root object provides an example of user registration and login:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -598,8 +606,8 @@ impl Mutation {
 <h1><a class="header" href="#subscription" id="subscription">Subscription</a></h1>
 <p>The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a Stream, and the field parameters are usually used as data filtering conditions.</p>
 <p>The following example subscribes to an integer stream, which generates one integer per second. The parameter step specifies the integer step size with a default of 1</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -622,8 +630,8 @@ impl Subscription {
 <p>Arguments to a query (<a href="define_input_object.html">InputObject</a>) are called <code>Input Objects</code> in GraphQL. If the provided input type does not match for a query, the query will return a type mismatch error. But sometimes we want to provide more restrictions on specific types of values. For example, we might want to require that an argument is a valid email address. Async-graphql provides an input validators to solve this problem.</p>
 <p>An input validator can be combined via <code>and</code> and <code>or</code> operators.</p>
 <p>The following is an input validator which checks that a <code>String</code> is a valid Email or MAC address:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 use async_graphql::validators::{Email, MAC};
@@ -638,8 +646,8 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <p>The following example verifies that the <code>i32</code> parameter <code>a</code> is greater than 10 and less than 100, or else equal to 0:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql:*;
 use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
@@ -660,8 +668,8 @@ impl Query {
 </span></code></pre></pre>
 <h2><a class="header" href="#custom-validator" id="custom-validator">Custom validator</a></h2>
 <p>Here is an example of a custom validator:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>struct MustBeZero {}
 
@@ -695,8 +703,8 @@ impl InputValueValidator for InputValueValidator {
 <p>You can use <code>max_age</code> parameters to control the age of the cache (in seconds), and you can also use <code>public</code> and <code>private</code> to control the scope of the cache. When you do not specify it, the scope will default to <code>public</code>.</p>
 <p>lWhen querying multiple resolvers, the results of all cache control parameters will be combined and the <code>max_age</code> minimum value will be taken. If the scope of any object or field is <code>private</code>, the result will be <code>private</code>.</p>
 <p>We can use <code>QueryResponse</code> to get a merged cache control result from a query result, and call <code>CacheControl::value</code> to get the corresponding HTTP header.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[Object(cache_control(max_age = 60))]
 impl Query {
@@ -726,8 +734,8 @@ impl Query {
 <h1><a class="header" href="#cursor-connections" id="cursor-connections">Cursor connections</a></h1>
 <p>Relay's cursor connection specification is defined to provide a consistent method for query paging. For more details on the specification see the <a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
 <p>Define a cursor connection in <code>async-graphql</code> is very simple, you just call the <code>connection::query</code> function and query data in closure.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 use async_graphql::connection::*;
@@ -783,8 +791,8 @@ its contents.</p>
 the error message exposed by <code>std::fmt::Display</code>. However <code>FieldError</code> actually provides an additional
 field <code>Option&lt;serde_json::Value&gt;</code> which - if some valid <code>serde_json::Map</code> - will be exposed as the extensions key to any error.</p>
 <p>A resolver like this: </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, FieldError&gt; {
     let my_extension = json!({ &quot;details&quot;: &quot;CAN_NOT_FETCH&quot; });
@@ -812,8 +820,8 @@ two convenience traits for casting your errors to the appropriate <code>FieldErr
 extensions.</p>
 <p>The easiest way to provide extensions to any error is by calling <code>extend_with</code> on the error.
 This will on the fly convert any error into a <code>FieldError</code> with the given extension.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use std::num::ParseIntError;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -826,8 +834,8 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 <h3><a class="header" href="#implementing-errorextensions-for-custom-errors" id="implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
 <p>If you find yourself attaching extensions to your errors all over the place you might want to consider
 implementing the trait on your custom error type directly.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[macro_use]
 extern crate thiserror;
@@ -862,8 +870,8 @@ impl ErrorExtensions for MyError {
 </span></code></pre></pre>
 <p>This way you only need to call <code>extend</code> on your error to deliver the error message alongside the provided extensions.
 Or further extend your error through <code>extend_with</code>.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; FieldResult&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
@@ -890,8 +898,8 @@ Or further extend your error through <code>extend_with</code>.</p>
 </code></pre>
 <h2><a class="header" href="#resultext" id="resultext">ResultExt</a></h2>
 <p>This trait enables you to call <code>extend_err</code> directly on results. So the above code becomes less verbose.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -905,8 +913,8 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 <h3><a class="header" href="#chained-extensions" id="chained-extensions">Chained extensions</a></h3>
 <p>Since <code>ErrorExtensions</code> and <code>ResultExt</code> are implemented for any type <code>&amp;E where E: std::fmt::Display</code>
 we can chain the extension together.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -959,8 +967,8 @@ The disadvantage is that the below code does <strong>NOT</strong> compile:</p>
 <h1><a class="header" href="#apollo-tracing" id="apollo-tracing">Apollo Tracing</a></h1>
 <p>Apollo Tracing provides performance analysis results for each step of query. This is an extension to <code>Schema</code>, and the performance analysis results are stored in <code>QueryResponse</code>.</p>
 <p>To enable the Apollo Tracing extension, add the extension when a <code>Schema</code> is created.</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 use async_graphql::extensions::ApolloTracing;
@@ -983,8 +991,8 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 <p>The <code>graphql</code> filter is used for execution <code>Query</code> and <code>Mutation</code> requests. It always asks for the POST method and outputs a <code>Schema</code> via <code>QueryBuilder</code>. You can combine other filters later, or directly call <code>QueryBuilder::execute</code> to execute the query.</p>
 <p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
 <h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
@@ -998,8 +1006,8 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#subscription-example" id="subscription-example">Subscription example</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);
@@ -1011,8 +1019,8 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <p><code>WSSubscription</code> is an Actor that supports WebSocket subscriptions。</p>
 <h2><a class="header" href="#request-example-1" id="request-example-1">Request example</a></h2>
 <p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data. </p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn index(
     // Schema now accessible here
@@ -1025,8 +1033,8 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#subscription-example-1" id="subscription-example-1">Subscription example</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn index_ws(
     schema: web::Data&lt;Schema&gt;,
@@ -1042,8 +1050,8 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <p>In <code>Async-GraphQL</code> most common scalar types are built in, but you can also create your own scalar types.</p>
 <p>Using <code>async-graphql::Scalar</code>, you can add support for a scalar when you implement it. You only need to implement parsing and output functions.</p>
 <p>The following example defines a 64-bit integer scalar where its input and output are strings. (Note: <code>Async-graphQL</code> already supports 64-bit integers and uses strings as input and output.)</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
@@ -1089,8 +1097,8 @@ impl ScalarType for StringNumber {
 </li>
 </ul>
 <h2><a class="header" href="#entity-lookup-function" id="entity-lookup-function">Entity lookup function</a></h2>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>struct Query;
 
@@ -1156,10 +1164,10 @@ impl Query {
         
 
         
-        
+
         
         <script type="text/javascript">
-            window.playpen_copyable = true;
+            window.playground_copyable = true;
         </script>
         
 

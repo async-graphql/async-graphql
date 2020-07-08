@@ -5,12 +5,19 @@
         <meta charset="UTF-8">
         <title>错误扩展 - Async-graphql教程</title>
         
+        
+
+
+        <!-- Custom HTML head -->
+        
+
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Async-graphql使用手册">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
         <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
@@ -19,8 +26,9 @@
 
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+        
+        <link rel="stylesheet" href="fonts/fonts.css">
+        
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
@@ -36,7 +44,7 @@
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
             var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
@@ -160,8 +168,8 @@
 由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>FieldError</code>实际上提供了一个额外的
 字段<code>Option&lt;serde_json::Value&gt;</code>，如果它是一个<code>serde_json::Map</code>，则可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, FieldError&gt; {
     let my_extension = json!({ &quot;details&quot;: &quot;CAN_NOT_FETCH&quot; });
@@ -188,8 +196,8 @@
 两个方便特性，可将您的错误转换为适当的<code>FieldError</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
 这将把任何错误转换为具有给定扩展信息的<code>FieldError</code>。</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use std::num::ParseIntError;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -201,8 +209,8 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 </span></code></pre></pre>
 <h3><a class="header" href="#为自定义错误实现errorextensions" id="为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
 <p>你也可以给自己的错误类型实现<code>ErrorExtensions</code>:</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[macro_use]
 extern crate thiserror;
@@ -236,8 +244,8 @@ impl ErrorExtensions for MyError {
 <span class="boring">}
 </span></code></pre></pre>
 <p>您只需要对错误调用<code>extend</code>即可将错误与其提供的扩展信息一起传递，或者通过<code>extend_with</code>进一步扩展错误信息。</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; FieldResult&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
@@ -262,8 +270,8 @@ impl ErrorExtensions for MyError {
 </code></pre>
 <h2><a class="header" href="#resultext" id="resultext">ResultExt</a></h2>
 <p>这个特质使您可以直接在结果上调用<code>extend_err</code>。因此上面的代码不再那么冗长。</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -276,8 +284,8 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 </span></code></pre></pre>
 <h3><a class="header" href="#链式调用" id="链式调用">链式调用</a></h3>
 <p>由于对所有<code>&amp;E where E: std::fmt::Display</code>实现了<code>ErrorExtensions</code>和<code>ResultsExt</code>，我们可以将扩展链接在一起。</p>
-<pre><pre class="playpen"><code class="language-rust">
-<span class="boring">#![allow(unused_variables)]
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
@@ -368,10 +376,10 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
         
 
         
-        
+
         
         <script type="text/javascript">
-            window.playpen_copyable = true;
+            window.playground_copyable = true;
         </script>
         
 
