@@ -33,3 +33,23 @@ impl MyObject {
     }
 }
 ```
+
+## Implement Object multiple times for the same type
+
+Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.
+
+```rust
+#[Object]
+impl MyObject {
+    async fn field1(&self) -> i32 {
+        todo!()
+    }
+}
+
+#[Object]
+impl MyObject {
+    async fn field2(&self) -> i32 {
+        todo!()    
+    }
+}
+```
