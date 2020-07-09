@@ -173,19 +173,32 @@ pub struct QueryBuilder {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
-    pub(crate) ctx_data: Option<Arc<Data>>,
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
-/// Query builder for batch requests
-pub enum BatchQueryBuilder {
+pub enum QueryBuilderTypes{
     /// Single query
     Single(QueryBuilder),
     /// Batch query
     Batch(Vec<QueryBuilder>),
 }
 
+/// Query builder for batch requests
+pub struct BatchQueryBuilder {
+    /// Concrete builder type
+    pub builder: QueryBuilderTypes,
+    pub(crate) ctx_data: Option<Data>
+}
+
 impl BatchQueryBuilder{
+    /// Create query builder for a single query with query source.
+    pub fn new_single<T: Into<String>>(query_source: T) -> BatchQueryBuilder {
+        BatchQueryBuilder{builder: QueryBuilderTypes::Single(QueryBuilder::new(query_source)), ctx_data: None}
+    }
+    /// Create query builder for a batch query with query sources.
+    pub fn new_batch<T: Into<String>>(query_sources: Vec<T>) -> BatchQueryBuilder {
+        BatchQueryBuilder{builder: QueryBuilderTypes::Batch(query_sources.into_iter().map(QueryBuilder::new).collect()), ctx_data: None}
+    }
     pub(crate) fn set_upload(
         &mut self,
         var_path: &str,
@@ -193,9 +206,9 @@ impl BatchQueryBuilder{
         content_type: Option<String>,
         content: File,
     ) -> std::result::Result<(), ParseRequestError> {
-        match self {
-            BatchQueryBuilder::Single(builder) => Ok(builder.set_upload(var_path, filename, content_type, content)),
-            BatchQueryBuilder::Batch(builders) => {
+        match self.builder {
+            QueryBuilderTypes::Single(ref mut builder) => Ok(builder.set_upload(var_path, filename, content_type, content)),
+            QueryBuilderTypes::Batch(ref mut builders) => {
                 let mut it = var_path.split('.').peekable();
                 // First part of the name in a batch query with uploads is the index of the query
                 // https://github.com/jaydenseric/graphql-multipart-request-spec
@@ -208,14 +221,14 @@ impl BatchQueryBuilder{
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
     ///
     /// **This data is valid for all queries in the batch**
-    pub fn data<D: Any + Send + Sync>(self, data: D) -> Self {
-        match &self {
-            BatchQueryBuilder::Single(ref mut builder) => { builder.data(data); },
-            BatchQueryBuilder::Batch(ref mut builders) => {
-                builders.get_mut(0).map(|builder| { builder.data(data); });
-            }
+    pub fn data<D: Any + Send + Sync>(&mut self, data: D) {
+        if let Some(ctx_data) = &mut self.ctx_data {
+            ctx_data.insert(data);
+        } else {
+            let mut ctx_data = Data::default();
+            ctx_data.insert(data);
+            self.ctx_data = Some(ctx_data);
         }
-        self
     }
 
     /// Execute the query, returns a stream, the first result being the query result,
@@ -230,10 +243,11 @@ impl BatchQueryBuilder{
             Mutation: ObjectType + Send + Sync + 'static,
             Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        match self {
-            BatchQueryBuilder::Single(builder) => BatchStreamResponse::Single(builder.execute_stream(schema).await),
-            BatchQueryBuilder::Batch(builders) => {
-                let futures = builders.into_iter().map(|builder| builder.execute_stream(schema));
+        match self.builder {
+            QueryBuilderTypes::Single(builder) => BatchStreamResponse::Single(builder.execute_stream(schema, Arc::new(self.ctx_data.unwrap_or_default())).await),
+            QueryBuilderTypes::Batch(builders) => {
+                let ctx = Arc::new(self.ctx_data.unwrap_or_default());
+                let futures = builders.into_iter().map(|builder| builder.execute_stream(schema, Arc::clone(&ctx)));
                 BatchStreamResponse::Batch(futures::future::join_all(futures).await)
             }
         }
@@ -249,10 +263,11 @@ impl BatchQueryBuilder{
             Mutation: ObjectType + Send + Sync + 'static,
             Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        match self {
-            BatchQueryBuilder::Single(builder) => BatchQueryResponse::Single(builder.execute(schema).await),
-            BatchQueryBuilder::Batch(builders) => {
-                let futures = builders.into_iter().map(|builder| builder.execute(schema));
+        match self.builder {
+            QueryBuilderTypes::Single(builder) => BatchQueryResponse::Single(builder.execute(schema, Arc::new(self.ctx_data.unwrap_or_default())).await),
+            QueryBuilderTypes::Batch(builders) => {
+                let ctx = Arc::new(self.ctx_data.unwrap_or_default());
+                let futures = builders.into_iter().map(|builder| builder.execute(schema, Arc::clone(&ctx)));
                 BatchQueryResponse::Batch(futures::future::join_all(futures).await)
             }
         }
@@ -267,7 +282,6 @@ impl QueryBuilder {
             operation_name: None,
             variables: Default::default(),
             extensions: Default::default(),
-            ctx_data: None,
         }
     }
 
@@ -294,19 +308,6 @@ impl QueryBuilder {
         self
     }
 
-    /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
-    ///
-    /// **This data is only valid for this query**
-    fn data<D: Any + Send + Sync>(&mut self, data: D) {
-        if let Some(ctx_data) = &mut self.ctx_data {
-            ctx_data.insert(data);
-        } else {
-            let mut ctx_data = Data::default();
-            ctx_data.insert(data);
-            self.ctx_data = Some(Arc::new(ctx_data));
-        }
-    }
-
     /// Set uploaded file path
     pub fn set_upload(
         &mut self,
@@ -322,9 +323,10 @@ impl QueryBuilder {
     /// Execute the query, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream<Query, Mutation, Subscription>(
+    async fn execute_stream<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
+        ctx_data: Arc<Data>
     ) -> StreamResponse
     where
         Query: ObjectType + Send + Sync + 'static,
@@ -332,7 +334,7 @@ impl QueryBuilder {
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let schema = schema.clone();
-        match self.execute_first(&schema).await {
+        match self.execute_first(&schema, ctx_data).await {
             Ok((first_resp, defer_list)) if defer_list.futures.lock().is_empty() => {
                 StreamResponse::Single(Ok(first_resp))
             }
@@ -379,6 +381,7 @@ impl QueryBuilder {
     async fn execute_first<'a, Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
+        ctx_data: Arc<Data>
     ) -> Result<(QueryResponse, DeferList)>
     where
         Query: ObjectType + Send + Sync + 'static,
@@ -413,7 +416,7 @@ impl QueryBuilder {
             extensions,
             self.variables,
             document,
-            self.ctx_data.unwrap_or_default(),
+            ctx_data,
         );
         let defer_list = DeferList {
             path_prefix: Vec::new(),
@@ -454,16 +457,17 @@ impl QueryBuilder {
     }
 
     /// Execute the query, always return a complete result.
-    pub async fn execute<Query, Mutation, Subscription>(
+    async fn execute<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
+        ctx_data: Arc<Data>
     ) -> Result<QueryResponse>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let resp = self.execute_stream(schema).await;
+        let resp = self.execute_stream(schema, ctx_data).await;
         match resp {
             StreamResponse::Single(res) => res,
             StreamResponse::Stream(mut stream) => {

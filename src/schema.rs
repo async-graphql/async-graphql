@@ -2,15 +2,11 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::query::{QueryBuilder, StreamResponse};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
-use crate::{
-    CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
-    SubscriptionType, Type, Variables, ID,
-};
+use crate::{CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, SubscriptionType, Type, Variables, ID, BatchQueryResponse, BatchStreamResponse, BatchQueryBuilder};
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -297,15 +293,15 @@ where
     }
 
     /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
-        QueryBuilder::new(query_source).execute(self).await
+    pub async fn execute(&self, query_source: &str) -> BatchQueryResponse {
+        BatchQueryBuilder::new_single(query_source).execute(self).await
     }
 
     /// Execute the query without create the `QueryBuilder`, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream(&self, query_source: &str) -> StreamResponse {
-        QueryBuilder::new(query_source).execute_stream(self).await
+    pub async fn execute_stream(&self, query_source: &str) -> BatchStreamResponse {
+        BatchQueryBuilder::new_single(query_source).execute_stream(self).await
     }
 
     pub(crate) fn prepare_query(

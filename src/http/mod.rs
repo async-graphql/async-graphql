@@ -13,8 +13,8 @@ pub use multipart_stream::multipart_stream;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, BatchQueryBuilder, IntoQueryBuilder};
-use crate::{Error, ParseRequestError, Pos, QueryBuilder, QueryError, QueryResponse, Result, Variables};
+use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, BatchQueryBuilder, IntoQueryBuilder, QueryBuilderTypes, QueryBuilder};
+use crate::{Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables};
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer, Deserialize, de};
 
@@ -84,10 +84,12 @@ impl IntoBatchQueryBuilder for BatchGQLRequest {
         _opts: &IntoQueryBuilderOpts,
     ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
         match self {
-            BatchGQLRequest::Single(request) => Ok(BatchQueryBuilder::Single(request.into_query_builder_opts(_opts).await?)),
+            BatchGQLRequest::Single(request) => Ok(
+                BatchQueryBuilder{ builder: QueryBuilderTypes::Single(request.into_query_builder_opts(_opts).await?), ctx_data: None }
+            ),
             BatchGQLRequest::Batch(requests) => {
                 let futures = requests.into_iter().map(|request| request.into_query_builder_opts(_opts));
-                Ok(BatchQueryBuilder::Batch(futures::future::try_join_all(futures).await?))
+                Ok(BatchQueryBuilder{ builder: QueryBuilderTypes::Batch(futures::future::try_join_all(futures).await?), ctx_data: None })
             }
         }
     }
