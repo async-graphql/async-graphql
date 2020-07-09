@@ -6,7 +6,7 @@ use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
-use crate::{CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, SubscriptionType, Type, Variables, ID, BatchQueryResponse, BatchStreamResponse, BatchQueryBuilder};
+use crate::{CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, SubscriptionType, Type, Variables, ID, BatchQueryResponse, BatchStreamResponse, BatchQueryBuilder, QueryResponse, StreamResponse};
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -17,6 +17,7 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+use crate::query::QueryBuilder;
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -293,15 +294,15 @@ where
     }
 
     /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> BatchQueryResponse {
-        BatchQueryBuilder::new_single(query_source).execute(self).await
+    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
+        QueryBuilder::new(query_source).execute(self).await
     }
 
     /// Execute the query without create the `QueryBuilder`, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream(&self, query_source: &str) -> BatchStreamResponse {
-        BatchQueryBuilder::new_single(query_source).execute_stream(self).await
+    pub async fn execute_stream(&self, query_source: &str) -> StreamResponse {
+        QueryBuilder::new(query_source).execute_stream(self).await
     }
 
     pub(crate) fn prepare_query(

@@ -14,7 +14,7 @@ pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
 use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, BatchQueryBuilder, IntoQueryBuilder, QueryBuilderTypes, QueryBuilder};
-use crate::{Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables};
+use crate::{Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables, BatchQueryResponse};
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer, Deserialize, de};
 
@@ -96,36 +96,53 @@ impl IntoBatchQueryBuilder for BatchGQLRequest {
 }
 
 /// Serializable GraphQL Response object
-#[derive(Serialize)]
 pub struct GQLResponse(pub Result<QueryResponse>);
 
-impl Serialize for Error {
+impl Serialize for GQLResponse {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(None)?;
-        map.serialize_key("errors")?;
-        map.serialize_value(&GQLError(self))?;
-        map.end()
+        match &self.0 {
+            Ok(res) => {
+                let mut map = serializer.serialize_map(None)?;
+                if let Some(label) = &res.label {
+                    map.serialize_key("label")?;
+                    map.serialize_value(label)?;
+                }
+                if let Some(path) = &res.path {
+                    map.serialize_key("path")?;
+                    map.serialize_value(path)?;
+                }
+                map.serialize_key("data")?;
+                map.serialize_value(&res.data)?;
+                if res.extensions.is_some() {
+                    map.serialize_key("extensions")?;
+                    map.serialize_value(&res.extensions)?;
+                }
+                map.end()
+            }
+            Err(err) => {
+                let mut map = serializer.serialize_map(None)?;
+                map.serialize_key("errors")?;
+                map.serialize_value(&GQLError(err))?;
+                map.end()
+            }
+        }
     }
 }
 
-impl Serialize for QueryResponse {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(None)?;
-        if let Some(label) = &self.label {
-            map.serialize_key("label")?;
-            map.serialize_value(label)?;
+/// Serializable GraphQL Response object
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum BatchGQLResponse {
+    Single(GQLResponse),
+    Batch(Vec<GQLResponse>)
+}
+
+impl From<BatchQueryResponse> for BatchGQLResponse {
+    fn from(item: BatchQueryResponse) -> Self {
+        match item {
+            BatchQueryResponse::Single(resp) => BatchGQLResponse::Single(GQLResponse(resp)),
+            BatchQueryResponse::Batch(responses) => BatchGQLResponse::Batch(responses.into_iter().map(GQLResponse).collect())
         }
-        if let Some(path) = &self.path {
-            map.serialize_key("path")?;
-            map.serialize_value(path)?;
-        }
-        map.serialize_key("data")?;
-        map.serialize_value(&self.data)?;
-        if self.extensions.is_some() {
-            map.serialize_key("extensions")?;
-            map.serialize_value(&self.extensions)?;
-        }
-        map.end()
     }
 }
 
