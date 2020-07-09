@@ -290,6 +290,19 @@ mod tests {
     }
 
     #[test]
+    fn test_batch_request_single_operation() {
+        let request: BatchGQLRequest = serde_json::from_value(json! ({
+            "query": "{ a b c }"
+        }))
+            .unwrap();
+        if let BatchGQLRequest::Single(request) = request {
+            assert_eq!(request.query, "{ a b c }");
+        } else {
+            panic!("Batch query not parsed as a batch")
+        }
+    }
+
+    #[test]
     fn test_request_with_operation_name() {
         let request: GQLRequest = serde_json::from_value(json! ({
             "query": "{ a b c }",
