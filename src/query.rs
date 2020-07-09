@@ -173,7 +173,7 @@ pub struct QueryBuilder {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
-    pub(crate) ctx_data: Option<Data>,
+    pub(crate) ctx_data: Option<Arc<Data>>,
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
@@ -203,6 +203,19 @@ impl BatchQueryBuilder{
                 Ok(builders.get_mut(idx).ok_or(ParseRequestError::BatchUploadIndexIncorrect)?.set_upload(it.join("").as_str(), filename, content_type, content))
             }
         }
+    }
+
+    /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
+    ///
+    /// **This data is valid for all queries in the batch**
+    pub fn data<D: Any + Send + Sync>(self, data: D) -> Self {
+        match &self {
+            BatchQueryBuilder::Single(ref mut builder) => { builder.data(data); },
+            BatchQueryBuilder::Batch(ref mut builders) => {
+                builders.get_mut(0).map(|builder| { builder.data(data); });
+            }
+        }
+        self
     }
 
     /// Execute the query, returns a stream, the first result being the query result,
@@ -253,8 +266,8 @@ impl QueryBuilder {
             query_source: query_source.into(),
             operation_name: None,
             variables: Default::default(),
-            ctx_data: None,
             extensions: Default::default(),
+            ctx_data: None,
         }
     }
 
@@ -284,15 +297,14 @@ impl QueryBuilder {
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
     ///
     /// **This data is only valid for this query**
-    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+    fn data<D: Any + Send + Sync>(&mut self, data: D) {
         if let Some(ctx_data) = &mut self.ctx_data {
             ctx_data.insert(data);
         } else {
             let mut ctx_data = Data::default();
             ctx_data.insert(data);
-            self.ctx_data = Some(ctx_data);
+            self.ctx_data = Some(Arc::new(ctx_data));
         }
-        self
     }
 
     /// Set uploaded file path
@@ -401,7 +413,7 @@ impl QueryBuilder {
             extensions,
             self.variables,
             document,
-            Arc::new(self.ctx_data.unwrap_or_default()),
+            self.ctx_data.unwrap_or_default(),
         );
         let defer_list = DeferList {
             path_prefix: Vec::new(),
