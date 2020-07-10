@@ -5,7 +5,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, StreamBody, BatchGQLRequest};
+use async_graphql::http::{multipart_stream, StreamBody, BatchGQLResponse, BatchGQLRequest};
 use async_graphql::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema, StreamResponse, SubscriptionType, BatchQueryResponse, BatchStreamResponse};
 use async_trait::async_trait;
 use futures::channel::mpsc;
@@ -132,7 +132,7 @@ pub trait ResponseExt: Sized {
 impl ResponseExt for Response {
     fn body_graphql(self, res: BatchQueryResponse) -> tide::Result<Self> {
         let mut resp = add_cache_control(self, &res);
-        resp.set_body(Body::from_json(&res)?);
+        resp.set_body(Body::from_json(&BatchGQLResponse::from(res))?);
         Ok(resp)
     }
 
@@ -167,14 +167,13 @@ fn add_cache_control(
     mut http_resp: Response,
     resp: &BatchQueryResponse,
 ) -> Response {
-    todo!()
-    // if let Ok(QueryResponse { cache_control, .. }) = resp {
-    //     if let Some(cache_control) = cache_control.value() {
-    //         if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
-    //             http_resp.insert_header(header, cache_control);
-    //             return http_resp;
-    //         }
-    //     }
-    // }
-    // http_resp
+    if let Some(cache_control) = resp.cache_control() {
+        if let Some(cache_control) = cache_control.value() {
+            if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
+                http_resp.insert_header(header, cache_control);
+                return http_resp;
+            }
+        }
+    }
+    http_resp
 }

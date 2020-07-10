@@ -74,14 +74,6 @@ pub struct QueryResponse {
     pub cache_control: CacheControl,
 }
 
-/// Batch Query response
-pub enum BatchQueryResponse {
-    /// Respond with a single object
-    Single(Result<QueryResponse>),
-    /// Respond with an array of responses
-    Batch(Vec<Result<QueryResponse>>)
-}
-
 impl QueryResponse {
     pub(crate) fn apply_path_prefix(mut self, mut prefix: Vec<serde_json::Value>) -> Self {
         if let Some(path) = &mut self.path {
@@ -134,6 +126,38 @@ impl QueryResponse {
             }
         }
         *p = resp.data;
+    }
+}
+
+/// Batch Query response
+pub enum BatchQueryResponse {
+    /// Respond with a single object
+    Single(Result<QueryResponse>),
+    /// Respond with an array of responses
+    Batch(Vec<Result<QueryResponse>>)
+}
+
+impl BatchQueryResponse{
+    /// return response's cache-control if single response,
+    /// smallest cache-control if batch
+    pub fn cache_control(&self) -> Option<CacheControl>{
+        match self{
+            BatchQueryResponse::Single(response_result) => response_result.as_ref().ok().map(|ref query_response| query_response.cache_control),
+            BatchQueryResponse::Batch(responses) => responses.iter().fold(None, |prev, response_result|{
+                let this_cache = response_result.as_ref().ok().map(|ref query_response| query_response.cache_control);
+                match this_cache {
+                    None => prev,
+                    Some(cache) => match prev{
+                        None => Some(cache),
+                        Some(prev_cache) => if prev_cache.max_age < cache.max_age{
+                            Some(prev_cache)
+                        } else {
+                            Some(cache)
+                        }
+                    }
+                }
+            })
+        }
     }
 }
 
