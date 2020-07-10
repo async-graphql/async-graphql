@@ -357,6 +357,87 @@ mod tests {
     }
 
     #[test]
+    fn test_batch_response_data() {
+        let gql_resp = GQLResponse(Ok(QueryResponse {
+            label: None,
+            path: None,
+            data: json!({"ok": true}),
+            extensions: None,
+            cache_control: Default::default(),
+        }));
+        let resp = BatchGQLResponse::Batch(vec![gql_resp]);
+        assert_eq!(
+            serde_json::to_value(resp).unwrap(),
+            json! ([{
+                "data": {
+                    "ok": true,
+                }
+            }])
+        );
+    }
+
+    #[test]
+    fn test_batch_response_mixed() {
+        let gql_resp = GQLResponse(Ok(QueryResponse {
+            label: None,
+            path: None,
+            data: json!({"ok": true}),
+            extensions: None,
+            cache_control: Default::default(),
+        }));
+        let err = Error::Query {
+            pos: Pos {
+                line: 10,
+                column: 20,
+            },
+            path: None,
+            err: QueryError::FieldError {
+                err: "MyErrorMessage".to_owned(),
+                extended_error: Some(json!({
+                    "code": "MY_TEST_CODE"
+                })),
+            },
+        };
+        let resp = BatchGQLResponse::Batch(vec![gql_resp, GQLResponse(Err(err))]);
+        assert_eq!(
+            serde_json::to_value(resp).unwrap(),
+            json! ([{
+                "data": {
+                    "ok": true,
+                }
+            }, {
+                "errors": [{
+                    "message":"MyErrorMessage",
+                    "extensions": {
+                        "code": "MY_TEST_CODE"
+                    },
+                    "locations": [{"line": 10, "column": 20}]
+                }]
+            }])
+        );
+    }
+
+    #[test]
+    fn test_batch_response_single_data() {
+        let gql_resp = GQLResponse(Ok(QueryResponse {
+            label: None,
+            path: None,
+            data: json!({"ok": true}),
+            extensions: None,
+            cache_control: Default::default(),
+        }));
+        let resp = BatchGQLResponse::Single(gql_resp);
+        assert_eq!(
+            serde_json::to_value(resp).unwrap(),
+            json! ({
+                "data": {
+                    "ok": true,
+                }
+            })
+        );
+    }
+
+    #[test]
     fn test_field_error_with_extension() {
         let err = Error::Query {
             pos: Pos {
