@@ -146,39 +146,6 @@ impl From<BatchQueryResponse> for BatchGQLResponse {
     }
 }
 
-
-// impl Serialize for BatchGQLResponse {
-//     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
-//         match &self.0 {
-//             BatchQueryResponse::Single(resp) => resp.seria
-//             Ok(res) => {
-//                 let mut map = serializer.serialize_map(None)?;
-//                 if let Some(label) = &res.label {
-//                     map.serialize_key("label")?;
-//                     map.serialize_value(label)?;
-//                 }
-//                 if let Some(path) = &res.path {
-//                     map.serialize_key("path")?;
-//                     map.serialize_value(path)?;
-//                 }
-//                 map.serialize_key("data")?;
-//                 map.serialize_value(&res.data)?;
-//                 if res.extensions.is_some() {
-//                     map.serialize_key("extensions")?;
-//                     map.serialize_value(&res.extensions)?;
-//                 }
-//                 map.end()
-//             }
-//             Err(err) => {
-//                 let mut map = serializer.serialize_map(None)?;
-//                 map.serialize_key("errors")?;
-//                 map.serialize_value(&GQLError(err))?;
-//                 map.end()
-//             }
-//         }
-//     }
-// }
-
 /// Serializable error type
 pub struct GQLError<'a>(pub &'a Error);
 
