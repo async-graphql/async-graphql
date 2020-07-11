@@ -4,11 +4,12 @@ use crate::parser::query::{
     OperationDefinition, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
-use crate::{Pos, Positioned, Value};
+use crate::{Pos, Positioned, Value, Variables};
 use std::collections::HashMap;
 
 pub struct VisitorContext<'a> {
     pub registry: &'a registry::Registry,
+    pub variables: Option<&'a Variables>,
     pub errors: Vec<RuleError>,
     type_stack: Vec<Option<&'a registry::MetaType>>,
     input_type: Vec<Option<MetaTypeName<'a>>>,
@@ -16,9 +17,14 @@ pub struct VisitorContext<'a> {
 }
 
 impl<'a> VisitorContext<'a> {
-    pub fn new(registry: &'a registry::Registry, doc: &'a Document) -> Self {
+    pub fn new(
+        registry: &'a registry::Registry,
+        doc: &'a Document,
+        variables: Option<&'a Variables>,
+    ) -> Self {
         Self {
             registry,
+            variables,
             errors: Default::default(),
             type_stack: Default::default(),
             input_type: Default::default(),

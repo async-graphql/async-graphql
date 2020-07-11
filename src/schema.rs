@@ -336,8 +336,13 @@ where
             cache_control,
             complexity,
             depth,
-        } = check_rules(&self.env.registry, &document, self.validation_mode)
-            .log_error(&extensions)?;
+        } = check_rules(
+            &self.env.registry,
+            &document,
+            Some(&variables),
+            self.validation_mode,
+        )
+        .log_error(&extensions)?;
         extensions.lock().validation_end();
 
         // check limit
