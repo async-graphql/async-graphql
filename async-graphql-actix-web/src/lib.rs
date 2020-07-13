@@ -3,21 +3,26 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-mod subscription;
+use std::convert::Infallible;
+use std::pin::Pin;
 
 use actix_web::body::BodyStream;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::{multipart_stream, StreamBody};
-use async_graphql::{IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse, StreamResponse, BatchQueryBuilder, IntoBatchQueryBuilder, BatchQueryResponse};
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
 use http::Method;
-use std::convert::Infallible;
-use std::pin::Pin;
+
+use async_graphql::http::{multipart_stream, StreamBody};
+use async_graphql::{
+    BatchQueryBuilder, BatchQueryResponse, IntoBatchQueryBuilder, IntoQueryBuilder,
+    IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse, StreamResponse,
+};
 pub use subscription::WSSubscription;
+
+mod subscription;
 
 /// Extractor for GraphQL request
 ///
@@ -108,7 +113,8 @@ impl FromRequest for BatchGQLRequest {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
 
         if req.method() == Method::GET {
-            let res = web::Query::<async_graphql::http::BatchGQLRequest>::from_query(req.query_string());
+            let res =
+                web::Query::<async_graphql::http::BatchGQLRequest>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
                 gql_request
@@ -193,8 +199,9 @@ impl Responder for BatchGQLResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
         add_cache_control_batch(&mut res, &self.0);
-        let res =
-            res.body(serde_json::to_string(&async_graphql::http::BatchGQLResponse::from(self.0)).unwrap());
+        let res = res.body(
+            serde_json::to_string(&async_graphql::http::BatchGQLResponse::from(self.0)).unwrap(),
+        );
         futures::future::ok(res)
     }
 }
@@ -237,10 +244,7 @@ fn add_cache_control(
     }
 }
 
-fn add_cache_control_batch(
-    builder: &mut HttpResponseBuilder,
-    resp: &BatchQueryResponse,
-) {
+fn add_cache_control_batch(builder: &mut HttpResponseBuilder, resp: &BatchQueryResponse) {
     if let Some(cache_control) = resp.cache_control() {
         if let Some(cache_control) = cache_control.value() {
             builder.header("cache-control", cache_control);

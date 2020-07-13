@@ -13,10 +13,15 @@ pub use multipart_stream::multipart_stream;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, BatchQueryBuilder, IntoQueryBuilder, QueryBuilderTypes, QueryBuilder};
-use crate::{Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables, BatchQueryResponse};
+use crate::query::{
+    BatchQueryBuilder, IntoBatchQueryBuilder, IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder,
+    QueryBuilderTypes,
+};
+use crate::{
+    BatchQueryResponse, Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables,
+};
 use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Serialize, Serializer, Deserialize, de};
+use serde::{de, Deserialize, Serialize, Serializer};
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -59,13 +64,13 @@ pub enum BatchGQLRequest {
     Single(GQLRequest),
     /// Non-empty array of queries
     #[serde(deserialize_with = "deserialize_non_empty_vec")]
-    Batch(Vec<GQLRequest>)
+    Batch(Vec<GQLRequest>),
 }
 
 fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
-    where
-        D: de::Deserializer<'de>,
-        T: Deserialize<'de>,
+where
+    D: de::Deserializer<'de>,
+    T: Deserialize<'de>,
 {
     use de::Error as _;
 
@@ -84,12 +89,20 @@ impl IntoBatchQueryBuilder for BatchGQLRequest {
         _opts: &IntoQueryBuilderOpts,
     ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
         match self {
-            BatchGQLRequest::Single(request) => Ok(
-                BatchQueryBuilder{ builder: QueryBuilderTypes::Single(request.into_query_builder_opts(_opts).await?), ctx_data: None }
-            ),
+            BatchGQLRequest::Single(request) => Ok(BatchQueryBuilder {
+                builder: QueryBuilderTypes::Single(request.into_query_builder_opts(_opts).await?),
+                ctx_data: None,
+            }),
             BatchGQLRequest::Batch(requests) => {
-                let futures = requests.into_iter().map(|request| request.into_query_builder_opts(_opts));
-                Ok(BatchQueryBuilder{ builder: QueryBuilderTypes::Batch(futures::future::try_join_all(futures).await?), ctx_data: None })
+                let futures = requests
+                    .into_iter()
+                    .map(|request| request.into_query_builder_opts(_opts));
+                Ok(BatchQueryBuilder {
+                    builder: QueryBuilderTypes::Batch(
+                        futures::future::try_join_all(futures).await?,
+                    ),
+                    ctx_data: None,
+                })
             }
         }
     }
@@ -136,14 +149,16 @@ pub enum BatchGQLResponse {
     /// Response for single queries
     Single(GQLResponse),
     /// Response for batch queries
-    Batch(Vec<GQLResponse>)
+    Batch(Vec<GQLResponse>),
 }
 
 impl From<BatchQueryResponse> for BatchGQLResponse {
     fn from(item: BatchQueryResponse) -> Self {
         match item {
             BatchQueryResponse::Single(resp) => BatchGQLResponse::Single(GQLResponse(resp)),
-            BatchQueryResponse::Batch(responses) => BatchGQLResponse::Batch(responses.into_iter().map(GQLResponse).collect())
+            BatchQueryResponse::Batch(responses) => {
+                BatchGQLResponse::Batch(responses.into_iter().map(GQLResponse).collect())
+            }
         }
     }
 }
@@ -249,7 +264,7 @@ mod tests {
         }, {
             "query": "{ d e f }"
         }]))
-            .unwrap();
+        .unwrap();
         if let BatchGQLRequest::Batch(requests) = request {
             assert_eq!(requests[0].query, "{ a b c }");
             assert_eq!(requests[1].query, "{ d e f }");
@@ -263,7 +278,7 @@ mod tests {
         let request: BatchGQLRequest = serde_json::from_value(json! ({
             "query": "{ a b c }"
         }))
-            .unwrap();
+        .unwrap();
         if let BatchGQLRequest::Single(request) = request {
             assert_eq!(request.query, "{ a b c }");
         } else {

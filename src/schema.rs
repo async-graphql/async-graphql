@@ -2,11 +2,15 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
+use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
-use crate::{CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, SubscriptionType, Type, Variables, ID, BatchQueryResponse, BatchQueryBuilder, QueryResponse, StreamResponse};
+use crate::{
+    BatchQueryBuilder, BatchQueryResponse, CacheControl, Error, ObjectType, Pos, QueryEnv,
+    QueryError, QueryResponse, Result, StreamResponse, SubscriptionType, Type, Variables, ID,
+};
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -17,7 +21,6 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
-use crate::query::QueryBuilder;
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -300,7 +303,9 @@ where
 
     /// Execute batch without creating the `BatchQueryBuilder`.
     pub async fn execute_batch(&self, query_sources: &[&str]) -> BatchQueryResponse {
-        BatchQueryBuilder::new_batch(query_sources).execute(self).await
+        BatchQueryBuilder::new_batch(query_sources)
+            .execute(self)
+            .await
     }
 
     /// Execute the query without creating the `QueryBuilder`, returns a stream, the first result being the query result,

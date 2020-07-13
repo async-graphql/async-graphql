@@ -1,13 +1,13 @@
 use crate::http::BatchGQLRequest;
 use crate::query::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, QueryBuilderTypes};
-use crate::{ParseRequestError, BatchQueryBuilder, IntoQueryBuilder, QueryBuilder};
+use crate::{BatchQueryBuilder, IntoQueryBuilder, ParseRequestError, QueryBuilder};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use mime::Mime;
 use multer::{Constraints, Multipart, SizeLimit};
+use serde::de::{Error, Unexpected};
 use std::collections::HashMap;
 use std::io::{Seek, SeekFrom, Write};
-use serde::de::{Error, Unexpected};
 
 impl From<multer::Error> for ParseRequestError {
     fn from(err: multer::Error) -> Self {
@@ -22,23 +22,26 @@ impl From<multer::Error> for ParseRequestError {
 
 #[async_trait::async_trait]
 impl<CT, Body> IntoQueryBuilder for (Option<CT>, Body)
-    where
-        CT: AsRef<str> + Send,
-        Body: AsyncRead + Send + Unpin + 'static,
+where
+    CT: AsRef<str> + Send,
+    Body: AsyncRead + Send + Unpin + 'static,
 {
     async fn into_query_builder_opts(
         mut self,
         opts: &IntoQueryBuilderOpts,
     ) -> std::result::Result<QueryBuilder, ParseRequestError> {
-        return if let QueryBuilderTypes::Single(builder) = self.into_batch_query_builder_opts(opts).await?.builder {
+        return if let QueryBuilderTypes::Single(builder) =
+            self.into_batch_query_builder_opts(opts).await?.builder
+        {
             Ok(builder)
         } else {
             // Replicate error message for unparsed array
-            Err(ParseRequestError::InvalidRequest(serde_json::Error::invalid_type(Unexpected::Map, &"a string at line 1 column 1")))
-        }
+            Err(ParseRequestError::InvalidRequest(
+                serde_json::Error::invalid_type(Unexpected::Map, &"a string at line 1 column 1"),
+            ))
+        };
     }
 }
-
 
 #[async_trait::async_trait]
 impl<CT, Body> IntoBatchQueryBuilder for (Option<CT>, Body)

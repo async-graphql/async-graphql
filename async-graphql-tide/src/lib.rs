@@ -5,8 +5,14 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, StreamBody, BatchGQLResponse, BatchGQLRequest, GQLResponse, GQLRequest};
-use async_graphql::{IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, BatchQueryBuilder, QueryResponse, Schema, StreamResponse, SubscriptionType, BatchQueryResponse, QueryBuilder, IntoQueryBuilder};
+use async_graphql::http::{
+    multipart_stream, BatchGQLRequest, BatchGQLResponse, GQLRequest, GQLResponse, StreamBody,
+};
+use async_graphql::{
+    BatchQueryBuilder, BatchQueryResponse, IntoBatchQueryBuilder, IntoQueryBuilder,
+    IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema, StreamResponse,
+    SubscriptionType,
+};
 use async_trait::async_trait;
 use futures::channel::mpsc;
 use futures::io::BufReader;
@@ -55,12 +61,12 @@ pub async fn graphql<Query, Mutation, Subscription, TideState, F>(
     schema: Schema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
 ) -> tide::Result<Response>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-        TideState: Send + Sync + 'static,
-        F: Fn(QueryBuilder) -> QueryBuilder + Send,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+    TideState: Send + Sync + 'static,
+    F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
@@ -71,12 +77,12 @@ pub async fn graphql_batch<Query, Mutation, Subscription, TideState, F>(
     schema: Schema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
 ) -> tide::Result<Response>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-        TideState: Send + Sync + 'static,
-        F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+    TideState: Send + Sync + 'static,
+    F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
 {
     graphql_opts_batch(req, schema, query_builder_configuration, Default::default()).await
 }
@@ -88,12 +94,12 @@ pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
     query_builder_configuration: F,
     opts: IntoQueryBuilderOpts,
 ) -> tide::Result<Response>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-        TideState: Send + Sync + 'static,
-        F: Fn(QueryBuilder) -> QueryBuilder + Send,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+    TideState: Send + Sync + 'static,
+    F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
     let query_builder = req.body_graphql_opts(opts).await?;
     Response::new(StatusCode::Ok).body_graphql(
@@ -110,12 +116,12 @@ pub async fn graphql_opts_batch<Query, Mutation, Subscription, TideState, F>(
     query_builder_configuration: F,
     opts: IntoQueryBuilderOpts,
 ) -> tide::Result<Response>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-        TideState: Send + Sync + 'static,
-        F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
+    TideState: Send + Sync + 'static,
+    F: Fn(BatchQueryBuilder) -> BatchQueryBuilder + Send,
 {
     let query_builder = req.body_graphql_opts_batch(opts).await?;
     Response::new(StatusCode::Ok).body_graphql_batch(
@@ -143,7 +149,10 @@ pub trait RequestExt<State: Send + Sync + 'static>: Sized {
     async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder>;
 
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
-    async fn body_graphql_opts_batch(self, opts: IntoQueryBuilderOpts) -> tide::Result<BatchQueryBuilder>;
+    async fn body_graphql_opts_batch(
+        self,
+        opts: IntoQueryBuilderOpts,
+    ) -> tide::Result<BatchQueryBuilder>;
 }
 
 #[async_trait]
@@ -163,7 +172,10 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
             Ok((content_type, self).into_query_builder_opts(&opts).await?)
         }
     }
-    async fn body_graphql_opts_batch(self, opts: IntoQueryBuilderOpts) -> tide::Result<BatchQueryBuilder> {
+    async fn body_graphql_opts_batch(
+        self,
+        opts: IntoQueryBuilderOpts,
+    ) -> tide::Result<BatchQueryBuilder> {
         if self.method() == Method::Get {
             let gql_request: BatchGQLRequest = self.query::<BatchGQLRequest>()?;
             let builder = gql_request
@@ -175,7 +187,9 @@ impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)
                 .and_then(|values| values.get(0).map(|value| value.to_string()));
-            Ok((content_type, self).into_batch_query_builder_opts(&opts).await?)
+            Ok((content_type, self)
+                .into_batch_query_builder_opts(&opts)
+                .await?)
         }
     }
 }
@@ -247,10 +261,7 @@ fn add_cache_control(
     http_resp
 }
 
-fn add_cache_control_batch(
-    mut http_resp: Response,
-    resp: &BatchQueryResponse,
-) -> Response {
+fn add_cache_control_batch(mut http_resp: Response, resp: &BatchQueryResponse) -> Response {
     if let Some(cache_control) = resp.cache_control() {
         if let Some(cache_control) = cache_control.value() {
             if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {

@@ -5,8 +5,12 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, StreamBody, BatchGQLRequest, GQLRequest};
-use async_graphql::{Data, FieldResult, IntoBatchQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport, BatchQueryBuilder, QueryBuilder, IntoQueryBuilder, BatchQueryResponse};
+use async_graphql::http::{multipart_stream, BatchGQLRequest, GQLRequest, StreamBody};
+use async_graphql::{
+    BatchQueryBuilder, BatchQueryResponse, Data, FieldResult, IntoBatchQueryBuilder,
+    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
+    StreamResponse, SubscriptionType, WebSocketTransport,
+};
 use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
@@ -69,10 +73,10 @@ impl Reject for BadRequest {}
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
 ) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     graphql_opts(schema, Default::default())
 }
@@ -81,10 +85,10 @@ pub fn graphql<Query, Mutation, Subscription>(
 pub fn graphql_batch<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
 ) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     graphql_opts_batch(schema, Default::default())
 }
@@ -140,10 +144,10 @@ pub fn graphql_opts_batch<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: IntoQueryBuilderOpts,
 ) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
+where
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     let opts = Arc::new(opts);
     warp::any()
@@ -362,7 +366,7 @@ impl Reply for GQLResponse {
             "content-type",
             "application/json",
         )
-            .into_response();
+        .into_response();
         add_cache_control(&mut resp, &gql_resp.0);
         resp
     }
@@ -378,7 +382,9 @@ impl From<async_graphql::BatchQueryResponse> for BatchGQLResponse {
 }
 
 fn get_cache_control_batch(resp: &BatchQueryResponse) -> Option<String> {
-    resp.cache_control().map(|cache_control| cache_control.value()).flatten()
+    resp.cache_control()
+        .map(|cache_control| cache_control.value())
+        .flatten()
 }
 
 impl Reply for BatchGQLResponse {
@@ -390,9 +396,9 @@ impl Reply for BatchGQLResponse {
             "content-type",
             "application/json",
         )
-            .into_response();
-        if let Some(cache_control_val) = cache_control{
-            if let Ok(value) = cache_control_val.parse(){
+        .into_response();
+        if let Some(cache_control_val) = cache_control {
+            if let Ok(value) = cache_control_val.parse() {
                 resp.headers_mut().insert("cache-control", value);
             }
         }

@@ -43,8 +43,11 @@ pub trait IntoQueryBuilder: Sized {
 #[allow(missing_docs)]
 #[async_trait::async_trait]
 pub trait IntoBatchQueryBuilder: Sized {
-    async fn into_batch_query_builder(self) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
-        self.into_batch_query_builder_opts(&Default::default()).await
+    async fn into_batch_query_builder(
+        self,
+    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
+        self.into_batch_query_builder_opts(&Default::default())
+            .await
     }
 
     async fn into_batch_query_builder_opts(
@@ -134,45 +137,55 @@ pub enum BatchQueryResponse {
     /// Respond with a single object
     Single(Result<QueryResponse>),
     /// Respond with an array of responses
-    Batch(Vec<Result<QueryResponse>>)
+    Batch(Vec<Result<QueryResponse>>),
 }
 
-impl BatchQueryResponse{
+impl BatchQueryResponse {
     /// return response's cache-control if single response,
     /// smallest cache-control if batch
-    pub fn cache_control(&self) -> Option<CacheControl>{
-        match self{
-            BatchQueryResponse::Single(response_result) => response_result.as_ref().ok().map(|ref query_response| query_response.cache_control),
-            BatchQueryResponse::Batch(responses) => responses.iter().fold(None, |prev, response_result|{
-                let this_cache = response_result.as_ref().ok().map(|ref query_response| query_response.cache_control);
-                match this_cache {
-                    None => prev,
-                    Some(cache) => match prev{
-                        None => Some(cache),
-                        Some(prev_cache) => if prev_cache.max_age < cache.max_age{
-                            Some(prev_cache)
-                        } else {
-                            Some(cache)
-                        }
+    pub fn cache_control(&self) -> Option<CacheControl> {
+        match self {
+            BatchQueryResponse::Single(response_result) => response_result
+                .as_ref()
+                .ok()
+                .map(|ref query_response| query_response.cache_control),
+            BatchQueryResponse::Batch(responses) => {
+                responses.iter().fold(None, |prev, response_result| {
+                    let this_cache = response_result
+                        .as_ref()
+                        .ok()
+                        .map(|ref query_response| query_response.cache_control);
+                    match this_cache {
+                        None => prev,
+                        Some(cache) => match prev {
+                            None => Some(cache),
+                            Some(prev_cache) => {
+                                if prev_cache.max_age < cache.max_age {
+                                    Some(prev_cache)
+                                } else {
+                                    Some(cache)
+                                }
+                            }
+                        },
                     }
-                }
-            })
+                })
+            }
         }
     }
 
     /// Either extracts `Single` variant from the enum, or panics
     pub fn unwrap_single(self) -> Result<QueryResponse> {
-        match self{
+        match self {
             BatchQueryResponse::Single(resp) => resp,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
     /// Either extracts `Batch` variant from the enum, or panics
     pub fn unwrap_batch(self) -> Vec<Result<QueryResponse>> {
-        match self{
+        match self {
             BatchQueryResponse::Batch(resp) => resp,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
@@ -205,7 +218,7 @@ pub struct QueryBuilder {
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
-pub enum QueryBuilderTypes{
+pub enum QueryBuilderTypes {
     /// Single query
     Single(QueryBuilder),
     /// Batch query
@@ -216,17 +229,28 @@ pub enum QueryBuilderTypes{
 pub struct BatchQueryBuilder {
     /// Concrete builder type
     pub builder: QueryBuilderTypes,
-    pub(crate) ctx_data: Option<Data>
+    pub(crate) ctx_data: Option<Data>,
 }
 
-impl BatchQueryBuilder{
+impl BatchQueryBuilder {
     /// Create query builder for a single query with query source.
     pub fn new_single<T: Into<String>>(query_source: T) -> BatchQueryBuilder {
-        BatchQueryBuilder{builder: QueryBuilderTypes::Single(QueryBuilder::new(query_source)), ctx_data: None}
+        BatchQueryBuilder {
+            builder: QueryBuilderTypes::Single(QueryBuilder::new(query_source)),
+            ctx_data: None,
+        }
     }
     /// Create query builder for a batch query with query sources.
     pub fn new_batch(query_sources: &[&str]) -> BatchQueryBuilder {
-        BatchQueryBuilder{builder: QueryBuilderTypes::Batch(query_sources.iter().map(|source| QueryBuilder::new(*source)).collect()), ctx_data: None}
+        BatchQueryBuilder {
+            builder: QueryBuilderTypes::Batch(
+                query_sources
+                    .iter()
+                    .map(|source| QueryBuilder::new(*source))
+                    .collect(),
+            ),
+            ctx_data: None,
+        }
     }
     pub(crate) fn set_upload(
         &mut self,
@@ -236,13 +260,22 @@ impl BatchQueryBuilder{
         content: File,
     ) -> std::result::Result<(), ParseRequestError> {
         match self.builder {
-            QueryBuilderTypes::Single(ref mut builder) => Ok(builder.set_upload(var_path, filename, content_type, content)),
+            QueryBuilderTypes::Single(ref mut builder) => {
+                Ok(builder.set_upload(var_path, filename, content_type, content))
+            }
             QueryBuilderTypes::Batch(ref mut builders) => {
                 let mut it = var_path.split('.').peekable();
                 // First part of the name in a batch query with uploads is the index of the query
                 // https://github.com/jaydenseric/graphql-multipart-request-spec
-                let idx = it.next().ok_or(ParseRequestError::BatchUploadIndexMissing)?.parse::<usize>().or(Err(ParseRequestError::BatchUploadIndexMissing))?;
-                Ok(builders.get_mut(idx).ok_or(ParseRequestError::BatchUploadIndexIncorrect)?.set_upload(it.join("").as_str(), filename, content_type, content))
+                let idx = it
+                    .next()
+                    .ok_or(ParseRequestError::BatchUploadIndexMissing)?
+                    .parse::<usize>()
+                    .or(Err(ParseRequestError::BatchUploadIndexMissing))?;
+                Ok(builders
+                    .get_mut(idx)
+                    .ok_or(ParseRequestError::BatchUploadIndexIncorrect)?
+                    .set_upload(it.join("").as_str(), filename, content_type, content))
             }
         }
     }
@@ -266,16 +299,22 @@ impl BatchQueryBuilder{
         self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> BatchQueryResponse
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         match self.builder {
-            QueryBuilderTypes::Single(builder) => BatchQueryResponse::Single(builder.execute_with_ctx(schema, Arc::new(self.ctx_data.unwrap_or_default())).await),
+            QueryBuilderTypes::Single(builder) => BatchQueryResponse::Single(
+                builder
+                    .execute_with_ctx(schema, Arc::new(self.ctx_data.unwrap_or_default()))
+                    .await,
+            ),
             QueryBuilderTypes::Batch(builders) => {
                 let ctx = Arc::new(self.ctx_data.unwrap_or_default());
-                let futures = builders.into_iter().map(|builder| builder.execute_with_ctx(schema, Arc::clone(&ctx)));
+                let futures = builders
+                    .into_iter()
+                    .map(|builder| builder.execute_with_ctx(schema, Arc::clone(&ctx)));
                 BatchQueryResponse::Batch(futures::future::join_all(futures).await)
             }
         }
@@ -353,10 +392,10 @@ impl QueryBuilder {
         mut self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> StreamResponse
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let ctx = Arc::new(self.ctx_data.take().unwrap_or_default());
         self.execute_stream_with_ctx(schema, ctx).await
@@ -365,7 +404,7 @@ impl QueryBuilder {
     async fn execute_stream_with_ctx<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-        ctx_data: Arc<Data>
+        ctx_data: Arc<Data>,
     ) -> StreamResponse
     where
         Query: ObjectType + Send + Sync + 'static,
@@ -420,7 +459,7 @@ impl QueryBuilder {
     async fn execute_first<'a, Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-        ctx_data: Arc<Data>
+        ctx_data: Arc<Data>,
     ) -> Result<(QueryResponse, DeferList)>
     where
         Query: ObjectType + Send + Sync + 'static,
@@ -451,12 +490,7 @@ impl QueryBuilder {
             .log_error(&extensions);
         }
 
-        let env = QueryEnv::new(
-            extensions,
-            self.variables,
-            document,
-            ctx_data,
-        );
+        let env = QueryEnv::new(extensions, self.variables, document, ctx_data);
         let defer_list = DeferList {
             path_prefix: Vec::new(),
             futures: Default::default(),
@@ -498,12 +532,12 @@ impl QueryBuilder {
     /// Execute the query, always return a complete result.
     pub async fn execute<Query, Mutation, Subscription>(
         mut self,
-        schema: &Schema<Query, Mutation, Subscription>
+        schema: &Schema<Query, Mutation, Subscription>,
     ) -> Result<QueryResponse>
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let ctx = Arc::new(self.ctx_data.take().unwrap_or_default());
         self.execute_with_ctx(schema, ctx).await
@@ -512,7 +546,7 @@ impl QueryBuilder {
     async fn execute_with_ctx<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
-        ctx_data: Arc<Data>
+        ctx_data: Arc<Data>,
     ) -> Result<QueryResponse>
     where
         Query: ObjectType + Send + Sync + 'static,
