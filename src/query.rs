@@ -385,9 +385,6 @@ impl QueryBuilder {
     /// Execute the query, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    /// Execute the query, returns a stream, the first result being the query result,
-    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
-    /// in the query will there be subsequent incremental results.
     pub async fn execute_stream<Query, Mutation, Subscription>(
         mut self,
         schema: &Schema<Query, Mutation, Subscription>,
