@@ -159,16 +159,22 @@ impl BatchQueryResponse{
             })
         }
     }
-}
 
+    /// Either extracts `Single` variant from the enum, or panics
+    pub fn unwrap_single(self) -> Result<QueryResponse> {
+        match self{
+            BatchQueryResponse::Single(resp) => resp,
+            _ => panic!()
+        }
+    }
 
-/// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
-pub enum BatchStreamResponse {
-    /// Single response
-    Single(StreamResponse),
-
-    /// Batch response
-    Batch(Vec<StreamResponse>),
+    /// Either extracts `Batch` variant from the enum, or panics
+    pub fn unwrap_batch(self) -> Vec<Result<QueryResponse>> {
+        match self{
+            BatchQueryResponse::Batch(resp) => resp,
+            _ => panic!()
+        }
+    }
 }
 
 /// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
@@ -219,8 +225,8 @@ impl BatchQueryBuilder{
         BatchQueryBuilder{builder: QueryBuilderTypes::Single(QueryBuilder::new(query_source)), ctx_data: None}
     }
     /// Create query builder for a batch query with query sources.
-    pub fn new_batch<T: Into<String>>(query_sources: Vec<T>) -> BatchQueryBuilder {
-        BatchQueryBuilder{builder: QueryBuilderTypes::Batch(query_sources.into_iter().map(QueryBuilder::new).collect()), ctx_data: None}
+    pub fn new_batch(query_sources: &[&str]) -> BatchQueryBuilder {
+        BatchQueryBuilder{builder: QueryBuilderTypes::Batch(query_sources.iter().map(|source| QueryBuilder::new(*source)).collect()), ctx_data: None}
     }
     pub(crate) fn set_upload(
         &mut self,
@@ -253,28 +259,6 @@ impl BatchQueryBuilder{
             self.ctx_data = Some(ctx_data);
         }
         self
-    }
-
-    /// Execute the query, returns a stream, the first result being the query result,
-    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
-    /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> BatchStreamResponse
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        match self.builder {
-            QueryBuilderTypes::Single(builder) => BatchStreamResponse::Single(builder.execute_stream_with_ctx(schema, Arc::new(self.ctx_data.unwrap_or_default())).await),
-            QueryBuilderTypes::Batch(builders) => {
-                let ctx = Arc::new(self.ctx_data.unwrap_or_default());
-                let futures = builders.into_iter().map(|builder| builder.execute_stream_with_ctx(schema, Arc::clone(&ctx)));
-                BatchStreamResponse::Batch(futures::future::join_all(futures).await)
-            }
-        }
     }
 
     /// Execute the query, always return a complete result.

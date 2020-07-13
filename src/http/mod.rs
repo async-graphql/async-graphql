@@ -129,11 +129,13 @@ impl Serialize for GQLResponse {
     }
 }
 
-/// Serializable GraphQL Response object
+/// Serializable GraphQL Response object for batchable queries
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum BatchGQLResponse {
+    /// Response for single queries
     Single(GQLResponse),
+    /// Response for batch queries
     Batch(Vec<GQLResponse>)
 }
 
