@@ -10,6 +10,8 @@ use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use futures::Future;
 use parking_lot::Mutex;
+use serde::ser::SerializeSeq;
+use serde::Serializer;
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
@@ -20,7 +22,7 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 /// Variables of query
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Variables(Value);
 
 impl Default for Variables {
@@ -160,6 +162,27 @@ pub struct QueryPathNode<'a> {
     pub segment: QueryPathSegment<'a>,
 }
 
+impl<'a> serde::Serialize for QueryPathNode<'a> {
+    fn serialize<S>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None)?;
+        self.for_each(|segment| match segment {
+            QueryPathSegment::Index(idx) => {
+                seq.serialize_element(&idx).ok();
+            }
+            QueryPathSegment::Name(name) => {
+                seq.serialize_element(name).ok();
+            }
+        });
+        seq.end()
+    }
+}
+
 impl<'a> std::fmt::Display for QueryPathNode<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
@@ -201,18 +224,6 @@ impl<'a> QueryPathNode<'a> {
             parent.for_each_ref(f);
         }
         f(&self.segment);
-    }
-
-    #[doc(hidden)]
-    pub fn to_json(&self) -> Vec<serde_json::Value> {
-        let mut path: Vec<serde_json::Value> = Vec::new();
-        self.for_each(|segment| {
-            path.push(match segment {
-                QueryPathSegment::Index(idx) => (*idx).into(),
-                QueryPathSegment::Name(name) => (*name).to_string().into(),
-            })
-        });
-        path
     }
 }
 

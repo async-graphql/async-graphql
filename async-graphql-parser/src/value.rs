@@ -1,3 +1,5 @@
+use serde::ser::{SerializeMap, SerializeSeq};
+use serde::Serializer;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -39,6 +41,38 @@ pub enum Value {
     List(Vec<Value>),
     Object(BTreeMap<String, Value>),
     Upload(UploadValue),
+}
+
+impl serde::Serialize for Value {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Value::Null => serializer.serialize_none(),
+            Value::Variable(variable) => serializer.serialize_str(&format!("${}", variable)),
+            Value::Int(value) => serializer.serialize_i32(*value),
+            Value::Float(value) => serializer.serialize_f64(*value),
+            Value::String(value) => serializer.serialize_str(value),
+            Value::Boolean(value) => serializer.serialize_bool(*value),
+            Value::Enum(value) => serializer.serialize_str(value),
+            Value::List(value) => {
+                let mut seq = serializer.serialize_seq(Some(value.len()))?;
+                for item in value {
+                    seq.serialize_element(item)?;
+                }
+                seq.end()
+            }
+            Value::Object(value) => {
+                let mut map = serializer.serialize_map(Some(value.len()))?;
+                for (key, value) in value {
+                    map.serialize_entry(key, value)?;
+                }
+                map.end()
+            }
+            Value::Upload(_) => serializer.serialize_none(),
+        }
+    }
 }
 
 impl Default for Value {

@@ -233,13 +233,9 @@ impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
     ) -> crate::Result<serde_json::Value> {
         match self {
             Ok(value) => Ok(OutputValueType::resolve(value, ctx, field).await?),
-            Err(err) => Err(err.clone().into_error_with_path(
-                field.position(),
-                match &ctx.path_node {
-                    Some(path) => path.to_json(),
-                    None => Vec::new(),
-                },
-            )),
+            Err(err) => Err(err
+                .clone()
+                .into_error_with_path(field.position(), ctx.path_node.as_ref())),
         }
     }
 }

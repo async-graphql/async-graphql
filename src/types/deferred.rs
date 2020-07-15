@@ -56,7 +56,10 @@ impl<T: OutputValueType + Send + Sync + 'static> OutputValueType for Deferred<T>
                     let path_prefix = ctx
                         .path_node
                         .as_ref()
-                        .map(|path| path.to_json())
+                        .map(|path| match serde_json::to_value(path) {
+                            Ok(serde_json::Value::Array(values)) => values,
+                            _ => Default::default(),
+                        })
                         .unwrap_or_default();
 
                     defer_list.append(async move {

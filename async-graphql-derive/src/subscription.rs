@@ -234,11 +234,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let create_field_stream = quote! {
                     #crate_name::futures::stream::StreamExt::fuse(self.#ident(ctx, #(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?)
+                        map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?)
                 };
 
                 let guard = field.guard.map(|guard| quote! {
-                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
+                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?;
                 });
                 if field.post_guard.is_some() {
                     return Err(Error::new_spanned(

@@ -83,7 +83,7 @@ impl Extension for ApolloTracing {
         self.pending_resolves.insert(
             info.resolve_id.current,
             PendingResolve {
-                path: info.path_node.to_json().into(),
+                path: serde_json::to_value(info.path_node).unwrap(),
                 field_name: info.path_node.field_name().to_string(),
                 parent_type: info.parent_type.to_string(),
                 return_type: info.return_type.to_string(),
