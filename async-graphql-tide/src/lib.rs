@@ -62,7 +62,7 @@ where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    TideState: Send + Sync + 'static,
+    TideState: Clone + Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
@@ -79,7 +79,7 @@ where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    TideState: Send + Sync + 'static,
+    TideState: Clone + Send + Sync + 'static,
     F: Fn(QueryBuilder) -> QueryBuilder + Send,
 {
     let query_builder = req.body_graphql_opts(opts).await?;
@@ -93,7 +93,7 @@ where
 /// Tide request extension
 ///
 #[async_trait]
-pub trait RequestExt<State: Send + Sync + 'static>: Sized {
+pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::QueryBuilder`.
     async fn body_graphql(self) -> tide::Result<QueryBuilder> {
         self.body_graphql_opts(Default::default()).await
@@ -104,7 +104,7 @@ pub trait RequestExt<State: Send + Sync + 'static>: Sized {
 }
 
 #[async_trait]
-impl<State: Send + Sync + 'static> RequestExt<State> for Request<State> {
+impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> {
     async fn body_graphql_opts(self, opts: IntoQueryBuilderOpts) -> tide::Result<QueryBuilder> {
         if self.method() == Method::Get {
             let gql_request: GQLRequest = self.query::<GQLRequest>()?;

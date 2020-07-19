@@ -35,7 +35,7 @@ fn quickstart() -> Result<()> {
 
             let mut app = tide::new();
             app.at("/").post(graphql).get(graphql);
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
@@ -109,6 +109,7 @@ fn hello() -> Result<()> {
                 }
             }
 
+            #[derive(Clone)]
             struct AppState {
                 schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
             }
@@ -131,7 +132,7 @@ fn hello() -> Result<()> {
                 })
                 .await
             });
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
@@ -229,7 +230,7 @@ fn upload() -> Result<()> {
                 let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
                 async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
             });
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
