@@ -68,7 +68,7 @@ pub async fn test_field_features() {
     let schema = Schema::new(QueryRoot, EmptyMutation, Subscription);
     let query = "{ value }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "value": 10,
         })
@@ -76,7 +76,7 @@ pub async fn test_field_features() {
 
     let query = "{ valueBson }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "valueBson": 10,
         })
@@ -84,7 +84,7 @@ pub async fn test_field_features() {
 
     let query = "{ valueAbc }";
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.unwrap_single().unwrap_err(),
         Error::Query {
             pos: Pos { column: 3, line: 1 },
             path: Some(serde_json::json!(["valueAbc"])),
@@ -97,7 +97,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": { "value": 10 }
         })
@@ -105,7 +105,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { valueBson } }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": { "valueBson": 10 }
         })
@@ -113,7 +113,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { valueAbc } }";
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.unwrap_single().unwrap_err(),
         Error::Query {
             pos: Pos { column: 9, line: 1 },
             path: Some(serde_json::json!(["obj", "valueAbc"])),

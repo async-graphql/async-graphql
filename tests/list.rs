@@ -55,7 +55,7 @@ pub async fn test_list_type() {
         json_value
     );
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "valueVec": vec![1, 2, 3, 4, 5],
             "valueSlice": vec![1, 2, 3, 4, 5],

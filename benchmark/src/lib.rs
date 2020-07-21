@@ -16,7 +16,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    task::block_on(async { s.execute(q).await.unwrap() })
+    task::block_on(async { s.execute(q).await.unwrap_single().unwrap() })
 }
 
 pub fn parse(q: &str) -> Document {

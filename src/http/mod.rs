@@ -13,13 +13,8 @@ pub use multipart_stream::multipart_stream;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::query::{
-    BatchQueryBuilder, IntoBatchQueryBuilder, IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder,
-    QueryBuilderTypes,
-};
-use crate::{
-    BatchQueryResponse, Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables,
-};
+use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinitionTypes, QueryDefinition};
+use crate::{BatchQueryResponse, Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables, BatchQueryDefinition};
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{de, Deserialize, Serialize, Serializer};
 
@@ -37,22 +32,16 @@ pub struct GQLRequest {
     pub variables: Option<serde_json::Value>,
 }
 
-#[async_trait::async_trait]
-impl IntoQueryBuilder for GQLRequest {
-    async fn into_query_builder_opts(
-        self,
-        _opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<QueryBuilder, ParseRequestError> {
-        let mut builder = QueryBuilder::new(self.query);
-        if let Some(operation_name) = self.operation_name {
-            builder = builder.operation_name(operation_name);
+impl From<GQLRequest> for QueryDefinition{
+    fn from(request: GQLRequest) -> Self {
+        Self{
+            query_source: request.query,
+            operation_name: request.operation_name,
+            // Unwrap twice as we use default variables if no variables provided, and if serde
+            // fails to deserialize them
+            variables: request.variables.map(Variables::parse_from_json).unwrap_or(Ok(Variables::default())).unwrap_or_default(),
+            extensions: vec![]
         }
-        if let Some(variables) = self.variables {
-            if let Ok(variables) = Variables::parse_from_json(variables) {
-                builder = builder.variables(variables);
-            }
-        }
-        Ok(builder)
     }
 }
 
@@ -83,24 +72,23 @@ where
 }
 
 #[async_trait::async_trait]
-impl IntoBatchQueryBuilder for BatchGQLRequest {
-    async fn into_batch_query_builder_opts(
+impl IntoBatchQueryDefinition for BatchGQLRequest {
+    async fn into_batch_query_definition_opts(
         self,
         _opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
+    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
         match self {
-            BatchGQLRequest::Single(request) => Ok(BatchQueryBuilder {
-                builder: QueryBuilderTypes::Single(request.into_query_builder_opts(_opts).await?),
+            BatchGQLRequest::Single(request) => Ok(BatchQueryDefinition {
+                definition: QueryDefinitionTypes::Single(request.into()),
                 ctx_data: None,
             }),
             BatchGQLRequest::Batch(requests) => {
-                let futures = requests
+                let definitions = requests
                     .into_iter()
-                    .map(|request| request.into_query_builder_opts(_opts));
-                Ok(BatchQueryBuilder {
-                    builder: QueryBuilderTypes::Batch(
-                        futures::future::try_join_all(futures).await?,
-                    ),
+                    .map(|request| request.into())
+                    .collect();
+                Ok(BatchQueryDefinition {
+                    definition: QueryDefinitionTypes::Batch(definitions),
                     ctx_data: None,
                 })
             }

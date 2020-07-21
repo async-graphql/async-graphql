@@ -30,17 +30,17 @@ pub struct IntoQueryBuilderOpts {
 #[allow(missing_docs)]
 #[async_trait::async_trait]
 pub trait IntoBatchQueryDefinition: Sized {
-    async fn into_batch_query_builder(
+    async fn into_batch_query_definition(
         self,
-    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError> {
-        self.into_batch_query_builder_opts(&Default::default())
+    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
+        self.into_batch_query_definition_opts(&Default::default())
             .await
     }
 
-    async fn into_batch_query_builder_opts(
+    async fn into_batch_query_definition_opts(
         self,
         opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<BatchQueryBuilder, ParseRequestError>;
+    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError>;
 }
 
 /// Query response
@@ -197,11 +197,11 @@ impl StreamResponse {
 }
 
 /// Query definition
-struct QueryDefinition {
+pub struct QueryDefinition {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
-    extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 pub enum QueryDefinitionTypes {
@@ -214,7 +214,7 @@ pub enum QueryDefinitionTypes {
 /// Query definition for batch requests
 pub struct BatchQueryDefinition {
     /// Concrete builder type
-    pub definition: QueryBuilderTypes,
+    pub definition: QueryDefinitionTypes,
     pub(crate) ctx_data: Option<Data>,
 }
 
@@ -226,11 +226,11 @@ impl BatchQueryDefinition{
         content_type: Option<String>,
         content: File,
     ) -> std::result::Result<(), ParseRequestError> {
-        match self.builder {
-            QueryBuilderTypes::Single(ref mut builder) => {
-                Ok(builder.set_upload(var_path, filename, content_type, content))
+        match self.definition {
+            QueryDefinitionTypes::Single(ref mut definition) => {
+                Ok(definition.set_upload(var_path, filename, content_type, content))
             }
-            QueryBuilderTypes::Batch(ref mut builders) => {
+            QueryDefinitionTypes::Batch(ref mut definitions) => {
                 let mut it = var_path.split('.').peekable();
                 // First part of the name in a batch query with uploads is the index of the query
                 // https://github.com/jaydenseric/graphql-multipart-request-spec
@@ -239,7 +239,7 @@ impl BatchQueryDefinition{
                     .ok_or(ParseRequestError::BatchUploadIndexMissing)?
                     .parse::<usize>()
                     .or(Err(ParseRequestError::BatchUploadIndexMissing))?;
-                Ok(builders
+                Ok(definitions
                     .get_mut(idx)
                     .ok_or(ParseRequestError::BatchUploadIndexIncorrect)?
                     .set_upload(it.join("").as_str(), filename, content_type, content))
@@ -271,24 +271,25 @@ impl BatchQueryDefinition{
             Mutation: ObjectType + Send + Sync + 'static,
             Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        match self.builder {
-            QueryBuilderTypes::Single(builder) => BatchQueryResponse::Single(
-                builder
+        match self.definition {
+            QueryDefinitionTypes::Single(definition) => BatchQueryResponse::Single(
+                definition
                     .execute_with_ctx(schema, Arc::new(self.ctx_data.unwrap_or_default()))
                     .await,
             ),
-            QueryBuilderTypes::Batch(builders) => {
+            QueryDefinitionTypes::Batch(definitions) => {
                 let ctx = Arc::new(self.ctx_data.unwrap_or_default());
-                let futures = builders
+                let futures = definitions
                     .into_iter()
-                    .map(|builder| builder.execute_with_ctx(schema, Arc::clone(&ctx)));
+                    .map(|definition| definition.execute_with_ctx(schema, Arc::clone(&ctx)));
                 BatchQueryResponse::Batch(futures::future::join_all(futures).await)
             }
         }
     }
 }
 
-struct SingleQueryBuilder{
+/// Query builder for a single-type query
+pub struct SingleQueryBuilder{
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
@@ -349,6 +350,18 @@ impl From<SingleQueryBuilder> for QueryDefinition{
 }
 
 impl QueryDefinition{
+    /// Set uploaded file path
+    fn set_upload(
+        &mut self,
+        var_path: &str,
+        filename: String,
+        content_type: Option<String>,
+        content: File,
+    ) {
+        self.variables
+            .set_upload(var_path, filename, content_type, content);
+    }
+
     async fn execute_stream_with_ctx<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
@@ -502,6 +515,8 @@ impl QueryDefinition{
 }
 
 // TODO: rename
+/// Main query builder type. You can use it to build either a single query, or a batch query
+/// The difference between single and batch queries using `new_single` and `new_batch` methods
 pub struct QueryBuilderReal{
     current_builder: SingleQueryBuilder,
     completed_builders: Vec<QueryDefinition>,
@@ -509,12 +524,17 @@ pub struct QueryBuilderReal{
 
 impl QueryBuilderReal {
     /// Create query builder with query source for a single query.
-    fn new_single<T: Into<String>>(query_source: T) -> SingleQueryBuilder {
+    pub fn new_single<T: Into<String>>(query_source: T) -> SingleQueryBuilder {
         SingleQueryBuilder::new(query_source)
     }
 
     /// Create query builder with query source for a batch query.
-    fn new_batch<T: Into<String>>(query_source: T) -> Self {
+    /// You need to supply the source of the first query to start the process, and then
+    /// you can customize first query however you want.
+    /// When you are done building first query in the batch, you need to call `next` with
+    /// the source of the second query and so on, untill finishing the process with
+    /// `finish` method, that will return you `BatchQueryDefinition`
+    pub fn new_batch<T: Into<String>>(query_source: T) -> Self {
         Self{ current_builder: SingleQueryBuilder::new(query_source), completed_builders: vec![] }
     }
 
@@ -535,7 +555,7 @@ impl QueryBuilderReal {
         mut self,
         extension_factory: F,
     ) -> Self {
-        self.current_builder = self.current_builder.extensions(extension_factory);
+        self.current_builder = self.current_builder.extension(extension_factory);
         self
     }
 

@@ -349,7 +349,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    let mut res = schema.execute(&query).await.unwrap().data;
+    let mut res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -408,7 +408,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -427,7 +427,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -440,7 +440,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -481,7 +481,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -500,7 +500,7 @@ pub async fn test_introspection_depraction() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 }
@@ -531,7 +531,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    let mut res = schema.execute(&query).await.unwrap().data;
+    let mut res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -545,7 +545,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -559,7 +559,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -573,7 +573,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -587,7 +587,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -626,7 +626,7 @@ pub async fn test_introspection_type_kind() {
           }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -659,7 +659,7 @@ pub async fn test_introspection_type_kind() {
         }
     });
 
-    res = schema.execute(&query).await.unwrap().data;
+    res = schema.execute(&query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 }
@@ -686,7 +686,7 @@ pub async fn test_introspection_scalar() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json)
 }
@@ -722,7 +722,7 @@ pub async fn test_introspection_union() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json)
 }
@@ -765,7 +765,7 @@ pub async fn test_introspection_interface() {
         }
     });
 
-    let mut res = schema.execute(query).await.unwrap().data;
+    let mut res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 
@@ -800,7 +800,7 @@ pub async fn test_introspection_interface() {
         }
     });
 
-    res = schema.execute(query).await.unwrap().data;
+    res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json);
 }
@@ -847,7 +847,7 @@ pub async fn test_introspection_enum() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     println!("{}", serde_json::to_string_pretty(&res).unwrap());
 
@@ -882,7 +882,7 @@ pub async fn test_introspection_input_object() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json)
 }
@@ -930,7 +930,7 @@ pub async fn test_introspection_mutation() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json)
 }
@@ -978,7 +978,7 @@ pub async fn test_introspection_subscription() {
         }
     });
 
-    let res = schema.execute(query).await.unwrap().data;
+    let res = schema.execute(query).await.unwrap_single().unwrap().data;
 
     assert_eq!(res, res_json)
 }

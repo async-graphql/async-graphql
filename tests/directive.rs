@@ -22,6 +22,7 @@ pub async fn test_directive_skip() {
         "#,
         )
         .await
+        .unwrap_single()
         .unwrap();
     assert_eq!(
         resp.data,
@@ -53,6 +54,7 @@ pub async fn test_directive_include() {
         "#,
         )
         .await
+        .unwrap_single()
         .unwrap();
     assert_eq!(
         resp.data,

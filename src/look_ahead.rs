@@ -109,6 +109,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -120,6 +121,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -133,6 +135,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -144,6 +147,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -157,6 +161,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -172,6 +177,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -181,12 +187,13 @@ mod tests {
                 ... A
             }
         }
-        
+
         fragment A on MyObj {
             a
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
 
         schema
@@ -196,7 +203,7 @@ mod tests {
                 ... A
             }
         }
-        
+
         fragment A on MyObj {
             detail {
                 c
@@ -204,6 +211,7 @@ mod tests {
         }"#,
             )
             .await
+            .unwrap_single()
             .unwrap();
     }
 }

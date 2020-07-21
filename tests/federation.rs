@@ -79,7 +79,7 @@ pub async fn test_federation() {
             }
         }"#;
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "_entities": [
                 {"__typename": "Product", "upc": "B00005N5PF"},

@@ -2,15 +2,11 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
-use crate::{
-    BatchQueryBuilder, BatchQueryResponse, CacheControl, Error, ObjectType, Pos, QueryEnv,
-    QueryError, QueryResponse, Result, StreamResponse, SubscriptionType, Type, Variables, ID,
-};
+use crate::{QueryBuilderReal, BatchQueryResponse, CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, StreamResponse, SubscriptionType, Type, Variables, ID, ParseRequestError};
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -297,22 +293,32 @@ where
     }
 
     /// Execute query without creating the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
-        QueryBuilder::new(query_source).execute(self).await
+    pub async fn execute(&self, query_source: &str) -> BatchQueryResponse {
+        QueryBuilderReal::new_single(query_source).finish().execute(self).await
     }
 
     /// Execute batch without creating the `BatchQueryBuilder`.
-    pub async fn execute_batch(&self, query_sources: &[&str]) -> BatchQueryResponse {
-        BatchQueryBuilder::new_batch(query_sources)
-            .execute(self)
-            .await
+    /// Will return error if query_sources slice is empty
+    pub async fn execute_batch(&self, query_sources: &[&str]) -> std::result::Result<BatchQueryResponse, ParseRequestError> {
+        let mut iter = query_sources.iter();
+        let definition = if let Some(first_query) = iter.next() {
+            let mut builder = QueryBuilderReal::new_batch(*first_query);
+            for query in iter {
+                builder = builder.next(*query)
+            }
+            builder.finish()
+        } else {
+            return Err(ParseRequestError::EmptyQuery)
+        };
+        Ok(definition.execute(self).await)
     }
 
     /// Execute the query without creating the `QueryBuilder`, returns a stream, the first result being the query result,
     /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
     /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream(&self, query_source: &str) -> StreamResponse {
-        QueryBuilder::new(query_source).execute_stream(self).await
+    /// Currently NOT IMPLEMENTED
+    async fn execute_stream(&self, _query_source: &str) -> StreamResponse {
+        unimplemented!()
     }
 
     pub(crate) fn prepare_query(

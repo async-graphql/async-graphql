@@ -329,6 +329,9 @@ pub enum ParseRequestError {
 
     #[error("Missing request index for file upload inside batch query")]
     BatchUploadIndexIncorrect,
+
+    #[error("Query is empty")]
+    EmptyQuery,
 }
 
 #[allow(missing_docs)]

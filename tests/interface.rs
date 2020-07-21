@@ -35,7 +35,7 @@ pub async fn test_interface_simple_object() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "node": {
                 "id": 33,
@@ -79,7 +79,7 @@ pub async fn test_interface_simple_object2() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "node": {
                 "id": 33,
@@ -143,7 +143,7 @@ pub async fn test_multiple_interfaces() {
             }
         }"#;
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "myObj": {
                 "valueA": 1,
@@ -219,7 +219,7 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
              }
          }"#;
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "myObj": [{
                 "valueA": 1,
@@ -266,7 +266,7 @@ pub async fn test_interface_field_result() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "node": {
                 "value": 10,
@@ -315,7 +315,7 @@ pub async fn test_interface_field_method() {
     let query = "{ test { created_at } }";
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "test": {
                 "created_at": 1,

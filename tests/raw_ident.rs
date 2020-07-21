@@ -53,9 +53,11 @@ pub async fn test_input_value_custom_error() {
             enumValue(value: TYPE)
         }"#;
     assert_eq!(
-        QueryBuilder::new(query)
+        QueryBuilderReal::new_single(query)
+            .finish()
             .execute(&schema)
             .await
+            .unwrap_single()
             .unwrap()
             .data,
         serde_json::json!({

@@ -32,7 +32,7 @@ pub async fn test_field_merge() {
         }
     "#;
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "value1": 1,
             "value2": 2,
@@ -72,7 +72,7 @@ pub async fn test_field_object_merge() {
         }
     "#;
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": {
                 "a": 1,

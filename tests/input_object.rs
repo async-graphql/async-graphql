@@ -75,7 +75,7 @@ pub async fn test_input_object_default_value() {
         }}"#
     );
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "a": {
                 "a": 999,

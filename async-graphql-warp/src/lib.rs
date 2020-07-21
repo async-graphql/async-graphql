@@ -6,14 +6,9 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{multipart_stream, BatchGQLRequest, GQLRequest, StreamBody};
-use async_graphql::{
-    BatchQueryBuilder, BatchQueryResponse, Data, FieldResult, IntoBatchQueryBuilder,
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
-    StreamResponse, SubscriptionType, WebSocketTransport,
-};
+use async_graphql::{BatchQueryResponse, Data, FieldResult, IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport, BatchQueryDefinition, IntoBatchQueryDefinition};
 use bytes::Bytes;
-use futures::select;
-use futures::{SinkExt, StreamExt};
+use futures::{select, StreamExt, SinkExt};
 use hyper::header::HeaderValue;
 use hyper::{Body, Method};
 use std::convert::Infallible;
@@ -64,15 +59,15 @@ impl Reject for BadRequest {}
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
-///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await))
+///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, query_definition): (_, BatchQueryDefinition)| async move {
+///         Ok::<_, Infallible>(BatchGQLResponse::from(query_definition.execute(&schema).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryDefinition),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -81,69 +76,11 @@ where
     graphql_opts(schema, Default::default())
 }
 
-/// Similar to `graphql`, but supports batch requests
-pub fn graphql_batch<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
-    graphql_opts_batch(schema, Default::default())
-}
-
 /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
-    let opts = Arc::new(opts);
-    warp::any()
-        .and(warp::method())
-        .and(warp::query::raw().or(warp::any().map(String::new)).unify())
-        .and(warp::header::optional::<String>("content-type"))
-        .and(warp::body::stream())
-        .and(warp::any().map(move || opts.clone()))
-        .and(warp::any().map(move || schema.clone()))
-        .and_then(
-            |method,
-             query: String,
-             content_type,
-             body,
-             opts: Arc<IntoQueryBuilderOpts>,
-             schema| async move {
-                if method == Method::GET {
-                    let gql_request: GQLRequest =
-                        serde_urlencoded::from_str(&query)
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    let builder = gql_request
-                        .into_query_builder_opts(&opts)
-                        .await
-                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
-                } else {
-                    let builder = (content_type, StreamBody::new(body))
-                        .into_query_builder_opts(&opts)
-                        .await
-                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
-                }
-            },
-        )
-        .boxed()
-}
-
-/// Similar to graphql_opts, but supports batch requests.
-pub fn graphql_opts_batch<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-    opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryBuilder),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryDefinition),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -168,17 +105,17 @@ where
                     let gql_request: BatchGQLRequest =
                         serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    let builder = gql_request
-                        .into_batch_query_builder_opts(&opts)
+                    let definition = gql_request
+                        .into_batch_query_definition_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    Ok::<_, Rejection>((schema, definition))
                 } else {
-                    let builder = (content_type, StreamBody::new(body))
-                        .into_batch_query_builder_opts(&opts)
+                    let definition = (content_type, StreamBody::new(body))
+                        .into_batch_query_definition_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    Ok::<_, Rejection>((schema, definition))
                 }
             },
         )
@@ -403,32 +340,5 @@ impl Reply for BatchGQLResponse {
             }
         }
         resp
-    }
-}
-
-/// GraphQL streaming reply
-pub struct GQLResponseStream(StreamResponse);
-
-impl From<StreamResponse> for GQLResponseStream {
-    fn from(resp: StreamResponse) -> Self {
-        GQLResponseStream(resp)
-    }
-}
-
-impl Reply for GQLResponseStream {
-    fn into_response(self) -> Response {
-        match self.0 {
-            StreamResponse::Single(resp) => GQLResponse(resp).into_response(),
-            StreamResponse::Stream(stream) => {
-                let mut resp = Response::new(Body::wrap_stream(
-                    multipart_stream(stream).map(Result::<_, Infallible>::Ok),
-                ));
-                resp.headers_mut().insert(
-                    "content-type",
-                    HeaderValue::from_static("multipart/mixed; boundary=\"-\""),
-                );
-                resp
-            }
-        }
     }
 }
