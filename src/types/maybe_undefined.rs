@@ -35,7 +35,7 @@ use std::borrow::Cow;
 ///             v3:value1()
 ///         }"#;
 ///     assert_eq!(
-///         schema.execute(&query).await.unwrap().data,
+///         schema.execute(&query).await.unwrap_single().unwrap().data,
 ///         serde_json::json!({
 ///             "v1": 99,
 ///             "v2": 1,

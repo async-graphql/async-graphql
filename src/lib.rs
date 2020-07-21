@@ -280,7 +280,7 @@ pub use types::{EnumItem, EnumType};
 ///         valueWithError
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
-///     }"#).await.unwrap().data;
+///     }"#).await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///         "valueRef": 10,
@@ -332,7 +332,7 @@ pub use async_graphql_derive::Object;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
-///     let res = schema.execute("{ value }").await.unwrap().data;
+///     let res = schema.execute("{ value }").await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
@@ -433,7 +433,7 @@ pub use async_graphql_derive::GQLSimpleObject;
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
-///     let res = schema.execute("{ value1 value2 }").await.unwrap().data;
+///     let res = schema.execute("{ value1 value2 }").await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// }
 /// ```
@@ -486,7 +486,7 @@ pub use async_graphql_derive::Enum;
 ///     {
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
-///     }"#).await.unwrap().data;
+///     }"#).await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// }
 /// ```
@@ -603,7 +603,7 @@ pub use async_graphql_derive::InputObject;
 ///             valueC(a: 3, b: 2)
 ///             value_d
 ///         }
-///     }"#).await.unwrap().data;
+///     }"#).await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",
@@ -674,7 +674,7 @@ pub use async_graphql_derive::GQLInterface;
 ///                 valueB
 ///             }
 ///         }
-///     }"#).await.unwrap().data;
+///     }"#).await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "allData": [
 ///             { "valueA": 10 },

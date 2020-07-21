@@ -69,7 +69,7 @@ pub struct EmptyFields;
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.unwrap_single().unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
 ///                 {"node": 0, "diff": 10000},
@@ -78,7 +78,7 @@ pub struct EmptyFields;
 ///         },
 ///     }));
 ///
-///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.unwrap().data, serde_json::json!({
+///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.unwrap_single().unwrap().data, serde_json::json!({
 ///         "numbers": {
 ///             "edges": [
 ///                 {"node": 9998, "diff": 2},

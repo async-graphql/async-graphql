@@ -146,9 +146,9 @@ pub struct MetaEnumValue {
 /// #[async_std::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     assert_eq!(schema.execute("{ value1 }").await.unwrap().cache_control, CacheControl { public: true, max_age: 30 });
-///     assert_eq!(schema.execute("{ value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 60 });
-///     assert_eq!(schema.execute("{ value1 value2 }").await.unwrap().cache_control, CacheControl { public: false, max_age: 30 });
+///     assert_eq!(schema.execute("{ value1 }").await.unwrap_single().unwrap().cache_control, CacheControl { public: true, max_age: 30 });
+///     assert_eq!(schema.execute("{ value2 }").await.unwrap_single().unwrap().cache_control, CacheControl { public: false, max_age: 60 });
+///     assert_eq!(schema.execute("{ value1 value2 }").await.unwrap_single().unwrap().cache_control, CacheControl { public: false, max_age: 30 });
 /// }
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
