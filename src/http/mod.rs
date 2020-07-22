@@ -15,8 +15,8 @@ use crate::query::{
     IntoQueryDefinition, IntoQueryDefinitionOpts, QueryDefinitionPart, QueryDefinitionTypes,
 };
 use crate::{
-    QueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
-    QueryResponse, Result, Variables,
+    BatchQueryResponse, Error, ParseRequestError, Pos, QueryDefinition, QueryError, QueryResponse,
+    Result, Variables,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{de, Deserialize, Serialize, Serializer};

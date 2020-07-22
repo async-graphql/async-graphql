@@ -1,6 +1,6 @@
 use crate::http::GQLRequest;
 use crate::query::{IntoQueryDefinition, IntoQueryDefinitionOpts};
-use crate::{QueryDefinition, ParseRequestError};
+use crate::{ParseRequestError, QueryDefinition};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use mime::Mime;

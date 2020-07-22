@@ -7,8 +7,8 @@
 
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, Data, FieldResult, IntoQueryDefinition,
-    IntoQueryDefinitionOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
+    BatchQueryResponse, Data, FieldResult, IntoQueryDefinition, IntoQueryDefinitionOpts,
+    ObjectType, QueryDefinition, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::{select, SinkExt, StreamExt};
@@ -103,9 +103,8 @@ where
              opts: Arc<IntoQueryDefinitionOpts>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest =
-                        serde_urlencoded::from_str(&query)
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                    let gql_request: GQLRequest = serde_urlencoded::from_str(&query)
+                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let definition = gql_request
                         .into_batch_query_definition_opts(&opts)
                         .await

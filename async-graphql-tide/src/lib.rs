@@ -5,10 +5,10 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, BatchGQLResponse, GQLRequestPart};
+use async_graphql::http::{BatchGQLResponse, GQLRequest, GQLRequestPart};
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts,
-    ObjectType, Schema, SubscriptionType,
+    BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts, ObjectType, QueryDefinition,
+    Schema, SubscriptionType,
 };
 use async_trait::async_trait;
 use std::str::FromStr;

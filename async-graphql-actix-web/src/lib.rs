@@ -15,8 +15,8 @@ use http::Method;
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts,
-    ParseRequestError,
+    BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts, ParseRequestError,
+    QueryDefinition,
 };
 pub use subscription::WSSubscription;
 
@@ -44,8 +44,7 @@ impl FromRequest for BatchGQLRequest {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
 
         if req.method() == Method::GET {
-            let res =
-                web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
+            let res = web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
                 gql_request
