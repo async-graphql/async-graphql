@@ -276,39 +276,6 @@ where
         .boxed()
 }
 
-/// GraphQL reply
-pub struct GQLResponse(async_graphql::Result<QueryResponse>);
-
-impl From<async_graphql::Result<QueryResponse>> for GQLResponse {
-    fn from(resp: async_graphql::Result<QueryResponse>) -> Self {
-        GQLResponse(resp)
-    }
-}
-
-fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<QueryResponse>) {
-    if let Ok(QueryResponse { cache_control, .. }) = resp {
-        if let Some(cache_control) = cache_control.value() {
-            if let Ok(value) = cache_control.parse() {
-                http_resp.headers_mut().insert("cache-control", value);
-            }
-        }
-    }
-}
-
-impl Reply for GQLResponse {
-    fn into_response(self) -> Response {
-        let gql_resp = async_graphql::http::GQLResponse(self.0);
-        let mut resp = warp::reply::with_header(
-            warp::reply::json(&gql_resp),
-            "content-type",
-            "application/json",
-        )
-        .into_response();
-        add_cache_control(&mut resp, &gql_resp.0);
-        resp
-    }
-}
-
 /// Batch GraphQL reply
 pub struct BatchGQLResponse(async_graphql::BatchQueryResponse);
 
