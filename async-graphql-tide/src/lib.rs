@@ -115,7 +115,7 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
         opts: IntoQueryBuilderOpts,
     ) -> tide::Result<BatchQueryDefinition> {
         if self.method() == Method::Get {
-            let gql_request: BatchGQLRequest = self.query::<BatchGQLRequest>()?;
+            let gql_request = BatchGQLRequest::Single(self.query::<GQLRequest>()?);
             let builder = gql_request
                 .into_batch_query_definition_opts(&opts)
                 .await
