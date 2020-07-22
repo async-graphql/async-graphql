@@ -527,4 +527,22 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_parse_overflowing_int() {
+        let query_ok = format!("mutation {{ add(big: {}) }} ", std::i32::MAX);
+        let query_overflow = format!("mutation {{ add(big: {}0) }} ", std::i32::MAX);
+        assert!(parse_query(query_ok).is_ok());
+        assert!(parse_query(query_overflow).is_err());
+    }
+
+    #[test]
+    fn test_parse_overflowing_float() {
+        let query_ok = format!("mutation {{ add(big: {:.1}) }} ", std::f64::MAX);
+        let query_overflow = format!("mutation {{ add(big: 1{:.1}) }} ", std::f64::MAX);
+        assert!(parse_query(query_ok).is_ok());
+
+        // NOTE: This is also ok since overflow gets parsed to infinity.
+        assert!(parse_query(query_overflow).is_ok());
+    }
 }
