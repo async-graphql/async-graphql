@@ -29,7 +29,7 @@ pub struct IntoQueryBuilderOpts {
 pub trait IntoBatchQueryDefinition: Sized {
     async fn into_batch_query_definition(
         self,
-    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
+    ) -> std::result::Result<QueryDefinition, ParseRequestError> {
         self.into_batch_query_definition_opts(&Default::default())
             .await
     }
@@ -37,7 +37,7 @@ pub trait IntoBatchQueryDefinition: Sized {
     async fn into_batch_query_definition_opts(
         self,
         opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError>;
+    ) -> std::result::Result<QueryDefinition, ParseRequestError>;
 }
 
 /// Query response
@@ -127,13 +127,13 @@ pub enum QueryDefinitionTypes {
 }
 
 /// Query definition for batch requests
-pub struct BatchQueryDefinition {
+pub struct QueryDefinition {
     /// Concrete builder type
     pub definition: QueryDefinitionTypes,
     pub(crate) ctx_data: Option<Data>,
 }
 
-impl BatchQueryDefinition {
+impl QueryDefinition {
     pub(crate) fn set_upload(
         &mut self,
         var_path: &str,
@@ -245,8 +245,8 @@ impl SingleQueryBuilder {
         self
     }
 
-    pub fn finish(self) -> BatchQueryDefinition {
-        BatchQueryDefinition {
+    pub fn finish(self) -> QueryDefinition {
+        QueryDefinition {
             definition: QueryDefinitionTypes::Single(self.into()),
             ctx_data: None,
         }
@@ -399,9 +399,9 @@ impl QueryBuilder {
     }
 
     /// Finish building a query, get back the definition
-    pub fn finish(mut self) -> BatchQueryDefinition {
+    pub fn finish(mut self) -> QueryDefinition {
         self.completed_builders.push(self.current_builder.into());
-        BatchQueryDefinition {
+        QueryDefinition {
             definition: QueryDefinitionTypes::Batch(self.completed_builders),
             ctx_data: None,
         }

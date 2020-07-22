@@ -15,7 +15,7 @@ use crate::query::{
     IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinitionPart, QueryDefinitionTypes,
 };
 use crate::{
-    BatchQueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
+    QueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
     QueryResponse, Result, Variables,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -83,15 +83,15 @@ impl IntoBatchQueryDefinition for GQLRequest {
     async fn into_batch_query_definition_opts(
         self,
         _opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
+    ) -> std::result::Result<QueryDefinition, ParseRequestError> {
         match self {
-            GQLRequest::Single(request) => Ok(BatchQueryDefinition {
+            GQLRequest::Single(request) => Ok(QueryDefinition {
                 definition: QueryDefinitionTypes::Single(request.into()),
                 ctx_data: None,
             }),
             GQLRequest::Batch(requests) => {
                 let definitions = requests.into_iter().map(|request| request.into()).collect();
-                Ok(BatchQueryDefinition {
+                Ok(QueryDefinition {
                     definition: QueryDefinitionTypes::Batch(definitions),
                     ctx_data: None,
                 })

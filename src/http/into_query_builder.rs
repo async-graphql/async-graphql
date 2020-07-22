@@ -1,6 +1,6 @@
 use crate::http::GQLRequest;
 use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts};
-use crate::{BatchQueryDefinition, ParseRequestError};
+use crate::{QueryDefinition, ParseRequestError};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use mime::Mime;
@@ -28,7 +28,7 @@ where
     async fn into_batch_query_definition_opts(
         mut self,
         opts: &IntoQueryBuilderOpts,
-    ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
+    ) -> std::result::Result<QueryDefinition, ParseRequestError> {
         if let Some(boundary) = self
             .0
             .and_then(|value| value.as_ref().parse::<Mime>().ok())

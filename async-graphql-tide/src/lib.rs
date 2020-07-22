@@ -7,7 +7,7 @@
 
 use async_graphql::http::{GQLRequest, BatchGQLResponse, GQLRequestPart};
 use async_graphql::{
-    BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
     ObjectType, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
@@ -60,7 +60,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: Fn(BatchQueryDefinition) -> BatchQueryDefinition + Send,
+    F: Fn(QueryDefinition) -> QueryDefinition + Send,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
@@ -77,7 +77,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: Fn(BatchQueryDefinition) -> BatchQueryDefinition + Send,
+    F: Fn(QueryDefinition) -> QueryDefinition + Send,
 {
     let query_builder = req.body_graphql_opts(opts).await?;
     Response::new(StatusCode::Ok).body_graphql(
@@ -92,7 +92,7 @@ where
 #[async_trait]
 pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::BatchQueryBuilder`.
-    async fn body_graphql(self) -> tide::Result<BatchQueryDefinition> {
+    async fn body_graphql(self) -> tide::Result<QueryDefinition> {
         self.body_graphql_opts(Default::default()).await
     }
 
@@ -100,7 +100,7 @@ pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
     async fn body_graphql_opts(
         self,
         opts: IntoQueryBuilderOpts,
-    ) -> tide::Result<BatchQueryDefinition>;
+    ) -> tide::Result<QueryDefinition>;
 }
 
 #[async_trait]
@@ -108,7 +108,7 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
     async fn body_graphql_opts(
         self,
         opts: IntoQueryBuilderOpts,
-    ) -> tide::Result<BatchQueryDefinition> {
+    ) -> tide::Result<QueryDefinition> {
         if self.method() == Method::Get {
             let gql_request = GQLRequest::Single(self.query::<GQLRequestPart>()?);
             let builder = gql_request

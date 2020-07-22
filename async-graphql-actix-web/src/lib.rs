@@ -15,7 +15,7 @@ use http::Method;
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
     ParseRequestError,
 };
 pub use subscription::WSSubscription;
@@ -26,11 +26,11 @@ mod subscription;
 ///
 /// It's a wrapper of `BatchQueryBuilder`, you can use `BatchGQLRequest::into_inner` unwrap it to `BatchQueryBuilder`.
 /// `async_graphql::IntoQueryBuilderOpts` allows to configure extraction process.
-pub struct BatchGQLRequest(BatchQueryDefinition);
+pub struct BatchGQLRequest(QueryDefinition);
 
 impl BatchGQLRequest {
     /// Unwrap it to `QueryBuilder`.
-    pub fn into_inner(self) -> BatchQueryDefinition {
+    pub fn into_inner(self) -> QueryDefinition {
         self.0
     }
 }

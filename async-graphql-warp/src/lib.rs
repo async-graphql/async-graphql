@@ -7,7 +7,7 @@
 
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
-    BatchQueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
+    QueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
     IntoQueryBuilderOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
@@ -60,7 +60,7 @@ impl Reject for BadRequest {}
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, query_definition): (_, BatchQueryDefinition)| async move {
+///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, query_definition): (_, QueryDefinition)| async move {
 ///         Ok::<_, Infallible>(BatchGQLResponse::from(query_definition.execute(&schema).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
@@ -68,7 +68,7 @@ impl Reject for BadRequest {}
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryDefinition),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryDefinition),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -81,7 +81,7 @@ where
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, BatchQueryDefinition),)>
+) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryDefinition),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
