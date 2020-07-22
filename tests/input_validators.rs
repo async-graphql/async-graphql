@@ -1646,3 +1646,123 @@ pub async fn test_input_validator_operator_and() {
         }
     }
 }
+
+#[async_std::test]
+pub async fn test_input_validator_variable() {
+    struct QueryRoot;
+
+    #[InputObject]
+    struct InputMaxLength {
+        #[field(validator(StringMinLength(length = "6")))]
+        pub id: String,
+    }
+
+    #[Object]
+    impl QueryRoot {
+        async fn field_parameter(
+            &self,
+            #[arg(validator(StringMinLength(length = "6")))] _id: String,
+        ) -> bool {
+            true
+        }
+
+        async fn input_object(&self, _input: InputMaxLength) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let test_cases = [
+        "abc",
+        "acbce",
+        "abcdef",
+        "abcdefghi",
+        "abcdefghijkl",
+        "abcdefghijklmnop",
+    ];
+
+    let validator_length = 6;
+    for case in &test_cases {
+        let mut variables = Variables::default();
+        variables.insert("id".to_string(), Value::String(case.to_string()));
+
+        let field_query = "query($id: String!) {fieldParameter(id: $id)}";
+        let object_query = "query($id: String!) {inputObject(input: {id: $id})}";
+        let case_length = case.len();
+
+        if case_length < validator_length {
+            let should_fail_msg = format!(
+                "StringMinValue case {} should have failed, but did not",
+                case
+            );
+
+            let field_error_msg = format!(
+                "Invalid value for argument \"id\", the value length is {}, must be greater than or equal to {}",
+                case_length, validator_length
+            );
+            let object_error_msg = format!(
+                "Invalid value for argument \"input.id\", the value length is {}, must be greater than or equal to {}",
+                case_length, validator_length
+            );
+
+            assert_eq!(
+                QueryBuilder::new(field_query)
+                    .variables(variables.clone())
+                    .execute(&schema)
+                    .await
+                    .expect_err(&should_fail_msg[..]),
+                Error::Rule {
+                    errors: vec!(RuleError {
+                        locations: vec!(Pos {
+                            line: 1,
+                            column: 37
+                        }),
+                        message: field_error_msg
+                    })
+                }
+            );
+
+            assert_eq!(
+                QueryBuilder::new(object_query)
+                    .variables(variables.clone())
+                    .execute(&schema)
+                    .await
+                    .expect_err(&should_fail_msg[..]),
+                Error::Rule {
+                    errors: vec!(RuleError {
+                        locations: vec!(Pos {
+                            line: 1,
+                            column: 34
+                        }),
+                        message: object_error_msg
+                    })
+                }
+            );
+        } else {
+            let error_msg = format!("Schema returned error with test_string = {}", case);
+            assert_eq!(
+                QueryBuilder::new(field_query)
+                    .variables(variables.clone())
+                    .execute(&schema)
+                    .await
+                    .expect(&error_msg[..])
+                    .data,
+                serde_json::json!({"fieldParameter": true}),
+                "Failed to validate {} with StringMinLength",
+                case
+            );
+
+            assert_eq!(
+                QueryBuilder::new(object_query)
+                    .variables(variables.clone())
+                    .execute(&schema)
+                    .await
+                    .expect(&error_msg[..])
+                    .data,
+                serde_json::json!({"inputObject": true}),
+                "Failed to validate {} with StringMinLength",
+                case
+            );
+        }
+    }
+}

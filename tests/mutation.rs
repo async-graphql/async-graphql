@@ -16,13 +16,13 @@ pub async fn test_mutation_execution_order() {
     impl MutationRoot {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             async_std::task::sleep(Duration::from_secs(1)).await;
-            ctx.data::<List>().lock().await.push(1);
+            ctx.data_unchecked::<List>().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             async_std::task::sleep(Duration::from_millis(500)).await;
-            ctx.data::<List>().lock().await.push(2);
+            ctx.data_unchecked::<List>().lock().await.push(2);
             true
         }
     }

@@ -399,7 +399,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let resolve_obj = quote! {
                     {
                         let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?
+                        res.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?
                     }
                 };
 
@@ -407,13 +407,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .guard
                     .map(|guard| quote! {
                         #guard.check(ctx).await
-                            .map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
+                            .map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?;
                     });
                 let post_guard = field
                     .post_guard
                     .map(|guard| quote! {
                         #guard.check(ctx, &res).await
-                            .map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?;
+                            .map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?;
                     });
 
                 resolvers.push(quote! {
@@ -489,7 +489,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
-        #[allow(unused_braces, unused_variables)]
+        #[allow(unused_braces, unused_variables, unused_parens)]
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {

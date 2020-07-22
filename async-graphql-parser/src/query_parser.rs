@@ -2,10 +2,11 @@ use crate::pos::Positioned;
 use crate::query::*;
 use crate::utils::{unquote_string, PositionCalculator};
 use crate::value::Value;
-use crate::Result;
+use crate::{Error, Result};
 use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::BTreeMap;
+use std::num::{ParseFloatError, ParseIntError};
 
 #[derive(Parser)]
 #[grammar = "query.pest"]
@@ -241,8 +242,24 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
         Rule::object => parse_object_value(pair, pc)?,
         Rule::array => parse_array_value(pair, pc)?,
         Rule::variable => Value::Variable(parse_variable(pair, pc)?.into_inner()),
-        Rule::float => Value::Float(pair.as_str().parse().unwrap()),
-        Rule::int => Value::Int(pair.as_str().parse().unwrap()),
+        Rule::float => {
+            let pos = pc.step(&pair);
+            Value::Float(
+                pair.as_str()
+                    .parse()
+                    .map_err(|err: ParseFloatError| Error {
+                        pos,
+                        message: err.to_string(),
+                    })?,
+            )
+        }
+        Rule::int => {
+            let pos = pc.step(&pair);
+            Value::Int(pair.as_str().parse().map_err(|err: ParseIntError| Error {
+                pos,
+                message: err.to_string(),
+            })?)
+        }
         Rule::string => Value::String({
             let pos = pc.step(&pair);
             unquote_string(pair.as_str(), pos)?

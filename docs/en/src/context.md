@@ -11,11 +11,11 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn borrow_from_context_data<'ctx'>(
+    async fn borrow_from_context_data<'ctx>(
         &self,
         ctx: &'ctx Context<'_>
-    ) -> &'ctx String {
-        ctx.data::<String>
+    ) -> FieldResult<&'ctx String> {
+        ctx.data::<String>()
     }
 }
 ```

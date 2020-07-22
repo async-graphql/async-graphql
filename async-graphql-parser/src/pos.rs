@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
@@ -5,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 
 /// Original position of element in source code
-#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize)]
 pub struct Pos {
     /// One-based line number
     pub line: usize,

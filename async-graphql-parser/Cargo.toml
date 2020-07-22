@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-parser"
-version = "1.14.7"
+version = "1.16.11"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "GraphQL query parser for async-graphql"
@@ -18,3 +18,5 @@ pest_derive = "2.1.0"
 thiserror = "1.0.11"
 serde_json = "1.0.48"
 arrayvec = "0.5.1"
+serde = { version = "1.0", features = ["derive"] }
+

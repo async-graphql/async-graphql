@@ -340,7 +340,7 @@ where
 {
     let schema = &*TEST_HARNESS;
     let registry = &schema.env.registry;
-    let mut ctx = VisitorContext::new(registry, doc);
+    let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {

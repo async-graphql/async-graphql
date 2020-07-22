@@ -2,13 +2,16 @@ use crate::extensions::Extensions;
 use crate::parser::query::{Directive, Field, SelectionSet};
 use crate::schema::SchemaEnv;
 use crate::{
-    InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result, Type, Value,
+    FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result,
+    Type, Value,
 };
 use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use futures::Future;
 use parking_lot::Mutex;
+use serde::ser::SerializeSeq;
+use serde::Serializer;
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
@@ -19,7 +22,7 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 /// Variables of query
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Variables(Value);
 
 impl Default for Variables {
@@ -159,6 +162,27 @@ pub struct QueryPathNode<'a> {
     pub segment: QueryPathSegment<'a>,
 }
 
+impl<'a> serde::Serialize for QueryPathNode<'a> {
+    fn serialize<S>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None)?;
+        self.for_each(|segment| match segment {
+            QueryPathSegment::Index(idx) => {
+                seq.serialize_element(&idx).ok();
+            }
+            QueryPathSegment::Name(name) => {
+                seq.serialize_element(name).ok();
+            }
+        });
+        seq.end()
+    }
+}
+
 impl<'a> std::fmt::Display for QueryPathNode<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut first = true;
@@ -200,18 +224,6 @@ impl<'a> QueryPathNode<'a> {
             parent.for_each_ref(f);
         }
         f(&self.segment);
-    }
-
-    #[doc(hidden)]
-    pub fn to_json(&self) -> Vec<serde_json::Value> {
-        let mut path: Vec<serde_json::Value> = Vec::new();
-        self.for_each(|segment| {
-            path.push(match segment {
-                QueryPathSegment::Index(idx) => (*idx).into(),
-                QueryPathSegment::Name(name) => (*name).to_string().into(),
-            })
-        });
-        path
     }
 }
 
@@ -399,12 +411,20 @@ impl<'a, T> ContextBase<'a, T> {
     ///
     /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
     ///
+    /// Returns a FieldError if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
+        self.data_opt::<D>()
+            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
     /// # Panics
     ///
     /// It will panic if the specified data type does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> &D {
+    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &D {
         self.data_opt::<D>()
-            .expect("The specified data type does not exist.")
+            .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
     }
 
     /// Gets the global data defined in the `Context` or `Schema`, returns `None` if the specified type data does not exist.

@@ -78,7 +78,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
-            if ctx.data::<Token>().0 != "123456" {
+            if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
             Ok(futures::stream::iter(0..10))

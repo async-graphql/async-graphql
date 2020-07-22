@@ -1,4 +1,4 @@
-use crate::{Pos, Value};
+use crate::{Pos, QueryPathNode, Value};
 use std::fmt::{Debug, Display};
 
 /// Input Value Error
@@ -59,14 +59,10 @@ impl FieldError {
     }
 
     #[doc(hidden)]
-    pub fn into_error_with_path(self, pos: Pos, path: Vec<serde_json::Value>) -> Error {
+    pub fn into_error_with_path(self, pos: Pos, path: Option<&QueryPathNode<'_>>) -> Error {
         Error::Query {
             pos,
-            path: if !path.is_empty() {
-                Some(path.into())
-            } else {
-                None
-            },
+            path: path.and_then(|path| serde_json::to_value(path).ok()),
             err: QueryError::FieldError {
                 err: self.0,
                 extended_error: self.1,

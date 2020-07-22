@@ -16,4 +16,4 @@ __这个项目目前不遵循 [Semantic Versioning (SemVer)](https://semver.org/
 
 我们目前计划在`v2.0.0`发布之后开始执行SemVer，这将在API开始稳定之后发生。不幸的是，我们目前还没有这方面的时间表。
 
-根据Rust关于“ 1.0.0”之前的版本的政策，我们将尝试将不兼容的变化限制为次要版本更改，但如果升级后似乎未进行编译，则可能需要深入研究编译器错误以更新某些已更改的语法。如果有些奇怪，请随时打开 [issue](https://github.com/async-graphql/async-graphql/issues) 。
+根据Rust关于“ 1.0.0”之前的版本的政策，我们将尝试将不兼容的变化限制为次要版本更改，但如果升级后似乎未通过编译，则可能需要深入研究编译器错误以更新某些已更改的语法。如果有些奇怪，请随时打开 [issue](https://github.com/async-graphql/async-graphql/issues) 。

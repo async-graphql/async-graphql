@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
 use crate::parser::query::OperationDefinition;
-use crate::{registry, Pos, QueryPathSegment, Value};
+use crate::{registry, Pos, QueryPathSegment, Value, Variables};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -53,6 +53,7 @@ pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&st
 
 pub fn is_valid_input_value(
     registry: &registry::Registry,
+    variables: Option<&Variables>,
     type_name: &str,
     value: &Value,
     path_node: QueryPathNode,
@@ -67,13 +68,14 @@ pub fn is_valid_input_value(
                 &path_node,
                 format!("expected type \"{}\"", type_name),
             )),
-            _ => is_valid_input_value(registry, type_name, value, path_node),
+            _ => is_valid_input_value(registry, variables, type_name, value, path_node),
         },
         registry::MetaTypeName::List(type_name) => match value {
             Value::List(elems) => {
                 for (idx, elem) in elems.iter().enumerate() {
                     if let Some(reason) = is_valid_input_value(
                         registry,
+                        variables,
                         type_name,
                         elem,
                         QueryPathNode {
@@ -86,7 +88,7 @@ pub fn is_valid_input_value(
                 }
                 None
             }
-            _ => is_valid_input_value(registry, type_name, value, path_node),
+            _ => is_valid_input_value(registry, variables, type_name, value, path_node),
         },
         registry::MetaTypeName::Named(type_name) => {
             if let Value::Null = value {
@@ -96,11 +98,21 @@ pub fn is_valid_input_value(
             if let Some(ty) = registry.types.get(type_name) {
                 match ty {
                     registry::MetaType::Scalar { is_valid, .. } => {
-                        if !is_valid(value) {
-                            Some(valid_error(
-                                &path_node,
-                                format!("expected type \"{}\"", type_name),
-                            ))
+                        let value = match value {
+                            Value::Variable(var_name) => {
+                                variables.and_then(|variables| variables.get(var_name))
+                            }
+                            _ => Some(value),
+                        };
+                        if let Some(value) = value {
+                            if !is_valid(value) {
+                                Some(valid_error(
+                                    &path_node,
+                                    format!("expected type \"{}\"", type_name),
+                                ))
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
@@ -136,19 +148,28 @@ pub fn is_valid_input_value(
                                 input_names.remove(field.name);
                                 if let Some(value) = values.get(field.name) {
                                     if let Some(validator) = &field.validator {
-                                        if let Some(reason) = validator.is_valid(value) {
-                                            return Some(valid_error(
-                                                &QueryPathNode {
-                                                    parent: Some(&path_node),
-                                                    segment: QueryPathSegment::Name(field.name),
-                                                },
-                                                reason,
-                                            ));
+                                        let value = match value {
+                                            Value::Variable(var_name) => variables
+                                                .and_then(|variables| variables.get(var_name)),
+                                            _ => Some(value),
+                                        };
+
+                                        if let Some(value) = value {
+                                            if let Some(reason) = validator.is_valid(value) {
+                                                return Some(valid_error(
+                                                    &QueryPathNode {
+                                                        parent: Some(&path_node),
+                                                        segment: QueryPathSegment::Name(field.name),
+                                                    },
+                                                    reason,
+                                                ));
+                                            }
                                         }
                                     }
 
                                     if let Some(reason) = is_valid_input_value(
                                         registry,
+                                        variables,
                                         &field.ty,
                                         value,
                                         QueryPathNode {

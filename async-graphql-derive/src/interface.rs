@@ -239,7 +239,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         let resolve_obj = quote! {
             self.#method_name(#(#use_params),*).await.
-                map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref().unwrap().to_json()))?
+                map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?
         };
 
         resolvers.push(quote! {

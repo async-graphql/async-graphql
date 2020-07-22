@@ -20,6 +20,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
                 ));
             } else if let Some(reason) = is_valid_input_value(
                 ctx.registry,
+                ctx.variables,
                 &variable_definition.var_type.to_string(),
                 value,
                 QueryPathNode {

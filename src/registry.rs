@@ -431,7 +431,7 @@ impl Registry {
                         .args
                         .values()
                         .map(|arg| federation_input_value(arg))
-                        .join(""),
+                        .join(", "),
                     field.ty
                 )
                 .ok();

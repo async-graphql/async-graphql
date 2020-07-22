@@ -35,7 +35,7 @@ fn quickstart() -> Result<()> {
 
             let mut app = tide::new();
             app.at("/").post(graphql).get(graphql);
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
@@ -43,7 +43,10 @@ fn quickstart() -> Result<()> {
         let client = Task::<Result<()>>::spawn(async move {
             Timer::after(Duration::from_millis(300)).await;
 
-            let resp = reqwest::Client::new()
+            let resp = reqwest::Client::builder()
+                .no_proxy()
+                .build()
+                .unwrap()
                 .post(format!("http://{}", listen_addr).as_str())
                 .body(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -57,7 +60,10 @@ fn quickstart() -> Result<()> {
             assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
             //
-            let resp = reqwest::Client::new()
+            let resp = reqwest::Client::builder()
+                .no_proxy()
+                .build()
+                .unwrap()
                 .get(
                     format!(
                         "http://{}?query=%7B%20add%28a%3A%2010%2C%20b%3A%2020%29%20%7D",
@@ -103,6 +109,7 @@ fn hello() -> Result<()> {
                 }
             }
 
+            #[derive(Clone)]
             struct AppState {
                 schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
             }
@@ -125,7 +132,7 @@ fn hello() -> Result<()> {
                 })
                 .await
             });
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
@@ -133,7 +140,10 @@ fn hello() -> Result<()> {
         let client = Task::<Result<()>>::spawn(async move {
             Timer::after(Duration::from_millis(300)).await;
 
-            let resp = reqwest::Client::new()
+            let resp = reqwest::Client::builder()
+                .no_proxy()
+                .build()
+                .unwrap()
                 .post(format!("http://{}", listen_addr).as_str())
                 .body(r#"{"query":"{ hello }"}"#)
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -147,7 +157,10 @@ fn hello() -> Result<()> {
 
             assert_eq!(string, json!({"data":{"hello":"Hello, Foo!"}}).to_string());
 
-            let resp = reqwest::Client::new()
+            let resp = reqwest::Client::builder()
+                .no_proxy()
+                .build()
+                .unwrap()
                 .post(format!("http://{}", listen_addr).as_str())
                 .body(r#"{"query":"{ hello }"}"#)
                 .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -217,7 +230,7 @@ fn upload() -> Result<()> {
                 let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
                 async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
             });
-            app.listen(&listen_addr).await?;
+            app.listen(listen_addr).await?;
 
             Ok(())
         });
@@ -230,7 +243,10 @@ fn upload() -> Result<()> {
                 .text("map", r#"{ "0": ["variables.file"] }"#)
                 .part("0", reqwest::multipart::Part::stream("test").file_name("test.txt").mime_str("text/plain")?);
 
-            let resp = reqwest::Client::new()
+            let resp = reqwest::Client::builder()
+                .no_proxy()
+                .build()
+                .unwrap()
                 .post(format!("http://{}", listen_addr).as_str())
                 .multipart(form)
                 .send()

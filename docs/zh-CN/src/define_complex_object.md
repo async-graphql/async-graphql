@@ -26,8 +26,28 @@ impl MyObject {
         ctx: &Context<'_>,
         #[arg(desc = "Id of object")] id: i64
     ) -> FieldResult<String> {
-        let conn = ctx.data::<DbPool>().take();
+        let conn = ctx.data::<DbPool>()?.take();
         Ok(conn.query_something(id)?.name)
+    }
+}
+```
+
+## 为同一类型实现多次Object
+
+通常我们在Rust中可以为同一类型创建多个实现，但由于过程宏的限制，无法为同一个类型创建多个Object实现。例如，下面的代码将无法通过编译。
+
+```rust
+#[Object]
+impl MyObject {
+    async fn field1(&self) -> i32 {
+        todo!()
+    }
+}
+
+#[Object]
+impl MyObject {
+    async fn field2(&self) -> i32 {
+        todo!()    
     }
 }
 ```
