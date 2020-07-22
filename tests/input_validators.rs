@@ -1706,10 +1706,12 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(field_query)
+                QueryBuilder::new_single(field_query)
                     .variables(variables.clone())
+                    .finish()
                     .execute(&schema)
                     .await
+                    .unwrap_single()
                     .expect_err(&should_fail_msg[..]),
                 Error::Rule {
                     errors: vec!(RuleError {
@@ -1723,10 +1725,12 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(object_query)
+                QueryBuilder::new_single(object_query)
                     .variables(variables.clone())
+                    .finish()
                     .execute(&schema)
                     .await
+                    .unwrap_single()
                     .expect_err(&should_fail_msg[..]),
                 Error::Rule {
                     errors: vec!(RuleError {
@@ -1741,10 +1745,12 @@ pub async fn test_input_validator_variable() {
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);
             assert_eq!(
-                QueryBuilder::new(field_query)
+                QueryBuilder::new_single(field_query)
                     .variables(variables.clone())
+                    .finish()
                     .execute(&schema)
                     .await
+                    .unwrap_single()
                     .expect(&error_msg[..])
                     .data,
                 serde_json::json!({"fieldParameter": true}),
@@ -1753,10 +1759,12 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(object_query)
+                QueryBuilder::new_single(object_query)
                     .variables(variables.clone())
+                    .finish()
                     .execute(&schema)
                     .await
+                    .unwrap_single()
                     .expect(&error_msg[..])
                     .data,
                 serde_json::json!({"inputObject": true}),
