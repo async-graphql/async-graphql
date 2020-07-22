@@ -30,7 +30,8 @@ pub async fn test_variables() {
              "intListVal": [1, 2, 3, 4, 5],
         }))
         .unwrap(),
-    ).finish();
+    )
+    .finish();
     let resp = query.execute(&schema).await.unwrap_single().unwrap();
     assert_eq!(
         resp.data,
@@ -91,7 +92,8 @@ pub async fn test_variable_no_value() {
             }
         "#,
     )
-    .variables(Variables::parse_from_json(serde_json::json!({})).unwrap()).finish();
+    .variables(Variables::parse_from_json(serde_json::json!({})).unwrap())
+    .finish();
     let resp = query.execute(&schema).await.unwrap_single().unwrap();
     assert_eq!(
         resp.data,
@@ -125,7 +127,8 @@ pub async fn test_variable_null() {
             "intVal": null,
         }))
         .unwrap(),
-    ).finish();
+    )
+    .finish();
     let resp = query.execute(&schema).await.unwrap_single().unwrap();
     assert_eq!(
         resp.data,

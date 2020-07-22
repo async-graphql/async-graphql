@@ -6,9 +6,13 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{multipart_stream, BatchGQLRequest, GQLRequest, StreamBody};
-use async_graphql::{BatchQueryResponse, Data, FieldResult, IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport, BatchQueryDefinition, IntoBatchQueryDefinition};
+use async_graphql::{
+    BatchQueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
+    IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType,
+    WebSocketTransport,
+};
 use bytes::Bytes;
-use futures::{select, StreamExt, SinkExt};
+use futures::{select, SinkExt, StreamExt};
 use hyper::header::HeaderValue;
 use hyper::{Body, Method};
 use std::convert::Infallible;

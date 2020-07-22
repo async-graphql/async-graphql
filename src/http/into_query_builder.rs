@@ -1,6 +1,6 @@
 use crate::http::BatchGQLRequest;
 use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts};
-use crate::{ParseRequestError, BatchQueryDefinition};
+use crate::{BatchQueryDefinition, ParseRequestError};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use mime::Mime;

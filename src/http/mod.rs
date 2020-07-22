@@ -13,8 +13,13 @@ pub use multipart_stream::multipart_stream;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinitionTypes, QueryDefinition};
-use crate::{BatchQueryResponse, Error, ParseRequestError, Pos, QueryError, QueryResponse, Result, Variables, BatchQueryDefinition};
+use crate::query::{
+    IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinition, QueryDefinitionTypes,
+};
+use crate::{
+    BatchQueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
+    QueryResponse, Result, Variables,
+};
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{de, Deserialize, Serialize, Serializer};
 
@@ -32,15 +37,19 @@ pub struct GQLRequest {
     pub variables: Option<serde_json::Value>,
 }
 
-impl From<GQLRequest> for QueryDefinition{
+impl From<GQLRequest> for QueryDefinition {
     fn from(request: GQLRequest) -> Self {
-        Self{
+        Self {
             query_source: request.query,
             operation_name: request.operation_name,
             // Unwrap twice as we use default variables if no variables provided, and if serde
             // fails to deserialize them
-            variables: request.variables.map(Variables::parse_from_json).unwrap_or(Ok(Variables::default())).unwrap_or_default(),
-            extensions: vec![]
+            variables: request
+                .variables
+                .map(Variables::parse_from_json)
+                .unwrap_or(Ok(Variables::default()))
+                .unwrap_or_default(),
+            extensions: vec![],
         }
     }
 }
@@ -83,10 +92,7 @@ impl IntoBatchQueryDefinition for BatchGQLRequest {
                 ctx_data: None,
             }),
             BatchGQLRequest::Batch(requests) => {
-                let definitions = requests
-                    .into_iter()
-                    .map(|request| request.into())
-                    .collect();
+                let definitions = requests.into_iter().map(|request| request.into()).collect();
                 Ok(BatchQueryDefinition {
                     definition: QueryDefinitionTypes::Batch(definitions),
                     ctx_data: None,

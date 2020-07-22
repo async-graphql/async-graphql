@@ -22,7 +22,11 @@ pub async fn test_fieldresult() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
     assert_eq!(
-        schema.execute("{ error }").await.unwrap_single().unwrap_err(),
+        schema
+            .execute("{ error }")
+            .await
+            .unwrap_single()
+            .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["error"])),
@@ -34,7 +38,11 @@ pub async fn test_fieldresult() {
     );
 
     assert_eq!(
-        schema.execute("{ optError }").await.unwrap_single().unwrap_err(),
+        schema
+            .execute("{ optError }")
+            .await
+            .unwrap_single()
+            .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["optError"])),
@@ -46,7 +54,11 @@ pub async fn test_fieldresult() {
     );
 
     assert_eq!(
-        schema.execute("{ vecError }").await.unwrap_single().unwrap_err(),
+        schema
+            .execute("{ vecError }")
+            .await
+            .unwrap_single()
+            .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
             path: Some(serde_json::json!(["vecError", 1])),

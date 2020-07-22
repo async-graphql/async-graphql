@@ -8,7 +8,10 @@
 use async_graphql::http::{
     multipart_stream, BatchGQLRequest, BatchGQLResponse, GQLRequest, GQLResponse, StreamBody,
 };
-use async_graphql::{BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType, BatchQueryDefinition};
+use async_graphql::{
+    BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType,
+};
 use async_trait::async_trait;
 use futures::channel::mpsc;
 use futures::io::BufReader;

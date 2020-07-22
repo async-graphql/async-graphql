@@ -218,7 +218,7 @@ pub struct BatchQueryDefinition {
     pub(crate) ctx_data: Option<Data>,
 }
 
-impl BatchQueryDefinition{
+impl BatchQueryDefinition {
     pub(crate) fn set_upload(
         &mut self,
         var_path: &str,
@@ -266,10 +266,10 @@ impl BatchQueryDefinition{
         self,
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> BatchQueryResponse
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         match self.definition {
             QueryDefinitionTypes::Single(definition) => BatchQueryResponse::Single(
@@ -289,14 +289,14 @@ impl BatchQueryDefinition{
 }
 
 /// Query builder for a single-type query
-pub struct SingleQueryBuilder{
+pub struct SingleQueryBuilder {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
     extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
-impl SingleQueryBuilder{
+impl SingleQueryBuilder {
     /// Create query builder with query source.
     fn new<T: Into<String>>(query_source: T) -> Self {
         Self {
@@ -331,25 +331,25 @@ impl SingleQueryBuilder{
     }
 
     pub fn finish(self) -> BatchQueryDefinition {
-        BatchQueryDefinition{
+        BatchQueryDefinition {
             definition: QueryDefinitionTypes::Single(self.into()),
-            ctx_data: None
+            ctx_data: None,
         }
     }
 }
 
-impl From<SingleQueryBuilder> for QueryDefinition{
+impl From<SingleQueryBuilder> for QueryDefinition {
     fn from(item: SingleQueryBuilder) -> Self {
-        Self{
+        Self {
             query_source: item.query_source,
             operation_name: item.operation_name,
             variables: item.variables,
-            extensions: item.extensions
+            extensions: item.extensions,
         }
     }
 }
 
-impl QueryDefinition{
+impl QueryDefinition {
     /// Set uploaded file path
     fn set_upload(
         &mut self,
@@ -367,10 +367,10 @@ impl QueryDefinition{
         schema: &Schema<Query, Mutation, Subscription>,
         ctx_data: Arc<Data>,
     ) -> StreamResponse
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let schema = schema.clone();
         match self.execute_first(&schema, ctx_data).await {
@@ -422,10 +422,10 @@ impl QueryDefinition{
         schema: &Schema<Query, Mutation, Subscription>,
         ctx_data: Arc<Data>,
     ) -> Result<(QueryResponse, DeferList)>
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let (mut document, cache_control, extensions) =
             schema.prepare_query(&self.query_source, &self.variables, &self.extensions)?;
@@ -448,7 +448,7 @@ impl QueryDefinition{
                     err: QueryError::MissingOperation,
                 })
             }
-                .log_error(&extensions);
+            .log_error(&extensions);
         }
 
         let env = QueryEnv::new(extensions, self.variables, document, ctx_data);
@@ -495,10 +495,10 @@ impl QueryDefinition{
         schema: &Schema<Query, Mutation, Subscription>,
         ctx_data: Arc<Data>,
     ) -> Result<QueryResponse>
-        where
-            Query: ObjectType + Send + Sync + 'static,
-            Mutation: ObjectType + Send + Sync + 'static,
-            Subscription: SubscriptionType + Send + Sync + 'static,
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
         let resp = self.execute_stream_with_ctx(schema, ctx_data).await;
         match resp {
@@ -534,7 +534,10 @@ impl QueryBuilder {
     /// the source of the second query and so on, untill finishing the process with
     /// `finish` method, that will return you `BatchQueryDefinition`
     pub fn new_batch<T: Into<String>>(query_source: T) -> Self {
-        Self{ current_builder: SingleQueryBuilder::new(query_source), completed_builders: vec![] }
+        Self {
+            current_builder: SingleQueryBuilder::new(query_source),
+            completed_builders: vec![],
+        }
     }
 
     /// Specify the operation name.
@@ -568,6 +571,9 @@ impl QueryBuilder {
     /// Finish building a query, get back the definition
     pub fn finish(mut self) -> BatchQueryDefinition {
         self.completed_builders.push(self.current_builder.into());
-        BatchQueryDefinition{ definition: QueryDefinitionTypes::Batch(self.completed_builders), ctx_data: None }
+        BatchQueryDefinition {
+            definition: QueryDefinitionTypes::Batch(self.completed_builders),
+            ctx_data: None,
+        }
     }
 }

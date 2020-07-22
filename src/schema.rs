@@ -6,7 +6,10 @@ use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
-use crate::{QueryBuilder, BatchQueryResponse, CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, Result, StreamResponse, SubscriptionType, Type, Variables, ID, ParseRequestError};
+use crate::{
+    BatchQueryResponse, CacheControl, Error, ObjectType, ParseRequestError, Pos, QueryBuilder,
+    QueryEnv, QueryError, Result, StreamResponse, SubscriptionType, Type, Variables, ID,
+};
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
@@ -294,12 +297,18 @@ where
 
     /// Execute query without creating the `QueryBuilder`.
     pub async fn execute(&self, query_source: &str) -> BatchQueryResponse {
-        QueryBuilder::new_single(query_source).finish().execute(self).await
+        QueryBuilder::new_single(query_source)
+            .finish()
+            .execute(self)
+            .await
     }
 
     /// Execute batch without creating the `BatchQueryBuilder`.
     /// Will return error if query_sources slice is empty
-    pub async fn execute_batch(&self, query_sources: &[&str]) -> std::result::Result<BatchQueryResponse, ParseRequestError> {
+    pub async fn execute_batch(
+        &self,
+        query_sources: &[&str],
+    ) -> std::result::Result<BatchQueryResponse, ParseRequestError> {
         let mut iter = query_sources.iter();
         let definition = if let Some(first_query) = iter.next() {
             let mut builder = QueryBuilder::new_batch(*first_query);
@@ -308,7 +317,7 @@ where
             }
             builder.finish()
         } else {
-            return Err(ParseRequestError::EmptyQuery)
+            return Err(ParseRequestError::EmptyQuery);
         };
         Ok(definition.execute(self).await)
     }

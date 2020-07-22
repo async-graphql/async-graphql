@@ -16,7 +16,10 @@ use futures::{Future, SinkExt, StreamExt, TryFutureExt};
 use http::Method;
 
 use async_graphql::http::StreamBody;
-use async_graphql::{BatchQueryResponse, IntoQueryBuilderOpts, ParseRequestError, QueryResponse, StreamResponse, BatchQueryDefinition, IntoBatchQueryDefinition};
+use async_graphql::{
+    BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    ParseRequestError, QueryResponse, StreamResponse,
+};
 pub use subscription::WSSubscription;
 
 mod subscription;
