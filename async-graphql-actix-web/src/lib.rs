@@ -15,7 +15,7 @@ use http::Method;
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts,
     ParseRequestError,
 };
 pub use subscription::WSSubscription;
@@ -38,7 +38,7 @@ impl BatchGQLRequest {
 impl FromRequest for BatchGQLRequest {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<BatchGQLRequest, Error>>>>;
-    type Config = IntoQueryBuilderOpts;
+    type Config = IntoQueryDefinitionOpts;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();

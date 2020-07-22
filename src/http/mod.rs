@@ -12,7 +12,7 @@ pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
 use crate::query::{
-    IntoQueryDefinition, IntoQueryBuilderOpts, QueryDefinitionPart, QueryDefinitionTypes,
+    IntoQueryDefinition, IntoQueryDefinitionOpts, QueryDefinitionPart, QueryDefinitionTypes,
 };
 use crate::{
     QueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
@@ -82,7 +82,7 @@ where
 impl IntoQueryDefinition for GQLRequest {
     async fn into_batch_query_definition_opts(
         self,
-        _opts: &IntoQueryBuilderOpts,
+        _opts: &IntoQueryDefinitionOpts,
     ) -> std::result::Result<QueryDefinition, ParseRequestError> {
         match self {
             GQLRequest::Single(request) => Ok(QueryDefinition {

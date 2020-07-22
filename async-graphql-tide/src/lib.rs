@@ -7,7 +7,7 @@
 
 use async_graphql::http::{GQLRequest, BatchGQLResponse, GQLRequestPart};
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryDefinitionOpts,
     ObjectType, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
@@ -70,7 +70,7 @@ pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
     schema: Schema<Query, Mutation, Subscription>,
     query_builder_configuration: F,
-    opts: IntoQueryBuilderOpts,
+    opts: IntoQueryDefinitionOpts,
 ) -> tide::Result<Response>
 where
     Query: ObjectType + Send + Sync + 'static,
@@ -99,7 +99,7 @@ pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
     async fn body_graphql_opts(
         self,
-        opts: IntoQueryBuilderOpts,
+        opts: IntoQueryDefinitionOpts,
     ) -> tide::Result<QueryDefinition>;
 }
 
@@ -107,7 +107,7 @@ pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
 impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> {
     async fn body_graphql_opts(
         self,
-        opts: IntoQueryBuilderOpts,
+        opts: IntoQueryDefinitionOpts,
     ) -> tide::Result<QueryDefinition> {
         if self.method() == Method::Get {
             let gql_request = GQLRequest::Single(self.query::<GQLRequestPart>()?);

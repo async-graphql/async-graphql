@@ -1,5 +1,5 @@
 use crate::http::GQLRequest;
-use crate::query::{IntoQueryDefinition, IntoQueryBuilderOpts};
+use crate::query::{IntoQueryDefinition, IntoQueryDefinitionOpts};
 use crate::{QueryDefinition, ParseRequestError};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
@@ -27,7 +27,7 @@ where
 {
     async fn into_batch_query_definition_opts(
         mut self,
-        opts: &IntoQueryBuilderOpts,
+        opts: &IntoQueryDefinitionOpts,
     ) -> std::result::Result<QueryDefinition, ParseRequestError> {
         if let Some(boundary) = self
             .0

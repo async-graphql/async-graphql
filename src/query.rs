@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 /// IntoQueryBuilder options
 #[derive(Default, Clone)]
-pub struct IntoQueryBuilderOpts {
+pub struct IntoQueryDefinitionOpts {
     /// Maximum file size.
     pub max_file_size: Option<usize>,
 
@@ -36,7 +36,7 @@ pub trait IntoQueryDefinition: Sized {
 
     async fn into_batch_query_definition_opts(
         self,
-        opts: &IntoQueryBuilderOpts,
+        opts: &IntoQueryDefinitionOpts,
     ) -> std::result::Result<QueryDefinition, ParseRequestError>;
 }
 

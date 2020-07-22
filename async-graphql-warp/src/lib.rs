@@ -8,7 +8,7 @@
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
     QueryDefinition, BatchQueryResponse, Data, FieldResult, IntoQueryDefinition,
-    IntoQueryBuilderOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
+    IntoQueryDefinitionOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::{select, SinkExt, StreamExt};
@@ -80,7 +80,7 @@ where
 /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-    opts: IntoQueryBuilderOpts,
+    opts: IntoQueryDefinitionOpts,
 ) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryDefinition),)>
 where
     Query: ObjectType + Send + Sync + 'static,
@@ -100,7 +100,7 @@ where
              query: String,
              content_type,
              body,
-             opts: Arc<IntoQueryBuilderOpts>,
+             opts: Arc<IntoQueryDefinitionOpts>,
              schema| async move {
                 if method == Method::GET {
                     let gql_request: GQLRequest =
