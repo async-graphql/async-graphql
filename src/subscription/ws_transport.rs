@@ -1,5 +1,5 @@
 use crate::context::Data;
-use crate::http::{GQLError, GQLRequest, GQLResponse};
+use crate::http::{GQLError, GQLRequestPart, GQLResponse};
 use crate::{
     FieldError, FieldResult, ObjectType, QueryResponse, Result, Schema, SubscriptionStreams,
     SubscriptionTransport, SubscriptionType, Variables,
@@ -76,7 +76,7 @@ impl SubscriptionTransport for WebSocketTransport {
                 }
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
-                        if let Ok(request) = serde_json::from_value::<GQLRequest>(payload) {
+                        if let Ok(request) = serde_json::from_value::<GQLRequestPart>(payload) {
                             let variables = request
                                 .variables
                                 .map(|value| Variables::parse_from_json(value).ok())

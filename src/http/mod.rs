@@ -23,7 +23,7 @@ use serde::{de, Deserialize, Serialize, Serializer};
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
-pub struct GQLRequest {
+pub struct GQLRequestPart {
     /// Query source
     pub query: String,
 
@@ -35,8 +35,8 @@ pub struct GQLRequest {
     pub variables: Option<serde_json::Value>,
 }
 
-impl From<GQLRequest> for QueryDefinition {
-    fn from(request: GQLRequest) -> Self {
+impl From<GQLRequestPart> for QueryDefinition {
+    fn from(request: GQLRequestPart) -> Self {
         Self {
             query_source: request.query,
             operation_name: request.operation_name,
@@ -57,10 +57,10 @@ impl From<GQLRequest> for QueryDefinition {
 #[serde(untagged)]
 pub enum BatchGQLRequest {
     /// Single query
-    Single(GQLRequest),
+    Single(GQLRequestPart),
     /// Non-empty array of queries
     #[serde(deserialize_with = "deserialize_non_empty_vec")]
-    Batch(Vec<GQLRequest>),
+    Batch(Vec<GQLRequestPart>),
 }
 
 fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn test_request() {
-        let request: GQLRequest = serde_json::from_value(json! ({
+        let request: GQLRequestPart = serde_json::from_value(json! ({
             "query": "{ a b c }"
         }))
         .unwrap();
@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_request_with_operation_name() {
-        let request: GQLRequest = serde_json::from_value(json! ({
+        let request: GQLRequestPart = serde_json::from_value(json! ({
             "query": "{ a b c }",
             "operationName": "a"
         }))
@@ -284,7 +284,7 @@ mod tests {
 
     #[test]
     fn test_request_with_variables() {
-        let request: GQLRequest = serde_json::from_value(json! ({
+        let request: GQLRequestPart = serde_json::from_value(json! ({
             "query": "{ a b c }",
             "variables": {
                 "v1": 100,
