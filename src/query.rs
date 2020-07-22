@@ -112,7 +112,7 @@ impl BatchQueryResponse {
 }
 
 /// Query definition
-pub struct QueryDefinition {
+pub struct QueryDefinitionPart {
     pub(crate) query_source: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
@@ -121,9 +121,9 @@ pub struct QueryDefinition {
 
 pub enum QueryDefinitionTypes {
     /// Single query
-    Single(QueryDefinition),
+    Single(QueryDefinitionPart),
     /// Batch query
-    Batch(Vec<QueryDefinition>),
+    Batch(Vec<QueryDefinitionPart>),
 }
 
 /// Query definition for batch requests
@@ -253,7 +253,7 @@ impl SingleQueryBuilder {
     }
 }
 
-impl From<SingleQueryBuilder> for QueryDefinition {
+impl From<SingleQueryBuilder> for QueryDefinitionPart {
     fn from(item: SingleQueryBuilder) -> Self {
         Self {
             query_source: item.query_source,
@@ -264,7 +264,7 @@ impl From<SingleQueryBuilder> for QueryDefinition {
     }
 }
 
-impl QueryDefinition {
+impl QueryDefinitionPart {
     /// Set uploaded file path
     fn set_upload(
         &mut self,
@@ -348,7 +348,7 @@ impl QueryDefinition {
 /// The difference between single and batch queries using `new_single` and `new_batch` methods
 pub struct QueryBuilder {
     current_builder: SingleQueryBuilder,
-    completed_builders: Vec<QueryDefinition>,
+    completed_builders: Vec<QueryDefinitionPart>,
 }
 
 impl QueryBuilder {

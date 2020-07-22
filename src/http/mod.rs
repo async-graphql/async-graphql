@@ -12,7 +12,7 @@ pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
 use crate::query::{
-    IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinition, QueryDefinitionTypes,
+    IntoBatchQueryDefinition, IntoQueryBuilderOpts, QueryDefinitionPart, QueryDefinitionTypes,
 };
 use crate::{
     BatchQueryDefinition, BatchQueryResponse, Error, ParseRequestError, Pos, QueryError,
@@ -35,7 +35,7 @@ pub struct GQLRequestPart {
     pub variables: Option<serde_json::Value>,
 }
 
-impl From<GQLRequestPart> for QueryDefinition {
+impl From<GQLRequestPart> for QueryDefinitionPart {
     fn from(request: GQLRequestPart) -> Self {
         Self {
             query_source: request.query,
