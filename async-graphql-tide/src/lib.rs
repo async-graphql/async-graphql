@@ -5,7 +5,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{BatchGQLRequest, BatchGQLResponse, GQLRequestPart};
+use async_graphql::http::{GQLRequest, BatchGQLResponse, GQLRequestPart};
 use async_graphql::{
     BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
     ObjectType, Schema, SubscriptionType,
@@ -110,7 +110,7 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
         opts: IntoQueryBuilderOpts,
     ) -> tide::Result<BatchQueryDefinition> {
         if self.method() == Method::Get {
-            let gql_request = BatchGQLRequest::Single(self.query::<GQLRequestPart>()?);
+            let gql_request = GQLRequest::Single(self.query::<GQLRequestPart>()?);
             let builder = gql_request
                 .into_batch_query_definition_opts(&opts)
                 .await

@@ -45,7 +45,7 @@ impl FromRequest for BatchGQLRequest {
 
         if req.method() == Method::GET {
             let res =
-                web::Query::<async_graphql::http::BatchGQLRequest>::from_query(req.query_string());
+                web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
                 gql_request

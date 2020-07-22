@@ -55,7 +55,7 @@ impl From<GQLRequestPart> for QueryDefinition {
 /// Batch support for GraphQL requests, which is either a single query, or an array of queries
 #[derive(Deserialize, Clone, PartialEq, Debug)]
 #[serde(untagged)]
-pub enum BatchGQLRequest {
+pub enum GQLRequest {
     /// Single query
     Single(GQLRequestPart),
     /// Non-empty array of queries
@@ -79,17 +79,17 @@ where
 }
 
 #[async_trait::async_trait]
-impl IntoBatchQueryDefinition for BatchGQLRequest {
+impl IntoBatchQueryDefinition for GQLRequest {
     async fn into_batch_query_definition_opts(
         self,
         _opts: &IntoQueryBuilderOpts,
     ) -> std::result::Result<BatchQueryDefinition, ParseRequestError> {
         match self {
-            BatchGQLRequest::Single(request) => Ok(BatchQueryDefinition {
+            GQLRequest::Single(request) => Ok(BatchQueryDefinition {
                 definition: QueryDefinitionTypes::Single(request.into()),
                 ctx_data: None,
             }),
-            BatchGQLRequest::Batch(requests) => {
+            GQLRequest::Batch(requests) => {
                 let definitions = requests.into_iter().map(|request| request.into()).collect();
                 Ok(BatchQueryDefinition {
                     definition: QueryDefinitionTypes::Batch(definitions),
@@ -243,13 +243,13 @@ mod tests {
 
     #[test]
     fn test_batch_request() {
-        let request: BatchGQLRequest = serde_json::from_value(json! ([{
+        let request: GQLRequest = serde_json::from_value(json! ([{
             "query": "{ a b c }"
         }, {
             "query": "{ d e f }"
         }]))
         .unwrap();
-        if let BatchGQLRequest::Batch(requests) = request {
+        if let GQLRequest::Batch(requests) = request {
             assert_eq!(requests[0].query, "{ a b c }");
             assert_eq!(requests[1].query, "{ d e f }");
         } else {
@@ -259,11 +259,11 @@ mod tests {
 
     #[test]
     fn test_batch_request_single_operation() {
-        let request: BatchGQLRequest = serde_json::from_value(json! ({
+        let request: GQLRequest = serde_json::from_value(json! ({
             "query": "{ a b c }"
         }))
         .unwrap();
-        if let BatchGQLRequest::Single(request) = request {
+        if let GQLRequest::Single(request) = request {
             assert_eq!(request.query, "{ a b c }");
         } else {
             panic!("Batch query not parsed as a batch")

@@ -5,7 +5,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{BatchGQLRequest, StreamBody};
+use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
     BatchQueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
     IntoQueryBuilderOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
@@ -103,7 +103,7 @@ where
              opts: Arc<IntoQueryBuilderOpts>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: BatchGQLRequest =
+                    let gql_request: GQLRequest =
                         serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let definition = gql_request

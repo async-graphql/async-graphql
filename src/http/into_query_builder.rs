@@ -1,4 +1,4 @@
-use crate::http::BatchGQLRequest;
+use crate::http::GQLRequest;
 use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts};
 use crate::{BatchQueryDefinition, ParseRequestError};
 use bytes::Bytes;
@@ -69,7 +69,7 @@ where
                 match field.name() {
                     Some("operations") => {
                         let request_str = field.text().await?;
-                        let request: BatchGQLRequest = serde_json::from_str(&request_str)
+                        let request: GQLRequest = serde_json::from_str(&request_str)
                             .map_err(ParseRequestError::InvalidRequest)?;
                         builder = Some(request.into_batch_query_definition().await?);
                     }
@@ -131,7 +131,7 @@ where
                 .read_to_end(&mut data)
                 .await
                 .map_err(ParseRequestError::Io)?;
-            let gql_request: BatchGQLRequest =
+            let gql_request: GQLRequest =
                 serde_json::from_slice(&data).map_err(ParseRequestError::InvalidRequest)?;
             gql_request.into_batch_query_definition().await
         }
