@@ -8,7 +8,7 @@ use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
     BatchQueryResponse, CacheControl, Error, ObjectType, ParseRequestError, Pos, QueryBuilder,
-    QueryEnv, QueryError, Result, StreamResponse, SubscriptionType, Type, Variables, ID,
+    QueryEnv, QueryError, Result, SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::query::{Document, OperationType};
 use bytes::Bytes;
@@ -240,20 +240,6 @@ where
             }
         });
 
-        registry.add_directive(MetaDirective {
-            name: "defer",
-            description: None,
-            locations: vec![__DirectiveLocation::FIELD],
-            args: Default::default(),
-        });
-
-        registry.add_directive(MetaDirective {
-            name: "stream",
-            description: None,
-            locations: vec![__DirectiveLocation::FIELD],
-            args: Default::default(),
-        });
-
         // register scalars
         bool::create_type_info(&mut registry);
         i32::create_type_info(&mut registry);
@@ -320,14 +306,6 @@ where
             return Err(ParseRequestError::EmptyQuery);
         };
         Ok(definition.execute(self).await)
-    }
-
-    /// Execute the query without creating the `QueryBuilder`, returns a stream, the first result being the query result,
-    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
-    /// in the query will there be subsequent incremental results.
-    /// Currently NOT IMPLEMENTED
-    async fn execute_stream(&self, _query_source: &str) -> StreamResponse {
-        unimplemented!()
     }
 
     pub(crate) fn prepare_query(
@@ -422,7 +400,6 @@ where
             None,
             &env.document.current_operation().selection_set,
             &resolve_id,
-            None,
         );
         let mut streams = Vec::new();
         create_subscription_stream(self, env.clone(), &ctx, &mut streams)

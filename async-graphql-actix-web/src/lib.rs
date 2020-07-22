@@ -3,10 +3,8 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-use std::convert::Infallible;
 use std::pin::Pin;
 
-use actix_web::body::BodyStream;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
@@ -18,7 +16,7 @@ use http::Method;
 use async_graphql::http::StreamBody;
 use async_graphql::{
     BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
-    ParseRequestError, QueryResponse, StreamResponse,
+    ParseRequestError,
 };
 pub use subscription::WSSubscription;
 

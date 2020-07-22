@@ -5,17 +5,14 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, BatchGQLRequest, GQLRequest, StreamBody};
+use async_graphql::http::{BatchGQLRequest, StreamBody};
 use async_graphql::{
     BatchQueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
-    IntoQueryBuilderOpts, ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType,
-    WebSocketTransport,
+    IntoQueryBuilderOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::{select, SinkExt, StreamExt};
-use hyper::header::HeaderValue;
-use hyper::{Body, Method};
-use std::convert::Infallible;
+use hyper::Method;
 use std::sync::Arc;
 use warp::filters::ws::Message;
 use warp::filters::BoxedFilter;

@@ -2,14 +2,11 @@ use crate::extensions::Extensions;
 use crate::parser::query::{Directive, Field, SelectionSet};
 use crate::schema::SchemaEnv;
 use crate::{
-    FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, QueryResponse, Result,
-    Type, Value,
+    FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Type, Value,
 };
 use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
-use futures::Future;
-use parking_lot::Mutex;
 use serde::ser::SerializeSeq;
 use serde::Serializer;
 use std::any::{Any, TypeId};
@@ -17,7 +14,6 @@ use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::ops::{Deref, DerefMut};
-use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -256,25 +252,6 @@ impl std::fmt::Display for ResolveId {
     }
 }
 
-#[doc(hidden)]
-pub type BoxDeferFuture =
-    Pin<Box<dyn Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static>>;
-
-#[doc(hidden)]
-pub struct DeferList {
-    pub path_prefix: Vec<serde_json::Value>,
-    pub futures: Mutex<Vec<BoxDeferFuture>>,
-}
-
-impl DeferList {
-    pub(crate) fn append<F>(&self, fut: F)
-    where
-        F: Future<Output = Result<(QueryResponse, DeferList)>> + Send + 'static,
-    {
-        self.futures.lock().push(Box::pin(fut));
-    }
-}
-
 /// Query context
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
@@ -286,7 +263,6 @@ pub struct ContextBase<'a, T> {
     pub item: T,
     pub(crate) schema_env: &'a SchemaEnv,
     pub(crate) query_env: &'a QueryEnv,
-    pub(crate) defer_list: Option<&'a DeferList>,
 }
 
 impl<'a, T> Deref for ContextBase<'a, T> {
@@ -340,7 +316,6 @@ impl QueryEnv {
         path_node: Option<QueryPathNode<'a>>,
         item: T,
         inc_resolve_id: &'a AtomicUsize,
-        defer_list: Option<&'a DeferList>,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
@@ -349,7 +324,6 @@ impl QueryEnv {
             item,
             schema_env,
             query_env: self,
-            defer_list,
         }
     }
 }
@@ -387,7 +361,6 @@ impl<'a, T> ContextBase<'a, T> {
             inc_resolve_id: self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            defer_list: self.defer_list,
         }
     }
 
@@ -403,7 +376,6 @@ impl<'a, T> ContextBase<'a, T> {
             inc_resolve_id: &self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            defer_list: self.defer_list,
         }
     }
 
@@ -536,16 +508,6 @@ impl<'a, T> ContextBase<'a, T> {
 
         Ok(false)
     }
-
-    #[doc(hidden)]
-    pub fn is_defer(&self, directives: &[Positioned<Directive>]) -> bool {
-        directives.iter().any(|d| d.name.node == "defer")
-    }
-
-    #[doc(hidden)]
-    pub fn is_stream(&self, directives: &[Positioned<Directive>]) -> bool {
-        directives.iter().any(|d| d.name.node == "stream")
-    }
 }
 
 impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
@@ -561,7 +523,6 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
             inc_resolve_id: self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            defer_list: self.defer_list,
         }
     }
 }

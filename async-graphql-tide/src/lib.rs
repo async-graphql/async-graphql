@@ -5,17 +5,12 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{
-    multipart_stream, BatchGQLRequest, BatchGQLResponse, GQLRequest, GQLResponse, StreamBody,
-};
+use async_graphql::http::{BatchGQLRequest, BatchGQLResponse, GQLRequest};
 use async_graphql::{
     BatchQueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
-    ObjectType, QueryResponse, Schema, StreamResponse, SubscriptionType,
+    ObjectType, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
-use futures::channel::mpsc;
-use futures::io::BufReader;
-use futures::{SinkExt, StreamExt};
 use std::str::FromStr;
 use tide::{
     http::{headers, Method},

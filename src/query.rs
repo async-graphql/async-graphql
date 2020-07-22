@@ -1,4 +1,4 @@
-use crate::context::{Data, DeferList, ResolveId};
+use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
@@ -8,12 +8,9 @@ use crate::{
     SubscriptionType, Variables,
 };
 use async_graphql_parser::query::OperationType;
-use futures::{Stream, StreamExt};
 use itertools::Itertools;
 use std::any::Any;
-use std::borrow::Cow;
 use std::fs::File;
-use std::pin::Pin;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -46,14 +43,6 @@ pub trait IntoBatchQueryDefinition: Sized {
 /// Query response
 #[derive(Debug)]
 pub struct QueryResponse {
-    /// Label for RelayModernQueryExecutor
-    ///
-    /// https://github.com/facebook/relay/blob/2859aa8df4df7d4d6d9eef4c9dc1134286773710/packages/relay-runtime/store/RelayModernQueryExecutor.js#L1267
-    pub label: Option<String>,
-
-    /// Path for subsequent response
-    pub path: Option<Vec<serde_json::Value>>,
-
     /// Data of query result
     pub data: serde_json::Value,
 
@@ -62,61 +51,6 @@ pub struct QueryResponse {
 
     /// Cache control value
     pub cache_control: CacheControl,
-}
-
-impl QueryResponse {
-    pub(crate) fn apply_path_prefix(mut self, mut prefix: Vec<serde_json::Value>) -> Self {
-        if let Some(path) = &mut self.path {
-            prefix.extend(path.drain(..));
-            *path = prefix;
-        } else {
-            self.path = Some(prefix);
-        }
-
-        self.label = self.path.as_ref().map(|path| {
-            path.iter()
-                .map(|value| {
-                    if let serde_json::Value::String(s) = value {
-                        Cow::Borrowed(s.as_str())
-                    } else {
-                        Cow::Owned(value.to_string())
-                    }
-                })
-                .join("$")
-        });
-
-        self
-    }
-
-    pub(crate) fn merge(&mut self, resp: QueryResponse) {
-        let mut p = &mut self.data;
-        for item in resp.path.unwrap_or_default() {
-            match item {
-                serde_json::Value::String(name) => {
-                    if let serde_json::Value::Object(obj) = p {
-                        if let Some(next) = obj.get_mut(&name) {
-                            p = next;
-                            continue;
-                        }
-                    }
-                    return;
-                }
-                serde_json::Value::Number(idx) => {
-                    if let serde_json::Value::Array(array) = p {
-                        let idx = idx.as_i64().unwrap() as usize;
-                        while array.len() <= idx {
-                            array.push(serde_json::Value::Null);
-                        }
-                        p = array.get_mut(idx as usize).unwrap();
-                        continue;
-                    }
-                    return;
-                }
-                _ => {}
-            }
-        }
-        *p = resp.data;
-    }
 }
 
 /// Batch Query response
@@ -173,25 +107,6 @@ impl BatchQueryResponse {
         match self {
             BatchQueryResponse::Batch(resp) => resp,
             _ => panic!(),
-        }
-    }
-}
-
-/// Response for `Schema::execute_stream` and `QueryBuilder::execute_stream`
-pub enum StreamResponse {
-    /// There is no `@defer` or `@stream` directive in the query, this is the final result.
-    Single(Result<QueryResponse>),
-
-    /// Streaming responses.
-    Stream(Pin<Box<dyn Stream<Item = Result<QueryResponse>> + Send + 'static>>),
-}
-
-impl StreamResponse {
-    /// Convert to a stream.
-    pub fn into_stream(self) -> impl Stream<Item = Result<QueryResponse>> + Send + 'static {
-        match self {
-            StreamResponse::Single(resp) => Box::pin(futures::stream::once(async move { resp })),
-            StreamResponse::Stream(stream) => stream,
         }
     }
 }
@@ -362,66 +277,11 @@ impl QueryDefinition {
             .set_upload(var_path, filename, content_type, content);
     }
 
-    async fn execute_stream_with_ctx<Query, Mutation, Subscription>(
+    async fn execute_with_ctx<Query, Mutation, Subscription>(
         self,
         schema: &Schema<Query, Mutation, Subscription>,
         ctx_data: Arc<Data>,
-    ) -> StreamResponse
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        let schema = schema.clone();
-        match self.execute_first(&schema, ctx_data).await {
-            Ok((first_resp, defer_list)) if defer_list.futures.lock().is_empty() => {
-                StreamResponse::Single(Ok(first_resp))
-            }
-            Err(err) => StreamResponse::Single(Err(err)),
-            Ok((first_resp, defer_list)) => {
-                let stream = async_stream::try_stream! {
-                    yield first_resp;
-
-                    let mut current_defer_list = Vec::new();
-                    for fut in defer_list.futures.into_inner() {
-                        current_defer_list.push((defer_list.path_prefix.clone(), fut));
-                    }
-
-                    loop {
-                        let mut next_defer_list = Vec::new();
-                        for (path_prefix, defer) in current_defer_list {
-                            let (res, mut defer_list) = defer.await?;
-                            for fut in defer_list.futures.into_inner() {
-                                let mut next_path_prefix = path_prefix.clone();
-                                next_path_prefix.extend(defer_list.path_prefix.clone());
-                                next_defer_list.push((next_path_prefix, fut));
-                            }
-                            let mut new_res = res.apply_path_prefix(path_prefix);
-                            new_res.label = new_res.path.as_ref().map(|path| path.iter().map(|value| {
-                                if let serde_json::Value::String(s) = value {
-                                    s.to_string()
-                                } else {
-                                    value.to_string()
-                                }
-                            }).join("$"));
-                            yield new_res;
-                        }
-                        if next_defer_list.is_empty() {
-                            break;
-                        }
-                        current_defer_list = next_defer_list;
-                    }
-                };
-                StreamResponse::Stream(Box::pin(stream))
-            }
-        }
-    }
-
-    async fn execute_first<'a, Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-        ctx_data: Arc<Data>,
-    ) -> Result<(QueryResponse, DeferList)>
+    ) -> Result<QueryResponse>
     where
         Query: ObjectType + Send + Sync + 'static,
         Mutation: ObjectType + Send + Sync + 'static,
@@ -452,10 +312,6 @@ impl QueryDefinition {
         }
 
         let env = QueryEnv::new(extensions, self.variables, document, ctx_data);
-        let defer_list = DeferList {
-            path_prefix: Vec::new(),
-            futures: Default::default(),
-        };
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
@@ -463,7 +319,6 @@ impl QueryDefinition {
             item: &env.document.current_operation().selection_set,
             schema_env: &schema.env,
             query_env: &env,
-            defer_list: Some(&defer_list),
         };
 
         env.extensions.lock().execution_start();
@@ -480,37 +335,12 @@ impl QueryDefinition {
         };
 
         env.extensions.lock().execution_end();
-        let res = QueryResponse {
-            label: None,
-            path: None,
+        let extensions = env.extensions.lock().result();
+        Ok(QueryResponse {
             data,
-            extensions: env.extensions.lock().result(),
+            extensions,
             cache_control,
-        };
-        Ok((res, defer_list))
-    }
-
-    async fn execute_with_ctx<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-        ctx_data: Arc<Data>,
-    ) -> Result<QueryResponse>
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        let resp = self.execute_stream_with_ctx(schema, ctx_data).await;
-        match resp {
-            StreamResponse::Single(res) => res,
-            StreamResponse::Stream(mut stream) => {
-                let mut resp = stream.next().await.unwrap()?;
-                while let Some(resp_part) = stream.next().await.transpose()? {
-                    resp.merge(resp_part);
-                }
-                Ok(resp)
-            }
-        }
+        })
     }
 }
 
