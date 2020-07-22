@@ -26,7 +26,7 @@ pub struct IntoQueryBuilderOpts {
 
 #[allow(missing_docs)]
 #[async_trait::async_trait]
-pub trait IntoBatchQueryDefinition: Sized {
+pub trait IntoQueryDefinition: Sized {
     async fn into_batch_query_definition(
         self,
     ) -> std::result::Result<QueryDefinition, ParseRequestError> {

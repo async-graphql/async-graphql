@@ -15,7 +15,7 @@ use http::Method;
 
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryBuilderOpts,
     ParseRequestError,
 };
 pub use subscription::WSSubscription;

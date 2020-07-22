@@ -1,5 +1,5 @@
 use crate::http::GQLRequest;
-use crate::query::{IntoBatchQueryDefinition, IntoQueryBuilderOpts};
+use crate::query::{IntoQueryDefinition, IntoQueryBuilderOpts};
 use crate::{QueryDefinition, ParseRequestError};
 use bytes::Bytes;
 use futures::{AsyncRead, AsyncReadExt, Stream};
@@ -20,7 +20,7 @@ impl From<multer::Error> for ParseRequestError {
 }
 
 #[async_trait::async_trait]
-impl<CT, Body> IntoBatchQueryDefinition for (Option<CT>, Body)
+impl<CT, Body> IntoQueryDefinition for (Option<CT>, Body)
 where
     CT: AsRef<str> + Send,
     Body: AsyncRead + Send + Unpin + 'static,

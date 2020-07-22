@@ -7,7 +7,7 @@
 
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, Data, FieldResult, IntoBatchQueryDefinition,
+    QueryDefinition, BatchQueryResponse, Data, FieldResult, IntoQueryDefinition,
     IntoQueryBuilderOpts, ObjectType, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;

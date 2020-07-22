@@ -7,7 +7,7 @@
 
 use async_graphql::http::{GQLRequest, BatchGQLResponse, GQLRequestPart};
 use async_graphql::{
-    QueryDefinition, BatchQueryResponse, IntoBatchQueryDefinition, IntoQueryBuilderOpts,
+    QueryDefinition, BatchQueryResponse, IntoQueryDefinition, IntoQueryBuilderOpts,
     ObjectType, Schema, SubscriptionType,
 };
 use async_trait::async_trait;
