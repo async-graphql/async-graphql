@@ -77,7 +77,7 @@ pub async fn test_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Admin)
             .execute(&schema)
@@ -92,7 +92,7 @@ pub async fn test_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Guest)
             .execute(&schema)
@@ -111,7 +111,7 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Admin)
             .execute(&schema)
@@ -126,7 +126,7 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Guest)
             .execute(&schema)
@@ -207,7 +207,7 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Admin)
             .data(Username("test".to_string()))
@@ -221,7 +221,7 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Guest)
             .data(Username("test".to_string()))
@@ -241,7 +241,7 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Admin)
             .data(Username("test1".to_string()))
@@ -261,7 +261,7 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(Role::Guest)
             .data(Username("test1".to_string()))
@@ -311,7 +311,7 @@ pub async fn test_guard_forward_arguments() {
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(ID::from("abc"))
             .execute(&schema)
@@ -324,7 +324,7 @@ pub async fn test_guard_forward_arguments() {
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .data(ID::from("aaa"))
             .execute(&schema)

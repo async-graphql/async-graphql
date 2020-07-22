@@ -53,7 +53,7 @@ pub async fn test_input_value_custom_error() {
             enumValue(value: TYPE)
         }"#;
     assert_eq!(
-        QueryBuilderReal::new_single(query)
+        QueryBuilder::new_single(query)
             .finish()
             .execute(&schema)
             .await

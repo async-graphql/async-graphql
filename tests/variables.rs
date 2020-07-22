@@ -16,7 +16,7 @@ pub async fn test_variables() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilderReal::new_single(
+    let query = QueryBuilder::new_single(
         r#"
             query QueryWithVariables($intVal: Int!, $intListVal: [Int!]!) {
                 intVal(value: $intVal)
@@ -84,7 +84,7 @@ pub async fn test_variable_no_value() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilderReal::new_single(
+    let query = QueryBuilder::new_single(
         r#"
             query QueryWithVariables($intVal: Int) {
                 intVal(value: $intVal)
@@ -113,7 +113,7 @@ pub async fn test_variable_null() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilderReal::new_single(
+    let query = QueryBuilder::new_single(
         r#"
             query QueryWithVariables($intVal: Int) {
                 intVal(value: $intVal)
@@ -172,7 +172,7 @@ pub async fn test_variable_in_input_object() {
         query TestQuery($value: Int!) {
             test(input: {value: $value })
         }"#;
-        let resp = QueryBuilderReal::new_single(query)
+        let resp = QueryBuilder::new_single(query)
             .variables(
                 Variables::parse_from_json(serde_json::json!({
                     "value": 10,
@@ -198,7 +198,7 @@ pub async fn test_variable_in_input_object() {
         query TestQuery($value: Int!) {
             test2(input: [{value: $value }, {value: $value }])
         }"#;
-        let resp = QueryBuilderReal::new_single(query)
+        let resp = QueryBuilder::new_single(query)
             .variables(
                 Variables::parse_from_json(serde_json::json!({
                     "value": 3,
@@ -224,7 +224,7 @@ pub async fn test_variable_in_input_object() {
         mutation TestMutation($value: Int!) {
             test(input: {value: $value })
         }"#;
-        let resp = QueryBuilderReal::new_single(query)
+        let resp = QueryBuilder::new_single(query)
             .variables(
                 Variables::parse_from_json(serde_json::json!({
                     "value": 10,

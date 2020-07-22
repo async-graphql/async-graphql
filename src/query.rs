@@ -514,15 +514,14 @@ impl QueryDefinition{
     }
 }
 
-// TODO: rename
 /// Main query builder type. You can use it to build either a single query, or a batch query
 /// The difference between single and batch queries using `new_single` and `new_batch` methods
-pub struct QueryBuilderReal{
+pub struct QueryBuilder {
     current_builder: SingleQueryBuilder,
     completed_builders: Vec<QueryDefinition>,
 }
 
-impl QueryBuilderReal {
+impl QueryBuilder {
     /// Create query builder with query source for a single query.
     pub fn new_single<T: Into<String>>(query_source: T) -> SingleQueryBuilder {
         SingleQueryBuilder::new(query_source)
