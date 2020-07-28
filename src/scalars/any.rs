@@ -46,7 +46,11 @@ mod test {
 
     #[test]
     fn test_conversion_ok() {
-        let value = Value::List(vec![Value::Int(1.into()), Value::Float(2.0), Value::Null]);
+        let value = Value::List(vec![
+            Value::Number(1.into()),
+            Value::Boolean(true),
+            Value::Null,
+        ]);
         let expected = Any(value.clone());
         let output: Any = value.into();
         assert_eq!(output, expected);

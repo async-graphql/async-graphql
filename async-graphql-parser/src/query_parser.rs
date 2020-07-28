@@ -6,7 +6,6 @@ use crate::{Error, Result};
 use pest::iterators::Pair;
 use pest::Parser;
 use std::collections::BTreeMap;
-use std::num::{ParseFloatError, ParseIntError};
 
 #[derive(Parser)]
 #[grammar = "query.pest"]
@@ -242,23 +241,16 @@ fn parse_value2(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Value> 
         Rule::object => parse_object_value(pair, pc)?,
         Rule::array => parse_array_value(pair, pc)?,
         Rule::variable => Value::Variable(parse_variable(pair, pc)?.into_inner()),
-        Rule::float => {
+        Rule::float | Rule::int => {
             let pos = pc.step(&pair);
-            Value::Float(
+            Value::Number(
                 pair.as_str()
                     .parse()
-                    .map_err(|err: ParseFloatError| Error {
+                    .map_err(|err: serde_json::Error| Error {
                         pos,
                         message: err.to_string(),
                     })?,
             )
-        }
-        Rule::int => {
-            let pos = pc.step(&pair);
-            Value::Int(pair.as_str().parse().map_err(|err: ParseIntError| Error {
-                pos,
-                message: err.to_string(),
-            })?)
         }
         Rule::string => Value::String({
             let pos = pc.step(&pair);
@@ -531,18 +523,8 @@ mod tests {
     #[test]
     fn test_parse_overflowing_int() {
         let query_ok = format!("mutation {{ add(big: {}) }} ", std::i32::MAX);
-        let query_overflow = format!("mutation {{ add(big: {}0) }} ", std::i32::MAX);
+        let query_overflow = format!("mutation {{ add(big: {}0000) }} ", std::i32::MAX);
         assert!(parse_query(query_ok).is_ok());
-        assert!(parse_query(query_overflow).is_err());
-    }
-
-    #[test]
-    fn test_parse_overflowing_float() {
-        let query_ok = format!("mutation {{ add(big: {:.1}) }} ", std::f64::MAX);
-        let query_overflow = format!("mutation {{ add(big: 1{:.1}) }} ", std::f64::MAX);
-        assert!(parse_query(query_ok).is_ok());
-
-        // NOTE: This is also ok since overflow gets parsed to infinity.
         assert!(parse_query(query_overflow).is_ok());
     }
 }

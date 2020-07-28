@@ -6,13 +6,13 @@ pub async fn test_input_value_custom_error() {
 
     #[Object]
     impl Query {
-        async fn parse_int(&self, _n: i64) -> bool {
+        async fn parse_int(&self, _n: i8) -> bool {
             true
         }
     }
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-    let query = r#"{ parseInt(n:"A") }"#;
+    let query = r#"{ parseInt(n:289) }"#;
     assert_eq!(
         schema.execute(&query).await.unwrap_err(),
         Error::Query {
@@ -22,7 +22,7 @@ pub async fn test_input_value_custom_error() {
             },
             path: None,
             err: QueryError::ParseInputValue {
-                reason: "invalid digit found in string".to_string()
+                reason: "Only integers from -128 to 127 are accepted.".to_string()
             },
         }
     );

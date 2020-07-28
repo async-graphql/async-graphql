@@ -77,7 +77,7 @@ impl PartialEq<&str> for ID {
 impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::Int(n) => Ok(ID(n.to_string())),
+            Value::Number(n) if n.is_i64() => Ok(ID(n.to_string())),
             Value::String(s) => Ok(ID(s)),
             _ => Err(InputValueError::ExpectedType(value)),
         }
@@ -85,7 +85,8 @@ impl ScalarType for ID {
 
     fn is_valid(value: &Value) -> bool {
         match value {
-            Value::Int(_) | Value::String(_) => true,
+            Value::Number(n) if n.is_i64() => true,
+            Value::String(_) => true,
             _ => false,
         }
     }

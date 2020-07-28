@@ -33,8 +33,7 @@ impl Clone for UploadValue {
 pub enum Value {
     Null,
     Variable(String),
-    Int(i32),
-    Float(f64),
+    Number(serde_json::Number),
     String(String),
     Boolean(bool),
     Enum(String),
@@ -51,8 +50,7 @@ impl serde::Serialize for Value {
         match self {
             Value::Null => serializer.serialize_none(),
             Value::Variable(variable) => serializer.serialize_str(&format!("${}", variable)),
-            Value::Int(value) => serializer.serialize_i32(*value),
-            Value::Float(value) => serializer.serialize_f64(*value),
+            Value::Number(value) => value.serialize(serializer),
             Value::String(value) => serializer.serialize_str(value),
             Value::Boolean(value) => serializer.serialize_bool(*value),
             Value::Enum(value) => serializer.serialize_str(value),
@@ -87,8 +85,7 @@ impl PartialEq for Value {
 
         match (self, other) {
             (Variable(a), Variable(b)) => a.eq(b),
-            (Int(a), Int(b)) => a.eq(b),
-            (Float(a), Float(b)) => a.eq(b),
+            (Number(a), Number(b)) => a.eq(b),
             (String(a), String(b)) => a.eq(b),
             (Boolean(a), Boolean(b)) => a.eq(b),
             (Null, Null) => true,
@@ -145,8 +142,7 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Variable(name) => write!(f, "${}", name),
-            Value::Int(num) => write!(f, "{}", *num),
-            Value::Float(val) => write!(f, "{}", *val),
+            Value::Number(num) => write!(f, "{}", *num),
             Value::String(ref val) => write_quoted(val, f),
             Value::Boolean(true) => write!(f, "true"),
             Value::Boolean(false) => write!(f, "false"),
@@ -188,8 +184,7 @@ impl From<Value> for serde_json::Value {
         match value {
             Value::Null => serde_json::Value::Null,
             Value::Variable(name) => name.into(),
-            Value::Int(n) => n.into(),
-            Value::Float(n) => n.into(),
+            Value::Number(n) => serde_json::Value::Number(n),
             Value::String(s) => s.into(),
             Value::Boolean(v) => v.into(),
             Value::Enum(e) => e.into(),
@@ -213,8 +208,7 @@ impl From<serde_json::Value> for Value {
         match value {
             serde_json::Value::Null => Value::Null,
             serde_json::Value::Bool(n) => Value::Boolean(n),
-            serde_json::Value::Number(n) if n.is_f64() => Value::Float(n.as_f64().unwrap()),
-            serde_json::Value::Number(n) => Value::Int(n.as_i64().unwrap() as i32),
+            serde_json::Value::Number(n) => Value::Number(n),
             serde_json::Value::String(s) => Value::String(s),
             serde_json::Value::Array(ls) => Value::List(ls.into_iter().map(Into::into).collect()),
             serde_json::Value::Object(obj) => Value::Object(

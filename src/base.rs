@@ -116,15 +116,16 @@ pub trait InputObjectType: InputValueType {}
 /// #[Scalar]
 /// impl ScalarType for MyInt {
 ///     fn parse(value: Value) -> InputValueResult<Self> {
-///         if let Value::Int(n) = value {
-///             Ok(MyInt(n as i32))
-///         } else {
-///             Err(InputValueError::ExpectedType(value))
+///         if let Value::Number(n) = &value {
+///             if let Some(n) = n.as_i64() {
+///                 return Ok(MyInt(n as i32));
+///             }
 ///         }
+///         Err(InputValueError::ExpectedType(value))
 ///     }
 ///
 ///     fn to_value(&self) -> Value {
-///         Value::Int(self.0)
+///         Value::Number(self.0.into())
 ///     }
 /// }
 /// ```

@@ -1,191 +1,85 @@
 use crate::{InputValueError, InputValueResult, ScalarType, Value};
 use async_graphql_derive::Scalar;
 
-/// The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
-#[Scalar(internal, name = "Int")]
-impl ScalarType for i8 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::Int(*self as i32)
-    }
-}
-
-/// The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
-#[Scalar(internal, name = "Int")]
-impl ScalarType for i16 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::Int(*self as i32)
-    }
-}
-
-/// The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
-#[Scalar(internal, name = "Int")]
-impl ScalarType for i32 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::Int(*self as i32)
-    }
-}
-
-/// The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
-#[Scalar(internal, name = "Int")]
-impl ScalarType for u8 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::Int(*self as i32)
-    }
-}
-
-/// The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
-#[Scalar(internal, name = "Int")]
-impl ScalarType for u16 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::Int(*self as i32)
-    }
-}
-
-/// The `Int64` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^64) and 2^64 - 1.
-#[Scalar(internal, name = "Int64")]
-impl ScalarType for i64 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => Ok(n as Self),
-            Value::String(s) => Ok(s.parse()?),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) | Value::String(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::String(self.to_string())
-    }
-}
-
-/// The `UInt64` scalar type represents non-fractional signed whole numeric values. Int can represent values between 0 and 2^64.
-#[Scalar(internal, name = "UInt64")]
-impl ScalarType for u32 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => {
-                if n < 0 {
-                    return Err(InputValueError::Custom("Expect a positive number.".into()));
+macro_rules! int_scalar {
+    ($($ty:ty),*) => {
+        $(
+        /// The `Int` scalar type represents non-fractional whole numeric values.
+        #[Scalar(internal, name = "Int")]
+        impl ScalarType for $ty {
+            fn parse(value: Value) -> InputValueResult<Self> {
+                match value {
+                    Value::Number(n) => {
+                        let n = n
+                            .as_i64()
+                            .ok_or_else(|| InputValueError::from("Invalid number"))?;
+                        if n < Self::MIN as i64 || n > Self::MAX as i64 {
+                            return Err(InputValueError::from(format!(
+                                "Only integers from {} to {} are accepted.",
+                                Self::MIN,
+                                Self::MAX
+                            )));
+                        }
+                        Ok(n as Self)
+                    }
+                    _ => Err(InputValueError::ExpectedType(value)),
                 }
-                Ok(n as Self)
             }
-            Value::String(s) => Ok(s.parse()?),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
 
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) | Value::String(_) => true,
-            _ => false,
-        }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::String(self.to_string())
-    }
-}
-
-/// The `UInt64` scalar type represents non-fractional signed whole numeric values. Int can represent values between 0 and 2^64.
-#[Scalar(internal, name = "UInt64")]
-impl ScalarType for u64 {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::Int(n) => {
-                if n < 0 {
-                    return Err(InputValueError::Custom("Expect a positive number.".into()));
+            fn is_valid(value: &Value) -> bool {
+                match value {
+                    Value::Number(n) if n.is_i64() => true,
+                    _ => false,
                 }
-                Ok(n as Self)
             }
-            Value::String(s) => Ok(s.parse()?),
-            _ => Err(InputValueError::ExpectedType(value)),
-        }
-    }
 
-    fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Int(_) | Value::String(_) => true,
-            _ => false,
+            fn to_value(&self) -> Value {
+                Value::Number(serde_json::Number::from(*self as i64))
+            }
         }
-    }
-
-    fn to_value(&self) -> Value {
-        Value::String(self.to_string())
-    }
+        )*
+    };
 }
+
+macro_rules! uint_scalar {
+    ($($ty:ty),*) => {
+        $(
+        /// The `Int` scalar type represents non-fractional whole numeric values.
+        #[Scalar(internal, name = "Int")]
+        impl ScalarType for $ty {
+            fn parse(value: Value) -> InputValueResult<Self> {
+                match value {
+                    Value::Number(n) => {
+                        let n = n
+                            .as_u64()
+                            .ok_or_else(|| InputValueError::from("Invalid number"))?;
+                        if n > Self::MAX as u64 {
+                            return Err(InputValueError::from(format!(
+                                "Only integers from {} to {} are accepted.",
+                                0,
+                                Self::MAX
+                            )));
+                        }
+                        Ok(n as Self)
+                    }
+                    _ => Err(InputValueError::ExpectedType(value)),
+                }
+            }
+
+            fn is_valid(value: &Value) -> bool {
+                match value {
+                    Value::Number(n) if n.is_u64() => true,
+                    _ => false,
+                }
+            }
+
+            fn to_value(&self) -> Value {
+                Value::Number(serde_json::Number::from(*self as u64))
+            }
+        }
+        )*
+    };
+}
+
+int_scalar!(i8, i16, i32, i64);
+uint_scalar!(u8, u16, u32, u64);

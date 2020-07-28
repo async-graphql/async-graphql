@@ -15,12 +15,12 @@ struct StringNumber(i64);
 #[Scalar]
 impl ScalarType for StringNumber {
     fn parse(value: Value) -> InputValueResult<Self> {
-        if let Value::String(value) = value {
+        if let Value::String(value) = &value {
             // Parse the integer value
-            value.parse().map(StringNumber)?
+            Ok(value.parse().map(StringNumber)?)
         } else {
             // If the type does not match
-            InputValueError::ExpectedType
+            Err(InputValueError::ExpectedType(value))
         }
     }
 
