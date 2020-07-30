@@ -156,6 +156,7 @@ pub use query::{
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
+pub use serde_json::Number;
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
