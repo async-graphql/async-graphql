@@ -203,22 +203,22 @@ impl Query {
 </span>struct MustBeZero {}
 
 impl InputValueValidator for InputValueValidator {
-    fn is_valid(&amp;self, value: &amp;Value) -&gt; Option&lt;String&gt; {
+    fn is_valid(&amp;self, value: &amp;Value) -&gt; Result&lt;(), String&gt; {
         if let Value::Int(n) = value {
             if n.as_i64().unwrap() != 0 {
                 // Validation failed
-                Some(format!(
+                Err(format!(
                     &quot;the value is {}, but must be zero&quot;,
                     n.as_i64().unwrap(),
                 ))
             } else {
                 // Validation succeeded
-                None
+                Ok(())
             }
         } else {
             // If the type does not match we can return None and built-in validations
             // will pick up on the error
-            None
+            Ok(())
         }
     }
 }
