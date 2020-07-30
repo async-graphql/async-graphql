@@ -46,8 +46,8 @@ where
 {
     /// Check value is valid, returns the reason for the error if it fails, otherwise None.
     ///
-    /// If the input type is different from the required type, return None directly, and other validators will find this error.
-    fn is_valid(&self, value: &Value) -> Option<String>;
+    /// If the input type is different from the required type, return `Ok(())` directly, and other validators will find this error.
+    fn is_valid(&self, value: &Value) -> Result<(), String>;
 }
 
 /// An extension trait for `InputValueValidator`
@@ -78,8 +78,9 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        self.0.is_valid(value).or_else(|| self.1.is_valid(value))
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        self.0.is_valid(value)?;
+        self.1.is_valid(value)
     }
 }
 
@@ -91,11 +92,11 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        if self.0.is_valid(value).is_some() {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        if self.0.is_valid(value).is_err() {
             self.1.is_valid(value)
         } else {
-            None
+            Ok(())
         }
     }
 }
@@ -108,7 +109,7 @@ where
     I: InputValueValidator,
     F: Fn(String) -> String + Send + Sync,
 {
-    fn is_valid(&self, value: &Value) -> Option<String> {
-        self.0.is_valid(value).map(&self.1)
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        self.0.is_valid(value).map_err(&self.1)
     }
 }

@@ -155,7 +155,7 @@ pub fn is_valid_input_value(
                                         };
 
                                         if let Some(value) = value {
-                                            if let Some(reason) = validator.is_valid(value) {
+                                            if let Err(reason) = validator.is_valid(value) {
                                                 return Some(valid_error(
                                                     &QueryPathNode {
                                                         parent: Some(&path_node),

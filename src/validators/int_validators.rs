@@ -11,18 +11,18 @@ pub struct IntRange {
 }
 
 impl InputValueValidator for IntRange {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Number(n) = value {
             if let Some(n) = n.as_i64() {
                 if n < self.min || n > self.max {
-                    return Some(format!(
+                    return Err(format!(
                         "the value is {}, must be between {} and {}",
                         n, self.min, self.max
                     ));
                 }
             }
         }
-        None
+        Ok(())
     }
 }
 
@@ -33,18 +33,18 @@ pub struct IntLessThan {
 }
 
 impl InputValueValidator for IntLessThan {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Number(n) = value {
             if let Some(n) = n.as_i64() {
                 if n >= self.value {
-                    return Some(format!(
+                    return Err(format!(
                         "the value is {}, must be less than {}",
                         n, self.value
                     ));
                 }
             }
         }
-        None
+        Ok(())
     }
 }
 
@@ -55,18 +55,18 @@ pub struct IntGreaterThan {
 }
 
 impl InputValueValidator for IntGreaterThan {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Number(n) = value {
             if let Some(n) = n.as_i64() {
                 if n <= self.value {
-                    return Some(format!(
+                    return Err(format!(
                         "the value is {}, must be greater than {}",
                         n, self.value
                     ));
                 }
             }
         }
-        None
+        Ok(())
     }
 }
 
@@ -74,15 +74,15 @@ impl InputValueValidator for IntGreaterThan {
 pub struct IntNonZero {}
 
 impl InputValueValidator for IntNonZero {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Number(n) = value {
             if let Some(n) = n.as_i64() {
                 if n == 0 {
-                    return Some(format!("the value is {}, must be nonzero", n));
+                    return Err(format!("the value is {}, must be nonzero", n));
                 }
             }
         }
-        None
+        Ok(())
     }
 }
 
@@ -93,17 +93,17 @@ pub struct IntEqual {
 }
 
 impl InputValueValidator for IntEqual {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Number(n) = value {
             if let Some(n) = n.as_i64() {
                 if n != self.value {
-                    return Some(format!(
+                    return Err(format!(
                         "the value is {}, must be equal to {}",
                         n, self.value
                     ));
                 }
             }
         }
-        None
+        Ok(())
     }
 }

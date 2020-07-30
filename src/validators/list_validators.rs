@@ -8,19 +8,19 @@ pub struct ListMinLength {
 }
 
 impl InputValueValidator for ListMinLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::List(values) = value {
             if values.len() < self.length as usize {
-                Some(format!(
+                Err(format!(
                     "the value length is {}, must be greater than or equal to {}",
                     values.len(),
                     self.length
                 ))
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }
@@ -32,19 +32,19 @@ pub struct ListMaxLength {
 }
 
 impl InputValueValidator for ListMaxLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::List(values) = value {
             if values.len() > self.length as usize {
-                Some(format!(
+                Err(format!(
                     "the value length is {}, must be less than or equal to {}",
                     values.len(),
                     self.length
                 ))
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }
