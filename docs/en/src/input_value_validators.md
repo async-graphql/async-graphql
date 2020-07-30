@@ -50,7 +50,7 @@ Here is an example of a custom validator:
 ```rust
 struct MustBeZero {}
 
-impl InputValueValidator for InputValueValidator {
+impl InputValueValidator for MustBeZero {
     fn is_valid(&self, value: &Value) -> Option<String> {
         if let Value::Int(n) = value {
             if n.as_i64().unwrap() != 0 {
