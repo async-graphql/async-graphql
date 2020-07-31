@@ -5,15 +5,12 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, GQLRequest, GQLResponse, StreamBody};
+use async_graphql::http::{GQLRequest, GQLResponse};
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
-    StreamResponse, SubscriptionType,
+    SubscriptionType,
 };
 use async_trait::async_trait;
-use futures::channel::mpsc;
-use futures::io::BufReader;
-use futures::{SinkExt, StreamExt};
 use std::str::FromStr;
 use tide::{
     http::{headers, Method},
@@ -127,9 +124,6 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
 pub trait ResponseExt: Sized {
     /// Set body as the result of a GraphQL query.
     fn body_graphql(self, res: async_graphql::Result<QueryResponse>) -> tide::Result<Self>;
-
-    /// Set body as the result of a GraphQL streaming query.
-    fn body_graphql_stream(self, res: StreamResponse) -> tide::Result<Self>;
 }
 
 impl ResponseExt for Response {
@@ -137,31 +131,6 @@ impl ResponseExt for Response {
         let mut resp = add_cache_control(self, &res);
         resp.set_body(Body::from_json(&GQLResponse(res))?);
         Ok(resp)
-    }
-
-    fn body_graphql_stream(mut self, res: StreamResponse) -> tide::Result<Self> {
-        match res {
-            StreamResponse::Single(res) => self.body_graphql(res),
-            StreamResponse::Stream(stream) => {
-                // Body::from_reader required Sync, however StreamResponse does not have Sync.
-                // I created an issue and got a reply that this might be fixed in the future.
-                // https://github.com/http-rs/http-types/pull/144
-                // Now I can only use forwarding to solve the problem.
-                let mut stream =
-                    Box::pin(multipart_stream(stream).map(Result::Ok::<_, std::io::Error>));
-                let (mut tx, rx) = mpsc::channel(0);
-                async_std::task::spawn(async move {
-                    while let Some(item) = stream.next().await {
-                        if tx.send(item).await.is_err() {
-                            return;
-                        }
-                    }
-                });
-                self.set_body(Body::from_reader(BufReader::new(StreamBody::new(rx)), None));
-                self.insert_header(tide::http::headers::CONTENT_TYPE, "multipart/mixed");
-                Ok(self)
-            }
-        }
     }
 }
 

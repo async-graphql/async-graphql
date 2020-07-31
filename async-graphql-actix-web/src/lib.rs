@@ -5,20 +5,17 @@
 
 mod subscription;
 
-use actix_web::body::BodyStream;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::{multipart_stream, StreamBody};
+use async_graphql::http::StreamBody;
 use async_graphql::{
     IntoQueryBuilder, IntoQueryBuilderOpts, ParseRequestError, QueryBuilder, QueryResponse,
-    StreamResponse,
 };
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
 use http::Method;
-use std::convert::Infallible;
 use std::pin::Pin;
 pub use subscription::WSSubscription;
 
@@ -109,33 +106,6 @@ impl Responder for GQLResponse {
         let res =
             res.body(serde_json::to_string(&async_graphql::http::GQLResponse(self.0)).unwrap());
         futures::future::ok(res)
-    }
-}
-
-/// Responder for GraphQL response stream
-pub struct GQLResponseStream(StreamResponse);
-
-impl From<StreamResponse> for GQLResponseStream {
-    fn from(resp: StreamResponse) -> Self {
-        GQLResponseStream(resp)
-    }
-}
-
-impl Responder for GQLResponseStream {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse, Error>>;
-
-    fn respond_to(self, req: &HttpRequest) -> Self::Future {
-        match self.0 {
-            StreamResponse::Single(resp) => GQLResponse(resp).respond_to(req),
-            StreamResponse::Stream(stream) => {
-                let body =
-                    BodyStream::new(multipart_stream(stream).map(Result::<_, Infallible>::Ok));
-                let mut res = HttpResponse::build(StatusCode::OK);
-                res.content_type("multipart/mixed; boundary=\"-\"");
-                futures::future::ok(res.body(body))
-            }
-        }
     }
 }
 

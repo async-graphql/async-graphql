@@ -274,7 +274,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         }),
                                         &field.selection_set,
                                         &resolve_id,
-                                        None,
                                     );
                                     #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await
                                 }

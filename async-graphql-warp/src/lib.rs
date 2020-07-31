@@ -5,17 +5,15 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{multipart_stream, GQLRequest, StreamBody};
+use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
     Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
-    QueryResponse, Schema, StreamResponse, SubscriptionType, WebSocketTransport,
+    QueryResponse, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
-use hyper::header::HeaderValue;
-use hyper::{Body, Method};
-use std::convert::Infallible;
+use hyper::Method;
 use std::sync::Arc;
 use warp::filters::ws::Message;
 use warp::filters::BoxedFilter;
@@ -310,32 +308,5 @@ impl Reply for GQLResponse {
         .into_response();
         add_cache_control(&mut resp, &gql_resp.0);
         resp
-    }
-}
-
-/// GraphQL streaming reply
-pub struct GQLResponseStream(StreamResponse);
-
-impl From<StreamResponse> for GQLResponseStream {
-    fn from(resp: StreamResponse) -> Self {
-        GQLResponseStream(resp)
-    }
-}
-
-impl Reply for GQLResponseStream {
-    fn into_response(self) -> Response {
-        match self.0 {
-            StreamResponse::Single(resp) => GQLResponse(resp).into_response(),
-            StreamResponse::Stream(stream) => {
-                let mut resp = Response::new(Body::wrap_stream(
-                    multipart_stream(stream).map(Result::<_, Infallible>::Ok),
-                ));
-                resp.headers_mut().insert(
-                    "content-type",
-                    HeaderValue::from_static("multipart/mixed; boundary=\"-\""),
-                );
-                resp
-            }
-        }
     }
 }

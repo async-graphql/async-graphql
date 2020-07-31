@@ -2,7 +2,7 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::query::{QueryBuilder, StreamResponse};
+use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
 use crate::types::QueryRoot;
@@ -241,20 +241,6 @@ where
             }
         });
 
-        registry.add_directive(MetaDirective {
-            name: "defer",
-            description: None,
-            locations: vec![__DirectiveLocation::FIELD],
-            args: Default::default(),
-        });
-
-        registry.add_directive(MetaDirective {
-            name: "stream",
-            description: None,
-            locations: vec![__DirectiveLocation::FIELD],
-            args: Default::default(),
-        });
-
         // register scalars
         bool::create_type_info(&mut registry);
         i32::create_type_info(&mut registry);
@@ -299,13 +285,6 @@ where
     /// Execute query without create the `QueryBuilder`.
     pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
         QueryBuilder::new(query_source).execute(self).await
-    }
-
-    /// Execute the query without create the `QueryBuilder`, returns a stream, the first result being the query result,
-    /// followed by the incremental result. Only when there are `@defer` and `@stream` directives
-    /// in the query will there be subsequent incremental results.
-    pub async fn execute_stream(&self, query_source: &str) -> StreamResponse {
-        QueryBuilder::new(query_source).execute_stream(self).await
     }
 
     pub(crate) fn prepare_query(
@@ -400,7 +379,6 @@ where
             None,
             &env.document.current_operation().selection_set,
             &resolve_id,
-            None,
         );
         let mut streams = Vec::new();
         create_subscription_stream(self, env.clone(), &ctx, &mut streams)
