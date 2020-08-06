@@ -21,6 +21,10 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                 .fields()
                 .and_then(|fields| fields.get(field.name.as_str()))
                 .is_none()
+                && !field
+                    .directives
+                    .iter()
+                    .any(|directive| directive.node.name.as_str() == "ifdef")
             {
                 ctx.report_error(
                     vec![field.position()],

@@ -463,6 +463,16 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
+    pub fn is_ifdef(&self, directives: &[Positioned<Directive>]) -> bool {
+        for directive in directives {
+            if directive.name.node == "ifdef" {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[doc(hidden)]
     pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> Result<bool> {
         for directive in directives {
             if directive.name.node == "skip" {

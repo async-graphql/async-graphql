@@ -1,6 +1,7 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
+use crate::registry::MetaType;
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
 
@@ -61,6 +62,16 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         .map_ok(move |value| (field_name, value)),
                     ));
                     continue;
+                }
+
+                if ctx.is_ifdef(&field.directives) {
+                    if let Some(MetaType::Object { fields, .. }) =
+                        ctx.schema_env.registry.types.get(T::type_name().as_ref())
+                    {
+                        if !fields.contains_key(field.name.as_str()) {
+                            continue;
+                        }
+                    }
                 }
 
                 futures.push(Box::pin({

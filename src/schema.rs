@@ -241,6 +241,13 @@ where
             }
         });
 
+        registry.add_directive(MetaDirective {
+            name: "ifdef",
+            description: Some("Directs the executor to query only when the field exists."),
+            locations: vec![__DirectiveLocation::FIELD],
+            args: Default::default(),
+        });
+
         // register scalars
         bool::create_type_info(&mut registry);
         i32::create_type_info(&mut registry);

@@ -61,3 +61,61 @@ pub async fn test_directive_include() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_directive_ifdef() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn value1(&self) -> i32 {
+            10
+        }
+    }
+
+    struct MutationRoot;
+
+    #[Object]
+    impl MutationRoot {
+        pub async fn action1(&self) -> i32 {
+            10
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+    let resp = schema
+        .execute(
+            r#"
+            {
+                value1 @ifdef
+                value2 @ifdef
+            }
+        "#,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        resp.data,
+        serde_json::json!({
+            "value1": 10,
+        })
+    );
+
+    let resp = schema
+        .execute(
+            r#"
+            mutation {
+                action1 @ifdef
+                action2 @ifdef
+            }
+        "#,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        resp.data,
+        serde_json::json!({
+            "action1": 10,
+        })
+    );
+}

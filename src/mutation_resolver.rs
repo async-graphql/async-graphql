@@ -1,5 +1,6 @@
 use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
+use crate::registry::MetaType;
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use std::future::Future;
 use std::pin::Pin;
@@ -45,6 +46,16 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             root.introspection_type_name().to_string().into(),
                         );
                         continue;
+                    }
+
+                    if ctx.is_ifdef(&field.directives) {
+                        if let Some(MetaType::Object { fields, .. }) =
+                            ctx.schema_env.registry.types.get(T::type_name().as_ref())
+                        {
+                            if !fields.contains_key(field.name.as_str()) {
+                                continue;
+                            }
+                        }
                     }
 
                     let ctx_field = ctx.with_field(field);
