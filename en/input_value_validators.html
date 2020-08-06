@@ -202,7 +202,7 @@ impl Query {
 </span><span class="boring">fn main() {
 </span>struct MustBeZero {}
 
-impl InputValueValidator for InputValueValidator {
+impl InputValueValidator for MustBeZero {
     fn is_valid(&amp;self, value: &amp;Value) -&gt; Result&lt;(), String&gt; {
         if let Value::Int(n) = value {
             if n.as_i64().unwrap() != 0 {
