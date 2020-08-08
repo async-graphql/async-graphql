@@ -10,7 +10,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
 ) -> Result<serde_json::Value> {
-    let mut futures = Vec::new();
+    let mut futures = Vec::with_capacity(ctx.item.items.len());
     collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
     let mut map = serde_json::Map::new();
