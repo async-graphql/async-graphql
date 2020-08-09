@@ -158,7 +158,10 @@ pub use serde_json::Number;
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
-pub use types::{connection, EmptyMutation, EmptySubscription, MaybeUndefined, Upload};
+pub use types::{
+    connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail,
+    Upload,
+};
 pub use validation::ValidationMode;
 
 /// Result type
@@ -757,3 +760,32 @@ pub use async_graphql_derive::Subscription;
 /// | desc        | Scalar description        | string   | Y        |
 ///
 pub use async_graphql_derive::Scalar;
+
+/// Define a merged object with multiple object types.
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[SimpleObject]
+///  struct Object1 {
+///     a: i32,
+///  }
+///
+/// #[SimpleObject]
+/// struct Object2 {
+///     b: i32,
+/// }
+///
+/// #[SimpleObject]
+/// struct Object3 {
+///     c: i32,
+/// }
+///
+/// #[MergedObject]
+/// struct MyObj(Object1, Object2, Object3);
+///
+/// let obj = MyObj::new(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
+/// ```
+pub use async_graphql_derive::MergedObject;

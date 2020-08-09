@@ -7,6 +7,7 @@ mod args;
 mod r#enum;
 mod input_object;
 mod interface;
+mod merged_object;
 mod object;
 mod output_type;
 mod scalar;
@@ -18,7 +19,7 @@ mod utils;
 use crate::utils::{add_container_attrs, parse_derive};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::parse_macro_input;
+use syn::{parse_macro_input, DeriveInput};
 use syn::{AttributeArgs, ItemImpl};
 
 #[proc_macro_attribute]
@@ -198,6 +199,20 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     let mut item_impl = parse_macro_input!(input as ItemImpl);
     match scalar::generate(&scalar_args, &mut item_impl) {
+        Ok(expanded) => expanded,
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn MergedObject(args: TokenStream, input: TokenStream) -> TokenStream {
+    let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
+        Ok(object_args) => object_args,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    let input = parse_macro_input!(input as DeriveInput);
+    match merged_object::generate(&object_args, &input) {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }
