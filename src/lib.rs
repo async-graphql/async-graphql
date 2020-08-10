@@ -93,7 +93,6 @@
 //!
 
 #![warn(missing_docs)]
-#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::needless_lifetimes)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
@@ -272,8 +271,7 @@ pub use types::{EnumItem, EnumType};
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{
 ///         value
@@ -289,7 +287,7 @@ pub use types::{EnumItem, EnumType};
 ///         "valueWithArg1": 1,
 ///         "valueWithArg2": 99
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Object;
 
@@ -330,14 +328,13 @@ pub use async_graphql_derive::Object;
 ///     value: i32,
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::SimpleObject;
 
@@ -431,12 +428,11 @@ pub use async_graphql_derive::GQLSimpleObject;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value1 value2 }").await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Enum;
 
@@ -482,8 +478,7 @@ pub use async_graphql_derive::Enum;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"
 ///     {
@@ -491,7 +486,7 @@ pub use async_graphql_derive::Enum;
 ///         value2: value(input:{a:9})
 ///     }"#).await.unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::InputObject;
 
@@ -597,8 +592,7 @@ pub use async_graphql_derive::InputObject;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -617,7 +611,7 @@ pub use async_graphql_derive::InputObject;
 ///             "value_d": 11
 ///         }
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Interface;
 
@@ -666,8 +660,7 @@ pub use async_graphql_derive::GQLInterface;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -686,7 +679,7 @@ pub use async_graphql_derive::GQLInterface;
 ///             { "valueB": 20 },
 ///         ]
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Union;
 
@@ -762,6 +755,15 @@ pub use async_graphql_derive::Subscription;
 pub use async_graphql_derive::Scalar;
 
 /// Define a merged object with multiple object types.
+///
+/// # Macro parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | desc          | Object description        | string   | Y        |
+/// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
 /// # Examples
 ///
