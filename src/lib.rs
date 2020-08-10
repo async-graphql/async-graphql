@@ -786,6 +786,9 @@ pub use async_graphql_derive::Scalar;
 /// #[MergedObject]
 /// struct MyObj(Object1, Object2, Object3);
 ///
-/// let obj = MyObj::new(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
+/// let obj = MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
 /// ```
 pub use async_graphql_derive::MergedObject;
+
+/// Derive a GraphQL Merged object
+pub use async_graphql_derive::GQLMergedObject;

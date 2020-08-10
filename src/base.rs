@@ -166,6 +166,13 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
     }
 }
 
+#[async_trait::async_trait]
+impl<T: ObjectType + Send + Sync> ObjectType for &T {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+        T::resolve_field(*self, ctx).await
+    }
+}
+
 impl<T: Type + Send + Sync> Type for Box<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()

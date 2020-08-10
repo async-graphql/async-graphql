@@ -1,9 +1,9 @@
 use crate::args;
 use crate::utils::{get_crate_name, get_rustdoc};
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::quote;
-use syn::spanned::Spanned;
-use syn::{Data, DeriveInput, Error, Ident, Result};
+use syn::{Data, DeriveInput, Error, LitInt, Result};
 
 pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -13,8 +13,6 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
-    let vis = &input.vis;
-    let attrs = &input.attrs;
 
     let desc = object_args
         .desc
@@ -33,23 +31,14 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         types.push(&field.ty);
     }
 
-    let new_args = {
-        let mut new_args = Vec::new();
-        for (i, ty) in types.iter().enumerate() {
-            let name = Ident::new(&format!("obj{}", i + 1), ty.span());
-            new_args.push(quote! { #name: #ty })
-        }
-        new_args
-    };
-
-    let new_func = {
+    let create_merged_obj = {
         let mut obj = quote! { #crate_name::MergedObjectTail };
-        for (i, ty) in types.iter().enumerate() {
-            let name = Ident::new(&format!("obj{}", i + 1), ty.span());
-            obj = quote! { #crate_name::MergedObject(#name, #obj) };
+        for i in 0..types.len() {
+            let n = LitInt::new(&format!("{}", i), Span::call_site());
+            obj = quote! { #crate_name::MergedObject(&self.#n, #obj) };
         }
         quote! {
-            Self(#obj)
+            #obj
         }
     };
 
@@ -62,15 +51,6 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
     };
 
     let expanded = quote! {
-        #(#attrs)*
-        #vis struct #ident(#merged_type);
-
-        impl #ident {
-            pub fn new(#(#new_args),*) -> Self {
-                #new_func
-            }
-        }
-
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, str> {
@@ -109,7 +89,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::ObjectType for #ident {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                self.0.resolve_field(ctx).await
+                #create_merged_obj.resolve_field(ctx).await
             }
         }
 
