@@ -81,3 +81,50 @@ pub async fn test_merged_object_macro() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_merged_object_default() {
+    mod a {
+        use super::*;
+
+        #[derive(GQLSimpleObject)]
+        pub struct QueryA {
+            pub a: i32,
+        }
+
+        impl Default for QueryA {
+            fn default() -> Self {
+                Self { a: 10 }
+            }
+        }
+    }
+
+    mod b {
+        use super::*;
+
+        #[derive(GQLSimpleObject)]
+        pub struct QueryB {
+            pub b: i32,
+        }
+
+        impl Default for QueryB {
+            fn default() -> Self {
+                Self { b: 20 }
+            }
+        }
+    }
+
+    #[MergedObject]
+    #[derive(Default)]
+    struct Query(a::QueryA, b::QueryB);
+
+    let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
+    let query = "{ a b }";
+    assert_eq!(
+        schema.execute(&query).await.unwrap().data,
+        serde_json::json!({
+            "a": 10,
+            "b": 20,
+        })
+    );
+}

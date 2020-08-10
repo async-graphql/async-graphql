@@ -10,6 +10,16 @@ use std::borrow::Cow;
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
 
+impl<A, B> Default for MergedObject<A, B>
+where
+    A: Default,
+    B: Default,
+{
+    fn default() -> Self {
+        Self(A::default(), B::default())
+    }
+}
+
 impl<A, B> Type for MergedObject<A, B>
 where
     A: ObjectType,
@@ -22,12 +32,9 @@ where
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_type::<Self, _>(|registry| {
             let mut fields = IndexMap::new();
-
-            A::create_type_info(registry);
-            B::create_type_info(registry);
-
             let mut cc = CacheControl::default();
 
+            A::create_type_info(registry);
             if let Some(MetaType::Object {
                 fields: a_fields,
                 cache_control: a_cc,
@@ -38,6 +45,7 @@ where
                 cc.merge(&a_cc);
             }
 
+            B::create_type_info(registry);
             if let Some(MetaType::Object {
                 fields: b_fields,
                 cache_control: b_cc,
@@ -95,4 +103,5 @@ where
 
 #[doc(hidden)]
 #[async_graphql_derive::SimpleObject(internal)]
+#[derive(Default)]
 pub struct MergedObjectTail;
