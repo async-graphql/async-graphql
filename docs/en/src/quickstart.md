@@ -6,7 +6,7 @@
 [dependencies]
 async-graphql = "1.11.0"
 async-graphql-actix-web = "1.3.0" # If you need to integrate into actix-web
-async-graphql-warp = "1.3.0" If you need to integrate into warp
+async-graphql-warp = "1.3.0" # If you need to integrate into warp
 async-graphql-tide = "1.2.0" # If you need to integrate into tide
 ```
 
