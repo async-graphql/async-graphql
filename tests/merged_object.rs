@@ -142,8 +142,7 @@ pub async fn test_merged_object_default() {
         }
     }
 
-    #[MergedObject]
-    #[derive(Default)]
+    #[derive(GQLMergedObject, Default)]
     struct Query(a::QueryA, b::QueryB);
 
     let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
