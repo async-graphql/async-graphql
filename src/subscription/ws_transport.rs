@@ -101,8 +101,8 @@ impl SubscriptionTransport for WebSocketTransport {
                                     if err == QueryError::NotSupported =>
                                 {
                                     // Is query or mutation
-                                    let mut builder =
-                                        QueryBuilder::new_single(&request.query).variables(variables);
+                                    let mut builder = QueryBuilder::new_single(&request.query)
+                                        .variables(variables);
                                     if let Some(operation_name) = &request.operation_name {
                                         builder = builder.operation_name(operation_name);
                                     }

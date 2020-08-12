@@ -160,7 +160,10 @@ pub use serde_json::Number;
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
-pub use types::{connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail, Upload};
+pub use types::{
+    connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail,
+    Upload,
+};
 pub use validation::ValidationMode;
 
 /// Result type
