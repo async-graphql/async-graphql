@@ -51,7 +51,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 };
 
                 if let Some(value) = value {
-                    if let Some(reason) = validator.is_valid(value) {
+                    if let Err(reason) = validator.is_valid(value) {
                         ctx.report_error(
                             vec![name.position()],
                             format!("Invalid value for argument \"{}\", {}", arg.name, reason),

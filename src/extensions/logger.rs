@@ -1,6 +1,8 @@
 use crate::extensions::{Extension, ResolveInfo};
 use crate::{Error, Variables};
 use async_graphql_parser::query::{Definition, Document, OperationDefinition, Selection};
+use itertools::Itertools;
+use std::borrow::Cow;
 use uuid::Uuid;
 
 /// Logger extension
@@ -57,77 +59,55 @@ impl Extension for Logger {
             return;
         }
 
-        info!(
-            target = "async-graphql",
-            "Query",
-            id = self.id,
-            source = self.query,
-            variables = self.variables
-        );
+        info!(target: "async-graphql", "[Query] id: \"{}\", query: \"{}\", variables: {}", self.id, &self.query, self.variables);
     }
 
     fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
-
-        trace!(
-            target = "async-graphql",
-            "Resolve start",
-            id = self.id,
-            path = info.path_node
-        );
+        trace!(target: "async-graphql", "[ResolveStart] id: \"{}\", path: \"{}\"", self.id, info.path_node);
     }
 
     fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
-
-        trace!(
-            target = "async-graphql",
-            "Resolve end",
-            id = self.id,
-            path = info.path_node
-        );
+        trace!(target: "async-graphql", "[ResolveEnd] id: \"{}\", path: \"{}\"", self.id, info.path_node);
     }
 
     fn error(&mut self, err: &Error) {
         match err {
             Error::Parse(err) => {
-                error!(
-                    target = "async-graphql",
-                    "Parse error",
-                    id = self.id,
-                    pos = err.pos,
-                    query = self.query,
-                    variables = self.variables,
-                    message = err.message
-                );
+                error!(target: "async-graphql", "[ParseError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, err.pos.line, err.pos.column, self.query, self.variables, err)
             }
             Error::Query { pos, path, err } => {
-                error!(
-                    target = "async-graphql",
-                    "Query error",
-                    id = self.id,
-                    pos = pos,
-                    path = path,
-                    query = self.query,
-                    variables = self.variables,
-                    error = err,
-                );
+                if let Some(path) = path {
+                    let path = if let serde_json::Value::Array(values) = path {
+                        values
+                            .iter()
+                            .filter_map(|value| match value {
+                                serde_json::Value::String(s) => Some(Cow::Borrowed(s.as_str())),
+                                serde_json::Value::Number(n) => Some(Cow::Owned(n.to_string())),
+                                _ => None,
+                            })
+                            .join(".")
+                    } else {
+                        String::new()
+                    };
+                    error!(target: "async-graphql", "[QueryError] id: \"{}\", path: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, path, pos.line, pos.column, self.query, self.variables, err)
+                } else {
+                    error!(target: "async-graphql", "[QueryError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, pos.line, pos.column, self.query, self.variables, err)
+                }
             }
             Error::Rule { errors } => {
-                for err in errors {
-                    error!(
-                        target = "async-graphql",
-                        "Validation error",
-                        id = self.id,
-                        pos = err.locations,
-                        query = self.query,
-                        variables = self.variables,
-                        error = err.message,
-                    );
+                for error in errors {
+                    let locations = error
+                        .locations
+                        .iter()
+                        .map(|pos| format!("{}:{}", pos.line, pos.column))
+                        .join(", ");
+                    error!(target: "async-graphql", "[ValidationError] id: \"{}\", pos: [{}], query: \"{}\", variables: {}, {}", self.id, locations, self.query, self.variables, error.message)
                 }
             }
         }

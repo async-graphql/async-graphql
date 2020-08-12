@@ -84,7 +84,7 @@ impl ScalarType for TestScalar {
     }
 
     fn to_value(&self) -> Value {
-        Value::Int(self.0.clone())
+        Value::Number(self.0.into())
     }
 }
 

@@ -1,8 +1,8 @@
 use crate::context::Data;
 use crate::http::{GQLError, GQLRequestPart, GQLResponse};
 use crate::{
-    FieldError, FieldResult, ObjectType, QueryResponse, Result, Schema, SubscriptionStreams,
-    SubscriptionTransport, SubscriptionType, Variables,
+    Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError, QueryResponse, Result,
+    Schema, SubscriptionStreams, SubscriptionTransport, SubscriptionType, Variables,
 };
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -86,7 +86,7 @@ impl SubscriptionTransport for WebSocketTransport {
                                 .create_subscription_stream(
                                     &request.query,
                                     request.operation_name.as_deref(),
-                                    variables,
+                                    variables.clone(),
                                     Some(self.data.clone()),
                                 )
                                 .await
@@ -96,6 +96,42 @@ impl SubscriptionTransport for WebSocketTransport {
                                     self.id_to_sid.insert(id.clone(), stream_id);
                                     self.sid_to_id.insert(stream_id, id);
                                     Ok(None)
+                                }
+                                Err(Error::Query { err, .. })
+                                    if err == QueryError::NotSupported =>
+                                {
+                                    // Is query or mutation
+                                    let mut builder =
+                                        QueryBuilder::new(&request.query).variables(variables);
+                                    if let Some(operation_name) = &request.operation_name {
+                                        builder = builder.operation_name(operation_name);
+                                    }
+
+                                    match builder.execute(schema).await {
+                                        Ok(resp) => Ok(Some(
+                                            serde_json::to_vec(&OperationMessage {
+                                                ty: "complete".to_string(),
+                                                id: Some(id),
+                                                payload: Some(
+                                                    serde_json::to_value(&GQLResponse(Ok(resp)))
+                                                        .unwrap(),
+                                                ),
+                                            })
+                                            .unwrap()
+                                            .into(),
+                                        )),
+                                        Err(err) => Ok(Some(
+                                            serde_json::to_vec(&OperationMessage {
+                                                ty: "error".to_string(),
+                                                id: Some(id),
+                                                payload: Some(
+                                                    serde_json::to_value(GQLError(&err)).unwrap(),
+                                                ),
+                                            })
+                                            .unwrap()
+                                            .into(),
+                                        )),
+                                    }
                                 }
                                 Err(err) => Ok(Some(
                                     serde_json::to_vec(&OperationMessage {
@@ -118,9 +154,18 @@ impl SubscriptionTransport for WebSocketTransport {
                 }
                 "stop" => {
                     if let Some(id) = msg.id {
-                        if let Some(id) = self.id_to_sid.remove(&id) {
-                            self.sid_to_id.remove(&id);
-                            streams.remove(id);
+                        if let Some(sid) = self.id_to_sid.remove(&id) {
+                            self.sid_to_id.remove(&sid);
+                            streams.remove(sid);
+                            return Ok(Some(
+                                serde_json::to_vec(&OperationMessage {
+                                    ty: "complete".to_string(),
+                                    id: Some(id),
+                                    payload: None,
+                                })
+                                .unwrap()
+                                .into(),
+                            ));
                         }
                     }
                     Ok(None)

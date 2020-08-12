@@ -1,6 +1,6 @@
 [package]
 name = "chat"
-version = "1.14.12"
+version = "1.17.3"
 authors = ["Ivan Plesskih <terma95@gmail.com>"]
 edition = "2018"
 

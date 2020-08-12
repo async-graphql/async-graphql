@@ -1,6 +1,7 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::query::{Selection, TypeCondition};
+use crate::registry::MetaType;
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
 
@@ -9,7 +10,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
 ) -> Result<serde_json::Value> {
-    let mut futures = Vec::new();
+    let mut futures = Vec::with_capacity(ctx.item.items.len());
     collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
     let mut map = serde_json::Map::new();
@@ -61,6 +62,16 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                         .map_ok(move |value| (field_name, value)),
                     ));
                     continue;
+                }
+
+                if ctx.is_ifdef(&field.directives) {
+                    if let Some(MetaType::Object { fields, .. }) =
+                        ctx.schema_env.registry.types.get(T::type_name().as_ref())
+                    {
+                        if !fields.contains_key(field.name.as_str()) {
+                            continue;
+                        }
+                    }
                 }
 
                 futures.push(Box::pin({

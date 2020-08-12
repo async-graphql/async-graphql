@@ -7,6 +7,7 @@ mod args;
 mod r#enum;
 mod input_object;
 mod interface;
+mod merged_object;
 mod object;
 mod output_type;
 mod scalar;
@@ -198,6 +199,34 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     let mut item_impl = parse_macro_input!(input as ItemImpl);
     match scalar::generate(&scalar_args, &mut item_impl) {
+        Ok(expanded) => expanded,
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn MergedObject(args: TokenStream, input: TokenStream) -> TokenStream {
+    add_container_attrs(
+        quote!(GQLMergedObject),
+        parse_macro_input!(args as AttributeArgs),
+        input.into(),
+    )
+    .unwrap_or_else(|err| err.to_compile_error())
+    .into()
+}
+
+#[proc_macro_derive(GQLMergedObject, attributes(item, graphql))]
+pub fn derive_merged_object(input: TokenStream) -> TokenStream {
+    let (args, input) = match parse_derive(input.into()) {
+        Ok(r) => r,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
+        Ok(object_args) => object_args,
+        Err(err) => return err.to_compile_error().into(),
+    };
+    match merged_object::generate(&object_args, &input) {
         Ok(expanded) => expanded,
         Err(err) => err.to_compile_error().into(),
     }

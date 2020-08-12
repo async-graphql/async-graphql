@@ -93,7 +93,6 @@
 //!
 
 #![warn(missing_docs)]
-#![allow(clippy::needless_doctest_main)]
 #![allow(clippy::needless_lifetimes)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
@@ -104,7 +103,7 @@ extern crate thiserror;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate xlog;
+extern crate log;
 
 mod base;
 mod context;
@@ -157,10 +156,11 @@ pub use query::{
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
+pub use serde_json::Number;
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
-pub use types::{connection, EmptyMutation, EmptySubscription, MaybeUndefined, Upload};
+pub use types::{connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail, Upload};
 pub use validation::ValidationMode;
 
 /// Result type
@@ -271,8 +271,7 @@ pub use types::{EnumItem, EnumType};
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{
 ///         value
@@ -288,7 +287,7 @@ pub use types::{EnumItem, EnumType};
 ///         "valueWithArg1": 1,
 ///         "valueWithArg2": 99
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Object;
 
@@ -329,14 +328,13 @@ pub use async_graphql_derive::Object;
 ///     value: i32,
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value }").await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::SimpleObject;
 
@@ -430,12 +428,11 @@ pub use async_graphql_derive::GQLSimpleObject;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value1 value2 }").await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Enum;
 
@@ -481,8 +478,7 @@ pub use async_graphql_derive::Enum;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"
 ///     {
@@ -490,7 +486,7 @@ pub use async_graphql_derive::Enum;
 ///         value2: value(input:{a:9})
 ///     }"#).await.unwrap_single().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::InputObject;
 
@@ -596,8 +592,7 @@ pub use async_graphql_derive::InputObject;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -616,7 +611,7 @@ pub use async_graphql_derive::InputObject;
 ///             "value_d": 11
 ///         }
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Interface;
 
@@ -665,8 +660,7 @@ pub use async_graphql_derive::GQLInterface;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// async_std::task::block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -685,7 +679,7 @@ pub use async_graphql_derive::GQLInterface;
 ///             { "valueB": 20 },
 ///         ]
 ///     }));
-/// }
+/// });
 /// ```
 pub use async_graphql_derive::Union;
 
@@ -759,3 +753,44 @@ pub use async_graphql_derive::Subscription;
 /// | desc        | Scalar description        | string   | Y        |
 ///
 pub use async_graphql_derive::Scalar;
+
+/// Define a merged object with multiple object types.
+///
+/// # Macro parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | desc          | Object description        | string   | Y        |
+/// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | extends       | Add fields to an entity that's defined in another service | bool | Y |
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[SimpleObject]
+///  struct Object1 {
+///     a: i32,
+///  }
+///
+/// #[SimpleObject]
+/// struct Object2 {
+///     b: i32,
+/// }
+///
+/// #[SimpleObject]
+/// struct Object3 {
+///     c: i32,
+/// }
+///
+/// #[MergedObject]
+/// struct MyObj(Object1, Object2, Object3);
+///
+/// let obj = MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
+/// ```
+pub use async_graphql_derive::MergedObject;
+
+/// Derive a GraphQL Merged object
+pub use async_graphql_derive::GQLMergedObject;

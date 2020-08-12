@@ -11,7 +11,8 @@ use async_graphql::{
     ObjectType, QueryDefinition, Schema, SubscriptionType, WebSocketTransport,
 };
 use bytes::Bytes;
-use futures::{select, SinkExt, StreamExt};
+use futures::select;
+use futures::{SinkExt, StreamExt};
 use hyper::Method;
 use std::sync::Arc;
 use warp::filters::ws::Message;

@@ -7,6 +7,7 @@
     - [对象(Object)](define_complex_object.md)
         - [查询上下文(Context)](context.md)
         - [错误处理](error_handling.md)
+        - [合并对象(MergedObject)](merging_objects.md)
     - [枚举(Enum)](define_enum.md)
     - [接口(Interface)](define_interface.md)
     - [联合(Union)](define_union.md)

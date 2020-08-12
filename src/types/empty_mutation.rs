@@ -19,9 +19,7 @@ use std::borrow::Cow;
 /// #[Object]
 /// impl QueryRoot {}
 ///
-/// fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-/// }
+/// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 /// ```
 pub struct EmptyMutation;
 

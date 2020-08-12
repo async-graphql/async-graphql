@@ -234,3 +234,58 @@ pub async fn test_subscription_ws_transport_error() {
         serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
     );
 }
+
+#[async_std::test]
+pub async fn test_query_over_websocket() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            999
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "connection_init",
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(serde_json::json!({
+        "type": "connection_ack",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
+
+    sink.send(
+        serde_json::to_vec(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "query { value }"
+            },
+        }))
+        .unwrap()
+        .into(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(serde_json::json!({
+            "type": "complete",
+            "id": "1",
+            "payload": { "data": { "value": 999 } },
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    )
+}

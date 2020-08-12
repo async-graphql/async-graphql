@@ -10,19 +10,19 @@ pub struct StringMinLength {
 }
 
 impl InputValueValidator for StringMinLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
             if s.len() < self.length as usize {
-                Some(format!(
+                Err(format!(
                     "the value length is {}, must be greater than or equal to {}",
                     s.len(),
                     self.length
                 ))
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }
@@ -34,19 +34,19 @@ pub struct StringMaxLength {
 }
 
 impl InputValueValidator for StringMaxLength {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
             if s.len() > self.length as usize {
-                Some(format!(
+                Err(format!(
                     "the value length is {}, must be less than or equal to {}",
                     s.len(),
                     self.length
                 ))
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }
@@ -59,15 +59,15 @@ static EMAIL_RE: Lazy<Regex> = Lazy::new(|| {
 pub struct Email {}
 
 impl InputValueValidator for Email {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
             if !EMAIL_RE.is_match(s) {
-                Some("invalid email format".to_string())
+                Err("invalid email format".to_string())
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }
@@ -84,21 +84,21 @@ pub struct MAC {
 }
 
 impl InputValueValidator for MAC {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
             if self.colon {
                 if !MAC_ADDRESS_RE.is_match(s) {
-                    Some("invalid MAC format".to_string())
+                    Err("invalid MAC format".to_string())
                 } else {
-                    None
+                    Ok(())
                 }
             } else if !MAC_ADDRESS_NO_COLON_RE.is_match(s) {
-                Some("invalid MAC format".to_string())
+                Err("invalid MAC format".to_string())
             } else {
-                None
+                Ok(())
             }
         } else {
-            None
+            Ok(())
         }
     }
 }

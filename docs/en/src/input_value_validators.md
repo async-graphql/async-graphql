@@ -50,23 +50,23 @@ Here is an example of a custom validator:
 ```rust
 struct MustBeZero {}
 
-impl InputValueValidator for InputValueValidator {
-    fn is_valid(&self, value: &Value) -> Option<String> {
+impl InputValueValidator for MustBeZero {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::Int(n) = value {
             if n.as_i64().unwrap() != 0 {
                 // Validation failed
-                Some(format!(
+                Err(format!(
                     "the value is {}, but must be zero",
                     n.as_i64().unwrap(),
                 ))
             } else {
                 // Validation succeeded
-                None
+                Ok(())
             }
         } else {
             // If the type does not match we can return None and built-in validations
             // will pick up on the error
-            None
+            Ok(())
         }
     }
 }
