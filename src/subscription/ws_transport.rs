@@ -106,7 +106,7 @@ impl SubscriptionTransport for WebSocketTransport {
                                     if let Some(operation_name) = &request.operation_name {
                                         builder = builder.operation_name(operation_name);
                                     }
-                                    // TODO: refactor
+                                    // TODO: remove `unwrap_single`
                                     match builder.finish().execute(schema).await.unwrap_single() {
                                         Ok(resp) => Ok(Some(
                                             serde_json::to_vec(&OperationMessage {
