@@ -102,12 +102,12 @@ impl SubscriptionTransport for WebSocketTransport {
                                 {
                                     // Is query or mutation
                                     let mut builder =
-                                        QueryBuilder::new(&request.query).variables(variables);
+                                        QueryBuilder::new_single(&request.query).variables(variables);
                                     if let Some(operation_name) = &request.operation_name {
                                         builder = builder.operation_name(operation_name);
                                     }
-
-                                    match builder.execute(schema).await {
+                                    // TODO: refactor
+                                    match builder.finish().execute(schema).await.unwrap_single() {
                                         Ok(resp) => Ok(Some(
                                             serde_json::to_vec(&OperationMessage {
                                                 ty: "complete".to_string(),

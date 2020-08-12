@@ -43,7 +43,7 @@ pub async fn test_merged_object() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = "{ obj { a b c } }";
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": {
                 "a": 10,
@@ -71,7 +71,7 @@ pub async fn test_merged_object_macro() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = "{ obj { a b c } }";
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": {
                 "a": 10,
@@ -99,7 +99,7 @@ pub async fn test_merged_object_derive() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = "{ obj { a b c } }";
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "obj": {
                 "a": 10,
@@ -148,7 +148,7 @@ pub async fn test_merged_object_default() {
     let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
     let query = "{ a b }";
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.unwrap_single().unwrap().data,
         serde_json::json!({
             "a": 10,
             "b": 20,
