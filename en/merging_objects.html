@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>自定义扩展 - Async-graphql教程</title>
+        <title>Merging Objects - Async-graphql Book</title>
         
         
 
@@ -13,7 +13,7 @@
 
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <meta name="description" content="Async-graphql使用手册">
+        <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
@@ -93,7 +93,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> 合并对象(MergedObject)</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> 游标连接(Cursor Connections)</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing支持</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="custom_extensions.html" class="active"><strong aria-hidden="true">7.2.</strong> 自定义扩展</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> 自定义订阅传输协议</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="merging_objects.html" class="active"><strong aria-hidden="true">3.2.3.</strong> Merging Objects</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.2.</strong> Custom extensions</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> Custom subscription transport</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -125,7 +125,7 @@
                         
                     </div>
 
-                    <h1 class="menu-title">Async-graphql教程</h1>
+                    <h1 class="menu-title">Async-graphql Book</h1>
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -159,23 +159,68 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#自定义扩展" id="自定义扩展">自定义扩展</a></h1>
-<p>一个GraphQL扩展对象能够接收一个查询执行各个阶段的事件，你可以收集想要的数据，这些数据能够在查询结果中返回。</p>
-<p>只需要实现<code>async_graphql::Extension</code>就能够定义一个扩展对象，然后在创建<code>Schema</code>的时候调用<code>Schema::extension</code>应用扩展。</p>
-<p>你可以参考<a href="https://github.com/async-graphql/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
+                        <h1><a class="header" href="#merging-objects" id="merging-objects">Merging Objects</a></h1>
+<p>Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl Query {
+    async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
+        todo!()
+    }
+}
+
+#[Object]
+impl Query {
+    async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
+        todo!()
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Instead, the <code>#[derive(GQLMergedObject)]</code> macro allows you to split an object's resolvers across multiple file by merging 2 or more <code>#[Object]</code> implementations into one.</p>
+<p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name even in a GQLMergedObject so make sure to give each object your merging it's own name.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl UserQuery {
+    async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
+        todo!()
+    }
+}
+
+#[Object]
+impl MovieQuery {
+    async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
+        todo!()
+    }
+}
+
+#[derive(GQLMergedObject, Default)]
+struct Query(UserQuery, MovieQuery);
+
+let schema = Schema::new(
+    Query::default(),
+    EmptyMutation,
+    EmptySubscription
+);
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="custom_scalars.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="error_handling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="custom_subscription_transport.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="define_enum.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -187,13 +232,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="custom_scalars.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="error_handling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="custom_subscription_transport.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="define_enum.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
