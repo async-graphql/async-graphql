@@ -4,6 +4,7 @@ use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
 use futures::{Stream, StreamExt};
 use slab::Slab;
+use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;
 
@@ -44,7 +45,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
-    ) -> std::result::Result<Option<Bytes>, Self::Error>
+    ) -> std::result::Result<Option<Vec<Bytes>>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
@@ -78,6 +79,7 @@ where
             rx_bytes,
             handle_request_fut: None,
             waker: AtomicWaker::new(),
+            send_buf: VecDeque::new(),
         };
         while let Some(data) = inner_stream.next().await {
             yield data;
@@ -90,7 +92,7 @@ type HandleRequestBoxFut<'a, T> = Pin<
     Box<
         dyn Future<
                 Output = (
-                    std::result::Result<Option<Bytes>, <T as SubscriptionTransport>::Error>,
+                    std::result::Result<Option<Vec<Bytes>>, <T as SubscriptionTransport>::Error>,
                     &'a mut T,
                     &'a mut SubscriptionStreams,
                 ),
@@ -108,6 +110,7 @@ struct SubscriptionStream<'a, Query, Mutation, Subscription, T: SubscriptionTran
     rx_bytes: mpsc::UnboundedReceiver<Bytes>,
     handle_request_fut: Option<HandleRequestBoxFut<'a, T>>,
     waker: AtomicWaker,
+    send_buf: VecDeque<Bytes>,
 }
 
 impl<'a, Query, Mutation, Subscription, T> Stream
@@ -125,14 +128,21 @@ where
 
         loop {
             // receive bytes
+            if let Some(bytes) = this.send_buf.pop_front() {
+                return Poll::Ready(Some(bytes));
+            }
+
             if let Some(handle_request_fut) = &mut this.handle_request_fut {
                 match handle_request_fut.as_mut().poll(cx) {
                     Poll::Ready((Ok(bytes), transport, streams)) => {
                         this.transport = Some(transport);
                         this.streams = Some(streams);
                         this.handle_request_fut = None;
-                        if let Some(bytes) = bytes {
-                            return Poll::Ready(Some(bytes));
+                        if let Some(mut msgs) = bytes {
+                            if !msgs.is_empty() {
+                                this.send_buf.extend(msgs.drain(1..));
+                                return Poll::Ready(Some(msgs.remove(0)));
+                            }
                         }
                         continue;
                     }

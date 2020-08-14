@@ -282,10 +282,18 @@ pub async fn test_query_over_websocket() {
 
     assert_eq!(
         Some(serde_json::json!({
-            "type": "complete",
+            "type": "data",
             "id": "1",
             "payload": { "data": { "value": 999 } },
         })),
         serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
-    )
+    );
+
+    assert_eq!(
+        Some(serde_json::json!({
+            "type": "complete",
+            "id": "1",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
 }

@@ -50,7 +50,7 @@ impl SubscriptionTransport for WebSocketTransport {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
-    ) -> std::result::Result<Option<Bytes>, Self::Error>
+    ) -> std::result::Result<Option<Vec<Bytes>>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
@@ -64,15 +64,13 @@ impl SubscriptionTransport for WebSocketTransport {
                             self.data = Arc::new(init_context_data(payload)?);
                         }
                     }
-                    Ok(Some(
-                        serde_json::to_vec(&OperationMessage {
-                            ty: "connection_ack".to_string(),
-                            id: None,
-                            payload: None,
-                        })
-                        .unwrap()
-                        .into(),
-                    ))
+                    Ok(Some(vec![serde_json::to_vec(&OperationMessage {
+                        ty: "connection_ack".to_string(),
+                        id: None,
+                        payload: None,
+                    })
+                    .unwrap()
+                    .into()]))
                 }
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
@@ -108,10 +106,10 @@ impl SubscriptionTransport for WebSocketTransport {
                                     }
 
                                     match builder.execute(schema).await {
-                                        Ok(resp) => Ok(Some(
+                                        Ok(resp) => Ok(Some(vec![
                                             serde_json::to_vec(&OperationMessage {
-                                                ty: "complete".to_string(),
-                                                id: Some(id),
+                                                ty: "data".to_string(),
+                                                id: Some(id.clone()),
                                                 payload: Some(
                                                     serde_json::to_value(&GQLResponse(Ok(resp)))
                                                         .unwrap(),
@@ -119,9 +117,16 @@ impl SubscriptionTransport for WebSocketTransport {
                                             })
                                             .unwrap()
                                             .into(),
-                                        )),
-                                        Err(err) => Ok(Some(
                                             serde_json::to_vec(&OperationMessage {
+                                                ty: "complete".to_string(),
+                                                id: Some(id),
+                                                payload: None,
+                                            })
+                                            .unwrap()
+                                            .into(),
+                                        ])),
+                                        Err(err) => {
+                                            Ok(Some(vec![serde_json::to_vec(&OperationMessage {
                                                 ty: "error".to_string(),
                                                 id: Some(id),
                                                 payload: Some(
@@ -129,21 +134,17 @@ impl SubscriptionTransport for WebSocketTransport {
                                                 ),
                                             })
                                             .unwrap()
-                                            .into(),
-                                        )),
+                                            .into()]))
+                                        }
                                     }
                                 }
-                                Err(err) => Ok(Some(
-                                    serde_json::to_vec(&OperationMessage {
-                                        ty: "error".to_string(),
-                                        id: Some(id),
-                                        payload: Some(
-                                            serde_json::to_value(GQLError(&err)).unwrap(),
-                                        ),
-                                    })
-                                    .unwrap()
-                                    .into(),
-                                )),
+                                Err(err) => Ok(Some(vec![serde_json::to_vec(&OperationMessage {
+                                    ty: "error".to_string(),
+                                    id: Some(id),
+                                    payload: Some(serde_json::to_value(GQLError(&err)).unwrap()),
+                                })
+                                .unwrap()
+                                .into()])),
                             }
                         } else {
                             Ok(None)
@@ -157,15 +158,13 @@ impl SubscriptionTransport for WebSocketTransport {
                         if let Some(sid) = self.id_to_sid.remove(&id) {
                             self.sid_to_id.remove(&sid);
                             streams.remove(sid);
-                            return Ok(Some(
-                                serde_json::to_vec(&OperationMessage {
-                                    ty: "complete".to_string(),
-                                    id: Some(id),
-                                    payload: None,
-                                })
-                                .unwrap()
-                                .into(),
-                            ));
+                            return Ok(Some(vec![serde_json::to_vec(&OperationMessage {
+                                ty: "complete".to_string(),
+                                id: Some(id),
+                                payload: None,
+                            })
+                            .unwrap()
+                            .into()]));
                         }
                     }
                     Ok(None)
