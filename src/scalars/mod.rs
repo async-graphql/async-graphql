@@ -5,7 +5,6 @@ mod floats;
 mod id;
 mod integers;
 mod json;
-mod naive_date;
 mod naive_time;
 mod string;
 mod uuid;
