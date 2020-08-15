@@ -155,7 +155,7 @@ pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
 pub use subscription::{
-    SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
+    ConnectionTransport, SimpleBroker, SubscriptionStreams, WebSocketTransport,
 };
 pub use types::{
     connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail,

@@ -1,8 +1,8 @@
 use crate::context::Data;
 use crate::http::{GQLError, GQLRequest, GQLResponse};
 use crate::{
-    Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError, QueryResponse, Result,
-    Schema, SubscriptionStreams, SubscriptionTransport, SubscriptionType, Variables,
+    ConnectionTransport, Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError,
+    QueryResponse, Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
 };
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -42,7 +42,7 @@ impl WebSocketTransport {
 }
 
 #[async_trait::async_trait]
-impl SubscriptionTransport for WebSocketTransport {
+impl ConnectionTransport for WebSocketTransport {
     type Error = FieldError;
 
     async fn handle_request<Query, Mutation, Subscription>(

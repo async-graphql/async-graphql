@@ -29,11 +29,11 @@ impl SubscriptionStreams {
     }
 }
 
-/// Subscription transport
+/// Connection transport
 ///
 /// You can customize your transport by implementing this trait.
 #[async_trait::async_trait]
-pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
+pub trait ConnectionTransport: Send + Sync + Unpin + 'static {
     /// The error type.
     type Error;
 
@@ -55,7 +55,7 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
     fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
 }
 
-pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
+pub fn create_connection<Query, Mutation, Subscription, T: ConnectionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
     mut transport: T,
 ) -> (
@@ -92,7 +92,7 @@ type HandleRequestBoxFut<'a, T> = Pin<
     Box<
         dyn Future<
                 Output = (
-                    std::result::Result<Option<Vec<Bytes>>, <T as SubscriptionTransport>::Error>,
+                    std::result::Result<Option<Vec<Bytes>>, <T as ConnectionTransport>::Error>,
                     &'a mut T,
                     &'a mut SubscriptionStreams,
                 ),
@@ -103,7 +103,7 @@ type HandleRequestBoxFut<'a, T> = Pin<
 
 #[allow(missing_docs)]
 #[allow(clippy::type_complexity)]
-struct SubscriptionStream<'a, Query, Mutation, Subscription, T: SubscriptionTransport> {
+struct SubscriptionStream<'a, Query, Mutation, Subscription, T: ConnectionTransport> {
     schema: &'a Schema<Query, Mutation, Subscription>,
     transport: Option<&'a mut T>,
     streams: Option<&'a mut SubscriptionStreams>,
@@ -119,7 +119,7 @@ where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    T: SubscriptionTransport,
+    T: ConnectionTransport,
 {
     type Item = Bytes;
 

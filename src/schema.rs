@@ -4,7 +4,7 @@ use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::subscription::{create_connection, create_subscription_stream, SubscriptionTransport};
+use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
@@ -395,7 +395,7 @@ where
     }
 
     /// Create subscription connection, returns `Sink` and `Stream`.
-    pub fn subscription_connection<T: SubscriptionTransport>(
+    pub fn subscription_connection<T: ConnectionTransport>(
         &self,
         transport: T,
     ) -> (
