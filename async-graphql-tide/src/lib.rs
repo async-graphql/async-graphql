@@ -60,7 +60,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder + Send,
+    F: FnOnce(QueryBuilder) -> QueryBuilder + Send,
 {
     graphql_opts(req, schema, query_builder_configuration, Default::default()).await
 }
@@ -77,7 +77,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: Fn(QueryBuilder) -> QueryBuilder + Send,
+    F: FnOnce(QueryBuilder) -> QueryBuilder + Send,
 {
     let query_builder = req.body_graphql_opts(opts).await?;
     Response::new(StatusCode::Ok).body_graphql(
