@@ -340,7 +340,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         });
                     });
 
-                    use_params.push(quote! { #ident });
+                    let param_ident = &ident.ident;
+                    use_params.push(quote! { #param_ident });
 
                     let default = match default {
                         Some(default) => quote! { Some(|| -> #ty { #default }) },
@@ -489,7 +490,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
-        #[allow(unused_braces, unused_variables, unused_parens)]
+        #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
         #[#crate_name::async_trait::async_trait]
         impl#generics #crate_name::ObjectType for #self_ty #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
