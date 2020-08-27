@@ -1,4 +1,6 @@
+use async_graphql::MergedObjectTail;
 use async_graphql::*;
+use futures::{Stream, StreamExt};
 
 #[SimpleObject]
 struct Object1 {
@@ -154,4 +156,69 @@ pub async fn test_merged_object_default() {
             "b": 20,
         })
     );
+}
+
+#[async_std::test]
+pub async fn test_merged_subscription() {
+    #[derive(Default)]
+    struct Subscription1;
+
+    #[Subscription]
+    impl Subscription1 {
+        async fn events1(&self) -> impl Stream<Item = i32> {
+            futures::stream::iter(0..10)
+        }
+    }
+
+    #[derive(Default)]
+    struct Subscription2;
+
+    #[Subscription]
+    impl Subscription2 {
+        async fn events2(&self) -> impl Stream<Item = i32> {
+            futures::stream::iter(10..20)
+        }
+    }
+
+    #[derive(GQLMergedSubscription, Default)]
+    struct Subscription(Subscription1, Subscription2);
+
+    struct Query;
+
+    #[Object]
+    impl Query {}
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription::default());
+
+    {
+        let mut stream = schema
+            .create_subscription_stream("subscription { events1 }", None, Default::default(), None)
+            .await
+            .unwrap();
+        for i in 0i32..10 {
+            assert_eq!(
+                Some(Ok(serde_json::json!({
+                    "events1": i,
+                }))),
+                stream.next().await
+            );
+        }
+        assert!(stream.next().await.is_none());
+    }
+
+    {
+        let mut stream = schema
+            .create_subscription_stream("subscription { events2 }", None, Default::default(), None)
+            .await
+            .unwrap();
+        for i in 10i32..20 {
+            assert_eq!(
+                Some(Ok(serde_json::json!({
+                    "events2": i,
+                }))),
+                stream.next().await
+            );
+        }
+        assert!(stream.next().await.is_none());
+    }
 }

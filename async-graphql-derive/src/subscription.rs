@@ -341,10 +341,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::Context<'_>,
                 schema_env: #crate_name::SchemaEnv,
                 query_env: #crate_name::QueryEnv,
-            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>>
-            where
-                Self: Send + Sync + 'static + Sized,
-            {
+            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>> {
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.name.to_string(),

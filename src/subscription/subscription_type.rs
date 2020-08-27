@@ -20,9 +20,7 @@ pub trait SubscriptionType: Type {
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
-    where
-        Self: Send + Sync + 'static + Sized;
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>;
 }
 
 type BoxCreateStreamFuture<'a> = Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>;
@@ -108,4 +106,17 @@ where
         }
         Ok(())
     })
+}
+
+#[async_trait::async_trait]
+impl<T: SubscriptionType + Send + Sync> SubscriptionType for &T {
+    async fn create_field_stream(
+        &self,
+        idx: usize,
+        ctx: &Context<'_>,
+        schema_env: SchemaEnv,
+        query_env: QueryEnv,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>> {
+        T::create_field_stream(*self, idx, ctx, schema_env, query_env).await
+    }
 }

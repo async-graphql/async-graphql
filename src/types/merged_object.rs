@@ -1,11 +1,13 @@
 use crate::registry::{MetaType, Registry};
 use crate::{
     do_resolve, CacheControl, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
-    Positioned, QueryError, Result, Type,
+    Positioned, QueryEnv, QueryError, Result, SchemaEnv, SubscriptionType, Type,
 };
 use async_graphql_parser::query::Field;
+use futures::Stream;
 use indexmap::IndexMap;
 use std::borrow::Cow;
+use std::pin::Pin;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
@@ -20,11 +22,7 @@ where
     }
 }
 
-impl<A, B> Type for MergedObject<A, B>
-where
-    A: ObjectType,
-    B: ObjectType,
-{
+impl<A: Type, B: Type> Type for MergedObject<A, B> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("{}_{}", A::type_name(), B::type_name()))
     }
@@ -101,7 +99,46 @@ where
     }
 }
 
+#[async_trait::async_trait]
+impl<A, B> SubscriptionType for MergedObject<A, B>
+where
+    A: SubscriptionType + Send + Sync,
+    B: SubscriptionType + Send + Sync,
+{
+    async fn create_field_stream(
+        &self,
+        idx: usize,
+        ctx: &Context<'_>,
+        schema_env: SchemaEnv,
+        query_env: QueryEnv,
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>> {
+        match self
+            .0
+            .create_field_stream(idx, ctx, schema_env.clone(), query_env.clone())
+            .await
+        {
+            Ok(value) => Ok(value),
+            Err(Error::Query {
+                err: QueryError::FieldNotFound { .. },
+                ..
+            }) => {
+                self.1
+                    .create_field_stream(idx, ctx, schema_env, query_env)
+                    .await
+            }
+            Err(err) => Err(err),
+        }
+    }
+}
+
 #[doc(hidden)]
 #[async_graphql_derive::SimpleObject(internal)]
 #[derive(Default)]
 pub struct MergedObjectTail;
+
+#[doc(hidden)]
+#[derive(Default)]
+pub struct MergedObjectSubscriptionTail;
+
+#[async_graphql_derive::Subscription(internal)]
+impl MergedObjectSubscriptionTail {}

@@ -158,8 +158,8 @@ pub use subscription::{
     ConnectionTransport, SimpleBroker, SubscriptionStreams, WebSocketTransport,
 };
 pub use types::{
-    connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject, MergedObjectTail,
-    Upload,
+    connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject,
+    MergedObjectSubscriptionTail, MergedObjectTail, Upload,
 };
 pub use validation::ValidationMode;
 
@@ -794,3 +794,46 @@ pub use async_graphql_derive::MergedObject;
 
 /// Derive a GraphQL Merged object
 pub use async_graphql_derive::GQLMergedObject;
+
+/// Define a merged subscription with multiple subscription types.
+///
+/// # Macro parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | desc          | Object description        | string   | Y        |
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+/// use futures::Stream;
+///
+/// #[derive(Default)]
+/// struct Subscription1;
+///
+/// #[Subscription]
+/// impl Subscription1 {
+///     async fn events1(&self) -> impl Stream<Item = i32> {
+///         futures::stream::iter(0..10)
+///     }
+/// }
+///
+/// #[derive(Default)]
+/// struct Subscription2;
+///
+/// #[Subscription]
+/// impl Subscription2 {
+///     async fn events2(&self) -> impl Stream<Item = i32> {
+///         futures::stream::iter(10..20)
+///    }
+/// }
+///
+/// #[derive(GQLMergedSubscription, Default)]
+/// struct Subscription(Subscription1, Subscription2);
+/// ```
+pub use async_graphql_derive::MergedSubscription;
+
+/// Derive a GraphQL Merged object
+pub use async_graphql_derive::GQLMergedSubscription;
