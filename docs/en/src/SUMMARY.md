@@ -7,7 +7,7 @@
     - [Object](define_complex_object.md)
         - [Context](context.md)
         - [Error handling](error_handling.md)
-        - [Merging Objects](merging_objects.md)
+        - [Merging Objects / Subscriptions](merging_objects.md)
     - [Enum](define_enum.md)
     - [Interface](define_interface.md)
     - [Union](define_union.md)

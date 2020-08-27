@@ -22,6 +22,8 @@ Instead, the `#[derive(GQLMergedObject)]` macro allows you to split an object's 
 
 **Tip:** Every `#[Object]` needs a unique name even in a GQLMergedObject so make sure to give each object your merging it's own name.
 
+**Note:** This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.
+
 ```rust
 #[Object]
 impl UserQuery {
@@ -44,5 +46,44 @@ let schema = Schema::new(
     Query::default(),
     EmptyMutation,
     EmptySubscription
+);
+```
+
+# Merging Subscriptions
+
+Along with `GQLMergedObject`, you can derive `GQLMergedSubscription` to merge separate `#[Subscription]` blocks.
+
+Like merging Objects, each subscription block requires a unique name.
+
+Example:
+
+```rust
+#[derive(Default)]
+struct Subscription1;
+
+#[Subscription]
+impl Subscription1 {
+    async fn events1(&self) -> impl Stream<Item = i32> {
+        futures::stream::iter(0..10)
+    }
+}
+
+#[derive(Default)]
+struct Subscription2;
+
+#[Subscription]
+impl Subscription2 {
+    async fn events2(&self) -> impl Stream<Item = i32> {
+        futures::stream::iter(10..20)
+    }
+}
+
+#[derive(GQLMergedSubscription, Default)]
+struct Subscription(Subscription1, Subscription2);
+
+let schema = Schema::new(
+    Query::default(),
+    EmptyMutation,
+    Subscription::default()
 );
 ```
