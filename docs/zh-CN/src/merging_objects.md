@@ -48,3 +48,40 @@ let schema = Schema::new(
     EmptySubscription
 );
 ```
+
+# 合并订阅
+
+和`GQLMergedObject`一样，你可以派生`GQLMergedSubscription`来合并单独的`＃[Subscription]`块。
+
+像合并对象一样，每个订阅块都需要一个唯一的名称。
+
+```rust
+#[derive(Default)]
+struct Subscription1;
+
+#[Subscription]
+impl Subscription1 {
+    async fn events1(&self) -> impl Stream<Item = i32> {
+        futures::stream::iter(0..10)
+    }
+}
+
+#[derive(Default)]
+struct Subscription2;
+
+#[Subscription]
+impl Subscription2 {
+    async fn events2(&self) -> impl Stream<Item = i32> {
+        futures::stream::iter(10..20)
+    }
+}
+
+#[derive(GQLMergedSubscription, Default)]
+struct Subscription(Subscription1, Subscription2);
+
+let schema = Schema::new(
+    Query::default(),
+    EmptyMutation,
+    Subscription::default()
+);
+```
