@@ -7,6 +7,7 @@ use std::pin::Pin;
 /// Empty subscription
 ///
 /// Only the parameters used to construct the Schema, representing an unconfigured subscription.
+#[derive(Default, Copy, Clone)]
 pub struct EmptySubscription;
 
 impl Type for EmptySubscription {

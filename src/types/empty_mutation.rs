@@ -21,6 +21,7 @@ use std::borrow::Cow;
 ///
 /// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 /// ```
+#[derive(Default, Copy, Clone)]
 pub struct EmptyMutation;
 
 impl Type for EmptyMutation {

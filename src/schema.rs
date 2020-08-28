@@ -153,6 +153,21 @@ impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscripti
     }
 }
 
+impl<Query, Mutation, Subscription> Default for Schema<Query, Mutation, Subscription>
+where
+    Query: Default + ObjectType + Send + Sync + 'static,
+    Mutation: Default + ObjectType + Send + Sync + 'static,
+    Subscription: Default + SubscriptionType + Send + Sync + 'static,
+{
+    fn default() -> Self {
+        Schema::new(
+            Query::default(),
+            Mutation::default(),
+            Subscription::default(),
+        )
+    }
+}
+
 impl<Query, Mutation, Subscription> Deref for Schema<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
