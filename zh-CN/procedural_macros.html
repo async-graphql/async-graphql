@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>自定义标量 - Async-graphql教程</title>
+        <title>定义类型的两种方式 - Async-graphql教程</title>
         
         
 
@@ -93,7 +93,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> 合并对象(MergedObject)</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li><li class="chapter-item expanded "><a href="procedural_macros.html"><strong aria-hidden="true">3.8.</strong> 定义类型的两种方式</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> 游标连接(Cursor Connections)</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing支持</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html" class="active"><strong aria-hidden="true">7.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.2.</strong> 自定义扩展</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> 自定义订阅传输协议</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> 合并对象(MergedObject)</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li><li class="chapter-item expanded "><a href="procedural_macros.html" class="active"><strong aria-hidden="true">3.8.</strong> 定义类型的两种方式</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.1.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.2.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.3.</strong> 游标连接(Cursor Connections)</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.4.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.5.</strong> Apollo Tracing支持</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.2.</strong> 自定义扩展</a></li><li class="chapter-item expanded "><a href="custom_subscription_transport.html"><strong aria-hidden="true">7.3.</strong> 自定义订阅传输协议</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -159,50 +159,67 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h1>
-<p><code>Async-graphql</code>已经内置了绝大部分常用的标量类型，同时你也能自定义标量。</p>
-<p>实现<code>Async-graphql::Scalar</code>即可自定义一个标量，你只需要实现一个解析函数和输出函数。</p>
-<p>下面的例子定义一个64位整数标量，但它的输入输出都是字符串。 (<code>Async-graphql</code>已经内置了对64位整数的支持，正是采用字符串作为输入输出)</p>
+                        <h1><a class="header" href="#定义类型的两种方式" id="定义类型的两种方式">定义类型的两种方式</a></h1>
+<p>我想你已经发现，定义一个GraphqlQL类型可以通过属性宏或者派生。</p>
+<p>下面是一个对应表：</p>
+<table><thead><tr><th>类型</th><th>属性宏</th><th>派生</th></tr></thead><tbody>
+<tr><td>枚举(Enum)</td><td>Enum</td><td>GQLEnum</td></tr>
+<tr><td>简单对象(Simple Object)</td><td>SimpleObject</td><td>GQLSimpleObject</td></tr>
+<tr><td>输入对象(Input Object)</td><td>InputObject</td><td>GQLInputObject</td></tr>
+<tr><td>接口(Interface)</td><td>Interface</td><td>GQLInterface</td></tr>
+<tr><td>联合(Union)</td><td>Union</td><td>GQLUnion</td></tr>
+<tr><td>合并对象(Merged Object)</td><td>MergedObject</td><td>GQLMergedObject</td></tr>
+<tr><td>合并订阅(Merged Subscription)</td><td>MergedSubscription</td><td>GQLMergedSubscription</td></tr>
+</tbody></table>
+<p>属性宏的好处在于你可以同时提供一些参数，例如：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use async_graphql::*;
-
-
-struct StringNumber(i64);
-
-#[Scalar]
-impl ScalarType for StringNumber {
-    fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
-        if let Value::String(value) = &amp;value {
-            // 解析整数
-            Ok(value.parse().map(StringNumber)?)
-        } else {
-            // 类型不匹配
-            Err(InputValueError::ExpectedType(value))
-        }
-    }
-
-    fn to_value(&amp;self) -&gt; Value {
-        Value::String(self.0.to_string())
-    }
+</span>#[SimpleObject(name = &quot;ABC&quot;)]
+struct MyObject {
+    value: i32,
 }
-
 <span class="boring">}
 </span></code></pre></pre>
+<p>但是它不支持条件编译，例如：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[SimpleObject]
+struct MyObject {
+    #[cfg(windows)]
+    value: i32,
+
+    #[cfg(not(windows))]
+    value: i32,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>派生可以支持条件编译，但它需要单独提供参数，例如：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(name = &quot;ABC&quot;)]
+struct MyObject {
+    value: i32,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>用哪种方式来定义类型取决于你，我更加推荐使用派生。</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="advanced_topics.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="default_value.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="custom_extensions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="define_schema.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -214,13 +231,13 @@ impl ScalarType for StringNumber {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="advanced_topics.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="default_value.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="custom_extensions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="define_schema.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
