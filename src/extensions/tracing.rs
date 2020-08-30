@@ -8,6 +8,7 @@ use tracing::{span, Id, Level};
 /// # References
 ///
 /// https://crates.io/crates/tracing
+#[derive(Default)]
 pub struct Tracing {
     root_id: Option<Id>,
     fields: BTreeMap<usize, Id>,
