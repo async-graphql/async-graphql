@@ -25,7 +25,7 @@ mod tests {
     use super::ID;
     use crate::Type;
     use bson::oid::ObjectId;
-    use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, Utc};
+    use chrono::{DateTime, FixedOffset, Local, NaiveDate, NaiveTime, Utc};
     use uuid::Uuid;
 
     #[test]
@@ -54,19 +54,22 @@ mod tests {
         assert_eq!(<NaiveTime as Type>::type_name(), "NaiveTime");
         assert_eq!(<NaiveTime as Type>::qualified_type_name(), "NaiveTime!");
 
-        assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTimeUtc");
+        assert_eq!(<DateTime::<Utc> as Type>::type_name(), "DateTime");
         assert_eq!(
             <DateTime::<Utc> as Type>::qualified_type_name(),
-            "DateTimeUtc!"
+            "DateTime!"
         );
 
+        assert_eq!(<DateTime::<Local> as Type>::type_name(), "DateTime");
         assert_eq!(
-            <DateTime::<FixedOffset> as Type>::type_name(),
-            "DateTimeFixedOffset"
+            <DateTime::<Local> as Type>::qualified_type_name(),
+            "DateTime!"
         );
+
+        assert_eq!(<DateTime::<FixedOffset> as Type>::type_name(), "DateTime");
         assert_eq!(
             <DateTime::<FixedOffset> as Type>::qualified_type_name(),
-            "DateTimeFixedOffset!"
+            "DateTime!"
         );
 
         assert_eq!(<Uuid as Type>::type_name(), "UUID");
