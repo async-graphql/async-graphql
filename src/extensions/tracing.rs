@@ -16,6 +16,7 @@ pub struct Tracing {
 }
 
 impl Extension for Tracing {
+    #[allow(clippy::deref_addrof)]
     fn parse_start(&mut self, query_source: &str, variables: &Variables) {
         let root_span: tracing::Span = span!(
             target: "async_graphql::graphql",
