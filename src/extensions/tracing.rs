@@ -1,7 +1,7 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::{Variables};
+use crate::Variables;
 use std::collections::BTreeMap;
-use tracing::{span, event, Id, Level};
+use tracing::{event, span, Id, Level};
 use uuid::Uuid;
 
 /// Tracing extension
