@@ -18,7 +18,7 @@ pub struct Tracing {
 impl Extension for Tracing {
     fn parse_start(&mut self, query_source: &str, variables: &Variables) {
         let root_span: tracing::Span = span!(
-            target: "async_graphql",
+            target: "async_graphql::graphql",
             parent:None,
             Level::INFO,
             "graphql",
