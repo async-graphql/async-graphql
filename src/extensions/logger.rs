@@ -2,6 +2,7 @@ use crate::extensions::{Extension, ResolveInfo};
 use crate::{Error, Variables};
 use async_graphql_parser::query::{Definition, Document, OperationDefinition, Selection};
 use itertools::Itertools;
+use log::{error, info, trace};
 use std::borrow::Cow;
 use uuid::Uuid;
 

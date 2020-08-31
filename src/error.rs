@@ -1,13 +1,14 @@
 use crate::{Pos, QueryPathNode, Value};
 use std::fmt::{Debug, Display};
+use thiserror::Error;
 
-/// Input Value Error
+/// An error in the format of an input value.
 #[derive(Debug)]
 pub enum InputValueError {
     /// Custom input value parsing error.
     Custom(String),
 
-    /// The type of input value does not match the expectation.
+    /// The type of input value does not match the expectation. Contains the value that was found.
     ExpectedType(Value),
 }
 
@@ -18,7 +19,7 @@ impl<T: Display> From<T> for InputValueError {
 }
 
 impl InputValueError {
-    #[allow(missing_docs)]
+    /// Convert this error to a regular `Error` type.
     pub fn into_error(self, pos: Pos, expected_type: String) -> Error {
         match self {
             InputValueError::Custom(reason) => Error::Query {
@@ -38,10 +39,10 @@ impl InputValueError {
     }
 }
 
-/// InputValueResult type
+/// An alias for `Result<T, InputValueError>`.
 pub type InputValueResult<T> = std::result::Result<T, InputValueError>;
 
-/// FieldError type
+/// An error in a field resolver.
 #[derive(Clone, Debug)]
 pub struct FieldError(pub String, pub Option<serde_json::Value>);
 
@@ -71,23 +72,17 @@ impl FieldError {
     }
 }
 
-/// FieldResult type
+/// An alias for `Result<T, InputValueError>`.
 pub type FieldResult<T> = std::result::Result<T, FieldError>;
 
-impl<E> From<E> for FieldError
-where
-    E: std::fmt::Display + Send + Sync + 'static,
-{
+impl<E: Display> From<E> for FieldError {
     fn from(err: E) -> Self {
         FieldError(format!("{}", err), None)
     }
 }
 
 #[allow(missing_docs)]
-pub trait ErrorExtensions
-where
-    Self: Sized,
-{
+pub trait ErrorExtensions: Sized {
     fn extend(&self) -> FieldError;
     fn extend_with<C>(self, cb: C) -> FieldError
     where
@@ -125,15 +120,14 @@ impl<E: std::fmt::Display> ErrorExtensions for &E {
     }
 }
 
-#[allow(missing_docs)]
-pub trait ResultExt<T, E>
-where
-    Self: Sized,
-{
-    fn extend_err<CB>(self, cb: CB) -> FieldResult<T>
+/// Extend a `Result`'s error value with [`ErrorExtensions`](trait.ErrorExtensions.html).
+pub trait ResultExt<T, E>: Sized {
+    /// Extend the error value of the result with the callback.
+    fn extend_err<C>(self, cb: C) -> FieldResult<T>
     where
-        CB: FnOnce(&E) -> serde_json::Value;
+        C: FnOnce(&E) -> serde_json::Value;
 
+    /// Extend the result to a `FieldResult`.
     fn extend(self) -> FieldResult<T>;
 }
 
@@ -161,25 +155,28 @@ where
     }
 }
 
-/// Error for query
+/// An error processing a GraphQL query.
 #[derive(Debug, Error, PartialEq)]
-#[allow(missing_docs)]
 pub enum QueryError {
+    /// The feature is not supported.
     #[error("Not supported.")]
     NotSupported,
 
+    /// The actual input type did not match the expected input type.
     #[error("Expected input type \"{expect}\", found {actual}.")]
     ExpectedInputType {
-        /// Expect input type
+        /// The expected input type.
         expect: String,
 
-        /// Actual input type
+        /// The actual input type.
         actual: Value,
     },
 
+    /// Parsing of an input value failed.
     #[error("Failed to parse input value: {reason}")]
     ParseInputValue { reason: String },
 
+    /// A field was not found on an object type.
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
     FieldNotFound {
         /// Field name
@@ -189,27 +186,33 @@ pub enum QueryError {
         object: String,
     },
 
+    /// An operation was missing from the query.
     #[error("Missing operation")]
     MissingOperation,
 
+    /// The operation name was unknown.
     #[error("Unknown operation named \"{name}\"")]
     UnknownOperationNamed {
-        /// Operation name for query
+        /// Operation name for query.
         name: String,
     },
 
+    /// The user attempted to query an object without selecting any subfields.
     #[error("Type \"{object}\" must have a selection of subfields.")]
     MustHaveSubFields {
         /// Object name
         object: String,
     },
 
+    /// The schema does not have mutations.
     #[error("Schema is not configured for mutations.")]
     NotConfiguredMutations,
 
+    /// The schema does not have subscriptions.
     #[error("Schema is not configured for subscriptions.")]
     NotConfiguredSubscriptions,
 
+    /// The value does not exist in the enum.
     #[error("Invalid value for enum \"{ty}\".")]
     InvalidEnumValue {
         /// Enum type name
@@ -219,21 +222,24 @@ pub enum QueryError {
         value: String,
     },
 
+    /// A required field in an input object was not present.
     #[error("Required field \"{field_name}\" for InputObject \"{object}\" does not exist.")]
     RequiredField {
-        /// field name
+        /// Field name
         field_name: String,
 
-        /// object name
+        /// Object name
         object: &'static str,
     },
 
+    /// A variable is used but not defined.
     #[error("Variable \"${var_name}\" is not defined")]
     VarNotDefined {
         /// Variable name
         var_name: String,
     },
 
+    /// A directive was required but not provided.
     #[error(
         "Directive \"{directive}\" argument \"{arg_name}\" of type \"{arg_type}\" is required, but it was not provided."
     )]
@@ -248,27 +254,36 @@ pub enum QueryError {
         arg_type: &'static str,
     },
 
+    /// An unknown directive name was encountered.
     #[error("Unknown directive \"{name}\".")]
     UnknownDirective {
         /// Directive name
         name: String,
     },
 
+    /// An unknown fragment was encountered.
     #[error("Unknown fragment \"{name}\".")]
     UnknownFragment {
-        // Fragment name
+        /// Fragment name
         name: String,
     },
 
+    /// The query was too complex.
+    // TODO: Expand on this
     #[error("Too complex")]
     TooComplex,
 
+    /// The query was nested too deep.
     #[error("Too deep")]
     TooDeep,
 
+    /// A field handler errored.
     #[error("Failed to resolve field: {err}")]
     FieldError {
+        /// The error description.
         err: String,
+        /// Extensions to the error provided through the [`ErrorExtensions`](trait.ErrorExtensions)
+        /// or [`ResultExt`](trait.ResultExt) traits.
         extended_error: Option<serde_json::Value>,
     },
 
@@ -280,7 +295,7 @@ pub enum QueryError {
 }
 
 impl QueryError {
-    #[doc(hidden)]
+    /// Convert this error to a regular `Error` type.
     pub fn into_error(self, pos: Pos) -> Error {
         Error::Query {
             pos,
@@ -290,18 +305,22 @@ impl QueryError {
     }
 }
 
-#[allow(missing_docs)]
+/// An error parsing the request.
 #[derive(Debug, Error)]
 pub enum ParseRequestError {
+    /// An IO error occurred.
     #[error("{0}")]
     Io(#[from] std::io::Error),
 
+    /// The request's syntax was invalid.
     #[error("Invalid request: {0}")]
     InvalidRequest(serde_json::Error),
 
+    /// The request's files map was invalid.
     #[error("Invalid files map: {0}")]
     InvalidFilesMap(serde_json::Error),
 
+    /// The request's multipart data was invalid.
     #[error("Invalid multipart data")]
     InvalidMultipart(multer::Error),
 
@@ -314,9 +333,11 @@ pub enum ParseRequestError {
     #[error("It's not an upload operation")]
     NotUpload,
 
+    /// Files were missing the request.
     #[error("Missing files")]
     MissingFiles,
 
+    /// The request's payload is too large, and this server rejected it.
     #[error("Payload too large")]
     PayloadTooLarge,
 }
@@ -328,16 +349,20 @@ pub struct RuleError {
     pub message: String,
 }
 
-#[allow(missing_docs)]
+/// An error serving a GraphQL query.
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
+    /// Parsing the query failed.
     #[error("Parse error: {0}")]
     Parse(#[from] crate::parser::Error),
 
+    /// Processing the query failed.
     #[error("Query error: {err}")]
     Query {
+        /// The position at which the processing failed.
         pos: Pos,
         path: Option<serde_json::Value>,
+        /// The query error.
         err: QueryError,
     },
 

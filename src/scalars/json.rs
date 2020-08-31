@@ -6,7 +6,7 @@ use crate::{
 use async_graphql_derive::Scalar;
 use async_graphql_parser::query::Field;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
@@ -100,6 +100,7 @@ impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
 #[cfg(test)]
 mod test {
     use crate::*;
+    use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
 
     #[async_std::test]

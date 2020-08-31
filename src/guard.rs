@@ -5,14 +5,16 @@ use serde::export::PhantomData;
 
 /// Field guard
 ///
-/// Guard is a pre-condition for a field that is resolved if `Ok(()` is returned, otherwise an error is returned.
+/// Guard is a pre-condition for a field that is resolved if `Ok(())` is returned, otherwise an error is returned.
+///
+/// This trait is defined through the [`async-trait`](https://crates.io/crates/async-trait) macro.
 #[async_trait::async_trait]
 pub trait Guard {
-    #[allow(missing_docs)]
+    /// Check whether the guard will allow access to the field.
     async fn check(&self, ctx: &Context<'_>) -> FieldResult<()>;
 }
 
-/// An extension trait for `Guard`
+/// An extension trait for `Guard`.
 pub trait GuardExt: Guard + Sized {
     /// Merge the two guards.
     fn and<R: Guard>(self, other: R) -> And<Self, R> {
@@ -22,7 +24,7 @@ pub trait GuardExt: Guard + Sized {
 
 impl<T: Guard> GuardExt for T {}
 
-/// Guard for `GuardExt::and`
+/// Guard for [`GuardExt::and`](trait.GuardExt.html#method.and).
 pub struct And<A: Guard, B: Guard>(A, B);
 
 #[async_trait::async_trait]
@@ -35,10 +37,12 @@ impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for And<A, B> {
 
 /// Field post guard
 ///
-/// Guard is a post-condition for a field that is resolved if `Ok(()` is returned, otherwise an error is returned.
+/// This is a post-condition for a field that is resolved if `Ok(()` is returned, otherwise an error is returned.
+///
+/// This trait is defined through the [`async-trait`](https://crates.io/crates/async-trait) macro.
 #[async_trait::async_trait]
 pub trait PostGuard<T: Send + Sync> {
-    #[allow(missing_docs)]
+    /// Check whether to allow the result of the field through.
     async fn check(&self, ctx: &Context<'_>, result: &T) -> FieldResult<()>;
 }
 
@@ -52,7 +56,7 @@ pub trait PostGuardExt<T: Send + Sync>: PostGuard<T> + Sized {
 
 impl<T: PostGuard<R>, R: Send + Sync> PostGuardExt<R> for T {}
 
-/// PostGuard for `PostGuardExt<T>::and`
+/// PostGuard for [`PostGuardExt<T>::and`](trait.PostGuardExt.html#method.and).
 pub struct PostAnd<T: Send + Sync, A: PostGuard<T>, B: PostGuard<T>>(A, B, PhantomData<T>);
 
 #[async_trait::async_trait]

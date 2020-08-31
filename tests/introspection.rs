@@ -52,7 +52,7 @@ enum TestEnum {
     #[item(desc = "Kind 1")]
     Kind1,
 
-    #[item(desc = "Kind 2", deprecation = "Kind 2 depracted")]
+    #[item(desc = "Kind 2", deprecation = "Kind 2 deprecated")]
     Kind2,
 }
 
@@ -269,10 +269,10 @@ impl Subscription {
 // }
 
 #[async_std::test]
-pub async fn test_introspection_depraction() {
+pub async fn test_introspection_deprecation() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-    let get_object_query = |obj, is_depracted| {
+    let get_object_query = |obj, is_deprecated| {
         format!(
             r#"
         {{
@@ -285,11 +285,11 @@ pub async fn test_introspection_depraction() {
             }}
        }}
        "#,
-            obj, is_depracted
+            obj, is_deprecated
         )
     };
 
-    // SimpleObject with depracted inclusive
+    // SimpleObject with deprecated inclusive
     let mut query = get_object_query("SimpleObject", "true");
 
     let mut res_json = serde_json::json!({
@@ -353,7 +353,7 @@ pub async fn test_introspection_depraction() {
 
     assert_eq!(res, res_json);
 
-    // SimpleObject with depracted fields exclusive
+    // SimpleObject with deprecated fields exclusive
     query = get_object_query("SimpleObject", "false");
 
     res_json = serde_json::json!({
@@ -412,7 +412,7 @@ pub async fn test_introspection_depraction() {
 
     assert_eq!(res, res_json);
 
-    // Object with only one depracted field inclusive
+    // Object with only one deprecated field inclusive
     query = get_object_query("Square", "true");
 
     res_json = serde_json::json!({
@@ -431,7 +431,7 @@ pub async fn test_introspection_depraction() {
 
     assert_eq!(res, res_json);
 
-    // Object with only one depracted field exclusive
+    // Object with only one deprecated field exclusive
     query = get_object_query("Square", "false");
 
     res_json = serde_json::json!({
@@ -444,7 +444,7 @@ pub async fn test_introspection_depraction() {
 
     assert_eq!(res, res_json);
 
-    let get_enum_query = |obj, is_depracted| {
+    let get_enum_query = |obj, is_deprecated| {
         format!(
             r#"
         {{
@@ -457,11 +457,11 @@ pub async fn test_introspection_depraction() {
             }}
        }}
        "#,
-            obj, is_depracted
+            obj, is_deprecated
         )
     };
 
-    // Enum with depracted value inclusive
+    // Enum with deprecated value inclusive
     query = get_enum_query("TestEnum", "true");
 
     res_json = serde_json::json!({
@@ -475,7 +475,7 @@ pub async fn test_introspection_depraction() {
               {
                 "name": "KIND_2",
                 "isDeprecated": true,
-                "deprecationReason": "Kind 2 depracted"
+                "deprecationReason": "Kind 2 deprecated"
               }
             ]
         }
@@ -485,7 +485,7 @@ pub async fn test_introspection_depraction() {
 
     assert_eq!(res, res_json);
 
-    // Enum with depracted value exclusive
+    // Enum with deprecated value exclusive
     query = get_enum_query("TestEnum", "false");
 
     res_json = serde_json::json!({
@@ -841,7 +841,7 @@ pub async fn test_introspection_enum() {
                 "name": "KIND_2",
                 "description": "Kind 2",
                 "isDeprecated": true,
-                "deprecationReason": "Kind 2 depracted"
+                "deprecationReason": "Kind 2 deprecated"
               }
             ]
         }

@@ -5,6 +5,7 @@ use crate::{
     QueryResponse, Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
 };
 use bytes::Bytes;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 

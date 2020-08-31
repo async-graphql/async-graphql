@@ -292,9 +292,9 @@ pub async fn test_input_validator_string_email() {
                 case
             );
             let field_error_msg =
-                format!("Invalid value for argument \"email\", invalid email format");
+                "Invalid value for argument \"email\", invalid email format".to_owned();
             let object_error_msg =
-                format!("Invalid value for argument \"input.email\", invalid email format");
+                "Invalid value for argument \"input.email\", invalid email format".to_owned();
 
             // Testing FieldValidator
             assert_eq!(
@@ -437,9 +437,9 @@ pub async fn test_input_validator_string_mac() {
             "MAC validation case {} should have failed, but did not",
             mac
         );
-        let field_error_msg = format!("Invalid value for argument \"mac\", invalid MAC format");
+        let field_error_msg = "Invalid value for argument \"mac\", invalid MAC format".to_owned();
         let object_error_msg =
-            format!("Invalid value for argument \"input.mac\", invalid MAC format");
+            "Invalid value for argument \"input.mac\", invalid MAC format".to_owned();
 
         assert_eq!(
             schema_without_colon
@@ -511,14 +511,14 @@ pub async fn test_input_validator_string_mac() {
     for mac in valid_macs {
         let field_query = format!("{{fieldParameter(mac: \"{}\")}}", mac);
         let object_query = format!("{{inputObject(input: {{mac: \"{}\"}})}}", mac);
-        let contains_colon = mac.contains(":");
+        let contains_colon = mac.contains(':');
         let should_fail_msg = format!(
             "MAC validation case {} should have failed, but did not",
             mac
         );
-        let field_error_msg = format!("Invalid value for argument \"mac\", invalid MAC format");
+        let field_error_msg = "Invalid value for argument \"mac\", invalid MAC format".to_owned();
         let object_error_msg =
-            format!("Invalid value for argument \"input.mac\", invalid MAC format");
+            "Invalid value for argument \"input.mac\", invalid MAC format".to_owned();
         let error_msg = format!("Schema returned error with test_string = {}", mac);
 
         if contains_colon {
@@ -1413,9 +1413,10 @@ pub async fn test_input_validator_operator_or() {
                 case
             );
 
-            let field_error_msg = format!("Invalid value for argument \"id\", invalid MAC format");
+            let field_error_msg =
+                "Invalid value for argument \"id\", invalid MAC format".to_owned();
             let object_error_msg =
-                format!("Invalid value for argument \"input.id\", invalid MAC format");
+                "Invalid value for argument \"input.id\", invalid MAC format".to_owned();
             assert_eq!(
                 schema
                     .execute(&field_query)
@@ -1518,13 +1519,13 @@ pub async fn test_input_validator_operator_and() {
             );
 
             let field_error_msg = if *should_be_invalid_email {
-                format!("Invalid value for argument \"email\", invalid email format")
+                "Invalid value for argument \"email\", invalid email format".to_owned()
             } else {
                 format!("Invalid value for argument \"email\", the value length is {}, must be greater than or equal to {}", case_length, min_length)
             };
 
             let object_error_msg = if *should_be_invalid_email {
-                format!("Invalid value for argument \"input.email\", invalid email format")
+                "Invalid value for argument \"input.email\", invalid email format".to_owned()
             } else {
                 format!("Invalid value for argument \"input.email\", the value length is {}, must be greater than or equal to {}", case_length, min_length)
             };

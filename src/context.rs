@@ -8,7 +8,7 @@ use async_graphql_parser::query::Document;
 use async_graphql_parser::UploadValue;
 use fnv::FnvHashMap;
 use serde::ser::SerializeSeq;
-use serde::Serializer;
+use serde::{Serialize, Serializer};
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};

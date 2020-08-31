@@ -67,13 +67,12 @@ pub async fn test_input_object_default_value() {
     }
 
     let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
-    let query = format!(
-        r#"{{
+    let query = r#"{{
             a(input:{{e:777}}) {{
                 a b c d e
             }}
         }}"#
-    );
+    .to_owned();
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({
@@ -90,7 +89,7 @@ pub async fn test_input_object_default_value() {
 
 #[async_std::test]
 pub async fn test_inputobject_derive_and_item_attributes() {
-    use serde_derive::Deserialize;
+    use serde::Deserialize;
 
     #[async_graphql::InputObject]
     #[derive(Deserialize, PartialEq, Debug)]
