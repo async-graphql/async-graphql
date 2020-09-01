@@ -15,7 +15,7 @@ pub async fn test_optional_type() {
     #[Object]
     impl Root {
         async fn value1(&self) -> Option<i32> {
-            self.value1.clone()
+            self.value1
         }
 
         async fn value1_ref(&self) -> &Option<i32> {
@@ -23,7 +23,7 @@ pub async fn test_optional_type() {
         }
 
         async fn value2(&self) -> Option<i32> {
-            self.value2.clone()
+            self.value2
         }
 
         async fn value2_ref(&self) -> &Option<i32> {
@@ -35,7 +35,7 @@ pub async fn test_optional_type() {
         }
 
         async fn test_input<'a>(&self, input: MyInput) -> Option<i32> {
-            input.value.clone()
+            input.value
         }
     }
 
@@ -47,18 +47,17 @@ pub async fn test_optional_type() {
         EmptyMutation,
         EmptySubscription,
     );
-    let query = format!(
-        r#"{{
+    let query = r#"{
             value1
             value1Ref
             value2
             value2Ref
             testArg1: testArg(input: 10)
             testArg2: testArg
-            testInput1: testInput(input: {{value: 10}})
-            testInput2: testInput(input: {{}})
-            }}"#
-    );
+            testInput1: testInput(input: {value: 10})
+            testInput2: testInput(input: {})
+            }"#
+    .to_owned();
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
         serde_json::json!({

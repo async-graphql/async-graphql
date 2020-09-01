@@ -40,7 +40,7 @@
 //! * Custom scalars
 //! * Minimal overhead
 //! * Easy integration (hyper, actix_web, tide ...)
-//! * Upload files (Multipart request)
+//! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions
 //! * Apollo Tracing extension
@@ -89,7 +89,7 @@
 //! cargo bench
 //! ```
 //!
-//! Now HTML report is available at `benchmark/target/criterion/report`
+//! Now a HTML report is available at `benchmark/target/criterion/report`.
 //!
 
 #![warn(missing_docs)]
@@ -97,13 +97,6 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
 #![forbid(unsafe_code)]
-
-#[macro_use]
-extern crate thiserror;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
 
 mod base;
 mod context;
@@ -182,7 +175,11 @@ pub use subscription::SubscriptionType;
 #[doc(hidden)]
 pub use types::{EnumItem, EnumType};
 
-/// Define a GraphQL object
+/// Define a GraphQL object with methods
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_complex_object.html).*
+///
+/// All methods are converted to camelCase.
 ///
 /// # Macro parameters
 ///
@@ -218,16 +215,17 @@ pub use types::{EnumItem, EnumType};
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 ///
-/// # The field returns the value type
+/// # Valid field return types
 ///
-/// - A scalar value, such as `i32`, `bool`
-/// - Borrowing of scalar values, such as `&i32`, `&bool`
-/// - Vec<T>, such as `Vec<i32>`
-/// - Slice<T>, such as `&[i32]`
-/// - Option<T>, such as `Option<i32>`
-/// - Object and &Object
-/// - Enum
-/// - FieldResult<T, E>, such as `FieldResult<i32, E>`
+/// - Scalar values, such as `i32` and `bool`. `usize`, `isize`, `u128` and `i128` are not
+/// supported
+/// - `Vec<T>`, such as `Vec<i32>`
+/// - Slices, such as `&[i32]`
+/// - `Option<T>`, such as `Option<i32>`
+/// - GraphQL objects.
+/// - GraphQL enums.
+/// - References to any of the above types, such as `&i32` or `&Option<String>`.
+/// - `FieldResult<T, E>`, such as `FieldResult<i32, E>`
 ///
 /// # Context
 ///
@@ -272,7 +270,7 @@ pub use types::{EnumItem, EnumType};
 /// }
 ///
 /// async_std::task::block_on(async move {
-///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
+///     let schema = Schema::new(QueryRoot { value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{
 ///         value
 ///         valueRef
@@ -291,9 +289,13 @@ pub use types::{EnumItem, EnumType};
 /// ```
 pub use async_graphql_derive::Object;
 
-/// Define a GraphQL object
+/// Define a GraphQL object with fields
 ///
-/// Similar to `Object`, but defined on a structure that automatically generates getters for all fields.
+/// You can also [derive this](derive.GQLSimpleObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html).*
+///
+/// Similar to `Object`, but defined on a structure that automatically generates getters for all fields. For a list of valid field types, see [`Object`](attr.Object.html). All fields are converted to camelCase.
 ///
 /// # Macro parameters
 ///
@@ -340,6 +342,12 @@ pub use async_graphql_derive::SimpleObject;
 
 /// Derive a GraphQL enum
 ///
+/// You can also [use an attribute](attr.Enum.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_enum.html).*
+///
+/// All variants are converted to SCREAMING_SNAKE_CASE.
+///
 /// # Examples
 ///
 /// ```rust
@@ -356,6 +364,10 @@ pub use async_graphql_derive::GQLEnum;
 
 /// Derive a GraphQL input object
 ///
+/// You can also [use an attribute](attr.InputObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_input_object.html).*
+///
 /// # Examples
 ///
 /// ```rust
@@ -368,7 +380,11 @@ pub use async_graphql_derive::GQLEnum;
 /// ```
 pub use async_graphql_derive::GQLInputObject;
 
-/// Derive a GraphQL simple object
+/// Derive a GraphQL object with fields
+///
+/// You can also [use an attribute](attr.SimpleObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html).*
 ///
 /// # Examples
 ///
@@ -383,6 +399,10 @@ pub use async_graphql_derive::GQLInputObject;
 pub use async_graphql_derive::GQLSimpleObject;
 
 /// Define a GraphQL enum
+///
+/// You can also [derive this](derive.GQLEnum.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_enum.html).*
 ///
 /// # Macro parameters
 ///
@@ -438,6 +458,10 @@ pub use async_graphql_derive::Enum;
 
 /// Define a GraphQL input object
 ///
+/// You can also [derive this](derive.GQLInputObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_input_object.html).*
+///
 /// # Macro parameters
 ///
 /// | Attribute   | description               | Type     | Optional |
@@ -491,6 +515,10 @@ pub use async_graphql_derive::Enum;
 pub use async_graphql_derive::InputObject;
 
 /// Define a GraphQL interface
+///
+/// You can also [derive this](derive.GQLInterface.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_interface.html).*
 ///
 /// # Macro parameters
 ///
@@ -616,10 +644,17 @@ pub use async_graphql_derive::InputObject;
 pub use async_graphql_derive::Interface;
 
 /// Derive a GraphQL interface
+///
+/// You can also [use an attribute](attr.Interface.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_interface.html).*
 pub use async_graphql_derive::GQLInterface;
 
 /// Define a GraphQL union
 ///
+/// You can also [derive this](derive.GQLUnion.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_union.html).*
 ///
 /// # Macro parameters
 ///
@@ -684,9 +719,15 @@ pub use async_graphql_derive::GQLInterface;
 pub use async_graphql_derive::Union;
 
 /// Derive a GraphQL union
+///
+/// You can also [use an attribute](attr.Union.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_union.html).*
 pub use async_graphql_derive::GQLUnion;
 
 /// Define a GraphQL subscription
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/subscription.html).*
 ///
 /// The field function is a synchronization function that performs filtering. When true is returned, the message is pushed to the client.
 /// The second parameter is the type of the field.
@@ -756,6 +797,10 @@ pub use async_graphql_derive::Scalar;
 
 /// Define a merged object with multiple object types.
 ///
+/// You can also [derive this](derive.GQLMergedObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
+///
 /// # Macro parameters
 ///
 /// | Attribute     | description               | Type     | Optional |
@@ -793,9 +838,17 @@ pub use async_graphql_derive::Scalar;
 pub use async_graphql_derive::MergedObject;
 
 /// Derive a GraphQL Merged object
+///
+/// You can also [use an attribute](attr.MergedObject.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
 pub use async_graphql_derive::GQLMergedObject;
 
 /// Define a merged subscription with multiple subscription types.
+///
+/// You can also [derive this](derive.GQLMergedSubscription.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
 ///
 /// # Macro parameters
 ///
@@ -835,5 +888,9 @@ pub use async_graphql_derive::GQLMergedObject;
 /// ```
 pub use async_graphql_derive::MergedSubscription;
 
-/// Derive a GraphQL Merged object
+/// Derive a GraphQL merged subscription with multiple subscription types.
+///
+/// You can also [use an attribute](attr.MergedSubscription.html).
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
 pub use async_graphql_derive::GQLMergedSubscription;

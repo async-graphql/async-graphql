@@ -23,7 +23,6 @@ anyhow = "1.0.26"
 thiserror = "1.0.11"
 async-trait = "0.1.30"
 serde = "1.0.104"
-serde_derive = "1.0.104"
 serde_json = "1.0.48"
 bytes = "0.5.4"
 Inflector = "0.11.4"
@@ -54,8 +53,6 @@ chrono-tz = { version = "0.5.1", optional = true }
 
 [dev-dependencies]
 async-std = { version = "1.5.0", features = ["attributes"] }
-serde = "1.0.104"
-serde_derive = "1.0.104"
 
 [workspace]
 members = [

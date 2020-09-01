@@ -55,7 +55,7 @@ mod tests {
     use super::*;
     use crate::{expect_fails_rule, expect_passes_rule};
 
-    pub fn factory<'a>() -> FieldsOnCorrectType {
+    pub fn factory() -> FieldsOnCorrectType {
         FieldsOnCorrectType
     }
 

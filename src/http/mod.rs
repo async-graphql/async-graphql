@@ -18,7 +18,7 @@ use crate::{
     Error, ParseRequestError, Pos, QueryBuilder, QueryError, QueryResponse, Result, Variables,
 };
 use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -241,7 +241,7 @@ mod tests {
             },
         };
 
-        let resp = GQLResponse(Err(err.into()));
+        let resp = GQLResponse(Err(err));
 
         assert_eq!(
             serde_json::to_value(resp).unwrap(),
