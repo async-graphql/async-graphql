@@ -10,7 +10,6 @@ use async_graphql::{
     Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
     QueryResponse, Schema, SubscriptionType, WebSocketTransport,
 };
-use bytes::Bytes;
 use futures::select;
 use futures::{SinkExt, StreamExt};
 use hyper::Method;
@@ -165,54 +164,7 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    warp::any()
-        .and(warp::ws())
-        .and(warp::any().map(move || schema.clone()))
-        .map(
-            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>| {
-                ws.on_upgrade(move |websocket| {
-                    let (mut tx, rx) = websocket.split();
-                    let (mut stx, srx) =
-                        schema.subscription_connection(WebSocketTransport::default());
-
-                    let mut rx = rx.fuse();
-                    let mut srx = srx.fuse();
-
-                    async move {
-                        loop {
-                            select! {
-                                bytes = srx.next() => {
-                                    if let Some(bytes) = bytes {
-                                        if let Ok(text) = String::from_utf8(bytes.to_vec()) {
-                                            if tx.send(Message::text(text)).await.is_err()
-                                            {
-                                                return;
-                                            }
-                                        }
-                                    } else {
-                                        return;
-                                    }
-                                }
-                                msg = rx.next() => {
-                                    if let Some(Ok(msg)) = msg {
-                                        if msg.is_text() {
-                                            if stx.send(Bytes::copy_from_slice(msg.as_bytes())).await.is_err() {
-                                                return;
-                                            }
-                                        }
-                                    } else {
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                })
-            },
-        ).map(|reply| {
-        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-    })
-        .boxed()
+    graphql_subscription_with_data(schema, |_| Ok(Default::default()))
 }
 
 /// GraphQL subscription filter
@@ -233,7 +185,9 @@ where
         .and(warp::any().map(move || schema.clone()))
         .and(warp::any().map(move || init_context_data.clone()))
         .map(
-            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, init_context_data: F| {
+            |ws: warp::ws::Ws,
+             schema: Schema<Query, Mutation, Subscription>,
+             init_context_data: F| {
                 ws.on_upgrade(move |websocket| {
                     let (mut tx, rx) = websocket.split();
                     let (mut stx, srx) =
@@ -259,7 +213,7 @@ where
                                 msg = rx.next() => {
                                     if let Some(Ok(msg)) = msg {
                                         if msg.is_text() {
-                                            if stx.send(Bytes::copy_from_slice(msg.as_bytes())).await.is_err() {
+                                            if stx.send(msg.into_bytes().into()).await.is_err() {
                                                 return;
                                             }
                                         }
@@ -272,9 +226,8 @@ where
                     }
                 })
             },
-        ).map(|reply| {
-        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-    })
+        )
+        .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
         .boxed()
 }
 

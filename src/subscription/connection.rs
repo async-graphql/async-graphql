@@ -4,6 +4,7 @@ use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
 use futures::{Stream, StreamExt};
 use slab::Slab;
+use smallvec::SmallVec;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;
@@ -45,7 +46,7 @@ pub trait ConnectionTransport: Send + Sync + Unpin + 'static {
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
         data: Bytes,
-    ) -> std::result::Result<Option<Vec<Bytes>>, Self::Error>
+    ) -> std::result::Result<Option<SmallVec<[Bytes; 4]>>, Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
@@ -92,7 +93,10 @@ type HandleRequestBoxFut<'a, T> = Pin<
     Box<
         dyn Future<
                 Output = (
-                    std::result::Result<Option<Vec<Bytes>>, <T as ConnectionTransport>::Error>,
+                    std::result::Result<
+                        Option<SmallVec<[Bytes; 4]>>,
+                        <T as ConnectionTransport>::Error,
+                    >,
                     &'a mut T,
                     &'a mut SubscriptionStreams,
                 ),
