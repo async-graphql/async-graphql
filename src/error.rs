@@ -174,7 +174,10 @@ pub enum QueryError {
 
     /// Parsing of an input value failed.
     #[error("Failed to parse input value: {reason}")]
-    ParseInputValue { reason: String },
+    ParseInputValue {
+        /// The reason for the failure to resolve.
+        reason: String,
+    },
 
     /// A field was not found on an object type.
     #[error("Cannot query field \"{field_name}\" on type \"{object}\".")]
@@ -287,9 +290,11 @@ pub enum QueryError {
         extended_error: Option<serde_json::Value>,
     },
 
+    /// Entity not found.
     #[error("Entity not found")]
     EntityNotFound,
 
+    /// "__typename" must be an existing string.
     #[error("\"__typename\" must be an existing string")]
     TypeNameNotExists,
 }
@@ -324,12 +329,15 @@ pub enum ParseRequestError {
     #[error("Invalid multipart data")]
     InvalidMultipart(multer::Error),
 
+    /// Missing "operators" part for multipart request.
     #[error("Missing \"operators\" part")]
     MissingOperatorsPart,
 
+    /// Missing "map" part for multipart request.
     #[error("Missing \"map\" part")]
     MissingMapPart,
 
+    /// It's not an upload operation
     #[error("It's not an upload operation")]
     NotUpload,
 
@@ -342,10 +350,13 @@ pub enum ParseRequestError {
     PayloadTooLarge,
 }
 
-#[allow(missing_docs)]
+/// Verification error.
 #[derive(Debug, PartialEq)]
 pub struct RuleError {
+    /// Location of this error in query string.
     pub locations: Vec<Pos>,
+
+    /// A description of this error.
     pub message: String,
 }
 
@@ -361,11 +372,18 @@ pub enum Error {
     Query {
         /// The position at which the processing failed.
         pos: Pos,
+
+        /// Node path.
         path: Option<serde_json::Value>,
+
         /// The query error.
         err: QueryError,
     },
 
+    /// The query statement verification failed.
     #[error("Rule error")]
-    Rule { errors: Vec<RuleError> },
+    Rule {
+        /// List of errors.
+        errors: Vec<RuleError>,
+    },
 }

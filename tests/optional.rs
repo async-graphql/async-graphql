@@ -47,16 +47,16 @@ pub async fn test_optional_type() {
         EmptyMutation,
         EmptySubscription,
     );
-    let query = r#"{{
+    let query = r#"{
             value1
             value1Ref
             value2
             value2Ref
             testArg1: testArg(input: 10)
             testArg2: testArg
-            testInput1: testInput(input: {{value: 10}})
-            testInput2: testInput(input: {{}})
-            }}"#
+            testInput1: testInput(input: {value: 10})
+            testInput2: testInput(input: {})
+            }"#
     .to_owned();
     assert_eq!(
         schema.execute(&query).await.unwrap().data,

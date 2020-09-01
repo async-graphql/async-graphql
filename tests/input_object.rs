@@ -67,11 +67,11 @@ pub async fn test_input_object_default_value() {
     }
 
     let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
-    let query = r#"{{
-            a(input:{{e:777}}) {{
+    let query = r#"{
+            a(input:{e:777}) {
                 a b c d e
-            }}
-        }}"#
+            }
+        }"#
     .to_owned();
     assert_eq!(
         schema.execute(&query).await.unwrap().data,

@@ -33,11 +33,11 @@ pub async fn test_enum_type() {
     }
 
     let schema = Schema::new(Root { value: MyEnum::A }, EmptyMutation, EmptySubscription);
-    let query = r#"{{
+    let query = r#"{
             value
             testArg(input: A)
-            testInput(input: {{value: B}}) }}
-            "#
+            testInput(input: {value: B})
+        }"#
     .to_owned();
     assert_eq!(
         schema.execute(&query).await.unwrap().data,
