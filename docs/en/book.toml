@@ -2,5 +2,5 @@
 authors = ["sunli"]
 description = "Async-graphql Book"
 src = "src"
-language = "zh-CN"
+language = "en"
 title = "Async-graphql Book"

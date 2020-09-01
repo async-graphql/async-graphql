@@ -1,3 +1,3 @@
 # Type System
 
-`Async-graphql` implemented conversion from GraphQL Object to Rust struct, and it's easy to use.
+`Async-graphql` implements conversions from GraphQL Objects to Rust structs, and it's easy to use.

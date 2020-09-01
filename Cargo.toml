@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "1.17.12"
+version = "1.17.15"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -22,8 +22,7 @@ async-graphql-derive = { path = "async-graphql-derive", version = "1.17.11" }
 anyhow = "1.0.26"
 thiserror = "1.0.11"
 async-trait = "0.1.30"
-serde = "1.0.104"
-serde_derive = "1.0.104"
+serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 bytes = "0.5.4"
 Inflector = "0.11.4"
@@ -55,8 +54,6 @@ smallvec = "1.4.2"
 
 [dev-dependencies]
 async-std = { version = "1.5.0", features = ["attributes"] }
-serde = "1.0.104"
-serde_derive = "1.0.104"
 
 [workspace]
 members = [
@@ -65,6 +62,6 @@ members = [
     "async-graphql-actix-web",
     "async-graphql-warp",
     "async-graphql-tide",
-#    "async-graphql-lambda",
+    #    "async-graphql-lambda",
     "benchmark",
 ]

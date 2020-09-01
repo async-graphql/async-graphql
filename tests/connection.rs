@@ -43,7 +43,7 @@ pub async fn test_connection_additional_fields() {
                         end < 10000,
                         ConnectionFields { total_count: 10000 },
                     );
-                    connection.append((start..end).into_iter().map(|n| {
+                    connection.append((start..end).map(|n| {
                         Edge::with_additional_fields(
                             n,
                             n as i32,

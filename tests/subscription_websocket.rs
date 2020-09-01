@@ -88,7 +88,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 
     let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::new(|value| {
-        #[derive(serde_derive::Deserialize)]
+        #[derive(serde::Deserialize)]
         struct Payload {
             token: String,
         }

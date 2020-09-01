@@ -381,7 +381,7 @@ where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if let Ok(_) = validate(doc, factory) {
+    if validate(doc, factory).is_ok() {
         panic!("Expected rule to fail, but no errors were found");
     }
 }

@@ -1,8 +1,7 @@
 # Union
 
-The definition of `Union` is similar to `Interface`'s, **but no field allowed.**.
-The implemention is quite similar for `Async-graphql`.
-From `Async-graphql`'s perspective, `Union` is a subset of `Interface`.
+The definition of a `Union` is similar to an `Interface`, **but with no fields allowed.**.
+The implementation is quite similar for `Async-graphql`; from `Async-graphql`'s perspective, `Union` is a subset of `Interface`.
 
 The following example modified the definition of `Interface` a little bit and removed fields.
 

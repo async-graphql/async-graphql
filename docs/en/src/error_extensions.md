@@ -1,7 +1,7 @@
 # Error extensions
 To quote the [graphql-spec](https://spec.graphql.org/June2018/#example-fce18):
 > GraphQL services may provide an additional entry to errors with key extensions.
-> This entry, if set, must have a map as its value. This entry is reserved for implementors to add
+> This entry, if set, must have a map as its value. This entry is reserved for implementer to add
 > additional information to errors however they see fit, and there are no additional restrictions on
 > its contents.
 
@@ -9,11 +9,11 @@ To quote the [graphql-spec](https://spec.graphql.org/June2018/#example-fce18):
 I would recommend on checking out this [async-graphql example](https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs) as a quickstart.
 
 ## General Concept
-In async-graphql all user-facing errors are cast to the `FieldError` type which by default provides
-the error message exposed by `std::fmt::Display`. However `FieldError` actually provides an additional
-field `Option<serde_json::Value>` which - if some valid `serde_json::Map` - will be exposed as the extensions key to any error.
+In `async-graphql` all user-facing errors are cast to the `FieldError` type which by default provides
+the error message exposed by `std::fmt::Display`. However `FieldError` also provides an additional
+field `Option<serde_json::Value>` which - if given some valid `serde_json::Map` - will be exposed as the extensions key to any error.
 
-A resolver like this: 
+A resolver looks like this:
 
 ```rust
 async fn parse_with_extensions(&self) -> Result<i32, FieldError> {
@@ -41,7 +41,7 @@ may then return a response like this:
 
 
 ## ErrorExtensions
-Constructing new `FieldError`s by hand quickly becomes tedious. That is why async_graphql provides
+Constructing new `FieldError`s by hand quickly becomes tedious. That is why `async-graphql` provides
 two convenience traits for casting your errors to the appropriate `FieldError` with
 extensions.
 
@@ -62,8 +62,7 @@ If you find yourself attaching extensions to your errors all over the place you 
 implementing the trait on your custom error type directly.
 
 ```rust
-#[macro_use]
-extern crate thiserror;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum MyError {
@@ -102,7 +101,6 @@ async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
     // OR
     Err(MyError::NotFound.extend_with(|_| json!({ "on_the_fly": "some_more_info" })))
 }
-
 ```
 
 ```json
@@ -119,11 +117,7 @@ async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
     }
   ]
 }
-
 ```
-
-
-
 
 ## ResultExt
 This trait enables you to call `extend_err` directly on results. So the above code becomes less verbose.
@@ -176,7 +170,7 @@ Expected response:
 ### Pitfalls
 Rust does not provide stable trait specialization yet.
 That is why `ErrorExtensions` is actually implemented for `&E where E: std::fmt::Display`
-instead of `E: std::fmt::Display` to provide some specialization through
+instead of `E: std::fmt::Display`. Some specialization is provided through
 [Autoref-based stable specialization](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md).
 The disadvantage is that the below code does **NOT** compile:
 

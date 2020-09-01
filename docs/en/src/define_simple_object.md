@@ -1,8 +1,8 @@
 # SimpleObject
 
-`SimpleObject` directly map all field of a struct to GraphQL object, you cannot define a resolver function on it.
+`SimpleObject` directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see [Object](define_complex_object.html).
 
-The example below defined an object `MyObject`, including field `a` and `b`. `c` will be not mapped to GraphQL as it is labelled as `#[field(skip)]`
+The example below defines an object `MyObject` which includes the fields `a` and `b`. `c` will be not mapped to GraphQL as it is labelled as `#[field(skip)]`
 
 ```rust
 use async_graphql::*;

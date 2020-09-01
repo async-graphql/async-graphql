@@ -1,7 +1,7 @@
 # Default value
 
 You can define default values for input value types.
-The following shows how to define default values for different types.
+Below are some examples.
 
 ## Object field
 

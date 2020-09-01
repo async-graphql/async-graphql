@@ -1,8 +1,8 @@
 # Apollo Federation
 
-`Apollo Federation` is a `GraphQL` API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction)。
+`Apollo Federation` is a `GraphQL` API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction).
 
-`Async-GraphQL` supports all the functionality of `Apollo Federation`, but some modifications to your `Schema` are required.
+`Async-graphql` supports all the functionality of `Apollo Federation`, but some modifications to your `Schema` are required.
 
 - You can use the `extends` property declaration on `async_graphql::Object` and `async_graphql::Interface` to extend a type offered by another implementing service.
 
@@ -36,16 +36,16 @@ impl Query {
 
 **Notice the difference between these three lookup functions, which are all looking for the `User` object.**
 
-- find_user_by_id
+- `find_user_by_id`
 
-    Use `id` to find an `User` object, the key for `User` is `id`。
+    Use `id` to find an `User` object, the key for `User` is `id`.
 
-- find_user_by_id_with_username
+- `find_user_by_id_with_username`
 
-    Use `id` to find an `User` object, the key for `User` is `id`, and the `username` field value of the `User` object is requested。
+    Use `id` to find an `User` object, the key for `User` is `id`, and the `username` field value of the `User` object is requested.
 
-- find_user_by_id_and_username
+- `find_user_by_id_and_username`
 
-    Use `id` and `username` to find an `User` object, the keys for `User` are `id` and `username`。
+    Use `id` and `username` to find an `User` object, the keys for `User` are `id` and `username`.
 
-For a complete example, refer to: https://github.com/async-graphql/examples/tree/master/federation
+For a complete example, refer to: <https://github.com/async-graphql/examples/tree/master/federation>.
