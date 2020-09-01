@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -160,14 +160,13 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#custom-scalars" id="custom-scalars">Custom scalars</a></h1>
-<p>In <code>Async-GraphQL</code> most common scalar types are built in, but you can also create your own scalar types.</p>
+<p>In <code>Async-graphql</code> most common scalar types are built in, but you can also create your own scalar types.</p>
 <p>Using <code>async-graphql::Scalar</code>, you can add support for a scalar when you implement it. You only need to implement parsing and output functions.</p>
-<p>The following example defines a 64-bit integer scalar where its input and output are strings. (Note: <code>Async-graphQL</code> already supports 64-bit integers and uses strings as input and output.)</p>
+<p>The following example defines a 64-bit integer scalar where its input and output are strings. (Note: <code>Async-graphql</code> already supports 64-bit integers and uses strings as input and output.)</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
-
 
 struct StringNumber(i64);
 
@@ -187,7 +186,6 @@ impl ScalarType for StringNumber {
         Value::String(self.0.to_string())
     }
 }
-
 <span class="boring">}
 </span></code></pre></pre>
 

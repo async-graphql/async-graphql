@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -161,14 +161,14 @@
                     <main>
                         <h1><a class="header" href="#interface" id="interface">Interface</a></h1>
 <p><code>Interface</code> is used to abstract <code>Object</code>s with common fields.
-<code>Async-graphql</code> implemented it as a wrapper.
-The wrapper will forward Resolve to the <code>Object</code> that implemented this <code>Interface</code>.
-Therefore, the <code>Object</code>'s fields' type, arguments must match with the <code>Interface</code>'s.</p>
-<p><code>Async-graphql</code> implemented auto conversion from <code>Object</code> to <code>Interface</code>, you only need to call <code>Into::into</code>.</p>
-<p>Interface fields names transforms to camelCase in schema definition.
-If you need e.g. snake_cased GraphQL field name, you can use both the <code>name</code> and <code>method</code> attribute.</p>
+<code>Async-graphql</code> implements it as a wrapper.
+The wrapper will forward field resolution to the <code>Object</code> that implements this <code>Interface</code>.
+Therefore, the <code>Object</code>'s fields' type and arguments must match with the <code>Interface</code>'s.</p>
+<p><code>Async-graphql</code> implements auto conversion from <code>Object</code> to <code>Interface</code>, you only need to call <code>Into::into</code>.</p>
+<p>Interface field names are transformed to camelCase for the schema definition.
+If you need e.g. a snake_cased GraphQL field name, you can use both the <code>name</code> and <code>method</code> attributes.</p>
 <ul>
-<li>When the <code>name</code> and <code>method</code> exist together, the <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
+<li>When <code>name</code> and <code>method</code> exist together, <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
 <li>When only <code>name</code> exists, <code>name.to_camel_case()</code> is the GraphQL field name and the <code>name</code> is the resolver function name.</li>
 </ul>
 <pre><pre class="playground"><code class="language-rust">

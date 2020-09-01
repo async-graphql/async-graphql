@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -161,11 +161,11 @@
                     <main>
                         <h1><a class="header" href="#inputobject" id="inputobject">InputObject</a></h1>
 <!--Input Object and SimpleObject inconsistant space.-->
-<p>You can define an <code>Object</code> as argument, GraphQL calls it <code>InputObject</code>.
-The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>.
-However, <code>SimpleObject</code> can only be used for output and <code>InputObject</code> can only be used as input.</p>
-<p><code>InputObject</code> don't need a <code>#[field]</code> for each field, every field is <code>InputValue</code>.
-But you can add optional <code>#[field]</code> to add description or rename the field.</p>
+<p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.
+The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
+<code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
+<p><code>InputObject</code> doesn't need a <code>#[field]</code> for each field, every field is an <code>InputValue</code>.
+You can add optional <code>#[field]</code> attributes to add descriptions or rename the field.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

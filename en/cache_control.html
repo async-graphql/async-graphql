@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -162,10 +162,10 @@
                         <h1><a class="header" href="#cache-control" id="cache-control">Cache control</a></h1>
 <p>Production environments often rely on caching to improve performance.</p>
 <p>A GraphQL query will call multiple resolver functions and each resolver can have a different cache definition. Some may cache for a few seconds, some may cache for a few hours, some may be the same for all users, and some may be different for each session.</p>
-<p><code>Async-Graphql</code> provides a mechanism that allows you to define the cache time and scope for each resolver.</p>
+<p><code>Async-graphql</code> provides a mechanism that allows you to define the cache time and scope for each resolver.</p>
 <p>You can define cache parameters on the object or on its fields. The following example shows two uses of cache control parameters.</p>
 <p>You can use <code>max_age</code> parameters to control the age of the cache (in seconds), and you can also use <code>public</code> and <code>private</code> to control the scope of the cache. When you do not specify it, the scope will default to <code>public</code>.</p>
-<p>lWhen querying multiple resolvers, the results of all cache control parameters will be combined and the <code>max_age</code> minimum value will be taken. If the scope of any object or field is <code>private</code>, the result will be <code>private</code>.</p>
+<p>when querying multiple resolvers, the results of all cache control parameters will be combined and the <code>max_age</code> minimum value will be taken. If the scope of any object or field is <code>private</code>, the result will be <code>private</code>.</p>
 <p>We can use <code>QueryResponse</code> to get a merged cache control result from a query result, and call <code>CacheControl::value</code> to get the corresponding HTTP header.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]

@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -160,8 +160,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#apollo-federation" id="apollo-federation">Apollo Federation</a></h1>
-<p><code>Apollo Federation</code> is a <code>GraphQL</code> API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">official documentation</a>。</p>
-<p><code>Async-GraphQL</code> supports all the functionality of <code>Apollo Federation</code>, but some modifications to your <code>Schema</code> are required.</p>
+<p><code>Apollo Federation</code> is a <code>GraphQL</code> API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">official documentation</a>.</p>
+<p><code>Async-graphql</code> supports all the functionality of <code>Apollo Federation</code>, but some modifications to your <code>Schema</code> are required.</p>
 <ul>
 <li>
 <p>You can use the <code>extends</code> property declaration on <code>async_graphql::Object</code> and <code>async_graphql::Interface</code> to extend a type offered by another implementing service.</p>
@@ -201,19 +201,19 @@ impl Query {
 <p><strong>Notice the difference between these three lookup functions, which are all looking for the <code>User</code> object.</strong></p>
 <ul>
 <li>
-<p>find_user_by_id</p>
-<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>。</p>
+<p><code>find_user_by_id</code></p>
+<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>.</p>
 </li>
 <li>
-<p>find_user_by_id_with_username</p>
-<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>, and the <code>username</code> field value of the <code>User</code> object is requested。</p>
+<p><code>find_user_by_id_with_username</code></p>
+<p>Use <code>id</code> to find an <code>User</code> object, the key for <code>User</code> is <code>id</code>, and the <code>username</code> field value of the <code>User</code> object is requested.</p>
 </li>
 <li>
-<p>find_user_by_id_and_username</p>
-<p>Use <code>id</code> and <code>username</code> to find an <code>User</code> object, the keys for <code>User</code> are <code>id</code> and <code>username</code>。</p>
+<p><code>find_user_by_id_and_username</code></p>
+<p>Use <code>id</code> and <code>username</code> to find an <code>User</code> object, the keys for <code>User</code> are <code>id</code> and <code>username</code>.</p>
 </li>
 </ul>
-<p>For a complete example, refer to: https://github.com/async-graphql/examples/tree/master/federation</p>
+<p>For a complete example, refer to: <a href="https://github.com/async-graphql/examples/tree/master/federation">https://github.com/async-graphql/examples/tree/master/federation</a>.</p>
 
                     </main>
 

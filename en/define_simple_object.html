@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -160,8 +160,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
-<p><code>SimpleObject</code> directly map all field of a struct to GraphQL object, you cannot define a resolver function on it.</p>
-<p>The example below defined an object <code>MyObject</code>, including field <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
+<p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see <a href="define_complex_object.html">Object</a>.</p>
+<p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

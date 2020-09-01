@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -179,8 +179,8 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Instead, the <code>#[derive(GQLMergedObject)]</code> macro allows you to split an object's resolvers across multiple file by merging 2 or more <code>#[Object]</code> implementations into one.</p>
-<p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name even in a GQLMergedObject so make sure to give each object your merging it's own name.</p>
+<p>Instead, the <code>#[derive(GQLMergedObject)]</code>/<code>#[MergedObject]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
+<p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>GQLMergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -210,7 +210,7 @@ let schema = Schema::new(
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#merging-subscriptions" id="merging-subscriptions">Merging Subscriptions</a></h1>
-<p>Along with <code>GQLMergedObject</code>, you can derive <code>GQLMergedSubscription</code> to merge separate <code>#[Subscription]</code> blocks.</p>
+<p>Along with <code>GQLMergedObject</code>, you can derive <code>GQLMergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>
 <pre><pre class="playground"><code class="language-rust">

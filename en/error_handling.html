@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="zh-CN" class="sidebar-visible no-js light">
+<html lang="en" class="sidebar-visible no-js light">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -160,16 +160,16 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#error-handling" id="error-handling">Error handling</a></h1>
-<p>Resolve can return a <code>FieldResult</code>, following is the definition:</p>
+<p>Resolve can return a <code>FieldResult</code>, which has the following definition:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>FieldError</code> and you can extend error message.</p>
-<p>Following example shows how to parse an input string to integer. When parsing failed, it would return error and attach error message.
-See <a href="error_extensions.html">ErrorExtensions</a> sections of this book for more details.</p>
+<p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>FieldError</code> and you can extend the error message.</p>
+<p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
+See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
