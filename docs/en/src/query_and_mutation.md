@@ -2,8 +2,7 @@
 
 ## Query root object
 
-The query root object is a GraphQL object with a definition similar to other objects. resolver functions for all fields of the query object are executed concurrently.
-
+The query root object is a GraphQL object with a definition similar to other objects. Resolver functions for all fields of the query object are executed concurrently.
 
 ```rust
 use async_graphql::*;

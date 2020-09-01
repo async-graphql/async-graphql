@@ -18,9 +18,9 @@ impl Query {
 }
 ```
 
-Instead, the `#[derive(GQLMergedObject)]` macro allows you to split an object's resolvers across multiple file by merging 2 or more `#[Object]` implementations into one.
+Instead, the `#[derive(GQLMergedObject)]`/`#[MergedObject]` macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more `#[Object]` implementations into one.
 
-**Tip:** Every `#[Object]` needs a unique name even in a GQLMergedObject so make sure to give each object your merging it's own name.
+**Tip:** Every `#[Object]` needs a unique name, even in a `GQLMergedObject`, so make sure to give each object you're merging its own name.
 
 **Note:** This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.
 
@@ -51,7 +51,7 @@ let schema = Schema::new(
 
 # Merging Subscriptions
 
-Along with `GQLMergedObject`, you can derive `GQLMergedSubscription` to merge separate `#[Subscription]` blocks.
+Along with `GQLMergedObject`, you can derive `GQLMergedSubscription` or use `#[MergedSubscription]` to merge separate `#[Subscription]` blocks.
 
 Like merging Objects, each subscription block requires a unique name.
 

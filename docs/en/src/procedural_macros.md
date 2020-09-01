@@ -1,6 +1,6 @@
 # Two ways to define types
 
-I think you have discovered that defining a GraphqlQL type can be use attribute macro or derive.
+I think you have discovered that GraphQL types can be defined using both an attribute macro and a derive.
 
 The following is the corresponding table:
 
@@ -14,7 +14,7 @@ The following is the corresponding table:
 |Merged Object|MergedObject|GQLMergedObject|
 |Merged Subscription|MergedSubscription|GQLMergedSubscription|
 
-The advantage of attribute macro is that you can provide some parameters at the same time, for example：
+The advantage of the attribute macro is that you can provide parameters at the same time, for example：
 
 ```rust
 #[SimpleObject(name = "ABC")]
@@ -23,7 +23,7 @@ struct MyObject {
 }
 ```
 
-**But it does not support conditional compilation**, for example:
+**However, attribute macros do not support conditional compilation**. The following does not work:
 
 ```rust
 #[SimpleObject]
@@ -36,7 +36,7 @@ struct MyObject {
 }
 ```
 
-**Derive can support conditional compilation**, but it needs to provide parameters separately, for example:
+Deriving, on the other hand, does support conditional compilation, but as derive macros can't take parameters you need to provide them separately. For example:
 
 ```rust
 #[derive(SimpleObject)]
@@ -46,4 +46,4 @@ struct MyObject {
 }
 ```
 
-_Which way to define the type is up to you, I prefer to use derive._
+_Which way you use to define types is up to you, personally I prefer to use derive._

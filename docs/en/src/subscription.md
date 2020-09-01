@@ -1,8 +1,8 @@
 # Subscription
 
-The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a Stream, and the field parameters are usually used as data filtering conditions.
+The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a [Stream](https://docs.rs/futures-core/~0.3/futures_core/stream/trait.Stream.html), and the field parameters are usually used as data filtering conditions.
 
-The following example subscribes to an integer stream, which generates one integer per second. The parameter step specifies the integer step size with a default of 1
+The following example subscribes to an integer stream, which generates one integer per second. The parameter `step` specifies the integer step size with a default of 1.
 
 ```rust
 use async_graphql::*;

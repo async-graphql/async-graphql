@@ -1,8 +1,8 @@
 # Cursor connections
 
-Relay's cursor connection specification is defined to provide a consistent method for query paging. For more details on the specification see the [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)。
+Relay's cursor connection specification is designed to provide a consistent method for query paging. For more details on the specification see the [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)。
 
-Define a cursor connection in `async-graphql` is very simple, you just call the `connection::query` function and query data in closure.
+Defining a cursor connection in `async-graphql` is very simple, you just call the `connection::query` function and query data in the closure.
 
 ```rust
 use async_graphql::*;
