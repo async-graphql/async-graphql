@@ -35,4 +35,4 @@ cd benchmark
 cargo bench
 ```
 
-Now HTML report is available at `benchmark/target/criterion/report`
+Now a HTML report is available at `benchmark/target/criterion/report`.

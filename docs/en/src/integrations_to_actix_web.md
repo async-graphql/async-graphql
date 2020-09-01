@@ -1,8 +1,8 @@
 # Actix-web
 
-`Async-graphql-actix-web` provides an implementation of `actix_web::FromRequest` for `GQLRequest`. This is actually an abstraction around `QueryBuilder` and you can call `GQLRequest::into_inner` to convert it into a `QueryBuilder`。
+`Async-graphql-actix-web` provides an implementation of `actix_web::FromRequest` for `GQLRequest`. This is actually an abstraction around `QueryBuilder` and you can call `GQLRequest::into_inner` to convert it into a `QueryBuilder`.
 
-`WSSubscription` is an Actor that supports WebSocket subscriptions。
+`WSSubscription` is an Actor that supports WebSocket subscriptions.
 
 ## Request example
 
