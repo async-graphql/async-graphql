@@ -12,7 +12,6 @@ use crate::{
     SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::query::{Document, OperationType};
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;
@@ -414,8 +413,8 @@ where
         &self,
         transport: T,
     ) -> (
-        mpsc::UnboundedSender<Bytes>,
-        impl Stream<Item = Bytes> + Unpin,
+        mpsc::UnboundedSender<Vec<u8>>,
+        impl Stream<Item = Vec<u8>> + Unpin,
     ) {
         create_connection(self.clone(), transport)
     }

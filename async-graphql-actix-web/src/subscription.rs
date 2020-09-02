@@ -3,7 +3,6 @@ use actix::{
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType, WebSocketTransport};
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::SinkExt;
 use std::time::{Duration, Instant};
@@ -15,7 +14,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
-    sink: Option<mpsc::UnboundedSender<Bytes>>,
+    sink: Option<mpsc::UnboundedSender<Vec<u8>>>,
     init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
 }
 
@@ -119,15 +118,15 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription> StreamHandler<Bytes>
+impl<Query, Mutation, Subscription> StreamHandler<Vec<u8>>
     for WSSubscription<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    fn handle(&mut self, data: Bytes, ctx: &mut Self::Context) {
-        if let Ok(text) = std::str::from_utf8(&data) {
+    fn handle(&mut self, data: Vec<u8>, ctx: &mut Self::Context) {
+        if let Ok(text) = String::from_utf8(data) {
             ctx.text(text);
         }
     }

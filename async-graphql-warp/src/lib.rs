@@ -201,7 +201,7 @@ where
                             select! {
                                 bytes = srx.next() => {
                                     if let Some(bytes) = bytes {
-                                        if let Ok(text) = String::from_utf8(bytes.to_vec()) {
+                                        if let Ok(text) = String::from_utf8(bytes) {
                                             if tx.send(Message::text(text)).await.is_err() {
                                                 return;
                                             }
@@ -213,7 +213,7 @@ where
                                 msg = rx.next() => {
                                     if let Some(Ok(msg)) = msg {
                                         if msg.is_text() {
-                                            if stx.send(msg.into_bytes().into()).await.is_err() {
+                                            if stx.send(msg.into_bytes()).await.is_err() {
                                                 return;
                                             }
                                         }

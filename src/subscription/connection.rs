@@ -1,5 +1,4 @@
 use crate::{ObjectType, Result, Schema, SubscriptionType};
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
 use futures::{Stream, StreamExt};
@@ -44,8 +43,8 @@ pub trait ConnectionTransport: Send + Sync + Unpin + 'static {
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
-        request: Bytes,
-        send_buf: &mut VecDeque<Bytes>,
+        request: Vec<u8>,
+        send_buf: &mut VecDeque<Vec<u8>>,
     ) -> std::result::Result<(), Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
@@ -53,15 +52,15 @@ pub trait ConnectionTransport: Send + Sync + Unpin + 'static {
         Subscription: SubscriptionType + Sync + Send + 'static;
 
     /// When a response message is generated, you can convert the message to the format you want here.
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Vec<u8>>;
 }
 
 pub fn create_connection<Query, Mutation, Subscription, T: ConnectionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
     mut transport: T,
 ) -> (
-    mpsc::UnboundedSender<Bytes>,
-    impl Stream<Item = Bytes> + Unpin,
+    mpsc::UnboundedSender<Vec<u8>>,
+    impl Stream<Item = Vec<u8>> + Unpin,
 )
 where
     Query: ObjectType + Sync + Send + 'static,
@@ -97,7 +96,7 @@ type HandleRequestBoxFut<'a, T> = Pin<
                     std::result::Result<(), <T as ConnectionTransport>::Error>,
                     &'a mut T,
                     &'a mut SubscriptionStreams,
-                    &'a mut VecDeque<Bytes>,
+                    &'a mut VecDeque<Vec<u8>>,
                 ),
             > + Send
             + 'a,
@@ -110,10 +109,10 @@ struct SubscriptionStream<'a, Query, Mutation, Subscription, T: ConnectionTransp
     schema: &'a Schema<Query, Mutation, Subscription>,
     transport: Option<&'a mut T>,
     streams: Option<&'a mut SubscriptionStreams>,
-    rx_bytes: mpsc::UnboundedReceiver<Bytes>,
+    rx_bytes: mpsc::UnboundedReceiver<Vec<u8>>,
     handle_request_fut: Option<HandleRequestBoxFut<'a, T>>,
     waker: AtomicWaker,
-    send_buf: Option<&'a mut VecDeque<Bytes>>,
+    send_buf: Option<&'a mut VecDeque<Vec<u8>>>,
 }
 
 impl<'a, Query, Mutation, Subscription, T> Stream
@@ -124,7 +123,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
     T: ConnectionTransport,
 {
-    type Item = Bytes;
+    type Item = Vec<u8>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;

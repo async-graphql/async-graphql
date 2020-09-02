@@ -4,7 +4,6 @@ use crate::{
     ConnectionTransport, Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError,
     QueryResponse, Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
 };
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -42,9 +41,9 @@ impl WebSocketTransport {
     }
 }
 
-fn send_message<T: Serialize>(send_buf: &mut VecDeque<Bytes>, msg: &T) {
+fn send_message<T: Serialize>(send_buf: &mut VecDeque<Vec<u8>>, msg: &T) {
     if let Ok(data) = serde_json::to_vec(msg) {
-        send_buf.push_back(data.into());
+        send_buf.push_back(data);
     }
 }
 
@@ -56,8 +55,8 @@ impl ConnectionTransport for WebSocketTransport {
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
-        request: Bytes,
-        send_buf: &mut VecDeque<Bytes>,
+        request: Vec<u8>,
+        send_buf: &mut VecDeque<Vec<u8>>,
     ) -> std::result::Result<(), Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
@@ -195,7 +194,7 @@ impl ConnectionTransport for WebSocketTransport {
         }
     }
 
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes> {
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Vec<u8>> {
         if let Some(id) = self.sid_to_id.get(&id) {
             match res {
                 Ok(value) => Some(
@@ -211,8 +210,7 @@ impl ConnectionTransport for WebSocketTransport {
                             .unwrap(),
                         ),
                     })
-                    .unwrap()
-                    .into(),
+                    .unwrap(),
                 ),
                 Err(err) => Some(
                     serde_json::to_vec(&OperationMessage {
@@ -220,8 +218,7 @@ impl ConnectionTransport for WebSocketTransport {
                         id: Some(id.to_string()),
                         payload: Some(serde_json::to_value(GQLError(&err)).unwrap()),
                     })
-                    .unwrap()
-                    .into(),
+                    .unwrap(),
                 ),
             }
         } else {
