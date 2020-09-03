@@ -20,11 +20,63 @@ use tokio_util::compat::Tokio02AsyncReadCompatExt;
 use yansi::Paint;
 
 
-
+/// Contains the fairing functions, to attach GraphQL with the desired `Schema`, and optionally
+/// `QueryBuilderOpts`, to Rocket.
+///
+/// # Examples
+/// **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
+///
+/// ```rust,no_run
+///
+/// use async_graphql::*;
+/// use async_graphql_rocket::{GQLRequest, GraphQL, GQLResponse};
+/// use rocket::{response::content, routes, State, http::Status};
+///
+/// type ExampleSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     #[field(desc = "Returns the sum of a and b")]
+///     async fn add(&self, a: i32, b: i32) -> i32 {
+///          a + b
+///     }
+/// }
+///
+/// #[rocket::post("/?<query..>")]
+/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: GQLRequest) -> Result<GQLResponse, Status> {
+///     query.execute(&schema)
+///         .await
+/// }
+///
+/// #[rocket::post("/", data = "<request>", format = "application/json")]
+/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: GQLRequest) -> Result<GQLResponse, Status> {
+///     request.execute(&schema)
+///         .await
+/// }
+///
+/// #[rocket::launch]
+/// fn rocket() -> rocket::Rocket {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     rocket::ignite()
+///         .attach(GraphQL::fairing(schema))
+///         .mount("/", routes![graphql_query, graphql_request])
+/// }
+/// ```
 pub struct GraphQL;
 
 impl GraphQL
 {
+    /// Fairing with default `QueryBuilderOpts`. You just need to pass in your `Schema` and then can
+    /// attach the `Fairing` to Rocket.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    ///     rocket::ignite()
+    ///         .attach(GraphQL::fairing(schema))
+    ///         .mount("/", routes![graphql_query, graphql_request])
+    /// ```
     pub fn fairing<Q, M, S>(schema: Schema<Q, M, S>) -> impl Fairing
     where
         Q: ObjectType + Send + Sync + 'static,
@@ -34,6 +86,17 @@ impl GraphQL
         GraphQL::attach(schema, Default::default())
     }
 
+    /// Fairing to which you need to pass `QueryBuilderOpts` and your `Schema`. Then you can
+    /// attach the `Fairing` to Rocket.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    ///     let opts: IntoQueryBuilderOpts = Default::default();
+    ///     rocket::ignite()
+    ///         .attach(GraphQL::fairing_with_opts(schema, opts))
+    ///         .mount("/", routes![graphql_query, graphql_request])
+    /// ```
     pub fn fairing_with_opts<Q, M, S>(schema: Schema<Q, M, S>, opts: IntoQueryBuilderOpts) -> impl Fairing
     where
         Q: ObjectType + Send + Sync + 'static,
@@ -60,9 +123,29 @@ impl GraphQL
     }
 }
 
+/// Implements `FromQuery` and `FromData`, so that it can be used as parameter in a
+/// Rocket route.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// #[rocket::post("/?<query..>")]
+/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: GQLRequest) -> Result<GQLResponse, Status> {
+///     query.execute(&schema)
+///         .await
+/// }
+///
+/// #[rocket::post("/", data = "<request>", format = "application/json")]
+/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: GQLRequest) -> Result<GQLResponse, Status> {
+///     request.execute(&schema)
+///         .await
+/// }
+/// ```
 pub struct GQLRequest(pub QueryBuilder);
 
 impl GQLRequest {
+    /// Mimics `async_graphqlquery::QueryBuilder.execute()`.
+    /// Executes the query, always return a complete result.
     pub async fn execute<Q, M, S>(self, schema: &Schema<Q, M, S>) -> Result<GQLResponse, Status>
     where
         Q: ObjectType + Send + Sync + 'static,
@@ -92,7 +175,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
             match key.as_str() {
                 "query" => {
                     if query.is_some() {
-                        return Err(r#"Multiple parameters named \"query\" found. Only one parameter by that name is allowed."#.to_string());
+                        return Err(r#"Multiple parameters named "query" found. Only one parameter by that name is allowed."#.to_string());
                     } else {
                         query = value.url_decode()
                             .map_err(|e| e.to_string())?
@@ -101,7 +184,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
                 }
                 "operation_name" => {
                     if operation_name.is_some() {
-                        return Err(r#"Multiple parameters named \"operation_name\" found. Only one parameter by that name is allowed."#.to_string());
+                        return Err(r#"Multiple parameters named "operation_name" found. Only one parameter by that name is allowed."#.to_string());
                     } else {
                         operation_name = value.url_decode()
                             .map_err(|e| e.to_string())?
@@ -110,7 +193,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
                 }
                 "variables" => {
                     if variables.is_some() {
-                        return Err(r#"Multiple parameters named \"variables\" found. Only one parameter by that name is allowed."#.to_string());
+                        return Err(r#"Multiple parameters named "variables" found. Only one parameter by that name is allowed."#.to_string());
                     } else {
                         let decoded= value.url_decode()
                             .map_err(|e| e.to_string())?;
@@ -122,7 +205,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
                     }
                 }
                 _ => {
-                    return Err(format!(r#"Extra parameter named \"{}\" found. Extra parameters are not allowed."#, key));
+                    return Err(format!(r#"Extra parameter named "{}" found. Extra parameters are not allowed."#, key));
                 }
             }
         }
@@ -156,7 +239,8 @@ impl FromData for GQLRequest {
             Outcome::Forward(()) => unreachable!(),
         };
 
-        let stream = data.open(100.kibibytes());
+        let limit = req.limits().get("graphql");
+        let stream = data.open(limit.unwrap_or_else(|| 128.kibibytes()));
         let builder = (req.headers().get_one("Content-Type"), stream.compat())
             .into_query_builder_opts(&opts)
             .await;
@@ -168,6 +252,9 @@ impl FromData for GQLRequest {
     }
 }
 
+/// Wrapper around `async-graphql::query::QueryResponse` for implementing the trait
+/// `rocket::response::responder::Responder`, so that `GQLResponse` can directly be returned
+/// from a Rocket Route function.
 pub struct GQLResponse(pub QueryResponse);
 
 impl<'r> Responder<'r, 'static> for GQLResponse {

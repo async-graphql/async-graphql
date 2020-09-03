@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-rocket"
-version = "1.17.18"
+version = "1.17.21"
 authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
 edition = "2018"
 description = "async-graphql for Rocket.rs"
@@ -13,10 +13,9 @@ keywords = ["futures", "async", "graphql", "rocket"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "..", version = "1.17.18" }
-rocket = { git = "https://github.com/SergioBenitez/Rocket/", default-features = false }
+async-graphql = { path = "..", version = "1.17.21" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket/", rev = "dc2c6ec", default-features = false } #TODO: Change to Cargo crate, when Rocket 0.5.0 is released
 log = "0.4.11"
 yansi = "0.5.0"
 tokio-util = { version = "0.3.1", default-features = false, features = ["compat"] }
 serde_json = "1.0.57"
-serde_urlencoded = "0.6.1"
