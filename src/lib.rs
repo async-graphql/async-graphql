@@ -479,6 +479,7 @@ pub use async_graphql_derive::Enum;
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
+/// | flatten      | Similar to serde (flatten)               | boolean | Y |
 ///
 /// # Examples
 ///
