@@ -166,8 +166,5 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
 
         impl #crate_name::InputObjectType for #ident {}
     };
-    if gql_typename == "MyInputObject11" {
-        println!("{}", expanded);
-    }
     Ok(expanded.into())
 }
