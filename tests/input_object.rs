@@ -91,10 +91,9 @@ pub async fn test_input_object_default_value() {
 pub async fn test_inputobject_derive_and_item_attributes() {
     use serde::Deserialize;
 
-    #[async_graphql::InputObject]
+    #[InputObject]
     #[derive(Deserialize, PartialEq, Debug)]
     struct MyInputObject {
-        #[field]
         #[serde(alias = "other")]
         real: i32,
     }
@@ -102,5 +101,133 @@ pub async fn test_inputobject_derive_and_item_attributes() {
     assert_eq!(
         serde_json::from_str::<MyInputObject>(r#"{ "other" : 100 }"#).unwrap(),
         MyInputObject { real: 100 }
+    );
+}
+
+#[async_std::test]
+pub async fn test_inputobject_flatten() {
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct A {
+        a: i32,
+    }
+
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct B {
+        #[field(default = 70)]
+        b: i32,
+        #[field(flatten)]
+        a_obj: A,
+    }
+
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct MyInputObject {
+        #[field(flatten)]
+        b_obj: B,
+        c: i32,
+    }
+
+    assert_eq!(
+        MyInputObject::parse(Some(
+            serde_json::json!({
+               "a": 10,
+               "b": 20,
+               "c": 30,
+            })
+            .into()
+        ))
+        .unwrap(),
+        MyInputObject {
+            b_obj: B {
+                b: 20,
+                a_obj: A { a: 10 }
+            },
+            c: 30,
+        }
+    );
+
+    assert_eq!(
+        MyInputObject {
+            b_obj: B {
+                b: 20,
+                a_obj: A { a: 10 }
+            },
+            c: 30,
+        }
+        .to_value(),
+        serde_json::json!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })
+        .into()
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(&self, input: MyInputObject) -> i32 {
+            input.c + input.b_obj.b + input.b_obj.a_obj.a
+        }
+
+        async fn test_with_default(
+            &self,
+            #[arg(default_with = r#"MyInputObject {
+            b_obj: B {
+                b: 2,
+                a_obj: A { a: 1 }
+            },
+            c: 3,
+        }"#)]
+            input: MyInputObject,
+        ) -> i32 {
+            input.c + input.b_obj.b + input.b_obj.a_obj.a
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10, b: 20, c: 30})
+        }"#
+            )
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({
+            "test": 60,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10, c: 30})
+        }"#
+            )
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({
+            "test": 110,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            testWithDefault
+        }"#
+            )
+            .await
+            .unwrap()
+            .data,
+        serde_json::json!({
+            "testWithDefault": 6,
+        })
     );
 }
