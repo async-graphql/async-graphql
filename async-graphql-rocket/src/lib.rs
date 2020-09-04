@@ -12,7 +12,7 @@ use rocket::{
     data::{self, FromData},
     data::{Data, ToByteUnit},
     fairing::{AdHoc, Fairing},
-    http::{hyper::header::CACHE_CONTROL, ContentType, Header, Status},
+    http::{ContentType, Header, Status},
     request::{self, FromQuery, Outcome},
     response::{self, Responder, ResponseBuilder},
     Request, Response, State,
@@ -289,7 +289,7 @@ impl<'r> CacheControl for ResponseBuilder<'r> {
     ) -> &mut ResponseBuilder<'r> {
         match resp {
             Ok(resp) if resp.cache_control.value().is_some() => self.header(Header::new(
-                CACHE_CONTROL.as_str(),
+                "cache-control",
                 resp.cache_control.value().unwrap(),
             )),
             _ => self,
