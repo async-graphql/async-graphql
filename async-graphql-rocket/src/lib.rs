@@ -29,7 +29,7 @@ use yansi::Paint;
 ///
 /// ```rust,no_run
 ///
-/// use async_graphql::*;
+/// use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 /// use async_graphql_rocket::{GQLRequest, GraphQL, GQLResponse};
 /// use rocket::{response::content, routes, State, http::Status};
 ///
@@ -72,7 +72,7 @@ impl GraphQL {
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
+    /// ```rust,no_run,ignore
     ///     rocket::ignite()
     ///         .attach(GraphQL::fairing(schema))
     ///         .mount("/", routes![graphql_query, graphql_request])
@@ -91,7 +91,7 @@ impl GraphQL {
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
+    /// ```rust,no_run,ignore
     ///     let opts: IntoQueryBuilderOpts = Default::default();
     ///     rocket::ignite()
     ///         .attach(GraphQL::fairing_with_opts(schema, opts))
@@ -133,7 +133,7 @@ impl GraphQL {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,no_run,ignore
 /// #[rocket::post("/?<query..>")]
 /// async fn graphql_query(schema: State<'_, ExampleSchema>, query: GQLRequest) -> Result<GQLResponse, Status> {
 ///     query.execute(&schema)
