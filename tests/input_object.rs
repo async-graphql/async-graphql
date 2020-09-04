@@ -105,7 +105,7 @@ pub async fn test_inputobject_derive_and_item_attributes() {
 }
 
 #[async_std::test]
-pub async fn test_inputobject_flatten() {
+pub async fn test_inputobject_flatten_recursive() {
     #[derive(GQLInputObject, Debug, Eq, PartialEq)]
     struct A {
         a: i32,
@@ -229,5 +229,67 @@ pub async fn test_inputobject_flatten() {
         serde_json::json!({
             "testWithDefault": 6,
         })
+    );
+}
+
+#[async_std::test]
+pub async fn test_inputobject_flatten_multiple() {
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct A {
+        a: i32,
+    }
+
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct B {
+        b: i32,
+    }
+
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct C {
+        c: i32,
+    }
+
+    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    struct ABC {
+        #[field(flatten)]
+        a: A,
+
+        #[field(flatten)]
+        b: B,
+
+        #[field(flatten)]
+        c: C,
+    }
+
+    assert_eq!(
+        ABC::parse(Some(
+            serde_json::json!({
+               "a": 10,
+               "b": 20,
+               "c": 30,
+            })
+            .into()
+        ))
+        .unwrap(),
+        ABC {
+            a: A { a: 10 },
+            b: B { b: 20 },
+            c: C { c: 30 }
+        }
+    );
+
+    assert_eq!(
+        ABC {
+            a: A { a: 10 },
+            b: B { b: 20 },
+            c: C { c: 30 }
+        }
+        .to_value(),
+        serde_json::json!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })
+        .into()
     );
 }
