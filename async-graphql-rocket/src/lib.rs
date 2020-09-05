@@ -29,7 +29,7 @@ use yansi::Paint;
 ///
 /// ```rust,no_run
 ///
-/// use async_graphql::{EmptyMutation, EmptySubscription, Schema};
+/// use async_graphql::{EmptyMutation, EmptySubscription, Schema, Object};
 /// use async_graphql_rocket::{GQLRequest, GraphQL, GQLResponse};
 /// use rocket::{response::content, routes, State, http::Status};
 ///
