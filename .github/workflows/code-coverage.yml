@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.46
+          toolchain: 1.46.0
           override: true
       - name: Install libsqlite3-dev
         run: |
