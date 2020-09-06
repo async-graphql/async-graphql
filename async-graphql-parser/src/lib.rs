@@ -4,8 +4,6 @@
 //! It uses the [pest](https://crates.io/crates/pest) crate to parse the input and then transforms
 //! it into Rust types.
 #![forbid(unsafe_code)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::doc_markdown, clippy::find_map, clippy::filter_map, clippy::module_name_repetitions, clippy::wildcard_imports, clippy::enum_glob_use)]
 
 use std::fmt;
 use pest::RuleType;

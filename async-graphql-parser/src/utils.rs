@@ -109,7 +109,6 @@ fn test_block_string_value() {
         block_string_value("line 1\r\n   line 2\n     line 3\r    line 4"),
         "line 1\nline 2\n  line 3\n line 4"
     );
-    dbg!();
     assert_eq!(
         block_string_value("\r\r  some text\r\n \n \n "),
         "some text"
