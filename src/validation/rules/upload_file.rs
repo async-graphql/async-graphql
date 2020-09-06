@@ -18,12 +18,10 @@ impl<'a> Visitor<'a> for UploadFile {
             {
                 if operation_definition.node.ty != OperationType::Mutation && ty.name() == "Upload"
                 {
-                    if ty.name() == "Upload" {
-                        ctx.report_error(
-                            vec![var.pos],
-                            "The Upload type is only allowed to be defined on a mutation",
-                        );
-                    }
+                    ctx.report_error(
+                        vec![var.pos],
+                        "The Upload type is only allowed to be defined on a mutation",
+                    );
                 }
             }
         }
