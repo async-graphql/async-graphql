@@ -196,9 +196,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
                         let decoded = value.url_decode().map_err(|e| e.to_string())?;
                         let json_value = serde_json::from_str::<serde_json::Value>(&decoded)
                             .map_err(|e| e.to_string())?;
-                        variables = Variables::parse_from_json(json_value)
-                            .map_err(|e| e.to_string())?
-                            .into();
+                        variables = Variables::parse_from_json(json_value).into();
                     }
                 }
                 _ => {

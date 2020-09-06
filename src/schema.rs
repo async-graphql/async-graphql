@@ -12,7 +12,6 @@ use crate::{
     CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
     SubscriptionType, Type, Variables, ID,
 };
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;

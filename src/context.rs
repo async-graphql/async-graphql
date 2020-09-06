@@ -30,13 +30,13 @@ impl Display for Variables {
 
 impl Variables {
     /// Parse variables from JSON object.
-    // TODO: Is this supposed to be able to return an error?
-    pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
-        Ok(if let Value::Object(obj) = value.into() {
+    /// If this `value` is not a `JsonObject`, then an empty `Variables` instance will be returned.
+    pub fn parse_from_json(value: serde_json::Value) -> Self {
+        if let Value::Object(obj) = value.into() {
             Self(obj)
         } else {
             Default::default()
-        })
+        }
     }
 
     pub(crate) fn variable_path(&mut self, path: &str) -> Option<&mut Value> {

@@ -1,6 +1,6 @@
 pub use async_graphql::http::GQLResponse;
 use async_graphql::{ObjectType, QueryResponse, Schema, SubscriptionType};
-use async_graphql_parser::{parse_query, query::Document};
+use async_graphql_parser::{parse_query, types::Document};
 use async_std::task;
 
 #[cfg(feature = "jemalloc")]

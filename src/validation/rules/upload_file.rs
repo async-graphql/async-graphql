@@ -1,4 +1,4 @@
-use crate::parser::types::OperationDefinition;
+use crate::parser::types::{OperationDefinition, OperationType};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -16,11 +16,14 @@ impl<'a> Visitor<'a> for UploadFile {
                 .registry
                 .concrete_type_by_parsed_type(&var.node.var_type.node)
             {
-                if ty.name() == "Upload" {
-                    ctx.report_error(
-                        vec![var.pos],
-                        "The Upload type is only allowed to be defined on a mutation",
-                    );
+                if operation_definition.node.ty != OperationType::Mutation && ty.name() == "Upload"
+                {
+                    if ty.name() == "Upload" {
+                        ctx.report_error(
+                            vec![var.pos],
+                            "The Upload type is only allowed to be defined on a mutation",
+                        );
+                    }
                 }
             }
         }
