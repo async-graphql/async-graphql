@@ -37,6 +37,10 @@ jobs:
 #            registryName: async-graphql-lambda
 #            path: async-graphql-lambda
     steps:
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.46
+          override: true
       - name: Checkout
         uses: actions/checkout@v2
       - name: get version
