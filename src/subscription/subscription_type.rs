@@ -42,19 +42,17 @@ where
                 continue;
             }
             match &selection.node {
-                Selection::Field(field) => {
-                    streams.push(
-                        schema
-                            .subscription
-                            .create_field_stream(
-                                idx,
-                                &ctx.with_field(field),
-                                schema.env.clone(),
-                                environment.clone(),
-                            )
-                            .await?,
-                    )
-                }
+                Selection::Field(field) => streams.push(
+                    schema
+                        .subscription
+                        .create_field_stream(
+                            idx,
+                            &ctx.with_field(field),
+                            schema.env.clone(),
+                            environment.clone(),
+                        )
+                        .await?,
+                ),
                 Selection::FragmentSpread(fragment_spread) => {
                     if let Some(fragment) = ctx
                         .query_env
@@ -72,8 +70,11 @@ where
                     }
                 }
                 Selection::InlineFragment(inline_fragment) => {
-                    if let Some(TypeCondition { on: name }) =
-                        inline_fragment.node.type_condition.as_ref().map(|v| &v.node)
+                    if let Some(TypeCondition { on: name }) = inline_fragment
+                        .node
+                        .type_condition
+                        .as_ref()
+                        .map(|v| &v.node)
                     {
                         if name.node == Subscription::type_name() {
                             create_subscription_stream(

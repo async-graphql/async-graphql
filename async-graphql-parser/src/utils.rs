@@ -87,14 +87,10 @@ pub(crate) fn block_string_value(raw: &str) -> String {
         // Put a newline between each line
         .enumerate()
         .flat_map(|(i, line)| {
-            if i == 0 {
-                [].as_ref()
-            } else {
-                ['\n'].as_ref()
-            }
-            .iter()
-            .copied()
-            .chain(line.chars())
+            if i == 0 { [].as_ref() } else { ['\n'].as_ref() }
+                .iter()
+                .copied()
+                .chain(line.chars())
         })
         .collect()
 }

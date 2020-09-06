@@ -2,9 +2,9 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
+use crate::parser::types::Document;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
-use crate::parser::types::Document;
 use once_cell::sync::Lazy;
 
 #[InputObject(internal)]

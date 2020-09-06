@@ -1,5 +1,5 @@
-use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
 use crate::parser::types::UploadValue;
+use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
 use std::borrow::Cow;
 use std::io::Read;
 

@@ -2,12 +2,12 @@ use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
+use crate::parser::types::{OperationType, UploadValue, Value};
 use crate::registry::CacheControl;
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
     SubscriptionType, Variables,
 };
-use crate::parser::types::{OperationType, Value, UploadValue};
 use std::any::Any;
 use std::fs::File;
 use std::sync::atomic::AtomicUsize;
@@ -143,22 +143,24 @@ impl QueryBuilder {
         let inc_resolve_id = AtomicUsize::default();
         let document = match document.into_executable(self.operation_name.as_deref()) {
             Some(document) => document,
-            None => return if let Some(operation_name) = self.operation_name {
-                Err(Error::Query {
-                    pos: Pos::default(),
-                    path: None,
-                    err: QueryError::UnknownOperationNamed {
-                        name: operation_name,
-                    },
-                })
-            } else {
-                Err(Error::Query {
-                    pos: Pos::default(),
-                    path: None,
-                    err: QueryError::MissingOperation,
-                })
+            None => {
+                return if let Some(operation_name) = self.operation_name {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::UnknownOperationNamed {
+                            name: operation_name,
+                        },
+                    })
+                } else {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::MissingOperation,
+                    })
+                }
+                .log_error(&extensions)
             }
-            .log_error(&extensions),
         };
 
         let env = QueryEnv::new(

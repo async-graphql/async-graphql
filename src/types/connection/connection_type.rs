@@ -1,11 +1,11 @@
 use crate::connection::edge::Edge;
 use crate::connection::page_info::PageInfo;
+use crate::parser::types::Field;
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType,
     Positioned, QueryError, Result, Type,
 };
-use crate::parser::types::Field;
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
 use std::borrow::Cow;

@@ -32,12 +32,13 @@ impl<'a> VariableInAllowedPosition<'a> {
         if let Some(usages) = self.variable_usages.get(from) {
             for (var_name, usage_pos, var_type) in usages {
                 if let Some(def) = var_defs.iter().find(|def| def.node.name.node == *var_name) {
-                    let expected_type = if def.node.var_type.node.nullable && def.node.default_value.is_some() {
-                        // A nullable type with a default value functions as a non-nullable
-                        format!("{}!", def.node.var_type.node)
-                    } else {
-                        def.node.var_type.node.to_string()
-                    };
+                    let expected_type =
+                        if def.node.var_type.node.nullable && def.node.default_value.is_some() {
+                            // A nullable type with a default value functions as a non-nullable
+                            format!("{}!", def.node.var_type.node)
+                        } else {
+                            def.node.var_type.node.to_string()
+                        };
 
                     if !var_type.is_subtype(&MetaTypeName::create(&expected_type)) {
                         ctx.report_error(
@@ -72,7 +73,13 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(operation_definition.node.name.as_ref().map(|name| &*name.node)));
+        self.current_scope = Some(Scope::Operation(
+            operation_definition
+                .node
+                .name
+                .as_ref()
+                .map(|name| &*name.node),
+        ));
     }
 
     fn enter_fragment_definition(

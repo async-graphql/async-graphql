@@ -33,8 +33,11 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         ctx: &mut VisitorContext<'a>,
         inline_fragment: &'a Positioned<InlineFragment>,
     ) {
-        if let Some(TypeCondition { on: name }) =
-            inline_fragment.node.type_condition.as_ref().map(|c| &c.node)
+        if let Some(TypeCondition { on: name }) = inline_fragment
+            .node
+            .type_condition
+            .as_ref()
+            .map(|c| &c.node)
         {
             validate_type(ctx, &name.node, inline_fragment.pos);
         }

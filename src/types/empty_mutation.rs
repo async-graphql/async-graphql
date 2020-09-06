@@ -1,8 +1,8 @@
+use crate::parser::types::Field;
 use crate::{
     registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Positioned,
     QueryError, Result, Type,
 };
-use crate::parser::types::Field;
 use std::borrow::Cow;
 
 /// Empty mutation

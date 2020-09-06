@@ -5,17 +5,17 @@
 //! it into Rust types.
 #![forbid(unsafe_code)]
 
-use std::fmt;
-use pest::RuleType;
 use pest::error::LineColLocation;
+use pest::RuleType;
+use std::fmt;
 
-pub use pos::{Pos, Positioned};
 pub use parser::parse_query;
+pub use pos::{Pos, Positioned};
 
 pub mod types;
 
-mod pos;
 mod parser;
+mod pos;
 mod utils;
 
 /// Parser error.
@@ -40,7 +40,8 @@ impl<R: RuleType> From<pest::error::Error<R>> for Error {
         Error {
             pos: {
                 match err.line_col {
-                    LineColLocation::Pos((line, column)) | LineColLocation::Span((line, column), _) => Pos { line, column },
+                    LineColLocation::Pos((line, column))
+                    | LineColLocation::Span((line, column), _) => Pos { line, column },
                 }
             },
             message: err.to_string(),

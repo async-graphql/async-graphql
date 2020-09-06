@@ -37,7 +37,8 @@ fn find<'a>(
                 }
             }
             Selection::InlineFragment(inline_fragment) => {
-                if let Some(field) = find(document, &inline_fragment.node.selection_set.node, name) {
+                if let Some(field) = find(document, &inline_fragment.node.selection_set.node, name)
+                {
                     return Some(field);
                 }
             }

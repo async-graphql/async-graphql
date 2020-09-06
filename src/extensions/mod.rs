@@ -10,8 +10,8 @@ use crate::{Result, Variables};
 pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 pub use self::tracing::Tracing;
-use crate::Error;
 use crate::parser::types::Document;
+use crate::Error;
 use serde_json::Value;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;

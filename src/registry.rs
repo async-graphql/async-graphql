@@ -1,4 +1,4 @@
-use crate::parser::types::{Type as ParsedType, BaseType as ParsedBaseType};
+use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
 use indexmap::map::IndexMap;
@@ -162,7 +162,11 @@ impl CacheControl {
     #[must_use]
     pub fn value(&self) -> Option<String> {
         if self.max_age > 0 {
-            Some(format!("max-age={}{}", self.max_age, if self.public { "" } else { ", private" }))
+            Some(format!(
+                "max-age={}{}",
+                self.max_age,
+                if self.public { "" } else { ", private" }
+            ))
         } else {
             None
         }

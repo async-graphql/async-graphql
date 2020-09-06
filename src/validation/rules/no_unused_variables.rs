@@ -77,7 +77,11 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let op_name = operation_definition.node.name.as_ref().map(|name| &*name.node);
+        let op_name = operation_definition
+            .node
+            .name
+            .as_ref()
+            .map(|name| &*name.node);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, HashSet::new());
     }
@@ -97,10 +101,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(vars) = self.defined_variables.get_mut(name) {
-                vars.insert((
-                    &variable_definition.node.name.node,
-                    variable_definition.pos,
-                ));
+                vars.insert((&variable_definition.node.name.node, variable_definition.pos));
             }
         }
     }

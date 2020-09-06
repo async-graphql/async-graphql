@@ -1,9 +1,7 @@
-use crate::extensions::Extensions;
-use crate::parser::types::{
-    Directive, ExecutableDocument, Field, SelectionSet, Value,
-};
-use crate::schema::SchemaEnv;
 use crate::base::Type;
+use crate::extensions::Extensions;
+use crate::parser::types::{Directive, ExecutableDocument, Field, SelectionSet, Value};
+use crate::schema::SchemaEnv;
 use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result};
 use fnv::FnvHashMap;
 use serde::ser::SerializeSeq;
@@ -405,15 +403,28 @@ impl<'a, T> ContextBase<'a, T> {
                 _ => continue,
             };
 
-            let Positioned { node: mut condition_input, pos } = directive.node.get_argument("if").ok_or_else(|| QueryError::RequiredDirectiveArgs {
-                directive: if include { "@skip" } else { "@include" },
-                arg_name: "if",
-                arg_type: "Boolean!",
-            }.into_error(directive.pos))?.clone();
+            let Positioned {
+                node: mut condition_input,
+                pos,
+            } = directive
+                .node
+                .get_argument("if")
+                .ok_or_else(|| {
+                    QueryError::RequiredDirectiveArgs {
+                        directive: if include { "@skip" } else { "@include" },
+                        arg_name: "if",
+                        arg_type: "Boolean!",
+                    }
+                    .into_error(directive.pos)
+                })?
+                .clone();
 
             self.resolve_input_value(&mut condition_input, pos)?;
 
-            if include != <bool as InputValueType>::parse(Some(condition_input)).map_err(|e| e.into_error(pos, bool::qualified_type_name()))? {
+            if include
+                != <bool as InputValueType>::parse(Some(condition_input))
+                    .map_err(|e| e.into_error(pos, bool::qualified_type_name()))?
+            {
                 return Ok(true);
             }
         }
@@ -466,8 +477,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => (value.pos, Some(self.resolved_input_value(value)?)),
             None => (Pos::default(), None),
         };
-        InputValueType::parse(value)
-        .map_err(|e| e.into_error(pos, T::qualified_type_name()))
+        InputValueType::parse(value).map_err(|e| e.into_error(pos, T::qualified_type_name()))
     }
 
     /// Get the position of the current field in the query code.

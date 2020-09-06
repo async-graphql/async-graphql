@@ -1,11 +1,11 @@
 use crate::model::{__Schema, __Type};
+use crate::parser::types::Field;
 use crate::scalars::Any;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
     Positioned, QueryError, Result, Type,
 };
 use async_graphql_derive::SimpleObject;
-use crate::parser::types::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 

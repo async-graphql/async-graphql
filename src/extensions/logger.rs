@@ -1,6 +1,6 @@
 use crate::extensions::{Extension, ResolveInfo};
+use crate::parser::types::{Definition, Document, OperationType, Selection};
 use crate::{Error, Variables};
-use crate::parser::types::{Definition, Document, Selection, OperationType};
 use itertools::Itertools;
 use log::{error, info, trace};
 use std::borrow::Cow;

@@ -37,7 +37,16 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
 
         for def in &doc.definitions {
             if let Definition::Operation(operation_definition) = def {
-                self.find_reachable_fragments(&Scope::Operation(operation_definition.node.name.as_ref().map(|name| &*name.node)), &mut reachable);
+                self.find_reachable_fragments(
+                    &Scope::Operation(
+                        operation_definition
+                            .node
+                            .name
+                            .as_ref()
+                            .map(|name| &*name.node),
+                    ),
+                    &mut reachable,
+                );
             }
         }
 
@@ -56,7 +65,13 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(operation_definition.node.name.as_ref().map(|name| &*name.node)));
+        self.current_scope = Some(Scope::Operation(
+            operation_definition
+                .node
+                .name
+                .as_ref()
+                .map(|name| &*name.node),
+        ));
     }
 
     fn enter_fragment_definition(
@@ -65,10 +80,8 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
-        self.defined_fragments.insert((
-            &fragment_definition.node.name.node,
-            fragment_definition.pos,
-        ));
+        self.defined_fragments
+            .insert((&fragment_definition.node.name.node, fragment_definition.pos));
     }
 
     fn enter_fragment_spread(

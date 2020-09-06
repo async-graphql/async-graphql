@@ -1,10 +1,10 @@
+use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
     ContextSelectionSet, InputValueResult, OutputValueType, Positioned, Result, ScalarType, Type,
     Value,
 };
 use async_graphql_derive::Scalar;
-use crate::parser::types::Field;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

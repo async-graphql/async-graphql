@@ -1,6 +1,7 @@
 use crate::model::__DirectiveLocation;
 use crate::parser::types::{
-    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition, OperationType
+    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
+    OperationType,
 };
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
@@ -16,11 +17,12 @@ impl<'a> Visitor<'a> for KnownDirectives {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.location_stack.push(match &operation_definition.node.ty {
-            OperationType::Query => __DirectiveLocation::QUERY,
-            OperationType::Mutation => __DirectiveLocation::MUTATION,
-            OperationType::Subscription => __DirectiveLocation::SUBSCRIPTION,
-        });
+        self.location_stack
+            .push(match &operation_definition.node.ty {
+                OperationType::Query => __DirectiveLocation::QUERY,
+                OperationType::Mutation => __DirectiveLocation::MUTATION,
+                OperationType::Subscription => __DirectiveLocation::SUBSCRIPTION,
+            });
     }
 
     fn exit_operation_definition(

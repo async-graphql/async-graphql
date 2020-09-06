@@ -2,6 +2,7 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
+use crate::parser::types::{Document, OperationType};
 use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
@@ -11,7 +12,6 @@ use crate::{
     CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
     SubscriptionType, Type, Variables, ID,
 };
-use crate::parser::types::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
@@ -379,15 +379,17 @@ where
 
         let document = match document.into_executable(operation_name) {
             Some(document) => document,
-            None => return if let Some(name) = operation_name {
-                Err(QueryError::UnknownOperationNamed {
-                    name: name.to_string(),
+            None => {
+                return if let Some(name) = operation_name {
+                    Err(QueryError::UnknownOperationNamed {
+                        name: name.to_string(),
+                    }
+                    .into_error(Pos::default()))
+                } else {
+                    Err(QueryError::MissingOperation.into_error(Pos::default()))
                 }
-                .into_error(Pos::default()))
-            } else {
-                Err(QueryError::MissingOperation.into_error(Pos::default()))
+                .log_error(&extensions)
             }
-            .log_error(&extensions),
         };
 
         if document.operation.node.ty != OperationType::Subscription {

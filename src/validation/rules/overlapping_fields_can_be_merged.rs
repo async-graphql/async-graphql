@@ -42,7 +42,9 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
                     self.find(&inline_fragment.node.selection_set);
                 }
                 Selection::FragmentSpread(fragment_spread) => {
-                    if let Some(fragment) = self.ctx.fragment(&fragment_spread.node.fragment_name.node) {
+                    if let Some(fragment) =
+                        self.ctx.fragment(&fragment_spread.node.fragment_name.node)
+                    {
                         self.find(&fragment.node.selection_set);
                     }
                 }

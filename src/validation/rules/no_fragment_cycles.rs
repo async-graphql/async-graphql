@@ -78,7 +78,8 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_fragment = Some(&fragment_definition.node.name.node);
-        self.fragment_order.push(&fragment_definition.node.name.node);
+        self.fragment_order
+            .push(&fragment_definition.node.name.node);
     }
 
     fn exit_fragment_definition(
@@ -98,7 +99,10 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
             self.spreads
                 .entry(current_fragment)
                 .or_insert_with(Vec::new)
-                .push((&fragment_spread.node.fragment_name.node, fragment_spread.pos));
+                .push((
+                    &fragment_spread.node.fragment_name.node,
+                    fragment_spread.pos,
+                ));
         }
     }
 }

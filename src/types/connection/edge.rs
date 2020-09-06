@@ -1,10 +1,10 @@
 use crate::connection::EmptyFields;
+use crate::parser::types::Field;
 use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
     QueryError, Result, Type,
 };
-use crate::parser::types::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 

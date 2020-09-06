@@ -538,8 +538,11 @@ fn visit_selection<'a, V: Visitor<'a>>(
             visit_fragment_spread(v, ctx, fragment_spread)
         }
         Selection::InlineFragment(inline_fragment) => {
-            if let Some(TypeCondition { on: name }) =
-                &inline_fragment.node.type_condition.as_ref().map(|c| &c.node)
+            if let Some(TypeCondition { on: name }) = &inline_fragment
+                .node
+                .type_condition
+                .as_ref()
+                .map(|c| &c.node)
             {
                 ctx.with_type(ctx.registry.types.get(&name.node), |ctx| {
                     visit_inline_fragment(v, ctx, inline_fragment)

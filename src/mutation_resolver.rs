@@ -136,8 +136,11 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         continue;
                     }
 
-                    if let Some(TypeCondition { on: name }) =
-                        inline_fragment.node.type_condition.as_ref().map(|v| &v.node)
+                    if let Some(TypeCondition { on: name }) = inline_fragment
+                        .node
+                        .type_condition
+                        .as_ref()
+                        .map(|v| &v.node)
                     {
                         let mut futures = Vec::new();
                         root.collect_inline_fields(

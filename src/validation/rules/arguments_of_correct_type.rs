@@ -44,9 +44,9 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         {
             if let Some(validator) = &arg.validator {
                 let value = match &value.node {
-                    Value::Variable(var_name) => {
-                        ctx.variables.and_then(|variables| variables.0.get(var_name))
-                    }
+                    Value::Variable(var_name) => ctx
+                        .variables
+                        .and_then(|variables| variables.0.get(var_name)),
                     _ => Some(&value.node),
                 };
 

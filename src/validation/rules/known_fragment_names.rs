@@ -14,7 +14,10 @@ impl<'a> Visitor<'a> for KnownFragmentNames {
         if !ctx.is_known_fragment(&fragment_spread.node.fragment_name.node) {
             ctx.report_error(
                 vec![fragment_spread.pos],
-                format!(r#"Unknown fragment: "{}""#, fragment_spread.node.fragment_name.node),
+                format!(
+                    r#"Unknown fragment: "{}""#,
+                    fragment_spread.node.fragment_name.node
+                ),
             );
         }
     }

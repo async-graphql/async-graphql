@@ -1,9 +1,9 @@
 //! GraphQL types.
 
 use crate::pos::{Pos, Positioned};
-use std::fmt::{self, Formatter, Write};
 use serde::{Serialize, Serializer};
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::{self, Formatter, Write};
 use std::fs::File;
 
 /// A complete GraphQL file or request string.
@@ -28,7 +28,15 @@ impl Document {
 
         for definition in self.definitions {
             match definition {
-                Definition::Operation(op) if operation_name.zip(op.node.name.as_ref()).map_or(false, |(required_name, op_name)| required_name != op_name.node) => (),
+                Definition::Operation(op)
+                    if operation_name
+                        .zip(op.node.name.as_ref())
+                        .map_or(false, |(required_name, op_name)| {
+                            required_name != op_name.node
+                        }) =>
+                {
+                    ()
+                }
                 Definition::Operation(op) => {
                     operation.get_or_insert(op);
                 }
@@ -151,11 +159,16 @@ impl VariableDefinition {
     /// `Value::Null` if it is nullable and `None` otherwise.
     #[must_use]
     pub fn default_value(&self) -> Option<&Value> {
-        self.default_value.as_ref().map(|value| &value.node).or_else(|| if self.var_type.node.nullable {
-            Some(&Value::Null)
-        } else {
-            None
-        })
+        self.default_value
+            .as_ref()
+            .map(|value| &value.node)
+            .or_else(|| {
+                if self.var_type.node.nullable {
+                    Some(&Value::Null)
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -400,7 +413,6 @@ pub struct SelectionSet {
     /// The fields to be selected.
     pub items: Vec<Positioned<Selection>>,
 }
-
 
 /// A part of an object to be selected; a single field, a fragment spread or an inline fragment.
 ///

@@ -1,9 +1,9 @@
+use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
     do_resolve, CacheControl, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
     Positioned, QueryEnv, QueryError, Result, SchemaEnv, SubscriptionType, Type,
 };
-use crate::parser::types::Field;
 use futures::Stream;
 use indexmap::IndexMap;
 use std::borrow::Cow;

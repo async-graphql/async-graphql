@@ -1,9 +1,9 @@
+use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
     registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
     Result, Value,
 };
-use crate::parser::types::Field;
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
