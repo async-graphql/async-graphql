@@ -33,10 +33,7 @@ impl Document {
                         .zip(op.node.name.as_ref())
                         .map_or(false, |(required_name, op_name)| {
                             required_name != op_name.node
-                        }) =>
-                {
-                    ()
-                }
+                        }) => {}
                 Definition::Operation(op) => {
                     operation.get_or_insert(op);
                 }
