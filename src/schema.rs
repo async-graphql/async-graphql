@@ -421,8 +421,8 @@ where
         &self,
         transport: T,
     ) -> (
-        mpsc::UnboundedSender<Bytes>,
-        impl Stream<Item = Bytes> + Unpin,
+        mpsc::UnboundedSender<Vec<u8>>,
+        impl Stream<Item = Vec<u8>> + Unpin,
     ) {
         create_connection(self.clone(), transport)
     }

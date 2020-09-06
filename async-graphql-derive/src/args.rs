@@ -457,6 +457,7 @@ pub struct InputField {
     pub desc: Option<String>,
     pub default: Option<TokenStream>,
     pub validator: TokenStream,
+    pub flatten: bool,
 }
 
 impl InputField {
@@ -465,6 +466,7 @@ impl InputField {
         let mut desc = None;
         let mut default = None;
         let mut validator = quote! { None };
+        let mut flatten = false;
 
         for attr in attrs {
             if attr.path.is_ident("field") {
@@ -479,6 +481,9 @@ impl InputField {
                             }
                             NestedMeta::Meta(Meta::Path(p)) if p.is_ident("default") => {
                                 default = Some(quote! { Default::default() });
+                            }
+                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("flatten") => {
+                                flatten = true;
                             }
                             NestedMeta::Meta(Meta::NameValue(nv)) => {
                                 if nv.path.is_ident("name") {
@@ -523,6 +528,7 @@ impl InputField {
             desc,
             default,
             validator,
+            flatten,
         })
     }
 }

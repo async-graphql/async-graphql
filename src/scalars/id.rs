@@ -42,13 +42,21 @@ impl Into<String> for ID {
     }
 }
 
-impl TryFrom<ID> for usize {
-    type Error = ParseIntError;
+macro_rules! try_from_integers {
+    ($($ty:ty),*) => {
+        $(
+           impl TryFrom<ID> for $ty {
+                type Error = ParseIntError;
 
-    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
-        id.0.parse()
-    }
+                fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+                    id.0.parse()
+                }
+            }
+         )*
+    };
 }
+
+try_from_integers!(i8, i16, i32, i64, u8, u16, u32, u64, isize, usize);
 
 impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;

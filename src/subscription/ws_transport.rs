@@ -4,9 +4,8 @@ use crate::{
     ConnectionTransport, Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError,
     QueryResponse, Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
 };
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
@@ -42,6 +41,12 @@ impl WebSocketTransport {
     }
 }
 
+fn send_message<T: Serialize>(send_buf: &mut VecDeque<Vec<u8>>, msg: &T) {
+    if let Ok(data) = serde_json::to_vec(msg) {
+        send_buf.push_back(data);
+    }
+}
+
 #[async_trait::async_trait]
 impl ConnectionTransport for WebSocketTransport {
     type Error = FieldError;
@@ -50,14 +55,15 @@ impl ConnectionTransport for WebSocketTransport {
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
-        data: Bytes,
-    ) -> std::result::Result<Option<Vec<Bytes>>, Self::Error>
+        request: Vec<u8>,
+        send_buf: &mut VecDeque<Vec<u8>>,
+    ) -> std::result::Result<(), Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
         Subscription: SubscriptionType + Sync + Send + 'static,
     {
-        match serde_json::from_slice::<OperationMessage>(&data) {
+        match serde_json::from_slice::<OperationMessage>(&request) {
             Ok(msg) => match msg.ty.as_str() {
                 "connection_init" => {
                     if let Some(payload) = msg.payload {
@@ -65,13 +71,15 @@ impl ConnectionTransport for WebSocketTransport {
                             self.data = Arc::new(init_context_data(payload)?);
                         }
                     }
-                    Ok(Some(vec![serde_json::to_vec(&OperationMessage {
-                        ty: "connection_ack".to_string(),
-                        id: None,
-                        payload: None,
-                    })
-                    .unwrap()
-                    .into()]))
+                    send_message(
+                        send_buf,
+                        &OperationMessage {
+                            ty: "connection_ack".to_string(),
+                            id: None,
+                            payload: None,
+                        },
+                    );
+                    Ok(())
                 }
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
@@ -94,7 +102,6 @@ impl ConnectionTransport for WebSocketTransport {
                                     let stream_id = streams.add(stream);
                                     self.id_to_sid.insert(id.clone(), stream_id);
                                     self.sid_to_id.insert(stream_id, id);
-                                    Ok(None)
                                 }
                                 Err(Error::Query { err, .. })
                                     if err == QueryError::NotSupported =>
@@ -107,68 +114,78 @@ impl ConnectionTransport for WebSocketTransport {
                                     }
 
                                     match builder.execute(schema).await {
-                                        Ok(resp) => Ok(Some(vec![
-                                            serde_json::to_vec(&OperationMessage {
-                                                ty: "data".to_string(),
-                                                id: Some(id.clone()),
-                                                payload: Some(
-                                                    serde_json::to_value(&GQLResponse(Ok(resp)))
+                                        Ok(resp) => {
+                                            send_message(
+                                                send_buf,
+                                                &OperationMessage {
+                                                    ty: "data".to_string(),
+                                                    id: Some(id.clone()),
+                                                    payload: Some(
+                                                        serde_json::to_value(&GQLResponse(Ok(
+                                                            resp,
+                                                        )))
                                                         .unwrap(),
-                                                ),
-                                            })
-                                            .unwrap()
-                                            .into(),
-                                            serde_json::to_vec(&OperationMessage {
-                                                ty: "complete".to_string(),
-                                                id: Some(id),
-                                                payload: None,
-                                            })
-                                            .unwrap()
-                                            .into(),
-                                        ])),
+                                                    ),
+                                                },
+                                            );
+
+                                            send_message(
+                                                send_buf,
+                                                &OperationMessage {
+                                                    ty: "complete".to_string(),
+                                                    id: Some(id),
+                                                    payload: None,
+                                                },
+                                            );
+                                        }
                                         Err(err) => {
-                                            Ok(Some(vec![serde_json::to_vec(&OperationMessage {
-                                                ty: "error".to_string(),
-                                                id: Some(id),
-                                                payload: Some(
-                                                    serde_json::to_value(GQLError(&err)).unwrap(),
-                                                ),
-                                            })
-                                            .unwrap()
-                                            .into()]))
+                                            send_message(
+                                                send_buf,
+                                                &OperationMessage {
+                                                    ty: "error".to_string(),
+                                                    id: Some(id),
+                                                    payload: Some(
+                                                        serde_json::to_value(GQLError(&err))
+                                                            .unwrap(),
+                                                    ),
+                                                },
+                                            );
                                         }
                                     }
                                 }
-                                Err(err) => Ok(Some(vec![serde_json::to_vec(&OperationMessage {
-                                    ty: "error".to_string(),
-                                    id: Some(id),
-                                    payload: Some(serde_json::to_value(GQLError(&err)).unwrap()),
-                                })
-                                .unwrap()
-                                .into()])),
+                                Err(err) => {
+                                    send_message(
+                                        send_buf,
+                                        &OperationMessage {
+                                            ty: "error".to_string(),
+                                            id: Some(id),
+                                            payload: Some(
+                                                serde_json::to_value(GQLError(&err)).unwrap(),
+                                            ),
+                                        },
+                                    );
+                                }
                             }
-                        } else {
-                            Ok(None)
                         }
-                    } else {
-                        Ok(None)
                     }
+                    Ok(())
                 }
                 "stop" => {
                     if let Some(id) = msg.id {
                         if let Some(sid) = self.id_to_sid.remove(&id) {
                             self.sid_to_id.remove(&sid);
                             streams.remove(sid);
-                            return Ok(Some(vec![serde_json::to_vec(&OperationMessage {
-                                ty: "complete".to_string(),
-                                id: Some(id),
-                                payload: None,
-                            })
-                            .unwrap()
-                            .into()]));
+                            send_message(
+                                send_buf,
+                                &OperationMessage {
+                                    ty: "complete".to_string(),
+                                    id: Some(id),
+                                    payload: None,
+                                },
+                            );
                         }
                     }
-                    Ok(None)
+                    Ok(())
                 }
                 "connection_terminate" => Err("connection_terminate".into()),
                 _ => Err("Unknown op".into()),
@@ -177,7 +194,7 @@ impl ConnectionTransport for WebSocketTransport {
         }
     }
 
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes> {
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Vec<u8>> {
         if let Some(id) = self.sid_to_id.get(&id) {
             match res {
                 Ok(value) => Some(
@@ -193,8 +210,7 @@ impl ConnectionTransport for WebSocketTransport {
                             .unwrap(),
                         ),
                     })
-                    .unwrap()
-                    .into(),
+                    .unwrap(),
                 ),
                 Err(err) => Some(
                     serde_json::to_vec(&OperationMessage {
@@ -202,8 +218,7 @@ impl ConnectionTransport for WebSocketTransport {
                         id: Some(id.to_string()),
                         payload: Some(serde_json::to_value(GQLError(&err)).unwrap()),
                     })
-                    .unwrap()
-                    .into(),
+                    .unwrap(),
                 ),
             }
         } else {

@@ -46,15 +46,42 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
     let mut put_fields = Vec::new();
     let mut fields = Vec::new();
     let mut schema_fields = Vec::new();
+    let mut flatten_fields = Vec::new();
 
     for field in &s.fields {
         let field_args = args::InputField::parse(&crate_name, &field.attrs)?;
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
-        let validator = &field_args.validator;
         let name = field_args
             .name
             .unwrap_or_else(|| ident.unraw().to_string().to_camel_case());
+
+        if field_args.flatten {
+            flatten_fields.push((ident, ty));
+
+            schema_fields.push(quote! {
+                #ty::create_type_info(registry);
+                if let Some(#crate_name::registry::MetaType::InputObject{ input_fields, .. }) =
+                    registry.types.remove(&*<#ty as #crate_name::Type>::type_name()) {
+                    fields.extend(input_fields);
+                }
+            });
+
+            get_fields.push(quote! {
+                let #ident: #ty = #crate_name::InputValueType::parse(Some(#crate_name::Value::Object(obj.clone())))?;
+            });
+
+            fields.push(ident);
+
+            put_fields.push(quote! {
+                if let #crate_name::Value::Object(values) = #crate_name::InputValueType::to_value(&self.#ident) {
+                    map.extend(values);
+                }
+            });
+            continue;
+        }
+
+        let validator = &field_args.validator;
         let desc = field_args
             .desc
             .as_ref()

@@ -1,5 +1,4 @@
 use crate::{ObjectType, Result, Schema, SubscriptionType};
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::task::{AtomicWaker, Context, Poll};
 use futures::{Stream, StreamExt};
@@ -44,23 +43,24 @@ pub trait ConnectionTransport: Send + Sync + Unpin + 'static {
         &mut self,
         schema: &Schema<Query, Mutation, Subscription>,
         streams: &mut SubscriptionStreams,
-        data: Bytes,
-    ) -> std::result::Result<Option<Vec<Bytes>>, Self::Error>
+        request: Vec<u8>,
+        send_buf: &mut VecDeque<Vec<u8>>,
+    ) -> std::result::Result<(), Self::Error>
     where
         Query: ObjectType + Sync + Send + 'static,
         Mutation: ObjectType + Sync + Send + 'static,
         Subscription: SubscriptionType + Sync + Send + 'static;
 
     /// When a response message is generated, you can convert the message to the format you want here.
-    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
+    fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Vec<u8>>;
 }
 
 pub fn create_connection<Query, Mutation, Subscription, T: ConnectionTransport>(
     schema: Schema<Query, Mutation, Subscription>,
     mut transport: T,
 ) -> (
-    mpsc::UnboundedSender<Bytes>,
-    impl Stream<Item = Bytes> + Unpin,
+    mpsc::UnboundedSender<Vec<u8>>,
+    impl Stream<Item = Vec<u8>> + Unpin,
 )
 where
     Query: ObjectType + Sync + Send + 'static,
@@ -72,6 +72,7 @@ where
         let mut streams = SubscriptionStreams {
             streams: Default::default(),
         };
+        let mut send_buf = Default::default();
         let mut inner_stream = SubscriptionStream {
             schema: &schema,
             transport: Some(&mut transport),
@@ -79,7 +80,7 @@ where
             rx_bytes,
             handle_request_fut: None,
             waker: AtomicWaker::new(),
-            send_buf: VecDeque::new(),
+            send_buf: Some(&mut send_buf),
         };
         while let Some(data) = inner_stream.next().await {
             yield data;
@@ -92,9 +93,10 @@ type HandleRequestBoxFut<'a, T> = Pin<
     Box<
         dyn Future<
                 Output = (
-                    std::result::Result<Option<Vec<Bytes>>, <T as ConnectionTransport>::Error>,
+                    std::result::Result<(), <T as ConnectionTransport>::Error>,
                     &'a mut T,
                     &'a mut SubscriptionStreams,
+                    &'a mut VecDeque<Vec<u8>>,
                 ),
             > + Send
             + 'a,
@@ -107,10 +109,10 @@ struct SubscriptionStream<'a, Query, Mutation, Subscription, T: ConnectionTransp
     schema: &'a Schema<Query, Mutation, Subscription>,
     transport: Option<&'a mut T>,
     streams: Option<&'a mut SubscriptionStreams>,
-    rx_bytes: mpsc::UnboundedReceiver<Bytes>,
+    rx_bytes: mpsc::UnboundedReceiver<Vec<u8>>,
     handle_request_fut: Option<HandleRequestBoxFut<'a, T>>,
     waker: AtomicWaker,
-    send_buf: VecDeque<Bytes>,
+    send_buf: Option<&'a mut VecDeque<Vec<u8>>>,
 }
 
 impl<'a, Query, Mutation, Subscription, T> Stream
@@ -121,32 +123,29 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
     T: ConnectionTransport,
 {
-    type Item = Bytes;
+    type Item = Vec<u8>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
 
         loop {
             // receive bytes
-            if let Some(bytes) = this.send_buf.pop_front() {
-                return Poll::Ready(Some(bytes));
+            if let Some(send_buf) = &mut this.send_buf {
+                if let Some(bytes) = send_buf.pop_front() {
+                    return Poll::Ready(Some(bytes));
+                }
             }
 
             if let Some(handle_request_fut) = &mut this.handle_request_fut {
                 match handle_request_fut.as_mut().poll(cx) {
-                    Poll::Ready((Ok(bytes), transport, streams)) => {
+                    Poll::Ready((Ok(()), transport, streams, send_buf)) => {
                         this.transport = Some(transport);
                         this.streams = Some(streams);
+                        this.send_buf = Some(send_buf);
                         this.handle_request_fut = None;
-                        if let Some(mut msgs) = bytes {
-                            if !msgs.is_empty() {
-                                this.send_buf.extend(msgs.drain(1..));
-                                return Poll::Ready(Some(msgs.remove(0)));
-                            }
-                        }
                         continue;
                     }
-                    Poll::Ready((Err(_), _, _)) => return Poll::Ready(None),
+                    Poll::Ready((Err(_), _, _, _)) => return Poll::Ready(None),
                     Poll::Pending => {}
                 }
             } else {
@@ -155,9 +154,12 @@ where
                         let transport = this.transport.take().unwrap();
                         let schema = this.schema;
                         let streams = this.streams.take().unwrap();
+                        let send_buf = this.send_buf.take().unwrap();
                         this.handle_request_fut = Some(Box::pin(async move {
-                            let res = transport.handle_request(schema, streams, data).await;
-                            (res, transport, streams)
+                            let res = transport
+                                .handle_request(schema, streams, data, send_buf)
+                                .await;
+                            (res, transport, streams, send_buf)
                         }));
                         this.waker.wake();
                         continue;
