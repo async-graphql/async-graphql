@@ -1,4 +1,4 @@
-use crate::parser::query::{Mutation, OperationDefinition, Query, Subscription};
+use crate::parser::types::OperationDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashSet;
@@ -14,26 +14,10 @@ impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
         ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let name = match &operation_definition.node {
-            OperationDefinition::Query(Positioned {
-                node: Query { name, .. },
-                ..
-            }) => name.as_ref(),
-            OperationDefinition::Mutation(Positioned {
-                node: Mutation { name, .. },
-                ..
-            }) => name.as_ref(),
-            OperationDefinition::Subscription(Positioned {
-                node: Subscription { name, .. },
-                ..
-            }) => name.as_ref(),
-            OperationDefinition::SelectionSet(_) => None,
-        };
-
-        if let Some(name) = name {
-            if !self.names.insert(name.as_str()) {
+        if let Some(name) = &operation_definition.node.name {
+            if !self.names.insert(&name.node) {
                 ctx.report_error(
-                    vec![name.position()],
+                    vec![name.pos],
                     format!("There can only be one operation named \"{}\"", name),
                 )
             }
@@ -44,7 +28,6 @@ impl<'a> Visitor<'a> for UniqueOperationNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueOperationNames<'a> {
         UniqueOperationNames::default()

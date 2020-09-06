@@ -1,6 +1,5 @@
 use crate::context::QueryPathNode;
-use crate::parser::query::OperationDefinition;
-use crate::{registry, Pos, QueryPathSegment, Value, Variables};
+use crate::{registry, QueryPathSegment, Value, Variables};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -31,23 +30,6 @@ fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
             .values()
             .for_each(|value| referenced_variables_to_vec(value, vars)),
         _ => {}
-    }
-}
-
-pub fn operation_name(operation_definition: &OperationDefinition) -> (Option<&str>, Pos) {
-    match operation_definition {
-        OperationDefinition::SelectionSet(selection_set) => (None, selection_set.position()),
-        OperationDefinition::Query(query) => {
-            (query.name.as_ref().map(|n| n.as_str()), query.position())
-        }
-        OperationDefinition::Mutation(mutation) => (
-            mutation.name.as_ref().map(|n| n.as_str()),
-            mutation.position(),
-        ),
-        OperationDefinition::Subscription(subscription) => (
-            subscription.name.as_ref().map(|n| n.as_str()),
-            subscription.position(),
-        ),
     }
 }
 
@@ -100,7 +82,7 @@ pub fn is_valid_input_value(
                     registry::MetaType::Scalar { is_valid, .. } => {
                         let value = match value {
                             Value::Variable(var_name) => {
-                                variables.and_then(|variables| variables.get(var_name))
+                                variables.and_then(|variables| variables.0.get(var_name))
                             }
                             _ => Some(value),
                         };
@@ -150,7 +132,7 @@ pub fn is_valid_input_value(
                                     if let Some(validator) = &field.validator {
                                         let value = match value {
                                             Value::Variable(var_name) => variables
-                                                .and_then(|variables| variables.get(var_name)),
+                                                .and_then(|variables| variables.0.get(var_name)),
                                             _ => Some(value),
                                         };
 

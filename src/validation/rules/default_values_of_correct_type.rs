@@ -1,5 +1,5 @@
 use crate::context::QueryPathNode;
-use crate::parser::query::{Type, VariableDefinition};
+use crate::parser::types::VariableDefinition;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, QueryPathSegment};
@@ -12,24 +12,24 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
         ctx: &mut VisitorContext<'a>,
         variable_definition: &'a Positioned<VariableDefinition>,
     ) {
-        if let Some(value) = &variable_definition.default_value {
-            if let Type::NonNull(_) = &variable_definition.var_type.node {
-                ctx.report_error(vec![variable_definition.position()],format!(
-                    "Argument \"{}\" has type \"{}\" and is not nullable, so it't can't have a default value",
-                    variable_definition.name, variable_definition.var_type,
+        if let Some(value) = &variable_definition.node.default_value {
+            if !variable_definition.node.var_type.node.nullable {
+                ctx.report_error(vec![variable_definition.pos],format!(
+                    "Argument \"{}\" has type \"{}\" and is not nullable, so it can't have a default value",
+                    variable_definition.node.name, variable_definition.node.var_type,
                 ));
             } else if let Some(reason) = is_valid_input_value(
                 ctx.registry,
                 ctx.variables,
-                &variable_definition.var_type.to_string(),
-                value,
+                &variable_definition.node.var_type.to_string(),
+                &value.node,
                 QueryPathNode {
                     parent: None,
-                    segment: QueryPathSegment::Name(&variable_definition.name),
+                    segment: QueryPathSegment::Name(&variable_definition.node.name.node),
                 },
             ) {
                 ctx.report_error(
-                    vec![variable_definition.position()],
+                    vec![variable_definition.pos],
                     format!("Invalid default value for argument {}", reason),
                 )
             }
@@ -40,7 +40,6 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> DefaultValuesOfCorrectType {
         DefaultValuesOfCorrectType

@@ -1,4 +1,4 @@
-use crate::parser::query::{Directive, Field};
+use crate::parser::types::{Directive, Field};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Positioned, Value};
 use std::collections::HashSet;
@@ -23,9 +23,9 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
         name: &'a Positioned<String>,
         _value: &'a Positioned<Value>,
     ) {
-        if !self.names.insert(name) {
+        if !self.names.insert(&name.node) {
             ctx.report_error(
-                vec![name.position()],
+                vec![name.pos],
                 format!("There can only be one argument named \"{}\"", name),
             )
         }
@@ -39,7 +39,6 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueArgumentNames<'a> {
         UniqueArgumentNames::default()

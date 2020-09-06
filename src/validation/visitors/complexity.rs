@@ -1,4 +1,4 @@
-use crate::parser::query::Field;
+use crate::parser::types::Field;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 

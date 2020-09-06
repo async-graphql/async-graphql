@@ -4,7 +4,7 @@
 
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
-use async_graphql_parser::query::Document;
+use crate::parser::types::Document;
 use once_cell::sync::Lazy;
 
 #[InputObject(internal)]
@@ -367,10 +367,8 @@ where
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
 macro_rules! expect_passes_rule {
-    ($factory:expr, $query_source:literal $(,)*) => {
+    ($factory:expr, $query_source:literal $(,)?) => {
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
         crate::validation::test_harness::expect_passes_rule_(&doc, $factory);
     };
@@ -386,10 +384,8 @@ where
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
 macro_rules! expect_fails_rule {
-    ($factory:expr, $query_source:literal $(,)*) => {
+    ($factory:expr, $query_source:literal $(,)?) => {
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
         crate::validation::test_harness::expect_fails_rule_(&doc, $factory);
     };

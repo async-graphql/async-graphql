@@ -1,7 +1,7 @@
-use crate::parser::query::{
+use crate::parser::types::{
     Definition, Document, FragmentDefinition, FragmentSpread, OperationDefinition,
 };
-use crate::validation::utils::{operation_name, Scope};
+use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
@@ -35,10 +35,9 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
         let mut reachable = HashSet::new();
 
-        for def in doc.definitions() {
-            if let Definition::Operation(operation_definition) = &def.node {
-                let (name, _) = operation_name(operation_definition);
-                self.find_reachable_fragments(&Scope::Operation(name), &mut reachable);
+        for def in &doc.definitions {
+            if let Definition::Operation(operation_definition) = def {
+                self.find_reachable_fragments(&Scope::Operation(operation_definition.node.name.as_ref().map(|name| &*name.node)), &mut reachable);
             }
         }
 
@@ -57,8 +56,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let (op_name, _) = operation_name(operation_definition);
-        self.current_scope = Some(Scope::Operation(op_name));
+        self.current_scope = Some(Scope::Operation(operation_definition.node.name.as_ref().map(|name| &*name.node)));
     }
 
     fn enter_fragment_definition(
@@ -66,10 +64,10 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
+        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
         self.defined_fragments.insert((
-            fragment_definition.name.as_str(),
-            fragment_definition.position(),
+            &fragment_definition.node.name.node,
+            fragment_definition.pos,
         ));
     }
 
@@ -82,7 +80,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push(fragment_spread.fragment_name.as_str());
+                .push(&fragment_spread.node.fragment_name.node);
         }
     }
 }
@@ -90,7 +88,6 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> NoUnusedFragments<'a> {
         NoUnusedFragments::default()

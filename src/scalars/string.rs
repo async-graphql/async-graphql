@@ -3,7 +3,7 @@ use crate::{
     Result, ScalarType, Type, Value,
 };
 use async_graphql_derive::Scalar;
-use async_graphql_parser::query::Field;
+use crate::parser::types::Field;
 use std::borrow::Cow;
 
 /// The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.

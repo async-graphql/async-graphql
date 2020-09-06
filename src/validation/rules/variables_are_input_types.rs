@@ -1,4 +1,4 @@
-use crate::parser::query::VariableDefinition;
+use crate::parser::types::VariableDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -13,14 +13,14 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
     ) {
         if let Some(ty) = ctx
             .registry
-            .concrete_type_by_parsed_type(&variable_definition.var_type)
+            .concrete_type_by_parsed_type(&variable_definition.node.var_type.node)
         {
             if !ty.is_input() {
                 ctx.report_error(
-                    vec![variable_definition.position()],
+                    vec![variable_definition.pos],
                     format!(
                         "Variable \"{}\" cannot be of non-input type \"{}\"",
-                        &variable_definition.name,
+                        variable_definition.node.name.node,
                         ty.name()
                     ),
                 );
@@ -32,7 +32,6 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> VariablesAreInputTypes {
         VariablesAreInputTypes

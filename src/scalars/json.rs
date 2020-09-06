@@ -4,7 +4,7 @@ use crate::{
     Value,
 };
 use async_graphql_derive::Scalar;
-use async_graphql_parser::query::Field;
+use crate::parser::types::Field;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

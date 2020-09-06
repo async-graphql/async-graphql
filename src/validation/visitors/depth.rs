@@ -1,4 +1,4 @@
-use crate::parser::query::{FragmentSpread, InlineFragment, SelectionSet};
+use crate::parser::types::{FragmentSpread, InlineFragment, SelectionSet};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 

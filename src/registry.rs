@@ -1,4 +1,4 @@
-use crate::parser::query::Type as ParsedType;
+use crate::parser::types::{Type as ParsedType, BaseType as ParsedBaseType};
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type as _, Value};
 use indexmap::map::IndexMap;
@@ -8,17 +8,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
 
-fn parse_non_null(type_name: &str) -> Option<&str> {
-    if type_name.ends_with('!') {
-        Some(&type_name[..type_name.len() - 1])
-    } else {
-        None
-    }
-}
-
-fn parse_list(type_name: &str) -> Option<&str> {
-    if type_name.starts_with('[') {
-        Some(&type_name[1..type_name.len() - 1])
+fn strip_brackets(type_name: &str) -> Option<&str> {
+    if let Some(rest) = type_name.strip_prefix('[') {
+        Some(&rest[..rest.len() - 1])
     } else {
         None
     }
@@ -43,9 +35,9 @@ impl<'a> std::fmt::Display for MetaTypeName<'a> {
 
 impl<'a> MetaTypeName<'a> {
     pub fn create(type_name: &str) -> MetaTypeName {
-        if let Some(type_name) = parse_non_null(type_name) {
+        if let Some(type_name) = type_name.strip_suffix('!') {
             MetaTypeName::NonNull(type_name)
-        } else if let Some(type_name) = parse_list(type_name) {
+        } else if let Some(type_name) = strip_brackets(type_name) {
             MetaTypeName::List(type_name)
         } else {
             MetaTypeName::Named(type_name)
@@ -61,11 +53,7 @@ impl<'a> MetaTypeName<'a> {
     }
 
     pub fn is_non_null(&self) -> bool {
-        if let MetaTypeName::NonNull(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, MetaTypeName::NonNull(_))
     }
 
     pub fn unwrap_non_null(&self) -> Self {
@@ -153,7 +141,7 @@ pub struct MetaEnumValue {
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CacheControl {
-    /// Scope is public, default is true
+    /// Scope is public, default is true.
     pub public: bool,
 
     /// Cache max age, default is 0.
@@ -171,13 +159,10 @@ impl Default for CacheControl {
 
 impl CacheControl {
     /// Get 'Cache-Control' header value.
+    #[must_use]
     pub fn value(&self) -> Option<String> {
         if self.max_age > 0 {
-            if !self.public {
-                Some(format!("max-age={}, private", self.max_age))
-            } else {
-                Some(format!("max-age={}", self.max_age))
-            }
+            Some(format!("max-age={}{}", self.max_age, if self.public { "" } else { ", private" }))
         } else {
             None
         }
@@ -353,8 +338,9 @@ impl Registry {
     ) -> String {
         let name = T::type_name();
         if !self.types.contains_key(name.as_ref()) {
+            // Inserting a fake type before calling the function allows recursive types to exist.
             self.types.insert(
-                name.to_string(),
+                name.clone().into_owned(),
                 MetaType::Object {
                     name: "".to_string(),
                     description: None,
@@ -365,7 +351,7 @@ impl Registry {
                 },
             );
             let ty = f(self);
-            self.types.insert(name.to_string(), ty);
+            *self.types.get_mut(&*name).unwrap() = ty;
         }
         T::qualified_type_name()
     }
@@ -406,19 +392,15 @@ impl Registry {
     }
 
     pub fn concrete_type_by_parsed_type(&self, query_type: &ParsedType) -> Option<&MetaType> {
-        match query_type {
-            ParsedType::NonNull(ty) => self.concrete_type_by_parsed_type(ty),
-            ParsedType::List(ty) => self.concrete_type_by_parsed_type(ty),
-            ParsedType::Named(name) => self.types.get(name.as_str()),
+        match &query_type.base {
+            ParsedBaseType::Named(name) => self.types.get(name.as_str()),
+            ParsedBaseType::List(ty) => self.concrete_type_by_parsed_type(ty),
         }
     }
 
     fn create_federation_fields<'a, I: Iterator<Item = &'a MetaField>>(sdl: &mut String, it: I) {
         for field in it {
-            if field.name.starts_with("__") {
-                continue;
-            }
-            if field.name == "_service" || field.name == "_entities" {
+            if field.name.starts_with("__") || matches!(&*field.name, "_service" | "_entities") {
                 continue;
             }
 

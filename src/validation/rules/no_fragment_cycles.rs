@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::parser::query::{Document, FragmentDefinition, FragmentSpread};
+use crate::parser::types::{Document, FragmentDefinition, FragmentSpread};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
@@ -77,8 +77,8 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_fragment = Some(&fragment_definition.name);
-        self.fragment_order.push(&fragment_definition.name);
+        self.current_fragment = Some(&fragment_definition.node.name.node);
+        self.fragment_order.push(&fragment_definition.node.name.node);
     }
 
     fn exit_fragment_definition(
@@ -98,7 +98,7 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
             self.spreads
                 .entry(current_fragment)
                 .or_insert_with(Vec::new)
-                .push((&fragment_spread.fragment_name, fragment_spread.position()));
+                .push((&fragment_spread.node.fragment_name.node, fragment_spread.pos));
         }
     }
 }
@@ -106,7 +106,6 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> NoFragmentCycles<'a> {
         NoFragmentCycles::default()

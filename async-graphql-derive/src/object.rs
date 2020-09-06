@@ -185,7 +185,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         if typename == &<#entity_type as #crate_name::Type>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 #(#requires_getter)*
-                                let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                                let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
                                 return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, ctx.item).await;
                             }
                         }
@@ -418,10 +418,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     });
 
                 resolvers.push(quote! {
-                    if ctx.name.node == #field_name {
+                    if ctx.node.name.node == #field_name {
                         #(#get_params)*
                         #guard
-                        let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+                        let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
                         let res = #resolve_obj;
                         #post_guard
                         return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
@@ -496,7 +496,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.to_string(),
+                    field_name: ctx.node.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }
@@ -519,7 +519,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::query::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #crate_name::do_resolve(ctx, self).await
             }
         }

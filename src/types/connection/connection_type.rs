@@ -5,7 +5,7 @@ use crate::{
     do_resolve, registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType,
     Positioned, QueryError, Result, Type,
 };
-use async_graphql_parser::query::Field;
+use crate::parser::types::Field;
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
@@ -196,7 +196,7 @@ where
     EE: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.name.node == "pageInfo" {
+        if ctx.node.name.node == "pageInfo" {
             let page_info = PageInfo {
                 has_previous_page: self.has_previous_page,
                 has_next_page: self.has_next_page,
@@ -206,7 +206,7 @@ where
                             err: err.to_string(),
                             extended_error: None,
                         }
-                        .into_error(ctx.position())
+                        .into_error(ctx.pos)
                     })?),
                     None => None,
                 },
@@ -216,15 +216,15 @@ where
                             err: err.to_string(),
                             extended_error: None,
                         }
-                        .into_error(ctx.position())
+                        .into_error(ctx.pos)
                     })?),
                     None => None,
                 },
             };
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
             return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item).await;
-        } else if ctx.name.node == "edges" {
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+        } else if ctx.node.name.node == "edges" {
+            let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
             return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item).await;
         }
 

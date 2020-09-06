@@ -1,4 +1,4 @@
-use crate::parser::query::FragmentDefinition;
+use crate::parser::types::FragmentDefinition;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashSet;
@@ -14,12 +14,12 @@ impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
         ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        if !self.names.insert(&fragment_definition.name) {
+        if !self.names.insert(&fragment_definition.node.name.node) {
             ctx.report_error(
-                vec![fragment_definition.position()],
+                vec![fragment_definition.pos],
                 format!(
                     "There can only be one fragment named \"{}\"",
-                    fragment_definition.name
+                    fragment_definition.node.name
                 ),
             )
         }
@@ -29,7 +29,6 @@ impl<'a> Visitor<'a> for UniqueFragmentNames<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> UniqueFragmentNames<'a> {
         UniqueFragmentNames::default()

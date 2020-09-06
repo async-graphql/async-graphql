@@ -11,7 +11,7 @@ pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 pub use self::tracing::Tracing;
 use crate::Error;
-use async_graphql_parser::query::Document;
+use crate::parser::types::Document;
 use serde_json::Value;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;

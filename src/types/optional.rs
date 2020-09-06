@@ -2,7 +2,7 @@ use crate::{
     registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Positioned,
     Result, Type, Value,
 };
-use async_graphql_parser::query::Field;
+use crate::parser::types::Field;
 use std::borrow::Cow;
 
 impl<T: Type> Type for Option<T> {

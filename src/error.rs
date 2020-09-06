@@ -81,9 +81,12 @@ impl<E: Display> From<E> for FieldError {
     }
 }
 
-#[allow(missing_docs)]
+/// An error which can be extended into a `FieldError`.
 pub trait ErrorExtensions: Sized {
+    /// Convert the error to a `FieldError`.
     fn extend(&self) -> FieldError;
+
+    /// Add extensions to the error, using a callback to make the extensions.
     fn extend_with<C>(self, cb: C) -> FieldError
     where
         C: FnOnce(&Self) -> serde_json::Value,

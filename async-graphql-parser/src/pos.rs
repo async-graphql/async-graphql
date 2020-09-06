@@ -3,15 +3,14 @@ use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::ops::{Deref, DerefMut};
 
-/// Original position of element in source code
+/// Original position of an element in source code.
 #[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize)]
 pub struct Pos {
-    /// One-based line number
+    /// One-based line number.
     pub line: usize,
 
-    /// One-based column number
+    /// One-based column number.
     pub column: usize,
 }
 
@@ -27,11 +26,12 @@ impl fmt::Display for Pos {
     }
 }
 
-/// Represents the position of a AST node
-#[derive(Clone, Debug, Copy, Default)]
-#[allow(missing_docs)]
+/// An AST node that stores its original position.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Positioned<T: ?Sized> {
+    /// The position of the node.
     pub pos: Pos,
+    /// The node itself.
     pub node: T,
 }
 
@@ -40,49 +40,22 @@ impl<T: fmt::Display> fmt::Display for Positioned<T> {
         self.node.fmt(f)
     }
 }
-
-impl<T: Clone> Positioned<T> {
-    #[inline]
-    #[allow(missing_docs)]
-    pub fn clone_inner(&self) -> T {
-        self.node.clone()
-    }
-}
-
 impl<T: PartialEq> PartialEq for Positioned<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.node.eq(&other.node)
+        self.node == other.node
     }
 }
-
+impl<T: Eq> Eq for Positioned<T> {}
 impl<T: PartialOrd> PartialOrd for Positioned<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.node.partial_cmp(&other.node)
     }
 }
-
 impl<T: Ord> Ord for Positioned<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.node.cmp(&other.node)
     }
 }
-
-impl<T: Ord> Eq for Positioned<T> {}
-
-impl<T: ?Sized> Deref for Positioned<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        &self.node
-    }
-}
-
-impl<T: ?Sized> DerefMut for Positioned<T> {
-    fn deref_mut(&mut self) -> &mut T {
-        &mut self.node
-    }
-}
-
 impl<T: Hash> Hash for Positioned<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node.hash(state)
@@ -102,26 +75,15 @@ impl BorrowMut<str> for Positioned<String> {
 }
 
 impl<T> Positioned<T> {
-    pub(crate) fn new(node: T, pos: Pos) -> Positioned<T> {
+    /// Create a new positioned node from the node and its position.
+    #[must_use]
+    pub const fn new(node: T, pos: Pos) -> Positioned<T> {
         Positioned { node, pos }
     }
 
+    /// Get the inner node.
     #[inline]
     pub fn into_inner(self) -> T {
         self.node
-    }
-
-    /// Get start position
-    #[inline]
-    pub fn position(&self) -> Pos {
-        self.pos
-    }
-
-    #[inline]
-    pub(crate) fn pack<F: FnOnce(Self) -> R, R>(self, f: F) -> Positioned<R> {
-        Positioned {
-            pos: self.pos,
-            node: f(self),
-        }
     }
 }

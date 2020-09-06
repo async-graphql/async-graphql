@@ -11,7 +11,7 @@ use crate::{
     CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
     SubscriptionType, Type, Variables, ID,
 };
-use async_graphql_parser::query::{Document, OperationType};
+use crate::parser::types::{Document, OperationType};
 use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
@@ -39,31 +39,33 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
 impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     SchemaBuilder<Query, Mutation, Subscription>
 {
-    /// You can use this function to register types that are not directly referenced.
+    /// Manually register a type in the schema.
+    ///
+    /// You can use this function to register schema types that are not directly referenced.
     pub fn register_type<T: Type>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
         self
     }
 
-    /// Disable introspection query
+    /// Disable introspection queries.
     pub fn disable_introspection(mut self) -> Self {
         self.query.disable_introspection = true;
         self
     }
 
-    /// Set limit complexity, Default no limit.
+    /// Set the maximum complexity a query can have. By default there is no limit.
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
         self.complexity = Some(complexity);
         self
     }
 
-    /// Set limit complexity, Default no limit.
+    /// Set the maximum depth a query can have. By default there is no limit.
     pub fn limit_depth(mut self, depth: usize) -> Self {
         self.depth = Some(depth);
         self
     }
 
-    /// Add an extension
+    /// Add an extension to the schema.
     pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
         mut self,
         extension_factory: F,
@@ -73,7 +75,7 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
         self
     }
 
-    /// Add a global data that can be accessed in the `Schema`, you access it with `Context::data`.
+    /// Add a global data that can be accessed in the `Schema`. You access it with `Context::data`.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
@@ -144,7 +146,9 @@ pub struct SchemaInner<Query, Mutation, Subscription> {
     pub(crate) env: SchemaEnv,
 }
 
-/// GraphQL schema
+/// GraphQL schema.
+///
+/// Cloning a schema is cheap, so it can be easily shared.
 pub struct Schema<Query, Mutation, Subscription>(Arc<SchemaInner<Query, Mutation, Subscription>>);
 
 impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscription> {
@@ -371,10 +375,11 @@ where
         variables: Variables,
         ctx_data: Option<Arc<Data>>,
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let (mut document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
+        let (document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
 
-        if !document.retain_operation(operation_name) {
-            return if let Some(name) = operation_name {
+        let document = match document.into_executable(operation_name) {
+            Some(document) => document,
+            None => return if let Some(name) = operation_name {
                 Err(QueryError::UnknownOperationNamed {
                     name: name.to_string(),
                 }
@@ -382,10 +387,10 @@ where
             } else {
                 Err(QueryError::MissingOperation.into_error(Pos::default()))
             }
-            .log_error(&extensions);
-        }
+            .log_error(&extensions),
+        };
 
-        if document.current_operation().ty != OperationType::Subscription {
+        if document.operation.node.ty != OperationType::Subscription {
             return Err(QueryError::NotSupported.into_error(Pos::default())).log_error(&extensions);
         }
 
@@ -399,7 +404,7 @@ where
         let ctx = env.create_context(
             &self.env,
             None,
-            &env.document.current_operation().selection_set,
+            &env.document.operation.node.selection_set,
             &resolve_id,
         );
         let mut streams = Vec::new();
