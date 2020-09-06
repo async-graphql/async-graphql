@@ -17,6 +17,7 @@ jobs:
         with:
           toolchain: 1.46.0
           override: true
+          components: clippy, rustfmt
       - name: Check format
         run: cargo fmt --all -- --check
       - name: Check with clippy
