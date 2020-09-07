@@ -518,16 +518,6 @@ impl<'a, T> ContextBase<'a, T> {
 
         Ok(false)
     }
-
-    #[doc(hidden)]
-    pub fn is_defer(&self, directives: &[Positioned<Directive>]) -> bool {
-        directives.iter().any(|d| d.name.node == "defer")
-    }
-
-    #[doc(hidden)]
-    pub fn is_stream(&self, directives: &[Positioned<Directive>]) -> bool {
-        directives.iter().any(|d| d.name.node == "stream")
-    }
 }
 
 impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
