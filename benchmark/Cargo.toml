@@ -8,7 +8,7 @@ edition = "2018"
 async-std = { version = "1.5.0", features = ["attributes"] }
 futures = "0.3.4"
 serde_json = "*"
-async-graphql-parser = { path = "../async-graphql-parser" }
+async-graphql-parser = { path = "../parser" }
 async-graphql = { path = ".." }
 jemallocator = { version = "0.3.2", optional = true }
 

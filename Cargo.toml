@@ -17,8 +17,8 @@ readme = "README.md"
 default = ["bson", "url", "chrono-tz"]
 
 [dependencies]
-async-graphql-parser = { path = "async-graphql-parser", version = "1.17.3" }
-async-graphql-derive = { path = "async-graphql-derive", version = "1.17.21" }
+async-graphql-parser = { path = "parser", version = "1.17.3" }
+async-graphql-derive = { path = "derive", version = "1.17.21" }
 anyhow = "1.0.26"
 thiserror = "1.0.11"
 async-trait = "0.1.30"
@@ -57,12 +57,13 @@ async-std = { version = "1.5.0", features = ["attributes"] }
 
 [workspace]
 members = [
-    "async-graphql-parser",
-    "async-graphql-derive",
-    "async-graphql-actix-web",
-    "async-graphql-warp",
-    "async-graphql-tide",
-    "async-graphql-rocket",
-#    "async-graphql-lambda",
+    "parser",
+    "derive",
+    "integrations/actix-web",
+    "integrations/warp",
+    "integrations/tide",
+    "integrations/rocket",
+#    "integrations/lambda",
     "benchmark",
 ]
+exclude = ["integrations"]
