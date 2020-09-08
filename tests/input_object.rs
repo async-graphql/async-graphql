@@ -132,7 +132,8 @@ pub async fn test_inputobject_flatten_recursive() {
                "a": 10,
                "b": 20,
                "c": 30,
-            })).unwrap()
+            }))
+            .unwrap()
         ))
         .unwrap(),
         MyInputObject {
@@ -157,7 +158,8 @@ pub async fn test_inputobject_flatten_recursive() {
            "a": 10,
            "b": 20,
            "c": 30,
-        })).unwrap()
+        }))
+        .unwrap()
     );
 
     struct Query;
@@ -265,7 +267,8 @@ pub async fn test_inputobject_flatten_multiple() {
                "a": 10,
                "b": 20,
                "c": 30,
-            })).unwrap()
+            }))
+            .unwrap()
         ))
         .unwrap(),
         ABC {
@@ -286,6 +289,7 @@ pub async fn test_inputobject_flatten_multiple() {
            "a": 10,
            "b": 20,
            "c": 30,
-        })).unwrap()
+        }))
+        .unwrap()
     );
 }

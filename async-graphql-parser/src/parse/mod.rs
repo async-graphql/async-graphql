@@ -2,9 +2,9 @@
 //!
 //! This module's structure mirrors `types`.
 
-use crate::pos::{Positioned, PositionCalculator};
+use crate::pos::{PositionCalculator, Positioned};
 use crate::types::*;
-use crate::{Result, Error};
+use crate::{Error, Result};
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
@@ -40,7 +40,10 @@ fn parse_operation_type(
     ))
 }
 
-fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<ConstValue>> {
+fn parse_default_value(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<ConstValue>> {
     debug_assert_eq!(pair.as_rule(), Rule::default_value);
 
     parse_const_value(exactly_one(pair.into_inner()), pc)
@@ -49,10 +52,16 @@ fn parse_default_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<
 fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Type>> {
     debug_assert_eq!(pair.as_rule(), Rule::type_);
 
-    Ok(Positioned::new(Type::new(pair.as_str()).unwrap(), pc.step(&pair)))
+    Ok(Positioned::new(
+        Type::new(pair.as_str()).unwrap(),
+        pc.step(&pair),
+    ))
 }
 
-fn parse_const_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<ConstValue>> {
+fn parse_const_value(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<ConstValue>> {
     debug_assert_eq!(pair.as_rule(), Rule::const_value);
 
     let pos = pc.step(&pair);
@@ -138,46 +147,73 @@ fn parse_variable(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posit
 fn parse_number(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Number>> {
     debug_assert_eq!(pair.as_rule(), Rule::number);
     let pos = pc.step(&pair);
-    Ok(Positioned::new(pair.as_str().parse().expect("failed to parse number"), pos))
+    Ok(Positioned::new(
+        pair.as_str().parse().expect("failed to parse number"),
+        pos,
+    ))
 }
 fn parse_string(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<String>> {
     debug_assert_eq!(pair.as_rule(), Rule::string);
     let pos = pc.step(&pair);
     let pair = exactly_one(pair.into_inner());
-    Ok(Positioned::new(match pair.as_rule() {
-        Rule::block_string_content => block_string_value(pair.as_str()),
-        Rule::string_content => string_value(pair.as_str()),
-        _ => unreachable!(),
-    }, pos))
+    Ok(Positioned::new(
+        match pair.as_rule() {
+            Rule::block_string_content => block_string_value(pair.as_str()),
+            Rule::string_content => string_value(pair.as_str()),
+            _ => unreachable!(),
+        },
+        pos,
+    ))
 }
 fn parse_boolean(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<bool>> {
     debug_assert_eq!(pair.as_rule(), Rule::boolean);
     let pos = pc.step(&pair);
-    Ok(Positioned::new(match pair.as_str() {
-        "true" => true,
-        "false" => false,
-        _ => unreachable!(),
-    }, pos))
+    Ok(Positioned::new(
+        match pair.as_str() {
+            "true" => true,
+            "false" => false,
+            _ => unreachable!(),
+        },
+        pos,
+    ))
 }
 fn parse_enum_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::enum_value);
     parse_name(exactly_one(pair.into_inner()), pc)
 }
 
-fn parse_opt_const_directives<'a>(pairs: &mut Pairs<'a, Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<ConstDirective>>> {
-    Ok(parse_if_rule(pairs, Rule::const_directives, |pair| parse_const_directives(pair, pc))?.unwrap_or_default())
+fn parse_opt_const_directives<'a>(
+    pairs: &mut Pairs<'a, Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<ConstDirective>>> {
+    Ok(parse_if_rule(pairs, Rule::const_directives, |pair| {
+        parse_const_directives(pair, pc)
+    })?
+    .unwrap_or_default())
 }
-fn parse_opt_directives<'a>(pairs: &mut Pairs<'a, Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<Directive>>> {
-    Ok(parse_if_rule(pairs, Rule::directives, |pair| parse_directives(pair, pc))?.unwrap_or_default())
+fn parse_opt_directives<'a>(
+    pairs: &mut Pairs<'a, Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<Directive>>> {
+    Ok(
+        parse_if_rule(pairs, Rule::directives, |pair| parse_directives(pair, pc))?
+            .unwrap_or_default(),
+    )
 }
-fn parse_const_directives(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<ConstDirective>>> {
+fn parse_const_directives(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<ConstDirective>>> {
     debug_assert_eq!(pair.as_rule(), Rule::const_directives);
 
     pair.into_inner()
         .map(|pair| parse_const_directive(pair, pc))
         .collect()
 }
-fn parse_directives(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<Directive>>> {
+fn parse_directives(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<Directive>>> {
     debug_assert_eq!(pair.as_rule(), Rule::directives);
 
     pair.into_inner()
@@ -185,14 +221,19 @@ fn parse_directives(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Vec
         .collect()
 }
 
-fn parse_const_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<ConstDirective>> {
+fn parse_const_directive(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<ConstDirective>> {
     debug_assert_eq!(pair.as_rule(), Rule::const_directive);
 
     let pos = pc.step(&pair);
     let mut pairs = pair.into_inner();
 
     let name = parse_name(pairs.next().unwrap(), pc)?;
-    let arguments = parse_if_rule(&mut pairs, Rule::const_arguments, |pair| parse_const_arguments(pair, pc))?;
+    let arguments = parse_if_rule(&mut pairs, Rule::const_arguments, |pair| {
+        parse_const_arguments(pair, pc)
+    })?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -211,7 +252,9 @@ fn parse_directive(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Posi
     let mut pairs = pair.into_inner();
 
     let name = parse_name(pairs.next().unwrap(), pc)?;
-    let arguments = parse_if_rule(&mut pairs, Rule::arguments, |pair| parse_arguments(pair, pc))?;
+    let arguments = parse_if_rule(&mut pairs, Rule::arguments, |pair| {
+        parse_arguments(pair, pc)
+    })?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -265,5 +308,8 @@ fn parse_arguments(
 
 fn parse_name(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::name);
-    Ok(Positioned::new(Name::new_unchecked(pair.as_str().to_owned()), pc.step(&pair)))
+    Ok(Positioned::new(
+        Name::new_unchecked(pair.as_str().to_owned()),
+        pc.step(&pair),
+    ))
 }

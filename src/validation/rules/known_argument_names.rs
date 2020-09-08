@@ -1,4 +1,4 @@
-use crate::parser::types::{Directive, Field, Value, Name};
+use crate::parser::types::{Directive, Field, Name, Value};
 use crate::registry::MetaInputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};

@@ -8,12 +8,18 @@ use super::*;
 pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
     let mut pc = PositionCalculator::new(input.as_ref());
     Ok(parse_executable_document(
-        exactly_one(GraphQLParser::parse(Rule::executable_document, input.as_ref())?),
+        exactly_one(GraphQLParser::parse(
+            Rule::executable_document,
+            input.as_ref(),
+        )?),
         &mut pc,
     )?)
 }
 
-fn parse_executable_document(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<ExecutableDocument> {
+fn parse_executable_document(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<ExecutableDocument> {
     debug_assert_eq!(pair.as_rule(), Rule::executable_document);
 
     Ok(ExecutableDocument {
@@ -25,13 +31,20 @@ fn parse_executable_document(pair: Pair<Rule>, pc: &mut PositionCalculator) -> R
     })
 }
 
-fn parse_executable_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<ExecutableDefinition> {
+fn parse_executable_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<ExecutableDefinition> {
     debug_assert_eq!(pair.as_rule(), Rule::executable_definition);
 
     let pair = exactly_one(pair.into_inner());
     Ok(match pair.as_rule() {
-        Rule::operation_definition => ExecutableDefinition::Operation(parse_operation_definition(pair, pc)?),
-        Rule::fragment_definition => ExecutableDefinition::Fragment(parse_fragment_definition(pair, pc)?),
+        Rule::operation_definition => {
+            ExecutableDefinition::Operation(parse_operation_definition(pair, pc)?)
+        }
+        Rule::fragment_definition => {
+            ExecutableDefinition::Fragment(parse_fragment_definition(pair, pc)?)
+        }
         _ => unreachable!(),
     })
 }
@@ -70,7 +83,9 @@ fn parse_named_operation_definition(
 
     let ty = parse_operation_type(pairs.next().unwrap(), pc)?;
     let name = parse_if_rule(&mut pairs, Rule::name, |pair| parse_name(pair, pc))?;
-    let variable_definitions = parse_if_rule(&mut pairs, Rule::variable_definitions, |pair| parse_variable_definitions(pair, pc))?;
+    let variable_definitions = parse_if_rule(&mut pairs, Rule::variable_definitions, |pair| {
+        parse_variable_definitions(pair, pc)
+    })?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
     let selection_set = parse_selection_set(pairs.next().unwrap(), pc)?;
 
@@ -107,7 +122,9 @@ fn parse_variable_definition(
 
     let variable = parse_variable(pairs.next().unwrap(), pc)?;
     let var_type = parse_type(pairs.next().unwrap(), pc)?;
-    let default_value = parse_if_rule(&mut pairs, Rule::default_value, |pair| parse_default_value(pair, pc))?;
+    let default_value = parse_if_rule(&mut pairs, Rule::default_value, |pair| {
+        parse_default_value(pair, pc)
+    })?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -121,7 +138,10 @@ fn parse_variable_definition(
     ))
 }
 
-fn parse_selection_set(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<SelectionSet>> {
+fn parse_selection_set(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<SelectionSet>> {
     debug_assert_eq!(pair.as_rule(), Rule::selection_set);
 
     let pos = pc.step(&pair);
@@ -162,10 +182,13 @@ fn parse_field(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
 
     let alias = parse_if_rule(&mut pairs, Rule::alias, |pair| parse_alias(pair, pc))?;
     let name = parse_name(pairs.next().unwrap(), pc)?;
-    let arguments = parse_if_rule(&mut pairs, Rule::arguments, |pair| parse_arguments(pair, pc))?;
+    let arguments = parse_if_rule(&mut pairs, Rule::arguments, |pair| {
+        parse_arguments(pair, pc)
+    })?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
-    let selection_set =
-        parse_if_rule(&mut pairs, Rule::selection_set, |pair| parse_selection_set(pair, pc))?;
+    let selection_set = parse_if_rule(&mut pairs, Rule::selection_set, |pair| {
+        parse_selection_set(pair, pc)
+    })?;
 
     debug_assert_eq!(pairs.next(), None);
 
@@ -185,7 +208,6 @@ fn parse_alias(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
     debug_assert_eq!(pair.as_rule(), Rule::alias);
     parse_name(exactly_one(pair.into_inner()), pc)
 }
-
 
 fn parse_fragment_spread(
     pair: Pair<Rule>,
@@ -219,8 +241,9 @@ fn parse_inline_fragment(
     let pos = pc.step(&pair);
     let mut pairs = pair.into_inner();
 
-    let type_condition =
-        parse_if_rule(&mut pairs, Rule::type_condition, |pair| parse_type_condition(pair, pc))?;
+    let type_condition = parse_if_rule(&mut pairs, Rule::type_condition, |pair| {
+        parse_type_condition(pair, pc)
+    })?;
     let directives = parse_opt_directives(&mut pairs, pc)?;
     let selection_set = parse_selection_set(pairs.next().unwrap(), pc)?;
 
@@ -287,8 +310,11 @@ mod tests {
     fn test_parser() {
         for entry in fs::read_dir("tests/executables").unwrap() {
             if let Ok(entry) = entry {
-                GraphQLParser::parse(Rule::executable_document, &fs::read_to_string(entry.path()).unwrap())
-                    .unwrap();
+                GraphQLParser::parse(
+                    Rule::executable_document,
+                    &fs::read_to_string(entry.path()).unwrap(),
+                )
+                .unwrap();
             }
         }
     }

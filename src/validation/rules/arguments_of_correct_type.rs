@@ -1,5 +1,5 @@
 use crate::context::QueryPathNode;
-use crate::parser::types::{Directive, Field, Value, Name};
+use crate::parser::types::{Directive, Field, Name, Value};
 use crate::registry::MetaInputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
@@ -42,7 +42,16 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
             .current_args
             .and_then(|args| args.get(name.node.as_str()).map(|input| input))
         {
-            let value = value.node.clone().into_const_with(|var_name| ctx.variables.and_then(|variables| variables.0.get(&var_name)).map(Clone::clone).ok_or(())).ok();
+            let value = value
+                .node
+                .clone()
+                .into_const_with(|var_name| {
+                    ctx.variables
+                        .and_then(|variables| variables.0.get(&var_name))
+                        .map(Clone::clone)
+                        .ok_or(())
+                })
+                .ok();
 
             if let Some(validator) = &arg.validator {
                 if let Some(value) = &value {
@@ -56,16 +65,18 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 }
             }
 
-            if let Some(reason) = value.and_then(|value| is_valid_input_value(
-                ctx.registry,
-                ctx.variables,
-                &arg.ty,
-                &value,
-                QueryPathNode {
-                    parent: None,
-                    segment: QueryPathSegment::Name(arg.name),
-                },
-            )) {
+            if let Some(reason) = value.and_then(|value| {
+                is_valid_input_value(
+                    ctx.registry,
+                    ctx.variables,
+                    &arg.ty,
+                    &value,
+                    QueryPathNode {
+                        parent: None,
+                        segment: QueryPathSegment::Name(arg.name),
+                    },
+                )
+            }) {
                 ctx.report_error(
                     vec![name.pos],
                     format!("Invalid value for argument {}", reason),

@@ -55,7 +55,11 @@ impl<'a> Visitor<'a> for KnownDirectives {
         ctx: &mut VisitorContext<'a>,
         directive: &'a Positioned<Directive>,
     ) {
-        if let Some(schema_directive) = ctx.registry.directives.get(directive.node.name.node.as_str()) {
+        if let Some(schema_directive) = ctx
+            .registry
+            .directives
+            .get(directive.node.name.node.as_str())
+        {
             if let Some(current_location) = self.location_stack.last() {
                 if !schema_directive.locations.contains(current_location) {
                     ctx.report_error(

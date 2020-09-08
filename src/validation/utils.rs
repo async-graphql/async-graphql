@@ -1,5 +1,5 @@
-use crate::parser::types::{Value, ConstValue};
 use crate::context::QueryPathNode;
+use crate::parser::types::{ConstValue, Value};
 use crate::{registry, QueryPathSegment, Variables};
 use std::collections::HashSet;
 
@@ -50,21 +50,18 @@ pub fn is_valid_input_value(
             _ => is_valid_input_value(registry, variables, type_name, value, path_node),
         },
         registry::MetaTypeName::List(type_name) => match value {
-            ConstValue::List(elems) => {
-                elems
-                    .iter()
-                    .enumerate()
-                    .find_map(|(idx, elem)| is_valid_input_value(
-                        registry,
-                        variables,
-                        type_name,
-                        elem,
-                        QueryPathNode {
-                            parent: Some(&path_node),
-                            segment: QueryPathSegment::Index(idx),
-                        }
-                    ))
-            }
+            ConstValue::List(elems) => elems.iter().enumerate().find_map(|(idx, elem)| {
+                is_valid_input_value(
+                    registry,
+                    variables,
+                    type_name,
+                    elem,
+                    QueryPathNode {
+                        parent: Some(&path_node),
+                        segment: QueryPathSegment::Index(idx),
+                    },
+                )
+            }),
             _ => is_valid_input_value(registry, variables, type_name, value, path_node),
         },
         registry::MetaTypeName::Named(type_name) => {
@@ -83,15 +80,18 @@ pub fn is_valid_input_value(
                         ))
                     }
                 }
-                registry::MetaType::Enum { enum_values, name: enum_name, .. } => match value {
+                registry::MetaType::Enum {
+                    enum_values,
+                    name: enum_name,
+                    ..
+                } => match value {
                     ConstValue::Enum(name) => {
                         if !enum_values.contains_key(name.as_str()) {
                             Some(valid_error(
                                 &path_node,
                                 format!(
                                     "enumeration type \"{}\" does not contain the value \"{}\"",
-                                    enum_name,
-                                    name
+                                    enum_name, name
                                 ),
                             ))
                         } else {
@@ -103,7 +103,11 @@ pub fn is_valid_input_value(
                         format!("expected type \"{}\"", type_name),
                     )),
                 },
-                registry::MetaType::InputObject { input_fields, name: object_name, .. } => match value {
+                registry::MetaType::InputObject {
+                    input_fields,
+                    name: object_name,
+                    ..
+                } => match value {
                     ConstValue::Object(values) => {
                         let mut input_names = values
                             .keys()
@@ -141,20 +145,19 @@ pub fn is_valid_input_value(
                                 && field.default_value.is_none()
                             {
                                 return Some(valid_error(
-                                        &path_node,
-                                        format!(
-                                            "field \"{}\" of type \"{}\" is required but not provided",
-                                            field.name,
-                                            object_name,
-                                        ),
-                                    ));
+                                    &path_node,
+                                    format!(
+                                        "field \"{}\" of type \"{}\" is required but not provided",
+                                        field.name, object_name,
+                                    ),
+                                ));
                             }
                         }
 
                         if let Some(name) = input_names.iter().next() {
                             return Some(valid_error(
                                 &path_node,
-                                format!("unknown field \"{}\" of type \"{}\"", name, object_name)
+                                format!("unknown field \"{}\" of type \"{}\"", name, object_name),
                             ));
                         }
 

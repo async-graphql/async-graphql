@@ -1,4 +1,4 @@
-use crate::parser::types::{Directive, Field, Value, Name};
+use crate::parser::types::{Directive, Field, Name, Value};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashSet;

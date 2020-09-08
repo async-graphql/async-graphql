@@ -1,12 +1,12 @@
+use crate::Error;
+use pest::iterators::Pair;
+use pest::RuleType;
 use serde::Serialize;
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::Chars;
-use pest::RuleType;
-use pest::iterators::Pair;
-use crate::Error;
 
 /// Original position of an element in source code.
 #[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize)]
@@ -47,7 +47,7 @@ impl<T> Positioned<T> {
     }
 
     /// Get the inner node.
-    /// 
+    ///
     /// This is most useful in callback chains where `Positioned::into_inner` is easier to read than
     /// `|positioned| positioned.node`.
     #[inline]

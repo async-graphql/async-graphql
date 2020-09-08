@@ -1,5 +1,6 @@
 use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition, Value, Name
+    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition, Value,
+    VariableDefinition,
 };
 use crate::validation::utils::{referenced_variables, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};

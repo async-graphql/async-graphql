@@ -8,12 +8,18 @@ use super::*;
 pub fn parse_schema<T: AsRef<str>>(input: T) -> Result<ServiceDocument> {
     let mut pc = PositionCalculator::new(input.as_ref());
     Ok(parse_service_document(
-        exactly_one(GraphQLParser::parse(Rule::service_document, input.as_ref())?),
+        exactly_one(GraphQLParser::parse(
+            Rule::service_document,
+            input.as_ref(),
+        )?),
         &mut pc,
     )?)
 }
 
-fn parse_service_document(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<ServiceDocument> {
+fn parse_service_document(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<ServiceDocument> {
     debug_assert_eq!(pair.as_rule(), Rule::service_document);
 
     Ok(ServiceDocument {
@@ -25,19 +31,27 @@ fn parse_service_document(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resu
     })
 }
 
-fn parse_type_system_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<TypeSystemDefinition> {
+fn parse_type_system_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<TypeSystemDefinition> {
     debug_assert_eq!(pair.as_rule(), Rule::type_system_definition);
 
     let pair = exactly_one(pair.into_inner());
     Ok(match pair.as_rule() {
         Rule::schema_definition => TypeSystemDefinition::Schema(parse_schema_definition(pair, pc)?),
         Rule::type_definition => TypeSystemDefinition::Type(parse_type_definition(pair, pc)?),
-        Rule::directive_definition => TypeSystemDefinition::Directive(parse_directive_definition(pair, pc)?),
+        Rule::directive_definition => {
+            TypeSystemDefinition::Directive(parse_directive_definition(pair, pc)?)
+        }
         _ => unreachable!(),
     })
 }
 
-fn parse_schema_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<SchemaDefinition>> {
+fn parse_schema_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<SchemaDefinition>> {
     debug_assert_eq!(pair.as_rule(), Rule::schema_definition);
 
     let pos = pc.step(&pair);
@@ -86,16 +100,22 @@ fn parse_schema_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Res
         return Err(Error::new("missing query root", pos));
     }
 
-    Ok(Positioned::new(SchemaDefinition {
-        extend,
-        directives,
-        query,
-        mutation,
-        subscription,
-    }, pos))
+    Ok(Positioned::new(
+        SchemaDefinition {
+            extend,
+            directives,
+            query,
+            mutation,
+            subscription,
+        },
+        pos,
+    ))
 }
 
-fn parse_type_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<TypeDefinition>> {
+fn parse_type_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<TypeDefinition>> {
     debug_assert_eq!(pair.as_rule(), Rule::type_definition);
 
     let pos = pc.step(&pair);
@@ -123,16 +143,25 @@ fn parse_type_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resul
 
             let directives = parse_opt_const_directives(&mut pairs, pc)?;
 
-            let fields = parse_if_rule(&mut pairs, Rule::fields_definition, |pair| parse_fields_definition(pair, pc))?.unwrap_or_default();
+            let fields = parse_if_rule(&mut pairs, Rule::fields_definition, |pair| {
+                parse_fields_definition(pair, pc)
+            })?
+            .unwrap_or_default();
 
-            (directives, TypeKind::Object(ObjectType {
-                implements: implements.unwrap_or_default(),
-                fields,
-            }))
+            (
+                directives,
+                TypeKind::Object(ObjectType {
+                    implements: implements.unwrap_or_default(),
+                    fields,
+                }),
+            )
         }
         Rule::interface_type => {
             let directives = parse_opt_const_directives(&mut pairs, pc)?;
-            let fields = parse_if_rule(&mut pairs, Rule::fields_definition, |pair| parse_fields_definition(pair, pc))?.unwrap_or_default();
+            let fields = parse_if_rule(&mut pairs, Rule::fields_definition, |pair| {
+                parse_fields_definition(pair, pc)
+            })?
+            .unwrap_or_default();
             (directives, TypeKind::Interface(InterfaceType { fields }))
         }
         Rule::union_type => {
@@ -140,10 +169,9 @@ fn parse_type_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resul
             let members = parse_if_rule(&mut pairs, Rule::union_member_types, |pair| {
                 debug_assert_eq!(pair.as_rule(), Rule::union_member_types);
 
-                pair.into_inner()
-                    .map(|pair| parse_name(pair, pc))
-                    .collect()
-            })?.unwrap_or_default();
+                pair.into_inner().map(|pair| parse_name(pair, pc)).collect()
+            })?
+            .unwrap_or_default();
             (directives, TypeKind::Union(UnionType { members }))
         }
         Rule::enum_type => {
@@ -158,20 +186,25 @@ fn parse_type_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resul
                         let pos = pc.step(&pair);
                         let mut pairs = pair.into_inner();
 
-                        let description = parse_if_rule(&mut pairs, Rule::string, |pair| parse_string(pair, pc))?;
+                        let description =
+                            parse_if_rule(&mut pairs, Rule::string, |pair| parse_string(pair, pc))?;
                         let value = parse_enum_value(pairs.next().unwrap(), pc)?;
                         let directives = parse_opt_const_directives(&mut pairs, pc)?;
 
                         debug_assert_eq!(pairs.next(), None);
 
-                        Ok(Positioned::new(EnumValueDefinition {
-                            description,
-                            value,
-                            directives,
-                        }, pos))
+                        Ok(Positioned::new(
+                            EnumValueDefinition {
+                                description,
+                                value,
+                                directives,
+                            },
+                            pos,
+                        ))
                     })
                     .collect()
-            })?.unwrap_or_default();
+            })?
+            .unwrap_or_default();
             (directives, TypeKind::Enum(EnumType { values }))
         }
         Rule::input_object_type => {
@@ -179,35 +212,49 @@ fn parse_type_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resul
             let fields = parse_if_rule(&mut pairs, Rule::input_fields_definition, |pair| {
                 debug_assert_eq!(pair.as_rule(), Rule::input_fields_definition);
 
-                pair
-                    .into_inner()
+                pair.into_inner()
                     .map(|pair| parse_input_value_definition(pair, pc))
                     .collect()
-            })?.unwrap_or_default();
+            })?
+            .unwrap_or_default();
 
-            (directives, TypeKind::InputObject(InputObjectType { fields }))
+            (
+                directives,
+                TypeKind::InputObject(InputObjectType { fields }),
+            )
         }
         _ => unreachable!(),
     };
 
     debug_assert_eq!(pairs.next(), None);
 
-    Ok(Positioned::new(TypeDefinition {
-        extend,
-        description,
-        name,
-        directives,
-        kind,
-    }, pos))
+    Ok(Positioned::new(
+        TypeDefinition {
+            extend,
+            description,
+            name,
+            directives,
+            kind,
+        },
+        pos,
+    ))
 }
 
-fn parse_fields_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<FieldDefinition>>> {
+fn parse_fields_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<FieldDefinition>>> {
     debug_assert_eq!(pair.as_rule(), Rule::fields_definition);
 
-    pair.into_inner().map(|pair| parse_field_definition(pair, pc)).collect()
+    pair.into_inner()
+        .map(|pair| parse_field_definition(pair, pc))
+        .collect()
 }
 
-fn parse_field_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<FieldDefinition>> {
+fn parse_field_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<FieldDefinition>> {
     debug_assert_eq!(pair.as_rule(), Rule::field_definition);
 
     let pos = pc.step(&pair);
@@ -215,16 +262,31 @@ fn parse_field_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Resu
 
     let description = parse_if_rule(&mut pairs, Rule::string, |pair| parse_string(pair, pc))?;
     let name = parse_name(pairs.next().unwrap(), pc)?;
-    let arguments = parse_if_rule(&mut pairs, Rule::arguments_definition, |pair| parse_arguments_definition(pair, pc))?.unwrap_or_default();
+    let arguments = parse_if_rule(&mut pairs, Rule::arguments_definition, |pair| {
+        parse_arguments_definition(pair, pc)
+    })?
+    .unwrap_or_default();
     let ty = parse_type(pairs.next().unwrap(), pc)?;
     let directives = parse_opt_const_directives(&mut pairs, pc)?;
 
     debug_assert_eq!(pairs.next(), None);
 
-    Ok(Positioned::new(FieldDefinition { description, name, arguments, ty, directives }, pos))
+    Ok(Positioned::new(
+        FieldDefinition {
+            description,
+            name,
+            arguments,
+            ty,
+            directives,
+        },
+        pos,
+    ))
 }
 
-fn parse_directive_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<DirectiveDefinition>> {
+fn parse_directive_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<DirectiveDefinition>> {
     debug_assert_eq!(pair.as_rule(), Rule::directive_definition);
 
     let pos = pc.step(&pair);
@@ -234,55 +296,63 @@ fn parse_directive_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> 
     let name = parse_name(pairs.next().unwrap(), pc)?;
     let arguments = parse_if_rule(&mut pairs, Rule::arguments_definition, |pair| {
         debug_assert_eq!(pair.as_rule(), Rule::arguments_definition);
-        pair
-            .into_inner()
+        pair.into_inner()
             .map(|pair| parse_input_value_definition(pair, pc))
             .collect()
-    })?.unwrap_or_default();
+    })?
+    .unwrap_or_default();
     let locations = {
         let pair = pairs.next().unwrap();
         debug_assert_eq!(pair.as_rule(), Rule::directive_locations);
-        pair
-            .into_inner()
+        pair.into_inner()
             .map(|pair| {
                 let pos = pc.step(&pair);
                 debug_assert_eq!(pair.as_rule(), Rule::directive_location);
-                Positioned::new(match pair.as_str() {
-	            "QUERY" => DirectiveLocation::Query,
-	            "MUTATION" => DirectiveLocation::Mutation,
-	            "SUBSCRIPTION" => DirectiveLocation::Subscription,
-	            "FIELD" => DirectiveLocation::Field,
-	            "FRAGMENT_DEFINITION" => DirectiveLocation::FragmentDefinition,
-	            "FRAGMENT_SPREAD" => DirectiveLocation::FragmentSpread,
-	            "INLINE_FRAGMENT" => DirectiveLocation::InlineFragment,
-	            "SCHEMA" => DirectiveLocation::Schema,
-	            "SCALAR" => DirectiveLocation::Scalar,
-	            "OBJECT" => DirectiveLocation::Object,
-	            "FIELD_DEFINITION" => DirectiveLocation::FieldDefinition,
-	            "ARGUMENT_DEFINITION" => DirectiveLocation::ArgumentDefinition,
-	            "INTERFACE" => DirectiveLocation::Interface,
-	            "UNION" => DirectiveLocation::Union,
-	            "ENUM" => DirectiveLocation::Enum,
-	            "ENUM_VALUE" => DirectiveLocation::EnumValue,
-	            "INPUT_OBJECT" => DirectiveLocation::InputObject,
-	            "INPUT_FIELD_DEFINITION" => DirectiveLocation::InputFieldDefinition,
-                    _ => unreachable!(),
-                }, pos)
+                Positioned::new(
+                    match pair.as_str() {
+                        "QUERY" => DirectiveLocation::Query,
+                        "MUTATION" => DirectiveLocation::Mutation,
+                        "SUBSCRIPTION" => DirectiveLocation::Subscription,
+                        "FIELD" => DirectiveLocation::Field,
+                        "FRAGMENT_DEFINITION" => DirectiveLocation::FragmentDefinition,
+                        "FRAGMENT_SPREAD" => DirectiveLocation::FragmentSpread,
+                        "INLINE_FRAGMENT" => DirectiveLocation::InlineFragment,
+                        "SCHEMA" => DirectiveLocation::Schema,
+                        "SCALAR" => DirectiveLocation::Scalar,
+                        "OBJECT" => DirectiveLocation::Object,
+                        "FIELD_DEFINITION" => DirectiveLocation::FieldDefinition,
+                        "ARGUMENT_DEFINITION" => DirectiveLocation::ArgumentDefinition,
+                        "INTERFACE" => DirectiveLocation::Interface,
+                        "UNION" => DirectiveLocation::Union,
+                        "ENUM" => DirectiveLocation::Enum,
+                        "ENUM_VALUE" => DirectiveLocation::EnumValue,
+                        "INPUT_OBJECT" => DirectiveLocation::InputObject,
+                        "INPUT_FIELD_DEFINITION" => DirectiveLocation::InputFieldDefinition,
+                        _ => unreachable!(),
+                    },
+                    pos,
+                )
             })
             .collect()
     };
 
     debug_assert_eq!(pairs.next(), None);
 
-    Ok(Positioned::new(DirectiveDefinition {
-        description,
-        name,
-        arguments,
-        locations,
-    }, pos))
+    Ok(Positioned::new(
+        DirectiveDefinition {
+            description,
+            name,
+            arguments,
+            locations,
+        },
+        pos,
+    ))
 }
 
-fn parse_arguments_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Vec<Positioned<InputValueDefinition>>> {
+fn parse_arguments_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Vec<Positioned<InputValueDefinition>>> {
     debug_assert_eq!(pair.as_rule(), Rule::arguments_definition);
 
     pair.into_inner()
@@ -290,7 +360,10 @@ fn parse_arguments_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> 
         .collect()
 }
 
-fn parse_input_value_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<InputValueDefinition>> {
+fn parse_input_value_definition(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+) -> Result<Positioned<InputValueDefinition>> {
     debug_assert_eq!(pair.as_rule(), Rule::input_value_definition);
 
     let pos = pc.step(&pair);
@@ -299,10 +372,21 @@ fn parse_input_value_definition(pair: Pair<Rule>, pc: &mut PositionCalculator) -
     let description = parse_if_rule(&mut pairs, Rule::string, |pair| parse_string(pair, pc))?;
     let name = parse_name(pairs.next().unwrap(), pc)?;
     let ty = parse_type(pairs.next().unwrap(), pc)?;
-    let default_value = parse_if_rule(&mut pairs, Rule::default_value, |pair| parse_default_value(pair, pc))?;
+    let default_value = parse_if_rule(&mut pairs, Rule::default_value, |pair| {
+        parse_default_value(pair, pc)
+    })?;
     let directives = parse_opt_const_directives(&mut pairs, pc)?;
 
-    Ok(Positioned::new(InputValueDefinition { description, name, ty, default_value, directives }, pos))
+    Ok(Positioned::new(
+        InputValueDefinition {
+            description,
+            name,
+            ty,
+            default_value,
+            directives,
+        },
+        pos,
+    ))
 }
 
 #[cfg(test)]
@@ -314,8 +398,11 @@ mod tests {
     fn test_parser() {
         for entry in fs::read_dir("tests/services").unwrap() {
             if let Ok(entry) = entry {
-                GraphQLParser::parse(Rule::service_document, &fs::read_to_string(entry.path()).unwrap())
-                    .unwrap();
+                GraphQLParser::parse(
+                    Rule::service_document,
+                    &fs::read_to_string(entry.path()).unwrap(),
+                )
+                .unwrap();
             }
         }
     }

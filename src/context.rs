@@ -1,6 +1,8 @@
 use crate::base::Type;
 use crate::extensions::Extensions;
-use crate::parser::types::{Directive, ExecutableDocumentData, Field, SelectionSet, Value as InputValue, Name};
+use crate::parser::types::{
+    Directive, ExecutableDocumentData, Field, Name, SelectionSet, Value as InputValue,
+};
 use crate::schema::SchemaEnv;
 use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Value};
 use fnv::FnvHashMap;
@@ -368,7 +370,9 @@ impl<'a, T> ContextBase<'a, T> {
 
     fn resolve_input_value(&self, value: Positioned<InputValue>) -> Result<Value> {
         let pos = value.pos;
-        value.node.into_const_with(|name| self.var_value(&name, pos))
+        value
+            .node
+            .into_const_with(|name| self.var_value(&name, pos))
     }
 
     #[doc(hidden)]
@@ -403,7 +407,8 @@ impl<'a, T> ContextBase<'a, T> {
             let pos = condition_input.pos;
             let condition_input = self.resolve_input_value(condition_input)?;
 
-            if include != <bool as InputValueType>::parse(Some(condition_input))
+            if include
+                != <bool as InputValueType>::parse(Some(condition_input))
                     .map_err(|e| e.into_error(pos, bool::qualified_type_name()))?
             {
                 return Ok(true);

@@ -1,7 +1,8 @@
 use crate::error::RuleError;
 use crate::parser::types::{
-    ExecutableDefinition, Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
-    OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition, Value, Name
+    Directive, ExecutableDefinition, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
+    InlineFragment, Name, OperationDefinition, OperationType, Selection, SelectionSet,
+    TypeCondition, Value, VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
 use crate::{Pos, Positioned, Variables};
@@ -32,7 +33,9 @@ impl<'a> VisitorContext<'a> {
                 .definitions
                 .iter()
                 .filter_map(|d| match &d {
-                    ExecutableDefinition::Fragment(fragment) => Some((&*fragment.node.name.node, fragment)),
+                    ExecutableDefinition::Fragment(fragment) => {
+                        Some((&*fragment.node.name.node, fragment))
+                    }
                     _ => None,
                 })
                 .collect(),
@@ -446,7 +449,11 @@ where
     }
 }
 
-pub fn visit<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
+pub fn visit<'a, V: Visitor<'a>>(
+    v: &mut V,
+    ctx: &mut VisitorContext<'a>,
+    doc: &'a ExecutableDocument,
+) {
     v.enter_document(ctx, doc);
     visit_definitions(v, ctx, doc);
     v.exit_document(ctx, doc);

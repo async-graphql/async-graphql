@@ -9,7 +9,11 @@ pub(super) fn next_if_rule<'a>(pairs: &mut Pairs<'a, Rule>, rule: Rule) -> Optio
         None
     }
 }
-pub(super) fn parse_if_rule<'a, T>(pairs: &mut Pairs<'a, Rule>, rule: Rule, f: impl FnOnce(Pair<Rule>) -> Result<T>) -> Result<Option<T>> {
+pub(super) fn parse_if_rule<'a, T>(
+    pairs: &mut Pairs<'a, Rule>,
+    rule: Rule,
+    f: impl FnOnce(Pair<Rule>) -> Result<T>,
+) -> Result<Option<T>> {
     next_if_rule(pairs, rule).map(f).transpose()
 }
 
@@ -19,7 +23,6 @@ pub(super) fn exactly_one<T>(iter: impl IntoIterator<Item = T>) -> T {
     debug_assert!(matches!(iter.next(), None));
     res
 }
-
 
 pub(super) fn block_string_value(raw: &str) -> String {
     // Split the string by either \r\n, \r or \n

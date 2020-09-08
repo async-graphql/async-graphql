@@ -7,19 +7,19 @@
 //! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/June2018/).
 
 use crate::pos::{Pos, Positioned};
-use serde::{Serialize, Deserialize};
-use serde::ser::{Serializer, Error as _};
 use serde::de::{Deserializer, Error as _, Unexpected};
+use serde::ser::{Error as _, Serializer};
+use serde::{Deserialize, Serialize};
+use std::borrow::Borrow;
 use std::collections::{BTreeMap, HashMap};
+use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter, Write};
 use std::fs::File;
-use std::convert::{TryFrom, TryInto};
-use std::borrow::Borrow;
 use std::ops::Deref;
 
 pub use executable::*;
-pub use service::*;
 pub use serde_json::Number;
+pub use service::*;
 
 mod executable;
 mod service;
@@ -147,8 +147,14 @@ impl ConstValue {
             Self::String(s) => Value::String(s),
             Self::Boolean(b) => Value::Boolean(b),
             Self::Enum(v) => Value::Enum(v),
-            Self::List(items) => Value::List(items.into_iter().map(ConstValue::into_value).collect()),
-            Self::Object(map) => Value::Object(map.into_iter().map(|(key, value)| (key, value.into_value())).collect()),
+            Self::List(items) => {
+                Value::List(items.into_iter().map(ConstValue::into_value).collect())
+            }
+            Self::Object(map) => Value::Object(
+                map.into_iter()
+                    .map(|(key, value)| (key, value.into_value()))
+                    .collect(),
+            ),
             Self::Upload(upload) => Value::Upload(upload),
         }
     }
@@ -242,11 +248,17 @@ pub enum Value {
 
 impl Value {
     /// Attempt to convert the value into a const value by using a function to get a variable.
-    pub fn into_const_with<E>(self, mut f: impl FnMut(Name) -> Result<ConstValue, E>) -> Result<ConstValue, E> {
+    pub fn into_const_with<E>(
+        self,
+        mut f: impl FnMut(Name) -> Result<ConstValue, E>,
+    ) -> Result<ConstValue, E> {
         self.into_const_with_mut(&mut f)
     }
 
-    fn into_const_with_mut<E>(self, f: &mut impl FnMut(Name) -> Result<ConstValue, E>) -> Result<ConstValue, E> {
+    fn into_const_with_mut<E>(
+        self,
+        f: &mut impl FnMut(Name) -> Result<ConstValue, E>,
+    ) -> Result<ConstValue, E> {
         Ok(match self {
             Self::Variable(name) => f(name)?,
             Self::Null => ConstValue::Null,
@@ -254,8 +266,17 @@ impl Value {
             Self::String(s) => ConstValue::String(s),
             Self::Boolean(b) => ConstValue::Boolean(b),
             Self::Enum(v) => ConstValue::Enum(v),
-            Self::List(items) => ConstValue::List(items.into_iter().map(|value| value.into_const_with_mut(f)).collect::<Result<_, _>>()?),
-            Self::Object(map) => ConstValue::Object(map.into_iter().map(|(key, value)| Ok((key, value.into_const_with_mut(f)?))).collect::<Result<_, _>>()?),
+            Self::List(items) => ConstValue::List(
+                items
+                    .into_iter()
+                    .map(|value| value.into_const_with_mut(f))
+                    .collect::<Result<_, _>>()?,
+            ),
+            Self::Object(map) => ConstValue::Object(
+                map.into_iter()
+                    .map(|(key, value)| Ok((key, value.into_const_with_mut(f)?)))
+                    .collect::<Result<_, _>>()?,
+            ),
             Self::Upload(upload) => ConstValue::Upload(upload),
         })
     }
@@ -350,7 +371,7 @@ fn write_quoted(s: &str, f: &mut Formatter<'_>) -> fmt::Result {
     }
     f.write_char('"')
 }
- fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'_>) -> fmt::Result {
     f.write_char('[')?;
     for item in list {
         item.fmt(f)?;
@@ -358,8 +379,11 @@ fn write_quoted(s: &str, f: &mut Formatter<'_>) -> fmt::Result {
     }
     f.write_char(']')
 }
- fn write_object<K: Display, V: Display>(object: impl IntoIterator<Item = (K, V)>, f: &mut Formatter<'_>) -> fmt::Result {
-     f.write_char('{')?;
+fn write_object<K: Display, V: Display>(
+    object: impl IntoIterator<Item = (K, V)>,
+    f: &mut Formatter<'_>,
+) -> fmt::Result {
+    f.write_char('{')?;
     for (name, value) in object {
         write!(f, "{}: {},", name, value)?;
     }
@@ -430,7 +454,11 @@ impl ConstDirective {
     pub fn into_directive(self) -> Directive {
         Directive {
             name: self.name,
-            arguments: self.arguments.into_iter().map(|(name, value)| (name, value.map(ConstValue::into_value))).collect(),
+            arguments: self
+                .arguments
+                .into_iter()
+                .map(|(name, value)| (name, value.map(ConstValue::into_value)))
+                .collect(),
         }
     }
 
@@ -461,7 +489,13 @@ impl Directive {
     pub fn into_const(self) -> Option<ConstDirective> {
         Some(ConstDirective {
             name: self.name,
-            arguments: self.arguments.into_iter().map(|(name, value)| Some((name, Positioned::new(value.node.into_const()?, value.pos)))).collect::<Option<_>>()?,
+            arguments: self
+                .arguments
+                .into_iter()
+                .map(|(name, value)| {
+                    Some((name, Positioned::new(value.node.into_const()?, value.pos)))
+                })
+                .collect::<Option<_>>()?,
         })
     }
 
@@ -488,7 +522,9 @@ impl Name {
     #[must_use]
     pub fn is_valid(name: &str) -> bool {
         let mut bytes = name.bytes();
-        bytes.next().map_or(false, |c| c.is_ascii_alphabetic() || c == b'_')
+        bytes
+            .next()
+            .map_or(false, |c| c.is_ascii_alphabetic() || c == b'_')
             && bytes.all(|c| c.is_ascii_alphanumeric() || c == b'_')
     }
 
@@ -595,7 +631,8 @@ impl<'a> PartialEq<Name> for &'a str {
 
 impl<'de> Deserialize<'de> for Name {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Self::new(String::deserialize(deserializer)?).map_err(|s| D::Error::invalid_value(Unexpected::Str(&s), &"a GraphQL name"))
+        Self::new(String::deserialize(deserializer)?)
+            .map_err(|s| D::Error::invalid_value(Unexpected::Str(&s), &"a GraphQL name"))
     }
 }
 

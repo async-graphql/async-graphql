@@ -1,5 +1,6 @@
 use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition, Value,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, Value,
+    VariableDefinition,
 };
 use crate::registry::MetaTypeName;
 use crate::validation::utils::Scope;

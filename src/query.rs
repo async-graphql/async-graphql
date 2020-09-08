@@ -6,7 +6,7 @@ use crate::parser::types::{OperationType, UploadValue};
 use crate::registry::CacheControl;
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
-    SubscriptionType, Variables,Value
+    SubscriptionType, Value, Variables,
 };
 use std::any::Any;
 use std::fs::File;

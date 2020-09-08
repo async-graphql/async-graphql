@@ -126,7 +126,12 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             pos: fragment_spread.pos,
                             path: None,
                             err: QueryError::UnknownFragment {
-                                name: fragment_spread.node.fragment_name.node.clone().into_string(),
+                                name: fragment_spread
+                                    .node
+                                    .fragment_name
+                                    .node
+                                    .clone()
+                                    .into_string(),
                             },
                         });
                     }
