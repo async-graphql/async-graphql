@@ -84,8 +84,10 @@ impl ConnectionTransport for WebSocketTransport {
                 "start" => {
                     if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
                         if let Ok(request) = serde_json::from_value::<GQLRequest>(payload) {
-                            let variables =
-                                Variables::parse_from_json(request.variables.unwrap_or_default());
+                            let variables = request
+                                .variables
+                                .map(Variables::parse_from_json)
+                                .unwrap_or_default();
                             match schema
                                 .create_subscription_stream(
                                     &request.query,

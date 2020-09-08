@@ -45,7 +45,7 @@ impl IntoQueryBuilder for GQLRequest {
             builder = builder.operation_name(operation_name);
         }
         if let Some(variables) = self.variables {
-            builder = builder.variables(Variables::parse_from_json(variables))
+            builder = builder.variables(Variables::parse_from_json(variables));
         }
         Ok(builder)
     }
