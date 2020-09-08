@@ -72,10 +72,7 @@ impl Type for Upload {
         registry.create_type::<Self, _>(|_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
-            is_valid: |value| match value {
-                Value::String(s) => s.starts_with("file:"),
-                _ => false,
-            },
+            is_valid: |value| matches!(value, Value::Upload(_)),
         })
     }
 }
