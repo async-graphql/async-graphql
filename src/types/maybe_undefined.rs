@@ -32,7 +32,7 @@ use std::borrow::Cow;
 ///         {
 ///             v1:value1(input: 99)
 ///             v2:value1(input: null)
-///             v3:value1()
+///             v3:value1
 ///         }"#;
 ///     assert_eq!(
 ///         schema.execute(&query).await.unwrap().data,
