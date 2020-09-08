@@ -1,53 +1,27 @@
-use crate::Pos;
-use pest::iterators::Pair;
-use pest::RuleType;
-use std::str::Chars;
+use super::Rule;
+use crate::Result;
+use pest::iterators::{Pair, Pairs};
 
-pub struct PositionCalculator<'a> {
-    input: Chars<'a>,
-    pos: usize,
-    line: usize,
-    column: usize,
-}
-
-impl<'a> PositionCalculator<'a> {
-    pub fn new(input: &'a str) -> PositionCalculator<'a> {
-        Self {
-            input: input.chars(),
-            pos: 0,
-            line: 1,
-            column: 1,
-        }
-    }
-
-    pub fn step<R: RuleType>(&mut self, pair: &Pair<R>) -> Pos {
-        let pos = pair.as_span().start();
-        debug_assert!(pos >= self.pos);
-        for _ in 0..pos - self.pos {
-            match self.input.next() {
-                Some('\r') => {
-                    self.column = 1;
-                }
-                Some('\n') => {
-                    self.line += 1;
-                    self.column = 1;
-                }
-                Some(_) => {
-                    self.column += 1;
-                }
-                None => break,
-            }
-        }
-        self.pos = pos;
-        Pos {
-            line: self.line,
-            column: self.column,
-        }
+pub(super) fn next_if_rule<'a>(pairs: &mut Pairs<'a, Rule>, rule: Rule) -> Option<Pair<'a, Rule>> {
+    if pairs.peek().map_or(false, |pair| pair.as_rule() == rule) {
+        Some(pairs.next().unwrap())
+    } else {
+        None
     }
 }
+pub(super) fn parse_if_rule<'a, T>(pairs: &mut Pairs<'a, Rule>, rule: Rule, f: impl FnOnce(Pair<Rule>) -> Result<T>) -> Result<Option<T>> {
+    next_if_rule(pairs, rule).map(f).transpose()
+}
 
-// See https://spec.graphql.org/June2018/#BlockStringValue()
-pub(crate) fn block_string_value(raw: &str) -> String {
+pub(super) fn exactly_one<T>(iter: impl IntoIterator<Item = T>) -> T {
+    let mut iter = iter.into_iter();
+    let res = iter.next().unwrap();
+    debug_assert!(matches!(iter.next(), None));
+    res
+}
+
+
+pub(super) fn block_string_value(raw: &str) -> String {
     // Split the string by either \r\n, \r or \n
     let lines: Vec<_> = raw
         .split("\r\n")
@@ -111,7 +85,7 @@ fn test_block_string_value() {
     );
 }
 
-pub(crate) fn string_value(s: &str) -> String {
+pub(super) fn string_value(s: &str) -> String {
     let mut chars = s.chars();
 
     std::iter::from_fn(|| {

@@ -1,10 +1,10 @@
 use crate::parser::types::{
-    Document, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition, Value,
 };
 use crate::registry::MetaTypeName;
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned, Value};
+use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -62,7 +62,7 @@ impl<'a> VariableInAllowedPosition<'a> {
 }
 
 impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
         for (op_scope, var_defs) in &self.variable_defs {
             self.collect_incorrect_usages(op_scope, var_defs, ctx, &mut HashSet::new());
         }

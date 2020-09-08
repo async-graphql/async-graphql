@@ -3,6 +3,10 @@ use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::str::Chars;
+use pest::RuleType;
+use pest::iterators::Pair;
+use crate::Error;
 
 /// Original position of an element in source code.
 #[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize)]
@@ -33,6 +37,39 @@ pub struct Positioned<T: ?Sized> {
     pub pos: Pos,
     /// The node itself.
     pub node: T,
+}
+
+impl<T> Positioned<T> {
+    /// Create a new positioned node from the node and its position.
+    #[must_use]
+    pub const fn new(node: T, pos: Pos) -> Positioned<T> {
+        Positioned { node, pos }
+    }
+
+    /// Get the inner node.
+    /// 
+    /// This is most useful in callback chains where `Positioned::into_inner` is easier to read than
+    /// `|positioned| positioned.node`.
+    #[inline]
+    pub fn into_inner(self) -> T {
+        self.node
+    }
+
+    /// Create a new positioned node with the same position as this one.
+    #[must_use]
+    pub fn position_node<U>(&self, other: U) -> Positioned<U> {
+        Positioned::new(other, self.pos)
+    }
+
+    /// Map the inner value of this positioned node.
+    #[must_use]
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Positioned<U> {
+        Positioned::new(f(self.node), self.pos)
+    }
+
+    pub(crate) fn error_here(&self, message: impl Into<String>) -> Error {
+        Error::new(message, self.pos)
+    }
 }
 
 impl<T: fmt::Display> fmt::Display for Positioned<T> {
@@ -74,16 +111,45 @@ impl BorrowMut<str> for Positioned<String> {
     }
 }
 
-impl<T> Positioned<T> {
-    /// Create a new positioned node from the node and its position.
-    #[must_use]
-    pub const fn new(node: T, pos: Pos) -> Positioned<T> {
-        Positioned { node, pos }
+pub(crate) struct PositionCalculator<'a> {
+    input: Chars<'a>,
+    pos: usize,
+    line: usize,
+    column: usize,
+}
+
+impl<'a> PositionCalculator<'a> {
+    pub(crate) fn new(input: &'a str) -> PositionCalculator<'a> {
+        Self {
+            input: input.chars(),
+            pos: 0,
+            line: 1,
+            column: 1,
+        }
     }
 
-    /// Get the inner node.
-    #[inline]
-    pub fn into_inner(self) -> T {
-        self.node
+    pub(crate) fn step<R: RuleType>(&mut self, pair: &Pair<R>) -> Pos {
+        let pos = pair.as_span().start();
+        debug_assert!(pos >= self.pos);
+        for _ in 0..pos - self.pos {
+            match self.input.next() {
+                Some('\r') => {
+                    self.column = 1;
+                }
+                Some('\n') => {
+                    self.line += 1;
+                    self.column = 1;
+                }
+                Some(_) => {
+                    self.column += 1;
+                }
+                None => break,
+            }
+        }
+        self.pos = pos;
+        Pos {
+            line: self.line,
+            column: self.column,
+        }
     }
 }

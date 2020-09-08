@@ -1,8 +1,8 @@
-use crate::parser::types::{ExecutableDocument, Field, Selection, SelectionSet};
+use crate::parser::types::{ExecutableDocumentData, Field, Selection, SelectionSet};
 
 /// A selection performed by a query
 pub struct Lookahead<'a> {
-    pub(crate) document: &'a ExecutableDocument,
+    pub(crate) document: &'a ExecutableDocumentData,
     pub(crate) field: Option<&'a Field>,
 }
 
@@ -25,7 +25,7 @@ impl<'a> Lookahead<'a> {
 }
 
 fn find<'a>(
-    document: &'a ExecutableDocument,
+    document: &'a ExecutableDocumentData,
     selection_set: &'a SelectionSet,
     name: &str,
 ) -> Option<&'a Field> {

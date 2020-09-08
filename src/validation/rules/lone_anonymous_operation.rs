@@ -1,4 +1,4 @@
-use crate::parser::types::{Definition, Document, OperationDefinition};
+use crate::parser::types::{ExecutableDefinition, ExecutableDocument, OperationDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -8,11 +8,11 @@ pub struct LoneAnonymousOperation {
 }
 
 impl<'a> Visitor<'a> for LoneAnonymousOperation {
-    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         self.operation_count = Some(
             doc.definitions
                 .iter()
-                .filter(|d| matches!(&d, Definition::Operation(_)))
+                .filter(|d| matches!(&d, ExecutableDefinition::Operation(_)))
                 .count(),
         );
     }

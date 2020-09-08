@@ -2,7 +2,7 @@ use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::parser::types::{Document, OperationType};
+use crate::parser::types::{ExecutableDocument, OperationType};
 use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
@@ -12,7 +12,6 @@ use crate::{
     CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
     SubscriptionType, Type, Variables, ID,
 };
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;
@@ -318,7 +317,7 @@ where
         source: &str,
         variables: &Variables,
         query_extensions: &[Box<dyn Fn() -> BoxExtension + Send + Sync>],
-    ) -> Result<(Document, CacheControl, spin::Mutex<Extensions>)> {
+    ) -> Result<(ExecutableDocument, CacheControl, spin::Mutex<Extensions>)> {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
@@ -377,7 +376,7 @@ where
     ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
         let (document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
 
-        let document = match document.into_executable(operation_name) {
+        let document = match document.into_data(operation_name) {
             Some(document) => document,
             None => {
                 return if let Some(name) = operation_name {

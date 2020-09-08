@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
-use crate::parser::types::Document;
+use crate::parser::types::ExecutableDocument;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
 use once_cell::sync::Lazy;
@@ -333,7 +333,7 @@ impl MutationRoot {
 static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, EmptySubscription>> =
     Lazy::new(|| Schema::new(QueryRoot, MutationRoot, EmptySubscription));
 
-pub fn validate<'a, V, F>(doc: &'a Document, factory: F) -> Result<()>
+pub fn validate<'a, V, F>(doc: &'a ExecutableDocument, factory: F) -> Result<()>
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -349,7 +349,7 @@ where
     Ok(())
 }
 
-pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a Document, factory: F)
+pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -374,7 +374,7 @@ macro_rules! expect_passes_rule {
     };
 }
 
-pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a Document, factory: F)
+pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,

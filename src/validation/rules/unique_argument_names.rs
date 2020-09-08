@@ -1,6 +1,6 @@
-use crate::parser::types::{Directive, Field};
+use crate::parser::types::{Directive, Field, Value, Name};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, Value};
+use crate::Positioned;
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -20,10 +20,10 @@ impl<'a> Visitor<'a> for UniqueArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
-        if !self.names.insert(&name.node) {
+        if !self.names.insert(name.node.as_str()) {
             ctx.report_error(
                 vec![name.pos],
                 format!("There can only be one argument named \"{}\"", name),

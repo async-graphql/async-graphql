@@ -52,7 +52,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         if let Some(MetaType::Object { fields, .. }) =
                             ctx.schema_env.registry.types.get(T::type_name().as_ref())
                         {
-                            if !fields.contains_key(&field.node.name.node) {
+                            if !fields.contains_key(field.node.name.node.as_str()) {
                                 continue;
                             }
                         }
@@ -79,7 +79,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                                     pos: field.pos,
                                     path: None,
                                     err: QueryError::FieldNotFound {
-                                        field_name: field.node.name.node.clone(),
+                                        field_name: field.node.name.node.clone().into_string(),
                                         object: T::type_name().to_string(),
                                     },
                                 });
@@ -96,7 +96,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                         .resolve_field(&ctx_field)
                         .await
                         .log_error(&ctx.query_env.extensions)?;
-                    values.insert(field_name, value);
+                    values.insert(field_name.into_string(), value);
 
                     ctx_field
                         .query_env
@@ -126,7 +126,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                             pos: fragment_spread.pos,
                             path: None,
                             err: QueryError::UnknownFragment {
-                                name: fragment_spread.node.fragment_name.node.clone(),
+                                name: fragment_spread.node.fragment_name.node.clone().into_string(),
                             },
                         });
                     }

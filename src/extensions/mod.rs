@@ -10,7 +10,7 @@ use crate::{Result, Variables};
 pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 pub use self::tracing::Tracing;
-use crate::parser::types::Document;
+use crate::parser::types::ExecutableDocument;
 use crate::Error;
 use serde_json::Value;
 
@@ -47,7 +47,7 @@ pub trait Extension: Sync + Send + 'static {
     fn parse_start(&mut self, query_source: &str, variables: &Variables) {}
 
     /// Called at the end of the parse.
-    fn parse_end(&mut self, document: &Document) {}
+    fn parse_end(&mut self, document: &ExecutableDocument) {}
 
     /// Called at the begin of the validation.
     fn validation_start(&mut self) {}
@@ -96,7 +96,7 @@ impl Extension for Extensions {
             .for_each(|e| e.parse_start(query_source, variables));
     }
 
-    fn parse_end(&mut self, document: &Document) {
+    fn parse_end(&mut self, document: &ExecutableDocument) {
         self.0.iter_mut().for_each(|e| e.parse_end(document));
     }
 

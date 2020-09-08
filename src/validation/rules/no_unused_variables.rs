@@ -1,9 +1,9 @@
 use crate::parser::types::{
-    Document, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition, Value, Name
 };
 use crate::validation::utils::{referenced_variables, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned, Value};
+use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -45,7 +45,7 @@ impl<'a> NoUnusedVariables<'a> {
 }
 
 impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
         for (op_name, def_vars) in &self.defined_variables {
             let mut used = HashSet::new();
             let mut visited = HashSet::new();
@@ -109,7 +109,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<String>,
+        _name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
         if let Some(ref scope) = self.current_scope {

@@ -141,7 +141,7 @@ pub use error::{
     ParseRequestError, QueryError, ResultExt, RuleError,
 };
 pub use look_ahead::Lookahead;
-pub use parser::{types::Value, Pos, Positioned};
+pub use parser::{types::ConstValue as Value, Pos, Positioned};
 pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, OutputJson, ID};

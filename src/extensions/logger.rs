@@ -1,5 +1,5 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::parser::types::{Definition, Document, OperationType, Selection};
+use crate::parser::types::{ExecutableDefinition, ExecutableDocument, OperationType, Selection};
 use crate::{Error, Variables};
 use itertools::Itertools;
 use log::{error, info, trace};
@@ -31,12 +31,12 @@ impl Extension for Logger {
         self.variables = variables.clone();
     }
 
-    fn parse_end(&mut self, document: &Document) {
+    fn parse_end(&mut self, document: &ExecutableDocument) {
         let is_schema = document
             .definitions
             .iter()
             .filter_map(|definition| match definition {
-                Definition::Operation(operation) if operation.node.ty == OperationType::Query => Some(operation),
+                ExecutableDefinition::Operation(operation) if operation.node.ty == OperationType::Query => Some(operation),
                 _ => None,
             })
             .any(|operation| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));

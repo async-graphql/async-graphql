@@ -8,7 +8,7 @@ mod utils;
 mod visitor;
 mod visitors;
 
-use crate::parser::types::Document;
+use crate::parser::types::ExecutableDocument;
 use crate::registry::Registry;
 use crate::{CacheControl, Error, Result, Variables};
 use visitor::{visit, VisitorContext, VisitorNil};
@@ -31,7 +31,7 @@ pub enum ValidationMode {
 
 pub fn check_rules(
     registry: &Registry,
-    doc: &Document,
+    doc: &ExecutableDocument,
     variables: Option<&Variables>,
     mode: ValidationMode,
 ) -> Result<CheckResult> {

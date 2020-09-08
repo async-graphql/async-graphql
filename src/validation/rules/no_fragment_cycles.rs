@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::parser::types::{Document, FragmentDefinition, FragmentSpread};
+use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
@@ -54,7 +54,7 @@ pub struct NoFragmentCycles<'a> {
 }
 
 impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
         let mut detector = CycleDetector {
             visited: HashSet::new(),
             spreads: &self.spreads,

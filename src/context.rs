@@ -1,8 +1,8 @@
 use crate::base::Type;
 use crate::extensions::Extensions;
-use crate::parser::types::{Directive, ExecutableDocument, Field, SelectionSet, Value};
+use crate::parser::types::{Directive, ExecutableDocumentData, Field, SelectionSet, Value as InputValue, Name};
 use crate::schema::SchemaEnv;
-use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result};
+use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Value};
 use fnv::FnvHashMap;
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 /// Variables of a query.
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct Variables(pub BTreeMap<String, Value>);
+pub struct Variables(pub BTreeMap<Name, Value>);
 
 impl Display for Variables {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -30,13 +30,15 @@ impl Display for Variables {
 
 impl Variables {
     /// Parse variables from JSON object.
-    // TODO: Is this supposed to be able to return an error?
-    pub fn parse_from_json(value: serde_json::Value) -> Result<Self> {
-        Ok(if let Value::Object(obj) = value.into() {
+    ///
+    /// If the value is not a map, or the keys of map are not valid GraphQL names, then an empty
+    /// `Variables` instance will be returned.
+    pub fn parse_from_json(value: serde_json::Value) -> Self {
+        if let Ok(Value::Object(obj)) = Value::from_json(value) {
             Self(obj)
         } else {
             Default::default()
-        })
+        }
     }
 
     pub(crate) fn variable_path(&mut self, path: &str) -> Option<&mut Value> {
@@ -212,7 +214,7 @@ impl<'a, T> Deref for ContextBase<'a, T> {
 pub struct QueryEnvInner {
     pub extensions: spin::Mutex<Extensions>,
     pub variables: Variables,
-    pub document: ExecutableDocument,
+    pub document: ExecutableDocumentData,
     pub ctx_data: Arc<Data>,
 }
 
@@ -233,7 +235,7 @@ impl QueryEnv {
     pub fn new(
         extensions: spin::Mutex<Extensions>,
         variables: Variables,
-        document: ExecutableDocument,
+        document: ExecutableDocumentData,
         ctx_data: Arc<Data>,
     ) -> QueryEnv {
         QueryEnv(Arc::new(QueryEnvInner {
@@ -364,27 +366,9 @@ impl<'a, T> ContextBase<'a, T> {
             })
     }
 
-    fn resolved_input_value(&self, mut value: Positioned<Value>) -> Result<Value> {
-        self.resolve_input_value(&mut value.node, value.pos)?;
-        Ok(value.node)
-    }
-
-    fn resolve_input_value(&self, value: &mut Value, pos: Pos) -> Result<()> {
-        match value {
-            Value::Variable(var_name) => *value = self.var_value(&var_name, pos)?,
-            Value::List(ls) => {
-                for ls_value in ls {
-                    self.resolve_input_value(ls_value, pos)?;
-                }
-            }
-            Value::Object(obj) => {
-                for obj_value in obj.values_mut() {
-                    self.resolve_input_value(obj_value, pos)?;
-                }
-            }
-            _ => (),
-        }
-        Ok(())
+    fn resolve_input_value(&self, value: Positioned<InputValue>) -> Result<Value> {
+        let pos = value.pos;
+        value.node.into_const_with(|name| self.var_value(&name, pos))
     }
 
     #[doc(hidden)]
@@ -403,10 +387,7 @@ impl<'a, T> ContextBase<'a, T> {
                 _ => continue,
             };
 
-            let Positioned {
-                node: mut condition_input,
-                pos,
-            } = directive
+            let condition_input = directive
                 .node
                 .get_argument("if")
                 .ok_or_else(|| {
@@ -419,10 +400,10 @@ impl<'a, T> ContextBase<'a, T> {
                 })?
                 .clone();
 
-            self.resolve_input_value(&mut condition_input, pos)?;
+            let pos = condition_input.pos;
+            let condition_input = self.resolve_input_value(condition_input)?;
 
-            if include
-                != <bool as InputValueType>::parse(Some(condition_input))
+            if include != <bool as InputValueType>::parse(Some(condition_input))
                     .map_err(|e| e.into_error(pos, bool::qualified_type_name()))?
             {
                 return Ok(true);
@@ -474,7 +455,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             }
         }
         let (pos, value) = match value {
-            Some(value) => (value.pos, Some(self.resolved_input_value(value)?)),
+            Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
             None => (Pos::default(), None),
         };
         InputValueType::parse(value).map_err(|e| e.into_error(pos, T::qualified_type_name()))

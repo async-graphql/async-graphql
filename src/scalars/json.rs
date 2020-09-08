@@ -11,7 +11,10 @@ use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
+///
+/// If the inner type cannot be serialized as JSON (e.g. it has non-string keys) it will be `null`.
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash, Default)]
+#[serde(transparent)]
 pub struct Json<T>(pub T);
 
 impl<T> Deref for Json<T> {
@@ -28,8 +31,8 @@ impl<T> DerefMut for Json<T> {
     }
 }
 
-impl From<serde_json::Value> for Json<serde_json::Value> {
-    fn from(value: serde_json::Value) -> Self {
+impl<T> From<T> for Json<T> {
+    fn from(value: T) -> Self {
         Self(value)
     }
 }
@@ -38,13 +41,14 @@ impl From<serde_json::Value> for Json<serde_json::Value> {
 #[Scalar(internal, name = "JSON")]
 impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     fn parse(value: Value) -> InputValueResult<Self> {
-        Ok(serde_json::from_value(value.into()).map(Json)?)
+        Ok(serde_json::from_value(value.into_json()?)?)
     }
 
     fn to_value(&self) -> Value {
         serde_json::to_value(&self.0)
-            .unwrap_or_else(|_| serde_json::Value::Null)
-            .into()
+            .ok()
+            .and_then(|json| Value::from_json(json).ok())
+            .unwrap_or_else(|| Value::Null)
     }
 }
 
@@ -66,8 +70,8 @@ impl<T> DerefMut for OutputJson<T> {
     }
 }
 
-impl From<serde_json::Value> for OutputJson<serde_json::Value> {
-    fn from(value: serde_json::Value) -> Self {
+impl<T> From<T> for OutputJson<T> {
+    fn from(value: T) -> Self {
         Self(value)
     }
 }

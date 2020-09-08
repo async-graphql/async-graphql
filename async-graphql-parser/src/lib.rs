@@ -9,14 +9,13 @@ use pest::error::LineColLocation;
 use pest::RuleType;
 use std::fmt;
 
-pub use parser::parse_query;
+pub use parse::{parse_query, parse_schema};
 pub use pos::{Pos, Positioned};
 
 pub mod types;
 
-mod parser;
+mod parse;
 mod pos;
-mod utils;
 
 /// Parser error.
 #[derive(Debug, PartialEq)]
@@ -25,6 +24,16 @@ pub struct Error {
     pub pos: Pos,
     /// The error message.
     pub message: String,
+}
+
+impl Error {
+    /// Create a new error with the given position and message.
+    pub fn new(message: impl Into<String>, pos: Pos) -> Self {
+        Self {
+            pos,
+            message: message.into(),
+        }
+    }
 }
 
 impl fmt::Display for Error {

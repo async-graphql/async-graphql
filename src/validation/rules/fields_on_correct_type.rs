@@ -19,7 +19,7 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
 
             if parent_type
                 .fields()
-                .and_then(|fields| fields.get(&field.node.name.node))
+                .and_then(|fields| fields.get(field.node.name.node.as_str()))
                 .is_none()
                 && !field
                     .node

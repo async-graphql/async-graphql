@@ -1,4 +1,4 @@
-use crate::parser::types::{Definition, Document, FragmentSpread, InlineFragment, TypeCondition};
+use crate::parser::types::{ExecutableDefinition, ExecutableDocument, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashMap;
@@ -9,9 +9,9 @@ pub struct PossibleFragmentSpreads<'a> {
 }
 
 impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
-    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         for d in &doc.definitions {
-            if let Definition::Fragment(fragment) = &d {
+            if let ExecutableDefinition::Fragment(fragment) = &d {
                 let TypeCondition { on: type_name } = &fragment.node.type_condition.node;
                 self.fragment_types
                     .insert(&fragment.node.name.node, &type_name.node);
@@ -56,7 +56,7 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
                 .as_ref()
                 .map(|c| &c.node)
             {
-                if let Some(on_type) = ctx.registry.types.get(&fragment_type.node) {
+                if let Some(on_type) = ctx.registry.types.get(fragment_type.node.as_str()) {
                     if !parent_type.type_overlap(&on_type) {
                         ctx.report_error(
                             vec![inline_fragment.pos],

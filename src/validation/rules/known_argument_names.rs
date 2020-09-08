@@ -1,8 +1,8 @@
-use crate::parser::types::{Directive, Field};
+use crate::parser::types::{Directive, Field, Value, Name};
 use crate::registry::MetaInputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, Value};
+use crate::Positioned;
 use indexmap::map::IndexMap;
 
 enum ArgsType<'a> {
@@ -41,7 +41,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
         self.current_args = ctx
             .registry
             .directives
-            .get(&directive.node.name.node)
+            .get(directive.node.name.node.as_str())
             .map(|d| (&d.args, ArgsType::Directive(&directive.node.name.node)));
     }
 
@@ -56,11 +56,11 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
         if let Some((args, arg_type)) = &self.current_args {
-            if !args.contains_key(&*name.node) {
+            if !args.contains_key(name.node.as_str()) {
                 match arg_type {
                     ArgsType::Field {
                         field_name,
@@ -73,7 +73,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                                 name,
                                 field_name,
                                 type_name,
-                                self.get_suggestion(&name.node)
+                                self.get_suggestion(name.node.as_str())
                             ),
                         );
                     }
@@ -84,7 +84,7 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                                 "Unknown argument \"{}\" on directive \"{}\".{}",
                                 name,
                                 directive_name,
-                                self.get_suggestion(&name.node)
+                                self.get_suggestion(name.node.as_str())
                             ),
                         );
                     }

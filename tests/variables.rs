@@ -29,7 +29,6 @@ pub async fn test_variables() {
             "intVal": 10,
              "intListVal": [1, 2, 3, 4, 5],
         }))
-        .unwrap(),
     );
     let resp = query.execute(&schema).await.unwrap();
     assert_eq!(
@@ -90,7 +89,7 @@ pub async fn test_variable_no_value() {
             }
         "#,
     )
-    .variables(Variables::parse_from_json(serde_json::json!({})).unwrap());
+    .variables(Variables::parse_from_json(serde_json::json!({})));
     let resp = query.execute(&schema).await.unwrap();
     assert_eq!(
         resp.data,
@@ -123,7 +122,6 @@ pub async fn test_variable_null() {
         Variables::parse_from_json(serde_json::json!({
             "intVal": null,
         }))
-        .unwrap(),
     );
     let resp = query.execute(&schema).await.unwrap();
     assert_eq!(
@@ -176,7 +174,6 @@ pub async fn test_variable_in_input_object() {
                 Variables::parse_from_json(serde_json::json!({
                     "value": 10,
                 }))
-                .unwrap(),
             )
             .execute(&schema)
             .await
@@ -200,7 +197,6 @@ pub async fn test_variable_in_input_object() {
                 Variables::parse_from_json(serde_json::json!({
                     "value": 3,
                 }))
-                .unwrap(),
             )
             .execute(&schema)
             .await
@@ -224,7 +220,6 @@ pub async fn test_variable_in_input_object() {
                 Variables::parse_from_json(serde_json::json!({
                     "value": 10,
                 }))
-                .unwrap(),
             )
             .execute(&schema)
             .await

@@ -128,12 +128,11 @@ pub async fn test_inputobject_flatten_recursive() {
 
     assert_eq!(
         MyInputObject::parse(Some(
-            serde_json::json!({
+            Value::from_json(serde_json::json!({
                "a": 10,
                "b": 20,
                "c": 30,
-            })
-            .into()
+            })).unwrap()
         ))
         .unwrap(),
         MyInputObject {
@@ -154,12 +153,11 @@ pub async fn test_inputobject_flatten_recursive() {
             c: 30,
         }
         .to_value(),
-        serde_json::json!({
+        Value::from_json(serde_json::json!({
            "a": 10,
            "b": 20,
            "c": 30,
-        })
-        .into()
+        })).unwrap()
     );
 
     struct Query;
@@ -263,12 +261,11 @@ pub async fn test_inputobject_flatten_multiple() {
 
     assert_eq!(
         ABC::parse(Some(
-            serde_json::json!({
+            Value::from_json(serde_json::json!({
                "a": 10,
                "b": 20,
                "c": 30,
-            })
-            .into()
+            })).unwrap()
         ))
         .unwrap(),
         ABC {
@@ -285,11 +282,10 @@ pub async fn test_inputobject_flatten_multiple() {
             c: C { c: 30 }
         }
         .to_value(),
-        serde_json::json!({
+        Value::from_json(serde_json::json!({
            "a": 10,
            "b": 20,
            "c": 30,
-        })
-        .into()
+        })).unwrap()
     );
 }

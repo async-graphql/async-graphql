@@ -2,11 +2,11 @@ use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
-use crate::parser::types::{OperationType, UploadValue, Value};
+use crate::parser::types::{OperationType, UploadValue};
 use crate::registry::CacheControl;
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
-    SubscriptionType, Variables,
+    SubscriptionType, Variables,Value
 };
 use std::any::Any;
 use std::fs::File;
@@ -141,7 +141,7 @@ impl QueryBuilder {
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let document = match document.into_executable(self.operation_name.as_deref()) {
+        let document = match document.into_data(self.operation_name.as_deref()) {
             Some(document) => document,
             None => {
                 return if let Some(operation_name) = self.operation_name {

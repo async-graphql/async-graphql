@@ -54,7 +54,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 if field.node.name.node == "__typename" {
                     // Get the typename
                     let ctx_field = ctx.with_field(field);
-                    let field_name = ctx_field.item.node.response_key().node.clone();
+                    let field_name = ctx_field.item.node.response_key().node.clone().into_string();
                     futures.push(Box::pin(
                         future::ok::<serde_json::Value, Error>(
                             root.introspection_type_name().to_string().into(),
@@ -78,7 +78,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     let ctx = ctx.clone();
                     async move {
                         let ctx_field = ctx.with_field(field);
-                        let field_name = ctx_field.item.node.response_key().node.clone();
+                        let field_name = ctx_field.item.node.response_key().node.clone().into_string();
 
                         let resolve_info = ResolveInfo {
                             resolve_id: ctx_field.resolve_id,
@@ -98,7 +98,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                         pos: field.pos,
                                         path: None,
                                         err: QueryError::FieldNotFound {
-                                            field_name: field.node.name.node.to_owned(),
+                                            field_name: field.node.name.node.clone().into_string(),
                                             object: T::type_name().to_string(),
                                         },
                                     });

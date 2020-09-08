@@ -1,9 +1,9 @@
 use crate::context::QueryPathNode;
-use crate::parser::types::{Directive, Field};
+use crate::parser::types::{Directive, Field, Value, Name};
 use crate::registry::MetaInputValue;
 use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, QueryPathSegment, Value};
+use crate::{Positioned, QueryPathSegment};
 use indexmap::map::IndexMap;
 
 #[derive(Default)]
@@ -20,7 +20,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
         self.current_args = ctx
             .registry
             .directives
-            .get(&directive.node.name.node)
+            .get(directive.node.name.node.as_str())
             .map(|d| &d.args);
     }
 
@@ -35,22 +35,17 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
         if let Some(arg) = self
             .current_args
-            .and_then(|args| args.get(&*name.node).map(|input| input))
+            .and_then(|args| args.get(name.node.as_str()).map(|input| input))
         {
-            if let Some(validator) = &arg.validator {
-                let value = match &value.node {
-                    Value::Variable(var_name) => ctx
-                        .variables
-                        .and_then(|variables| variables.0.get(var_name)),
-                    _ => Some(&value.node),
-                };
+            let value = value.node.clone().into_const_with(|var_name| ctx.variables.and_then(|variables| variables.0.get(&var_name)).map(Clone::clone).ok_or(())).ok();
 
-                if let Some(value) = value {
+            if let Some(validator) = &arg.validator {
+                if let Some(value) = &value {
                     if let Err(reason) = validator.is_valid(value) {
                         ctx.report_error(
                             vec![name.pos],
@@ -61,16 +56,16 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 }
             }
 
-            if let Some(reason) = is_valid_input_value(
+            if let Some(reason) = value.and_then(|value| is_valid_input_value(
                 ctx.registry,
                 ctx.variables,
                 &arg.ty,
-                &value.node,
+                &value,
                 QueryPathNode {
                     parent: None,
                     segment: QueryPathSegment::Name(arg.name),
                 },
-            ) {
+            )) {
                 ctx.report_error(
                     vec![name.pos],
                     format!("Invalid value for argument {}", reason),

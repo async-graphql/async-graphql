@@ -1,5 +1,5 @@
 use crate::parser::types::{
-    Definition, Document, FragmentDefinition, FragmentSpread, OperationDefinition,
+    ExecutableDefinition, ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
 };
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
@@ -32,11 +32,11 @@ impl<'a> NoUnusedFragments<'a> {
 }
 
 impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         let mut reachable = HashSet::new();
 
         for def in &doc.definitions {
-            if let Definition::Operation(operation_definition) = def {
+            if let ExecutableDefinition::Operation(operation_definition) = def {
                 self.find_reachable_fragments(
                     &Scope::Operation(
                         operation_definition

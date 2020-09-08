@@ -76,7 +76,7 @@ where
                         .as_ref()
                         .map(|v| &v.node)
                     {
-                        if name.node == Subscription::type_name() {
+                        if name.node.as_str() == Subscription::type_name() {
                             create_subscription_stream(
                                 schema,
                                 environment.clone(),

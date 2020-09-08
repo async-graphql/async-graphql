@@ -1,10 +1,10 @@
 use crate::error::RuleError;
 use crate::parser::types::{
-    Definition, Directive, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
-    OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition,
+    ExecutableDefinition, Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
+    OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition, Value, Name
 };
 use crate::registry::{self, MetaType, MetaTypeName};
-use crate::{Pos, Positioned, Value, Variables};
+use crate::{Pos, Positioned, Variables};
 use std::collections::HashMap;
 
 pub struct VisitorContext<'a> {
@@ -19,7 +19,7 @@ pub struct VisitorContext<'a> {
 impl<'a> VisitorContext<'a> {
     pub fn new(
         registry: &'a registry::Registry,
-        doc: &'a Document,
+        doc: &'a ExecutableDocument,
         variables: Option<&'a Variables>,
     ) -> Self {
         Self {
@@ -32,7 +32,7 @@ impl<'a> VisitorContext<'a> {
                 .definitions
                 .iter()
                 .filter_map(|d| match &d {
-                    Definition::Fragment(fragment) => Some((&*fragment.node.name.node, fragment)),
+                    ExecutableDefinition::Fragment(fragment) => Some((&*fragment.node.name.node, fragment)),
                     _ => None,
                 })
                 .collect(),
@@ -95,8 +95,8 @@ impl<'a> VisitorContext<'a> {
 }
 
 pub trait Visitor<'a> {
-    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a Document) {}
-    fn exit_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a Document) {}
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
+    fn exit_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
 
     fn enter_operation_definition(
         &mut self,
@@ -153,14 +153,14 @@ pub trait Visitor<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<String>,
+        _name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
     }
     fn exit_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        _name: &'a Positioned<String>,
+        _name: &'a Positioned<Name>,
         _value: &'a Positioned<Value>,
     ) {
     }
@@ -261,12 +261,12 @@ where
     A: Visitor<'a> + 'a,
     B: Visitor<'a> + 'a,
 {
-    fn enter_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         self.0.enter_document(ctx, doc);
         self.1.enter_document(ctx, doc);
     }
 
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         self.0.exit_document(ctx, doc);
         self.1.exit_document(ctx, doc);
     }
@@ -346,7 +346,7 @@ where
     fn enter_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
         self.0.enter_argument(ctx, name, value);
@@ -356,7 +356,7 @@ where
     fn exit_argument(
         &mut self,
         ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
         self.0.exit_argument(ctx, name, value);
@@ -446,7 +446,7 @@ where
     }
 }
 
-pub fn visit<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+pub fn visit<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
     v.enter_document(ctx, doc);
     visit_definitions(v, ctx, doc);
     v.exit_document(ctx, doc);
@@ -455,16 +455,16 @@ pub fn visit<'a, V: Visitor<'a>>(v: &mut V, ctx: &mut VisitorContext<'a>, doc: &
 fn visit_definitions<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
-    doc: &'a Document,
+    doc: &'a ExecutableDocument,
 ) {
     for d in &doc.definitions {
         match d {
-            Definition::Operation(operation) => {
+            ExecutableDefinition::Operation(operation) => {
                 visit_operation_definition(v, ctx, operation);
             }
-            Definition::Fragment(fragment) => {
+            ExecutableDefinition::Fragment(fragment) => {
                 let TypeCondition { on: name } = &fragment.node.type_condition.node;
-                ctx.with_type(ctx.registry.types.get(&name.node), |ctx| {
+                ctx.with_type(ctx.registry.types.get(name.node.as_str()), |ctx| {
                     visit_fragment_definition(v, ctx, fragment)
                 });
             }
@@ -544,7 +544,7 @@ fn visit_selection<'a, V: Visitor<'a>>(
                 .as_ref()
                 .map(|c| &c.node)
             {
-                ctx.with_type(ctx.registry.types.get(&name.node), |ctx| {
+                ctx.with_type(ctx.registry.types.get(name.node.as_str()), |ctx| {
                     visit_inline_fragment(v, ctx, inline_fragment)
                 });
             }
@@ -615,7 +615,7 @@ fn visit_input_value<'a, V: Visitor<'a>>(
                     {
                         if let MetaType::InputObject { input_fields, .. } = ty {
                             for (item_key, item_value) in values {
-                                if let Some(input_value) = input_fields.get(item_key) {
+                                if let Some(input_value) = input_fields.get(item_key.as_str()) {
                                     visit_input_value(
                                         v,
                                         ctx,
@@ -655,7 +655,7 @@ fn visit_directives<'a, V: Visitor<'a>>(
     for d in directives {
         v.enter_directive(ctx, d);
 
-        let schema_directive = ctx.registry.directives.get(&d.node.name.node);
+        let schema_directive = ctx.registry.directives.get(d.node.name.node.as_str());
 
         for (name, value) in &d.node.arguments {
             v.enter_argument(ctx, name, value);
