@@ -1,4 +1,4 @@
-use crate::parser::query::OperationDefinition;
+use crate::parser::types::{OperationDefinition, OperationType};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -11,26 +11,17 @@ impl<'a> Visitor<'a> for UploadFile {
         ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        if let OperationDefinition::Query(query) = &operation_definition.node {
-            for var in &query.variable_definitions {
-                if let Some(ty) = ctx.registry.concrete_type_by_parsed_type(&var.var_type) {
-                    if ty.name() == "Upload" {
-                        ctx.report_error(
-                            vec![var.position()],
-                            "The Upload type is only allowed to be defined on a mutation",
-                        );
-                    }
-                }
-            }
-        } else if let OperationDefinition::Subscription(subscription) = &operation_definition.node {
-            for var in &subscription.variable_definitions {
-                if let Some(ty) = ctx.registry.concrete_type_by_parsed_type(&var.var_type) {
-                    if ty.name() == "Upload" {
-                        ctx.report_error(
-                            vec![var.position()],
-                            "The Upload type is only allowed to be defined on a mutation",
-                        );
-                    }
+        for var in &operation_definition.node.variable_definitions {
+            if let Some(ty) = ctx
+                .registry
+                .concrete_type_by_parsed_type(&var.node.var_type.node)
+            {
+                if operation_definition.node.ty != OperationType::Mutation && ty.name() == "Upload"
+                {
+                    ctx.report_error(
+                        vec![var.pos],
+                        "The Upload type is only allowed to be defined on a mutation",
+                    );
                 }
             }
         }

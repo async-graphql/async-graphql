@@ -2,12 +2,12 @@ use crate::context::{Data, ResolveId};
 use crate::error::ParseRequestError;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension};
 use crate::mutation_resolver::do_mutation_resolve;
+use crate::parser::types::{OperationType, UploadValue};
 use crate::registry::CacheControl;
 use crate::{
     do_resolve, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Result, Schema,
-    SubscriptionType, Variables,
+    SubscriptionType, Value, Variables,
 };
-use async_graphql_parser::query::OperationType;
 use std::any::Any;
 use std::fs::File;
 use std::sync::atomic::AtomicUsize;
@@ -115,8 +115,15 @@ impl QueryBuilder {
         content_type: Option<String>,
         content: File,
     ) {
-        self.variables
-            .set_upload(var_path, filename, content_type, content);
+        let variable = match self.variables.variable_path(var_path) {
+            Some(variable) => variable,
+            None => return,
+        };
+        *variable = Value::Upload(UploadValue {
+            filename,
+            content_type,
+            content,
+        });
     }
 
     /// Execute the query, always return a complete result.
@@ -129,29 +136,32 @@ impl QueryBuilder {
         Mutation: ObjectType + Send + Sync + 'static,
         Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        let (mut document, cache_control, extensions) =
+        let (document, cache_control, extensions) =
             schema.prepare_query(&self.query_source, &self.variables, &self.extensions)?;
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        if !document.retain_operation(self.operation_name.as_deref()) {
-            return if let Some(operation_name) = self.operation_name {
-                Err(Error::Query {
-                    pos: Pos::default(),
-                    path: None,
-                    err: QueryError::UnknownOperationNamed {
-                        name: operation_name,
-                    },
-                })
-            } else {
-                Err(Error::Query {
-                    pos: Pos::default(),
-                    path: None,
-                    err: QueryError::MissingOperation,
-                })
+        let document = match document.into_data(self.operation_name.as_deref()) {
+            Some(document) => document,
+            None => {
+                return if let Some(operation_name) = self.operation_name {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::UnknownOperationNamed {
+                            name: operation_name,
+                        },
+                    })
+                } else {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::MissingOperation,
+                    })
+                }
+                .log_error(&extensions)
             }
-            .log_error(&extensions);
-        }
+        };
 
         let env = QueryEnv::new(
             extensions,
@@ -163,13 +173,13 @@ impl QueryBuilder {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
-            item: &env.document.current_operation().selection_set,
+            item: &env.document.operation.node.selection_set,
             schema_env: &schema.env,
             query_env: &env,
         };
 
         env.extensions.lock().execution_start();
-        let data = match &env.document.current_operation().ty {
+        let data = match &env.document.operation.node.ty {
             OperationType::Query => do_resolve(&ctx, &schema.query).await?,
             OperationType::Mutation => do_mutation_resolve(&ctx, &schema.mutation).await?,
             OperationType::Subscription => {

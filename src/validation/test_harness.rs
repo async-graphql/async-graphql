@@ -2,9 +2,9 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
+use crate::parser::types::ExecutableDocument;
 use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
-use async_graphql_parser::query::Document;
 use once_cell::sync::Lazy;
 
 #[InputObject(internal)]
@@ -333,7 +333,7 @@ impl MutationRoot {
 static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, EmptySubscription>> =
     Lazy::new(|| Schema::new(QueryRoot, MutationRoot, EmptySubscription));
 
-pub fn validate<'a, V, F>(doc: &'a Document, factory: F) -> Result<()>
+pub fn validate<'a, V, F>(doc: &'a ExecutableDocument, factory: F) -> Result<()>
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -349,7 +349,7 @@ where
     Ok(())
 }
 
-pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a Document, factory: F)
+pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -367,16 +367,14 @@ where
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
 macro_rules! expect_passes_rule {
-    ($factory:expr, $query_source:literal $(,)*) => {
+    ($factory:expr, $query_source:literal $(,)?) => {
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
         crate::validation::test_harness::expect_passes_rule_(&doc, $factory);
     };
 }
 
-pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a Document, factory: F)
+pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -386,10 +384,8 @@ where
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
 macro_rules! expect_fails_rule {
-    ($factory:expr, $query_source:literal $(,)*) => {
+    ($factory:expr, $query_source:literal $(,)?) => {
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
         crate::validation::test_harness::expect_fails_rule_(&doc, $factory);
     };

@@ -37,7 +37,7 @@ pub async fn test_maybe_undefined_type() {
         {
             v1:value1(input: 99)
             v2:value1(input: null)
-            v3:value1()
+            v3:value1
             v4:value2(input: { value: 99} )
             v5:value2(input: { value: null} )
             v6:value2(input: {} )

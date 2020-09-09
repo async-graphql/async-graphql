@@ -1,10 +1,10 @@
 use crate::connection::EmptyFields;
+use crate::parser::types::Field;
 use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
     QueryError, Result, Type,
 };
-use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -113,10 +113,10 @@ where
     E: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.name.node == "node" {
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+        if ctx.node.name.node == "node" {
+            let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
             return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item).await;
-        } else if ctx.name.node == "cursor" {
+        } else if ctx.node.name.node == "cursor" {
             return Ok(self
                 .cursor
                 .encode_cursor()
@@ -125,7 +125,7 @@ where
                         err: err.to_string(),
                         extended_error: None,
                     }
-                    .into_error(ctx.position())
+                    .into_error(ctx.pos)
                 })?
                 .into());
         }

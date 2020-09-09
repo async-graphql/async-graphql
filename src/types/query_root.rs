@@ -1,11 +1,11 @@
 use crate::model::{__Schema, __Type};
+use crate::parser::types::Field;
 use crate::scalars::Any;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
     Positioned, QueryError, Result, Type,
 };
 use async_graphql_derive::SimpleObject;
-use async_graphql_parser::query::Field;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -81,22 +81,22 @@ impl<T: Type> Type for QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.name.node == "__schema" {
+        if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
                 return Err(Error::Query {
-                    pos: ctx.position(),
+                    pos: ctx.pos,
                     path: ctx
                         .path_node
                         .as_ref()
                         .and_then(|path| serde_json::to_value(path).ok()),
                     err: QueryError::FieldNotFound {
-                        field_name: ctx.name.to_string(),
+                        field_name: ctx.item.node.name.to_string(),
                         object: Self::type_name().to_string(),
                     },
                 });
             }
 
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
                 &__Schema {
                     registry: &ctx.schema_env.registry,
@@ -105,9 +105,9 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 ctx.item,
             )
             .await;
-        } else if ctx.name.node == "__type" {
+        } else if ctx.item.node.name.node == "__type" {
             let type_name: String = ctx.param_value("name", None)?;
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
                 &ctx.schema_env
                     .registry
@@ -118,15 +118,15 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 ctx.item,
             )
             .await;
-        } else if ctx.name.node == "_entities" {
+        } else if ctx.item.node.name.node == "_entities" {
             let representations: Vec<Any> = ctx.param_value("representations", None)?;
             let mut res = Vec::new();
             for item in representations {
                 res.push(self.inner.find_entity(ctx, &item.0).await?);
             }
             return Ok(res.into());
-        } else if ctx.name.node == "_service" {
-            let ctx_obj = ctx.with_selection_set(&ctx.selection_set);
+        } else if ctx.item.node.name.node == "_service" {
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
                 &Service {
                     sdl: Some(ctx.schema_env.registry.create_federation_sdl()),

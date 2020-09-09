@@ -1,6 +1,6 @@
 pub use async_graphql::http::GQLResponse;
 use async_graphql::{ObjectType, QueryResponse, Schema, SubscriptionType};
-use async_graphql_parser::{parse_query, query::Document};
+use async_graphql_parser::{parse_query, types::ExecutableDocument};
 use async_std::task;
 
 #[cfg(feature = "jemalloc")]
@@ -19,7 +19,7 @@ where
     task::block_on(async { s.execute(q).await.unwrap() })
 }
 
-pub fn parse(q: &str) -> Document {
+pub fn parse(q: &str) -> ExecutableDocument {
     parse_query(q).unwrap()
 }
 

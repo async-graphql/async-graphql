@@ -1,4 +1,4 @@
-use crate::parser::query::{Field, SelectionSet};
+use crate::parser::types::{Field, SelectionSet};
 use crate::registry::MetaType;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{CacheControl, Positioned};
@@ -23,7 +23,7 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
     fn enter_field(&mut self, ctx: &mut VisitorContext<'_>, field: &Positioned<Field>) {
         if let Some(registry_field) = ctx
             .parent_type()
-            .and_then(|parent| parent.field_by_name(&field.name))
+            .and_then(|parent| parent.field_by_name(&field.node.name.node))
         {
             self.cache_control.merge(&registry_field.cache_control);
         }

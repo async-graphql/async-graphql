@@ -1,4 +1,4 @@
-use crate::parser::query::{Directive, Field};
+use crate::parser::types::{Directive, Field};
 use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
@@ -12,20 +12,25 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
         ctx: &mut VisitorContext<'a>,
         directive: &'a Positioned<Directive>,
     ) {
-        if let Some(schema_directive) = ctx.registry.directives.get(directive.name.as_str()) {
+        if let Some(schema_directive) = ctx
+            .registry
+            .directives
+            .get(directive.node.name.node.as_str())
+        {
             for arg in schema_directive.args.values() {
                 if MetaTypeName::create(&arg.ty).is_non_null()
                     && arg.default_value.is_none()
                     && directive
+                        .node
                         .arguments
                         .iter()
                         .find(|(name, _)| name.node == arg.name)
                         .is_none()
                 {
-                    ctx.report_error(vec![directive.position()],
+                    ctx.report_error(vec![directive.pos],
                             format!(
                                 "Directive \"@{}\" argument \"{}\" of type \"{}\" is required but not provided",
-                                directive.name, arg.name, arg.ty
+                                directive.node.name, arg.name, arg.ty
                             ));
                 }
             }
@@ -34,20 +39,21 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
 
     fn enter_field(&mut self, ctx: &mut VisitorContext<'a>, field: &'a Positioned<Field>) {
         if let Some(parent_type) = ctx.parent_type() {
-            if let Some(schema_field) = parent_type.field_by_name(&field.name) {
+            if let Some(schema_field) = parent_type.field_by_name(&field.node.name.node) {
                 for arg in schema_field.args.values() {
                     if MetaTypeName::create(&arg.ty).is_non_null()
                         && arg.default_value.is_none()
                         && field
+                            .node
                             .arguments
                             .iter()
                             .find(|(name, _)| name.node == arg.name)
                             .is_none()
                     {
-                        ctx.report_error(vec![field.position()],
+                        ctx.report_error(vec![field.pos],
                              format!(
                                  r#"Field "{}" argument "{}" of type "{}" is required but not provided"#,
-                                 field.name, arg.name, parent_type.name()
+                                 field.node.name, arg.name, parent_type.name()
                              ));
                     }
                 }
@@ -59,7 +65,6 @@ impl<'a> Visitor<'a> for ProvidedNonNullArguments {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> ProvidedNonNullArguments {
         ProvidedNonNullArguments

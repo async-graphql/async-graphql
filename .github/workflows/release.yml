@@ -17,26 +17,33 @@ jobs:
         package:
           - name: async-graphql-parser
             registryName: async-graphql-parser
-            path: async-graphql-parser
+            path: parser
           - name: async-graphql-derive
             registryName: async-graphql-derive
-            path: async-graphql-derive
+            path: derive
           - name: async-graphql
             registryName: async-graphql
             path: .
           - name: async-graphql-actix-web
             registryName: async-graphql-actix-web
-            path: async-graphql-actix-web
+            path: integrations/actix-web
           - name: async-graphql-warp
             registryName: async-graphql-warp
-            path: async-graphql-warp
+            path: integrations/warp
           - name: async-graphql-tide
             registryName: async-graphql-tide
-            path: async-graphql-tide
+            path: integrations/tide
+#          - name: async-graphql-rocket
+#            registryName: async-graphql-rocket
+#            path: async-graphql-rocket
 #          - name: async-graphql-lambda
 #            registryName: async-graphql-lambda
 #            path: async-graphql-lambda
     steps:
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
       - name: Checkout
         uses: actions/checkout@v2
       - name: get version

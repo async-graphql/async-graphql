@@ -26,15 +26,12 @@ impl ScalarType for Any {
 
 impl Any {
     /// Parse this `Any` value to T by `serde_json`.
-    pub fn parse_value<T: DeserializeOwned>(&self) -> std::result::Result<T, serde_json::Error> {
-        serde_json::from_value(self.to_value().into())
+    pub fn parse_value<T: DeserializeOwned>(&self) -> serde_json::Result<T> {
+        serde_json::from_value(self.to_value().into_json()?)
     }
 }
 
-impl<T> From<T> for Any
-where
-    T: Into<Value>,
-{
+impl<T: Into<Value>> From<T> for Any {
     fn from(value: T) -> Any {
         Any(value.into())
     }

@@ -1,4 +1,4 @@
-use crate::parser::query::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
+use crate::parser::types::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
 use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
@@ -12,8 +12,8 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        let TypeCondition::On(name) = &fragment_definition.type_condition.node;
-        validate_type(ctx, name.as_str(), fragment_definition.position());
+        let TypeCondition { on: name } = &fragment_definition.node.type_condition.node;
+        validate_type(ctx, &name.node, fragment_definition.pos);
     }
 
     fn enter_variable_definition(
@@ -23,8 +23,8 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     ) {
         validate_type(
             ctx,
-            MetaTypeName::concrete_typename(&variable_definition.var_type.to_string()),
-            variable_definition.position(),
+            MetaTypeName::concrete_typename(&variable_definition.node.var_type.to_string()),
+            variable_definition.pos,
         );
     }
 
@@ -33,10 +33,13 @@ impl<'a> Visitor<'a> for KnownTypeNames {
         ctx: &mut VisitorContext<'a>,
         inline_fragment: &'a Positioned<InlineFragment>,
     ) {
-        if let Some(TypeCondition::On(name)) =
-            inline_fragment.type_condition.as_ref().map(|c| &c.node)
+        if let Some(TypeCondition { on: name }) = inline_fragment
+            .node
+            .type_condition
+            .as_ref()
+            .map(|c| &c.node)
         {
-            validate_type(ctx, name.as_str(), inline_fragment.position());
+            validate_type(ctx, &name.node, inline_fragment.pos);
         }
     }
 }
@@ -50,7 +53,6 @@ fn validate_type(ctx: &mut VisitorContext<'_>, type_name: &str, pos: Pos) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> KnownTypeNames {
         KnownTypeNames::default()

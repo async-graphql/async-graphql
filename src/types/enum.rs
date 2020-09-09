@@ -1,3 +1,4 @@
+use crate::parser::types::Name;
 use crate::{InputValueError, InputValueResult, Type, Value};
 
 #[allow(missing_docs)]
@@ -35,7 +36,7 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
         let items = Self::items();
         for item in items {
             if item.value == *self {
-                return Value::Enum(item.name.into());
+                return Value::Enum(Name::new_unchecked(item.name.to_owned()));
             }
         }
         unreachable!()

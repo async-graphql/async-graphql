@@ -1,6 +1,6 @@
 use crate::extensions::{Extension, ResolveInfo};
+use crate::parser::types::{ExecutableDefinition, ExecutableDocument, OperationType, Selection};
 use crate::{Error, Variables};
-use async_graphql_parser::query::{Definition, Document, OperationDefinition, Selection};
 use itertools::Itertools;
 use log::{error, info, trace};
 use std::borrow::Cow;
@@ -31,29 +31,15 @@ impl Extension for Logger {
         self.variables = variables.clone();
     }
 
-    fn parse_end(&mut self, document: &Document) {
-        let mut is_schema = false;
-
-        for definition in document.definitions() {
-            if let Definition::Operation(operation) = &definition.node {
-                let selection_set = match &operation.node {
-                    OperationDefinition::Query(query) => &query.selection_set,
-                    OperationDefinition::SelectionSet(selection_set) => &selection_set.node,
-                    _ => continue,
-                };
-                is_schema = selection_set.items.iter().any(|selection| {
-                    if let Selection::Field(field) = &selection.node {
-                        if field.name.as_str() == "__schema" {
-                            return true;
-                        }
-                    }
-                    false
-                });
-                if is_schema {
-                    break;
-                }
-            }
-        }
+    fn parse_end(&mut self, document: &ExecutableDocument) {
+        let is_schema = document
+            .definitions
+            .iter()
+            .filter_map(|definition| match definition {
+                ExecutableDefinition::Operation(operation) if operation.node.ty == OperationType::Query => Some(operation),
+                _ => None,
+            })
+            .any(|operation| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
 
         if is_schema {
             self.enabled = false;
