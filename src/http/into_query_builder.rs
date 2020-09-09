@@ -2,11 +2,12 @@ use crate::http::GQLRequest;
 use crate::query::{IntoQueryBuilder, IntoQueryBuilderOpts};
 use crate::{ParseRequestError, QueryBuilder};
 use bytes::Bytes;
-use futures::{AsyncRead, AsyncReadExt, Stream};
-use mime::Mime;
+use futures::{stream, AsyncRead, AsyncReadExt, Stream};
 use multer::{Constraints, Multipart, SizeLimit};
 use std::collections::HashMap;
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{self, Seek, SeekFrom, Write};
+use std::pin::Pin;
+use std::task::Poll;
 
 impl From<multer::Error> for ParseRequestError {
     fn from(err: multer::Error) -> Self {
@@ -29,23 +30,10 @@ where
         mut self,
         opts: &IntoQueryBuilderOpts,
     ) -> std::result::Result<QueryBuilder, ParseRequestError> {
-        if let Some(boundary) = self
-            .0
-            .and_then(|value| value.as_ref().parse::<Mime>().ok())
-            .and_then(|ct| {
-                if ct.essence_str() == mime::MULTIPART_FORM_DATA {
-                    ct.get_param("boundary")
-                        .map(|boundary| boundary.to_string())
-                } else {
-                    None
-                }
-            })
-        {
+        if let Some(boundary) = self.0.and_then(|ct| multer::parse_boundary(ct).ok()) {
             // multipart
-            let stream = reader_stream(self.1);
-
             let mut multipart = Multipart::new_with_constraints(
-                stream,
+                reader_stream(self.1),
                 boundary,
                 Constraints::new().size_limit({
                     let mut limit = SizeLimit::new();
@@ -98,14 +86,8 @@ where
                 }
             }
 
-            let mut builder = match builder {
-                Some(builder) => builder,
-                None => return Err(ParseRequestError::MissingOperatorsPart),
-            };
-            let map = match &mut map {
-                Some(map) => map,
-                None => return Err(ParseRequestError::MissingMapPart),
-            };
+            let mut builder = builder.ok_or(ParseRequestError::MissingOperatorsPart)?;
+            let map = map.as_mut().ok_or(ParseRequestError::MissingMapPart)?;
 
             for (name, filename, content_type, file) in files {
                 if let Some(var_paths) = map.remove(&name) {
@@ -139,15 +121,16 @@ where
 }
 
 fn reader_stream(
-    mut r: impl AsyncRead + Send + Unpin + 'static,
-) -> impl Stream<Item = std::io::Result<Bytes>> + 'static {
-    async_stream::try_stream! {
-        let mut buf = [0u8; 2048];
-        while let size = r.read(&mut buf[..]).await? {
-            if size == 0 {
-                return;
-            }
-            yield Bytes::from(buf[..size].to_vec());
-        }
-    }
+    mut reader: impl AsyncRead + Unpin + Send + 'static,
+) -> impl Stream<Item = io::Result<Bytes>> + Unpin + Send + 'static {
+    let mut buf = [0u8; 2048];
+
+    stream::poll_fn(move |cx| {
+        Poll::Ready(
+            match futures::ready!(Pin::new(&mut reader).poll_read(cx, &mut buf)?) {
+                0 => None,
+                size => Some(Ok(Bytes::copy_from_slice(&buf[..size]))),
+            },
+        )
+    })
 }
