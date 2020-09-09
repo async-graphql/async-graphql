@@ -4,7 +4,7 @@ mod apollo_tracing;
 mod logger;
 mod tracing;
 
-use crate::context::{QueryPathNode, ResolveId};
+use crate::context::{Context, QueryPathNode, ResolveId};
 use crate::{Result, Variables};
 
 pub use self::apollo_tracing::ApolloTracing;
@@ -27,6 +27,9 @@ pub struct ResolveInfo<'a> {
 
     /// Current path node, You can go through the entire path.
     pub path_node: &'a QueryPathNode<'a>,
+
+    /// Context
+    pub context: &'a Context<'a>,
 
     /// Parent type
     pub parent_type: &'a str,
@@ -56,7 +59,7 @@ pub trait Extension: Sync + Send + 'static {
     fn validation_end(&mut self) {}
 
     /// Called at the begin of the execution.
-    fn execution_start(&mut self) {}
+    fn execution_start<'a>(&mut self) {}
 
     /// Called at the end of the execution.
     fn execution_end(&mut self) {}

@@ -96,6 +96,7 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                             resolve_id: ctx_field.resolve_id,
                             path_node: ctx_field.path_node.as_ref().unwrap(),
                             parent_type: &T::type_name(),
+                            context: &ctx_field,
                             return_type: match ctx_field
                                 .schema_env
                                 .registry

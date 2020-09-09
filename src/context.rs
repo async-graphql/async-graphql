@@ -140,7 +140,7 @@ impl<'a> Display for QueryPathNode<'a> {
 }
 
 impl<'a> QueryPathNode<'a> {
-    pub(crate) fn field_name(&self) -> &str {
+    pub fn field_name(&self) -> &str {
         let mut p = self;
         loop {
             if let QueryPathSegment::Name(name) = &p.segment {

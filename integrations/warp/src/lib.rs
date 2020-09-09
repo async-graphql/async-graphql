@@ -5,20 +5,21 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
+    http::{GQLRequest, StreamBody},
     Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
     QueryResponse, Schema, SubscriptionType, WebSocketTransport,
 };
-use futures::select;
-use futures::{SinkExt, StreamExt};
+use futures::{select, SinkExt, StreamExt};
 use hyper::Method;
 use std::sync::Arc;
-use warp::filters::ws::Message;
-use warp::filters::BoxedFilter;
-use warp::reject::Reject;
-use warp::reply::Response;
-use warp::{Filter, Rejection, Reply};
+use warp::{
+    filters::{ws::Message, BoxedFilter},
+    http::HeaderMap,
+    reject::Reject,
+    reply::Response,
+    Filter, Rejection, Reply,
+};
 
 /// Bad request error
 ///
@@ -44,7 +45,7 @@ impl Reject for BadRequest {}
 ///
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::Filter;
+/// use warp::{http::HeaderMap, Filter};
 /// use std::convert::Infallible;
 ///
 /// struct QueryRoot;
@@ -60,7 +61,7 @@ impl Reject for BadRequest {}
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
+///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder, _headers): (_, QueryBuilder, HeaderMap)| async move {
 ///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
@@ -68,7 +69,11 @@ impl Reject for BadRequest {}
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((
+    Schema<Query, Mutation, Subscription>,
+    QueryBuilder,
+    HeaderMap,
+),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -81,7 +86,11 @@ where
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((
+    Schema<Query, Mutation, Subscription>,
+    QueryBuilder,
+    HeaderMap,
+),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -92,6 +101,7 @@ where
         .and(warp::method())
         .and(warp::query::raw().or(warp::any().map(String::new)).unify())
         .and(warp::header::optional::<String>("content-type"))
+        .and(warp::header::headers_cloned())
         .and(warp::body::stream())
         .and(warp::any().map(move || opts.clone()))
         .and(warp::any().map(move || schema.clone()))
@@ -99,24 +109,24 @@ where
             |method,
              query: String,
              content_type,
+             headers,
              body,
              opts: Arc<IntoQueryBuilderOpts>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest =
-                        serde_urlencoded::from_str(&query)
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                    let gql_request: GQLRequest = serde_urlencoded::from_str(&query)
+                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let builder = gql_request
                         .into_query_builder_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    Ok::<_, Rejection>((schema, builder, headers))
                 } else {
                     let builder = (content_type, StreamBody::new(body))
                         .into_query_builder_opts(&opts)
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    Ok::<_, Rejection>((schema, builder, headers))
                 }
             },
         )
