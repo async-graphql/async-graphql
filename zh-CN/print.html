@@ -174,10 +174,10 @@
 <h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
 <h2><a class="header" href="#添加依赖" id="添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
-async-graphql = &quot;1.11.0&quot;
-async-graphql-actix-web = &quot;1.3.0&quot; # 如果你需要集成到Actix-web
-async-graphql-warp = &quot;1.3.0&quot; # 如果你需要集成到Warp
-async-graphql-tide = &quot;1.2.0&quot; # 如果你需要集成到Tide
+async-graphql = &quot;1.18.0&quot;
+async-graphql-actix-web = &quot;1.18.0&quot; # 如果你需要集成到Actix-web
+async-graphql-warp = &quot;1.18.0&quot; # 如果你需要集成到Warp
+async-graphql-tide = &quot;1.18.0&quot; # 如果你需要集成到Tide
 </code></pre>
 <h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
 <p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的结构来描述它们，结构的字段对应GraphQL对象的字段，但你需要用<code>#[field]</code>来修饰它，这样<code>Async-graphql</code>提供的过程宏才能够正确的识别它。</p>
