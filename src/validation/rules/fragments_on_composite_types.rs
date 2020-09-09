@@ -1,4 +1,4 @@
-use crate::parser::query::{FragmentDefinition, InlineFragment, TypeCondition};
+use crate::parser::types::{FragmentDefinition, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -13,12 +13,12 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
-                let TypeCondition::On(name) = &fragment_definition.type_condition.node;
+                let TypeCondition { on: name } = &fragment_definition.node.type_condition.node;
                 ctx.report_error(
-                    vec![fragment_definition.position()],
+                    vec![fragment_definition.pos],
                     format!(
                         "Fragment \"{}\" cannot condition non composite type \"{}\"",
-                        fragment_definition.name, name
+                        fragment_definition.node.name, name
                     ),
                 );
             }
@@ -33,7 +33,7 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
                 ctx.report_error(
-                    vec![inline_fragment.position()],
+                    vec![inline_fragment.pos],
                     format!(
                         "Fragment cannot condition non composite type \"{}\"",
                         current_type.name()
@@ -47,7 +47,6 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     fn factory() -> FragmentsOnCompositeTypes {
         FragmentsOnCompositeTypes

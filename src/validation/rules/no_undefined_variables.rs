@@ -1,9 +1,10 @@
-use crate::parser::query::{
-    Document, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
+use crate::parser::types::{
+    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition, Value,
+    VariableDefinition,
 };
-use crate::validation::utils::{operation_name, referenced_variables, Scope};
+use crate::validation::utils::{referenced_variables, Scope};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned, Value};
+use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
@@ -45,7 +46,7 @@ impl<'a> NoUndefinedVariables<'a> {
 }
 
 impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
-    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a Document) {
+    fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
         for (op_name, &(ref def_pos, ref def_vars)) in &self.defined_variables {
             let mut unused = Vec::new();
             let mut visited = HashSet::new();
@@ -77,10 +78,14 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let (op_name, pos) = operation_name(&operation_definition);
-        self.current_scope = Some(Scope::Operation(op_name));
+        let name = operation_definition
+            .node
+            .name
+            .as_ref()
+            .map(|name| &*name.node);
+        self.current_scope = Some(Scope::Operation(name));
         self.defined_variables
-            .insert(op_name, (pos, HashSet::new()));
+            .insert(name, (operation_definition.pos, HashSet::new()));
     }
 
     fn enter_fragment_definition(
@@ -88,7 +93,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(fragment_definition.name.as_str()));
+        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
     }
 
     fn enter_variable_definition(
@@ -98,7 +103,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     ) {
         if let Some(Scope::Operation(ref name)) = self.current_scope {
             if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
-                vars.insert(variable_definition.name.as_str());
+                vars.insert(&variable_definition.node.name.node);
             }
         }
     }
@@ -106,7 +111,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn enter_argument(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        name: &'a Positioned<String>,
+        name: &'a Positioned<Name>,
         value: &'a Positioned<Value>,
     ) {
         if let Some(ref scope) = self.current_scope {
@@ -114,9 +119,9 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
                 .entry(scope.clone())
                 .or_insert_with(HashMap::new)
                 .extend(
-                    referenced_variables(value)
+                    referenced_variables(&value.node)
                         .into_iter()
-                        .map(|n| (n, name.position())),
+                        .map(|n| (n, name.pos)),
                 );
         }
     }
@@ -130,7 +135,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
             self.spreads
                 .entry(scope.clone())
                 .or_insert_with(Vec::new)
-                .push(fragment_spread.fragment_name.as_str());
+                .push(&fragment_spread.node.fragment_name.node);
         }
     }
 }
@@ -138,7 +143,6 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory<'a>() -> NoUndefinedVariables<'a> {
         NoUndefinedVariables::default()

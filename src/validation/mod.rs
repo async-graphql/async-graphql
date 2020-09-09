@@ -1,13 +1,14 @@
+#[cfg(test)]
+#[macro_use]
+mod test_harness;
+
 mod rules;
 mod suggestion;
 mod utils;
 mod visitor;
 mod visitors;
 
-#[cfg(test)]
-mod test_harness;
-
-use crate::parser::query::Document;
+use crate::parser::types::ExecutableDocument;
 use crate::registry::Registry;
 use crate::{CacheControl, Error, Result, Variables};
 use visitor::{visit, VisitorContext, VisitorNil};
@@ -30,7 +31,7 @@ pub enum ValidationMode {
 
 pub fn check_rules(
     registry: &Registry,
-    doc: &Document,
+    doc: &ExecutableDocument,
     variables: Option<&Variables>,
     mode: ValidationMode,
 ) -> Result<CheckResult> {

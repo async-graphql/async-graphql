@@ -1,7 +1,0 @@
-type Type1 implements IOne & ITwo
-
-type Type2 implements IOne
-
-interface Type1 implements IOne & ITwo
-
-interface Type2 implements IOne

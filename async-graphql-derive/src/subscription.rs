@@ -248,10 +248,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 create_stream.push(quote! {
-                    if ctx.name.node == #field_name {
+                    if ctx.node.name.node == #field_name {
                         #(#get_params)*
                         #guard
-                        let field_name = ::std::sync::Arc::new(ctx.result_name().to_string());
+                        let field_name = ::std::sync::Arc::new(ctx.item.node.response_key().node.clone());
                         let field = ::std::sync::Arc::new(ctx.item.clone());
 
                         let pos = ctx.position();
@@ -272,7 +272,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                             parent: None,
                                             segment: #crate_name::QueryPathSegment::Name(&field_name),
                                         }),
-                                        &field.selection_set,
+                                        &field.node.selection_set,
                                         &resolve_id,
                                     );
                                     #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await
@@ -344,7 +344,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>> {
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.name.to_string(),
+                    field_name: ctx.node.name.to_string(),
                     object: #gql_typename.to_string(),
                 }.into_error(ctx.position()))
             }

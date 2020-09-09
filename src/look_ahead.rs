@@ -1,15 +1,15 @@
-use async_graphql_parser::query::{Document, Field, Selection, SelectionSet};
+use crate::parser::types::{ExecutableDocumentData, Field, Selection, SelectionSet};
 
 /// A selection performed by a query
 pub struct Lookahead<'a> {
-    pub(crate) document: &'a Document,
+    pub(crate) document: &'a ExecutableDocumentData,
     pub(crate) field: Option<&'a Field>,
 }
 
 impl<'a> Lookahead<'a> {
     /// Check if the specified field exists in the current selection.
-    pub fn field(&self, name: &str) -> Lookahead {
-        Lookahead {
+    pub fn field(&self, name: &str) -> Self {
+        Self {
             document: self.document,
             field: self
                 .field
@@ -25,28 +25,29 @@ impl<'a> Lookahead<'a> {
 }
 
 fn find<'a>(
-    document: &'a Document,
+    document: &'a ExecutableDocumentData,
     selection_set: &'a SelectionSet,
     name: &str,
 ) -> Option<&'a Field> {
     for item in &selection_set.items {
         match &item.node {
             Selection::Field(field) => {
-                if field.name.node == name {
+                if field.node.name.node == name {
                     return Some(&field.node);
                 }
             }
             Selection::InlineFragment(inline_fragment) => {
-                if let Some(field) = find(document, &inline_fragment.selection_set.node, name) {
+                if let Some(field) = find(document, &inline_fragment.node.selection_set.node, name)
+                {
                     return Some(field);
                 }
             }
             Selection::FragmentSpread(fragment_spread) => {
                 if let Some(fragment) = document
-                    .fragments()
-                    .get(fragment_spread.fragment_name.as_str())
+                    .fragments
+                    .get(&fragment_spread.node.fragment_name.node)
                 {
-                    if let Some(field) = find(document, &fragment.selection_set.node, name) {
+                    if let Some(field) = find(document, &fragment.node.selection_set.node, name) {
                         return Some(field);
                     }
                 }

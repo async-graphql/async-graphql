@@ -1,4 +1,4 @@
-use crate::parser::query::Field;
+use crate::parser::types::Field;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{registry, Positioned};
@@ -12,25 +12,26 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
             if let Some(registry::MetaType::Union { .. })
             | Some(registry::MetaType::Interface { .. }) = ctx.parent_type()
             {
-                if field.name.node == "__typename" {
+                if field.node.name.node == "__typename" {
                     return;
                 }
             }
 
             if parent_type
                 .fields()
-                .and_then(|fields| fields.get(field.name.as_str()))
+                .and_then(|fields| fields.get(field.node.name.node.as_str()))
                 .is_none()
                 && !field
+                    .node
                     .directives
                     .iter()
-                    .any(|directive| directive.node.name.as_str() == "ifdef")
+                    .any(|directive| directive.node.name.node == "ifdef")
             {
                 ctx.report_error(
-                    vec![field.position()],
+                    vec![field.pos],
                     format!(
                         "Unknown field \"{}\" on type \"{}\".{}",
-                        field.name,
+                        field.node.name,
                         parent_type.name(),
                         make_suggestion(
                             " Did you mean",
@@ -40,7 +41,7 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                                 .map(|fields| fields.keys())
                                 .flatten()
                                 .map(|s| s.as_str()),
-                            &field.name
+                            &field.node.name.node,
                         )
                         .unwrap_or_default()
                     ),
@@ -53,7 +54,6 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> FieldsOnCorrectType {
         FieldsOnCorrectType

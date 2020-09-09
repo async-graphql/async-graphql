@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::crate_name;
 use quote::quote;
 use syn::{
@@ -12,8 +12,7 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         quote! { crate }
     } else {
         let name = crate_name("async-graphql").unwrap_or_else(|_| "async_graphql".to_owned());
-        let id = Ident::new(&name, Span::call_site());
-        quote! { #id }
+        TokenTree::from(Ident::new(&name, Span::call_site())).into()
     }
 }
 

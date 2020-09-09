@@ -1,4 +1,4 @@
-use crate::parser::query::FragmentSpread;
+use crate::parser::types::FragmentSpread;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -11,10 +11,13 @@ impl<'a> Visitor<'a> for KnownFragmentNames {
         ctx: &mut VisitorContext<'a>,
         fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
-        if !ctx.is_known_fragment(&fragment_spread.fragment_name) {
+        if !ctx.is_known_fragment(&fragment_spread.node.fragment_name.node) {
             ctx.report_error(
-                vec![fragment_spread.position()],
-                format!(r#"Unknown fragment: "{}""#, fragment_spread.fragment_name),
+                vec![fragment_spread.pos],
+                format!(
+                    r#"Unknown fragment: "{}""#,
+                    fragment_spread.node.fragment_name.node
+                ),
             );
         }
     }
@@ -23,7 +26,6 @@ impl<'a> Visitor<'a> for KnownFragmentNames {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> KnownFragmentNames {
         KnownFragmentNames::default()

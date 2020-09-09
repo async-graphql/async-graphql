@@ -1,4 +1,4 @@
-use crate::parser::query::{Definition, Document, OperationDefinition};
+use crate::parser::types::{ExecutableDefinition, ExecutableDocument, OperationDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -8,14 +8,11 @@ pub struct LoneAnonymousOperation {
 }
 
 impl<'a> Visitor<'a> for LoneAnonymousOperation {
-    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a Document) {
+    fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         self.operation_count = Some(
-            doc.definitions()
+            doc.definitions
                 .iter()
-                .filter(|d| match &d.node {
-                    Definition::Operation(_) => true,
-                    Definition::Fragment(_) => false,
-                })
+                .filter(|d| matches!(&d, ExecutableDefinition::Operation(_)))
                 .count(),
         );
     }
@@ -26,25 +23,9 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         if let Some(operation_count) = self.operation_count {
-            let (err, pos) = match &operation_definition.node {
-                OperationDefinition::SelectionSet(s) => (operation_count > 1, s.position()),
-                OperationDefinition::Query(query) if query.name.is_none() => {
-                    (operation_count > 1, query.position())
-                }
-                OperationDefinition::Mutation(mutation) if mutation.name.is_none() => {
-                    (operation_count > 1, mutation.position())
-                }
-                OperationDefinition::Subscription(subscription) if subscription.name.is_none() => {
-                    (operation_count > 1, subscription.position())
-                }
-                _ => {
-                    return;
-                }
-            };
-
-            if err {
+            if operation_definition.node.name.is_none() && operation_count > 1 {
                 ctx.report_error(
-                    vec![pos],
+                    vec![operation_definition.pos],
                     "This anonymous operation must be the only defined operation",
                 );
             }
@@ -55,7 +36,6 @@ impl<'a> Visitor<'a> for LoneAnonymousOperation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expect_fails_rule, expect_passes_rule};
 
     pub fn factory() -> LoneAnonymousOperation {
         LoneAnonymousOperation::default()

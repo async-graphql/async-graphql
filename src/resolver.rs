@@ -1,6 +1,6 @@
 use crate::base::BoxFieldFuture;
 use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
-use crate::parser::query::{Selection, TypeCondition};
+use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{ContextSelectionSet, Error, ObjectType, QueryError, Result};
 use futures::{future, TryFutureExt};
@@ -10,7 +10,7 @@ pub async fn do_resolve<'a, T: ObjectType + Send + Sync>(
     ctx: &'a ContextSelectionSet<'a>,
     root: &'a T,
 ) -> Result<serde_json::Value> {
-    let mut futures = Vec::with_capacity(ctx.item.items.len());
+    let mut futures = Vec::with_capacity(ctx.item.node.items.len());
     collect_fields(ctx, root, &mut futures)?;
     let res = futures::future::try_join_all(futures).await?;
     let mut map = serde_json::Map::new();
@@ -34,9 +34,9 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
     root: &'a T,
     futures: &mut Vec<BoxFieldFuture<'a>>,
 ) -> Result<()> {
-    if ctx.items.is_empty() {
+    if ctx.node.items.is_empty() {
         return Err(Error::Query {
-            pos: ctx.position(),
+            pos: ctx.pos,
             path: None,
             err: QueryError::MustHaveSubFields {
                 object: T::type_name().to_string(),
@@ -44,17 +44,23 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
         });
     }
 
-    for selection in &ctx.item.items {
+    for selection in &ctx.item.node.items {
         match &selection.node {
             Selection::Field(field) => {
-                if ctx.is_skip(&field.directives)? {
+                if ctx.is_skip(&field.node.directives)? {
                     continue;
                 }
 
-                if field.name.node == "__typename" {
+                if field.node.name.node == "__typename" {
                     // Get the typename
                     let ctx_field = ctx.with_field(field);
-                    let field_name = ctx_field.result_name().to_string();
+                    let field_name = ctx_field
+                        .item
+                        .node
+                        .response_key()
+                        .node
+                        .clone()
+                        .into_string();
                     futures.push(Box::pin(
                         future::ok::<serde_json::Value, Error>(
                             root.introspection_type_name().to_string().into(),
@@ -64,11 +70,11 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     continue;
                 }
 
-                if ctx.is_ifdef(&field.directives) {
+                if ctx.is_ifdef(&field.node.directives) {
                     if let Some(MetaType::Object { fields, .. }) =
                         ctx.schema_env.registry.types.get(T::type_name().as_ref())
                     {
-                        if !fields.contains_key(field.name.as_str()) {
+                        if !fields.contains_key(field.node.name.node.as_str()) {
                             continue;
                         }
                     }
@@ -78,7 +84,13 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                     let ctx = ctx.clone();
                     async move {
                         let ctx_field = ctx.with_field(field);
-                        let field_name = ctx_field.result_name().to_string();
+                        let field_name = ctx_field
+                            .item
+                            .node
+                            .response_key()
+                            .node
+                            .clone()
+                            .into_string();
 
                         let resolve_info = ResolveInfo {
                             resolve_id: ctx_field.resolve_id,
@@ -89,16 +101,16 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                                 .registry
                                 .types
                                 .get(T::type_name().as_ref())
-                                .and_then(|ty| ty.field_by_name(field.name.as_str()))
+                                .and_then(|ty| ty.field_by_name(field.node.name.node.as_str()))
                                 .map(|field| &field.ty)
                             {
                                 Some(ty) => &ty,
                                 None => {
                                     return Err(Error::Query {
-                                        pos: field.position(),
+                                        pos: field.pos,
                                         path: None,
                                         err: QueryError::FieldNotFound {
-                                            field_name: field.name.to_string(),
+                                            field_name: field.node.name.node.clone().into_string(),
                                             object: T::type_name().to_string(),
                                         },
                                     });
@@ -128,45 +140,45 @@ pub fn collect_fields<'a, T: ObjectType + Send + Sync>(
                 }))
             }
             Selection::FragmentSpread(fragment_spread) => {
-                if ctx.is_skip(&fragment_spread.directives)? {
+                if ctx.is_skip(&fragment_spread.node.directives)? {
                     continue;
                 }
 
                 if let Some(fragment) = ctx
                     .query_env
                     .document
-                    .fragments()
-                    .get(fragment_spread.fragment_name.as_str())
+                    .fragments
+                    .get(&fragment_spread.node.fragment_name.node)
                 {
                     collect_fields(
-                        &ctx.with_selection_set(&fragment.selection_set),
+                        &ctx.with_selection_set(&fragment.node.selection_set),
                         root,
                         futures,
                     )?;
                 } else {
                     return Err(Error::Query {
-                        pos: fragment_spread.position(),
+                        pos: fragment_spread.pos,
                         path: None,
                         err: QueryError::UnknownFragment {
-                            name: fragment_spread.fragment_name.to_string(),
+                            name: fragment_spread.node.fragment_name.to_string(),
                         },
                     });
                 }
             }
             Selection::InlineFragment(inline_fragment) => {
-                if ctx.is_skip(&inline_fragment.directives)? {
+                if ctx.is_skip(&inline_fragment.node.directives)? {
                     continue;
                 }
 
-                if let Some(TypeCondition::On(name)) = inline_fragment.type_condition.as_deref() {
+                if let Some(condition) = &inline_fragment.node.type_condition {
                     root.collect_inline_fields(
-                        name,
-                        &ctx.with_selection_set(&inline_fragment.selection_set),
+                        &condition.node.on.node,
+                        &ctx.with_selection_set(&inline_fragment.node.selection_set),
                         futures,
                     )?;
                 } else {
                     collect_fields(
-                        &ctx.with_selection_set(&inline_fragment.selection_set),
+                        &ctx.with_selection_set(&inline_fragment.node.selection_set),
                         root,
                         futures,
                     )?;

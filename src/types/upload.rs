@@ -1,5 +1,5 @@
+use crate::parser::types::UploadValue;
 use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
-use async_graphql_parser::UploadValue;
 use std::borrow::Cow;
 use std::io::Read;
 
@@ -63,7 +63,7 @@ impl Upload {
     }
 }
 
-impl<'a> Type for Upload {
+impl Type for Upload {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("Upload")
     }
@@ -72,15 +72,12 @@ impl<'a> Type for Upload {
         registry.create_type::<Self, _>(|_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
-            is_valid: |value| match value {
-                Value::String(s) => s.starts_with("file:"),
-                _ => false,
-            },
+            is_valid: |value| matches!(value, Value::Upload(_)),
         })
     }
 }
 
-impl<'a> InputValueType for Upload {
+impl InputValueType for Upload {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         let value = value.unwrap_or_default();
         if let Value::Upload(upload) = value {

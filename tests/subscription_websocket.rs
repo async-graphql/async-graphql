@@ -25,8 +25,7 @@ pub async fn test_subscription_ws_transport() {
             "type": "connection_init",
             "payload": { "token": "123456" }
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -46,8 +45,7 @@ pub async fn test_subscription_ws_transport() {
                 "query": "subscription { values }"
             },
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -104,8 +102,7 @@ pub async fn test_subscription_ws_transport_with_token() {
             "type": "connection_init",
             "payload": { "token": "123456" }
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -125,8 +122,7 @@ pub async fn test_subscription_ws_transport_with_token() {
                 "query": "subscription { values }"
             },
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -183,8 +179,7 @@ pub async fn test_subscription_ws_transport_error() {
         serde_json::to_vec(&serde_json::json!({
             "type": "connection_init"
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -204,8 +199,7 @@ pub async fn test_subscription_ws_transport_error() {
                 "query": "subscription { events { value } }"
             },
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -253,8 +247,7 @@ pub async fn test_query_over_websocket() {
         serde_json::to_vec(&serde_json::json!({
             "type": "connection_init",
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();
@@ -274,8 +267,7 @@ pub async fn test_query_over_websocket() {
                 "query": "query { value }"
             },
         }))
-        .unwrap()
-        .into(),
+        .unwrap(),
     )
     .await
     .unwrap();

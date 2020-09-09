@@ -1,0 +1,167 @@
+WHITESPACE = _{ " " | "," | "\t" | "\u{feff}" | line_terminator }
+COMMENT = _{ "#" ~ (!line_terminator ~ ANY)* }
+line_terminator = @{ "\r\n" | "\r" | "\n" }
+
+// Executable //
+
+executable_document   = { SOI ~ executable_definition+ ~ EOI }
+executable_definition = { operation_definition | fragment_definition }
+
+operation_definition       = { named_operation_definition | selection_set }
+named_operation_definition = { operation_type ~ name? ~ variable_definitions? ~ directives? ~ selection_set }
+variable_definitions       = { "(" ~ variable_definition* ~ ")" }
+variable_definition        = { variable ~ ":" ~ type_ ~ default_value? }
+
+selection_set = { "{" ~ selection+ ~ "}" }
+selection = { field | inline_fragment | fragment_spread }
+field = { alias? ~ name ~ arguments? ~ directives? ~ selection_set? }
+alias = { name ~ ":" }
+fragment_spread = { "..." ~ name ~ directives? }
+inline_fragment = { "..." ~ type_condition? ~ directives? ~ selection_set }
+
+fragment_definition = { "fragment" ~ name ~ type_condition ~ directives? ~ selection_set }
+type_condition = { "on" ~ name }
+
+// Service //
+
+service_document       = { SOI ~ type_system_definition+ ~ EOI }
+type_system_definition = { schema_definition | type_definition | directive_definition }
+
+schema_definition = {
+	"schema" ~ const_directives? ~ "{" ~ operation_type_definition+ ~ "}"
+	| extend ~ "schema" ~ (const_directives? ~ "{" ~ operation_type_definition+ ~ "}" | const_directives)
+}
+operation_type_definition = { operation_type ~ ":" ~ name }
+
+type_definition = { scalar_type | object_type | interface_type | union_type | enum_type | input_object_type }
+
+scalar_type = {
+	string? ~ "scalar" ~ name ~ const_directives?
+	| extend ~ "scalar" ~ name ~ const_directives
+}
+
+object_type = {
+	string? ~ "type" ~ name ~ implements_interfaces? ~ const_directives? ~ fields_definition?
+	| extend ~ "type" ~ name ~ (implements_interfaces? ~ (const_directives? ~ fields_definition | const_directives) | implements_interfaces)
+}
+implements_interfaces = { "implements" ~ "&"? ~ name ~ ("&" ~ name)* }
+
+interface_type = {
+	string? ~ "interface" ~ name ~ const_directives? ~ fields_definition?
+	| extend ~ "interface" ~ name ~ (const_directives? ~ fields_definition | const_directives)
+}
+
+fields_definition = { "{" ~ field_definition+ ~ "}" }
+field_definition = { string? ~ name ~ arguments_definition? ~ ":" ~ type_ ~ const_directives? }
+
+union_type = {
+	string? ~ "union" ~ name ~ const_directives? ~ union_member_types?
+	| extend ~ "union" ~ name ~ (const_directives? ~ union_member_types | const_directives)
+}
+union_member_types = { "=" ~ "|"? ~ name ~ ("|" ~ name)* }
+
+enum_type = {
+	string? ~ "enum" ~ name ~ const_directives? ~ enum_values?
+	| extend ~ "enum" ~ name ~ (const_directives? ~ enum_values | const_directives)
+}
+enum_values = { "{" ~ enum_value_definition+ ~ "}" }
+enum_value_definition = { string? ~ enum_value ~ const_directives? }
+
+input_object_type = {
+	string? ~ "input" ~ name ~ const_directives? ~ input_fields_definition?
+	| extend ~ "input" ~ name ~ (const_directives? ~ input_fields_definition | const_directives)
+}
+input_fields_definition = { "{" ~ input_value_definition+ ~ "}" }
+
+extend = { "extend" }
+
+directive_definition = { string? ~ "directive" ~ "@" ~ name ~ arguments_definition? ~ "on" ~ directive_locations }
+directive_locations = { "|"? ~ directive_location ~ ("|" ~ directive_location)* }
+directive_location = {
+	"QUERY"
+	| "MUTATION"
+	| "SUBSCRIPTION"
+	| "FIELD"
+	| "FRAGMENT_DEFINITION"
+	| "FRAGMENT_SPREAD"
+	| "INLINE_FRAGMENT"
+	| "SCHEMA"
+	| "SCALAR"
+	| "OBJECT"
+	| "FIELD_DEFINITION"
+	| "ARGUMENT_DEFINITION"
+	| "INTERFACE"
+	| "UNION"
+	| "ENUM"
+	| "ENUM_VALUE"
+	| "INPUT_OBJECT"
+	| "INPUT_FIELD_DEFINITION"
+}
+
+arguments_definition = { "(" ~ input_value_definition+ ~ ")" }
+
+input_value_definition = { string? ~ name ~ ":" ~ type_ ~ default_value? ~ const_directives? }
+
+// Common //
+
+operation_type = { "query" | "mutation" | "subscription" }
+
+default_value = { "=" ~ const_value }
+
+type_ = @{ (name | "[" ~ type_ ~ "]") ~ "!"? }
+
+const_value = {            number | string | boolean | null | enum_value | const_list | const_object }
+value       = { variable | number | string | boolean | null | enum_value |       list |       object }
+
+variable = { "$" ~ name }
+
+number     = @{ float | int }
+float      = { int ~ ((fractional ~ exponent) | fractional | exponent) }
+fractional = { "." ~ ASCII_DIGIT+ }
+exponent   = { ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
+int        = { "-"? ~ ("0" | (ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)) }
+
+string = ${ ("\"\"\"" ~ block_string_content ~ "\"\"\"") | ("\"" ~ string_content ~ "\"") }
+block_string_content = @{ block_string_character* }
+block_string_character = {
+	(!("\"\"\"" | "\\\"\"\"") ~ ANY)
+	| "\\\"\"\""
+}
+string_content = @{ string_character* }
+string_character = {
+	(!("\"" | "\\" | line_terminator) ~ ANY)
+	| ("\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t"))
+	| ("\\u" ~ unicode_scalar_value_hex)
+}
+// Spec inconsistency:
+// In GraphQL, strings can contain any Unicode code point. However in Rust strings can only contain
+// Unicode Scalar Values. To avoid having to use Vec<u8> everywhere we deviate from the spec
+// slightly and disallow non-scalar value code points at the parsing level.
+unicode_scalar_value_hex = { !(^"d" ~ ('8'..'9' | 'a'..'f' | 'A'..'F')) ~ ASCII_HEX_DIGIT{4} }
+
+boolean = { "true" | "false" }
+
+null = { "null" }
+
+enum_value = ${ !(boolean | null) ~ name }
+
+const_list = { "[" ~ const_value* ~ "]" }
+list       = { "[" ~       value* ~ "]" }
+
+const_object = { "{" ~ const_object_field* ~ "}" }
+object       = { "{" ~       object_field* ~ "}" }
+const_object_field = { name ~ ":" ~ const_value }
+object_field       = { name ~ ":" ~       value }
+
+
+const_directives = { const_directive+ }
+directives       = {       directive+ }
+const_directive  = { "@" ~ name ~ const_arguments? }
+directive        = { "@" ~ name ~       arguments? }
+
+const_arguments = { "(" ~ const_argument+ ~ ")" }
+arguments       = { "(" ~       argument+ ~ ")" }
+const_argument = { name ~ ":" ~ const_value }
+argument       = { name ~ ":" ~       value }
+
+name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }

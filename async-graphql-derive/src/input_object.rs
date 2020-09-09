@@ -111,7 +111,10 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         }
 
         put_fields.push(quote! {
-            map.insert(#name.to_string(), #crate_name::InputValueType::to_value(&self.#ident));
+            map.insert(
+                #crate_name::parser::types::Name::new_unchecked(#name.to_owned()),
+                #crate_name::InputValueType::to_value(&self.#ident)
+            );
         });
 
         fields.push(ident);
