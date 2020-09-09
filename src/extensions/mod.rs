@@ -5,7 +5,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Result, Variables};
+use crate::{Context, Result, Variables};
 
 pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
@@ -27,6 +27,9 @@ pub struct ResolveInfo<'a> {
 
     /// Current path node, You can go through the entire path.
     pub path_node: &'a QueryPathNode<'a>,
+
+    /// Context
+    pub context: &'a Context<'a>,
 
     /// Parent type
     pub parent_type: &'a str,

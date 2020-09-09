@@ -64,6 +64,7 @@ fn do_resolve<'a, T: ObjectType + Send + Sync>(
                     let resolve_info = ResolveInfo {
                         resolve_id: ctx_field.resolve_id,
                         path_node: ctx_field.path_node.as_ref().unwrap(),
+                        context: &ctx_field,
                         parent_type: &T::type_name(),
                         return_type: match ctx_field
                             .schema_env
