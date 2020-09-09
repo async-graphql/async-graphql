@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.46.0
+          toolchain: stable
           override: true
       - name: Checkout
         uses: actions/checkout@v2
