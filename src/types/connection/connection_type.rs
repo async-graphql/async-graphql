@@ -4,7 +4,7 @@ use crate::parser::types::Field;
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType,
-    Positioned, QueryError, Result, Type,
+    Positioned, Result, Type,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
@@ -200,26 +200,8 @@ where
             let page_info = PageInfo {
                 has_previous_page: self.has_previous_page,
                 has_next_page: self.has_next_page,
-                start_cursor: match self.edges.first() {
-                    Some(edge) => Some(edge.cursor.encode_cursor().map_err(|err| {
-                        QueryError::FieldError {
-                            err: err.to_string(),
-                            extended_error: None,
-                        }
-                        .into_error(ctx.pos)
-                    })?),
-                    None => None,
-                },
-                end_cursor: match self.edges.last() {
-                    Some(edge) => Some(edge.cursor.encode_cursor().map_err(|err| {
-                        QueryError::FieldError {
-                            err: err.to_string(),
-                            extended_error: None,
-                        }
-                        .into_error(ctx.pos)
-                    })?),
-                    None => None,
-                },
+                start_cursor: self.edges.first().map(|edge| edge.cursor.encode_cursor()),
+                end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
             };
             let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
             return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item).await;

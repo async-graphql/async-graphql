@@ -3,7 +3,7 @@ use crate::parser::types::Field;
 use crate::types::connection::CursorType;
 use crate::{
     do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
-    QueryError, Result, Type,
+    Result, Type,
 };
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
@@ -117,17 +117,7 @@ where
             let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
             return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item).await;
         } else if ctx.node.name.node == "cursor" {
-            return Ok(self
-                .cursor
-                .encode_cursor()
-                .map_err(|err| {
-                    QueryError::FieldError {
-                        err: err.to_string(),
-                        extended_error: None,
-                    }
-                    .into_error(ctx.pos)
-                })?
-                .into());
+            return Ok(self.cursor.encode_cursor().into());
         }
 
         self.additional_fields.resolve_field(ctx).await

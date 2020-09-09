@@ -120,8 +120,6 @@ pub mod validators;
 pub use async_graphql_parser as parser;
 
 #[doc(hidden)]
-pub use anyhow;
-#[doc(hidden)]
 pub use async_trait;
 #[doc(hidden)]
 pub use futures;
