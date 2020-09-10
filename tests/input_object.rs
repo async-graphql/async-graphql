@@ -194,6 +194,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({
@@ -209,6 +210,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({
@@ -224,6 +226,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({

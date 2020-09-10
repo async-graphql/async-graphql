@@ -93,6 +93,7 @@ pub async fn test_post_guard() {
         schema
             .execute(Request::new(query).data(Username("test1".to_string())))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -120,6 +121,7 @@ pub async fn test_post_guard() {
         schema
             .execute(Request::new(query).data(Username("test1".to_string())))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 9 },
@@ -167,6 +169,7 @@ pub async fn test_multiple_post_guards() {
                     .data(Username("test".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -187,6 +190,7 @@ pub async fn test_multiple_post_guards() {
                     .data(Username("test1".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -207,6 +211,7 @@ pub async fn test_multiple_post_guards() {
                     .data(Username("test1".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -263,6 +268,7 @@ pub async fn test_post_guard_forward_arguments() {
         schema
             .execute(Request::new(query).data(ID::from("aaa")))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -318,6 +324,7 @@ pub async fn test_post_guard_generic() {
         schema
             .execute(Request::new(query).data(ID::from("aaa")))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },

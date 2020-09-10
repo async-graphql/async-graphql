@@ -53,7 +53,7 @@ pub async fn test_input_value_custom_error() {
             enumValue(value: TYPE)
         }"#;
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "type": 99,
             "obj": { "i32": 88 },
@@ -63,8 +63,6 @@ pub async fn test_input_value_custom_error() {
 
     let mut stream = schema
         .execute_stream("subscription { type }")
-        .await
-        .unwrap()
         .map(|resp| resp.into_result())
         .map_ok(|resp| resp.data);
     for i in 0..10 {

@@ -35,7 +35,7 @@ pub async fn test_union_simple_object() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "node": {
                 "id": 33,
@@ -79,7 +79,7 @@ pub async fn test_union_simple_object2() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "node": {
                 "id": 33,
@@ -149,7 +149,7 @@ pub async fn test_multiple_unions() {
              }
         }"#;
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "unionA": {
                 "valueA": 1,
@@ -229,7 +229,7 @@ pub async fn test_multiple_objects_in_multiple_unions() {
             }
          }"#;
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "myObj": [{
                 "valueA": 1,
@@ -276,7 +276,7 @@ pub async fn test_union_field_result() {
         }"#;
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "node": {
                 "value": 10,

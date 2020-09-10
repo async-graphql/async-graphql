@@ -88,6 +88,7 @@ pub async fn test_variable_no_value() {
         "#,
         ))
         .await
+        .into_result()
         .unwrap();
     assert_eq!(
         resp.data,

@@ -37,7 +37,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
@@ -62,7 +62,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
@@ -95,7 +95,7 @@ pub async fn test_complexity_and_depth() {
         .limit_depth(2)
         .finish();
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,

@@ -12,13 +12,22 @@ use crate::{
     do_resolve, CacheControl, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Request,
     Response, Result, SubscriptionType, Type, Variables, ID,
 };
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+
+macro_rules! try_query_result {
+    ($res:expr) => {
+        match $res {
+            Ok(resp) => resp,
+            Err(err) => return err.into(),
+        }
+    };
+}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -431,55 +440,72 @@ where
     }
 
     /// Execute an GraphQL subscription.
-    pub async fn execute_stream(
-        &self,
-        request: impl Into<Request>,
-    ) -> Result<impl Stream<Item = Response> + Send> {
-        let request = request.into();
-        let (document, _, extensions) = self.prepare_query(&request.query, &request.variables)?;
+    pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
+        let schema = self.clone();
+        Box::pin(async_stream::stream! {
+            let request = request.into();
+            let (document, extensions) = match schema.prepare_query(&request.query, &request.variables) {
+                Ok((document, _, extensions)) => (document, extensions),
+                Err(err) => {
+                    yield Response::from(err);
+                    return;
+                }
+            };
 
-        let document = match document.into_data(request.operation_name.as_deref()) {
-            Some(document) => document,
-            None => {
-                let err = if let Some(name) = request.operation_name {
-                    QueryError::UnknownOperationNamed {
-                        name: name.to_string(),
-                    }
-                    .into_error(Pos::default())
-                } else {
-                    QueryError::MissingOperation.into_error(Pos::default())
-                };
+            let document = match document.into_data(request.operation_name.as_deref()) {
+                Some(document) => document,
+                None => {
+                    let err = if let Some(name) = request.operation_name {
+                        QueryError::UnknownOperationNamed {
+                            name: name.to_string(),
+                        }
+                        .into_error(Pos::default())
+                    } else {
+                        QueryError::MissingOperation.into_error(Pos::default())
+                    };
+                    extensions.lock().error(&err);
+                    yield err.into();
+                    return;
+                }
+            };
+
+            if document.operation.node.ty != OperationType::Subscription {
+                let err = QueryError::NotSupported.into_error(Pos::default());
                 extensions.lock().error(&err);
-                return Err(err.into());
+                yield err.into();
+                return;
             }
-        };
 
-        if document.operation.node.ty != OperationType::Subscription {
-            let err = QueryError::NotSupported.into_error(Pos::default());
-            extensions.lock().error(&err);
-            return Err(err);
-        }
+            let resolve_id = AtomicUsize::default();
+            let env = QueryEnv::new(
+                extensions,
+                request.variables,
+                document,
+                Arc::new(request.ctx_data),
+            );
 
-        let resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(
-            extensions,
-            request.variables,
-            document,
-            Arc::new(request.ctx_data),
-        );
-        let ctx = env.create_context(
-            &self.env,
-            None,
-            &env.document.operation.node.selection_set,
-            &resolve_id,
-        );
-        let mut streams = Vec::new();
-        match create_subscription_stream(self, env.clone(), &ctx, &mut streams).await {
-            Ok(()) => Ok(futures::stream::select_all(streams)),
-            Err(err) => {
-                env.extensions.lock().error(&err);
-                Err(err)
+            let ctx = env.create_context(
+                &schema.env,
+                None,
+                &env.document.operation.node.selection_set,
+                &resolve_id,
+            );
+
+            let mut streams = Vec::new();
+
+            if let Err(err) = create_subscription_stream(&schema, env.clone(), &ctx, &mut streams).await {
+                yield err.into();
+                return;
             }
-        }
+
+            let mut stream = futures::stream::select_all(streams);
+            while let Some(resp) = stream.next().await {
+                let is_err = resp.is_err();
+                yield resp;
+                if is_err {
+                    break;
+                }
+            }
+        })
     }
 }

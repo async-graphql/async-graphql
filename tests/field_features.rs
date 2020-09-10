@@ -84,7 +84,7 @@ pub async fn test_field_features() {
 
     let query = "{ valueAbc }";
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { column: 3, line: 1 },
             path: Some(serde_json::json!(["valueAbc"])),
@@ -113,7 +113,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { valueAbc } }";
     assert_eq!(
-        schema.execute(query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { column: 9, line: 1 },
             path: Some(serde_json::json!(["obj", "valueAbc"])),
@@ -124,10 +124,7 @@ pub async fn test_field_features() {
         }
     );
 
-    let mut stream = schema
-        .execute_stream("subscription { values }")
-        .await
-        .unwrap();
+    let mut stream = schema.execute_stream("subscription { values }");
     assert_eq!(
         stream.next().await.map(|resp| resp.data),
         Some(serde_json::json!({
@@ -135,10 +132,7 @@ pub async fn test_field_features() {
         }))
     );
 
-    let mut stream = schema
-        .execute_stream("subscription { valuesBson }")
-        .await
-        .unwrap();
+    let mut stream = schema.execute_stream("subscription { valuesBson }");
     assert_eq!(
         stream.next().await.map(|resp| resp.data),
         Some(serde_json::json!({
@@ -146,13 +140,14 @@ pub async fn test_field_features() {
         }))
     );
 
-    let err = schema
-        .execute_stream("subscription { valuesAbc }")
-        .await
-        .map(|_| ())
-        .unwrap_err();
     assert_eq!(
-        err,
+        schema
+            .execute_stream("subscription { valuesAbc }")
+            .next()
+            .await
+            .unwrap()
+            .error
+            .unwrap(),
         Error::Query {
             pos: Pos {
                 column: 16,

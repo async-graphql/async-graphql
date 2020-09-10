@@ -90,6 +90,7 @@ pub async fn test_guard() {
         schema
             .execute(Request::new(query).data(Role::Guest))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 9 },
@@ -117,6 +118,7 @@ pub async fn test_guard() {
         schema
             .execute(Request::new(query).data(Role::Guest))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -131,8 +133,6 @@ pub async fn test_guard() {
     assert_eq!(
         schema
             .execute_stream(Request::new("subscription { values }").data(Role::Admin))
-            .await
-            .unwrap()
             .map(|item| item.data)
             .collect::<Vec<_>>()
             .await,
@@ -146,9 +146,11 @@ pub async fn test_guard() {
     assert_eq!(
         schema
             .execute_stream(Request::new("subscription { values }").data(Role::Guest))
+            .next()
             .await
-            .map(|_| ())
-            .unwrap_err(),
+            .unwrap()
+            .error
+            .unwrap(),
         Error::Query {
             pos: Pos {
                 line: 1,
@@ -195,6 +197,7 @@ pub async fn test_multiple_guards() {
                     .data(Username("test".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -215,6 +218,7 @@ pub async fn test_multiple_guards() {
                     .data(Username("test1".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -235,6 +239,7 @@ pub async fn test_multiple_guards() {
                     .data(Username("test1".to_string()))
             )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -290,6 +295,7 @@ pub async fn test_guard_forward_arguments() {
         schema
             .execute(Request::new(query).data(ID::from("aaa")))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },

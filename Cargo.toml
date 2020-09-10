@@ -20,7 +20,7 @@ default = ["bson", "url", "chrono-tz"]
 async-graphql-derive = { path = "derive", version = "1.18.0" }
 async-graphql-parser = { path = "parser", version = "1.18.0" }
 
-async-stream = "0.2.1"
+async-stream = "0.3"
 async-trait = "0.1.30"
 bytes = "0.5.4"
 chrono = "0.4.10"
