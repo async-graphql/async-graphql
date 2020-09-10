@@ -108,6 +108,7 @@ mod query;
 mod resolver;
 mod scalars;
 mod schema;
+mod serialize_resp;
 mod subscription;
 mod types;
 mod validation;
@@ -140,7 +141,7 @@ pub use error::{
 };
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
-pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
+pub use query::{GQLQuery, GQLQueryResponse, ReceiveMultipartOptions};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};

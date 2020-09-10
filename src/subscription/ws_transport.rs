@@ -1,8 +1,8 @@
 use crate::context::Data;
-use crate::http::{GQLError, GQLRequest, GQLResponse};
+use crate::http::GQLRequest;
 use crate::{
-    ConnectionTransport, Error, FieldError, FieldResult, ObjectType, QueryBuilder, QueryError,
-    QueryResponse, Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
+    ConnectionTransport, Error, FieldError, FieldResult, GQLQueryResponse, ObjectType, QueryError,
+    Result, Schema, SubscriptionStreams, SubscriptionType, Variables,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
@@ -201,7 +201,7 @@ impl ConnectionTransport for WebSocketTransport {
                         ty: "data".to_string(),
                         id: Some(id.clone()),
                         payload: Some(
-                            serde_json::to_value(GQLResponse(Ok(QueryResponse {
+                            serde_json::to_value(GQLResponse(Ok(GQLQueryResponse {
                                 data: value,
                                 extensions: None,
                                 cache_control: Default::default(),

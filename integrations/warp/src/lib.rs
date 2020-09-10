@@ -7,8 +7,8 @@
 
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
-    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
-    QueryResponse, Schema, SubscriptionType, WebSocketTransport,
+    Data, FieldResult, GQLQueryResponse, IntoQueryBuilder, ObjectType, QueryBuilder,
+    ReceiveMultipartOptions, Schema, SubscriptionType, WebSocketTransport,
 };
 use futures::select;
 use futures::{SinkExt, StreamExt};
@@ -80,7 +80,7 @@ where
 /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-    opts: IntoQueryBuilderOpts,
+    opts: ReceiveMultipartOptions,
 ) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
 where
     Query: ObjectType + Send + Sync + 'static,
@@ -100,12 +100,11 @@ where
              query: String,
              content_type,
              body,
-             opts: Arc<IntoQueryBuilderOpts>,
+             opts: Arc<ReceiveMultipartOptions>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest =
-                        serde_urlencoded::from_str(&query)
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                    let gql_request: GQLRequest = serde_urlencoded::from_str(&query)
+                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
                     let builder = gql_request
                         .into_query_builder_opts(&opts)
                         .await
@@ -232,16 +231,16 @@ where
 }
 
 /// GraphQL reply
-pub struct GQLResponse(async_graphql::Result<QueryResponse>);
+pub struct GQLResponse(async_graphql::Result<GQLQueryResponse>);
 
-impl From<async_graphql::Result<QueryResponse>> for GQLResponse {
-    fn from(resp: async_graphql::Result<QueryResponse>) -> Self {
+impl From<async_graphql::Result<GQLQueryResponse>> for GQLResponse {
+    fn from(resp: async_graphql::Result<GQLQueryResponse>) -> Self {
         GQLResponse(resp)
     }
 }
 
-fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<QueryResponse>) {
-    if let Ok(QueryResponse { cache_control, .. }) = resp {
+fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<GQLQueryResponse>) {
+    if let Ok(GQLQueryResponse { cache_control, .. }) = resp {
         if let Some(cache_control) = cache_control.value() {
             if let Ok(value) = cache_control.parse() {
                 http_resp.headers_mut().insert("cache-control", value);

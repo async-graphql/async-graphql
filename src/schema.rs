@@ -1,16 +1,16 @@
-use crate::context::Data;
+use crate::context::{Data, ResolveId};
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
+use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
 use crate::parser::types::{ExecutableDocument, OperationType};
-use crate::query::QueryBuilder;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
-    SubscriptionType, Type, Variables, ID,
+    do_resolve, CacheControl, ContextBase, Error, GQLQueryResponse, ObjectType, Pos, QueryEnv,
+    QueryError, Result, SubscriptionType, Type, Variables, ID,
 };
 use futures::channel::mpsc;
 use futures::Stream;
@@ -307,12 +307,7 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
-    /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
-        QueryBuilder::new(query_source).execute(self).await
-    }
-
-    pub(crate) fn prepare_query(
+    fn prepare_query(
         &self,
         source: &str,
         variables: &Variables,
@@ -364,6 +359,74 @@ where
         }
 
         Ok((document, cache_control, extensions))
+    }
+
+    /// Execute query without create the `QueryBuilder`.
+    pub async fn execute(&self, query: GQLQuery) -> GQLQueryResponse {
+        let (document, cache_control, extensions) =
+            self.prepare_query(&query.query, &query.variables, &query.extensions)?;
+
+        // execute
+        let inc_resolve_id = AtomicUsize::default();
+        let document = match document.into_data(self.operation_name.as_deref()) {
+            Some(document) => document,
+            None => {
+                return if let Some(operation_name) = self.operation_name {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::UnknownOperationNamed {
+                            name: operation_name,
+                        },
+                    })
+                } else {
+                    Err(Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::MissingOperation,
+                    })
+                }
+                .log_error(&extensions)
+                .into()
+            }
+        };
+
+        let env = QueryEnv::new(
+            extensions,
+            self.variables,
+            document,
+            Arc::new(self.ctx_data.unwrap_or_default()),
+        );
+        let ctx = ContextBase {
+            path_node: None,
+            resolve_id: ResolveId::root(),
+            inc_resolve_id: &inc_resolve_id,
+            item: &env.document.operation.node.selection_set,
+            schema_env: &schema.env,
+            query_env: &env,
+        };
+
+        env.extensions.lock().execution_start();
+        let data = match &env.document.operation.node.ty {
+            OperationType::Query => do_resolve(&ctx, &schema.query).await?,
+            OperationType::Mutation => do_mutation_resolve(&ctx, &schema.mutation).await?,
+            OperationType::Subscription => {
+                return Err(Error::Query {
+                    pos: Pos::default(),
+                    path: None,
+                    err: QueryError::NotSupported,
+                })
+                .into()
+            }
+        };
+
+        env.extensions.lock().execution_end();
+        GQLQueryResponse {
+            data,
+            extensions: env.extensions.lock().result(),
+            cache_control,
+            error: None,
+        }
     }
 
     /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
