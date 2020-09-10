@@ -1,6 +1,6 @@
 use crate::context::QueryEnv;
 use crate::parser::types::{Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, ObjectType, Result, Schema, SchemaEnv, Type};
+use crate::{Context, ContextSelectionSet, ObjectType, Response, Result, Schema, SchemaEnv, Type};
 use futures::{Future, Stream};
 use std::pin::Pin;
 
@@ -20,7 +20,7 @@ pub trait SubscriptionType: Type {
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>;
+    ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>>;
 }
 
 type BoxCreateStreamFuture<'a> = Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>;
@@ -29,7 +29,7 @@ pub fn create_subscription_stream<'a, Query, Mutation, Subscription>(
     schema: &'a Schema<Query, Mutation, Subscription>,
     environment: QueryEnv,
     ctx: &'a ContextSelectionSet<'_>,
-    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>,
+    streams: &'a mut Vec<Pin<Box<dyn Stream<Item = Response> + Send>>>,
 ) -> BoxCreateStreamFuture<'a>
 where
     Query: ObjectType + Send + Sync + 'static,
@@ -109,7 +109,7 @@ impl<T: SubscriptionType + Send + Sync> SubscriptionType for &T {
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>> {
+    ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>> {
         T::create_field_stream(*self, idx, ctx, schema_env, query_env).await
     }
 }

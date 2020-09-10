@@ -10,7 +10,7 @@ use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 use async_graphql::http::StreamBody;
 use async_graphql::{
-    GQLQueryResponse, IntoQueryBuilder, ParseRequestError, QueryBuilder, ReceiveMultipartOptions,
+    IntoQueryBuilder, ParseRequestError, QueryBuilder, ReceiveMultipartOptions, Response,
 };
 use futures::channel::mpsc;
 use futures::future::Ready;
@@ -87,10 +87,10 @@ impl FromRequest for GQLRequest {
 }
 
 /// Responder for GraphQL response
-pub struct GQLResponse(async_graphql::Result<GQLQueryResponse>);
+pub struct GQLResponse(async_graphql::Result<Response>);
 
-impl From<async_graphql::Result<GQLQueryResponse>> for GQLResponse {
-    fn from(resp: async_graphql::Result<GQLQueryResponse>) -> Self {
+impl From<async_graphql::Result<Response>> for GQLResponse {
+    fn from(resp: async_graphql::Result<Response>) -> Self {
         GQLResponse(resp)
     }
 }
@@ -109,11 +109,8 @@ impl Responder for GQLResponse {
     }
 }
 
-fn add_cache_control(
-    builder: &mut HttpResponseBuilder,
-    resp: &async_graphql::Result<GQLQueryResponse>,
-) {
-    if let Ok(GQLQueryResponse { cache_control, .. }) = resp {
+fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &async_graphql::Result<Response>) {
+    if let Ok(Response { cache_control, .. }) = resp {
         if let Some(cache_control) = cache_control.value() {
             builder.header("cache-control", cache_control);
         }

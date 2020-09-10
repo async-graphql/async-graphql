@@ -98,14 +98,20 @@
 #![recursion_limit = "256"]
 #![forbid(unsafe_code)]
 
+// Do not try to modify the location of this line of code, it must be
+// the first mod defined, otherwise there will be a danger of failing to compile.
+#[macro_use]
+mod macros;
+
 mod base;
 mod context;
 mod error;
 mod look_ahead;
 mod model;
 mod mutation_resolver;
-mod query;
+mod request;
 mod resolver;
+mod response;
 mod scalars;
 mod schema;
 mod serialize_resp;
@@ -141,14 +147,13 @@ pub use error::{
 };
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
-pub use query::{GQLQuery, GQLQueryResponse, ReceiveMultipartOptions};
 pub use registry::CacheControl;
+pub use request::{ReceiveMultipartOptions, Request};
+pub use response::Response;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
-pub use subscription::{
-    ConnectionTransport, SimpleBroker, SubscriptionStreams, WebSocketTransport,
-};
+pub use subscription::{ConnectionTransport, SimpleBroker, SubscriptionStreams};
 pub use types::{
     connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject,
     MergedObjectSubscriptionTail, MergedObjectTail, Upload,
@@ -164,7 +169,6 @@ pub use context::ContextSelectionSet;
 
 #[doc(hidden)]
 pub mod registry;
-
 #[doc(hidden)]
 pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
 #[doc(hidden)]

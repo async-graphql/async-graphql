@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::{
-    GQLQueryResponse, IntoQueryBuilder, ObjectType, QueryBuilder, ReceiveMultipartOptions, Schema,
+    IntoQueryBuilder, ObjectType, QueryBuilder, ReceiveMultipartOptions, Response, Schema,
     SubscriptionType, Variables,
 };
 use log::{error, info};
@@ -258,7 +258,7 @@ impl FromData for GQLRequest {
 /// Wrapper around `async-graphql::query::QueryResponse` for implementing the trait
 /// `rocket::response::responder::Responder`, so that `GQLResponse` can directly be returned
 /// from a Rocket Route function.
-pub struct GQLResponse(pub GQLQueryResponse);
+pub struct GQLResponse(pub Response);
 
 impl<'r> Responder<'r, 'static> for GQLResponse {
     fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
@@ -277,13 +277,13 @@ impl<'r> Responder<'r, 'static> for GQLResponse {
 /// Extension trait, to allow the use of `cache_control` with for example `ResponseBuilder`.
 pub trait CacheControl {
     /// Add the `async-graphql::query::QueryResponse` cache control value as header to the Rocket response.
-    fn cache_control(&mut self, resp: &async_graphql::Result<GQLQueryResponse>) -> &mut Self;
+    fn cache_control(&mut self, resp: &async_graphql::Result<Response>) -> &mut Self;
 }
 
 impl<'r> CacheControl for ResponseBuilder<'r> {
     fn cache_control(
         &mut self,
-        resp: &async_graphql::Result<GQLQueryResponse>,
+        resp: &async_graphql::Result<Response>,
     ) -> &mut ResponseBuilder<'r> {
         match resp {
             Ok(resp) if resp.cache_control.value().is_some() => self.header(Header::new(

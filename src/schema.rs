@@ -5,14 +5,13 @@ use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
 use crate::parser::types::{ExecutableDocument, OperationType};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
+use crate::subscription::create_subscription_stream;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    do_resolve, CacheControl, ContextBase, Error, GQLQueryResponse, ObjectType, Pos, QueryEnv,
-    QueryError, Result, SubscriptionType, Type, Variables, ID,
+    do_resolve, CacheControl, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Request,
+    Response, Result, SubscriptionType, Type, Variables, ID,
 };
-use futures::channel::mpsc;
 use futures::Stream;
 use indexmap::map::IndexMap;
 use itertools::Itertools;
@@ -311,14 +310,12 @@ where
         &self,
         source: &str,
         variables: &Variables,
-        query_extensions: &[Box<dyn Fn() -> BoxExtension + Send + Sync>],
     ) -> Result<(ExecutableDocument, CacheControl, spin::Mutex<Extensions>)> {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
                 .extensions
                 .iter()
-                .chain(query_extensions)
                 .map(|factory| factory())
                 .collect_vec(),
         ));
@@ -362,108 +359,110 @@ where
     }
 
     /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query: GQLQuery) -> GQLQueryResponse {
+    pub async fn execute(&self, query: Request) -> Response {
         let (document, cache_control, extensions) =
-            self.prepare_query(&query.query, &query.variables, &query.extensions)?;
+            try_query_result!(self.prepare_query(&query.query, &query.variables));
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let document = match document.into_data(self.operation_name.as_deref()) {
+        let document = match document.into_data(query.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                return if let Some(operation_name) = self.operation_name {
-                    Err(Error::Query {
+                let err = if let Some(operation_name) = query.operation_name {
+                    Error::Query {
                         pos: Pos::default(),
                         path: None,
                         err: QueryError::UnknownOperationNamed {
                             name: operation_name,
                         },
-                    })
+                    }
                 } else {
-                    Err(Error::Query {
+                    Error::Query {
                         pos: Pos::default(),
                         path: None,
                         err: QueryError::MissingOperation,
-                    })
-                }
-                .log_error(&extensions)
-                .into()
+                    }
+                };
+                extensions.lock().error(&err);
+                return err.into();
             }
         };
 
         let env = QueryEnv::new(
             extensions,
-            self.variables,
+            query.variables,
             document,
-            Arc::new(self.ctx_data.unwrap_or_default()),
+            Arc::new(query.ctx_data),
         );
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
             item: &env.document.operation.node.selection_set,
-            schema_env: &schema.env,
+            schema_env: &self.env,
             query_env: &env,
         };
 
         env.extensions.lock().execution_start();
         let data = match &env.document.operation.node.ty {
-            OperationType::Query => do_resolve(&ctx, &schema.query).await?,
-            OperationType::Mutation => do_mutation_resolve(&ctx, &schema.mutation).await?,
+            OperationType::Query => try_query_result!(do_resolve(&ctx, &self.query).await),
+            OperationType::Mutation => {
+                try_query_result!(do_mutation_resolve(&ctx, &self.mutation).await)
+            }
             OperationType::Subscription => {
-                return Err(Error::Query {
+                return Error::Query {
                     pos: Pos::default(),
                     path: None,
                     err: QueryError::NotSupported,
-                })
+                }
                 .into()
             }
         };
 
         env.extensions.lock().execution_end();
-        GQLQueryResponse {
+        let extensions = env.extensions.lock().result();
+        Response {
             data,
-            extensions: env.extensions.lock().result(),
+            extensions,
             cache_control,
             error: None,
         }
     }
 
-    /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
-    pub async fn create_subscription_stream(
+    pub async fn execute_stream(
         &self,
-        source: &str,
-        operation_name: Option<&str>,
-        variables: Variables,
-        ctx_data: Option<Arc<Data>>,
-    ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let (document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
+        query: Request,
+    ) -> Result<impl Stream<Item = Response> + Send> {
+        let (document, _, extensions) = self.prepare_query(&query.query, &query.variables)?;
 
-        let document = match document.into_data(operation_name) {
+        let document = match document.into_data(query.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                return if let Some(name) = operation_name {
-                    Err(QueryError::UnknownOperationNamed {
+                let err = if let Some(name) = query.operation_name {
+                    QueryError::UnknownOperationNamed {
                         name: name.to_string(),
                     }
-                    .into_error(Pos::default()))
+                    .into_error(Pos::default())
                 } else {
-                    Err(QueryError::MissingOperation.into_error(Pos::default()))
-                }
-                .log_error(&extensions)
+                    QueryError::MissingOperation.into_error(Pos::default())
+                };
+                extensions.lock().error(&err);
+                return Err(err.into());
             }
         };
 
         if document.operation.node.ty != OperationType::Subscription {
-            return Err(QueryError::NotSupported.into_error(Pos::default())).log_error(&extensions);
+            let err = QueryError::NotSupported.into_error(Pos::default());
+            extensions.lock().error(&err);
+            return Err(err);
         }
 
         let resolve_id = AtomicUsize::default();
         let env = QueryEnv::new(
             extensions,
-            variables,
+            query.variables,
             document,
-            ctx_data.unwrap_or_default(),
+            Arc::new(query.ctx_data),
         );
         let ctx = env.create_context(
             &self.env,
@@ -472,20 +471,12 @@ where
             &resolve_id,
         );
         let mut streams = Vec::new();
-        create_subscription_stream(self, env.clone(), &ctx, &mut streams)
-            .await
-            .log_error(&ctx.query_env.extensions)?;
-        Ok(futures::stream::select_all(streams))
-    }
-
-    /// Create subscription connection, returns `Sink` and `Stream`.
-    pub fn subscription_connection<T: ConnectionTransport>(
-        &self,
-        transport: T,
-    ) -> (
-        mpsc::UnboundedSender<Vec<u8>>,
-        impl Stream<Item = Vec<u8>> + Unpin,
-    ) {
-        create_connection(self.clone(), transport)
+        match create_subscription_stream(self, env.clone(), &ctx, &mut streams).await {
+            Ok(()) => Ok(futures::stream::select_all(streams)),
+            Err(err) => {
+                env.extensions.lock().error(&err);
+                Err(err)
+            }
+        }
     }
 }

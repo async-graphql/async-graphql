@@ -1,24 +1,15 @@
-use crate::context::{Data, ResolveId};
-use crate::extensions::{BoxExtension, ErrorLogger, Extension};
-use crate::parser::types::{OperationType, UploadValue};
-use crate::{
-    do_resolve, http, CacheControl, ContextBase, Error, ObjectType, ParseRequestError, Pos,
-    QueryEnv, QueryError, Result, Schema, SubscriptionType, Value, Variables,
-};
+use crate::parser::types::UploadValue;
+use crate::{http, Data, ParseRequestError, Value, Variables};
 use bytes::Bytes;
 use futures::stream;
 use futures::task::Poll;
 use futures::{AsyncRead, AsyncReadExt, Stream};
 use multer::{Constraints, Multipart, SizeLimit};
-use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Serialize, Serializer};
 use std::any::Any;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io;
-use std::io::{Seek, SeekFrom, Write};
-use std::sync::atomic::AtomicUsize;
-use std::sync::Arc;
+use std::io::{self, Seek, SeekFrom, Write};
+use std::pin::Pin;
 
 /// Options for `GQLQuery::receive_multipart`
 #[derive(Default, Clone)]
@@ -30,23 +21,21 @@ pub struct ReceiveMultipartOptions {
     pub max_num_files: Option<usize>,
 }
 
-pub struct GQLQuery {
+pub struct Request {
     pub(crate) query: String,
     pub(crate) operation_name: Option<String>,
     pub(crate) variables: Variables,
     pub(crate) ctx_data: Data,
-    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
-impl GQLQuery {
-    /// Create a query with query source.
+impl Request {
+    /// Create a request object with query source.
     pub fn new(query: impl Into<String>) -> Self {
         Self {
             query: query.into(),
             operation_name: None,
             variables: Variables::default(),
             ctx_data: Data::default(),
-            extensions: Vec::default(),
         }
     }
 
@@ -59,13 +48,12 @@ impl GQLQuery {
                 .map(|value| Variables::parse_from_json(value))
                 .unwrap_or_default(),
             ctx_data: Data::default(),
-            extensions: Vec::default(),
         }
     }
 
     pub async fn receive_request(
         content_type: Option<impl AsRef<str>>,
-        mut body: impl AsyncRead,
+        mut body: impl AsyncRead + Send + Unpin + 'static,
         opts: ReceiveMultipartOptions,
     ) -> std::result::Result<Self, ParseRequestError> {
         if let Some(boundary) = content_type.and_then(|ct| multer::parse_boundary(ct).ok()) {
@@ -87,7 +75,7 @@ impl GQLQuery {
                 }),
             );
 
-            let mut query = None;
+            let mut request = None;
             let mut map = None;
             let mut files = Vec::new();
 
@@ -95,7 +83,7 @@ impl GQLQuery {
                 match field.name() {
                     Some("operations") => {
                         let request_str = field.text().await?;
-                        query = Some(Self::new_with_http_request(
+                        request = Some(Self::new_with_http_request(
                             serde_json::from_str(&request_str)
                                 .map_err(ParseRequestError::InvalidRequest)?,
                         ));
@@ -125,13 +113,13 @@ impl GQLQuery {
                 }
             }
 
-            let mut query = query.ok_or(ParseRequestError::MissingOperatorsPart)?;
+            let mut request = request.ok_or(ParseRequestError::MissingOperatorsPart)?;
             let map = map.as_mut().ok_or(ParseRequestError::MissingMapPart)?;
 
             for (name, filename, content_type, file) in files {
                 if let Some(var_paths) = map.remove(&name) {
                     for var_path in var_paths {
-                        query.set_upload(
+                        request.set_upload(
                             &var_path,
                             filename.clone(),
                             content_type.clone(),
@@ -145,7 +133,7 @@ impl GQLQuery {
                 return Err(ParseRequestError::MissingFiles);
             }
 
-            Ok(query)
+            Ok(request)
         } else {
             let mut data = Vec::new();
             body.read_to_end(&mut data)
@@ -168,16 +156,6 @@ impl GQLQuery {
     /// Specify the variables.
     pub fn variables(self, variables: Variables) -> Self {
         Self { variables, ..self }
-    }
-
-    /// Add an extension
-    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
-        mut self,
-        extension_factory: F,
-    ) -> Self {
-        self.extensions
-            .push(Box::new(move || Box::new(extension_factory())));
-        self
     }
 
     /// Add a context data that can be accessed in the `Context`, you access it with `Context::data`.
@@ -208,54 +186,15 @@ impl GQLQuery {
     }
 }
 
-impl<T: Into<String>> From<T> for GQLQuery {
+impl<T: Into<String>> From<T> for Request {
     fn from(query: T) -> Self {
         Self::new(query)
     }
 }
 
-impl From<http::GQLRequest> for GQLQuery {
+impl From<http::GQLRequest> for Request {
     fn from(request: http::GQLRequest) -> Self {
         Self::new_with_http_request(request)
-    }
-}
-
-/// Query response
-#[derive(Debug)]
-pub struct GQLQueryResponse {
-    /// Data of query result
-    pub data: serde_json::Value,
-
-    /// Extensions result
-    pub extensions: Option<serde_json::Value>,
-
-    /// Cache control value
-    pub cache_control: CacheControl,
-
-    /// Error
-    pub error: Option<Error>,
-}
-
-impl GQLQueryResponse {
-    #[inline]
-    pub fn is_err(&self) -> bool {
-        self.error.is_some()
-    }
-
-    #[inline]
-    pub fn unwrap_err(self) -> Error {
-        self.error.unwrap()
-    }
-}
-
-impl From<Error> for GQLQueryResponse {
-    fn from(err: Error) -> Self {
-        Self {
-            data: serde_json::Value::Null,
-            extensions: None,
-            cache_control: CacheControl::default(),
-            error: Some(err),
-        }
     }
 }
 

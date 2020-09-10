@@ -1,15 +1,16 @@
-use crate::{Error, GQLQueryResponse, Pos, QueryError};
+use crate::{Error, QueryError, Response};
+use itertools::Itertools;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
-impl Serialize for GQLQueryResponse {
+impl Serialize for Response {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         match &self.error {
             None => {
                 let mut map = serializer.serialize_map(None)?;
                 map.serialize_key("data")?;
                 map.serialize_value(&self.data)?;
-                if res.extensions.is_some() {
+                if self.extensions.is_some() {
                     map.serialize_key("extensions")?;
                     map.serialize_value(&self.extensions)?;
                 }
@@ -22,18 +23,6 @@ impl Serialize for GQLQueryResponse {
                 map.end()
             }
         }
-    }
-}
-
-impl<'a> Serialize for Pos {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(2))?;
-        map.serialize_entry("line", &self.0.line)?;
-        map.serialize_entry("column", &self.0.column)?;
-        map.end()
     }
 }
 
@@ -105,7 +94,7 @@ mod tests {
 
     #[test]
     fn test_response_data() {
-        let resp = GQLQueryResponse {
+        let resp = Response {
             data: json!({"ok": true}),
             extensions: None,
             cache_control: Default::default(),
@@ -123,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_field_error_with_extension() {
-        let resp = GQLQueryResponse::from(Error::Query {
+        let resp = Response::from(Error::Query {
             pos: Pos {
                 line: 10,
                 column: 20,
@@ -153,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_response_error_with_pos() {
-        let resp = GQLQueryResponse::from(Error::Query {
+        let resp = Response::from(Error::Query {
             pos: Pos {
                 line: 10,
                 column: 20,

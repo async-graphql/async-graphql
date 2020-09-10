@@ -7,8 +7,8 @@
 
 use async_graphql::http::{GQLRequest, StreamBody};
 use async_graphql::{
-    Data, FieldResult, GQLQueryResponse, IntoQueryBuilder, ObjectType, QueryBuilder,
-    ReceiveMultipartOptions, Schema, SubscriptionType, WebSocketTransport,
+    Data, FieldResult, IntoQueryBuilder, ObjectType, QueryBuilder, ReceiveMultipartOptions,
+    Response, Schema, SubscriptionType, WebSocketTransport,
 };
 use futures::select;
 use futures::{SinkExt, StreamExt};
@@ -231,16 +231,16 @@ where
 }
 
 /// GraphQL reply
-pub struct GQLResponse(async_graphql::Result<GQLQueryResponse>);
+pub struct GQLResponse(async_graphql::Result<Response>);
 
-impl From<async_graphql::Result<GQLQueryResponse>> for GQLResponse {
-    fn from(resp: async_graphql::Result<GQLQueryResponse>) -> Self {
+impl From<async_graphql::Result<Response>> for GQLResponse {
+    fn from(resp: async_graphql::Result<Response>) -> Self {
         GQLResponse(resp)
     }
 }
 
-fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<GQLQueryResponse>) {
-    if let Ok(GQLQueryResponse { cache_control, .. }) = resp {
+fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<Response>) {
+    if let Ok(Response { cache_control, .. }) = resp {
         if let Some(cache_control) = cache_control.value() {
             if let Ok(value) = cache_control.parse() {
                 http_resp.headers_mut().insert("cache-control", value);

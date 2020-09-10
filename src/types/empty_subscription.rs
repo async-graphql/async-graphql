@@ -1,5 +1,7 @@
 use crate::context::QueryEnv;
-use crate::{registry, Context, Error, Pos, QueryError, Result, SchemaEnv, SubscriptionType, Type};
+use crate::{
+    registry, Context, Error, Pos, QueryError, Response, Result, SchemaEnv, SubscriptionType, Type,
+};
 use futures::Stream;
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -39,7 +41,7 @@ impl SubscriptionType for EmptySubscription {
         _ctx: &Context<'_>,
         _schema_env: SchemaEnv,
         _query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>>
+    ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>>
     where
         Self: Send + Sync + 'static + Sized,
     {

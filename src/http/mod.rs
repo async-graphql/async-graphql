@@ -4,15 +4,11 @@ mod graphiql_source;
 mod playground_source;
 mod stream_body;
 
-use itertools::Itertools;
-
 pub use graphiql_source::graphiql_source;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::{Error, GQLQueryResponse, ParseRequestError, Pos, QueryError, Result, Variables};
-use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Deserialize, Serialize, Serializer};
+use serde::Deserialize;
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -31,7 +27,6 @@ pub struct GQLRequest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pos;
     use serde_json::json;
 
     #[test]

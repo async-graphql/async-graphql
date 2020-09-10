@@ -284,10 +284,19 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             if !*state {
                                 return #crate_name::futures::future::ready(None);
                             }
-                            if item.is_err() {
+                            let resp = match item {
+                                Ok(value) => #crate_name::Response {
+                                    data: value,
+                                    extensions: None,
+                                    cache_control: Default::default(),
+                                    error: None,
+                                }
+                                Err(err) => err.into(),
+                            };
+                            if resp.is_err() {
                                 *state = false;
                             }
-                            return #crate_name::futures::future::ready(Some(item));
+                            return #crate_name::futures::future::ready(Some(resp));
                         });
                         return Ok(Box::pin(stream));
                     }
@@ -341,7 +350,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ctx: &#crate_name::Context<'_>,
                 schema_env: #crate_name::SchemaEnv,
                 query_env: #crate_name::QueryEnv,
-            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send>>> {
+            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Response> + Send>>> {
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
                     field_name: ctx.node.name.to_string(),
