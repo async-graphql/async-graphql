@@ -3,14 +3,17 @@
 mod graphiql_source;
 mod playground_source;
 mod stream_body;
+mod multipart;
 
 use itertools::Itertools;
 
 pub use graphiql_source::graphiql_source;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
+pub use multipart::{receive_multipart, MultipartOptions};
 
-use crate::{Error, GQLQueryResponse, ParseRequestError, Pos, QueryError, Result, Variables};
+use crate::{GQLQuery, ParseRequestError, Pos, QueryError, Variables};
+use futures::io::AsyncRead;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -26,6 +29,24 @@ pub struct GQLRequest {
 
     /// Variables for this query
     pub variables: Option<serde_json::Value>,
+}
+
+/// Receive a GraphQL request from a content type and body.
+pub async fn receive_body(
+    content_type: Option<impl AsRef<str>>,
+    body: impl AsyncRead,
+    opts: MultipartOptions,
+) -> Result<GQLQuery, ParseRequestError> {
+    if let Some(Ok(boundary)) = content_type.map(multer::parse_boundary) {
+        receive_multipart(body, boundary, opts)
+    } else {
+        futures::pin_mut!(body);
+        let mut data = Vec::new();
+        body.read_to_end(data).await.map_err(ParseRequestError::Io)?;
+        Ok(GQLQuery::new_with_http_request(
+            serde_json::from_slice(&data).map_err(ParseRequestError::InvalidRequest)?,
+        ))
+    }
 }
 
 #[cfg(test)]
