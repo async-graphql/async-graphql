@@ -10,11 +10,11 @@ pub use multipart::{receive_multipart, MultipartOptions};
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::{GQLQuery, ParseRequestError, Pos, QueryError, Variables};
+use crate::{Data, ParseRequestError, Pos, QueryError, Request, Variables};
 use futures::io::AsyncRead;
 use futures::AsyncReadExt;
 use serde::ser::{SerializeMap, SerializeSeq};
-use serde::{Deserialize, Serialize, Serializer};
+use serde::Deserialize;
 
 /// Deserializable GraphQL Request object
 #[derive(Deserialize, Clone, PartialEq, Debug)]
@@ -30,23 +30,36 @@ pub struct GQLRequest {
     pub variables: Option<serde_json::Value>,
 }
 
+impl From<GQLRequest> for Request {
+    fn from(request: GQLRequest) -> Self {
+        Self {
+            query: request.query,
+            operation_name: request.operation_name,
+            variables: request
+                .variables
+                .map(|value| Variables::parse_from_json(value))
+                .unwrap_or_default(),
+            ctx_data: Data::default(),
+        }
+    }
+}
+
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
-    body: impl AsyncRead,
+    mut body: impl AsyncRead + Send + Unpin + 'static,
     opts: MultipartOptions,
-) -> Result<Query, ParseRequestError> {
+) -> Result<Request, ParseRequestError> {
     if let Some(Ok(boundary)) = content_type.map(multer::parse_boundary) {
-        receive_multipart(body, boundary, opts)
+        receive_multipart(body, boundary, opts).await
     } else {
-        futures::pin_mut!(body);
         let mut data = Vec::new();
         body.read_to_end(&mut data)
             .await
             .map_err(ParseRequestError::Io)?;
-        Ok(GQLQuery::new_with_http_request(
-            serde_json::from_slice(&data).map_err(ParseRequestError::InvalidRequest)?,
-        ))
+        Ok(serde_json::from_slice::<GQLRequest>(&data)
+            .map_err(ParseRequestError::InvalidRequest)?
+            .into())
     }
 }
 

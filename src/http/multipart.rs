@@ -1,12 +1,13 @@
-use futures::stream::{self, Stream};
-use futures::io::AsyncRead;
-use crate::{GQLQuery, ParseRequestError};
-use std::collections::HashMap;
-use multer::{Multipart, Constraints, SizeLimit};
-use std::io::{self, SeekFrom};
-use std::task::Poll;
+use crate::http::GQLRequest;
+use crate::{ParseRequestError, Request};
 use bytes::Bytes;
+use futures::io::AsyncRead;
+use futures::stream::{self, Stream};
+use multer::{Constraints, Multipart, SizeLimit};
+use std::collections::HashMap;
+use std::io::{self, Seek, SeekFrom, Write};
 use std::pin::Pin;
+use std::task::Poll;
 
 /// Options for `receive_multipart`.
 #[derive(Default, Clone)]
@@ -21,10 +22,10 @@ pub struct MultipartOptions {
 
 /// Receive a multipart request.
 pub async fn receive_multipart(
-    body: impl AsyncRead,
+    body: impl AsyncRead + Send + Unpin + 'static,
     boundary: impl Into<String>,
     opts: MultipartOptions,
-) -> Result<GQLQuery, ParseRequestError> {
+) -> Result<Request, ParseRequestError> {
     let mut multipart = Multipart::new_with_constraints(
         reader_stream(body),
         boundary,
@@ -42,7 +43,7 @@ pub async fn receive_multipart(
         }),
     );
 
-    let mut query = None;
+    let mut request = None;
     let mut map = None;
     let mut files = Vec::new();
 
@@ -50,10 +51,11 @@ pub async fn receive_multipart(
         match field.name() {
             Some("operations") => {
                 let request_str = field.text().await?;
-                query = Some(GQLQuery::new_with_http_request(
-                    serde_json::from_str(&request_str)
-                        .map_err(ParseRequestError::InvalidRequest)?,
-                ));
+                request = Some(
+                    serde_json::from_str::<GQLRequest>(&request_str)
+                        .map_err(ParseRequestError::InvalidRequest)?
+                        .into(),
+                );
             }
             Some("map") => {
                 let map_str = field.text().await?;
@@ -65,10 +67,8 @@ pub async fn receive_multipart(
             _ => {
                 if let Some(name) = field.name().map(ToString::to_string) {
                     if let Some(filename) = field.file_name().map(ToString::to_string) {
-                        let content_type =
-                            field.content_type().map(|mime| mime.to_string());
-                        let mut file =
-                            tempfile::tempfile().map_err(ParseRequestError::Io)?;
+                        let content_type = field.content_type().map(|mime| mime.to_string());
+                        let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
                         while let Some(chunk) = field.chunk().await.unwrap() {
                             file.write(&chunk).map_err(ParseRequestError::Io)?;
                         }
@@ -80,13 +80,13 @@ pub async fn receive_multipart(
         }
     }
 
-    let mut query = query.ok_or(ParseRequestError::MissingOperatorsPart)?;
+    let mut request: Request = request.ok_or(ParseRequestError::MissingOperatorsPart)?;
     let map = map.as_mut().ok_or(ParseRequestError::MissingMapPart)?;
 
     for (name, filename, content_type, file) in files {
         if let Some(var_paths) = map.remove(&name) {
             for var_path in var_paths {
-                query.set_upload(
+                request.set_upload(
                     &var_path,
                     filename.clone(),
                     content_type.clone(),
@@ -100,11 +100,11 @@ pub async fn receive_multipart(
         return Err(ParseRequestError::MissingFiles);
     }
 
-    Ok(query)
+    Ok(request)
 }
 
 fn reader_stream(
-    mut reader: impl AsyncRead + Unpin + Send + 'static,
+    mut reader: impl AsyncRead + Send + Unpin + 'static,
 ) -> impl Stream<Item = io::Result<Bytes>> + Unpin + Send + 'static {
     let mut buf = [0u8; 2048];
 

@@ -29,18 +29,6 @@ impl Request {
         }
     }
 
-    pub fn new_with_http_request(request: http::GQLRequest) -> Self {
-        Self {
-            query: request.query,
-            operation_name: request.operation_name,
-            variables: request
-                .variables
-                .map(|value| Variables::parse_from_json(value))
-                .unwrap_or_default(),
-            ctx_data: Data::default(),
-        }
-    }
-
     /// Specify the operation name.
     pub fn operation_name<T: Into<String>>(self, name: T) -> Self {
         Self {
@@ -85,11 +73,5 @@ impl Request {
 impl<T: Into<String>> From<T> for Request {
     fn from(query: T) -> Self {
         Self::new(query)
-    }
-}
-
-impl From<http::GQLRequest> for Request {
-    fn from(request: http::GQLRequest) -> Self {
-        Self::new_with_http_request(request)
     }
 }

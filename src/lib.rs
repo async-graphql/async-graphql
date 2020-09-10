@@ -148,7 +148,7 @@ pub use error::{
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
 pub use registry::CacheControl;
-pub use request::{ReceiveMultipartOptions, Request};
+pub use request::Request;
 pub use response::Response;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
