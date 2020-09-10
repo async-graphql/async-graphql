@@ -68,7 +68,7 @@ pub async fn test_field_features() {
     let schema = Schema::new(QueryRoot, EmptyMutation, Subscription);
     let query = "{ value }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "value": 10,
         })
@@ -76,7 +76,7 @@ pub async fn test_field_features() {
 
     let query = "{ valueBson }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "valueBson": 10,
         })
@@ -97,7 +97,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "obj": { "value": 10 }
         })
@@ -105,7 +105,7 @@ pub async fn test_field_features() {
 
     let query = "{ obj { valueBson } }";
     assert_eq!(
-        schema.execute(query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "obj": { "valueBson": 10 }
         })
@@ -125,62 +125,44 @@ pub async fn test_field_features() {
     );
 
     let mut stream = schema
-        .create_subscription_stream(
-            "subscription { values }",
-            None,
-            Default::default(),
-            Default::default(),
-        )
+        .execute_stream("subscription { values }")
         .await
         .unwrap();
     assert_eq!(
-        stream.next().await,
-        Some(Ok(serde_json::json!({
+        stream.next().await.map(|resp| resp.data),
+        Some(serde_json::json!({
             "values": 10
-        })))
+        }))
     );
 
     let mut stream = schema
-        .create_subscription_stream(
-            "subscription { valuesBson }",
-            None,
-            Default::default(),
-            Default::default(),
-        )
+        .execute_stream("subscription { valuesBson }")
         .await
         .unwrap();
     assert_eq!(
-        stream.next().await,
-        Some(Ok(serde_json::json!({
+        stream.next().await.map(|resp| resp.data),
+        Some(serde_json::json!({
             "valuesBson": 10
-        })))
+        }))
     );
 
-    let res = schema
-        .create_subscription_stream(
-            "subscription { valuesAbc }",
-            None,
-            Default::default(),
-            Default::default(),
-        )
-        .await;
-    if let Err(err) = res {
-        assert_eq!(
-            err,
-            Error::Query {
-                pos: Pos {
-                    column: 16,
-                    line: 1
-                },
-                path: Some(serde_json::json!(["valuesAbc"])),
-                err: QueryError::FieldError {
-                    err: "`valuesAbc` is only available if the features `abc` are enabled"
-                        .to_string(),
-                    extended_error: None
-                }
+    let err = schema
+        .execute_stream("subscription { valuesAbc }")
+        .await
+        .map(|_| ())
+        .unwrap_err();
+    assert_eq!(
+        err,
+        Error::Query {
+            pos: Pos {
+                column: 16,
+                line: 1
+            },
+            path: Some(serde_json::json!(["valuesAbc"])),
+            err: QueryError::FieldError {
+                err: "`valuesAbc` is only available if the features `abc` are enabled".to_string(),
+                extended_error: None
             }
-        )
-    } else {
-        unreachable!()
-    }
+        }
+    );
 }

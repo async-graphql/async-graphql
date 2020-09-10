@@ -22,7 +22,7 @@ pub struct MultipartOptions {
 
 /// Receive a multipart request.
 pub async fn receive_multipart(
-    body: impl AsyncRead + Send + Unpin + 'static,
+    body: impl AsyncRead + Unpin + Send + 'static,
     boundary: impl Into<String>,
     opts: MultipartOptions,
 ) -> Result<Request, ParseRequestError> {
@@ -104,7 +104,7 @@ pub async fn receive_multipart(
 }
 
 fn reader_stream(
-    mut reader: impl AsyncRead + Send + Unpin + 'static,
+    mut reader: impl AsyncRead + Unpin + Send + 'static,
 ) -> impl Stream<Item = io::Result<Bytes>> + Unpin + Send + 'static {
     let mut buf = [0u8; 2048];
 

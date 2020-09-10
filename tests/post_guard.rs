@@ -79,11 +79,9 @@ pub async fn test_post_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Username("test".to_string())))
             .await
-            .unwrap()
             .data,
         serde_json::json!({
             "value": 99
@@ -92,9 +90,8 @@ pub async fn test_post_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Username("test1".to_string())))
             .await
             .unwrap_err(),
         Error::Query {
@@ -109,11 +106,9 @@ pub async fn test_post_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Username("test".to_string())))
             .await
-            .unwrap()
             .data,
         serde_json::json!({
             "obj": { "value": 88 }
@@ -122,9 +117,8 @@ pub async fn test_post_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Username("test1".to_string())))
             .await
             .unwrap_err(),
         Error::Query {
@@ -153,22 +147,25 @@ pub async fn test_multiple_post_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+            )
             .await
-            .unwrap()
             .data,
         serde_json::json!({"value": 10})
     );
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+            )
             .await
             .unwrap_err(),
         Error::Query {
@@ -183,10 +180,12 @@ pub async fn test_multiple_post_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+            )
             .await
             .unwrap_err(),
         Error::Query {
@@ -201,10 +200,12 @@ pub async fn test_multiple_post_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+            )
             .await
             .unwrap_err(),
         Error::Query {
@@ -250,20 +251,17 @@ pub async fn test_post_guard_forward_arguments() {
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("abc"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("abc")))
             .await
-            .unwrap()
             .data,
         serde_json::json!({"user": "haha"})
     );
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("aaa"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("aaa")))
             .await
             .unwrap_err(),
         Error::Query {
@@ -308,20 +306,17 @@ pub async fn test_post_guard_generic() {
 
     let query = r#"{ user }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("abc"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("abc")))
             .await
-            .unwrap()
             .data,
         serde_json::json!({"user": "haha"})
     );
 
     let query = r#"{ user }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("aaa"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("aaa")))
             .await
             .unwrap_err(),
         Error::Query {

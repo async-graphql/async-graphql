@@ -16,7 +16,7 @@ pub async fn test_variables() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilder::new(
+    let query = Request::new(
         r#"
             query QueryWithVariables($intVal: Int!, $intListVal: [Int!]!) {
                 intVal(value: $intVal)
@@ -28,9 +28,9 @@ pub async fn test_variables() {
         "intVal": 10,
          "intListVal": [1, 2, 3, 4, 5],
     })));
-    let resp = query.execute(&schema).await.unwrap();
+
     assert_eq!(
-        resp.data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "intVal": 10,
             "intListVal": [1, 2, 3, 4, 5],
@@ -50,18 +50,17 @@ pub async fn test_variable_default_value() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let resp = schema
-        .execute(
-            r#"
+    assert_eq!(
+        schema
+            .execute(
+                r#"
             query QueryWithVariables($intVal: Int = 10) {
                 intVal(value: $intVal)
             }
-        "#,
-        )
-        .await
-        .unwrap();
-    assert_eq!(
-        resp.data,
+        "#
+            )
+            .await
+            .data,
         serde_json::json!({
             "intVal": 10,
         })
@@ -80,15 +79,16 @@ pub async fn test_variable_no_value() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilder::new(
-        r#"
+    let resp = schema
+        .execute(Request::new(
+            r#"
             query QueryWithVariables($intVal: Int) {
                 intVal(value: $intVal)
             }
         "#,
-    )
-    .variables(Variables::parse_from_json(serde_json::json!({})));
-    let resp = query.execute(&schema).await.unwrap();
+        ))
+        .await
+        .unwrap();
     assert_eq!(
         resp.data,
         serde_json::json!({
@@ -109,7 +109,7 @@ pub async fn test_variable_null() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let query = QueryBuilder::new(
+    let query = Request::new(
         r#"
             query QueryWithVariables($intVal: Int) {
                 intVal(value: $intVal)
@@ -119,7 +119,7 @@ pub async fn test_variable_null() {
     .variables(Variables::parse_from_json(serde_json::json!({
         "intVal": null,
     })));
-    let resp = query.execute(&schema).await.unwrap();
+    let resp = schema.execute(query).await;
     assert_eq!(
         resp.data,
         serde_json::json!({
@@ -165,13 +165,13 @@ pub async fn test_variable_in_input_object() {
         query TestQuery($value: Int!) {
             test(input: {value: $value })
         }"#;
-        let resp = QueryBuilder::new(query)
-            .variables(Variables::parse_from_json(serde_json::json!({
-                "value": 10,
-            })))
-            .execute(&schema)
-            .await
-            .unwrap();
+        let resp = schema
+            .execute(
+                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                    "value": 10,
+                }))),
+            )
+            .await;
         assert_eq!(
             resp.data,
             serde_json::json!({
@@ -186,13 +186,13 @@ pub async fn test_variable_in_input_object() {
         query TestQuery($value: Int!) {
             test2(input: [{value: $value }, {value: $value }])
         }"#;
-        let resp = QueryBuilder::new(query)
-            .variables(Variables::parse_from_json(serde_json::json!({
-                "value": 3,
-            })))
-            .execute(&schema)
-            .await
-            .unwrap();
+        let resp = schema
+            .execute(
+                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                    "value": 3,
+                }))),
+            )
+            .await;
         assert_eq!(
             resp.data,
             serde_json::json!({
@@ -207,13 +207,13 @@ pub async fn test_variable_in_input_object() {
         mutation TestMutation($value: Int!) {
             test(input: {value: $value })
         }"#;
-        let resp = QueryBuilder::new(query)
-            .variables(Variables::parse_from_json(serde_json::json!({
-                "value": 10,
-            })))
-            .execute(&schema)
-            .await
-            .unwrap();
+        let resp = schema
+            .execute(
+                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                    "value": 10,
+                }))),
+            )
+            .await;
         assert_eq!(
             resp.data,
             serde_json::json!({

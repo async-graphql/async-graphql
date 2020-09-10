@@ -63,7 +63,7 @@ pub async fn test_input_validator_string_min_length() {
                 schema
                     .execute(&field_query)
                     .await
-                    .expect_err(&should_fail_msg[..]),
+                    .expect_err(&should_fail_msg),
                 Error::Rule {
                     errors: vec!(RuleError {
                         locations: vec!(Pos {
@@ -1651,9 +1651,8 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(field_query)
-                    .variables(variables.clone())
-                    .execute(&schema)
+                schema
+                    .execute(Request::new(field_query).variables(variables.clone()))
                     .await
                     .expect_err(&should_fail_msg[..]),
                 Error::Rule {
@@ -1668,9 +1667,8 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(object_query)
-                    .variables(variables.clone())
-                    .execute(&schema)
+                schema
+                    .execute(Request::new(object_query).variables(variables.clone()))
                     .await
                     .expect_err(&should_fail_msg[..]),
                 Error::Rule {
@@ -1686,9 +1684,8 @@ pub async fn test_input_validator_variable() {
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);
             assert_eq!(
-                QueryBuilder::new(field_query)
-                    .variables(variables.clone())
-                    .execute(&schema)
+                schema
+                    .execute(Request::new(field_query).variables(variables.clone()))
                     .await
                     .expect(&error_msg[..])
                     .data,
@@ -1698,9 +1695,8 @@ pub async fn test_input_validator_variable() {
             );
 
             assert_eq!(
-                QueryBuilder::new(object_query)
-                    .variables(variables.clone())
-                    .execute(&schema)
+                schema
+                    .execute(Request::new(object_query).variables(variables.clone()))
                     .await
                     .expect(&error_msg[..])
                     .data,

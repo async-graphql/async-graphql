@@ -358,17 +358,18 @@ where
         Ok((document, cache_control, extensions))
     }
 
-    /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query: Request) -> Response {
+    /// Execute an GraphQL query.
+    pub async fn execute(&self, request: impl Into<Request>) -> Response {
+        let request = request.into();
         let (document, cache_control, extensions) =
-            try_query_result!(self.prepare_query(&query.query, &query.variables));
+            try_query_result!(self.prepare_query(&request.query, &request.variables));
 
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let document = match document.into_data(query.operation_name.as_deref()) {
+        let document = match document.into_data(request.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                let err = if let Some(operation_name) = query.operation_name {
+                let err = if let Some(operation_name) = request.operation_name {
                     Error::Query {
                         pos: Pos::default(),
                         path: None,
@@ -390,9 +391,9 @@ where
 
         let env = QueryEnv::new(
             extensions,
-            query.variables,
+            request.variables,
             document,
-            Arc::new(query.ctx_data),
+            Arc::new(request.ctx_data),
         );
         let ctx = ContextBase {
             path_node: None,
@@ -429,16 +430,18 @@ where
         }
     }
 
+    /// Execute an GraphQL subscription.
     pub async fn execute_stream(
         &self,
-        query: Request,
+        request: impl Into<Request>,
     ) -> Result<impl Stream<Item = Response> + Send> {
-        let (document, _, extensions) = self.prepare_query(&query.query, &query.variables)?;
+        let request = request.into();
+        let (document, _, extensions) = self.prepare_query(&request.query, &request.variables)?;
 
-        let document = match document.into_data(query.operation_name.as_deref()) {
+        let document = match document.into_data(request.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                let err = if let Some(name) = query.operation_name {
+                let err = if let Some(name) = request.operation_name {
                     QueryError::UnknownOperationNamed {
                         name: name.to_string(),
                     }
@@ -460,9 +463,9 @@ where
         let resolve_id = AtomicUsize::default();
         let env = QueryEnv::new(
             extensions,
-            query.variables,
+            request.variables,
             document,
-            Arc::new(query.ctx_data),
+            Arc::new(request.ctx_data),
         );
         let ctx = env.create_context(
             &self.env,

@@ -1,6 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt};
-use std::sync::Arc;
+use futures::{Stream, StreamExt, TryStreamExt};
 
 #[async_std::test]
 pub async fn test_subscription() {
@@ -32,17 +31,13 @@ pub async fn test_subscription() {
 
     {
         let mut stream = schema
-            .create_subscription_stream(
-                "subscription { values(start: 10, end: 20) }",
-                None,
-                Default::default(),
-                None,
-            )
+            .execute_stream("subscription { values(start: 10, end: 20) }")
             .await
-            .unwrap();
+            .unwrap()
+            .map(|resp| resp.unwrap().data);
         for i in 10..20 {
             assert_eq!(
-                Some(Ok(serde_json::json!({ "values": i }))),
+                Some(serde_json::json!({ "values": i })),
                 stream.next().await
             );
         }
@@ -51,17 +46,13 @@ pub async fn test_subscription() {
 
     {
         let mut stream = schema
-            .create_subscription_stream(
-                "subscription { events(start: 10, end: 20) { a b } }",
-                None,
-                Default::default(),
-                None,
-            )
+            .execute_stream("subscription { events(start: 10, end: 20) { a b } }")
             .await
-            .unwrap();
+            .unwrap()
+            .map(|resp| resp.unwrap().data);
         for i in 10..20 {
             assert_eq!(
-                Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
+                Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
                 stream.next().await
             );
         }
@@ -103,23 +94,15 @@ pub async fn test_simple_broker() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream1 = schema
-        .create_subscription_stream(
-            "subscription { events1 { value } }",
-            None,
-            Default::default(),
-            None,
-        )
+        .execute_stream("subscription { events1 { value } }")
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.unwrap().data);
     let mut stream2 = schema
-        .create_subscription_stream(
-            "subscription { events2 { value } }",
-            None,
-            Default::default(),
-            None,
-        )
+        .execute_stream("subscription { events2 { value } }")
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.unwrap().data);
 
     SimpleBroker::publish(Event1 { value: 10 });
     SimpleBroker::publish(Event2 { value: 88 });
@@ -128,20 +111,20 @@ pub async fn test_simple_broker() {
 
     assert_eq!(
         stream1.next().await,
-        Some(Ok(serde_json::json!({ "events1": {"value": 10} })))
+        Some(serde_json::json!({ "events1": {"value": 10} }))
     );
     assert_eq!(
         stream1.next().await,
-        Some(Ok(serde_json::json!({ "events1": {"value": 15} })))
+        Some(serde_json::json!({ "events1": {"value": 15} }))
     );
 
     assert_eq!(
         stream2.next().await,
-        Some(Ok(serde_json::json!({ "events2": {"value": 88} })))
+        Some(serde_json::json!({ "events2": {"value": 88} }))
     );
     assert_eq!(
         stream2.next().await,
-        Some(Ok(serde_json::json!({ "events2": {"value": 99} })))
+        Some(serde_json::json!({ "events2": {"value": 99} }))
     );
 }
 
@@ -179,24 +162,16 @@ pub async fn test_subscription_with_ctx_data() {
 
     {
         let mut stream = schema
-            .create_subscription_stream(
-                "subscription { values objects { value } }",
-                None,
-                Default::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(100i32);
-                    data
-                })),
-            )
+            .execute_stream(Request::new("subscription { values objects { value } }").data(100i32))
             .await
-            .unwrap();
+            .unwrap()
+            .map(|resp| resp.data);
         assert_eq!(
-            Some(Ok(serde_json::json!({ "values": 100 }))),
+            Some(serde_json::json!({ "values": 100 })),
             stream.next().await
         );
         assert_eq!(
-            Some(Ok(serde_json::json!({ "objects": { "value": 100 } }))),
+            Some(serde_json::json!({ "objects": { "value": 100 } })),
             stream.next().await
         );
         assert!(stream.next().await.is_none());
@@ -228,20 +203,14 @@ pub async fn test_subscription_with_token() {
 
     {
         let mut stream = schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Default::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Token("123456".to_string()));
-                    data
-                })),
+            .execute_stream(
+                Request::new("subscription { values }").data(Token("123456".to_string())),
             )
             .await
-            .unwrap();
+            .unwrap()
+            .map(|resp| resp.unwrap().data);
         assert_eq!(
-            Some(Ok(serde_json::json!({ "values": 100 }))),
+            Some(serde_json::json!({ "values": 100 })),
             stream.next().await
         );
         assert!(stream.next().await.is_none());
@@ -249,15 +218,8 @@ pub async fn test_subscription_with_token() {
 
     {
         assert!(schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Default::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Token("654321".to_string()));
-                    data
-                })),
+            .execute_stream(
+                Request::new("subscription { values }").data(Token("654321".to_string()))
             )
             .await
             .is_err());
@@ -288,7 +250,7 @@ pub async fn test_subscription_inline_fragment() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
-        .create_subscription_stream(
+        .execute_stream(
             r#"
             subscription {
                 events(start: 10, end: 20) {
@@ -299,15 +261,13 @@ pub async fn test_subscription_inline_fragment() {
                 }
             }
             "#,
-            None,
-            Default::default(),
-            None,
         )
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.data);
     for i in 10..20 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
+            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
             stream.next().await
         );
     }
@@ -345,7 +305,7 @@ pub async fn test_subscription_fragment() {
         .register_type::<MyInterface>()
         .finish();
     let mut stream = schema
-        .create_subscription_stream(
+        .execute_stream(
             r#"
             subscription s {
                 events(start: 10, end: 20) {
@@ -356,15 +316,13 @@ pub async fn test_subscription_fragment() {
                 }
             }
             "#,
-            None,
-            Default::default(),
-            None,
         )
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.data);
     for i in 10..20 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
+            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
             stream.next().await
         );
     }
@@ -402,7 +360,7 @@ pub async fn test_subscription_fragment2() {
         .register_type::<MyInterface>()
         .finish();
     let mut stream = schema
-        .create_subscription_stream(
+        .execute_stream(
             r#"
             subscription s {
                 events(start: 10, end: 20) {
@@ -414,15 +372,13 @@ pub async fn test_subscription_fragment2() {
                 a b
             }
             "#,
-            None,
-            Default::default(),
-            None,
         )
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.data);
     for i in 10..20 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "events": {"a": i, "b": i * 10} }))),
+            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
             stream.next().await
         );
     }
@@ -462,14 +418,11 @@ pub async fn test_subscription_error() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
-        .create_subscription_stream(
-            "subscription { events { value } }",
-            None,
-            Default::default(),
-            None,
-        )
+        .execute_stream("subscription { events { value } }")
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.into_result())
+        .map_ok(|resp| resp.data);
     for i in 0i32..5 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "events": { "value": i } }))),
@@ -516,9 +469,11 @@ pub async fn test_subscription_fieldresult() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream = schema
-        .create_subscription_stream("subscription { values }", None, Default::default(), None)
+        .execute_stream("subscription { values }")
         .await
-        .unwrap();
+        .unwrap()
+        .map(|resp| resp.into_result())
+        .map_ok(|resp| resp.data);
     for i in 0i32..5 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "values": i }))),

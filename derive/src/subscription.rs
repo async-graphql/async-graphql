@@ -290,13 +290,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                     extensions: None,
                                     cache_control: Default::default(),
                                     error: None,
-                                }
+                                },
                                 Err(err) => err.into(),
                             };
                             if resp.is_err() {
                                 *state = false;
                             }
-                            return #crate_name::futures::future::ready(Some(resp));
+                            #crate_name::futures::future::ready(Some(resp))
                         });
                         return Ok(Box::pin(stream));
                     }

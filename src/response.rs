@@ -1,4 +1,4 @@
-use crate::{CacheControl, Error};
+use crate::{CacheControl, Error, Result};
 
 /// Query response
 #[derive(Debug)]
@@ -17,14 +17,72 @@ pub struct Response {
 }
 
 impl Response {
+    /// Returns `true` if the response is ok.
+    #[inline]
+    pub fn is_ok(&self) -> bool {
+        self.error.is_none()
+    }
+
+    /// Returns `true` if the response is error.
     #[inline]
     pub fn is_err(&self) -> bool {
         self.error.is_some()
     }
 
+    /// Get self.
+    ///
+    /// Panics
+    ///
+    /// It will panic when the response is error.
+    #[inline]
+    pub fn unwrap(self) -> Self {
+        self
+    }
+
+    /// Get the error object.
+    ///
+    /// Panics
+    ///
+    /// It will panic when the response is ok.
     #[inline]
     pub fn unwrap_err(self) -> Error {
         self.error.unwrap()
+    }
+
+    /// Returns the contained error, consuming the self value.
+    ///
+    /// Panics
+    ///
+    /// Panics if the response is ok, with a panic message including the passed message.
+    #[inline]
+    pub fn expect_err(self, msg: &str) -> Error {
+        match self.error {
+            Some(err) => err,
+            None => panic!("{}", msg),
+        }
+    }
+
+    /// Returns self, consuming the self value.
+    ///
+    /// Panics
+    ///
+    /// Panics if the response is errror, with a panic message including the passed message.
+    #[inline]
+    pub fn expect(self, msg: &str) -> Self {
+        match self.error {
+            Some(_) => panic!("{}", msg),
+            None => self,
+        }
+    }
+
+    /// Convert response to `Result<Response>`.
+    #[inline]
+    pub fn into_result(self) -> Result<Self> {
+        if self.is_err() {
+            Err(self.error.unwrap())
+        } else {
+            Ok(self)
+        }
     }
 }
 

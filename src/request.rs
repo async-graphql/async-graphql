@@ -1,16 +1,9 @@
 use crate::parser::types::UploadValue;
-use crate::{http, Data, ParseRequestError, Value, Variables};
-use bytes::Bytes;
-use futures::stream;
-use futures::task::Poll;
-use futures::{AsyncRead, AsyncReadExt, Stream};
-use multer::{Constraints, Multipart, SizeLimit};
+use crate::{Data, Value, Variables};
 use std::any::Any;
-use std::collections::HashMap;
 use std::fs::File;
-use std::io::{self, Seek, SeekFrom, Write};
-use std::pin::Pin;
 
+/// GraphQL query request
 pub struct Request {
     pub(crate) query: String,
     pub(crate) operation_name: Option<String>,

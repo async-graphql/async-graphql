@@ -59,7 +59,7 @@ pub async fn test_optional_type() {
             }"#
     .to_owned();
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.data,
         serde_json::json!({
             "value1": 10,
             "value1Ref": 10,

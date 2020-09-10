@@ -10,10 +10,9 @@ pub use multipart::{receive_multipart, MultipartOptions};
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use stream_body::StreamBody;
 
-use crate::{Data, ParseRequestError, Pos, QueryError, Request, Variables};
+use crate::{Data, ParseRequestError, Request, Variables};
 use futures::io::AsyncRead;
 use futures::AsyncReadExt;
-use serde::ser::{SerializeMap, SerializeSeq};
 use serde::Deserialize;
 
 /// Deserializable GraphQL Request object
@@ -47,7 +46,7 @@ impl From<GQLRequest> for Request {
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
-    mut body: impl AsyncRead + Send + Unpin + 'static,
+    mut body: impl AsyncRead + Unpin + Send + 'static,
     opts: MultipartOptions,
 ) -> Result<Request, ParseRequestError> {
     if let Some(Ok(boundary)) = content_type.map(multer::parse_boundary) {
