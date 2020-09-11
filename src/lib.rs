@@ -104,10 +104,12 @@ mod error;
 mod look_ahead;
 mod model;
 mod mutation_resolver;
-mod query;
+mod request;
 mod resolver;
+mod response;
 mod scalars;
 mod schema;
+mod serialize_resp;
 mod subscription;
 mod types;
 mod validation;
@@ -115,6 +117,7 @@ mod validation;
 pub mod extensions;
 pub mod guard;
 pub mod validators;
+pub use subscription::transports;
 
 #[doc(hidden)]
 pub use async_graphql_parser as parser;
@@ -140,14 +143,13 @@ pub use error::{
 };
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
-pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
+pub use request::Request;
+pub use response::Response;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
-pub use subscription::{
-    ConnectionTransport, SimpleBroker, SubscriptionStreams, WebSocketTransport,
-};
+pub use subscription::SimpleBroker;
 pub use types::{
     connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject,
     MergedObjectSubscriptionTail, MergedObjectTail, Upload,
@@ -163,7 +165,6 @@ pub use context::ContextSelectionSet;
 
 #[doc(hidden)]
 pub mod registry;
-
 #[doc(hidden)]
 pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
 #[doc(hidden)]
@@ -275,7 +276,7 @@ pub use types::{EnumItem, EnumType};
 ///         valueWithError
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
-///     }"#).await.unwrap().data;
+///     }"#).await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///         "valueRef": 10,
@@ -330,7 +331,7 @@ pub use async_graphql_derive::Object;
 ///
 /// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
-///     let res = schema.execute("{ value }").await.unwrap().data;
+///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "value": 10,
 ///     }));
@@ -448,13 +449,14 @@ pub use async_graphql_derive::GQLSimpleObject;
 ///
 /// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
-///     let res = schema.execute("{ value1 value2 }").await.unwrap().data;
+///     let res = schema.execute("{ value1 value2 }").await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// });
 /// ```
 pub use async_graphql_derive::Enum;
 
 /// Define a GraphQL input object
+///
 ///
 /// You can also [derive this](derive.GQLInputObject.html).
 ///
@@ -507,7 +509,7 @@ pub use async_graphql_derive::Enum;
 ///     {
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
-///     }"#).await.unwrap().data;
+///     }"#).await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// });
 /// ```
@@ -629,7 +631,7 @@ pub use async_graphql_derive::InputObject;
 ///             valueC(a: 3, b: 2)
 ///             value_d
 ///         }
-///     }"#).await.unwrap().data;
+///     }"#).await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "typeA": {
 ///             "valueA": "hello",
@@ -706,7 +708,7 @@ pub use async_graphql_derive::GQLInterface;
 ///                 valueB
 ///             }
 ///         }
-///     }"#).await.unwrap().data;
+///     }"#).await.into_result().unwrap().data;
 ///     assert_eq!(res, serde_json::json!({
 ///         "allData": [
 ///             { "valueA": 10 },

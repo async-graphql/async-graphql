@@ -2,7 +2,7 @@ use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
     do_resolve, CacheControl, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
-    Positioned, QueryEnv, QueryError, Result, SchemaEnv, SubscriptionType, Type,
+    Positioned, QueryEnv, QueryError, Response, Result, SchemaEnv, SubscriptionType, Type,
 };
 use futures::Stream;
 use indexmap::IndexMap;
@@ -111,7 +111,7 @@ where
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send>>> {
+    ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>> {
         match self
             .0
             .create_field_stream(idx, ctx, schema_env.clone(), query_env.clone())

@@ -74,7 +74,7 @@ pub async fn test_input_object_default_value() {
         }"#
     .to_owned();
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(&query).await.data,
         serde_json::json!({
             "a": {
                 "a": 999,
@@ -194,6 +194,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({
@@ -209,6 +210,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({
@@ -224,6 +226,7 @@ pub async fn test_inputobject_flatten_recursive() {
         }"#
             )
             .await
+            .into_result()
             .unwrap()
             .data,
         serde_json::json!({

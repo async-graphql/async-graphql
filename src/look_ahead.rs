@@ -101,7 +101,7 @@ mod tests {
 
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -110,9 +110,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -121,9 +121,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -134,9 +134,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 3) {
@@ -145,9 +145,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -158,9 +158,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -173,9 +173,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -188,9 +188,9 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
 
-        schema
+        assert!(!schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -205,6 +205,6 @@ mod tests {
         }"#,
             )
             .await
-            .unwrap();
+            .is_err());
     }
 }

@@ -3,10 +3,8 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-use async_graphql::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder, QueryResponse, Schema,
-    SubscriptionType, Variables,
-};
+use async_graphql::http::MultipartOptions;
+use async_graphql::{ObjectType, Schema, SubscriptionType, Variables};
 use log::{error, info};
 use rocket::{
     data::{self, FromData},
@@ -21,8 +19,8 @@ use std::{io::Cursor, sync::Arc};
 use tokio_util::compat::Tokio02AsyncReadCompatExt;
 use yansi::Paint;
 
-/// Contains the fairing functions, to attach GraphQL with the desired `Schema`, and optionally
-/// `QueryBuilderOpts`, to Rocket.
+/// Contains the fairing functions, to attach GraphQL with the desired `async_graphql::Schema`, and optionally
+/// `async_graphql::MultipartOptions`, to Rocket.
 ///
 /// # Examples
 /// **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
@@ -67,7 +65,7 @@ use yansi::Paint;
 pub struct GraphQL;
 
 impl GraphQL {
-    /// Fairing with default `QueryBuilderOpts`. You just need to pass in your `Schema` and then can
+    /// Fairing with default `async_graphql::MultipartOptions`. You just need to pass in your `async_graphql::Schema` and then can
     /// attach the `Fairing` to Rocket.
     ///
     /// # Examples
@@ -86,20 +84,20 @@ impl GraphQL {
         GraphQL::attach(schema, Default::default())
     }
 
-    /// Fairing to which you need to pass `QueryBuilderOpts` and your `Schema`. Then you can
+    /// Fairing to which you need to pass `async_graphql::MultipartOptions` and your `async_graphql::Schema`. Then you can
     /// attach the `Fairing` to Rocket.
     ///
     /// # Examples
     ///
     /// ```rust,no_run,ignore
-    ///     let opts: IntoQueryBuilderOpts = Default::default();
+    ///     let opts: MultipartOptions = Default::default();
     ///     rocket::ignite()
     ///         .attach(GraphQL::fairing_with_opts(schema, opts))
     ///         .mount("/", routes![graphql_query, graphql_request])
     /// ```
     pub fn fairing_with_opts<Q, M, S>(
         schema: Schema<Q, M, S>,
-        opts: IntoQueryBuilderOpts,
+        opts: MultipartOptions,
     ) -> impl Fairing
     where
         Q: ObjectType + Send + Sync + 'static,
@@ -109,7 +107,7 @@ impl GraphQL {
         GraphQL::attach(schema, opts)
     }
 
-    fn attach<Q, M, S>(schema: Schema<Q, M, S>, opts: IntoQueryBuilderOpts) -> impl Fairing
+    fn attach<Q, M, S>(schema: Schema<Q, M, S>, opts: MultipartOptions) -> impl Fairing
     where
         Q: ObjectType + Send + Sync + 'static,
         M: ObjectType + Send + Sync + 'static,
@@ -146,10 +144,10 @@ impl GraphQL {
 ///         .await
 /// }
 /// ```
-pub struct GQLRequest(pub QueryBuilder);
+pub struct GQLRequest(pub async_graphql::Request);
 
 impl GQLRequest {
-    /// Mimics `async_graphqlquery::QueryBuilder.execute()`.
+    /// Mimics `async_graphql::Schema.execute()`.
     /// Executes the query, always return a complete result.
     pub async fn execute<Q, M, S>(self, schema: &Schema<Q, M, S>) -> Result<GQLResponse, Status>
     where
@@ -157,10 +155,15 @@ impl GQLRequest {
         M: ObjectType + Send + Sync + 'static,
         S: SubscriptionType + Send + Sync + 'static,
     {
-        self.0.execute(schema).await.map(GQLResponse).map_err(|e| {
-            error!("{}", e);
-            Status::BadRequest
-        })
+        schema
+            .execute(self.0)
+            .await
+            .into_result()
+            .map(GQLResponse)
+            .map_err(|e| {
+                error!("{}", e);
+                Status::BadRequest
+            })
     }
 }
 
@@ -209,17 +212,17 @@ impl<'q> FromQuery<'q> for GQLRequest {
         }
 
         if let Some(query_source) = query {
-            let mut builder = QueryBuilder::new(query_source);
+            let mut request = async_graphql::Request::new(query_source);
 
             if let Some(variables) = variables {
-                builder = builder.variables(variables);
+                request = request.variables(variables);
             }
 
             if let Some(operation_name) = operation_name {
-                builder = builder.operation_name(operation_name);
+                request = request.operation_name(operation_name);
             }
 
-            Ok(GQLRequest(builder))
+            Ok(GQLRequest(request))
         } else {
             Err(r#"Parameter "query" missing from request."#.to_string())
         }
@@ -231,12 +234,12 @@ impl FromData for GQLRequest {
     type Error = String;
 
     async fn from_data(req: &Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
-        let opts = match req.guard::<State<'_, Arc<IntoQueryBuilderOpts>>>().await {
+        let opts = match req.guard::<State<'_, Arc<MultipartOptions>>>().await {
             Outcome::Success(opts) => opts,
             Outcome::Failure(_) => {
                 return data::Outcome::Failure((
                     Status::InternalServerError,
-                    "Missing IntoQueryBuilderOpts in State".to_string(),
+                    "Missing MultipartOptions in State".to_string(),
                 ))
             }
             Outcome::Forward(()) => unreachable!(),
@@ -244,53 +247,51 @@ impl FromData for GQLRequest {
 
         let limit = req.limits().get("graphql");
         let stream = data.open(limit.unwrap_or_else(|| 128.kibibytes()));
-        let builder = (req.headers().get_one("Content-Type"), stream.compat())
-            .into_query_builder_opts(&opts)
-            .await;
+        let request = async_graphql::http::receive_body(
+            req.headers().get_one("Content-Type"),
+            stream.compat(),
+            MultipartOptions::clone(&opts),
+        )
+        .await;
 
-        match builder {
-            Ok(builder) => data::Outcome::Success(GQLRequest(builder)),
+        match request {
+            Ok(request) => data::Outcome::Success(GQLRequest(request)),
             Err(e) => data::Outcome::Failure((Status::BadRequest, format!("{}", e))),
         }
     }
 }
 
-/// Wrapper around `async-graphql::query::QueryResponse` for implementing the trait
+/// Wrapper around `async-graphql::Response` for implementing the trait
 /// `rocket::response::responder::Responder`, so that `GQLResponse` can directly be returned
 /// from a Rocket Route function.
-pub struct GQLResponse(pub QueryResponse);
+pub struct GQLResponse(pub async_graphql::Response);
 
 impl<'r> Responder<'r, 'static> for GQLResponse {
     fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
-        let gql_resp = async_graphql::http::GQLResponse(Ok(self.0));
-        let body = serde_json::to_string(&gql_resp).unwrap();
+        let body = serde_json::to_string(&self.0).unwrap();
 
         Response::build()
             .header(ContentType::new("application", "json"))
             .status(Status::Ok)
             .sized_body(body.len(), Cursor::new(body))
-            .cache_control(&gql_resp.0)
+            .cache_control(&self.0)
             .ok()
     }
 }
 
-/// Extension trait, to allow the use of `cache_control` with for example `ResponseBuilder`.
+/// Extension trait, to allow the use of `cache_control` with for example `async_graphql::Request`.
 pub trait CacheControl {
-    /// Add the `async-graphql::query::QueryResponse` cache control value as header to the Rocket response.
-    fn cache_control(&mut self, resp: &async_graphql::Result<QueryResponse>) -> &mut Self;
+    /// Add the `async-graphql::Response` cache control value as header to the Rocket response.
+    fn cache_control(&mut self, resp: &async_graphql::Response) -> &mut Self;
 }
 
 impl<'r> CacheControl for ResponseBuilder<'r> {
-    fn cache_control(
-        &mut self,
-        resp: &async_graphql::Result<QueryResponse>,
-    ) -> &mut ResponseBuilder<'r> {
-        match resp {
-            Ok(resp) if resp.cache_control.value().is_some() => self.header(Header::new(
-                "cache-control",
-                resp.cache_control.value().unwrap(),
-            )),
-            _ => self,
+    fn cache_control(&mut self, resp: &async_graphql::Response) -> &mut ResponseBuilder<'r> {
+        if resp.is_ok() {
+            if let Some(value) = resp.cache_control.value() {
+                self.header(Header::new("cache-control", value));
+            }
         }
+        self
     }
 }

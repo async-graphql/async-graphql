@@ -37,7 +37,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
@@ -50,7 +50,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "a": 1,
             "b": 1,
@@ -62,7 +62,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
@@ -75,7 +75,7 @@ pub async fn test_complexity_and_depth() {
         .limit_complexity(2)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "obj": { "a": 1 }
         })
@@ -95,7 +95,7 @@ pub async fn test_complexity_and_depth() {
         .limit_depth(2)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos { line: 0, column: 0 },
             path: None,
@@ -117,7 +117,7 @@ pub async fn test_complexity_and_depth() {
         .limit_depth(3)
         .finish();
     assert_eq!(
-        schema.execute(&query).await.unwrap().data,
+        schema.execute(query).await.data,
         serde_json::json!({
             "obj": {
                 "a": 1,

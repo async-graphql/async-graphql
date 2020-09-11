@@ -28,9 +28,8 @@ fn quickstart() -> Result<()> {
 
             async fn graphql(req: Request<()>) -> tide::Result<Response> {
                 let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-                let query_builder = req.body_graphql().await?;
-                Ok(Response::new(StatusCode::Ok)
-                    .body_graphql(query_builder.execute(&schema).await)?)
+                let request = req.body_graphql().await?;
+                Ok(Response::new(StatusCode::Ok).body_graphql(schema.execute(request).await)?)
             }
 
             let mut app = tide::new();

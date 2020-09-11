@@ -14,7 +14,7 @@ pub async fn test_input_value_custom_error() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = r#"{ parseInt(n:289) }"#;
     assert_eq!(
-        schema.execute(&query).await.unwrap_err(),
+        schema.execute(query).await.into_result().unwrap_err(),
         Error::Query {
             pos: Pos {
                 line: 1,

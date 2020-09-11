@@ -1,7 +1,6 @@
 use async_graphql::guard::Guard;
 use async_graphql::*;
 use futures::{Stream, StreamExt};
-use std::sync::Arc;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
@@ -77,11 +76,9 @@ pub async fn test_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Role::Admin))
             .await
-            .unwrap()
             .data,
         serde_json::json!({
             "obj": {"value": 99}
@@ -90,10 +87,10 @@ pub async fn test_guard() {
 
     let query = "{ obj { value } }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Role::Guest))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 9 },
@@ -107,11 +104,9 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Role::Admin))
             .await
-            .unwrap()
             .data,
         serde_json::json!({
             "value": 1,
@@ -120,10 +115,10 @@ pub async fn test_guard() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(Role::Guest))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -137,41 +132,25 @@ pub async fn test_guard() {
 
     assert_eq!(
         schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Variables::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Role::Admin);
-                    data
-                })),
-            )
-            .await
-            .unwrap()
+            .execute_stream(Request::new("subscription { values }").data(Role::Admin))
+            .map(|item| item.data)
             .collect::<Vec<_>>()
             .await,
         vec![
-            Ok(serde_json::json! ({"values": 1})),
-            Ok(serde_json::json! ({"values": 2})),
-            Ok(serde_json::json! ({"values": 3}))
+            serde_json::json! ({"values": 1}),
+            serde_json::json! ({"values": 2}),
+            serde_json::json! ({"values": 3})
         ]
     );
 
     assert_eq!(
         schema
-            .create_subscription_stream(
-                "subscription { values }",
-                None,
-                Variables::default(),
-                Some(Arc::new({
-                    let mut data = Data::default();
-                    data.insert(Role::Guest);
-                    data
-                })),
-            )
+            .execute_stream(Request::new("subscription { values }").data(Role::Guest))
+            .boxed()
+            .next()
             .await
-            .err()
+            .unwrap()
+            .error
             .unwrap(),
         Error::Query {
             pos: Pos {
@@ -199,23 +178,27 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+            )
             .await
-            .unwrap()
             .data,
         serde_json::json!({"value": 10})
     );
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .data(Username("test".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+            )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -229,11 +212,14 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Admin)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+            )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -247,11 +233,14 @@ pub async fn test_multiple_guards() {
 
     let query = "{ value }";
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(Role::Guest)
-            .data(Username("test1".to_string()))
-            .execute(&schema)
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+            )
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },
@@ -295,21 +284,19 @@ pub async fn test_guard_forward_arguments() {
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("abc"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("abc")))
             .await
-            .unwrap()
             .data,
         serde_json::json!({"user": "abc"})
     );
 
     let query = r#"{ user(id: "abc") }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .data(ID::from("aaa"))
-            .execute(&schema)
+        schema
+            .execute(Request::new(query).data(ID::from("aaa")))
             .await
+            .into_result()
             .unwrap_err(),
         Error::Query {
             pos: Pos { line: 1, column: 3 },

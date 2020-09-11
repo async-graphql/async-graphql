@@ -31,10 +31,7 @@ pub async fn test_mutation_execution_order() {
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(list.clone())
         .finish();
-    schema
-        .execute("mutation { append1 append2 }")
-        .await
-        .unwrap();
+    schema.execute("mutation { append1 append2 }").await;
     assert_eq!(list.lock().await[0], 1);
     assert_eq!(list.lock().await[1], 2);
 }
@@ -66,8 +63,7 @@ pub async fn test_mutation_fragment() {
             }
         }"#,
         )
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         resp.data,
         serde_json::json!({

@@ -21,8 +21,7 @@ pub async fn test_directive_skip() {
             }
         "#,
         )
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         resp.data,
         serde_json::json!({
@@ -52,8 +51,7 @@ pub async fn test_directive_include() {
             }
         "#,
         )
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         resp.data,
         serde_json::json!({
@@ -92,8 +90,7 @@ pub async fn test_directive_ifdef() {
             }
         "#,
         )
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         resp.data,
         serde_json::json!({
@@ -110,8 +107,7 @@ pub async fn test_directive_ifdef() {
             }
         "#,
         )
-        .await
-        .unwrap();
+        .await;
     assert_eq!(
         resp.data,
         serde_json::json!({

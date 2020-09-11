@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures::{Stream, StreamExt, TryStreamExt};
 
 #[async_std::test]
 pub async fn test_input_value_custom_error() {
@@ -53,11 +53,7 @@ pub async fn test_input_value_custom_error() {
             enumValue(value: TYPE)
         }"#;
     assert_eq!(
-        QueryBuilder::new(query)
-            .execute(&schema)
-            .await
-            .unwrap()
-            .data,
+        schema.execute(query).await.into_result().unwrap().data,
         serde_json::json!({
             "type": 99,
             "obj": { "i32": 88 },
@@ -66,9 +62,10 @@ pub async fn test_input_value_custom_error() {
     );
 
     let mut stream = schema
-        .create_subscription_stream("subscription { type }", None, Default::default(), None)
-        .await
-        .unwrap();
+        .execute_stream("subscription { type }")
+        .map(|resp| resp.into_result())
+        .map_ok(|resp| resp.data)
+        .boxed();
     for i in 0..10 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "type": i }))),

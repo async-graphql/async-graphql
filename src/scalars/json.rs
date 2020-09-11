@@ -128,7 +128,7 @@ mod test {
         let query = r#"{ obj(input: { a: 1, b: 2, c: { a: 11, b: 22 } } ) }"#;
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
         assert_eq!(
-            schema.execute(&query).await.unwrap().data,
+            schema.execute(query).await.into_result().unwrap().data,
             serde_json::json!({
              "obj": {
                  "a": 1,

@@ -1,5 +1,4 @@
-pub use async_graphql::http::GQLResponse;
-use async_graphql::{ObjectType, QueryResponse, Schema, SubscriptionType};
+use async_graphql::{ObjectType, Response, Schema, SubscriptionType};
 use async_graphql_parser::{parse_query, types::ExecutableDocument};
 use async_std::task;
 
@@ -10,13 +9,13 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 pub fn run<Query, Mutation, Subscription>(
     s: &Schema<Query, Mutation, Subscription>,
     q: &str,
-) -> QueryResponse
+) -> Response
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    task::block_on(async { s.execute(q).await.unwrap() })
+    task::block_on(async { s.execute(q).await.into_result().unwrap() })
 }
 
 pub fn parse(q: &str) -> ExecutableDocument {
@@ -31,6 +30,6 @@ pub fn parse(q: &str) -> ExecutableDocument {
 //     do_resolve(...).unwrap();
 // }
 
-pub fn serialize(r: &GQLResponse) -> String {
-    serde_json::to_string(&r).unwrap()
+pub fn serialize(r: &async_graphql::Response) -> String {
+    serde_json::to_string(r).unwrap()
 }

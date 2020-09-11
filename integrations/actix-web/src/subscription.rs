@@ -2,7 +2,7 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType, WebSocketTransport};
+use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::SinkExt;
 use std::time::{Duration, Instant};
@@ -15,7 +15,7 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     hb: Instant,
     sink: Option<mpsc::UnboundedSender<Vec<u8>>>,
-    init_context_data: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
+    initializer: Option<Box<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -30,17 +30,17 @@ where
             schema: schema.clone(),
             hb: Instant::now(),
             sink: None,
-            init_context_data: None,
+            initializer: None,
         }
     }
 
     /// Set a context data initialization function.
-    pub fn init_context_data<F>(self, f: F) -> Self
+    pub fn initializer<F>(self, f: F) -> Self
     where
         F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
     {
         Self {
-            init_context_data: Some(Box::new(f)),
+            initializer: Some(Box::new(f)),
             ..self
         }
     }
@@ -65,16 +65,18 @@ where
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
-        let schema = self.schema.clone();
-        let (sink, stream) = schema.subscription_connection(
-            if let Some(init_with_payload) = self.init_context_data.take() {
-                WebSocketTransport::new(init_with_payload)
-            } else {
-                WebSocketTransport::default()
-            },
-        );
-        ctx.add_stream(stream);
-        self.sink = Some(sink);
+        if let Some(initializer) = self.initializer.take() {
+            let (sink, stream) = async_graphql::transports::websocket::create_with_initializer(
+                &self.schema,
+                initializer,
+            );
+            ctx.add_stream(stream);
+            self.sink = Some(sink);
+        } else {
+            let (sink, stream) = async_graphql::transports::websocket::create(&self.schema);
+            ctx.add_stream(stream);
+            self.sink = Some(sink);
+        };
     }
 }
 

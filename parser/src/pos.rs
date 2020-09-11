@@ -1,7 +1,8 @@
 use crate::Error;
 use pest::iterators::Pair;
 use pest::RuleType;
-use serde::Serialize;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
@@ -9,7 +10,7 @@ use std::hash::{Hash, Hasher};
 use std::str::Chars;
 
 /// Original position of an element in source code.
-#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash)]
 pub struct Pos {
     /// One-based line number.
     pub line: usize,
@@ -27,6 +28,18 @@ impl fmt::Debug for Pos {
 impl fmt::Display for Pos {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}:{}", self.line, self.column)
+    }
+}
+
+impl Serialize for Pos {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(2))?;
+        map.serialize_entry("line", &self.line)?;
+        map.serialize_entry("column", &self.column)?;
+        map.end()
     }
 }
 

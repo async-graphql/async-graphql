@@ -1,25 +1,34 @@
-use crate::context::Data;
+use crate::context::{Data, ResolveId};
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
+use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
-use crate::parser::types::{ExecutableDocument, OperationType};
-use crate::query::QueryBuilder;
+use crate::parser::types::OperationType;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::subscription::{create_connection, create_subscription_stream, ConnectionTransport};
+use crate::subscription::create_subscription_stream;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    CacheControl, Error, ObjectType, Pos, QueryEnv, QueryError, QueryResponse, Result,
-    SubscriptionType, Type, Variables, ID,
+    do_resolve, CacheControl, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Request,
+    Response, Result, SubscriptionType, Type, Variables, ID,
 };
-use futures::channel::mpsc;
-use futures::Stream;
+use async_graphql_parser::types::ExecutableDocumentData;
+use futures::{Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+
+macro_rules! try_query_result {
+    ($res:expr) => {
+        match $res {
+            Ok(resp) => resp,
+            Err(err) => return err.into(),
+        }
+    };
+}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -307,29 +316,27 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
-    /// Execute query without create the `QueryBuilder`.
-    pub async fn execute(&self, query_source: &str) -> Result<QueryResponse> {
-        QueryBuilder::new(query_source).execute(self).await
-    }
-
-    pub(crate) fn prepare_query(
+    fn prepare_request(
         &self,
-        source: &str,
-        variables: &Variables,
-        query_extensions: &[Box<dyn Fn() -> BoxExtension + Send + Sync>],
-    ) -> Result<(ExecutableDocument, CacheControl, spin::Mutex<Extensions>)> {
+        request: &Request,
+    ) -> Result<(
+        ExecutableDocumentData,
+        CacheControl,
+        spin::Mutex<Extensions>,
+    )> {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
                 .extensions
                 .iter()
-                .chain(query_extensions)
                 .map(|factory| factory())
                 .collect_vec(),
         ));
 
-        extensions.lock().parse_start(source, &variables);
-        let document = parse_query(source)
+        extensions
+            .lock()
+            .parse_start(&request.query, &request.variables);
+        let document = parse_query(&request.query)
             .map_err(Into::<Error>::into)
             .log_error(&extensions)?;
         extensions.lock().parse_end(&document);
@@ -343,7 +350,7 @@ where
         } = check_rules(
             &self.env.registry,
             &document,
-            Some(&variables),
+            Some(&request.variables),
             self.validation_mode,
         )
         .log_error(&extensions)?;
@@ -363,66 +370,151 @@ where
             }
         }
 
-        Ok((document, cache_control, extensions))
-    }
-
-    /// Create subscription stream, typically called inside the `SubscriptionTransport::handle_request` method
-    pub async fn create_subscription_stream(
-        &self,
-        source: &str,
-        operation_name: Option<&str>,
-        variables: Variables,
-        ctx_data: Option<Arc<Data>>,
-    ) -> Result<impl Stream<Item = Result<serde_json::Value>> + Send> {
-        let (document, _, extensions) = self.prepare_query(source, &variables, &Vec::new())?;
-
-        let document = match document.into_data(operation_name) {
+        let document = match document.into_data(request.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                return if let Some(name) = operation_name {
-                    Err(QueryError::UnknownOperationNamed {
-                        name: name.to_string(),
+                let err = if let Some(operation_name) = &request.operation_name {
+                    Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::UnknownOperationNamed {
+                            name: operation_name.to_string(),
+                        },
                     }
-                    .into_error(Pos::default()))
                 } else {
-                    Err(QueryError::MissingOperation.into_error(Pos::default()))
-                }
-                .log_error(&extensions)
+                    Error::Query {
+                        pos: Pos::default(),
+                        path: None,
+                        err: QueryError::MissingOperation,
+                    }
+                };
+                extensions.lock().error(&err);
+                return Err(err);
             }
         };
 
-        if document.operation.node.ty != OperationType::Subscription {
-            return Err(QueryError::NotSupported.into_error(Pos::default())).log_error(&extensions);
-        }
-
-        let resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(
-            extensions,
-            variables,
-            document,
-            ctx_data.unwrap_or_default(),
-        );
-        let ctx = env.create_context(
-            &self.env,
-            None,
-            &env.document.operation.node.selection_set,
-            &resolve_id,
-        );
-        let mut streams = Vec::new();
-        create_subscription_stream(self, env.clone(), &ctx, &mut streams)
-            .await
-            .log_error(&ctx.query_env.extensions)?;
-        Ok(futures::stream::select_all(streams))
+        Ok((document, cache_control, extensions))
     }
 
-    /// Create subscription connection, returns `Sink` and `Stream`.
-    pub fn subscription_connection<T: ConnectionTransport>(
+    async fn execute_once(
         &self,
-        transport: T,
-    ) -> (
-        mpsc::UnboundedSender<Vec<u8>>,
-        impl Stream<Item = Vec<u8>> + Unpin,
-    ) {
-        create_connection(self.clone(), transport)
+        document: ExecutableDocumentData,
+        extensions: spin::Mutex<Extensions>,
+        variables: Variables,
+        ctx_data: Data,
+    ) -> Response {
+        // execute
+        let inc_resolve_id = AtomicUsize::default();
+        let env = QueryEnv::new(extensions, variables, document, Arc::new(ctx_data));
+        let ctx = ContextBase {
+            path_node: None,
+            resolve_id: ResolveId::root(),
+            inc_resolve_id: &inc_resolve_id,
+            item: &env.document.operation.node.selection_set,
+            schema_env: &self.env,
+            query_env: &env,
+        };
+
+        env.extensions.lock().execution_start();
+        let data = match &env.document.operation.node.ty {
+            OperationType::Query => try_query_result!(do_resolve(&ctx, &self.query).await),
+            OperationType::Mutation => {
+                try_query_result!(do_mutation_resolve(&ctx, &self.mutation).await)
+            }
+            OperationType::Subscription => {
+                return Error::Query {
+                    pos: Pos::default(),
+                    path: None,
+                    err: QueryError::NotSupported,
+                }
+                .into()
+            }
+        };
+
+        env.extensions.lock().execution_end();
+        let extensions = env.extensions.lock().result();
+        Response {
+            data,
+            extensions,
+            cache_control: Default::default(),
+            error: None,
+        }
+    }
+
+    /// Execute an GraphQL query.
+    pub async fn execute(&self, request: impl Into<Request>) -> Response {
+        let request = request.into();
+        let (document, cache_control, extensions) =
+            try_query_result!(self.prepare_request(&request));
+        let mut resp = self
+            .execute_once(document, extensions, request.variables, request.ctx_data)
+            .await;
+        resp.cache_control = cache_control;
+        resp
+    }
+
+    pub(crate) fn execute_stream_with_ctx_data(
+        &self,
+        request: impl Into<Request>,
+        ctx_data: Arc<Data>,
+    ) -> impl Stream<Item = Response> {
+        let schema = self.clone();
+        async_stream::stream! {
+            let request = request.into();
+            let (document, cache_control, extensions) = match schema.prepare_request(& request) {
+                Ok(res) => res,
+                Err(err) => {
+                    yield Response::from(err);
+                    return;
+                }
+            };
+
+            if document.operation.node.ty != OperationType::Subscription {
+                let mut resp = schema
+                    .execute_once(document, extensions, request.variables, request.ctx_data)
+                    .await;
+                resp.cache_control = cache_control;
+                yield resp;
+                return;
+            }
+
+            let resolve_id = AtomicUsize::default();
+            let env = QueryEnv::new(
+                extensions,
+                request.variables,
+                document,
+                ctx_data,
+            );
+
+            let ctx = env.create_context(
+                &schema.env,
+                None,
+                &env.document.operation.node.selection_set,
+                &resolve_id,
+            );
+
+            let mut streams = Vec::new();
+
+            if let Err(err) = create_subscription_stream(&schema, env.clone(), &ctx, &mut streams).await {
+                yield err.into();
+                return;
+            }
+
+            let mut stream = futures::stream::select_all(streams);
+            while let Some(resp) = stream.next().await {
+                let is_err = resp.is_err();
+                yield resp;
+                if is_err {
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Execute an GraphQL subscription.
+    pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
+        let mut request = request.into();
+        let ctx_data = std::mem::replace(&mut request.ctx_data, Default::default());
+        self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
     }
 }

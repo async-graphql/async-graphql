@@ -5,11 +5,8 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, StreamBody};
-use async_graphql::{
-    Data, FieldResult, IntoQueryBuilder, IntoQueryBuilderOpts, ObjectType, QueryBuilder,
-    QueryResponse, Schema, SubscriptionType, WebSocketTransport,
-};
+use async_graphql::http::{GQLRequest, MultipartOptions, StreamBody};
+use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType};
 use futures::select;
 use futures::{SinkExt, StreamExt};
 use hyper::Method;
@@ -35,9 +32,10 @@ impl Reject for BadRequest {}
 
 /// GraphQL request filter
 ///
-/// It outputs a tuple containing the `Schema` and `QuertBuilder`.
+/// It outputs a tuple containing the `async_graphql::Schema` and `async_graphql::Request`.
 ///
 /// # Examples
+///
 /// *[Full Example](<https://github.com/async-graphql/examples/blob/master/warp/starwars/src/main.rs>)*
 ///
 /// ```no_run
@@ -57,18 +55,24 @@ impl Reject for BadRequest {}
 ///     }
 /// }
 ///
+/// type MySchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
+///
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
-///         Ok::<_, Infallible>(GQLResponse::from(builder.execute(&schema).await))
+///     let filter = async_graphql_warp::graphql(schema).
+///             and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
+///         Ok::<_, Infallible>(GQLResponse::from(schema.execute(request).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+) -> BoxedFilter<((
+    Schema<Query, Mutation, Subscription>,
+    async_graphql::Request,
+),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -77,11 +81,14 @@ where
     graphql_opts(schema, Default::default())
 }
 
-/// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
+/// Similar to graphql, but you can set the options `async_graphql::MultipartOptions`.
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-    opts: IntoQueryBuilderOpts,
-) -> BoxedFilter<((Schema<Query, Mutation, Subscription>, QueryBuilder),)>
+    opts: MultipartOptions,
+) -> BoxedFilter<((
+    Schema<Query, Mutation, Subscription>,
+    async_graphql::Request,
+),)>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -100,23 +107,19 @@ where
              query: String,
              content_type,
              body,
-             opts: Arc<IntoQueryBuilderOpts>,
+             opts: Arc<MultipartOptions>,
              schema| async move {
                 if method == Method::GET {
-                    let gql_request: GQLRequest =
-                        serde_urlencoded::from_str(&query)
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    let builder = gql_request
-                        .into_query_builder_opts(&opts)
-                        .await
+                    let request: GQLRequest = serde_urlencoded::from_str(&query)
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    Ok::<_, Rejection>((schema, async_graphql::Request::from(request)))
                 } else {
-                    let builder = (content_type, StreamBody::new(body))
-                        .into_query_builder_opts(&opts)
-                        .await
-                        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, builder))
+                    let request = async_graphql::http::receive_body(
+                        content_type,
+                        StreamBody::new(body),
+                        MultipartOptions::clone(&opts)
+                    ).await.map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                    Ok::<_, Rejection>((schema, request))
                 }
             },
         )
@@ -164,15 +167,15 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    graphql_subscription_with_data(schema, |_| Ok(Default::default()))
+    graphql_subscription_with_initializer(schema, |_| Ok(Default::default()))
 }
 
 /// GraphQL subscription filter
 ///
 /// Specifies that a function converts the init payload to data.
-pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
+pub fn graphql_subscription_with_initializer<Query, Mutation, Subscription, F>(
     schema: Schema<Query, Mutation, Subscription>,
-    init_context_data: F,
+    initializer: F,
 ) -> BoxedFilter<(impl Reply,)>
 where
     Query: ObjectType + Sync + Send + 'static,
@@ -183,20 +186,23 @@ where
     warp::any()
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
-        .and(warp::any().map(move || init_context_data.clone()))
+        .and(warp::any().map(move || initializer.clone()))
         .map(
-            |ws: warp::ws::Ws,
-             schema: Schema<Query, Mutation, Subscription>,
-             init_context_data: F| {
+            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, initializer: F| {
                 ws.on_upgrade(move |websocket| {
                     let (mut tx, rx) = websocket.split();
                     let (mut stx, srx) =
-                        schema.subscription_connection(WebSocketTransport::new(init_context_data));
+                        async_graphql::transports::websocket::create_with_initializer(
+                            &schema,
+                            initializer,
+                        );
 
                     let mut rx = rx.fuse();
-                    let mut srx = srx.fuse();
+                    let srx = srx.fuse();
 
                     async move {
+                        futures::pin_mut!(srx);
+
                         loop {
                             select! {
                                 bytes = srx.next() => {
@@ -232,17 +238,17 @@ where
 }
 
 /// GraphQL reply
-pub struct GQLResponse(async_graphql::Result<QueryResponse>);
+pub struct GQLResponse(async_graphql::Response);
 
-impl From<async_graphql::Result<QueryResponse>> for GQLResponse {
-    fn from(resp: async_graphql::Result<QueryResponse>) -> Self {
+impl From<async_graphql::Response> for GQLResponse {
+    fn from(resp: async_graphql::Response) -> Self {
         GQLResponse(resp)
     }
 }
 
-fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<QueryResponse>) {
-    if let Ok(QueryResponse { cache_control, .. }) = resp {
-        if let Some(cache_control) = cache_control.value() {
+fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Response) {
+    if resp.is_ok() {
+        if let Some(cache_control) = resp.cache_control.value() {
             if let Ok(value) = cache_control.parse() {
                 http_resp.headers_mut().insert("cache-control", value);
             }
@@ -252,14 +258,13 @@ fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Result<Quer
 
 impl Reply for GQLResponse {
     fn into_response(self) -> Response {
-        let gql_resp = async_graphql::http::GQLResponse(self.0);
         let mut resp = warp::reply::with_header(
-            warp::reply::json(&gql_resp),
+            warp::reply::json(&self.0),
             "content-type",
             "application/json",
         )
         .into_response();
-        add_cache_control(&mut resp, &gql_resp.0);
+        add_cache_control(&mut resp, &self.0);
         resp
     }
 }

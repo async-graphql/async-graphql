@@ -353,6 +353,17 @@ pub enum ParseRequestError {
     PayloadTooLarge,
 }
 
+impl From<multer::Error> for ParseRequestError {
+    fn from(err: multer::Error) -> Self {
+        match err {
+            multer::Error::FieldSizeExceeded { .. } | multer::Error::StreamSizeExceeded { .. } => {
+                ParseRequestError::PayloadTooLarge
+            }
+            _ => ParseRequestError::InvalidMultipart(err),
+        }
+    }
+}
+
 /// Verification error.
 #[derive(Debug, PartialEq)]
 pub struct RuleError {

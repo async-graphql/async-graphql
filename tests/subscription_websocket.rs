@@ -18,12 +18,12 @@ pub async fn test_subscription_ws_transport() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
+    let (mut sink, stream) = transports::websocket::create(&schema);
+    futures::pin_mut!(stream);
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
             "type": "connection_init",
-            "payload": { "token": "123456" }
         }))
         .unwrap(),
     )
@@ -60,6 +60,14 @@ pub async fn test_subscription_ws_transport() {
             serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
         );
     }
+
+    assert_eq!(
+        Some(serde_json::json!({
+        "type": "complete",
+        "id": "1",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
 }
 
 #[async_std::test]
@@ -84,8 +92,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-
-    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::new(|value| {
+    let (mut sink, stream) = transports::websocket::create_with_initializer(&schema, |value| {
         #[derive(serde::Deserialize)]
         struct Payload {
             token: String,
@@ -95,7 +102,8 @@ pub async fn test_subscription_ws_transport_with_token() {
         let mut data = Data::default();
         data.insert(Token(payload.token));
         Ok(data)
-    }));
+    });
+    futures::pin_mut!(stream);
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
@@ -137,6 +145,14 @@ pub async fn test_subscription_ws_transport_with_token() {
             serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
         );
     }
+
+    assert_eq!(
+        Some(serde_json::json!({
+        "type": "complete",
+        "id": "1",
+        })),
+        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+    );
 }
 
 #[async_std::test]
@@ -171,9 +187,8 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-
-    let (mut sink, mut stream) =
-        schema.subscription_connection(WebSocketTransport::new(|_| Ok(Data::default())));
+    let (mut sink, stream) = transports::websocket::create(&schema);
+    futures::pin_mut!(stream);
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
@@ -241,7 +256,8 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let (mut sink, mut stream) = schema.subscription_connection(WebSocketTransport::default());
+    let (mut sink, stream) = transports::websocket::create(&schema);
+    futures::pin_mut!(stream);
 
     sink.send(
         serde_json::to_vec(&serde_json::json!({
