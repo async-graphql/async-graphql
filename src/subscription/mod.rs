@@ -6,3 +6,4 @@ mod subscription_type;
 //pub use connection::{create_connection, ConnectionTransport, SubscriptionStreams};
 pub use simple_broker::SimpleBroker;
 pub use subscription_type::{create_subscription_stream, SubscriptionType};
+pub mod transports;

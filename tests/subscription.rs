@@ -32,7 +32,8 @@ pub async fn test_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { values(start: 10, end: 20) }")
-            .map(|resp| resp.into_result().unwrap().data);
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
         for i in 10..20 {
             assert_eq!(
                 Some(serde_json::json!({ "values": i })),
@@ -45,7 +46,8 @@ pub async fn test_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { events(start: 10, end: 20) { a b } }")
-            .map(|resp| resp.into_result().unwrap().data);
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
         for i in 10..20 {
             assert_eq!(
                 Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
@@ -97,10 +99,12 @@ pub async fn test_simple_broker() {
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let mut stream1 = schema
         .execute_stream("subscription { events1 { value } }")
-        .map(|resp| resp.into_result().unwrap().data);
+        .map(|resp| resp.into_result().unwrap().data)
+        .boxed();
     let mut stream2 = schema
         .execute_stream("subscription { events2 { value } }")
-        .map(|resp| resp.into_result().unwrap().data);
+        .map(|resp| resp.into_result().unwrap().data)
+        .boxed();
 
     assert_eq!(
         stream1.next().await,
@@ -156,7 +160,8 @@ pub async fn test_subscription_with_ctx_data() {
     {
         let mut stream = schema
             .execute_stream(Request::new("subscription { values objects { value } }").data(100i32))
-            .map(|resp| resp.data);
+            .map(|resp| resp.data)
+            .boxed();
         assert_eq!(
             Some(serde_json::json!({ "values": 100 })),
             stream.next().await
@@ -197,7 +202,8 @@ pub async fn test_subscription_with_token() {
             .execute_stream(
                 Request::new("subscription { values }").data(Token("123456".to_string())),
             )
-            .map(|resp| resp.into_result().unwrap().data);
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
         assert_eq!(
             Some(serde_json::json!({ "values": 100 })),
             stream.next().await
@@ -210,6 +216,7 @@ pub async fn test_subscription_with_token() {
             .execute_stream(
                 Request::new("subscription { values }").data(Token("654321".to_string()))
             )
+            .boxed()
             .next()
             .await
             .unwrap()
@@ -253,7 +260,8 @@ pub async fn test_subscription_inline_fragment() {
             }
             "#,
         )
-        .map(|resp| resp.data);
+        .map(|resp| resp.data)
+        .boxed();
     for i in 10..20 {
         assert_eq!(
             Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
@@ -306,8 +314,9 @@ pub async fn test_subscription_fragment() {
             }
             "#,
         )
-        .map(|resp| resp.data);
-    for i in 10..20 {
+        .map(|resp| resp.data)
+        .boxed();
+    for i in 10i32..20 {
         assert_eq!(
             Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
             stream.next().await
@@ -360,7 +369,8 @@ pub async fn test_subscription_fragment2() {
             }
             "#,
         )
-        .map(|resp| resp.data);
+        .map(|resp| resp.data)
+        .boxed();
     for i in 10..20 {
         assert_eq!(
             Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
@@ -405,7 +415,8 @@ pub async fn test_subscription_error() {
     let mut stream = schema
         .execute_stream("subscription { events { value } }")
         .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data);
+        .map_ok(|resp| resp.data)
+        .boxed();
     for i in 0i32..5 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "events": { "value": i } }))),
@@ -454,7 +465,8 @@ pub async fn test_subscription_fieldresult() {
     let mut stream = schema
         .execute_stream("subscription { values }")
         .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data);
+        .map_ok(|resp| resp.data)
+        .boxed();
     for i in 0i32..5 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "values": i }))),

@@ -3,7 +3,7 @@ use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
-use crate::parser::types::{ExecutableDocument, OperationType};
+use crate::parser::types::OperationType;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::subscription::create_subscription_stream;
 use crate::types::QueryRoot;
@@ -12,6 +12,7 @@ use crate::{
     do_resolve, CacheControl, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Request,
     Response, Result, SubscriptionType, Type, Variables, ID,
 };
+use async_graphql_parser::types::ExecutableDocumentData;
 use futures::{Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
@@ -315,11 +316,14 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
-    fn prepare_query(
+    fn prepare_request(
         &self,
-        source: &str,
-        variables: &Variables,
-    ) -> Result<(ExecutableDocument, CacheControl, spin::Mutex<Extensions>)> {
+        request: &Request,
+    ) -> Result<(
+        ExecutableDocumentData,
+        CacheControl,
+        spin::Mutex<Extensions>,
+    )> {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
@@ -329,8 +333,10 @@ where
                 .collect_vec(),
         ));
 
-        extensions.lock().parse_start(source, &variables);
-        let document = parse_query(source)
+        extensions
+            .lock()
+            .parse_start(&request.query, &request.variables);
+        let document = parse_query(&request.query)
             .map_err(Into::<Error>::into)
             .log_error(&extensions)?;
         extensions.lock().parse_end(&document);
@@ -344,7 +350,7 @@ where
         } = check_rules(
             &self.env.registry,
             &document,
-            Some(&variables),
+            Some(&request.variables),
             self.validation_mode,
         )
         .log_error(&extensions)?;
@@ -364,26 +370,15 @@ where
             }
         }
 
-        Ok((document, cache_control, extensions))
-    }
-
-    /// Execute an GraphQL query.
-    pub async fn execute(&self, request: impl Into<Request>) -> Response {
-        let request = request.into();
-        let (document, cache_control, extensions) =
-            try_query_result!(self.prepare_query(&request.query, &request.variables));
-
-        // execute
-        let inc_resolve_id = AtomicUsize::default();
         let document = match document.into_data(request.operation_name.as_deref()) {
             Some(document) => document,
             None => {
-                let err = if let Some(operation_name) = request.operation_name {
+                let err = if let Some(operation_name) = &request.operation_name {
                     Error::Query {
                         pos: Pos::default(),
                         path: None,
                         err: QueryError::UnknownOperationNamed {
-                            name: operation_name,
+                            name: operation_name.to_string(),
                         },
                     }
                 } else {
@@ -394,16 +389,23 @@ where
                     }
                 };
                 extensions.lock().error(&err);
-                return err.into();
+                return Err(err);
             }
         };
 
-        let env = QueryEnv::new(
-            extensions,
-            request.variables,
-            document,
-            Arc::new(request.ctx_data),
-        );
+        Ok((document, cache_control, extensions))
+    }
+
+    async fn execute_once(
+        &self,
+        document: ExecutableDocumentData,
+        extensions: spin::Mutex<Extensions>,
+        variables: Variables,
+        ctx_data: Data,
+    ) -> Response {
+        // execute
+        let inc_resolve_id = AtomicUsize::default();
+        let env = QueryEnv::new(extensions, variables, document, Arc::new(ctx_data));
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
@@ -434,45 +436,42 @@ where
         Response {
             data,
             extensions,
-            cache_control,
+            cache_control: Default::default(),
             error: None,
         }
+    }
+
+    /// Execute an GraphQL query.
+    pub async fn execute(&self, request: impl Into<Request>) -> Response {
+        let request = request.into();
+        let (document, cache_control, extensions) =
+            try_query_result!(self.prepare_request(&request));
+        let mut resp = self
+            .execute_once(document, extensions, request.variables, request.ctx_data)
+            .await;
+        resp.cache_control = cache_control;
+        resp
     }
 
     /// Execute an GraphQL subscription.
     pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
         let schema = self.clone();
-        Box::pin(async_stream::stream! {
+        async_stream::stream! {
             let request = request.into();
-            let (document, extensions) = match schema.prepare_query(&request.query, &request.variables) {
-                Ok((document, _, extensions)) => (document, extensions),
+            let (document, cache_control, extensions) = match schema.prepare_request(& request) {
+                Ok(res) => res,
                 Err(err) => {
                     yield Response::from(err);
                     return;
                 }
             };
 
-            let document = match document.into_data(request.operation_name.as_deref()) {
-                Some(document) => document,
-                None => {
-                    let err = if let Some(name) = request.operation_name {
-                        QueryError::UnknownOperationNamed {
-                            name: name.to_string(),
-                        }
-                        .into_error(Pos::default())
-                    } else {
-                        QueryError::MissingOperation.into_error(Pos::default())
-                    };
-                    extensions.lock().error(&err);
-                    yield err.into();
-                    return;
-                }
-            };
-
             if document.operation.node.ty != OperationType::Subscription {
-                let err = QueryError::NotSupported.into_error(Pos::default());
-                extensions.lock().error(&err);
-                yield err.into();
+                let mut resp = schema
+                    .execute_once(document, extensions, request.variables, request.ctx_data)
+                    .await;
+                resp.cache_control = cache_control;
+                yield resp;
                 return;
             }
 
@@ -506,6 +505,6 @@ where
                     break;
                 }
             }
-        })
+        }
     }
 }

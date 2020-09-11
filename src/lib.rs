@@ -117,6 +117,7 @@ mod validation;
 pub mod extensions;
 pub mod guard;
 pub mod validators;
+pub use subscription::transports;
 
 #[doc(hidden)]
 pub use async_graphql_parser as parser;
