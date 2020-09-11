@@ -11,13 +11,27 @@ use std::task::Poll;
 
 /// Options for `receive_multipart`.
 #[derive(Default, Clone)]
-#[non_exhaustive]
 pub struct MultipartOptions {
-    /// Maximum file size.
-    pub max_file_size: Option<usize>,
+    max_file_size: Option<usize>,
+    max_num_files: Option<usize>,
+}
 
-    /// Maximum number of files.
-    pub max_num_files: Option<usize>,
+impl MultipartOptions {
+    /// Set maximum file size.
+    pub fn max_file_size(self, size: usize) -> Self {
+        MultipartOptions {
+            max_file_size: Some(size),
+            ..self
+        }
+    }
+
+    /// Set maximum number of files.
+    pub fn max_num_files(self, n: usize) -> Self {
+        MultipartOptions {
+            max_num_files: Some(n),
+            ..self
+        }
+    }
 }
 
 /// Receive a multipart request.
