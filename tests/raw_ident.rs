@@ -64,7 +64,8 @@ pub async fn test_input_value_custom_error() {
     let mut stream = schema
         .execute_stream("subscription { type }")
         .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data);
+        .map_ok(|resp| resp.data)
+        .boxed();
     for i in 0..10 {
         assert_eq!(
             Some(Ok(serde_json::json!({ "type": i }))),

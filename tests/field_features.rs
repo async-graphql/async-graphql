@@ -124,7 +124,7 @@ pub async fn test_field_features() {
         }
     );
 
-    let mut stream = schema.execute_stream("subscription { values }");
+    let mut stream = schema.execute_stream("subscription { values }").boxed();
     assert_eq!(
         stream.next().await.map(|resp| resp.data),
         Some(serde_json::json!({
@@ -132,7 +132,7 @@ pub async fn test_field_features() {
         }))
     );
 
-    let mut stream = schema.execute_stream("subscription { valuesBson }");
+    let mut stream = schema.execute_stream("subscription { valuesBson }").boxed();
     assert_eq!(
         stream.next().await.map(|resp| resp.data),
         Some(serde_json::json!({
@@ -143,6 +143,7 @@ pub async fn test_field_features() {
     assert_eq!(
         schema
             .execute_stream("subscription { valuesAbc }")
+            .boxed()
             .next()
             .await
             .unwrap()

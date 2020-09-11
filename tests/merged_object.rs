@@ -193,7 +193,8 @@ pub async fn test_merged_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { events1 }")
-            .map(|resp| resp.into_result().unwrap().data);
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
         for i in 0i32..10 {
             assert_eq!(
                 Some(serde_json::json!({
@@ -208,7 +209,8 @@ pub async fn test_merged_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { events2 }")
-            .map(|resp| resp.into_result().unwrap().data);
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
         for i in 10i32..20 {
             assert_eq!(
                 Some(serde_json::json!({

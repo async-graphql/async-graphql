@@ -1,6 +1,8 @@
+//! WebSocket transport for subscription
+
 use crate::{http, Data, FieldResult, ObjectType, Response, Schema, SubscriptionType};
 use futures::channel::mpsc;
-use futures::task::{AtomicWaker, Context, Poll};
+use futures::task::{Context, Poll};
 use futures::{Future, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
@@ -57,7 +59,6 @@ where
             initializer: Arc::new(initializer),
             rx_bytes,
             handle_request_fut: None,
-            waker: AtomicWaker::new(),
             ctx: Some(WSContext {
                 streams: &mut streams,
                 send_buf: &mut send_buf,
@@ -90,7 +91,6 @@ struct SubscriptionStream<'a, Query, Mutation, Subscription> {
     initializer: InitializerFn,
     rx_bytes: mpsc::UnboundedReceiver<Vec<u8>>,
     handle_request_fut: Option<HandleRequestBoxFut<'a>>,
-    waker: AtomicWaker,
     ctx: Option<WSContext<'a>>,
 }
 
@@ -134,7 +134,6 @@ where
                             ctx,
                             data,
                         )));
-                        this.waker.wake();
                         continue;
                     }
                     Poll::Ready(None) => return Poll::Ready(None),
@@ -191,15 +190,10 @@ where
                     for id in closed {
                         ctx.streams.remove(&id);
                     }
-                    this.waker.register(cx.waker());
-                    return Poll::Pending;
-                } else {
-                    this.waker.register(cx.waker());
-                    return Poll::Pending;
                 }
-            } else {
-                return Poll::Pending;
             }
+
+            return Poll::Pending;
         }
     }
 }
