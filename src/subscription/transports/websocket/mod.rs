@@ -28,6 +28,7 @@ type HandleRequestBoxFut<'a> =
 
 type InitializerFn = Arc<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>;
 
+/// Create a websocket transport.
 pub fn create<Query, Mutation, Subscription>(
     schema: &Schema<Query, Mutation, Subscription>,
 ) -> (mpsc::UnboundedSender<Vec<u8>>, impl Stream<Item = Vec<u8>>)
@@ -39,6 +40,7 @@ where
     create_with_initializer(schema, |_| Ok(Default::default()))
 }
 
+/// Create a websocket transport and specify a context initialization function.
 pub fn create_with_initializer<Query, Mutation, Subscription>(
     schema: &Schema<Query, Mutation, Subscription>,
     initializer: impl Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,

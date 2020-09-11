@@ -5,16 +5,13 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, GQLResponse};
-use async_graphql::{
-    IntoQueryBuilder, ObjectType, QueryBuilder, ReceiveMultipartOptions, Response, Schema,
-    SubscriptionType,
-};
+use async_graphql::http::{GQLRequest, MultipartOptions};
+use async_graphql::{ObjectType, Schema, SubscriptionType};
 use async_trait::async_trait;
 use std::str::FromStr;
 use tide::{
     http::{headers, Method},
-    Body, Request, Response, Status, StatusCode,
+    Body, Request, Response, StatusCode,
 };
 
 /// GraphQL request handler
@@ -53,38 +50,34 @@ use tide::{
 pub async fn graphql<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
     schema: Schema<Query, Mutation, Subscription>,
-    query_builder_configuration: F,
+    configuration: F,
 ) -> tide::Result<Response>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: FnOnce(QueryBuilder) -> QueryBuilder + Send,
+    F: FnOnce(async_graphql::Request) -> async_graphql::Request + Send,
 {
-    graphql_opts(req, schema, query_builder_configuration, Default::default()).await
+    graphql_opts(req, schema, configuration, Default::default()).await
 }
 
-/// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
+/// Similar to graphql, but you can set the options `MultipartOptions`.
 pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
     schema: Schema<Query, Mutation, Subscription>,
-    query_builder_configuration: F,
-    opts: ReceiveMultipartOptions,
+    configuration: F,
+    opts: MultipartOptions,
 ) -> tide::Result<Response>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: FnOnce(QueryBuilder) -> QueryBuilder + Send,
+    F: FnOnce(async_graphql::Request) -> async_graphql::Request + Send,
 {
-    let query_builder = req.body_graphql_opts(opts).await?;
-    Response::new(StatusCode::Ok).body_graphql(
-        query_builder_configuration(query_builder)
-            .execute(&schema)
-            .await,
-    )
+    let request = req.body_graphql_opts(opts).await?;
+    Response::new(StatusCode::Ok).body_graphql(schema.execute(configuration(request)).await)
 }
 
 /// Tide request extension
@@ -92,29 +85,32 @@ where
 #[async_trait]
 pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
     /// Convert a query to `async_graphql::QueryBuilder`.
-    async fn body_graphql(self) -> tide::Result<QueryBuilder> {
+    async fn body_graphql(self) -> tide::Result<async_graphql::Request> {
         self.body_graphql_opts(Default::default()).await
     }
 
     /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
-    async fn body_graphql_opts(self, opts: ReceiveMultipartOptions) -> tide::Result<QueryBuilder>;
+    async fn body_graphql_opts(
+        self,
+        opts: MultipartOptions,
+    ) -> tide::Result<async_graphql::Request>;
 }
 
 #[async_trait]
 impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> {
-    async fn body_graphql_opts(self, opts: ReceiveMultipartOptions) -> tide::Result<QueryBuilder> {
+    async fn body_graphql_opts(
+        self,
+        opts: MultipartOptions,
+    ) -> tide::Result<async_graphql::Request> {
         if self.method() == Method::Get {
-            let gql_request: GQLRequest = self.query::<GQLRequest>()?;
-            let builder = gql_request
-                .into_query_builder_opts(&opts)
-                .await
-                .status(StatusCode::BadRequest)?;
-            Ok(builder)
+            Ok(self.query::<GQLRequest>()?.into())
         } else {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)
                 .and_then(|values| values.get(0).map(|value| value.to_string()));
-            Ok((content_type, self).into_query_builder_opts(&opts).await?)
+            async_graphql::http::receive_body(content_type, self, opts)
+                .await
+                .map_err(|err| tide::Error::new(StatusCode::BadRequest, err))
         }
     }
 }
@@ -123,23 +119,22 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
 ///
 pub trait ResponseExt: Sized {
     /// Set body as the result of a GraphQL query.
-    fn body_graphql(self, res: async_graphql::Result<Response>) -> tide::Result<Self>;
+    fn body_graphql(self, res: async_graphql::Response) -> tide::Result<Self>;
 }
 
 impl ResponseExt for Response {
-    fn body_graphql(self, res: async_graphql::Result<Response>) -> tide::Result<Self> {
+    fn body_graphql(self, res: async_graphql::Response) -> tide::Result<Self> {
         let mut resp = add_cache_control(self, &res);
-        resp.set_body(Body::from_json(&GQLResponse(res))?);
+        resp.set_body(Body::from_json(&res)?);
         Ok(resp)
     }
 }
 
-fn add_cache_control(mut http_resp: Response, resp: &async_graphql::Result<Response>) -> Response {
-    if let Ok(Response { cache_control, .. }) = resp {
-        if let Some(cache_control) = cache_control.value() {
+fn add_cache_control(mut http_resp: Response, resp: &async_graphql::Response) -> Response {
+    if resp.is_ok() {
+        if let Some(cache_control) = resp.cache_control.value() {
             if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
                 http_resp.insert_header(header, cache_control);
-                return http_resp;
             }
         }
     }
