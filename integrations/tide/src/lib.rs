@@ -62,7 +62,7 @@ where
     graphql_opts(req, schema, configuration, Default::default()).await
 }
 
-/// Similar to graphql, but you can set the options `MultipartOptions`.
+/// Similar to graphql, but you can set the options `async_graphql::MultipartOptions`.
 pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
     req: Request<TideState>,
     schema: Schema<Query, Mutation, Subscription>,
@@ -84,12 +84,12 @@ where
 ///
 #[async_trait]
 pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
-    /// Convert a query to `async_graphql::QueryBuilder`.
+    /// Convert a query to `async_graphql::Request`.
     async fn body_graphql(self) -> tide::Result<async_graphql::Request> {
         self.body_graphql_opts(Default::default()).await
     }
 
-    /// Similar to graphql, but you can set the options `IntoQueryBuilderOpts`.
+    /// Similar to `RequestExt::body_graphql`, but you can set the options `async_graphql::MultipartOptions`.
     async fn body_graphql_opts(
         self,
         opts: MultipartOptions,

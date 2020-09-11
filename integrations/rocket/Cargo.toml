@@ -4,6 +4,7 @@ version = "1.18.0"
 authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
 edition = "2018"
 description = "async-graphql for Rocket.rs"
+# Waiting for Rocket 0.5 release.
 #publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"

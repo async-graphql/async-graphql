@@ -60,6 +60,5 @@ members = [
     "integrations/warp",
     "integrations/tide",
     "integrations/rocket",
-#    "integrations/lambda",
     "benchmark",
 ]
