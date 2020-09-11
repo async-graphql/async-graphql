@@ -453,8 +453,11 @@ where
         resp
     }
 
-    /// Execute an GraphQL subscription.
-    pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
+    pub(crate) fn execute_stream_with_ctx_data(
+        &self,
+        request: impl Into<Request>,
+        ctx_data: Arc<Data>,
+    ) -> impl Stream<Item = Response> {
         let schema = self.clone();
         async_stream::stream! {
             let request = request.into();
@@ -480,7 +483,7 @@ where
                 extensions,
                 request.variables,
                 document,
-                Arc::new(request.ctx_data),
+                ctx_data,
             );
 
             let ctx = env.create_context(
@@ -506,5 +509,12 @@ where
                 }
             }
         }
+    }
+
+    /// Execute an GraphQL subscription.
+    pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
+        let mut request = request.into();
+        let ctx_data = std::mem::replace(&mut request.ctx_data, Default::default());
+        self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
     }
 }

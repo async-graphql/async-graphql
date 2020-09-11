@@ -1,6 +1,6 @@
 //! WebSocket transport for subscription
 
-use crate::{http, Data, FieldResult, ObjectType, Response, Schema, SubscriptionType};
+use crate::{http, Data, FieldResult, ObjectType, Request, Response, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::task::{Context, Poll};
 use futures::{Future, Stream, StreamExt};
@@ -181,8 +181,11 @@ where
                                             payload: None,
                                         },
                                     );
+                                    break;
                                 }
-                                Poll::Pending => break,
+                                Poll::Pending => {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -190,6 +193,10 @@ where
                     for id in closed {
                         ctx.streams.remove(&id);
                     }
+                }
+
+                if !ctx.send_buf.is_empty() {
+                    continue;
                 }
             }
 
@@ -227,7 +234,10 @@ where
             "start" => {
                 if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
                     if let Ok(request) = serde_json::from_value::<http::GQLRequest>(payload) {
-                        let stream = schema.execute_stream(request).boxed();
+                        let request = Request::from(request);
+                        let stream = schema
+                            .execute_stream_with_ctx_data(request, ctx.ctx_data.clone())
+                            .boxed();
                         ctx.streams.insert(id, stream);
                     }
                 }
