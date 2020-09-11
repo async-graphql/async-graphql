@@ -239,7 +239,7 @@ impl FromData for GQLRequest {
             Outcome::Failure(_) => {
                 return data::Outcome::Failure((
                     Status::InternalServerError,
-                    "Missing IntoQueryBuilderOpts in State".to_string(),
+                    "Missing MultipartOptions in State".to_string(),
                 ))
             }
             Outcome::Forward(()) => unreachable!(),
