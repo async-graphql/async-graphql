@@ -1095,19 +1095,21 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 <p><strong>即使你目前使用的Web Server不在上面的列表中，自己实现类似的功能也相当的简单。</strong></p>
 <h1><a class="header" href="#warp" id="warp">Warp</a></h1>
 <p><code>Async-graphql-warp</code>提供了两个<code>Filter</code>，<code>graphql</code>和<code>graphql_subscription</code>。</p>
-<p><code>graphql</code>用于执行<code>Query</code>和<code>Mutation</code>请求，他总是要求POST方法，输出一个包含<code>Schema</code>和<code>QueryBuilder的元组</code>，你可以在之后组合其它Filter，或者直接调用<code>QueryBuilder::execute</code>执行查询。</p>
+<p><code>graphql</code>用于执行<code>Query</code>和<code>Mutation</code>请求，他总是要求POST方法，输出一个包含<code>async_graphql::Schema</code>和<code>async_graphql::Request的元组</code>，你可以在之后组合其它Filter，或者直接调用<code>Schema::execute</code>执行查询。</p>
 <p><code>graphql_subscription</code>用于实现基于Web Socket的订阅，它输出<code>warp::Reply</code>。</p>
 <h2><a class="header" href="#请求例子" id="请求例子">请求例子</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
+</span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
+
+let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
     // 执行查询
-    let resp = builder.execute(&amp;schema).await;
+    let resp = schema.execute(request).await;
 
     // 返回结果
-    Ok::&lt;_, Infallible&gt;(warp::reply::json(&amp;GQLResponse(resp)).into_response())
+    Ok::&lt;_, Infallible&gt;(warp::reply::json(resp).into_response())
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
@@ -1122,7 +1124,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
-<p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>GQLRequest</code>，它其实是QueryBuilder的包装，你可以调用<code>GQLRequest::into_inner</code>把它转换成一个<code>QueryBuilder</code>。</p>
+<p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>GQLRequest</code>，它其实是<code>async_graphql::Request</code>的包装，你可以调用<code>GQLRequest::into_inner</code>把它转换成一个<code>async_graphql::Request</code>。</p>
 <p><code>WSSubscription</code>是一个支持Web Socket订阅的Actor。</p>
 <h2><a class="header" href="#请求例子-1" id="请求例子-1">请求例子</a></h2>
 <p>你需要把Schema传入<code>actix_web::App</code>作为全局数据。</p>
@@ -1131,9 +1133,9 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">fn main() {
 </span>async fn index(
     schema: web::Data&lt;Schema&gt;,
-    gql_request: GQLRequest,
+    request: GQLRequest,
 ) -&gt; web::Json&lt;GQLResponse&gt; {
-    web::Json(GQLResponse(gql_request.into_inner().execute(&amp;schema).await))
+    web::Json(GQLResponse(schema.execute(request.into_inner()).await)
 }
 
 <span class="boring">}

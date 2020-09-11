@@ -160,7 +160,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
-<p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>GQLRequest</code>，它其实是QueryBuilder的包装，你可以调用<code>GQLRequest::into_inner</code>把它转换成一个<code>QueryBuilder</code>。</p>
+<p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>GQLRequest</code>，它其实是<code>async_graphql::Request</code>的包装，你可以调用<code>GQLRequest::into_inner</code>把它转换成一个<code>async_graphql::Request</code>。</p>
 <p><code>WSSubscription</code>是一个支持Web Socket订阅的Actor。</p>
 <h2><a class="header" href="#请求例子" id="请求例子">请求例子</a></h2>
 <p>你需要把Schema传入<code>actix_web::App</code>作为全局数据。</p>
@@ -169,9 +169,9 @@
 </span><span class="boring">fn main() {
 </span>async fn index(
     schema: web::Data&lt;Schema&gt;,
-    gql_request: GQLRequest,
+    request: GQLRequest,
 ) -&gt; web::Json&lt;GQLResponse&gt; {
-    web::Json(GQLResponse(gql_request.into_inner().execute(&amp;schema).await))
+    web::Json(GQLResponse(schema.execute(request.into_inner()).await)
 }
 
 <span class="boring">}

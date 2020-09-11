@@ -1122,19 +1122,22 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 <p><strong>Even if the server you are currently using is not in the above list, it is quite simple to implement similar functionality yourself.</strong></p>
 <h1><a class="header" href="#warp" id="warp">Warp</a></h1>
 <p>For <code>Async-graphql-warp</code>, two <code>Filter</code> integrations are provided: <code>graphql</code> and <code>graphql_subscription</code>.</p>
-<p>The <code>graphql</code> filter is used for execution <code>Query</code> and <code>Mutation</code> requests. It always asks for the POST method and outputs a <code>Schema</code> via <code>QueryBuilder</code>. You can combine other filters later, or directly call <code>QueryBuilder::execute</code> to execute the query.</p>
+<p>The <code>graphql</code> filter is used for execution <code>Query</code> and <code>Mutation</code> requests. It always asks for the POST method and outputs a <code>async_graphql::Schema</code> and <code>async_graphql::Request</code>.
+You can combine other filters later, or directly call <code>Schema::execute</code> to execute the query.</p>
 <p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
 <h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-let filter = async_graphql_warp::graphql(schema).and_then(|(schema, builder): (_, QueryBuilder)| async move {
+</span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
+
+let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
     // Execute query
-    let resp = builder.execute(&amp;schema).await;
+    let resp = schema.execute(request).await;
 
     // Return result
-    Ok::&lt;_, Infallible&gt;(warp::reply::json(&amp;GQLResponse(resp)).into_response())
+    Ok::&lt;_, Infallible&gt;(warp::reply::json(resp).into_response())
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
@@ -1149,7 +1152,9 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
-<p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>GQLRequest</code>. This is actually an abstraction around <code>QueryBuilder</code> and you can call <code>GQLRequest::into_inner</code> to convert it into a <code>QueryBuilder</code>.</p>
+<p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>GQLRequest</code>.
+This is actually an abstraction around <code>async_graphql::Request</code> and you can call <code>GQLRequest::into_inner</code> to 
+convert it into a <code>async_graphql::Request</code>.</p>
 <p><code>WSSubscription</code> is an Actor that supports WebSocket subscriptions.</p>
 <h2><a class="header" href="#request-example-1" id="request-example-1">Request example</a></h2>
 <p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data. </p>
@@ -1159,9 +1164,9 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span>async fn index(
     // Schema now accessible here
     schema: web::Data&lt;Schema&gt;,
-    gql_request: GQLRequest,
+    request: GQLRequest,
 ) -&gt; web::Json&lt;GQLResponse&gt; {
-    web::Json(GQLResponse(gql_request.into_inner().execute(&amp;schema).await))
+    web::Json(GQLResponse(schema.execute(request.into_inner()).await)
 }
 
 <span class="boring">}
