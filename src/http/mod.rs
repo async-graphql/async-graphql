@@ -36,7 +36,7 @@ impl From<GQLRequest> for Request {
             operation_name: request.operation_name,
             variables: request
                 .variables
-                .map(|value| Variables::parse_from_json(value))
+                .map(Variables::parse_from_json)
                 .unwrap_or_default(),
             ctx_data: Data::default(),
         }
