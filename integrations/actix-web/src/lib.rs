@@ -8,10 +8,8 @@ mod subscription;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::StreamBody;
-use async_graphql::{
-    IntoQueryBuilder, ParseRequestError, QueryBuilder, ReceiveMultipartOptions, Response,
-};
+use async_graphql::http::{receive_body, MultipartOptions, StreamBody};
+use async_graphql::{ParseRequestError, Request, Response};
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::{Future, SinkExt, StreamExt, TryFutureExt};
@@ -21,13 +19,13 @@ pub use subscription::WSSubscription;
 
 /// Extractor for GraphQL request
 ///
-/// It's a wrapper of `QueryBuilder`, you can use `GQLRequest::into_inner` unwrap it to `QueryBuilder`.
-/// `async_graphql::IntoQueryBuilderOpts` allows to configure extraction process.
-pub struct GQLRequest(QueryBuilder);
+/// It's a wrapper of `async_graphql::Request`, you can use `GQLRequest::into_inner` unwrap it to `async_graphql::Request`.
+/// `async_graphql::http::MultipartOptions` allows to configure extraction process.
+pub struct GQLRequest(Request);
 
 impl GQLRequest {
-    /// Unwrap it to `QueryBuilder`.
-    pub fn into_inner(self) -> QueryBuilder {
+    /// Unwraps the value to `async_graphql::Request`.
+    pub fn into_inner(self) -> Request {
         self.0
     }
 }
@@ -35,7 +33,7 @@ impl GQLRequest {
 impl FromRequest for GQLRequest {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<GQLRequest, Error>>>>;
-    type Config = ReceiveMultipartOptions;
+    type Config = MultipartOptions;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
@@ -44,12 +42,7 @@ impl FromRequest for GQLRequest {
             let res = web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
-                gql_request
-                    .into_inner()
-                    .into_query_builder_opts(&config)
-                    .map_ok(GQLRequest)
-                    .map_err(actix_web::error::ErrorBadRequest)
-                    .await
+                Ok(GQLRequest(gql_request.into_inner().into()))
             })
         } else {
             let content_type = req
@@ -71,26 +64,26 @@ impl FromRequest for GQLRequest {
             });
 
             Box::pin(async move {
-                (content_type, StreamBody::new(rx))
-                    .into_query_builder_opts(&config)
-                    .map_ok(GQLRequest)
-                    .map_err(|err| match err {
-                        ParseRequestError::PayloadTooLarge => {
-                            actix_web::error::ErrorPayloadTooLarge(err)
-                        }
-                        _ => actix_web::error::ErrorBadRequest(err),
-                    })
-                    .await
+                Ok(GQLRequest(
+                    receive_body(content_type, StreamBody::new(rx), config)
+                        .map_err(|err| match err {
+                            ParseRequestError::PayloadTooLarge => {
+                                actix_web::error::ErrorPayloadTooLarge(err)
+                            }
+                            _ => actix_web::error::ErrorBadRequest(err),
+                        })
+                        .await?,
+                ))
             })
         }
     }
 }
 
 /// Responder for GraphQL response
-pub struct GQLResponse(async_graphql::Result<Response>);
+pub struct GQLResponse(Response);
 
-impl From<async_graphql::Result<Response>> for GQLResponse {
-    fn from(resp: async_graphql::Result<Response>) -> Self {
+impl From<Response> for GQLResponse {
+    fn from(resp: Response) -> Self {
         GQLResponse(resp)
     }
 }
@@ -103,15 +96,14 @@ impl Responder for GQLResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
         add_cache_control(&mut res, &self.0);
-        let res =
-            res.body(serde_json::to_string(&async_graphql::http::GQLResponse(self.0)).unwrap());
+        let res = res.body(serde_json::to_string(&self.0).unwrap());
         futures::future::ok(res)
     }
 }
 
-fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &async_graphql::Result<Response>) {
-    if let Ok(Response { cache_control, .. }) = resp {
-        if let Some(cache_control) = cache_control.value() {
+fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &Response) {
+    if resp.is_ok() {
+        if let Some(cache_control) = resp.cache_control.value() {
             builder.header("cache-control", cache_control);
         }
     }
