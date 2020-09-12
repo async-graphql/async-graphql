@@ -442,7 +442,7 @@ where
         let (document, cache_control, extensions) =
             try_query_result!(self.prepare_request(&request));
         let mut resp = self
-            .execute_once(document, extensions, request.variables, request.ctx_data)
+            .execute_once(document, extensions, request.variables, request.data)
             .await;
         resp.cache_control = cache_control;
         resp
@@ -466,7 +466,7 @@ where
 
             if document.operation.node.ty != OperationType::Subscription {
                 let mut resp = schema
-                    .execute_once(document, extensions, request.variables, request.ctx_data)
+                    .execute_once(document, extensions, request.variables, request.data)
                     .await;
                 resp.cache_control = cache_control;
                 yield resp;
@@ -509,7 +509,7 @@ where
     /// Execute an GraphQL subscription.
     pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
         let mut request = request.into();
-        let ctx_data = std::mem::take(&mut request.ctx_data);
+        let ctx_data = std::mem::take(&mut request.data);
         self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
     }
 }

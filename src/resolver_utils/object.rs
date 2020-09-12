@@ -251,7 +251,7 @@ impl<'a> Fields<'a> {
 
                     let introspection_type_name = root.introspection_type_name();
 
-                    if type_condition.map_or(false, |condition| {
+                    let applies_concrete_object = type_condition.map_or(false, |condition| {
                         introspection_type_name == condition
                             || ctx
                                 .schema_env
@@ -259,7 +259,8 @@ impl<'a> Fields<'a> {
                                 .implements
                                 .get(&*introspection_type_name)
                                 .map_or(false, |interfaces| interfaces.contains(condition))
-                    }) {
+                    });
+                    if applies_concrete_object {
                         // The fragment applies to the concrete object type.
 
                         // TODO: This solution isn't ideal. If there are two interfaces InterfaceA

@@ -5,7 +5,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, MultipartOptions};
+use async_graphql::http::MultipartOptions;
 use async_graphql::{resolver_utils::ObjectType, Schema, SubscriptionType};
 use async_trait::async_trait;
 use std::str::FromStr;
@@ -103,7 +103,7 @@ impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> 
         opts: MultipartOptions,
     ) -> tide::Result<async_graphql::Request> {
         if self.method() == Method::Get {
-            Ok(self.query::<GQLRequest>()?.into())
+            Ok(self.query::<async_graphql::Request>()?)
         } else {
             let content_type = self
                 .header(&headers::CONTENT_TYPE)

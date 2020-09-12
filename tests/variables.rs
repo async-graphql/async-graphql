@@ -24,7 +24,7 @@ pub async fn test_variables() {
             }
         "#,
     )
-    .variables(Variables::parse_from_json(serde_json::json!({
+    .variables(Variables::from_json(serde_json::json!({
         "intVal": 10,
          "intListVal": [1, 2, 3, 4, 5],
     })));
@@ -117,7 +117,7 @@ pub async fn test_variable_null() {
             }
         "#,
     )
-    .variables(Variables::parse_from_json(serde_json::json!({
+    .variables(Variables::from_json(serde_json::json!({
         "intVal": null,
     })));
     let resp = schema.execute(query).await;
@@ -168,7 +168,7 @@ pub async fn test_variable_in_input_object() {
         }"#;
         let resp = schema
             .execute(
-                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                Request::new(query).variables(Variables::from_json(serde_json::json!({
                     "value": 10,
                 }))),
             )
@@ -189,7 +189,7 @@ pub async fn test_variable_in_input_object() {
         }"#;
         let resp = schema
             .execute(
-                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                Request::new(query).variables(Variables::from_json(serde_json::json!({
                     "value": 3,
                 }))),
             )
@@ -210,7 +210,7 @@ pub async fn test_variable_in_input_object() {
         }"#;
         let resp = schema
             .execute(
-                Request::new(query).variables(Variables::parse_from_json(serde_json::json!({
+                Request::new(query).variables(Variables::from_json(serde_json::json!({
                     "value": 10,
                 }))),
             )

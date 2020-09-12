@@ -5,8 +5,10 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::{GQLRequest, MultipartOptions};
-use async_graphql::{resolver_utils::ObjectType, Data, FieldResult, Schema, SubscriptionType};
+use async_graphql::http::MultipartOptions;
+use async_graphql::{
+    resolver_utils::ObjectType, Data, FieldResult, Request, Schema, SubscriptionType,
+};
 use futures::io::ErrorKind;
 use futures::{select, TryStreamExt};
 use futures::{SinkExt, StreamExt};
@@ -112,9 +114,9 @@ where
              opts: Arc<MultipartOptions>,
              schema| async move {
                 if method == Method::GET {
-                    let request: GQLRequest = serde_urlencoded::from_str(&query)
+                    let request: Request = serde_urlencoded::from_str(&query)
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, async_graphql::Request::from(request)))
+                    Ok::<_, Rejection>((schema, request))
                 } else {
                     let request = async_graphql::http::receive_body(
                         content_type,

@@ -41,10 +41,10 @@ impl FromRequest for GQLRequest {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
 
         if req.method() == Method::GET {
-            let res = web::Query::<async_graphql::http::GQLRequest>::from_query(req.query_string());
+            let res = web::Query::<async_graphql::Request>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
-                Ok(GQLRequest(gql_request.into_inner().into()))
+                Ok(GQLRequest(gql_request.into_inner()))
             })
         } else {
             let content_type = req

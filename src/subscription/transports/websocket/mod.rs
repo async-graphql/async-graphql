@@ -1,7 +1,7 @@
 //! WebSocket transport for subscription
 
 use crate::resolver_utils::ObjectType;
-use crate::{http, Data, FieldResult, Request, Response, Schema, SubscriptionType};
+use crate::{Data, FieldResult, Request, Response, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::task::{Context, Poll};
 use futures::{Future, Stream, StreamExt};
@@ -229,8 +229,7 @@ where
             }
             "start" => {
                 if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
-                    if let Ok(request) = serde_json::from_value::<http::GQLRequest>(payload) {
-                        let request = Request::from(request);
+                    if let Ok(request) = serde_json::from_value::<Request>(payload) {
                         let stream = schema
                             .execute_stream_with_ctx_data(request, ctx.ctx_data.clone())
                             .boxed();

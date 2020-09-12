@@ -1,4 +1,3 @@
-use crate::http::GQLRequest;
 use crate::{ParseRequestError, Request};
 use bytes::Bytes;
 use futures::io::AsyncRead;
@@ -66,9 +65,8 @@ pub async fn receive_multipart(
             Some("operations") => {
                 let request_str = field.text().await?;
                 request = Some(
-                    serde_json::from_str::<GQLRequest>(&request_str)
-                        .map_err(ParseRequestError::InvalidRequest)?
-                        .into(),
+                    serde_json::from_str::<Request>(&request_str)
+                        .map_err(ParseRequestError::InvalidRequest)?,
                 );
             }
             Some("map") => {

@@ -6,18 +6,19 @@ use crate::parser::types::{
 use crate::schema::SchemaEnv;
 use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Value};
 use fnv::FnvHashMap;
-use serde::ser::SerializeSeq;
-use serde::{Serialize, Serializer};
+use serde::ser::{SerializeSeq, Serializer};
+use serde::{Deserialize, Serialize};
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 /// Variables of a query.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(transparent)]
 pub struct Variables(pub BTreeMap<Name, Value>);
 
 impl Display for Variables {
@@ -31,16 +32,32 @@ impl Display for Variables {
 }
 
 impl Variables {
-    /// Parse variables from JSON object.
+    /// Get the variables from a GraphQL value.
     ///
-    /// If the value is not a map, or the keys of map are not valid GraphQL names, then an empty
-    /// `Variables` instance will be returned.
-    pub fn parse_from_json(value: serde_json::Value) -> Self {
-        if let Ok(Value::Object(obj)) = Value::from_json(value) {
-            Self(obj)
-        } else {
-            Default::default()
+    /// If the value is not a map, then no variables will be returned.
+    #[must_use]
+    pub fn from_value(value: Value) -> Self {
+        match value {
+            Value::Object(obj) => Self(obj),
+            _ => Self::default(),
         }
+    }
+
+    /// Get the values from a JSON value.
+    ///
+    /// If the value is not a map or the keys of a map are not valid GraphQL names, then no
+    /// variables will be returned.
+    #[must_use]
+    pub fn from_json(value: serde_json::Value) -> Self {
+        Value::from_json(value)
+            .map(Self::from_value)
+            .unwrap_or_default()
+    }
+
+    /// Get the variables as a GraphQL value.
+    #[must_use]
+    pub fn into_value(self) -> Value {
+        Value::Object(self.0)
     }
 
     pub(crate) fn variable_path(&mut self, path: &str) -> Option<&mut Value> {
@@ -60,14 +77,28 @@ impl Variables {
     }
 }
 
+impl From<Variables> for Value {
+    fn from(variables: Variables) -> Self {
+        variables.into_value()
+    }
+}
+
 /// Schema/Context data.
+///
+/// This is a type map, allowing you to store anything inside it.
 #[derive(Default)]
 pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
 
 impl Data {
-    #[allow(missing_docs)]
+    /// Insert data.
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
         self.0.insert(TypeId::of::<D>(), Box::new(data));
+    }
+}
+
+impl Debug for Data {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_tuple("Data").finish()
     }
 }
 
