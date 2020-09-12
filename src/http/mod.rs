@@ -3,12 +3,10 @@
 mod graphiql_source;
 mod multipart;
 mod playground_source;
-mod stream_body;
 
 pub use graphiql_source::graphiql_source;
 pub use multipart::{receive_multipart, MultipartOptions};
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
-pub use stream_body::StreamBody;
 
 use crate::{Data, ParseRequestError, Request, Variables};
 use futures::io::AsyncRead;
