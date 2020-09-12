@@ -1,6 +1,6 @@
 use crate::context::QueryEnv;
 use crate::parser::types::{Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, ObjectType, Response, Result, Schema, SchemaEnv, Type};
+use crate::{Context, ContextSelectionSet, Response, Result, Schema, SchemaEnv, Type};
 use futures::{Future, Stream};
 use std::pin::Pin;
 
@@ -32,8 +32,8 @@ pub fn create_subscription_stream<'a, Query, Mutation, Subscription>(
     streams: &'a mut Vec<Pin<Box<dyn Stream<Item = Response> + Send>>>,
 ) -> BoxCreateStreamFuture<'a>
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
+    Query: Send + Sync,
+    Mutation: Send + Sync,
     Subscription: SubscriptionType + Send + Sync + 'static + Sized,
 {
     Box::pin(async move {

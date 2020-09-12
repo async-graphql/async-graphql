@@ -6,7 +6,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{GQLRequest, MultipartOptions, StreamBody};
-use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType};
+use async_graphql::{resolver_utils::ObjectType, Data, FieldResult, Schema, SubscriptionType};
 use futures::select;
 use futures::{SinkExt, StreamExt};
 use hyper::Method;

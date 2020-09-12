@@ -1,8 +1,9 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
+use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    do_resolve, CacheControl, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
-    Positioned, QueryEnv, QueryError, Response, Result, SchemaEnv, SubscriptionType, Type,
+    CacheControl, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryEnv,
+    QueryError, Response, Result, SchemaEnv, SubscriptionType, Type,
 };
 use futures::Stream;
 use indexmap::IndexMap;
@@ -95,7 +96,7 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        do_resolve(ctx, self).await
+        resolve_object(ctx, self).await
     }
 }
 

@@ -1,16 +1,16 @@
 use crate::context::{Data, ResolveId};
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
-use crate::mutation_resolver::do_mutation_resolve;
 use crate::parser::parse_query;
 use crate::parser::types::OperationType;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
+use crate::resolver_utils::{resolve_object, resolve_object_serial, ObjectType};
 use crate::subscription::create_subscription_stream;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    do_resolve, CacheControl, ContextBase, Error, ObjectType, Pos, QueryEnv, QueryError, Request,
-    Response, Result, SubscriptionType, Type, Variables, ID,
+    CacheControl, ContextBase, Error, Pos, QueryEnv, QueryError, Request, Response, Result,
+    SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::types::ExecutableDocumentData;
 use futures::{Stream, StreamExt};
@@ -180,12 +180,7 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription> Deref for Schema<Query, Mutation, Subscription>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
+impl<Query, Mutation, Subscription> Deref for Schema<Query, Mutation, Subscription> {
     type Target = SchemaInner<Query, Mutation, Subscription>;
 
     fn deref(&self) -> &Self::Target {
@@ -417,9 +412,9 @@ where
 
         env.extensions.lock().execution_start();
         let data = match &env.document.operation.node.ty {
-            OperationType::Query => try_query_result!(do_resolve(&ctx, &self.query).await),
+            OperationType::Query => try_query_result!(resolve_object(&ctx, &self.query).await),
             OperationType::Mutation => {
-                try_query_result!(do_mutation_resolve(&ctx, &self.mutation).await)
+                try_query_result!(resolve_object_serial(&ctx, &self.mutation).await)
             }
             OperationType::Subscription => {
                 return Error::Query {
@@ -514,7 +509,7 @@ where
     /// Execute an GraphQL subscription.
     pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
         let mut request = request.into();
-        let ctx_data = std::mem::replace(&mut request.ctx_data, Default::default());
+        let ctx_data = std::mem::take(&mut request.ctx_data);
         self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
     }
 }

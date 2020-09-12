@@ -40,8 +40,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
-    let mut collect_inline_fields = Vec::new();
     let mut get_introspection_typename = Vec::new();
+    let mut collect_all_fields = Vec::new();
 
     for variant in s.variants.iter() {
         let enum_name = &variant.ident;
@@ -94,15 +94,13 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
             });
 
-            collect_inline_fields.push(quote! {
-                if let #ident::#enum_name(obj) = self {
-                    return obj.collect_inline_fields(name, ctx, futures);
-                }
-            });
-
             get_introspection_typename.push(quote! {
                 #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
-            })
+            });
+
+            collect_all_fields.push(quote! {
+                #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
+            });
         } else {
             return Err(Error::new_spanned(field, "Invalid type"));
         }
@@ -305,7 +303,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::ObjectType for #ident #generics {
+        impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
@@ -314,14 +312,10 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 }.into_error(ctx.position()))
             }
 
-            fn collect_inline_fields<'a>(
-                &'a self,
-                name: &str,
-                ctx: &#crate_name::ContextSelectionSet<'a>,
-                futures: &mut Vec<#crate_name::BoxFieldFuture<'a>>,
-            ) -> #crate_name::Result<()> {
-                #(#collect_inline_fields)*
-                Ok(())
+            fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::Result<()> {
+                match self {
+                    #(#collect_all_fields),*
+                }
             }
         }
 
@@ -329,7 +323,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::do_resolve(ctx, self).await
+                #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }
     };

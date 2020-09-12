@@ -1,6 +1,7 @@
 //! WebSocket transport for subscription
 
-use crate::{http, Data, FieldResult, ObjectType, Request, Response, Schema, SubscriptionType};
+use crate::resolver_utils::ObjectType;
+use crate::{http, Data, FieldResult, Request, Response, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::task::{Context, Poll};
 use futures::{Future, Stream, StreamExt};

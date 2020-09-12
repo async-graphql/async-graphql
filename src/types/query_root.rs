@@ -1,9 +1,10 @@
 use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
+use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::scalars::Any;
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType,
-    Positioned, QueryError, Result, Type,
+    registry, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError, Result,
+    Type,
 };
 use async_graphql_derive::SimpleObject;
 use indexmap::map::IndexMap;
@@ -148,6 +149,6 @@ impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        do_resolve(ctx, self).await
+        resolve_object(ctx, self).await
     }
 }

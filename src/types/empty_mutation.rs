@@ -1,7 +1,8 @@
 use crate::parser::types::Field;
+use crate::resolver_utils::ObjectType;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Positioned,
-    QueryError, Result, Type,
+    registry, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError, Result,
+    Type,
 };
 use std::borrow::Cow;
 

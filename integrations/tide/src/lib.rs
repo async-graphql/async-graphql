@@ -6,7 +6,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{GQLRequest, MultipartOptions};
-use async_graphql::{ObjectType, Schema, SubscriptionType};
+use async_graphql::{resolver_utils::ObjectType, Schema, SubscriptionType};
 use async_trait::async_trait;
 use std::str::FromStr;
 use tide::{

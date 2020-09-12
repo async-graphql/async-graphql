@@ -103,9 +103,7 @@ mod context;
 mod error;
 mod look_ahead;
 mod model;
-mod mutation_resolver;
 mod request;
-mod resolver;
 mod response;
 mod scalars;
 mod schema;
@@ -116,6 +114,7 @@ mod validation;
 
 pub mod extensions;
 pub mod guard;
+pub mod resolver_utils;
 pub mod validators;
 pub use subscription::transports;
 
@@ -166,9 +165,7 @@ pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
-pub use base::{BoxFieldFuture, InputObjectType, InputValueType, ObjectType, OutputValueType};
-#[doc(hidden)]
-pub use resolver::{collect_fields, do_resolve};
+pub use base::{InputObjectType, InputValueType, OutputValueType};
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
 #[doc(hidden)]

@@ -1,10 +1,10 @@
 use crate::connection::edge::Edge;
 use crate::connection::page_info::PageInfo;
 use crate::parser::types::Field;
+use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType,
-    Positioned, Result, Type,
+    registry, Context, ContextSelectionSet, FieldResult, OutputValueType, Positioned, Result, Type,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
@@ -227,6 +227,6 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        do_resolve(ctx, self).await
+        resolve_object(ctx, self).await
     }
 }

@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::MultipartOptions;
-use async_graphql::{ObjectType, Schema, SubscriptionType, Variables};
+use async_graphql::{resolver_utils::ObjectType, Schema, SubscriptionType, Variables};
 use log::{error, info};
 use rocket::{
     data::{self, FromData},

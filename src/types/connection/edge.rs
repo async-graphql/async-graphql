@@ -1,10 +1,8 @@
 use crate::connection::EmptyFields;
 use crate::parser::types::Field;
+use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::types::connection::CursorType;
-use crate::{
-    do_resolve, registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
-    Result, Type,
-};
+use crate::{registry, Context, ContextSelectionSet, OutputValueType, Positioned, Result, Type};
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -136,6 +134,6 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        do_resolve(ctx, self).await
+        resolve_object(ctx, self).await
     }
 }

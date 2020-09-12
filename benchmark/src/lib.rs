@@ -1,4 +1,4 @@
-use async_graphql::{ObjectType, Response, Schema, SubscriptionType};
+use async_graphql::{resolver_utils::ObjectType, Response, Schema, SubscriptionType};
 use async_graphql_parser::{parse_query, types::ExecutableDocument};
 use async_std::task;
 

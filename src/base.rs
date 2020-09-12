@@ -1,12 +1,9 @@
 use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, InputValueResult, Positioned, QueryError,
-    Result, Value,
+    registry, ContextSelectionSet, FieldResult, InputValueResult, Positioned, Result, Value,
 };
 use std::borrow::Cow;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 
 /// Represents a GraphQL type
@@ -50,53 +47,6 @@ pub trait OutputValueType: Type {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> Result<serde_json::Value>;
-}
-
-#[allow(missing_docs)]
-pub type BoxFieldFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
-
-/// Represents a GraphQL object
-#[async_trait::async_trait]
-pub trait ObjectType: OutputValueType {
-    /// This function returns true of type `EmptyMutation` only
-    #[doc(hidden)]
-    fn is_empty() -> bool {
-        false
-    }
-
-    /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value>;
-
-    /// Collect the fields with the `name` inline object
-    fn collect_inline_fields<'a>(
-        &'a self,
-        name: &str,
-        ctx: &ContextSelectionSet<'a>,
-        futures: &mut Vec<BoxFieldFuture<'a>>,
-    ) -> Result<()>
-    where
-        Self: Send + Sync + Sized,
-    {
-        if name == Self::type_name().as_ref()
-            || ctx
-                .schema_env
-                .registry
-                .implements
-                .get(Self::type_name().as_ref())
-                .map(|ty| ty.contains(name))
-                .unwrap_or_default()
-        {
-            crate::collect_fields(ctx, self, futures)
-        } else {
-            Ok(())
-        }
-    }
-
-    /// Query entities with params
-    async fn find_entity(&self, ctx: &Context<'_>, _params: &Value) -> Result<serde_json::Value> {
-        Err(QueryError::EntityNotFound.into_error(ctx.pos))
-    }
 }
 
 /// Represents a GraphQL input object
@@ -163,13 +113,6 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
         field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
         T::resolve(*self, ctx, field).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> ObjectType for &T {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        T::resolve_field(*self, ctx).await
     }
 }
 
