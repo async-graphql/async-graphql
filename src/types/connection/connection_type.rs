@@ -196,17 +196,17 @@ where
     EE: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
-        if ctx.node.name.node == "pageInfo" {
+        if ctx.item.node.name.node == "pageInfo" {
             let page_info = PageInfo {
                 has_previous_page: self.has_previous_page,
                 has_next_page: self.has_next_page,
                 start_cursor: self.edges.first().map(|edge| edge.cursor.encode_cursor()),
                 end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
             };
-            let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item).await;
-        } else if ctx.node.name.node == "edges" {
-            let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
+        } else if ctx.item.node.name.node == "edges" {
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item).await;
         }
 

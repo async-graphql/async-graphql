@@ -234,11 +234,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 let create_field_stream = quote! {
                     #crate_name::futures::stream::StreamExt::fuse(self.#ident(ctx, #(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?)
+                        map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?)
                 };
 
                 let guard = field.guard.map(|guard| quote! {
-                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?;
+                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
                 });
                 if field.post_guard.is_some() {
                     return Err(Error::new_spanned(
@@ -248,13 +248,13 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 }
 
                 create_stream.push(quote! {
-                    if ctx.node.name.node == #field_name {
+                    if ctx.item.node.name.node == #field_name {
                         #(#get_params)*
                         #guard
                         let field_name = ::std::sync::Arc::new(ctx.item.node.response_key().node.clone());
                         let field = ::std::sync::Arc::new(ctx.item.clone());
 
-                        let pos = ctx.position();
+                        let pos = ctx.item.pos;
                         let schema_env = schema_env.clone();
                         let query_env = query_env.clone();
                         let stream = #crate_name::futures::StreamExt::then(#create_field_stream, {
@@ -353,9 +353,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Response> + Send>>> {
                 #(#create_stream)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.node.name.to_string(),
+                    field_name: ctx.item.node.name.to_string(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position()))
+                }.into_error(ctx.item.pos))
             }
         }
     };

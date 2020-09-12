@@ -85,7 +85,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
                 return Err(Error::Query {
-                    pos: ctx.pos,
+                    pos: ctx.item.pos,
                     path: ctx
                         .path_node
                         .as_ref()

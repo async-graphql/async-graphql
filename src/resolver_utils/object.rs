@@ -38,7 +38,7 @@ pub trait ObjectType: OutputValueType {
 
     /// Query entities with params
     async fn find_entity(&self, ctx: &Context<'_>, _params: &Value) -> Result<serde_json::Value> {
-        Err(QueryError::EntityNotFound.into_error(ctx.pos))
+        Err(QueryError::EntityNotFound.into_error(ctx.item.pos))
     }
 }
 

@@ -98,10 +98,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 let ident = &item.ident;
                 let guard = field
                     .guard
-                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?; });
+                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
                 let post_guard = field
                     .post_guard
-                    .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?; });
+                    .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
 
                 let features = &field.features;
                 getters.push(if !field.owned {
@@ -135,10 +135,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 });
 
                 resolvers.push(quote! {
-                    if ctx.node.name.node == #field_name {
+                    if ctx.item.node.name.node == #field_name {
                         #guard
-                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.position(), ctx.path_node.as_ref()))?;
-                        let ctx_obj = ctx.with_selection_set(&ctx.node.selection_set);
+                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         #post_guard
                         return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
                     }
@@ -192,9 +192,9 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.node.name.to_string(),
+                    field_name: ctx.item.node.name.to_string(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position()))
+                }.into_error(ctx.item.pos))
             }
         }
 

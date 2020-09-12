@@ -130,9 +130,9 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
         impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.node.name.to_string(),
+                    field_name: ctx.item.node.name.to_string(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.position()))
+                }.into_error(ctx.item.pos))
             }
 
             fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::Result<()> {

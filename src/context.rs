@@ -236,14 +236,6 @@ pub struct ContextBase<'a, T> {
     pub(crate) query_env: &'a QueryEnv,
 }
 
-impl<'a, T> Deref for ContextBase<'a, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.item
-    }
-}
-
 #[doc(hidden)]
 pub struct QueryEnvInner {
     pub extensions: spin::Mutex<Extensions>,
@@ -486,11 +478,6 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             None => (Pos::default(), None),
         };
         InputValueType::parse(value).map_err(|e| e.into_error(pos, T::qualified_type_name()))
-    }
-
-    /// Get the position of the current field in the query code.
-    pub fn position(&self) -> Pos {
-        self.pos
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.
