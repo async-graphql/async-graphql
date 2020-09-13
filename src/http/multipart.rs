@@ -140,9 +140,9 @@ impl<T: AsyncRead> Stream for ReaderStream<T> {
         let this = self.project();
 
         Poll::Ready(
-            match futures::ready!(this.reader.poll_read(cx, &mut self.buf)?) {
+            match futures::ready!(this.reader.poll_read(cx, this.buf)?) {
                 0 => None,
-                size => Some(Ok(Bytes::copy_from_slice(&self.buf[..size]))),
+                size => Some(Ok(Bytes::copy_from_slice(&this.buf[..size]))),
             }
         )
     }

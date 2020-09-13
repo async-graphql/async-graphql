@@ -12,7 +12,7 @@ use std::pin::Pin;
 /// `OutputValueType::resolve` implementation.
 #[async_trait::async_trait]
 pub trait ObjectType: OutputValueType {
-    /// This function returns true of type `EmptyMutation` only
+    /// This function returns true of type `EmptyMutation` only.
     #[doc(hidden)]
     fn is_empty() -> bool {
         false
@@ -151,6 +151,7 @@ impl<'a> Fields<'a> {
                     }
 
                     self.0.push(Box::pin({
+                        // TODO: investigate removing this
                         let ctx = ctx.clone();
                         async move {
                             let ctx_field = ctx.with_field(field);

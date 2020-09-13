@@ -233,8 +233,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 });
 
                 let create_field_stream = quote! {
-                    #crate_name::futures::stream::StreamExt::fuse(self.#ident(ctx, #(#use_params),*).await.
-                        map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?)
+                    self.#ident(ctx, #(#use_params),*)
+                        .await
+                        .map_err(|err| {
+                            err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref())
+                        })?
                 };
 
                 let guard = field.guard.map(|guard| quote! {
@@ -247,58 +250,65 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     ));
                 }
 
-                create_stream.push(quote! {
-                    if ctx.item.node.name.node == #field_name {
-                        #(#get_params)*
-                        #guard
-                        let field_name = ::std::sync::Arc::new(ctx.item.node.response_key().node.clone());
-                        let field = ::std::sync::Arc::new(ctx.item.clone());
+                let stream_fn = quote! {
+                    #(#get_params)*
+                    #guard
+                    let field_name = ::std::sync::Arc::new(ctx.item.node.response_key().node.clone());
+                    let field = ::std::sync::Arc::new(ctx.item.clone());
 
-                        let pos = ctx.item.pos;
-                        let schema_env = schema_env.clone();
-                        let query_env = query_env.clone();
-                        let stream = #crate_name::futures::StreamExt::then(#create_field_stream, {
+                    let pos = ctx.item.pos;
+                    let schema_env = ctx.schema_env.clone();
+                    let query_env = ctx.query_env.clone();
+                    let stream = #crate_name::futures::StreamExt::then(#create_field_stream, {
+                        let field_name = field_name.clone();
+                        move |msg| {
+                            let schema_env = schema_env.clone();
+                            let query_env = query_env.clone();
+                            let field = field.clone();
                             let field_name = field_name.clone();
-                            move |msg| {
-                                let schema_env = schema_env.clone();
-                                let query_env = query_env.clone();
-                                let field = field.clone();
-                                let field_name = field_name.clone();
-                                async move {
-                                    let resolve_id = ::std::sync::atomic::AtomicUsize::default();
-                                    let ctx_selection_set = query_env.create_context(
-                                        &schema_env,
-                                        Some(#crate_name::QueryPathNode {
-                                            parent: None,
-                                            segment: #crate_name::QueryPathSegment::Name(&field_name),
-                                        }),
-                                        &field.node.selection_set,
-                                        &resolve_id,
-                                    );
-                                    #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await
-                                }
+                            async move {
+                                let resolve_id = ::std::sync::atomic::AtomicUsize::default();
+                                let ctx_selection_set = query_env.create_context(
+                                    &schema_env,
+                                    Some(#crate_name::QueryPathNode {
+                                        parent: None,
+                                        segment: #crate_name::QueryPathSegment::Name(&field_name),
+                                    }),
+                                    &field.node.selection_set,
+                                    &resolve_id,
+                                );
+                                #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
+                                    .await
+                                    .map(|value| {
+                                        #crate_name::serde_json::json!({
+                                            field_name.as_str(): value
+                                        })
+                                    })
                             }
-                        });
-                        let stream = #crate_name::futures::TryStreamExt::map_ok(stream, move |value| #crate_name::serde_json::json!({ field_name.as_str(): value }));
-                        let stream = #crate_name::futures::StreamExt::scan(stream, true, |state, item| {
-                            if !*state {
+                        }
+                    });
+                    #crate_name::Result::Ok(#crate_name::futures::StreamExt::scan(
+                        stream,
+                        false,
+                        |errored, item| {
+                            if *errored {
                                 return #crate_name::futures::future::ready(None);
                             }
-                            let resp = match item {
-                                Ok(value) => #crate_name::Response {
-                                    data: value,
-                                    extensions: None,
-                                    cache_control: Default::default(),
-                                    error: None,
-                                },
-                                Err(err) => err.into(),
-                            };
-                            if resp.is_err() {
-                                *state = false;
+                            if item.is_err() {
+                                *errored = true;
                             }
-                            #crate_name::futures::future::ready(Some(resp))
-                        });
-                        return Ok(Box::pin(stream));
+                            #crate_name::futures::future::ready(Some(item))
+                        },
+                    ))
+                };
+
+                create_stream.push(quote! {
+                    if ctx.item.node.name.node == #field_name {
+                        return ::std::boxed::Box::pin(
+                            #crate_name::futures::TryStreamExt::try_flatten(
+                                #crate_name::futures::stream::once((move || async move { #stream_fn })())
+                            )
+                        );
                     }
                 });
             }
@@ -333,7 +343,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         #(#schema_fields)*
                         fields
                     },
-                    cache_control: Default::default(),
+                    cache_control: ::std::default::Default::default(),
                     extends: false,
                     keys: None,
                 })
@@ -341,20 +351,19 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
         #[allow(unused_braces, unused_variables)]
         impl #crate_name::SubscriptionType for #self_ty #where_clause {
-            async fn create_field_stream(
-                &self,
-                ctx: &#crate_name::Context<'_>,
-                schema_env: #crate_name::SchemaEnv,
-                query_env: #crate_name::QueryEnv,
-            ) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Response> + Send>>> {
+            fn create_field_stream<'a>(
+                &'a self,
+                ctx: &'a #crate_name::Context<'a>,
+            ) -> ::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send + 'a>> {
                 #(#create_stream)*
-                Err(#crate_name::QueryError::FieldNotFound {
+                let error = #crate_name::QueryError::FieldNotFound {
                     field_name: ctx.item.node.name.to_string(),
                     object: #gql_typename.to_string(),
-                }.into_error(ctx.item.pos))
+                }
+                    .into_error(ctx.item.pos);
+                ::std::boxed::Box::pin(#crate_name::futures::stream::once(async { Err(error) }))
             }
         }
     };

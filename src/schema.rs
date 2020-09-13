@@ -5,7 +5,7 @@ use crate::parser::parse_query;
 use crate::parser::types::OperationType;
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_object, resolve_object_serial, ObjectType};
-use crate::subscription::create_subscription_stream;
+use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
@@ -13,22 +13,13 @@ use crate::{
     SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::types::ExecutableDocumentData;
-use futures::{Stream, StreamExt};
+use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
-
-macro_rules! try_query_result {
-    ($res:expr) => {
-        match $res {
-            Ok(resp) => resp,
-            Err(err) => return err.into(),
-        }
-    };
-}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -411,10 +402,11 @@ where
         };
 
         env.extensions.lock().execution_start();
+
         let data = match &env.document.operation.node.ty {
-            OperationType::Query => try_query_result!(resolve_object(&ctx, &self.query).await),
+            OperationType::Query => resolve_object(&ctx, &self.query).await,
             OperationType::Mutation => {
-                try_query_result!(resolve_object_serial(&ctx, &self.mutation).await)
+                resolve_object_serial(&ctx, &self.mutation).await
             }
             OperationType::Subscription => {
                 return Error::Query {
@@ -428,24 +420,21 @@ where
 
         env.extensions.lock().execution_end();
         let extensions = env.extensions.lock().result();
-        Response {
-            data,
-            extensions,
-            cache_control: Default::default(),
-            error: None,
-        }
+
+        Response::from_result(data)
+            .extensions(extensions)
     }
 
     /// Execute an GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
-        let (document, cache_control, extensions) =
-            try_query_result!(self.prepare_request(&request));
-        let mut resp = self
-            .execute_once(document, extensions, request.variables, request.data)
-            .await;
-        resp.cache_control = cache_control;
-        resp
+        match self.prepare_request(&request) {
+            Ok((document, cache_control, extensions)) => self
+                .execute_once(document, extensions, request.variables, request.data)
+                .await
+                .cache_control(cache_control),
+            Err(e) => Response::from_error(e),
+        }
     }
 
     pub(crate) fn execute_stream_with_ctx_data(
@@ -454,9 +443,10 @@ where
         ctx_data: Arc<Data>,
     ) -> impl Stream<Item = Response> {
         let schema = self.clone();
+
         async_stream::stream! {
             let request = request.into();
-            let (document, cache_control, extensions) = match schema.prepare_request(& request) {
+            let (document, cache_control, extensions) = match schema.prepare_request(&request) {
                 Ok(res) => res,
                 Err(err) => {
                     yield Response::from(err);
@@ -465,11 +455,10 @@ where
             };
 
             if document.operation.node.ty != OperationType::Subscription {
-                let mut resp = schema
+                yield schema
                     .execute_once(document, extensions, request.variables, request.data)
-                    .await;
-                resp.cache_control = cache_control;
-                yield resp;
+                    .await
+                    .cache_control(cache_control);
                 return;
             }
 
@@ -488,17 +477,19 @@ where
                 &resolve_id,
             );
 
-            let mut streams = Vec::new();
+            // TODO: Invoke extensions
 
-            if let Err(err) = create_subscription_stream(&schema, env.clone(), &ctx, &mut streams).await {
-                yield err.into();
+            let mut streams = Vec::new();
+            if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                yield Response::from(e);
                 return;
             }
 
-            let mut stream = futures::stream::select_all(streams);
-            while let Some(resp) = stream.next().await {
-                let is_err = resp.is_err();
-                yield resp;
+            let mut stream = stream::select_all(streams);
+            while let Some(data) = stream.next().await {
+                let is_err = data.is_err();
+                let extensions = env.extensions.lock().result();
+                yield Response::from_result(data).extensions(extensions);
                 if is_err {
                     break;
                 }

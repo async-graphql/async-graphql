@@ -82,10 +82,18 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
         impl #crate_name::SubscriptionType for #ident {
-            async fn create_field_stream(&self, ctx: &#crate_name::Context<'_>, schema_env: #crate_name::SchemaEnv, query_env: #crate_name::QueryEnv) -> #crate_name::Result<::std::pin::Pin<Box<dyn #crate_name::futures::Stream<Item = #crate_name::Response> + Send>>> {
-                #create_merged_obj.create_field_stream(ctx, schema_env, query_env).await
+            fn create_field_stream<'a>(
+                &'a self,
+                ctx: &'a #crate_name::Context<'a>
+            ) -> ::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send + 'a>> {
+                ::std::boxed::Box::pin(#crate_name::async_stream::stream! {
+                    let obj = #create_merged_obj;
+                    let mut stream = obj.create_field_stream(ctx);
+                    while let Some(item) = #crate_name::futures::stream::StreamExt::next(&mut stream).await {
+                        yield item;
+                    }
+                })
             }
         }
     };

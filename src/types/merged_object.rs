@@ -3,10 +3,10 @@ use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
     CacheControl, Context, ContextSelectionSet, Error, GQLSimpleObject, GQLSubscription,
-    OutputValueType, Positioned, QueryEnv, QueryError, Response, Result, SchemaEnv,
+    OutputValueType, Positioned, QueryError, Result,
     SubscriptionType, Type,
 };
-use futures::Stream;
+use futures::{stream, Stream, StreamExt, future::Either};
 use indexmap::IndexMap;
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -101,34 +101,31 @@ where
     }
 }
 
-#[async_trait::async_trait]
 impl<A, B> SubscriptionType for MergedObject<A, B>
 where
     A: SubscriptionType + Send + Sync,
     B: SubscriptionType + Send + Sync,
 {
-    async fn create_field_stream(
-        &self,
-        ctx: &Context<'_>,
-        schema_env: SchemaEnv,
-        query_env: QueryEnv,
-    ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>> {
-        match self
-            .0
-            .create_field_stream(ctx, schema_env.clone(), query_env.clone())
-            .await
-        {
-            Ok(value) => Ok(value),
-            Err(Error::Query {
-                err: QueryError::FieldNotFound { .. },
-                ..
-            }) => {
-                self.1
-                    .create_field_stream(ctx, schema_env, query_env)
-                    .await
-            }
-            Err(err) => Err(err),
-        }
+    fn create_field_stream<'a>(
+        &'a self,
+        ctx: &'a Context<'a>,
+    ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>> {
+        let left_stream = self.0.create_field_stream(ctx);
+        let mut right_stream = Some(self.1.create_field_stream(ctx));
+        Box::pin(
+            left_stream
+            .flat_map(move |res| {
+                match res {
+                    Err(Error::Query {
+                        err: QueryError::FieldNotFound { .. },
+                        ..
+                    }) if right_stream.is_some() => {
+                        Either::Right(right_stream.take().unwrap())
+                    }
+                    other => Either::Left(stream::once(async { other })),
+                }
+            })
+        )
     }
 }
 

@@ -123,6 +123,8 @@ pub use async_graphql_parser as parser;
 #[doc(hidden)]
 pub use async_trait;
 #[doc(hidden)]
+pub use async_stream;
+#[doc(hidden)]
 pub use futures;
 #[doc(hidden)]
 pub use indexmap;

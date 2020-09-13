@@ -126,7 +126,7 @@ pub async fn test_field_features() {
 
     let mut stream = schema.execute_stream("subscription { values }").boxed();
     assert_eq!(
-        stream.next().await.map(|resp| resp.data),
+        stream.next().await.map(|resp| resp.into_result().unwrap().data),
         Some(serde_json::json!({
             "values": 10
         }))

@@ -232,8 +232,10 @@ pub struct ContextBase<'a, T> {
     pub(crate) inc_resolve_id: &'a AtomicUsize,
     #[doc(hidden)]
     pub item: T,
-    pub(crate) schema_env: &'a SchemaEnv,
-    pub(crate) query_env: &'a QueryEnv,
+    #[doc(hidden)]
+    pub schema_env: &'a SchemaEnv,
+    #[doc(hidden)]
+    pub query_env: &'a QueryEnv,
 }
 
 #[doc(hidden)]
