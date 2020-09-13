@@ -105,16 +105,15 @@ mod look_ahead;
 mod model;
 mod request;
 mod response;
-mod scalars;
 mod schema;
 mod serialize_resp;
 mod subscription;
-mod types;
 mod validation;
 
 pub mod extensions;
 pub mod guard;
 pub mod validators;
+pub mod types;
 
 #[doc(hidden)]
 pub mod resolver_utils;
@@ -145,15 +144,11 @@ pub use parser::{types::ConstValue as Value, Pos, Positioned};
 pub use registry::CacheControl;
 pub use request::Request;
 pub use response::Response;
-pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
 pub use subscription::SimpleBroker;
-pub use types::{
-    connection, EmptyMutation, EmptySubscription, MaybeUndefined, MergedObject,
-    MergedObjectSubscriptionTail, MergedObjectTail, Upload,
-};
 pub use validation::ValidationMode;
+pub use types::*;
 
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;
@@ -168,8 +163,6 @@ pub mod registry;
 pub use base::{InputObjectType, InputValueType, OutputValueType};
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
-#[doc(hidden)]
-pub use types::{EnumItem, EnumType};
 
 /// Define a GraphQL object with methods
 ///

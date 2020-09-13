@@ -10,7 +10,7 @@ use std::ops::{Deref, DerefMut};
 ///
 /// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct ID(String);
+pub struct ID(pub String);
 
 impl Deref for ID {
     type Target = String;
@@ -26,18 +26,15 @@ impl DerefMut for ID {
     }
 }
 
-impl<T> From<T> for ID
-where
-    T: std::fmt::Display,
-{
+impl<T: std::fmt::Display> From<T> for ID {
     fn from(value: T) -> Self {
         ID(value.to_string())
     }
 }
 
-impl Into<String> for ID {
-    fn into(self) -> String {
-        self.0
+impl From<ID> for String {
+    fn from(id: ID) -> Self {
+        id.0
     }
 }
 
@@ -55,7 +52,7 @@ macro_rules! try_from_integers {
     };
 }
 
-try_from_integers!(i8, i16, i32, i64, u8, u16, u32, u64, isize, usize);
+try_from_integers!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, isize, usize);
 
 impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;

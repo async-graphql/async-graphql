@@ -61,7 +61,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .unwrap_or_else(|| quote! {None});
         enum_items.push(quote! { #(#item_attrs)* #item_ident});
         items.push(quote! {
-            #crate_name::EnumItem {
+            #crate_name::resolver_utils::EnumItem {
                 name: #gql_item_name,
                 value: #ident::#item_ident,
             }
@@ -77,8 +77,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::EnumType for #ident {
-            fn items() -> &'static [#crate_name::EnumItem<#ident>] {
+        impl #crate_name::resolver_utils::EnumType for #ident {
+            fn items() -> &'static [#crate_name::resolver_utils::EnumItem<#ident>] {
                 &[#(#items),*]
             }
         }
@@ -107,18 +107,18 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
             fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
-                #crate_name::EnumType::parse_enum(value.unwrap_or_default())
+                #crate_name::resolver_utils::parse_enum(value.unwrap_or_default())
             }
 
             fn to_value(&self) -> #crate_name::Value {
-                #crate_name::EnumType::to_value(self)
+                #crate_name::resolver_utils::enum_value(*self)
             }
         }
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputValueType for #ident {
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                Ok(#crate_name::EnumType::to_value(self).into_json().unwrap())
+                Ok(#crate_name::resolver_utils::enum_value(*self).into_json().unwrap())
             }
         }
     };

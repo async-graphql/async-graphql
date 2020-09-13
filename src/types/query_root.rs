@@ -1,9 +1,8 @@
 use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
-use crate::scalars::Any;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, GQLSimpleObject, OutputValueType, Positioned,
+    registry, Any, Context, ContextSelectionSet, Error, GQLSimpleObject, OutputValueType, Positioned,
     QueryError, Result, Type,
 };
 
@@ -17,9 +16,9 @@ struct Service {
     sdl: Option<String>,
 }
 
-pub struct QueryRoot<T> {
-    pub inner: T,
-    pub disable_introspection: bool,
+pub(crate) struct QueryRoot<T> {
+    pub(crate) inner: T,
+    pub(crate) disable_introspection: bool,
 }
 
 impl<T: Type> Type for QueryRoot<T> {
