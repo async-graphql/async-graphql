@@ -24,7 +24,7 @@ pub trait SubscriptionType: Type {
 
 type BoxCreateStreamFuture<'a> = Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>>;
 
-pub fn create_subscription_stream<'a, Query, Mutation, Subscription>(
+pub(crate) fn create_subscription_stream<'a, Query, Mutation, Subscription>(
     schema: &'a Schema<Query, Mutation, Subscription>,
     environment: QueryEnv,
     ctx: &'a ContextSelectionSet<'_>,

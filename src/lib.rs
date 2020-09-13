@@ -146,7 +146,6 @@ pub use request::Request;
 pub use response::Response;
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
-pub use subscription::SimpleBroker;
 pub use validation::ValidationMode;
 pub use types::*;
 
