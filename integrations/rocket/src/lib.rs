@@ -27,14 +27,14 @@ use yansi::Paint;
 ///
 /// ```rust,no_run
 ///
-/// use async_graphql::{EmptyMutation, EmptySubscription, Schema, Object};
+/// use async_graphql::{EmptyMutation, EmptySubscription, Schema, GQLObject};
 /// use async_graphql_rocket::{GQLRequest, GraphQL, GQLResponse};
 /// use rocket::{response::content, routes, State, http::Status};
 ///
 /// type ExampleSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GQLObject]
 /// impl QueryRoot {
 ///     #[field(desc = "Returns the sum of a and b")]
 ///     async fn add(&self, a: i32, b: i32) -> i32 {

@@ -3,6 +3,7 @@
 mod graphiql_source;
 mod multipart;
 mod playground_source;
+pub mod websocket;
 
 pub use graphiql_source::graphiql_source;
 pub use multipart::{receive_multipart, MultipartOptions};

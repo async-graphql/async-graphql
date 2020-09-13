@@ -18,7 +18,7 @@ pub async fn test_subscription_ws_transport() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = transports::websocket::create(&schema);
+    let (mut sink, stream) = http::websocket::create(&schema);
     futures::pin_mut!(stream);
 
     sink.send(
@@ -92,7 +92,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = transports::websocket::create_with_initializer(&schema, |value| {
+    let (mut sink, stream) = http::websocket::create_with_initializer(&schema, |value| {
         #[derive(serde::Deserialize)]
         struct Payload {
             token: String,
@@ -187,7 +187,7 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = transports::websocket::create(&schema);
+    let (mut sink, stream) = http::websocket::create(&schema);
     futures::pin_mut!(stream);
 
     sink.send(
@@ -256,7 +256,7 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let (mut sink, stream) = transports::websocket::create(&schema);
+    let (mut sink, stream) = http::websocket::create(&schema);
     futures::pin_mut!(stream);
 
     sink.send(
