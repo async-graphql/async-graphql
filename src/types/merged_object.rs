@@ -109,14 +109,13 @@ where
 {
     async fn create_field_stream(
         &self,
-        idx: usize,
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
     ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>> {
         match self
             .0
-            .create_field_stream(idx, ctx, schema_env.clone(), query_env.clone())
+            .create_field_stream(ctx, schema_env.clone(), query_env.clone())
             .await
         {
             Ok(value) => Ok(value),
@@ -125,7 +124,7 @@ where
                 ..
             }) => {
                 self.1
-                    .create_field_stream(idx, ctx, schema_env, query_env)
+                    .create_field_stream(ctx, schema_env, query_env)
                     .await
             }
             Err(err) => Err(err),

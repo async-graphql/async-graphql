@@ -16,7 +16,6 @@ pub trait SubscriptionType: Type {
     #[doc(hidden)]
     async fn create_field_stream(
         &self,
-        idx: usize,
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
@@ -37,7 +36,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static + Sized,
 {
     Box::pin(async move {
-        for (idx, selection) in ctx.item.node.items.iter().enumerate() {
+        for selection in &ctx.item.node.items {
             if ctx.is_skip(selection.node.directives())? {
                 continue;
             }
@@ -46,7 +45,6 @@ where
                     schema
                         .subscription
                         .create_field_stream(
-                            idx,
                             &ctx.with_field(field),
                             schema.env.clone(),
                             environment.clone(),
@@ -105,11 +103,10 @@ where
 impl<T: SubscriptionType + Send + Sync> SubscriptionType for &T {
     async fn create_field_stream(
         &self,
-        idx: usize,
         ctx: &Context<'_>,
         schema_env: SchemaEnv,
         query_env: QueryEnv,
     ) -> Result<Pin<Box<dyn Stream<Item = Response> + Send>>> {
-        T::create_field_stream(*self, idx, ctx, schema_env, query_env).await
+        T::create_field_stream(*self, ctx, schema_env, query_env).await
     }
 }

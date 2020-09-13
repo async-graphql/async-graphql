@@ -346,7 +346,6 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
         impl #crate_name::SubscriptionType for #self_ty #where_clause {
             async fn create_field_stream(
                 &self,
-                idx: usize,
                 ctx: &#crate_name::Context<'_>,
                 schema_env: #crate_name::SchemaEnv,
                 query_env: #crate_name::QueryEnv,

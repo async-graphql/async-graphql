@@ -37,7 +37,6 @@ impl SubscriptionType for EmptySubscription {
 
     async fn create_field_stream(
         &self,
-        _idx: usize,
         _ctx: &Context<'_>,
         _schema_env: SchemaEnv,
         _query_env: QueryEnv,
