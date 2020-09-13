@@ -517,9 +517,6 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// }
     /// ```
     pub fn look_ahead(&self) -> Lookahead {
-        Lookahead {
-            document: &self.query_env.document,
-            field: Some(&self.item.node),
-        }
+        Lookahead::new(&self.query_env.document, &self.item.node)
     }
 }

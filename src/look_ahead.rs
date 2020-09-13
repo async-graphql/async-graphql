@@ -1,13 +1,24 @@
 use crate::parser::types::{ExecutableDocumentData, Field, Selection, SelectionSet};
 
-/// A selection performed by a query
+/// A selection performed by a query.
 pub struct Lookahead<'a> {
-    pub(crate) document: &'a ExecutableDocumentData,
-    pub(crate) field: Option<&'a Field>,
+    document: &'a ExecutableDocumentData,
+    field: Option<&'a Field>,
 }
 
 impl<'a> Lookahead<'a> {
-    /// Check if the specified field exists in the current selection.
+    pub(crate) fn new(document: &'a ExecutableDocumentData, field: &'a Field) -> Self {
+        Self {
+            document,
+            field: Some(field),
+        }
+    }
+
+    /// Get the first subfield of the selection set with the specified name. This will ignore
+    /// aliases.
+    ///
+    /// For example, calling `.field("a")` on `{ a { b } }` will return a lookahead that
+    /// represents `{ b }`.
     pub fn field(&self, name: &str) -> Self {
         Self {
             document: self.document,
@@ -29,32 +40,25 @@ fn find<'a>(
     selection_set: &'a SelectionSet,
     name: &str,
 ) -> Option<&'a Field> {
-    for item in &selection_set.items {
-        match &item.node {
+    selection_set
+        .items
+        .iter()
+        .find_map(|item| match &item.node {
             Selection::Field(field) => {
                 if field.node.name.node == name {
-                    return Some(&field.node);
+                    Some(&field.node)
+                } else {
+                    None
                 }
             }
-            Selection::InlineFragment(inline_fragment) => {
-                if let Some(field) = find(document, &inline_fragment.node.selection_set.node, name)
-                {
-                    return Some(field);
-                }
+            Selection::InlineFragment(fragment) => {
+                find(document, &fragment.node.selection_set.node, name)
             }
-            Selection::FragmentSpread(fragment_spread) => {
-                if let Some(fragment) = document
-                    .fragments
-                    .get(&fragment_spread.node.fragment_name.node)
-                {
-                    if let Some(field) = find(document, &fragment.node.selection_set.node, name) {
-                        return Some(field);
-                    }
-                }
-            }
-        }
-    }
-    None
+            Selection::FragmentSpread(spread) => document
+                .fragments
+                .get(&spread.node.fragment_name.node)
+                .and_then(|fragment| find(document, &fragment.node.selection_set.node, name)),
+        })
 }
 
 #[cfg(test)]
