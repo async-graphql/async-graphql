@@ -13,7 +13,6 @@
     - [Union](define_union.md)
     - [InputObject](define_input_object.md)
     - [Default value](default_value.md)
-    - [Two ways to define types](procedural_macros.md)
 - [Schema](define_schema.md)
     - [Query and Mutation](query_and_mutation.md)
     - [Subscription](subscription.md)
