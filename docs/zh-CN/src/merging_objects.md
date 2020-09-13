@@ -5,14 +5,14 @@
 通常我们在Rust中可以为同一类型创建多个实现，但由于过程宏的限制，无法为同一个类型创建多个Object实现。例如，下面的代码将无法通过编译。
 
 ```rust
-#[Object]
+#[GQLObject]
 impl MyObject {
     async fn field1(&self) -> i32 {
         todo!()
     }
 }
 
-#[Object]
+#[GQLObject]
 impl MyObject {
     async fn field2(&self) -> i32 {
         todo!()    
@@ -22,17 +22,17 @@ impl MyObject {
 
 用 `#[derive(GQLMergedObject)]` 宏允许你合并多个独立的GQLObject为一个.
 
-**提示:** 每个`#[Object]`需要一个唯一的名称，即使在一个`GQLMergedObject`内，所以确保每个对象有单独的名称。
+**提示:** 每个`#[GQLObject]`需要一个唯一的名称，即使在一个`GQLMergedObject`内，所以确保每个对象有单独的名称。
 
 ```rust
-#[Object]
+#[GQLObject]
 impl UserQuery {
     async fn users(&self) -> Vec<User> {
         todo!()
     }
 }
 
-#[Object]
+#[GQLObject]
 impl MovieQuery {
     async fn movies(&self) -> Vec<Movie> {
         todo!()
@@ -59,7 +59,7 @@ let schema = Schema::new(
 #[derive(Default)]
 struct Subscription1;
 
-#[Subscription]
+#[GQLSubscription]
 impl Subscription1 {
     async fn events1(&self) -> impl Stream<Item = i32> {
         futures::stream::iter(0..10)
@@ -69,7 +69,7 @@ impl Subscription1 {
 #[derive(Default)]
 struct Subscription2;
 
-#[Subscription]
+#[GQLSubscription]
 impl Subscription2 {
     async fn events2(&self) -> impl Stream<Item = i32> {
         futures::stream::iter(10..20)

@@ -3,14 +3,14 @@
 Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.
 
 ```rust
-#[Object]
+#[GQLObject]
 impl Query {
     async fn users(&self) -> Vec<User> {
         todo!()
     }
 }
 
-#[Object]
+#[GQLObject]
 impl Query {
     async fn movies(&self) -> Vec<Movie> {
         todo!()
@@ -18,21 +18,21 @@ impl Query {
 }
 ```
 
-Instead, the `#[derive(GQLMergedObject)]`/`#[MergedObject]` macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more `#[Object]` implementations into one.
+Instead, the `#[derive(GQLMergedObject)]` macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more `#[Object]` implementations into one.
 
-**Tip:** Every `#[Object]` needs a unique name, even in a `GQLMergedObject`, so make sure to give each object you're merging its own name.
+**Tip:** Every `#[GQLObject]` needs a unique name, even in a `GQLMergedObject`, so make sure to give each object you're merging its own name.
 
 **Note:** This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.
 
 ```rust
-#[Object]
+#[GQLObject]
 impl UserQuery {
     async fn users(&self) -> Vec<User> {
         todo!()
     }
 }
 
-#[Object]
+#[GQLObject]
 impl MovieQuery {
     async fn movies(&self) -> Vec<Movie> {
         todo!()
@@ -61,7 +61,7 @@ Example:
 #[derive(Default)]
 struct Subscription1;
 
-#[Subscription]
+#[GQLSubscription]
 impl Subscription1 {
     async fn events1(&self) -> impl Stream<Item = i32> {
         futures::stream::iter(0..10)
@@ -71,7 +71,7 @@ impl Subscription1 {
 #[derive(Default)]
 struct Subscription2;
 
-#[Subscription]
+#[GQLSubscription]
 impl Subscription2 {
     async fn events2(&self) -> impl Stream<Item = i32> {
         futures::stream::iter(10..20)

@@ -20,7 +20,7 @@ struct Circle {
     radius: f32,
 }
 
-#[Object]
+#[GQLObject]
 impl Circle {
     async fn area(&self) -> f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -40,7 +40,7 @@ struct Square {
     width: f32,
 }
 
-#[Object]
+#[GQLObject]
 impl Square {
     async fn area(&self) -> f32 {
         self.width * self.width
@@ -56,7 +56,8 @@ impl Square {
     }
 }
 
-#[Interface(
+#[derive(GQLInterface)]
+#[graphql(
     field(name = "area", type = "f32"),
     field(name = "scale", type = "Shape", arg(name = "s", type = "f32"))
     field(name = "short_description", method = "short_description", type = "String")

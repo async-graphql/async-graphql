@@ -9,7 +9,7 @@ use async_graphql::*;
 
 struct Query;
 
-#[Object]
+#[GQLObject]
 impl Query {
     async fn borrow_from_context_data<'ctx>(
         &self,

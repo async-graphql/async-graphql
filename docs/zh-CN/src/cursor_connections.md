@@ -12,7 +12,7 @@ use async_graphql::connection::*;
 
 struct Query;
 
-#[Object]
+#[GQLObject]
 impl Query {
     #[field]
     async fn numbers(&self,

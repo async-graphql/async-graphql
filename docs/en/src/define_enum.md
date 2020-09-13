@@ -7,16 +7,17 @@ It's easy to define an `Enum`, here we have an example:
 ```rust
 use async_graphql::*;
 
-#[Enum(desc = "One of the films in the Star Wars Trilogy")]
+/// One of the films in the Star Wars Trilogy
+#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
 pub enum Episode {
-    #[item(desc = "Released in 1977.")]
+    /// Released in 1977.
     NewHope,
 
-    #[item(desc = "Released in 1980.")]
+    /// Released in 1980.
     Empire,
 
-    // rename to `AAA`
-    #[item(name="AAA", desc = "Released in 1983.")]
+    /// Released in 1983.
+    #[item(name="AAA")]
     Jedi,
 }
 ```

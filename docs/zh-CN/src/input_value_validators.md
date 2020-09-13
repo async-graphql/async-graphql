@@ -12,7 +12,7 @@ use async_graphql::validators::{Email, MAC};
 
 struct Query;
 
-#[Object]
+#[GQLObject]
 impl Query {
     async fn input(#[arg(validator(or(Email, MAC(colon = "false"))))] a: String) {
     }
@@ -27,7 +27,7 @@ use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
 
 struct Query;
 
-#[Object]
+#[GQLObject]
 impl Query {
     async fn input(#[validator(
         or(

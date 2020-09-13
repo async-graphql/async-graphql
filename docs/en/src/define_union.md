@@ -12,7 +12,7 @@ struct Circle {
     radius: f32,
 }
 
-#[Object]
+#[GQLObject]
 impl Circle {
     async fn area(&self) -> f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -27,7 +27,7 @@ struct Square {
     width: f32,
 }
 
-#[Object]
+#[GQLObject]
 impl Square {
     async fn area(&self) -> f32 {
         self.width * self.width
@@ -38,7 +38,7 @@ impl Square {
     }
 }
 
-#[Union]
+#[derive(GQLUnion)]
 enum Shape {
     Circle(Circle),
     Square(Square),

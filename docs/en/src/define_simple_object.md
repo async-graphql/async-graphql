@@ -7,9 +7,12 @@ The example below defines an object `MyObject` which includes the fields `a` and
 ```rust
 use async_graphql::*;
 
-#[SimpleObject]
+#[derive(GQLSimpleObject)]
 struct MyObject {
+    /// Value a
     a: i32,
+    
+    #[field(desc = "Value b")]
     b: i32,
 
     #[field(skip)]

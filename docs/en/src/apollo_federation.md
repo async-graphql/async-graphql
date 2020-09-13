@@ -15,7 +15,7 @@
 ```rust
 struct Query;
 
-#[Object]
+#[GQLObject]
 impl Query {
     #[entity]
     async fn find_user_by_id(&self, id: ID) -> User {

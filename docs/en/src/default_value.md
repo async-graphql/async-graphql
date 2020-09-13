@@ -14,7 +14,7 @@ fn my_default() -> i32 {
     30
 }
 
-#[Object]
+#[GQLObject]
 impl Query {
     // The default value of the value parameter is 0, it will call i32::default()
     fn test1(&self, #[arg(default)] value: i32) {}
@@ -32,7 +32,8 @@ impl Query {
 ```rust
 use async_graphql::*;
 
-#[Interface(
+#[derive(GQLInterface)]
+#[graphql(
     field(name = "test1", arg(name = "value", default)),
     field(name = "test2", arg(name = "value", default = 10)),
     field(name = "test3", arg(name = "value", default = "my_default()")),
@@ -47,6 +48,7 @@ enum MyInterface {
 ```rust
 use async_graphql::*;
 
+#derive(GQLInputObject)
 struct MyInputObject {
     #[field(default)]
     value1: i32,
