@@ -1,13 +1,12 @@
 use async_graphql::*;
-use async_std::stream;
-use async_std::stream::Stream;
+use async_std::stream::{self, Stream};
 
 #[derive(Clone, Debug)]
 struct Circle {
     radius: f32,
 }
 
-#[Object(desc = "Circle")]
+#[GQLObject(desc = "Circle")]
 impl Circle {
     async fn scale(&self, s: f32) -> TestInterface {
         Circle {
@@ -22,7 +21,7 @@ struct Square {
     width: f32,
 }
 
-#[Object(desc = "Square")]
+#[GQLObject(desc = "Square")]
 impl Square {
     #[field(deprecation = "Field scale is deprecated")]
     async fn scale(&self, s: f32) -> TestInterface {
@@ -33,21 +32,22 @@ impl Square {
     }
 }
 
-#[Interface(field(name = "scale", type = "TestInterface", arg(name = "s", type = "f32")))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GQLInterface)]
+#[graphql(field(name = "scale", type = "TestInterface", arg(name = "s", type = "f32")))]
 enum TestInterface {
     Circle(Circle),
     Square(Square),
 }
 
-#[Union(desc = "Test Union")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GQLUnion)]
+#[graphql(desc = "Test Union")]
 enum TestUnion {
     Circle(Circle),
     Square(Square),
 }
 
-#[Enum(desc = "Test Enum")]
+#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[graphql(desc = "Test Enum")]
 enum TestEnum {
     #[item(desc = "Kind 1")]
     Kind1,
@@ -56,14 +56,12 @@ enum TestEnum {
     Kind2,
 }
 
-#[SimpleObject]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GQLSimpleObject)]
 struct SimpleList {
     items: Vec<String>,
 }
 
-#[SimpleObject]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GQLSimpleObject)]
 struct SimpleOption {
     required: i32,
     optional: Option<i32>,
@@ -73,7 +71,7 @@ struct SimpleOption {
 #[derive(Clone, Debug)]
 struct TestScalar(i32);
 
-#[Scalar(desc = "Test scalar")]
+#[GQLScalar(desc = "Test scalar")]
 impl ScalarType for TestScalar {
     fn parse(_value: Value) -> InputValueResult<Self> {
         Ok(TestScalar(42))
@@ -90,7 +88,7 @@ impl ScalarType for TestScalar {
 
 /// Is SimpleObject
 /// and some more ```lorem ipsum```
-#[SimpleObject]
+#[derive(GQLSimpleObject)]
 struct SimpleObject {
     /// Value a with # 'some' `markdown`"."
     /// and some more lorem ipsum
@@ -122,7 +120,7 @@ struct SimpleObject {
 
 struct Query;
 
-#[Object(desc = "Global query")]
+#[GQLObject(desc = "Global query")]
 impl Query {
     /// Get a simple object
     async fn simple_object(&self) -> SimpleObject {
@@ -130,14 +128,15 @@ impl Query {
     }
 }
 
-#[async_graphql::InputObject(desc = "Simple Input")]
+#[derive(GQLInputObject)]
+#[graphql(desc = "Simple Input")]
 pub struct SimpleInput {
     pub a: String,
 }
 
 struct Mutation;
 
-#[Object(desc = "Global mutation")]
+#[GQLObject(desc = "Global mutation")]
 impl Mutation {
     /// simple_mutation description
     /// line2
@@ -149,7 +148,7 @@ impl Mutation {
 
 struct Subscription;
 
-#[Subscription(desc = "Global subscription")]
+#[GQLSubscription(desc = "Global subscription")]
 impl Subscription {
     /// simple_subscription description
     async fn simple_subscription(&self, #[arg(default = 1)] step: i32) -> impl Stream<Item = i32> {

@@ -1,8 +1,7 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 
 /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
-#[Scalar(internal, name = "Float")]
+#[GQLScalar(internal, name = "Float")]
 impl ScalarType for f32 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -27,7 +26,7 @@ impl ScalarType for f32 {
 }
 
 /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
-#[Scalar(internal, name = "Float")]
+#[GQLScalar(internal, name = "Float")]
 impl ScalarType for f64 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

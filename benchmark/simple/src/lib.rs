@@ -2,7 +2,7 @@ use async_graphql::*;
 
 pub struct QueryRoot;
 
-#[Object]
+#[GQLObject]
 impl QueryRoot {
     #[field]
     async fn value_i32(&self) -> i32 {
@@ -17,7 +17,7 @@ impl QueryRoot {
 
 pub struct MyObj;
 
-#[Object]
+#[GQLObject]
 impl MyObj {
     #[field]
     async fn value_i32(&self) -> i32 {

@@ -3,25 +3,25 @@ use futures::{Stream, StreamExt, TryStreamExt};
 
 #[async_std::test]
 pub async fn test_input_value_custom_error() {
-    #[Enum]
+    #[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
     #[allow(non_camel_case_types)]
     enum MyEnum {
         r#type,
     }
 
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyObject {
         r#i32: i32,
     }
 
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInputObject {
         r#i32: i32,
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn r#type(&self, r#i32: i32) -> i32 {
             r#i32
@@ -38,7 +38,7 @@ pub async fn test_input_value_custom_error() {
 
     struct SubscriptionRoot;
 
-    #[Subscription]
+    #[GQLSubscription]
     impl SubscriptionRoot {
         async fn r#type(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(0..10)

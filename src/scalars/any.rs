@@ -1,5 +1,4 @@
-use crate::{InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueResult, ScalarType, Value};
 use serde::de::DeserializeOwned;
 
 /// Any scalar
@@ -9,7 +8,7 @@ use serde::de::DeserializeOwned;
 pub struct Any(pub Value);
 
 /// The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.
-#[Scalar(internal, name = "_Any")]
+#[GQLScalar(internal, name = "_Any")]
 impl ScalarType for Any {
     fn parse(value: Value) -> InputValueResult<Self> {
         Ok(Self(value))

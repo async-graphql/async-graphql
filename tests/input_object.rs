@@ -2,7 +2,7 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_input_object_default_value() {
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInput {
         #[field(default = 999)]
         a: i32,
@@ -28,7 +28,7 @@ pub async fn test_input_object_default_value() {
         e: Option<i32>,
     }
 
-    #[Object]
+    #[GQLObject]
     impl MyOutput {
         async fn a(&self) -> i32 {
             self.a
@@ -53,7 +53,7 @@ pub async fn test_input_object_default_value() {
 
     struct Root;
 
-    #[Object]
+    #[GQLObject]
     impl Root {
         async fn a(&self, input: MyInput) -> MyOutput {
             MyOutput {
@@ -91,8 +91,7 @@ pub async fn test_input_object_default_value() {
 pub async fn test_inputobject_derive_and_item_attributes() {
     use serde::Deserialize;
 
-    #[InputObject]
-    #[derive(Deserialize, PartialEq, Debug)]
+    #[derive(Deserialize, PartialEq, Debug, GQLInputObject)]
     struct MyInputObject {
         #[serde(alias = "other")]
         real: i32,
@@ -164,7 +163,7 @@ pub async fn test_inputobject_flatten_recursive() {
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn test(&self, input: MyInputObject) -> i32 {
             input.c + input.b_obj.b + input.b_obj.a_obj.a

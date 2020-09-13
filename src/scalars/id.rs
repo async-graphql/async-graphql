@@ -1,5 +1,4 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 #[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
 use serde::{Deserialize, Serialize};
@@ -81,7 +80,7 @@ impl PartialEq<&str> for ID {
     }
 }
 
-#[Scalar(internal)]
+#[GQLScalar(internal)]
 impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

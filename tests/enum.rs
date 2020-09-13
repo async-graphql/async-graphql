@@ -2,13 +2,13 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_enum_type() {
-    #[Enum]
+    #[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
     enum MyEnum {
         A,
         B,
     }
 
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInput {
         value: MyEnum,
     }
@@ -17,7 +17,7 @@ pub async fn test_enum_type() {
         value: MyEnum,
     }
 
-    #[Object]
+    #[GQLObject]
     impl Root {
         async fn value(&self) -> MyEnum {
             self.value
@@ -53,8 +53,7 @@ pub async fn test_enum_type() {
 pub async fn test_enum_derive_and_item_attributes() {
     use serde::Deserialize;
 
-    #[async_graphql::Enum]
-    #[derive(Deserialize, Debug)]
+    #[derive(Deserialize, Debug, GQLEnum, Copy, Clone, Eq, PartialEq)]
     enum Test {
         #[serde(alias = "Other")]
         Real,

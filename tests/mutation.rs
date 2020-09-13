@@ -7,12 +7,12 @@ use std::time::Duration;
 pub async fn test_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct QueryRoot;
 
     struct MutationRoot;
 
-    #[Object]
+    #[GQLObject]
     impl MutationRoot {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             async_std::task::sleep(Duration::from_secs(1)).await;
@@ -38,12 +38,12 @@ pub async fn test_mutation_execution_order() {
 
 #[async_std::test]
 pub async fn test_mutation_fragment() {
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct QueryRoot;
 
     struct MutationRoot;
 
-    #[Object]
+    #[GQLObject]
     impl MutationRoot {
         async fn action(&self) -> bool {
             true

@@ -2,14 +2,14 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_maybe_undefined_type() {
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInput {
         value: MaybeUndefined<i32>,
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn value1(&self, input: MaybeUndefined<i32>) -> i32 {
             if input.is_null() {

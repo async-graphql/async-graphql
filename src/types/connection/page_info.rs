@@ -1,7 +1,8 @@
-use async_graphql_derive::SimpleObject;
+use crate::GQLSimpleObject;
 
 /// Information about pagination in a connection
-#[SimpleObject(internal)]
+#[derive(GQLSimpleObject)]
+#[graphql(internal)]
 pub struct PageInfo {
     /// When paginating backwards, are there more items?
     pub has_previous_page: bool,

@@ -5,7 +5,7 @@ mod cursor;
 mod edge;
 mod page_info;
 
-use crate::FieldResult;
+use crate::{FieldResult, GQLSimpleObject};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
@@ -14,7 +14,8 @@ pub use page_info::PageInfo;
 use std::fmt::Display;
 
 /// Empty additional fields
-#[async_graphql_derive::SimpleObject(internal)]
+#[derive(GQLSimpleObject)]
+#[graphql(internal)]
 pub struct EmptyFields;
 
 /// Parses the parameters and executes the query.
@@ -29,12 +30,12 @@ pub struct EmptyFields;
 ///
 /// struct Numbers;
 ///
-/// #[SimpleObject]
+/// #[derive(GQLSimpleObject)]
 /// struct Diff {
 ///     diff: i32,
 /// }
 ///
-/// #[Object]
+/// #[GQLObject]
 /// impl QueryRoot {
 ///     async fn numbers(&self,
 ///         after: Option<String>,

@@ -6,7 +6,7 @@ pub async fn test_complexity_and_depth() {
 
     struct MyObj;
 
-    #[Object]
+    #[GQLObject]
     impl MyObj {
         async fn a(&self) -> i32 {
             1
@@ -21,7 +21,7 @@ pub async fn test_complexity_and_depth() {
         }
     }
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn value(&self) -> i32 {
             1

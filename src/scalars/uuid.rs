@@ -1,8 +1,7 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 use uuid::Uuid;
 
-#[Scalar(internal, name = "UUID")]
+#[GQLScalar(internal, name = "UUID")]
 impl ScalarType for Uuid {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

@@ -17,7 +17,7 @@ use std::borrow::Cow;
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GQLObject]
 /// impl QueryRoot {}
 ///
 /// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);

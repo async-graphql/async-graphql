@@ -5,17 +5,17 @@ use async_graphql::*;
 pub async fn test_connection_additional_fields() {
     struct QueryRoot;
 
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct ConnectionFields {
         total_count: i32,
     }
 
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct Diff {
         diff: i32,
     }
 
-    #[Object]
+    #[GQLObject]
     impl QueryRoot {
         async fn numbers(
             &self,

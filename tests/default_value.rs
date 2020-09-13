@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_default_value_arg() {
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn value1(&self, #[arg(default = 100)] input: i32) -> i32 {
             input
@@ -44,7 +44,7 @@ pub async fn test_default_value_arg() {
 
 #[async_std::test]
 pub async fn test_default_value_inputobject() {
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInput {
         #[field(default = 100)]
         value1: i32,
@@ -56,7 +56,7 @@ pub async fn test_default_value_inputobject() {
         value3: i32,
     }
 
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyOutput {
         value1: i32,
         value2: i32,
@@ -65,7 +65,7 @@ pub async fn test_default_value_inputobject() {
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn value(&self, input: MyInput) -> MyOutput {
             MyOutput {

@@ -2,20 +2,20 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_union_simple_object() {
-    #[async_graphql::SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -46,20 +46,20 @@ pub async fn test_union_simple_object() {
 
 #[async_std::test]
 pub async fn test_union_simple_object2() {
-    #[async_graphql::SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -92,7 +92,7 @@ pub async fn test_union_simple_object2() {
 pub async fn test_multiple_unions() {
     struct MyObj;
 
-    #[async_graphql::Object]
+    #[GQLObject]
     impl MyObj {
         async fn value_a(&self) -> i32 {
             1
@@ -107,19 +107,19 @@ pub async fn test_multiple_unions() {
         }
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum UnionA {
         MyObj(MyObj),
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum UnionB {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn union_a(&self) -> UnionA {
             MyObj.into()
@@ -169,7 +169,7 @@ pub async fn test_multiple_unions() {
 pub async fn test_multiple_objects_in_multiple_unions() {
     struct MyObjOne;
 
-    #[async_graphql::Object]
+    #[GQLObject]
     impl MyObjOne {
         async fn value_a(&self) -> i32 {
             1
@@ -186,27 +186,27 @@ pub async fn test_multiple_objects_in_multiple_unions() {
 
     struct MyObjTwo;
 
-    #[async_graphql::Object]
+    #[GQLObject]
     impl MyObjTwo {
         async fn value_a(&self) -> i32 {
             1
         }
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum UnionA {
         MyObjOne(MyObjOne),
         MyObjTwo(MyObjTwo),
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum UnionB {
         MyObjOne(MyObjOne),
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn my_obj(&self) -> Vec<UnionA> {
             vec![MyObjOne.into(), MyObjTwo.into()]
@@ -246,21 +246,21 @@ pub async fn test_multiple_objects_in_multiple_unions() {
 pub async fn test_union_field_result() {
     struct MyObj;
 
-    #[async_graphql::Object]
+    #[GQLObject]
     impl MyObj {
         async fn value(&self) -> FieldResult<i32> {
             Ok(10)
         }
     }
 
-    #[async_graphql::Union]
+    #[derive(GQLUnion)]
     enum Node {
         MyObj(MyObj),
     }
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn node(&self) -> Node {
             MyObj.into()

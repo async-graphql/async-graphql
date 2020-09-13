@@ -18,7 +18,7 @@ fn quickstart() -> Result<()> {
             use tide::{http::StatusCode, Request, Response};
 
             struct QueryRoot;
-            #[Object]
+            #[GQLObject]
             impl QueryRoot {
                 #[field(desc = "Returns the sum of a and b")]
                 async fn add(&self, a: i32, b: i32) -> i32 {
@@ -99,7 +99,7 @@ fn hello() -> Result<()> {
 
             struct Hello(String);
             struct QueryRoot;
-            #[Object]
+            #[GQLObject]
             impl QueryRoot {
                 #[field(desc = "Returns hello")]
                 async fn hello<'a>(&self, ctx: &'a Context<'_>) -> String {
@@ -194,18 +194,17 @@ fn upload() -> Result<()> {
             use tide::Request;
 
             struct QueryRoot;
-            #[Object]
+            #[GQLObject]
             impl QueryRoot {}
 
-            #[async_graphql::SimpleObject]
-            #[derive(Clone)]
+            #[derive(Clone, GQLSimpleObject)]
             pub struct FileInfo {
                 filename: String,
                 mime_type: Option<String>,
             }
 
             struct MutationRoot;
-            #[Object]
+            #[GQLObject]
             impl MutationRoot {
                 async fn single_upload(&self, file: Upload) -> FileInfo {
                     println!("single_upload: filename={}", file.filename());

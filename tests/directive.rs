@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_directive_skip() {
     struct QueryRoot;
 
-    #[Object]
+    #[GQLObject]
     impl QueryRoot {
         pub async fn value(&self) -> i32 {
             10
@@ -34,7 +34,7 @@ pub async fn test_directive_skip() {
 pub async fn test_directive_include() {
     struct QueryRoot;
 
-    #[Object]
+    #[GQLObject]
     impl QueryRoot {
         pub async fn value(&self) -> i32 {
             10
@@ -64,7 +64,7 @@ pub async fn test_directive_include() {
 pub async fn test_directive_ifdef() {
     struct QueryRoot;
 
-    #[Object]
+    #[GQLObject]
     impl QueryRoot {
         pub async fn value1(&self) -> i32 {
             10
@@ -73,7 +73,7 @@ pub async fn test_directive_ifdef() {
 
     struct MutationRoot;
 
-    #[Object]
+    #[GQLObject]
     impl MutationRoot {
         pub async fn action1(&self) -> i32 {
             10

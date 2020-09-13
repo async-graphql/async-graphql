@@ -22,7 +22,7 @@ pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 ///
 /// struct QueryRoot;
 ///
-/// #[Object]
+/// #[GQLObject]
 /// impl QueryRoot {
 ///     // Input is email address
 ///     async fn value1(&self, #[arg(validator(Email))] email: String) -> i32 {

@@ -2,10 +2,7 @@ use itertools::Itertools;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::crate_name;
 use quote::quote;
-use syn::{
-    Attribute, AttributeArgs, DeriveInput, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta,
-    Result,
-};
+use syn::{Attribute, DeriveInput, Error, Expr, Ident, Lit, Meta, MetaList, NestedMeta, Result};
 
 pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
@@ -14,27 +11,6 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
         let name = crate_name("async-graphql").unwrap_or_else(|_| "async_graphql".to_owned());
         TokenTree::from(Ident::new(&name, Span::call_site())).into()
     }
-}
-
-pub fn add_container_attrs(
-    derive: TokenStream,
-    container_attrs: AttributeArgs,
-    item: TokenStream,
-) -> Result<TokenStream> {
-    let internal = container_attrs.iter().any(|meta| {
-        if let NestedMeta::Meta(Meta::Path(p)) = meta {
-            p.is_ident("internal")
-        } else {
-            false
-        }
-    });
-    let crate_name = get_crate_name(internal);
-    let expanded = quote! {
-       #[derive(#crate_name::#derive)]
-       #[graphql(#(#container_attrs),*)]
-       #item
-    };
-    Ok(expanded)
 }
 
 pub fn parse_derive(input: TokenStream) -> Result<(proc_macro::TokenStream, DeriveInput)> {

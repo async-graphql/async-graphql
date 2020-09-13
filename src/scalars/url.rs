@@ -1,8 +1,7 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 use url::Url;
 
-#[Scalar(internal)]
+#[GQLScalar(internal)]
 impl ScalarType for Url {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_mut_args() {
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn test(&self, mut a: i32, mut b: String) -> String {
             a += 1;

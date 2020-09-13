@@ -118,7 +118,7 @@ pub struct MetaEnumValue {
 ///
 /// struct QueryRoot;
 ///
-/// #[Object(cache_control(max_age = 60))]
+/// #[GQLObject(cache_control(max_age = 60))]
 /// impl QueryRoot {
 ///     #[field(cache_control(max_age = 30))]
 ///     async fn value1(&self) -> i32 {

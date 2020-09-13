@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_field_merge() {
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn value1(&self) -> i32 {
             1
@@ -43,7 +43,7 @@ pub async fn test_field_merge() {
 
 #[async_std::test]
 pub async fn test_field_object_merge() {
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyObject {
         a: i32,
         b: i32,
@@ -52,7 +52,7 @@ pub async fn test_field_object_merge() {
 
     struct Query;
 
-    #[Object]
+    #[GQLObject]
     impl Query {
         async fn obj(&self) -> MyObject {
             MyObject { a: 1, b: 2, c: 3 }

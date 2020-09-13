@@ -17,11 +17,11 @@ use std::io::Read;
 /// *[Full Example](<https://github.com/async-graphql/examples/blob/master/models/files/src/lib.rs>)*
 ///
 /// ```
-/// use async_graphql::Upload;
+/// use async_graphql::*;
 ///
 /// struct MutationRoot;
 ///
-/// #[async_graphql::Object]
+/// #[GQLObject]
 /// impl MutationRoot {
 ///     async fn upload(&self, file: Upload) -> bool {
 ///         println!("upload: filename={}", file.filename());

@@ -12,7 +12,7 @@ use std::borrow::Cow;
 ///
 /// struct Query;
 ///
-/// #[Object]
+/// #[GQLObject]
 /// impl Query {
 ///     async fn value1(&self, input: MaybeUndefined<i32>) -> i32 {
 ///         if input.is_null() {

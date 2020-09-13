@@ -1,9 +1,8 @@
-use crate::{InputValueError, InputValueResult, ScalarType, Value};
-use async_graphql_derive::Scalar;
+use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 use bson::{oid::ObjectId, DateTime as UtcDateTime};
 use chrono::{DateTime, Utc};
 
-#[Scalar(internal)]
+#[GQLScalar(internal)]
 impl ScalarType for ObjectId {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -17,7 +16,7 @@ impl ScalarType for ObjectId {
     }
 }
 
-#[Scalar(internal, name = "DateTime")]
+#[GQLScalar(internal, name = "DateTime")]
 impl ScalarType for UtcDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         DateTime::<Utc>::parse(value).map(UtcDateTime::from)

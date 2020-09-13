@@ -6,7 +6,7 @@ use std::pin::Pin;
 
 #[async_std::test]
 pub async fn test_field_features() {
-    #[SimpleObject]
+    #[derive(GQLSimpleObject)]
     struct MyObj {
         value: i32,
 
@@ -19,7 +19,7 @@ pub async fn test_field_features() {
 
     struct Subscription;
 
-    #[Subscription]
+    #[GQLSubscription]
     impl Subscription {
         async fn values(&self) -> impl Stream<Item = i32> {
             futures::stream::once(async move { 10 })
@@ -40,7 +40,7 @@ pub async fn test_field_features() {
 
     struct QueryRoot;
 
-    #[Object]
+    #[GQLObject]
     impl QueryRoot {
         async fn value(&self) -> i32 {
             10

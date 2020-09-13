@@ -63,7 +63,7 @@ pub trait InputObjectType: InputValueType {}
 ///
 /// struct MyInt(i32);
 ///
-/// #[Scalar]
+/// #[GQLScalar]
 /// impl ScalarType for MyInt {
 ///     fn parse(value: Value) -> InputValueResult<Self> {
 ///         if let Value::Number(n) = &value {

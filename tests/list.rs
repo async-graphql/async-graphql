@@ -2,7 +2,7 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_list_type() {
-    #[InputObject]
+    #[derive(GQLInputObject)]
     struct MyInput {
         value: Vec<i32>,
     }
@@ -11,7 +11,7 @@ pub async fn test_list_type() {
         value: Vec<i32>,
     }
 
-    #[Object]
+    #[GQLObject]
     impl Root {
         async fn value_vec(&self) -> Vec<i32> {
             self.value.clone()
