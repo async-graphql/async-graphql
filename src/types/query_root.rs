@@ -2,8 +2,8 @@ use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, Error, GQLSimpleObject, OutputValueType, Positioned,
-    QueryError, Result, Type,
+    registry, Any, Context, ContextSelectionSet, Error, GQLSimpleObject, OutputValueType,
+    Positioned, QueryError, Result, Type,
 };
 
 use indexmap::map::IndexMap;

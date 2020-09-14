@@ -3,11 +3,11 @@ use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
 use multer::{Constraints, Multipart, SizeLimit};
+use pin_project_lite::pin_project;
 use std::collections::HashMap;
 use std::io::{self, Seek, SeekFrom, Write};
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use pin_project_lite::pin_project;
 
 /// Options for `receive_multipart`.
 #[derive(Default, Clone)]
@@ -143,7 +143,7 @@ impl<T: AsyncRead> Stream for ReaderStream<T> {
             match futures::ready!(this.reader.poll_read(cx, this.buf)?) {
                 0 => None,
                 size => Some(Ok(Bytes::copy_from_slice(&this.buf[..size]))),
-            }
+            },
         )
     }
 }

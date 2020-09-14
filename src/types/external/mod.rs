@@ -1,14 +1,14 @@
 //! Implementations of `Type`, `ScalarType`, etc on external types.
 
-mod string;
+mod bool;
+mod datetime;
+mod floats;
+mod integers;
 mod list;
 mod optional;
-mod bool;
-mod integers;
-mod floats;
+mod string;
 mod url;
 mod uuid;
-mod datetime;
 
 #[cfg(feature = "bson")]
 mod bson;

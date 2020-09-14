@@ -405,9 +405,7 @@ where
 
         let data = match &env.document.operation.node.ty {
             OperationType::Query => resolve_object(&ctx, &self.query).await,
-            OperationType::Mutation => {
-                resolve_object_serial(&ctx, &self.mutation).await
-            }
+            OperationType::Mutation => resolve_object_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
                 return Error::Query {
                     pos: Pos::default(),
@@ -421,8 +419,7 @@ where
         env.extensions.lock().execution_end();
         let extensions = env.extensions.lock().result();
 
-        Response::from_result(data)
-            .extensions(extensions)
+        Response::from_result(data).extensions(extensions)
     }
 
     /// Execute an GraphQL query.

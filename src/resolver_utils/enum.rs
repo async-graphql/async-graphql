@@ -24,16 +24,18 @@ pub fn parse_enum<T: EnumType>(value: Value) -> InputValueResult<T> {
         Value::String(s) => s.as_str(),
         _ => return Err(InputValueError::ExpectedType(value)),
     };
-    
+
     T::items()
         .iter()
         .find(|item| item.name == value)
         .map(|item| item.value)
-        .ok_or_else(|| InputValueError::Custom(format!(
-            r#"Enumeration type "{}" does not contain the value "{}""#,
-            T::type_name(),
-            value,
-        )))
+        .ok_or_else(|| {
+            InputValueError::Custom(format!(
+                r#"Enumeration type "{}" does not contain the value "{}""#,
+                T::type_name(),
+                value,
+            ))
+        })
 }
 
 /// Convert the enum value into a GraphQL value.

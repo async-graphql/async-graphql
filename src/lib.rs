@@ -112,8 +112,8 @@ mod validation;
 
 pub mod extensions;
 pub mod guard;
-pub mod validators;
 pub mod types;
+pub mod validators;
 
 #[doc(hidden)]
 pub mod resolver_utils;
@@ -121,9 +121,9 @@ pub mod resolver_utils;
 pub use async_graphql_parser as parser;
 
 #[doc(hidden)]
-pub use async_trait;
-#[doc(hidden)]
 pub use async_stream;
+#[doc(hidden)]
+pub use async_trait;
 #[doc(hidden)]
 pub use futures;
 #[doc(hidden)]
@@ -148,8 +148,8 @@ pub use request::Request;
 pub use response::Response;
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
-pub use validation::ValidationMode;
 pub use types::*;
+pub use validation::ValidationMode;
 
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;

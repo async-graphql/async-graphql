@@ -1,6 +1,4 @@
-use crate::{
-    registry, Context, Error, Pos, QueryError, Result, SubscriptionType, Type,
-};
+use crate::{registry, Context, Error, Pos, QueryError, Result, SubscriptionType, Type};
 use futures::{stream, Stream};
 use std::borrow::Cow;
 use std::pin::Pin;

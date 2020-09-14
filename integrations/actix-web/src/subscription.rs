@@ -66,10 +66,8 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         if let Some(initializer) = self.initializer.take() {
-            let (sink, stream) = async_graphql::http::websocket::create_with_initializer(
-                &self.schema,
-                initializer,
-            );
+            let (sink, stream) =
+                async_graphql::http::websocket::create_with_initializer(&self.schema, initializer);
             ctx.add_stream(stream);
             self.sink = Some(sink);
         } else {

@@ -3,10 +3,9 @@ use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
     CacheControl, Context, ContextSelectionSet, Error, GQLSimpleObject, GQLSubscription,
-    OutputValueType, Positioned, QueryError, Result,
-    SubscriptionType, Type,
+    OutputValueType, Positioned, QueryError, Result, SubscriptionType, Type,
 };
-use futures::{stream, Stream, StreamExt, future::Either};
+use futures::{future::Either, stream, Stream, StreamExt};
 use indexmap::IndexMap;
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -112,20 +111,13 @@ where
     ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>> {
         let left_stream = self.0.create_field_stream(ctx);
         let mut right_stream = Some(self.1.create_field_stream(ctx));
-        Box::pin(
-            left_stream
-            .flat_map(move |res| {
-                match res {
-                    Err(Error::Query {
-                        err: QueryError::FieldNotFound { .. },
-                        ..
-                    }) if right_stream.is_some() => {
-                        Either::Right(right_stream.take().unwrap())
-                    }
-                    other => Either::Left(stream::once(async { other })),
-                }
-            })
-        )
+        Box::pin(left_stream.flat_map(move |res| match res {
+            Err(Error::Query {
+                err: QueryError::FieldNotFound { .. },
+                ..
+            }) if right_stream.is_some() => Either::Right(right_stream.take().unwrap()),
+            other => Either::Left(stream::once(async { other })),
+        }))
     }
 }
 

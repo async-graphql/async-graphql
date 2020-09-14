@@ -47,10 +47,7 @@ impl Response {
     /// Set the extensions result of the response.
     #[must_use]
     pub fn extensions(self, extensions: Option<serde_json::Value>) -> Self {
-        Self {
-            extensions,
-            ..self
-        }
+        Self { extensions, ..self }
     }
 
     /// Set the cache control of the response.

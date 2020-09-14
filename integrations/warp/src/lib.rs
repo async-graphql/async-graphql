@@ -199,11 +199,10 @@ where
             |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, initializer: F| {
                 ws.on_upgrade(move |websocket| {
                     let (mut tx, rx) = websocket.split();
-                    let (mut stx, srx) =
-                        async_graphql::http::websocket::create_with_initializer(
-                            &schema,
-                            initializer,
-                        );
+                    let (mut stx, srx) = async_graphql::http::websocket::create_with_initializer(
+                        &schema,
+                        initializer,
+                    );
 
                     let mut rx = rx.fuse();
                     let srx = srx.fuse();
