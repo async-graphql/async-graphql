@@ -1,9 +1,9 @@
 use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
 use bson::oid::ObjectId;
 #[cfg(feature = "chrono")]
-use chrono::{DateTime, Utc};
-#[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
+#[cfg(feature = "chrono")]
+use chrono::{DateTime, Utc};
 
 #[GQLScalar(internal)]
 impl ScalarType for ObjectId {

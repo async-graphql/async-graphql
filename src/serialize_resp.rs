@@ -1,32 +1,30 @@
 use crate::{Error, QueryError, Response};
 use itertools::Itertools;
-use serde::ser::{SerializeMap, SerializeSeq};
+use serde::ser::{SerializeSeq, SerializeStruct};
 use serde::{Serialize, Serializer};
 
 impl Serialize for Response {
     fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         match &self.error {
             None => {
-                let mut map = serializer.serialize_map(None)?;
-                map.serialize_key("data")?;
-                map.serialize_value(&self.data)?;
-                if self.extensions.is_some() {
-                    map.serialize_key("extensions")?;
-                    map.serialize_value(&self.extensions)?;
+                let mut s = serializer
+                    .serialize_struct("Response", if self.extensions.is_some() { 2 } else { 1 })?;
+                s.serialize_field("data", &self.data)?;
+                if let Some(extensions) = &self.extensions {
+                    s.serialize_field("extensions", extensions)?;
                 }
-                map.end()
+                s.end()
             }
             Some(err) => {
-                let mut map = serializer.serialize_map(None)?;
-                map.serialize_key("errors")?;
-                map.serialize_value(err)?;
-                map.end()
+                let mut s = serializer.serialize_struct("Response", 1)?;
+                s.serialize_field("errors", err)?;
+                s.end()
             }
         }
     }
 }
 
-impl<'a> Serialize for Error {
+impl Serialize for Error {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -73,7 +71,7 @@ impl<'a> Serialize for Error {
                 seq.end()
             }
             Error::Rule { errors } => {
-                let mut seq = serializer.serialize_seq(Some(1))?;
+                let mut seq = serializer.serialize_seq(Some(errors.len()))?;
                 for error in errors {
                     seq.serialize_element(&serde_json::json!({
                         "message": error.message,
