@@ -43,7 +43,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 * Rustfmt friendly (Procedural Macro)
 * Custom scalars
 * Minimal overhead
-* Easy integration (hyper, actix_web, tide ...)
+* Easy integration (actix_web, tide, warp, rocket ...)
 * Upload files (Multipart request)
 * Subscriptions (WebSocket transport)
 * Custom extensions
