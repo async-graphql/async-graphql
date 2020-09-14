@@ -11,9 +11,9 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
-struct OperationMessage {
+struct OperationMessage<'a> {
     #[serde(rename = "type")]
-    ty: String,
+    ty: &'a str,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<String>,
@@ -156,7 +156,7 @@ where
                                 send_message(
                                     ctx.send_buf,
                                     &OperationMessage {
-                                        ty: "error".to_string(),
+                                        ty: "error",
                                         id: Some(id.to_string()),
                                         payload: Some(serde_json::to_value(err).unwrap()),
                                     },
@@ -165,7 +165,7 @@ where
                                 send_message(
                                     ctx.send_buf,
                                     &OperationMessage {
-                                        ty: "data".to_string(),
+                                        ty: "data",
                                         id: Some(id.to_string()),
                                         payload: Some(serde_json::to_value(&res).unwrap()),
                                     },
@@ -177,7 +177,7 @@ where
                             send_message(
                                 ctx.send_buf,
                                 &OperationMessage {
-                                    ty: "complete".to_string(),
+                                    ty: "complete",
                                     id: Some(id.to_string()),
                                     payload: None,
                                 },
@@ -213,7 +213,7 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     match serde_json::from_slice::<OperationMessage>(&data) {
-        Ok(msg) => match msg.ty.as_str() {
+        Ok(msg) => match msg.ty {
             "connection_init" => {
                 if let Some(payload) = msg.payload {
                     *ctx.ctx_data = Arc::new(initializer(payload)?);
@@ -221,7 +221,7 @@ where
                 send_message(
                     ctx.send_buf,
                     &OperationMessage {
-                        ty: "connection_ack".to_string(),
+                        ty: "connection_ack",
                         id: None,
                         payload: None,
                     },
@@ -243,7 +243,7 @@ where
                         send_message(
                             ctx.send_buf,
                             &OperationMessage {
-                                ty: "complete".to_string(),
+                                ty: "complete",
                                 id: Some(id),
                                 payload: None,
                             },
