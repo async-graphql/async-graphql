@@ -11,7 +11,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
-struct OperationMessage<'a> {
+struct OperationMessage<'a, T> {
     #[serde(rename = "type")]
     ty: &'a str,
 
@@ -19,7 +19,7 @@ struct OperationMessage<'a> {
     id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    payload: Option<serde_json::Value>,
+    payload: Option<T>,
 }
 
 type SubscriptionStreams = HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>;
@@ -158,7 +158,7 @@ where
                                     &OperationMessage {
                                         ty: "error",
                                         id: Some(id.to_string()),
-                                        payload: Some(serde_json::to_value(err).unwrap()),
+                                        payload: Some(err),
                                     },
                                 );
                             } else {
@@ -167,7 +167,7 @@ where
                                     &OperationMessage {
                                         ty: "data",
                                         id: Some(id.to_string()),
-                                        payload: Some(serde_json::to_value(&res).unwrap()),
+                                        payload: Some(&res),
                                     },
                                 );
                             }
@@ -179,7 +179,7 @@ where
                                 &OperationMessage {
                                     ty: "complete",
                                     id: Some(id.to_string()),
-                                    payload: None,
+                                    payload: Option::<serde_json::Value>::None,
                                 },
                             );
                         }
@@ -212,7 +212,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    match serde_json::from_slice::<OperationMessage>(&data) {
+    match serde_json::from_slice::<OperationMessage<serde_json::Value>>(&data) {
         Ok(msg) => match msg.ty {
             "connection_init" => {
                 if let Some(payload) = msg.payload {
@@ -223,7 +223,7 @@ where
                     &OperationMessage {
                         ty: "connection_ack",
                         id: None,
-                        payload: None,
+                        payload: Option::<serde_json::Value>::None,
                     },
                 );
             }
@@ -245,7 +245,7 @@ where
                             &OperationMessage {
                                 ty: "complete",
                                 id: Some(id),
-                                payload: None,
+                                payload: Option::<serde_json::Value>::None,
                             },
                         );
                     }
