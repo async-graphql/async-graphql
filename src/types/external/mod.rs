@@ -14,6 +14,10 @@ mod uuid;
 
 #[cfg(feature = "bson")]
 mod bson;
+#[cfg(feature = "chrono")]
+mod datetime;
+#[cfg(feature = "chrono")]
+mod naive_time;
 #[cfg(feature = "chrono_tz")]
 mod chrono_tz;
 #[cfg(feature = "url")]

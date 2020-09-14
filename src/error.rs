@@ -330,6 +330,7 @@ pub enum ParseRequestError {
 
     /// The request's multipart data was invalid.
     #[error("Invalid multipart data")]
+    #[cfg(feature = "multipart")]
     InvalidMultipart(multer::Error),
 
     /// Missing "operators" part for multipart request.
@@ -353,6 +354,7 @@ pub enum ParseRequestError {
     PayloadTooLarge,
 }
 
+#[cfg(feature = "multipart")]
 impl From<multer::Error> for ParseRequestError {
     fn from(err: multer::Error) -> Self {
         match err {

@@ -1,14 +1,20 @@
 //! Extensions for schema
 
+#[cfg(feature = "apollo_tracing")]
 mod apollo_tracing;
+#[cfg(feature = "log")]
 mod logger;
+#[cfg(feature = "tracing")]
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
 use crate::{Context, Result, Variables};
 
+#[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
+#[cfg(feature = "log")]
 pub use self::logger::Logger;
+#[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::parser::types::ExecutableDocument;
 use crate::Error;
