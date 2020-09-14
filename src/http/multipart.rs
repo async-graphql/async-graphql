@@ -11,9 +11,12 @@ use std::task::{Context, Poll};
 
 /// Options for `receive_multipart`.
 #[derive(Default, Clone)]
+#[non_exhaustive]
 pub struct MultipartOptions {
-    max_file_size: Option<usize>,
-    max_num_files: Option<usize>,
+    /// The maximum file size.
+    pub max_file_size: Option<usize>,
+    /// The maximum number of files.
+    pub max_num_files: Option<usize>,
 }
 
 impl MultipartOptions {
