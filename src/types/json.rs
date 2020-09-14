@@ -30,7 +30,7 @@ impl<T> DerefMut for Json<T> {
     }
 }
 
-impl<T> From<T> for Json<T> {
+impl<T: DeserializeOwned + Serialize> From<T> for Json<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
@@ -69,7 +69,7 @@ impl<T> DerefMut for OutputJson<T> {
     }
 }
 
-impl<T> From<T> for OutputJson<T> {
+impl<T: Serialize> From<T> for OutputJson<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
@@ -125,6 +125,48 @@ mod test {
         }
 
         let query = r#"{ obj(input: { a: 1, b: 2, c: { a: 11, b: 22 } } ) }"#;
+        let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            serde_json::json!({
+             "obj": {
+                 "a": 1,
+                 "b": 2,
+                 "c": { "a": 11, "b": 22 }
+             }
+            })
+        );
+    }
+
+    #[async_std::test]
+    async fn test_output_json_type() {
+        #[derive(Serialize)]
+        struct MyStruct {
+            a: i32,
+            b: i32,
+            c: HashMap<String, i32>,
+        }
+
+        struct Query;
+
+        #[GQLObject(internal)]
+        impl Query {
+            async fn obj(&self) -> OutputJson<MyStruct> {
+                MyStruct {
+                    a: 1,
+                    b: 2,
+                    c: {
+                        let mut values = HashMap::new();
+                        values.insert("a".to_string(), 11);
+                        values.insert("b".to_string(), 22);
+                        values
+                    },
+                }
+                .into()
+            }
+        }
+
+        let query = r#"{ obj }"#;
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
         assert_eq!(
             schema.execute(query).await.into_result().unwrap().data,

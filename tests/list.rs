@@ -1,4 +1,6 @@
 use async_graphql::*;
+use std::cmp::Ordering;
+use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
 
 #[async_std::test]
 pub async fn test_list_type() {
@@ -8,17 +10,37 @@ pub async fn test_list_type() {
     }
 
     struct Root {
-        value: Vec<i32>,
+        value_vec: Vec<i32>,
+        value_hash_set: HashSet<i32>,
+        value_btree_set: BTreeSet<i32>,
+        value_linked_list: LinkedList<i32>,
+        value_vec_deque: VecDeque<i32>,
     }
 
     #[GQLObject]
     impl Root {
         async fn value_vec(&self) -> Vec<i32> {
-            self.value.clone()
+            self.value_vec.clone()
         }
 
         async fn value_slice(&self) -> &[i32] {
-            &self.value
+            &self.value_vec
+        }
+
+        async fn value_linked_list(&self) -> LinkedList<i32> {
+            self.value_linked_list.clone()
+        }
+
+        async fn value_hash_set(&self) -> HashSet<i32> {
+            self.value_hash_set.clone()
+        }
+
+        async fn value_btree_set(&self) -> BTreeSet<i32> {
+            self.value_btree_set.clone()
+        }
+
+        async fn value_vec_deque(&self) -> VecDeque<i32> {
+            self.value_vec_deque.clone()
         }
 
         async fn value_input_slice(&self, a: Vec<i32>) -> Vec<i32> {
@@ -36,7 +58,11 @@ pub async fn test_list_type() {
 
     let schema = Schema::new(
         Root {
-            value: vec![1, 2, 3, 4, 5],
+            value_vec: vec![1, 2, 3, 4, 5],
+            value_hash_set: vec![1, 2, 3, 4, 5].into_iter().collect(),
+            value_btree_set: vec![1, 2, 3, 4, 5].into_iter().collect(),
+            value_linked_list: vec![1, 2, 3, 4, 5].into_iter().collect(),
+            value_vec_deque: vec![1, 2, 3, 4, 5].into_iter().collect(),
         },
         EmptyMutation,
         EmptySubscription,
@@ -46,6 +72,10 @@ pub async fn test_list_type() {
         r#"{{
             valueVec
             valueSlice
+            valueLinkedList
+            valueHashSet
+            valueBtreeSet
+            valueVecDeque
             testArg(input: {0})
             testInput(input: {{value: {0}}})
             valueInputSlice1: valueInputSlice(a: [1, 2, 3])
@@ -54,11 +84,32 @@ pub async fn test_list_type() {
             "#,
         json_value
     );
+    let mut res = schema.execute(&query).await.data;
+
+    if let serde_json::Value::Object(obj) = &mut res {
+        if let Some(value_hash_set) = obj.get_mut("valueHashSet") {
+            if let serde_json::Value::Array(array) = value_hash_set {
+                array.sort_by(|a, b| {
+                    if let (serde_json::Value::Number(a), serde_json::Value::Number(b)) = (a, b) {
+                        if let (Some(a), Some(b)) = (a.as_i64(), b.as_i64()) {
+                            return a.cmp(&b);
+                        }
+                    }
+                    Ordering::Less
+                });
+            }
+        }
+    }
+
     assert_eq!(
-        schema.execute(&query).await.data,
+        res,
         serde_json::json!({
             "valueVec": vec![1, 2, 3, 4, 5],
             "valueSlice": vec![1, 2, 3, 4, 5],
+            "valueLinkedList": vec![1, 2, 3, 4, 5],
+            "valueHashSet": vec![1, 2, 3, 4, 5],
+            "valueBtreeSet": vec![1, 2, 3, 4, 5],
+            "valueVecDeque": vec![1, 2, 3, 4, 5],
             "testArg": vec![1, 2, 3, 4, 5],
             "testInput": vec![1, 2, 3, 4, 5],
             "valueInputSlice1": vec![1, 2, 3],
