@@ -1,12 +1,15 @@
+mod cache_control;
+mod federation;
+
 use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
 use crate::validators::InputValueValidator;
-use crate::{model, Any, Type as _, Value};
+use crate::{model, Value};
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
-use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
-use std::fmt::Write;
 use std::sync::Arc;
+
+pub use cache_control::CacheControl;
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
     if let Some(rest) = type_name.strip_prefix('[') {
@@ -107,83 +110,6 @@ pub struct MetaEnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub deprecation: Option<&'static str>,
-}
-
-/// Cache control values
-///
-/// # Examples
-///
-/// ```rust
-/// use async_graphql::*;
-///
-/// struct QueryRoot;
-///
-/// #[GQLObject(cache_control(max_age = 60))]
-/// impl QueryRoot {
-///     #[field(cache_control(max_age = 30))]
-///     async fn value1(&self) -> i32 {
-///         0
-///     }
-///
-///     #[field(cache_control(private))]
-///     async fn value2(&self) -> i32 {
-///         0
-///     }
-/// }
-///
-/// #[async_std::main]
-/// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     assert_eq!(schema.execute("{ value1 }").await.into_result().unwrap().cache_control, CacheControl { public: true, max_age: 30 });
-///     assert_eq!(schema.execute("{ value2 }").await.into_result().unwrap().cache_control, CacheControl { public: false, max_age: 60 });
-///     assert_eq!(schema.execute("{ value1 value2 }").await.into_result().unwrap().cache_control, CacheControl { public: false, max_age: 30 });
-/// }
-/// ```
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct CacheControl {
-    /// Scope is public, default is true.
-    pub public: bool,
-
-    /// Cache max age, default is 0.
-    pub max_age: usize,
-}
-
-impl Default for CacheControl {
-    fn default() -> Self {
-        Self {
-            public: true,
-            max_age: 0,
-        }
-    }
-}
-
-impl CacheControl {
-    /// Get 'Cache-Control' header value.
-    #[must_use]
-    pub fn value(&self) -> Option<String> {
-        if self.max_age > 0 {
-            Some(format!(
-                "max-age={}{}",
-                self.max_age,
-                if self.public { "" } else { ", private" }
-            ))
-        } else {
-            None
-        }
-    }
-}
-
-impl CacheControl {
-    pub(crate) fn merge(&mut self, other: &CacheControl) {
-        self.public = self.public && other.public;
-        self.max_age = if self.max_age == 0 {
-            other.max_age
-        } else if other.max_age == 0 {
-            self.max_age
-        } else {
-            self.max_age.min(other.max_age)
-        };
-    }
 }
 
 pub enum MetaType {
@@ -402,155 +328,6 @@ impl Registry {
         }
     }
 
-    fn create_federation_fields<'a, I: Iterator<Item = &'a MetaField>>(sdl: &mut String, it: I) {
-        for field in it {
-            if field.name.starts_with("__") || matches!(&*field.name, "_service" | "_entities") {
-                continue;
-            }
-
-            if !field.args.is_empty() {
-                write!(
-                    sdl,
-                    "\t{}({}): {}",
-                    field.name,
-                    field
-                        .args
-                        .values()
-                        .map(|arg| federation_input_value(arg))
-                        .join(", "),
-                    field.ty
-                )
-                .ok();
-            } else {
-                write!(sdl, "\t{}: {}", field.name, field.ty).ok();
-            }
-
-            if field.external {
-                write!(sdl, " @external").ok();
-            }
-            if let Some(requires) = field.requires {
-                write!(sdl, " @requires(fields: \"{}\")", requires).ok();
-            }
-            if let Some(provides) = field.provides {
-                write!(sdl, " @provides(fields: \"{}\")", provides).ok();
-            }
-            writeln!(sdl).ok();
-        }
-    }
-
-    fn create_federation_type(&self, ty: &MetaType, sdl: &mut String) {
-        match ty {
-            MetaType::Scalar { name, .. } => {
-                const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID", "Any"];
-                if !SYSTEM_SCALARS.contains(&name.as_str()) {
-                    writeln!(sdl, "scalar {}", name).ok();
-                }
-            }
-            MetaType::Object {
-                name,
-                fields,
-                extends,
-                keys,
-                ..
-            } => {
-                if name == &self.query_type && fields.len() == 4 {
-                    // Is empty query root, only __schema, __type, _service, _entities fields
-                    return;
-                }
-                if let Some(subscription_type) = &self.subscription_type {
-                    if name == subscription_type {
-                        return;
-                    }
-                }
-                if *extends {
-                    write!(sdl, "extend ").ok();
-                }
-                write!(sdl, "type {} ", name).ok();
-                if let Some(implements) = self.implements.get(name) {
-                    if !implements.is_empty() {
-                        write!(sdl, "implements {}", implements.iter().join(" & ")).ok();
-                    }
-                }
-                if let Some(keys) = keys {
-                    for key in keys {
-                        write!(sdl, "@key(fields: \"{}\") ", key).ok();
-                    }
-                }
-                writeln!(sdl, "{{").ok();
-                Self::create_federation_fields(sdl, fields.values());
-                writeln!(sdl, "}}").ok();
-            }
-            MetaType::Interface {
-                name,
-                fields,
-                extends,
-                keys,
-                ..
-            } => {
-                if *extends {
-                    write!(sdl, "extend ").ok();
-                }
-                write!(sdl, "interface {} ", name).ok();
-                if let Some(keys) = keys {
-                    for key in keys {
-                        write!(sdl, "@key(fields: \"{}\") ", key).ok();
-                    }
-                }
-                writeln!(sdl, "{{").ok();
-                Self::create_federation_fields(sdl, fields.values());
-                writeln!(sdl, "}}").ok();
-            }
-            MetaType::Enum {
-                name, enum_values, ..
-            } => {
-                write!(sdl, "enum {} ", name).ok();
-                writeln!(sdl, "{{").ok();
-                for value in enum_values.values() {
-                    writeln!(sdl, "{}", value.name).ok();
-                }
-                writeln!(sdl, "}}").ok();
-            }
-            MetaType::InputObject {
-                name, input_fields, ..
-            } => {
-                write!(sdl, "input {} ", name).ok();
-                writeln!(sdl, "{{").ok();
-                for field in input_fields.values() {
-                    writeln!(sdl, "{}", federation_input_value(&field)).ok();
-                }
-                writeln!(sdl, "}}").ok();
-            }
-            MetaType::Union {
-                name,
-                possible_types,
-                ..
-            } => {
-                writeln!(
-                    sdl,
-                    "union {} = {}",
-                    name,
-                    possible_types.iter().join(" | ")
-                )
-                .ok();
-            }
-        }
-    }
-
-    pub fn create_federation_sdl(&self) -> String {
-        let mut sdl = String::new();
-        for ty in self.types.values() {
-            if ty.name().starts_with("__") {
-                continue;
-            }
-            const FEDERATION_TYPES: &[&str] = &["_Any", "_Entity", "_Service"];
-            if FEDERATION_TYPES.contains(&ty.name()) {
-                continue;
-            }
-            self.create_federation_type(ty, &mut sdl);
-        }
-        sdl
-    }
-
     pub(crate) fn has_entities(&self) -> bool {
         self.types.values().any(|ty| match ty {
             MetaType::Object {
@@ -590,97 +367,5 @@ impl Registry {
                 possible_types,
             },
         );
-    }
-
-    pub fn create_federation_types(&mut self) {
-        Any::create_type_info(self);
-
-        self.types.insert(
-            "_Service".to_string(),
-            MetaType::Object {
-                name: "_Service".to_string(),
-                description: None,
-                fields: {
-                    let mut fields = IndexMap::new();
-                    fields.insert(
-                        "sdl".to_string(),
-                        MetaField {
-                            name: "sdl".to_string(),
-                            description: None,
-                            args: Default::default(),
-                            ty: "String".to_string(),
-                            deprecation: None,
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                        },
-                    );
-                    fields
-                },
-                cache_control: Default::default(),
-                extends: false,
-                keys: None,
-            },
-        );
-
-        self.create_entity_type();
-
-        let query_root = self.types.get_mut(&self.query_type).unwrap();
-        if let MetaType::Object { fields, .. } = query_root {
-            fields.insert(
-                "_service".to_string(),
-                MetaField {
-                    name: "_service".to_string(),
-                    description: None,
-                    args: Default::default(),
-                    ty: "_Service!".to_string(),
-                    deprecation: None,
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                },
-            );
-
-            fields.insert(
-                "_entities".to_string(),
-                MetaField {
-                    name: "_entities".to_string(),
-                    description: None,
-                    args: {
-                        let mut args = IndexMap::new();
-                        args.insert(
-                            "representations",
-                            MetaInputValue {
-                                name: "representations",
-                                description: None,
-                                ty: "[_Any!]!".to_string(),
-                                default_value: None,
-                                validator: None,
-                            },
-                        );
-                        args
-                    },
-                    ty: "[_Entity]!".to_string(),
-                    deprecation: None,
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                },
-            );
-        }
-    }
-}
-
-fn federation_input_value(input_value: &MetaInputValue) -> String {
-    if let Some(default_value) = &input_value.default_value {
-        format!(
-            "{}: {} = {}",
-            input_value.name, input_value.ty, default_value
-        )
-    } else {
-        format!("{}: {}", input_value.name, input_value.ty)
     }
 }
