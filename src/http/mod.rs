@@ -33,7 +33,9 @@ pub async fn receive_body(
 }
 
 /// Receive a GraphQL request from a body as JSON.
-pub async fn receive_json(body: impl AsyncRead + Send + 'static) -> Result<Request, ParseRequestError> {
+pub async fn receive_json(
+    body: impl AsyncRead + Send + 'static,
+) -> Result<Request, ParseRequestError> {
     let mut data = Vec::new();
     futures::pin_mut!(body);
     body.read_to_end(&mut data)
