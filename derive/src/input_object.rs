@@ -166,8 +166,6 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
                 #crate_name::Value::Object(map)
             }
         }
-
-        impl #crate_name::InputObjectType for #ident {}
     };
     Ok(expanded.into())
 }

@@ -49,9 +49,6 @@ pub trait OutputValueType: Type {
     ) -> Result<serde_json::Value>;
 }
 
-/// Represents a GraphQL input object
-pub trait InputObjectType: InputValueType {}
-
 /// Represents a GraphQL scalar
 ///
 /// You can implement the trait to create a custom scalar.

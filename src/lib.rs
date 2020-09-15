@@ -133,7 +133,7 @@ pub use serde_json;
 
 pub mod http;
 
-pub use base::{ScalarType, Type};
+pub use base::{InputValueType, OutputValueType, ScalarType, Type};
 pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, Variables,
 };
@@ -160,8 +160,6 @@ pub use context::ContextSelectionSet;
 
 #[doc(hidden)]
 pub mod registry;
-#[doc(hidden)]
-pub use base::{InputObjectType, InputValueType, OutputValueType};
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
 
