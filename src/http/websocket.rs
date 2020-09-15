@@ -65,43 +65,45 @@ impl Stream for WebSocketStream {
     }
 }
 
-/// Create a websocket transport.
-pub fn create<Query, Mutation, Subscription>(
-    schema: &Schema<Query, Mutation, Subscription>,
-) -> WebSocketStream
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
-    create_with_initializer(schema, |_| Ok(Default::default()))
-}
+impl WebSocketStream {
+    /// Create a websocket transport.
+    pub fn new<Query, Mutation, Subscription>(
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Self
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        Self::new_with_initializer(schema, |_| Ok(Default::default()))
+    }
 
-/// Create a websocket transport and specify a context initialization function.
-pub fn create_with_initializer<Query, Mutation, Subscription>(
-    schema: &Schema<Query, Mutation, Subscription>,
-    initializer: impl Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
-) -> WebSocketStream
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
-    let (tx, rx) = mpsc::unbounded();
-    WebSocketStream {
-        tx,
-        rx: SubscriptionStream {
-            schema: schema.clone(),
-            initializer: Arc::new(initializer),
-            rx_bytes: rx,
-            handle_request_fut: None,
-            ctx: Some(WSContext {
-                streams: Default::default(),
-                send_buf: Default::default(),
-                ctx_data: Arc::new(Data::default()),
-            }),
+    /// Create a websocket transport and specify a context initialization function.
+    pub fn new_with_initializer<Query, Mutation, Subscription>(
+        schema: &Schema<Query, Mutation, Subscription>,
+        initializer: impl Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
+    ) -> Self
+    where
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
+    {
+        let (tx, rx) = mpsc::unbounded();
+        WebSocketStream {
+            tx,
+            rx: SubscriptionStream {
+                schema: schema.clone(),
+                initializer: Arc::new(initializer),
+                rx_bytes: rx,
+                handle_request_fut: None,
+                ctx: Some(WSContext {
+                    streams: Default::default(),
+                    send_buf: Default::default(),
+                    ctx_data: Arc::new(Data::default()),
+                }),
+            }
+            .boxed(),
         }
-        .boxed(),
     }
 }
 

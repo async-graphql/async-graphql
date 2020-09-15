@@ -2,7 +2,7 @@ use actix::{
     Actor, ActorContext, ActorFuture, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture,
 };
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::http::websocket::WebSocketStream;
+use async_graphql::http::WebSocketStream;
 use async_graphql::{resolver_utils::ObjectType, Data, FieldResult, Schema, SubscriptionType};
 use futures::stream::SplitSink;
 use futures::{SinkExt, StreamExt};
@@ -67,13 +67,15 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
         if let Some(initializer) = self.initializer.take() {
-            let (sink, stream) =
-                async_graphql::http::websocket::create_with_initializer(&self.schema, initializer)
-                    .split();
+            let (sink, stream) = async_graphql::http::WebSocketStream::new_with_initializer(
+                &self.schema,
+                initializer,
+            )
+            .split();
             ctx.add_stream(stream);
             self.sink = Some(sink);
         } else {
-            let (sink, stream) = async_graphql::http::websocket::create(&self.schema).split();
+            let (sink, stream) = async_graphql::http::WebSocketStream::new(&self.schema).split();
             ctx.add_stream(stream);
             self.sink = Some(sink);
         };
