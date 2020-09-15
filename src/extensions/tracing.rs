@@ -8,8 +8,9 @@ use uuid::Uuid;
 ///
 /// # References
 ///
-/// https://crates.io/crates/tracing
+/// <https://crates.io/crates/tracing>
 #[derive(Default)]
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
 pub struct Tracing {
     root_id: Option<Id>,
     fields: BTreeMap<usize, Id>,

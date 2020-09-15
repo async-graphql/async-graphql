@@ -331,6 +331,7 @@ pub enum ParseRequestError {
     /// The request's multipart data was invalid.
     #[error("Invalid multipart data")]
     #[cfg(feature = "multipart")]
+    #[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
     InvalidMultipart(multer::Error),
 
     /// Missing "operators" part for multipart request.

@@ -7,6 +7,7 @@ use std::borrow::Cow;
 use uuid::Uuid;
 
 /// Logger extension
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "log")))]
 pub struct Logger {
     id: Uuid,
     enabled: bool,

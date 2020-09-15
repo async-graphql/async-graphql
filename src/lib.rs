@@ -59,8 +59,8 @@
 //! Licensed under either of
 //!
 //! * Apache License, Version 2.0,
-//! (./LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-//! * MIT license (./LICENSE-MIT or http://opensource.org/licenses/MIT)
+//! (./LICENSE-APACHE or <http://www.apache.org/licenses/LICENSE-2.0>)
+//! * MIT license (./LICENSE-MIT or <http://opensource.org/licenses/MIT>)
 //! at your option.
 //!
 //! ## References
@@ -91,12 +91,25 @@
 //!
 //! Now a HTML report is available at `benchmark/target/criterion/report`.
 //!
+//! # Crate features
+//!
+//! This crate offers the following features, all of which are activated by default:
+//!
+//! - `apollo_tracing`: Enable the [Apollo tracing
+//! extension](extensions/struct.ApolloTracing.html).
+//! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
+//! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
+//! - `multipart`: Support [sending files over HTTP multipart](http/fn.receive_multipart.html).
+//! - `bson`: Integrate with the [`bson` crate](https://crates.io/crates/bson).
+//! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
+//! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
+//! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 
 #![warn(missing_docs)]
-#![allow(clippy::needless_lifetimes)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
 #![forbid(unsafe_code)]
+#![cfg_attr(feature = "nightly", feature(doc_cfg))]
 
 mod base;
 mod context;

@@ -12,6 +12,7 @@ use std::task::{Context, Poll};
 /// Options for `receive_multipart`.
 #[derive(Default, Clone)]
 #[non_exhaustive]
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 pub struct MultipartOptions {
     /// The maximum file size.
     pub max_file_size: Option<usize>,
@@ -38,6 +39,7 @@ impl MultipartOptions {
 }
 
 /// Receive a multipart request.
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 pub async fn receive_multipart(
     body: impl AsyncRead + Send + 'static,
     boundary: impl Into<String>,

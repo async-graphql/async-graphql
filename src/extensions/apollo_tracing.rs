@@ -51,6 +51,7 @@ impl Serialize for ResolveStat {
 /// have access to performance traces alongside the data returned by your query.
 /// It's already supported by `Apollo Engine`, and we're excited to see what other kinds of
 /// integrations people can build on top of this format.
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "apollo_tracing")))]
 pub struct ApolloTracing {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,

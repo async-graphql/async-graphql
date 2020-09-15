@@ -10,6 +10,7 @@ use std::ops::{Deref, DerefMut};
 ///
 /// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct ID(pub String);
 
 impl Deref for ID {

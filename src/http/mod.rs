@@ -21,6 +21,7 @@ use futures::AsyncReadExt;
 /// If the content type is multipart it will use `receive_multipart`, otherwise it will use
 /// `receive_json`.
 #[cfg(feature = "multipart")]
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
     body: impl AsyncRead + Send + 'static,
