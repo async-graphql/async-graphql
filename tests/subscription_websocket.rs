@@ -18,37 +18,38 @@ pub async fn test_subscription_ws_transport() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = http::websocket::create(&schema);
-    futures::pin_mut!(stream);
+    let mut stream = http::websocket::create(&schema);
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init",
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "connection_init",
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
         "type": "connection_ack",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "subscription { values }"
-            },
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "start",
+                "id": "1",
+                "payload": {
+                    "query": "subscription { values }"
+                },
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     for i in 0..10 {
         assert_eq!(
@@ -57,7 +58,7 @@ pub async fn test_subscription_ws_transport() {
             "id": "1",
             "payload": { "data": { "values": i } },
             })),
-            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
         );
     }
 
@@ -66,7 +67,7 @@ pub async fn test_subscription_ws_transport() {
         "type": "complete",
         "id": "1",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 }
 
@@ -92,7 +93,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = http::websocket::create_with_initializer(&schema, |value| {
+    let mut stream = http::websocket::create_with_initializer(&schema, |value| {
         #[derive(serde::Deserialize)]
         struct Payload {
             token: String,
@@ -103,37 +104,38 @@ pub async fn test_subscription_ws_transport_with_token() {
         data.insert(Token(payload.token));
         Ok(data)
     });
-    futures::pin_mut!(stream);
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init",
-            "payload": { "token": "123456" }
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "connection_init",
+                "payload": { "token": "123456" }
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
         "type": "connection_ack",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "subscription { values }"
-            },
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "start",
+                "id": "1",
+                "payload": {
+                    "query": "subscription { values }"
+                },
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     for i in 0..10 {
         assert_eq!(
@@ -142,7 +144,7 @@ pub async fn test_subscription_ws_transport_with_token() {
             "id": "1",
             "payload": { "data": { "values": i } },
             })),
-            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
         );
     }
 
@@ -151,7 +153,7 @@ pub async fn test_subscription_ws_transport_with_token() {
         "type": "complete",
         "id": "1",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 }
 
@@ -187,37 +189,38 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut sink, stream) = http::websocket::create(&schema);
-    futures::pin_mut!(stream);
+    let mut stream = http::websocket::create(&schema);
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init"
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "connection_init"
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
         "type": "connection_ack",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "subscription { events { value } }"
-            },
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "start",
+                "id": "1",
+                "payload": {
+                    "query": "subscription { events { value } }"
+                },
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     for i in 0i32..5 {
         assert_eq!(
@@ -226,7 +229,7 @@ pub async fn test_subscription_ws_transport_error() {
             "id": "1",
             "payload": { "data": { "events": { "value": i } } },
             })),
-            serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
         );
     }
 
@@ -240,7 +243,7 @@ pub async fn test_subscription_ws_transport_error() {
                 "path": ["events", "value"],
             }],
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 }
 
@@ -256,37 +259,38 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let (mut sink, stream) = http::websocket::create(&schema);
-    futures::pin_mut!(stream);
+    let mut stream = http::websocket::create(&schema);
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "connection_init",
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "connection_init",
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
         "type": "connection_ack",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    sink.send(
-        serde_json::to_vec(&serde_json::json!({
-            "type": "start",
-            "id": "1",
-            "payload": {
-                "query": "query { value }"
-            },
-        }))
-        .unwrap(),
-    )
-    .await
-    .unwrap();
+    stream
+        .send(
+            serde_json::to_string(&serde_json::json!({
+                "type": "start",
+                "id": "1",
+                "payload": {
+                    "query": "query { value }"
+                },
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
@@ -294,7 +298,7 @@ pub async fn test_query_over_websocket() {
             "id": "1",
             "payload": { "data": { "value": 999 } },
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
     assert_eq!(
@@ -302,6 +306,6 @@ pub async fn test_query_over_websocket() {
             "type": "complete",
             "id": "1",
         })),
-        serde_json::from_slice(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 }

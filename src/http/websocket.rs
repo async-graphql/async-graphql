@@ -4,7 +4,7 @@ use crate::resolver_utils::ObjectType;
 use crate::{Data, FieldResult, Request, Response, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::task::{Context, Poll};
-use futures::{Future, Stream, StreamExt};
+use futures::{Future, Sink, SinkExt, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::pin::Pin;
@@ -29,10 +29,47 @@ type HandleRequestBoxFut<'a> =
 
 type InitializerFn = Arc<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>;
 
+/// A wrapper around an underlying raw stream which implements the WebSocket protocol.
+///
+/// Only Text messages can be transmitted. You can use `futures::stream::StreamExt::split` function
+/// to splits this object into separate Sink and Stream objects.
+pub struct WebSocketStream {
+    tx: mpsc::UnboundedSender<String>,
+    rx: Pin<Box<dyn Stream<Item = String> + Send>>,
+}
+
+impl Sink<String> for WebSocketStream {
+    type Error = mpsc::SendError;
+
+    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.tx.poll_ready_unpin(cx)
+    }
+
+    fn start_send(mut self: Pin<&mut Self>, item: String) -> Result<(), Self::Error> {
+        self.tx.start_send(item)
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.tx.poll_flush_unpin(cx)
+    }
+
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.tx.poll_close_unpin(cx)
+    }
+}
+
+impl Stream for WebSocketStream {
+    type Item = String;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.rx.poll_next_unpin(cx)
+    }
+}
+
 /// Create a websocket transport.
 pub fn create<Query, Mutation, Subscription>(
     schema: &Schema<Query, Mutation, Subscription>,
-) -> (mpsc::UnboundedSender<Vec<u8>>, impl Stream<Item = Vec<u8>>)
+) -> WebSocketStream
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -45,14 +82,14 @@ where
 pub fn create_with_initializer<Query, Mutation, Subscription>(
     schema: &Schema<Query, Mutation, Subscription>,
     initializer: impl Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
-) -> (mpsc::UnboundedSender<Vec<u8>>, impl Stream<Item = Vec<u8>>)
+) -> WebSocketStream
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     let schema = schema.clone();
-    let (tx_bytes, rx_bytes) = mpsc::unbounded();
+    let (tx, rx) = mpsc::unbounded();
     let stream = async_stream::stream! {
         let mut streams = Default::default();
         let mut send_buf = Default::default();
@@ -60,7 +97,7 @@ where
         let mut inner_stream = SubscriptionStream {
             schema: &schema,
             initializer: Arc::new(initializer),
-            rx_bytes,
+            rx_bytes: rx,
             handle_request_fut: None,
             ctx: Some(WSContext {
                 streams: &mut streams,
@@ -72,17 +109,20 @@ where
             yield data;
         }
     };
-    (tx_bytes, stream)
+    WebSocketStream {
+        tx,
+        rx: Box::pin(stream),
+    }
 }
 
 struct WSContext<'a> {
     streams: &'a mut SubscriptionStreams,
-    send_buf: &'a mut VecDeque<Vec<u8>>,
+    send_buf: &'a mut VecDeque<String>,
     ctx_data: &'a mut Arc<Data>,
 }
 
-fn send_message<T: Serialize>(send_buf: &mut VecDeque<Vec<u8>>, msg: &T) {
-    if let Ok(data) = serde_json::to_vec(msg) {
+fn send_message<T: Serialize>(send_buf: &mut VecDeque<String>, msg: &T) {
+    if let Ok(data) = serde_json::to_string(msg) {
         send_buf.push_back(data);
     }
 }
@@ -92,7 +132,7 @@ fn send_message<T: Serialize>(send_buf: &mut VecDeque<Vec<u8>>, msg: &T) {
 struct SubscriptionStream<'a, Query, Mutation, Subscription> {
     schema: &'a Schema<Query, Mutation, Subscription>,
     initializer: InitializerFn,
-    rx_bytes: mpsc::UnboundedReceiver<Vec<u8>>,
+    rx_bytes: mpsc::UnboundedReceiver<String>,
     handle_request_fut: Option<HandleRequestBoxFut<'a>>,
     ctx: Option<WSContext<'a>>,
 }
@@ -104,7 +144,7 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    type Item = Vec<u8>;
+    type Item = String;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
@@ -205,14 +245,14 @@ async fn handle_request<'a, Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     initializer: InitializerFn,
     ctx: WSContext<'a>,
-    data: Vec<u8>,
+    data: String,
 ) -> FieldResult<WSContext<'a>>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    match serde_json::from_slice::<OperationMessage<serde_json::Value>>(&data) {
+    match serde_json::from_str::<OperationMessage<serde_json::Value>>(&data) {
         Ok(msg) => match msg.ty {
             "connection_init" => {
                 if let Some(payload) = msg.payload {

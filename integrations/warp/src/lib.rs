@@ -202,7 +202,8 @@ where
                     let (mut stx, srx) = async_graphql::http::websocket::create_with_initializer(
                         &schema,
                         initializer,
-                    );
+                    )
+                    .split();
 
                     let mut rx = rx.fuse();
                     let srx = srx.fuse();
@@ -213,11 +214,9 @@ where
                         loop {
                             select! {
                                 bytes = srx.next() => {
-                                    if let Some(bytes) = bytes {
-                                        if let Ok(text) = String::from_utf8(bytes) {
-                                            if tx.send(Message::text(text)).await.is_err() {
-                                                return;
-                                            }
+                                    if let Some(text) = bytes {
+                                        if tx.send(Message::text(text)).await.is_err() {
+                                            return;
                                         }
                                     } else {
                                         return;
@@ -226,8 +225,10 @@ where
                                 msg = rx.next() => {
                                     if let Some(Ok(msg)) = msg {
                                         if msg.is_text() {
-                                            if stx.send(msg.into_bytes()).await.is_err() {
-                                                return;
+                                            if let Ok(text) = String::from_utf8(msg.into_bytes()) {
+                                                if stx.send(text).await.is_err() {
+                                                    return;
+                                                }
                                             }
                                         }
                                     } else {
