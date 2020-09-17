@@ -4,7 +4,6 @@ use crate::{
     registry, ContextSelectionSet, FieldResult, InputValueResult, Positioned, Result, Value,
 };
 use std::borrow::Cow;
-use std::sync::Arc;
 
 /// Represents a GraphQL type
 ///
@@ -110,51 +109,6 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
         field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
         T::resolve(*self, ctx, field).await
-    }
-}
-
-impl<T: Type + Send + Sync> Type for Box<T> {
-    fn type_name() -> Cow<'static, str> {
-        T::type_name()
-    }
-
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync> OutputValueType for Box<T> {
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    #[allow(clippy::borrowed_box)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
-        T::resolve(&*self, ctx, field).await
-    }
-}
-
-impl<T: Type + Send + Sync> Type for Arc<T> {
-    fn type_name() -> Cow<'static, str> {
-        T::type_name()
-    }
-
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync> OutputValueType for Arc<T> {
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
-        T::resolve(&*self, ctx, field).await
     }
 }
 
