@@ -201,15 +201,14 @@ impl Query {
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;);
+let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#把查询结果输出为json" id="把查询结果输出为json">把查询结果输出为JSON</a></h2>
-<p>查询返回的<code>async_graphql::Result</code>用<code>async_graphql::http::GQLResponse</code>包装起来，就能直接转换为JSON。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let json = serde_json::to_string(&amp;async_graphql::http::GQLResponse(res));
+</span>let json = serde_json::to_string(&amp;res);
 <span class="boring">}
 </span></code></pre></pre>
 <h2><a class="header" href="#和web-server的集成" id="和web-server的集成">和Web Server的集成</a></h2>
