@@ -1,4 +1,4 @@
-//! Async-graphql integration with Wrap
+//! Async-graphql integration with Warp
 
 #![warn(missing_docs)]
 #![allow(clippy::type_complexity)]
@@ -9,13 +9,11 @@ use async_graphql::http::MultipartOptions;
 use async_graphql::{
     resolver_utils::ObjectType, Data, FieldResult, Request, Schema, SubscriptionType,
 };
-use futures::io::ErrorKind;
-use futures::{select, TryStreamExt};
-use futures::{SinkExt, StreamExt};
+use futures::{future, StreamExt, TryStreamExt};
 use hyper::Method;
-use std::io;
+use std::io::{self, ErrorKind};
 use std::sync::Arc;
-use warp::filters::ws::Message;
+use warp::filters::ws;
 use warp::filters::BoxedFilter;
 use warp::reject::Reject;
 use warp::reply::Response;
@@ -169,81 +167,57 @@ where
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<(impl Reply,)>
+) -> impl Filter<Extract = (impl Reply,)> + Clone
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    graphql_subscription_with_initializer(schema, |_| Ok(Default::default()))
+    graphql_subscription_with_data::<_, _, _, fn(serde_json::Value) -> FieldResult<Data>>(
+        schema, None,
+    )
 }
 
 /// GraphQL subscription filter
 ///
 /// Specifies that a function converts the init payload to data.
-pub fn graphql_subscription_with_initializer<Query, Mutation, Subscription, F>(
+pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
     schema: Schema<Query, Mutation, Subscription>,
-    initializer: F,
-) -> BoxedFilter<(impl Reply,)>
+    initializer: Option<F>,
+) -> impl Filter<Extract = (impl Reply,)> + Clone
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    F: Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + Clone + 'static,
+    F: FnOnce(serde_json::Value) -> FieldResult<Data> + Send + Sync + Clone + 'static,
 {
     warp::any()
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
         .and(warp::any().map(move || initializer.clone()))
         .map(
-            |ws: warp::ws::Ws, schema: Schema<Query, Mutation, Subscription>, initializer: F| {
+            |ws: ws::Ws, schema: Schema<Query, Mutation, Subscription>, initializer: Option<F>| {
                 ws.on_upgrade(move |websocket| {
-                    let (mut tx, rx) = websocket.split();
-                    let (mut stx, srx) =
-                        async_graphql::http::WebSocketStream::new_with_initializer(
-                            &schema,
-                            initializer,
-                        )
-                        .split();
-
-                    let mut rx = rx.fuse();
-                    let srx = srx.fuse();
+                    let (ws_sender, ws_receiver) = websocket.split();
 
                     async move {
-                        futures::pin_mut!(srx);
-
-                        loop {
-                            select! {
-                                bytes = srx.next() => {
-                                    if let Some(text) = bytes {
-                                        if tx.send(Message::text(text)).await.is_err() {
-                                            return;
-                                        }
-                                    } else {
-                                        return;
-                                    }
-                                }
-                                msg = rx.next() => {
-                                    if let Some(Ok(msg)) = msg {
-                                        if msg.is_text() {
-                                            if let Ok(text) = String::from_utf8(msg.into_bytes()) {
-                                                if stx.send(text).await.is_err() {
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        return;
-                                    }
-                                }
-                            }
-                        }
+                        let _ = async_graphql::http::WebSocket::with_data(
+                            schema,
+                            ws_receiver
+                                .take_while(|msg| future::ready(msg.is_ok()))
+                                .map(Result::unwrap)
+                                .map(ws::Message::into_bytes),
+                            initializer,
+                        )
+                        .map(ws::Message::text)
+                        .map(Ok)
+                        .forward(ws_sender)
+                        .await;
                     }
                 })
             },
         )
         .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
-        .boxed()
 }
 
 /// GraphQL reply

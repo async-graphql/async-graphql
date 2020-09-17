@@ -1,4 +1,5 @@
 use async_graphql::*;
+use futures::channel::mpsc;
 use futures::{SinkExt, Stream, StreamExt};
 
 #[async_std::test]
@@ -18,56 +19,55 @@ pub async fn test_subscription_ws_transport() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let mut stream = http::WebSocketStream::new(&schema);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx);
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "connection_init",
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
-        Some(serde_json::json!({
-        "type": "connection_ack",
-        })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
     );
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "start",
-                "id": "1",
-                "payload": {
-                    "query": "subscription { values }"
-                },
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     for i in 0..10 {
         assert_eq!(
-            Some(serde_json::json!({
-            "type": "data",
-            "id": "1",
-            "payload": { "data": { "values": i } },
-            })),
-            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+            serde_json::json!({
+                "type": "data",
+                "id": "1",
+                "payload": { "data": { "values": i } },
+            }),
         );
     }
 
     assert_eq!(
-        Some(serde_json::json!({
-        "type": "complete",
-        "id": "1",
-        })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+        serde_json::json!({
+            "type": "complete",
+            "id": "1",
+        }),
     );
 }
 
@@ -93,56 +93,59 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let mut stream = http::WebSocketStream::new_with_initializer(&schema, |value| {
-        #[derive(serde::Deserialize)]
-        struct Payload {
-            token: String,
-        }
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::with_data(
+        schema,
+        rx,
+        Some(|value| {
+            #[derive(serde::Deserialize)]
+            struct Payload {
+                token: String,
+            }
 
-        let payload: Payload = serde_json::from_value(value).unwrap();
-        let mut data = Data::default();
-        data.insert(Token(payload.token));
-        Ok(data)
-    });
+            let payload: Payload = serde_json::from_value(value).unwrap();
+            let mut data = Data::default();
+            data.insert(Token(payload.token));
+            Ok(data)
+        }),
+    );
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "connection_init",
-                "payload": { "token": "123456" }
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "connection_init",
+            "payload": { "token": "123456" }
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
-        "type": "connection_ack",
+            "type": "connection_ack",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "start",
-                "id": "1",
-                "payload": {
-                    "query": "subscription { values }"
-                },
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     for i in 0..10 {
         assert_eq!(
             Some(serde_json::json!({
-            "type": "data",
-            "id": "1",
-            "payload": { "data": { "values": i } },
+                "type": "data",
+                "id": "1",
+                "payload": { "data": { "values": i } },
             })),
             serde_json::from_str(&stream.next().await.unwrap()).unwrap()
         );
@@ -150,8 +153,8 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     assert_eq!(
         Some(serde_json::json!({
-        "type": "complete",
-        "id": "1",
+            "type": "complete",
+            "id": "1",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
@@ -189,45 +192,44 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let mut stream = http::WebSocketStream::new(&schema);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx);
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "connection_init"
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "connection_init"
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
-        "type": "connection_ack",
+            "type": "connection_ack",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "start",
-                "id": "1",
-                "payload": {
-                    "query": "subscription { events { value } }"
-                },
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { events { value } }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     for i in 0i32..5 {
         assert_eq!(
             Some(serde_json::json!({
-            "type": "data",
-            "id": "1",
-            "payload": { "data": { "events": { "value": i } } },
+                "type": "data",
+                "id": "1",
+                "payload": { "data": { "events": { "value": i } } },
             })),
             serde_json::from_str(&stream.next().await.unwrap()).unwrap()
         );
@@ -235,13 +237,15 @@ pub async fn test_subscription_ws_transport_error() {
 
     assert_eq!(
         Some(serde_json::json!({
-        "type": "error",
-        "id": "1",
-        "payload": [{
-                "message": "TestError",
-                "locations": [{"line": 1, "column": 25}],
-                "path": ["events", "value"],
-            }],
+            "type": "data",
+            "id": "1",
+            "payload": {
+                "errors": [{
+                    "message": "TestError",
+                    "locations": [{"line": 1, "column": 25}],
+                    "path": ["events", "value"],
+                }],
+            },
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
@@ -259,17 +263,17 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let mut stream = http::WebSocketStream::new(&schema);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx);
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "connection_init",
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({
@@ -278,19 +282,18 @@ pub async fn test_query_over_websocket() {
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
-    stream
-        .send(
-            serde_json::to_string(&serde_json::json!({
-                "type": "start",
-                "id": "1",
-                "payload": {
-                    "query": "query { value }"
-                },
-            }))
-            .unwrap(),
-        )
-        .await
-        .unwrap();
+    tx.send(
+        serde_json::to_string(&serde_json::json!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "query { value }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         Some(serde_json::json!({

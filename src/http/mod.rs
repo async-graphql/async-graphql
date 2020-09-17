@@ -10,7 +10,7 @@ pub use graphiql_source::graphiql_source;
 #[cfg(feature = "multipart")]
 pub use multipart::{receive_multipart, MultipartOptions};
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
-pub use websocket::WebSocketStream;
+pub use websocket::WebSocket;
 
 use crate::{ParseRequestError, Request};
 use futures::io::AsyncRead;

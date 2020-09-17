@@ -2,291 +2,207 @@
 
 use crate::resolver_utils::ObjectType;
 use crate::{Data, FieldResult, Request, Response, Schema, SubscriptionType};
-use futures::channel::mpsc;
-use futures::task::{Context, Poll};
-use futures::{Future, Sink, SinkExt, Stream, StreamExt};
+use futures::Stream;
+use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 
-#[derive(Serialize, Deserialize)]
-struct OperationMessage<'a, T> {
-    #[serde(rename = "type")]
-    ty: &'a str,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    id: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    payload: Option<T>,
-}
-
-type SubscriptionStreams = HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>;
-
-type HandleRequestBoxFut = Pin<Box<dyn Future<Output = FieldResult<WSContext>> + Send>>;
-
-type InitializerFn = Arc<dyn Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync>;
-
-/// A wrapper around an underlying raw stream which implements the WebSocket protocol.
-///
-/// Only Text messages can be transmitted. You can use `futures::stream::StreamExt::split` function
-/// to splits this object into separate Sink and Stream objects.
-pub struct WebSocketStream {
-    tx: mpsc::UnboundedSender<String>,
-    rx: Pin<Box<dyn Stream<Item = String> + Send>>,
-}
-
-impl Sink<String> for WebSocketStream {
-    type Error = mpsc::SendError;
-
-    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.tx.poll_ready_unpin(cx)
-    }
-
-    fn start_send(mut self: Pin<&mut Self>, item: String) -> Result<(), Self::Error> {
-        self.tx.start_send(item)
-    }
-
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.tx.poll_flush_unpin(cx)
-    }
-
-    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.tx.poll_close_unpin(cx)
+pin_project! {
+    /// A GraphQL connection over websocket.
+    ///
+    /// [Reference](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
+    pub struct WebSocket<S, F, Query, Mutation, Subscription> {
+        data_initializer: Option<F>,
+        data: Arc<Data>,
+        schema: Schema<Query, Mutation, Subscription>,
+        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
+        #[pin]
+        stream: S,
     }
 }
 
-impl Stream for WebSocketStream {
-    type Item = String;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        self.rx.poll_next_unpin(cx)
-    }
-}
-
-impl WebSocketStream {
-    /// Create a websocket transport.
-    pub fn new<Query, Mutation, Subscription>(
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> Self
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        Self::new_with_initializer(schema, |_| Ok(Default::default()))
-    }
-
-    /// Create a websocket transport and specify a context initialization function.
-    pub fn new_with_initializer<Query, Mutation, Subscription>(
-        schema: &Schema<Query, Mutation, Subscription>,
-        initializer: impl Fn(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
-    ) -> Self
-    where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
-    {
-        let (tx, rx) = mpsc::unbounded();
-        WebSocketStream {
-            tx,
-            rx: SubscriptionStream {
-                schema: schema.clone(),
-                initializer: Arc::new(initializer),
-                rx_bytes: rx,
-                handle_request_fut: None,
-                ctx: Some(WSContext {
-                    streams: Default::default(),
-                    send_buf: Default::default(),
-                    ctx_data: Arc::new(Data::default()),
-                }),
-            }
-            .boxed(),
+impl<S, Query, Mutation, Subscription>
+    WebSocket<S, fn(serde_json::Value) -> FieldResult<Data>, Query, Mutation, Subscription>
+{
+    /// Create a new websocket.
+    #[must_use]
+    pub fn new(schema: Schema<Query, Mutation, Subscription>, stream: S) -> Self {
+        Self {
+            data_initializer: None,
+            data: Arc::default(),
+            schema,
+            streams: HashMap::new(),
+            stream,
         }
     }
 }
 
-struct WSContext {
-    streams: SubscriptionStreams,
-    send_buf: VecDeque<String>,
-    ctx_data: Arc<Data>,
-}
-
-fn send_message<T: Serialize>(send_buf: &mut VecDeque<String>, msg: &T) {
-    if let Ok(data) = serde_json::to_string(msg) {
-        send_buf.push_back(data);
+impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subscription> {
+    /// Create a new websocket with a data initialization function.
+    ///
+    /// This function, if present, will be called with the data sent by the client in the
+    /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
+    /// From that point on the returned data will be accessible to all requests.
+    #[must_use]
+    pub fn with_data(
+        schema: Schema<Query, Mutation, Subscription>,
+        stream: S,
+        data_initializer: Option<F>,
+    ) -> Self {
+        Self {
+            data_initializer,
+            data: Arc::default(),
+            schema,
+            streams: HashMap::new(),
+            stream,
+        }
     }
 }
 
-#[allow(missing_docs)]
-#[allow(clippy::type_complexity)]
-struct SubscriptionStream<Query, Mutation, Subscription> {
-    schema: Schema<Query, Mutation, Subscription>,
-    initializer: InitializerFn,
-    rx_bytes: mpsc::UnboundedReceiver<String>,
-    handle_request_fut: Option<HandleRequestBoxFut>,
-    ctx: Option<WSContext>,
-}
-
-impl<'a, Query, Mutation, Subscription> Stream for SubscriptionStream<Query, Mutation, Subscription>
+impl<S, F, Query, Mutation, Subscription> Stream for WebSocket<S, F, Query, Mutation, Subscription>
 where
+    S: Stream,
+    S::Item: AsRef<[u8]>,
+    F: FnOnce(serde_json::Value) -> FieldResult<Data>,
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
     type Item = String;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let this = &mut *self;
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        let this = self.project();
 
-        loop {
-            // receive bytes
-            if let Some(ctx) = &mut this.ctx {
-                if let Some(bytes) = ctx.send_buf.pop_front() {
-                    return Poll::Ready(Some(bytes));
-                }
-            }
+        match this.stream.poll_next(cx) {
+            Poll::Ready(message) => {
+                let message = match message {
+                    Some(message) => message,
+                    None => return Poll::Ready(None),
+                };
 
-            if let Some(handle_request_fut) = &mut this.handle_request_fut {
-                match handle_request_fut.as_mut().poll(cx) {
-                    Poll::Ready(Ok(ctx)) => {
-                        this.ctx = Some(ctx);
-                        this.handle_request_fut = None;
-                        continue;
+                let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
+                    Ok(message) => message,
+                    Err(e) => {
+                        return Poll::Ready(Some(
+                            serde_json::to_string(&ServerMessage::ConnectionError {
+                                payload: ConnectionError {
+                                    message: e.to_string(),
+                                    extensions: None,
+                                },
+                            })
+                            .unwrap(),
+                        ))
                     }
-                    Poll::Ready(Err(_)) => return Poll::Ready(None),
-                    Poll::Pending => {}
-                }
-            } else {
-                match Pin::new(&mut this.rx_bytes).poll_next(cx) {
-                    Poll::Ready(Some(data)) => {
-                        let ctx = this.ctx.take().unwrap();
-                        this.handle_request_fut = Some(Box::pin(handle_request(
-                            this.schema.clone(),
-                            this.initializer.clone(),
-                            ctx,
-                            data,
-                        )));
-                        continue;
-                    }
-                    Poll::Ready(None) => return Poll::Ready(None),
-                    Poll::Pending => {}
-                }
-            }
+                };
 
-            // receive msg
-            if let Some(ctx) = &mut this.ctx {
-                let mut closed = Vec::new();
-
-                for (id, incoming_stream) in ctx.streams.iter_mut() {
-                    match incoming_stream.as_mut().poll_next(cx) {
-                        Poll::Ready(Some(res)) => {
-                            if let Some(err) = &res.error {
-                                closed.push(id.to_string());
-                                send_message(
-                                    &mut ctx.send_buf,
-                                    &OperationMessage {
-                                        ty: "error",
-                                        id: Some(id.to_string()),
-                                        payload: Some(err),
-                                    },
-                                );
-                            } else {
-                                send_message(
-                                    &mut ctx.send_buf,
-                                    &OperationMessage {
-                                        ty: "data",
-                                        id: Some(id.to_string()),
-                                        payload: Some(&res),
-                                    },
-                                );
+                match message {
+                    ClientMessage::ConnectionInit { payload } => {
+                        if let Some(payload) = payload {
+                            if let Some(data_initializer) = this.data_initializer.take() {
+                                *this.data = Arc::new(match data_initializer(payload) {
+                                    Ok(data) => data,
+                                    Err(e) => {
+                                        return Poll::Ready(Some(
+                                            serde_json::to_string(
+                                                &ServerMessage::ConnectionError {
+                                                    payload: ConnectionError {
+                                                        message: e.0,
+                                                        extensions: e.1,
+                                                    },
+                                                },
+                                            )
+                                            .unwrap(),
+                                        ))
+                                    }
+                                });
                             }
                         }
-                        Poll::Ready(None) => {
-                            closed.push(id.to_string());
-                            send_message(
-                                &mut ctx.send_buf,
-                                &OperationMessage {
-                                    ty: "complete",
-                                    id: Some(id.to_string()),
-                                    payload: Option::<serde_json::Value>::None,
-                                },
-                            );
-                        }
-                        Poll::Pending => {}
+                        return Poll::Ready(Some(
+                            serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
+                        ));
                     }
-                }
-
-                for id in closed {
-                    ctx.streams.remove(&id);
-                }
-
-                if !ctx.send_buf.is_empty() {
-                    continue;
+                    ClientMessage::Start {
+                        id,
+                        payload: request,
+                    } => {
+                        this.streams.insert(
+                            id,
+                            Box::pin(
+                                this.schema
+                                    .execute_stream_with_ctx_data(request, Arc::clone(this.data)),
+                            ),
+                        );
+                    }
+                    ClientMessage::Stop { id } => {
+                        if this.streams.remove(id).is_some() {
+                            return Poll::Ready(Some(
+                                serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
+                            ));
+                        }
+                    }
+                    ClientMessage::ConnectionTerminate => return Poll::Ready(None),
                 }
             }
-
-            return Poll::Pending;
+            Poll::Pending => {}
         }
+
+        for (id, stream) in &mut *this.streams {
+            match Pin::new(stream).poll_next(cx) {
+                Poll::Ready(Some(payload)) => {
+                    return Poll::Ready(Some(
+                        serde_json::to_string(&ServerMessage::Data {
+                            id,
+                            payload: Box::new(payload),
+                        })
+                        .unwrap(),
+                    ));
+                }
+                Poll::Ready(None) => {
+                    let id = id.clone();
+                    this.streams.remove(&id);
+                    return Poll::Ready(Some(
+                        serde_json::to_string(&ServerMessage::Complete { id: &id }).unwrap(),
+                    ));
+                }
+                Poll::Pending => {}
+            }
+        }
+
+        Poll::Pending
     }
 }
 
-async fn handle_request<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-    initializer: InitializerFn,
-    mut ctx: WSContext,
-    data: String,
-) -> FieldResult<WSContext>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-{
-    match serde_json::from_str::<OperationMessage<serde_json::Value>>(&data) {
-        Ok(msg) => match msg.ty {
-            "connection_init" => {
-                if let Some(payload) = msg.payload {
-                    ctx.ctx_data = Arc::new(initializer(payload)?);
-                }
-                send_message(
-                    &mut ctx.send_buf,
-                    &OperationMessage {
-                        ty: "connection_ack",
-                        id: None,
-                        payload: Option::<serde_json::Value>::None,
-                    },
-                );
-            }
-            "start" => {
-                if let (Some(id), Some(payload)) = (msg.id, msg.payload) {
-                    if let Ok(request) = serde_json::from_value::<Request>(payload) {
-                        let stream = schema
-                            .execute_stream_with_ctx_data(request, ctx.ctx_data.clone())
-                            .boxed();
-                        ctx.streams.insert(id, stream);
-                    }
-                }
-            }
-            "stop" => {
-                if let Some(id) = msg.id {
-                    if ctx.streams.remove(&id).is_some() {
-                        send_message(
-                            &mut ctx.send_buf,
-                            &OperationMessage {
-                                ty: "complete",
-                                id: Some(id),
-                                payload: Option::<serde_json::Value>::None,
-                            },
-                        );
-                    }
-                }
-            }
-            "connection_terminate" => return Err("connection_terminate".into()),
-            _ => return Err("Unknown op".into()),
-        },
-        Err(err) => return Err(err.into()),
-    }
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum ClientMessage<'a> {
+    ConnectionInit { payload: Option<serde_json::Value> },
+    Start { id: String, payload: Request },
+    Stop { id: &'a str },
+    ConnectionTerminate,
+}
 
-    Ok(ctx)
+#[derive(Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum ServerMessage<'a> {
+    ConnectionError { payload: ConnectionError },
+    ConnectionAck,
+    Data { id: &'a str, payload: Box<Response> },
+    // Not used by this library, as it's not necessary to send
+    // Error {
+    //     id: &'a str,
+    //     payload: serde_json::Value,
+    // },
+    Complete { id: &'a str },
+    // Not used by this library
+    // #[serde(rename = "ka")]
+    // KeepAlive
+}
+
+#[derive(Serialize)]
+struct ConnectionError {
+    message: String,
+    extensions: Option<serde_json::Value>,
 }

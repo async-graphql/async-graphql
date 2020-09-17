@@ -436,9 +436,9 @@ where
 
     pub(crate) fn execute_stream_with_ctx_data(
         &self,
-        request: impl Into<Request>,
+        request: impl Into<Request> + Send,
         ctx_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> {
+    ) -> impl Stream<Item = Response> + Send {
         let schema = self.clone();
 
         async_stream::stream! {
@@ -495,7 +495,10 @@ where
     }
 
     /// Execute an GraphQL subscription.
-    pub fn execute_stream(&self, request: impl Into<Request>) -> impl Stream<Item = Response> {
+    pub fn execute_stream(
+        &self,
+        request: impl Into<Request>,
+    ) -> impl Stream<Item = Response> + Send {
         let mut request = request.into();
         let ctx_data = std::mem::take(&mut request.data);
         self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
