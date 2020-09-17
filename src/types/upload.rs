@@ -55,6 +55,11 @@ impl Upload {
         self.0.content_type.as_deref()
     }
 
+    /// Returns the size of the file, in bytes.
+    pub fn size(&self) -> std::io::Result<u64> {
+        self.0.content.metadata().map(|meta| meta.len())
+    }
+
     /// Convert to a `Read`.
     ///
     /// **Note**: this is a *synchronous/blocking* reader.
