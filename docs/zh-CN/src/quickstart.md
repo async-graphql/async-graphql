@@ -39,15 +39,13 @@ impl Query {
 
 ```rust
 let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute("{ add(a: 10, b: 20) }");
+let res = schema.execute("{ add(a: 10, b: 20) }").await;
 ```
 
 ## 把查询结果输出为JSON
 
-查询返回的`async_graphql::Result`用`async_graphql::http::GQLResponse`包装起来，就能直接转换为JSON。
-
 ```rust
-let json = serde_json::to_string(&async_graphql::http::GQLResponse(res));
+let json = serde_json::to_string(&res);
 ```
 
 ## 和Web Server的集成

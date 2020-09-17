@@ -38,15 +38,13 @@ In our example, there is only a Query without a Mutation or Subscription, so we 
 
 ```rust
 let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute("{ add(a: 10, b: 20) }");
+let res = schema.execute("{ add(a: 10, b: 20) }").await;
 ```
 
 ## Output the query results as JSON
 
-`Schema::execute` returns `async_graphql::Result` with `async_graphql::http::GQLResponse` wrapped, and it can be directly converted to JSON.
-
 ```rust
-let json = serde_json::to_string(&async_graphql::http::GQLResponse(res));
+let json = serde_json::to_string(&res);
 ```
 
 ## Web server integration
