@@ -9,8 +9,8 @@ use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    CacheControl, ContextBase, Error, Pos, QueryEnv, QueryError, Request, Response, Result,
-    SubscriptionType, Type, Variables, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, Error, Pos, QueryEnv, QueryError,
+    Request, Response, Result, SubscriptionType, Type, Variables, ID,
 };
 use async_graphql_parser::types::ExecutableDocumentData;
 use futures::stream::{self, Stream, StreamExt};
@@ -431,6 +431,19 @@ where
                 .await
                 .cache_control(cache_control),
             Err(e) => Response::from_error(e),
+        }
+    }
+
+    /// Execute an GraphQL batch query.
+    pub async fn execute_batch(&self, batch_request: BatchRequest) -> BatchResponse {
+        match batch_request {
+            BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
+            BatchRequest::Batch(requests) => BatchResponse::Batch(
+                futures::stream::iter(requests.into_iter())
+                    .then(|request| self.execute(request))
+                    .collect()
+                    .await,
+            ),
         }
     }
 

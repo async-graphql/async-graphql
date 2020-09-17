@@ -63,14 +63,17 @@ impl CacheControl {
 }
 
 impl CacheControl {
-    pub(crate) fn merge(&mut self, other: &CacheControl) {
-        self.public = self.public && other.public;
-        self.max_age = if self.max_age == 0 {
-            other.max_age
-        } else if other.max_age == 0 {
-            self.max_age
-        } else {
-            self.max_age.min(other.max_age)
-        };
+    #[must_use]
+    pub(crate) fn merge(self, other: &CacheControl) -> CacheControl {
+        CacheControl {
+            public: self.public && other.public,
+            max_age: if self.max_age == 0 {
+                other.max_age
+            } else if other.max_age == 0 {
+                self.max_age
+            } else {
+                self.max_age.min(other.max_age)
+            },
+        }
     }
 }

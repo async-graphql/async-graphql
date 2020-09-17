@@ -41,7 +41,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
             }) = registry.types.remove(&*A::type_name())
             {
                 fields.extend(a_fields);
-                cc.merge(&a_cc);
+                cc = cc.merge(&a_cc);
             }
 
             B::create_type_info(registry);
@@ -52,7 +52,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
             }) = registry.types.remove(&*B::type_name())
             {
                 fields.extend(b_fields);
-                cc.merge(&b_cc);
+                cc = cc.merge(&b_cc);
             }
 
             MetaType::Object {

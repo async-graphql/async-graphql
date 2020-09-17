@@ -8,7 +8,7 @@ mod subscription;
 use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
-use async_graphql::http::{receive_body, MultipartOptions};
+use async_graphql::http::MultipartOptions;
 use async_graphql::{ParseRequestError, Request, Response};
 use futures::channel::mpsc;
 use futures::future::Ready;
@@ -67,7 +67,7 @@ impl FromRequest for GQLRequest {
 
             Box::pin(async move {
                 Ok(GQLRequest(
-                    receive_body(
+                    async_graphql::http::receive_body(
                         content_type,
                         rx.map_err(|err| io::Error::new(ErrorKind::Other, err))
                             .into_async_read(),

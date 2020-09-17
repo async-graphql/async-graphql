@@ -51,6 +51,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 * Limit query complexity/depth
 * Error Extensions
 * Apollo Federation
+* Batch Queries
 
 ## Examples
 

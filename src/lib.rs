@@ -47,6 +47,7 @@
 //! * Limit query complexity/depth
 //! * Error Extensions
 //! * Apollo Federation
+//! * Batch Queries
 //!
 //! ## Integrations
 //!
@@ -157,8 +158,8 @@ pub use error::{
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
 pub use registry::CacheControl;
-pub use request::Request;
-pub use response::Response;
+pub use request::{BatchRequest, Request};
+pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
 pub use types::*;
@@ -292,8 +293,6 @@ pub use async_graphql_derive::GQLObject;
 
 /// Define a GraphQL object with fields
 ///
-/// You can also [derive this](derive.GQLSimpleObject.html).
-///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html).*
 ///
 /// Similar to `Object`, but defined on a structure that automatically generates getters for all fields. For a list of valid field types, see [`Object`](attr.Object.html). All fields are converted to camelCase.
@@ -342,8 +341,6 @@ pub use async_graphql_derive::GQLObject;
 pub use async_graphql_derive::GQLSimpleObject;
 
 /// Define a GraphQL enum
-///
-/// You can also [derive this](derive.GQLEnum.html).
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_enum.html).*
 ///
@@ -401,9 +398,6 @@ pub use async_graphql_derive::GQLEnum;
 
 /// Define a GraphQL input object
 ///
-///
-/// You can also [derive this](derive.GQLInputObject.html).
-///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_input_object.html).*
 ///
 /// # Macro parameters
@@ -460,8 +454,6 @@ pub use async_graphql_derive::GQLEnum;
 pub use async_graphql_derive::GQLInputObject;
 
 /// Define a GraphQL interface
-///
-/// You can also [derive this](derive.GQLInterface.html).
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_interface.html).*
 ///
@@ -590,8 +582,6 @@ pub use async_graphql_derive::GQLInputObject;
 pub use async_graphql_derive::GQLInterface;
 
 /// Define a GraphQL union
-///
-/// You can also [derive this](derive.GQLUnion.html).
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_union.html).*
 ///
@@ -725,8 +715,6 @@ pub use async_graphql_derive::GQLScalar;
 
 /// Define a merged object with multiple object types.
 ///
-/// You can also [derive this](derive.GQLMergedObject.html).
-///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
 ///
 /// # Macro parameters
@@ -766,8 +754,6 @@ pub use async_graphql_derive::GQLScalar;
 pub use async_graphql_derive::GQLMergedObject;
 
 /// Define a merged subscription with multiple subscription types.
-///
-/// You can also [derive this](derive.GQLMergedSubscription.html).
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*
 ///

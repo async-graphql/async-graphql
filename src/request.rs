@@ -1,6 +1,6 @@
 use crate::parser::types::UploadValue;
 use crate::{Data, Value, Variables};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::any::Any;
 use std::fs::File;
 
@@ -87,6 +87,47 @@ impl<T: Into<String>> From<T> for Request {
     }
 }
 
+/// Batch support for GraphQL requests, which is either a single query, or an array of queries
+///
+/// **Reference:** <https://www.apollographql.com/blog/batching-client-graphql-queries-a685f5bcd41b/>
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum BatchRequest {
+    /// Single query
+    Single(Request),
+
+    /// Non-empty array of queries
+    #[serde(deserialize_with = "deserialize_non_empty_vec")]
+    Batch(Vec<Request>),
+}
+
+fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    use serde::de::Error as _;
+
+    let v = Vec::<T>::deserialize(deserializer)?;
+    if v.is_empty() {
+        Err(D::Error::invalid_length(0, &"a positive integer"))
+    } else {
+        Ok(v)
+    }
+}
+
+impl From<Request> for BatchRequest {
+    fn from(r: Request) -> Self {
+        BatchRequest::Single(r)
+    }
+}
+
+impl From<Vec<Request>> for BatchRequest {
+    fn from(r: Vec<Request>) -> Self {
+        BatchRequest::Batch(r)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,5 +177,46 @@ mod tests {
         );
         assert!(request.operation_name.is_none());
         assert_eq!(request.query, "{ a b c }");
+    }
+
+    #[test]
+    fn test_batch_request_single() {
+        let request: BatchRequest = serde_json::from_value(json! ({
+            "query": "{ a b c }"
+        }))
+        .unwrap();
+
+        if let BatchRequest::Single(request) = request {
+            assert!(request.variables.0.is_empty());
+            assert!(request.operation_name.is_none());
+            assert_eq!(request.query, "{ a b c }");
+        } else {
+            unreachable!()
+        }
+    }
+
+    #[test]
+    fn test_batch_request_batch() {
+        let request: BatchRequest = serde_json::from_value(json!([
+            {
+                "query": "{ a b c }"
+            },
+            {
+                "query": "{ d e }"
+            }
+        ]))
+        .unwrap();
+
+        if let BatchRequest::Batch(requests) = request {
+            assert!(requests[0].variables.0.is_empty());
+            assert!(requests[0].operation_name.is_none());
+            assert_eq!(requests[0].query, "{ a b c }");
+
+            assert!(requests[1].variables.0.is_empty());
+            assert!(requests[1].operation_name.is_none());
+            assert_eq!(requests[1].query, "{ d e }");
+        } else {
+            unreachable!()
+        }
     }
 }

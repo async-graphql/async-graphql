@@ -1,7 +1,7 @@
 use crate::{GQLScalar, InputValueResult, ScalarType, Value};
 use serde::de::DeserializeOwned;
 
-/// Any scalar
+/// Any scalar (For [Apollo Federation](https://www.apollographql.com/docs/apollo-server/federation/introduction))
 ///
 /// The `Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.
 #[derive(Clone, PartialEq, Debug)]

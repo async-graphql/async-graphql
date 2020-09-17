@@ -72,6 +72,16 @@ impl<T> MaybeUndefined<T> {
         }
     }
 
+    /// Returns true if the MaybeUndefined<T> is value.
+    #[inline]
+    pub fn is_value(&self) -> bool {
+        if let MaybeUndefined::Value(_) = self {
+            true
+        } else {
+            false
+        }
+    }
+
     /// Borrow the value, returns `None` if the value is `undefined` or `null`, otherwise returns `Some(T)`.
     #[inline]
     pub fn value(&self) -> Option<&T> {
