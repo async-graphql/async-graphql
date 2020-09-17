@@ -72,7 +72,7 @@ impl FieldError {
     }
 }
 
-/// An alias for `Result<T, InputValueError>`.
+/// An alias for `Result<T, FieldError>`.
 pub type FieldResult<T> = std::result::Result<T, FieldError>;
 
 impl<E: Display> From<E> for FieldError {
