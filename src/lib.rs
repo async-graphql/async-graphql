@@ -47,6 +47,7 @@
 //! * Limit query complexity/depth
 //! * Error Extensions
 //! * Apollo Federation
+//! * Batch Queries
 //!
 //! ## Integrations
 //!
@@ -157,8 +158,8 @@ pub use error::{
 pub use look_ahead::Lookahead;
 pub use parser::{types::ConstValue as Value, Pos, Positioned};
 pub use registry::CacheControl;
-pub use request::Request;
-pub use response::Response;
+pub use request::{BatchRequest, Request};
+pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use serde_json::Number;
 pub use types::*;

@@ -1,4 +1,5 @@
 use crate::{CacheControl, Error, Result};
+use serde::Serialize;
 
 /// Query response
 #[derive(Debug, Default)]
@@ -86,5 +87,59 @@ impl Response {
 impl From<Error> for Response {
     fn from(err: Error) -> Self {
         Self::from_error(err)
+    }
+}
+
+/// Response for batchable queries
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum BatchResponse {
+    /// Response for single queries
+    Single(Response),
+
+    /// Response for batch queries
+    Batch(Vec<Response>),
+}
+
+impl BatchResponse {
+    /// Get cache control value
+    pub fn cache_control(&self) -> CacheControl {
+        match self {
+            BatchResponse::Single(resp) => resp.cache_control,
+            BatchResponse::Batch(resp) => resp.iter().fold(CacheControl::default(), |acc, item| {
+                acc.merge(&item.cache_control)
+            }),
+        }
+    }
+
+    /// Returns `true` if all responses are ok.
+    pub fn is_ok(&self) -> bool {
+        match self {
+            BatchResponse::Single(resp) => resp.is_ok(),
+            BatchResponse::Batch(resp) => resp.iter().all(Response::is_ok),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_batch_response_single() {
+        let resp = BatchResponse::Single(Response::new(serde_json::Value::Bool(true)));
+        assert_eq!(serde_json::to_string(&resp).unwrap(), r#"{"data":true}"#);
+    }
+
+    #[test]
+    fn test_batch_response_batch() {
+        let resp = BatchResponse::Batch(vec![
+            Response::new(serde_json::Value::Bool(true)),
+            Response::new(serde_json::Value::String("1".to_string())),
+        ]);
+        assert_eq!(
+            serde_json::to_string(&resp).unwrap(),
+            r#"[{"data":true},{"data":"1"}]"#
+        );
     }
 }

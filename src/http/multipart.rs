@@ -39,8 +39,7 @@ impl MultipartOptions {
 }
 
 /// Receive a multipart request.
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
-pub async fn receive_multipart(
+pub(crate) async fn receive_multipart(
     body: impl AsyncRead + Send + 'static,
     boundary: impl Into<String>,
     opts: MultipartOptions,
@@ -122,7 +121,7 @@ pub async fn receive_multipart(
 }
 
 pin_project! {
-    struct ReaderStream<T> {
+    pub(crate) struct ReaderStream<T> {
         buf: [u8; 2048],
         #[pin]
         reader: T,
@@ -130,7 +129,7 @@ pin_project! {
 }
 
 impl<T> ReaderStream<T> {
-    fn new(reader: T) -> Self {
+    pub(crate) fn new(reader: T) -> Self {
         Self {
             buf: [0; 2048],
             reader,

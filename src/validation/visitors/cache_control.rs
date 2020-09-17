@@ -15,7 +15,7 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
     ) {
         if let Some(current_type) = ctx.current_type() {
             if let MetaType::Object { cache_control, .. } = current_type {
-                self.cache_control.merge(cache_control);
+                *self.cache_control = self.cache_control.merge(cache_control);
             }
         }
     }
@@ -25,7 +25,7 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
             .parent_type()
             .and_then(|parent| parent.field_by_name(&field.node.name.node))
         {
-            self.cache_control.merge(&registry_field.cache_control);
+            *self.cache_control = self.cache_control.merge(&registry_field.cache_control);
         }
     }
 }
