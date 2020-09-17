@@ -1,5 +1,5 @@
 use crate::parser::types::UploadValue;
-use crate::{Data, Value, Variables};
+use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
 use std::any::Any;
 use std::fs::File;
@@ -99,6 +99,15 @@ pub enum BatchRequest {
     /// Non-empty array of queries
     #[serde(deserialize_with = "deserialize_non_empty_vec")]
     Batch(Vec<Request>),
+}
+
+impl BatchRequest {
+    pub(crate) fn into_single(self) -> Result<Request, ParseRequestError> {
+        match self {
+            Self::Single(req) => Ok(req),
+            Self::Batch(_) => Err(ParseRequestError::UnsupportedBatch),
+        }
+    }
 }
 
 fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>

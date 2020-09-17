@@ -1,4 +1,4 @@
-use crate::{ParseRequestError, Request};
+use crate::{BatchRequest, ParseRequestError};
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
@@ -38,12 +38,11 @@ impl MultipartOptions {
     }
 }
 
-/// Receive a multipart request.
-pub(crate) async fn receive_multipart(
+pub(super) async fn receive_batch_multipart(
     body: impl AsyncRead + Send + 'static,
     boundary: impl Into<String>,
     opts: MultipartOptions,
-) -> Result<Request, ParseRequestError> {
+) -> Result<BatchRequest, ParseRequestError> {
     let mut multipart = Multipart::new_with_constraints(
         ReaderStream::new(body),
         boundary,
@@ -70,7 +69,7 @@ pub(crate) async fn receive_multipart(
             Some("operations") => {
                 let request_str = field.text().await?;
                 request = Some(
-                    serde_json::from_str::<Request>(&request_str)
+                    serde_json::from_str::<BatchRequest>(&request_str)
                         .map_err(ParseRequestError::InvalidRequest)?,
                 );
             }
@@ -97,18 +96,38 @@ pub(crate) async fn receive_multipart(
         }
     }
 
-    let mut request: Request = request.ok_or(ParseRequestError::MissingOperatorsPart)?;
+    let mut request: BatchRequest = request.ok_or(ParseRequestError::MissingOperatorsPart)?;
     let map = map.as_mut().ok_or(ParseRequestError::MissingMapPart)?;
 
     for (name, filename, content_type, file) in files {
         if let Some(var_paths) = map.remove(&name) {
             for var_path in var_paths {
-                request.set_upload(
-                    &var_path,
-                    filename.clone(),
-                    content_type.clone(),
-                    file.try_clone().unwrap(),
-                );
+                match &mut request {
+                    BatchRequest::Single(request) => {
+                        request.set_upload(
+                            &var_path,
+                            filename.clone(),
+                            content_type.clone(),
+                            file.try_clone().unwrap(),
+                        );
+                    }
+                    BatchRequest::Batch(requests) => {
+                        let mut s = var_path.splitn(2, '.');
+                        let idx = s.next().and_then(|idx| idx.parse::<usize>().ok());
+                        let path = s.next();
+
+                        if let (Some(idx), Some(path)) = (idx, path) {
+                            if let Some(request) = requests.get_mut(idx) {
+                                request.set_upload(
+                                    path,
+                                    filename.clone(),
+                                    content_type.clone(),
+                                    file.try_clone().unwrap(),
+                                );
+                            }
+                        }
+                    }
+                }
             }
         }
     }

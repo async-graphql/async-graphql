@@ -315,6 +315,7 @@ impl QueryError {
 
 /// An error parsing the request.
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum ParseRequestError {
     /// An IO error occurred.
     #[error("{0}")]
@@ -353,6 +354,10 @@ pub enum ParseRequestError {
     /// The request's payload is too large, and this server rejected it.
     #[error("Payload too large")]
     PayloadTooLarge,
+
+    /// The request is a batch request, but the server does not support batch requests.
+    #[error("Batch requests are not supported")]
+    UnsupportedBatch,
 }
 
 #[cfg(feature = "multipart")]
