@@ -77,7 +77,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
             type_into_impls.push(quote! {
                 #[allow(clippy::all, clippy::pedantic)]
-                impl #generics From<#p> for #ident #generics {
+                impl #generics std::convert::From<#p> for #ident #generics {
                     fn from(obj: #p) -> Self {
                         #ident::#enum_name(obj)
                     }
