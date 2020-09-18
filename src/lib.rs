@@ -101,7 +101,7 @@
 //! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
 //! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
 //! - `multipart`: Support [sending files over HTTP multipart](http/fn.receive_body.html).
-//! - `unblock`: Support [asynchronous reader for Upload](http/struct.Upload.html)
+//! - `unblock`: Support [asynchronous reader for Upload](types/struct.Upload.html)
 //! - `bson`: Integrate with the [`bson` crate](https://crates.io/crates/bson).
 //! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
