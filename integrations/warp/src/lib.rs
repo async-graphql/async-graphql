@@ -161,13 +161,14 @@ where
 /// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-///     let filter = async_graphql_warp::graphql_subscription(schema);
+///     let filter = async_graphql_warp::graphql_subscription(schema)
+///         .or(warp::any().map(|| "Hello, World!"));
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> impl Filter<Extract = (impl Reply,)> + Clone
+) -> BoxedFilter<(impl Reply,)>
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -184,7 +185,7 @@ where
 pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
     schema: Schema<Query, Mutation, Subscription>,
     initializer: Option<F>,
-) -> impl Filter<Extract = (impl Reply,)> + Clone
+) -> BoxedFilter<(impl Reply,)>
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -218,6 +219,7 @@ where
             },
         )
         .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
+        .boxed()
 }
 
 /// GraphQL reply
