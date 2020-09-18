@@ -1,5 +1,7 @@
 use crate::parser::types::UploadValue;
 use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use blocking::Unblock;
+use futures::AsyncRead;
 use std::borrow::Cow;
 use std::io::Read;
 
@@ -65,6 +67,13 @@ impl Upload {
     /// **Note**: this is a *synchronous/blocking* reader.
     pub fn into_read(self) -> impl Read + Sync + Send + 'static {
         self.0.content
+    }
+
+    #[cfg(feature = "unblock")]
+    #[cfg_attr(feature = "nightly", doc(cfg(feature = "unblock")))]
+    /// Convert to a `AsyncRead`.
+    pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
+        Unblock::new(self.0.content)
     }
 }
 
