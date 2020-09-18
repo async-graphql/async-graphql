@@ -1,5 +1,5 @@
 use crate::model::{__Directive, __Type};
-use crate::{registry, GQLObject};
+use crate::{registry, Object};
 use itertools::Itertools;
 
 pub struct __Schema<'a> {
@@ -7,7 +7,7 @@ pub struct __Schema<'a> {
 }
 
 /// A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
-#[GQLObject(internal)]
+#[Object(internal)]
 impl<'a> __Schema<'a> {
     /// A list of all types supported by this server.
     async fn types(&self) -> Vec<__Type<'a>> {

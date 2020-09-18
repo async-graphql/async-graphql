@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
-#[GQLScalar(internal)]
+#[Scalar(internal)]
 impl ScalarType for NaiveDate {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -15,7 +15,7 @@ impl ScalarType for NaiveDate {
     }
 }
 
-#[GQLScalar(internal)]
+#[Scalar(internal)]
 impl ScalarType for NaiveTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -29,7 +29,7 @@ impl ScalarType for NaiveTime {
     }
 }
 
-#[GQLScalar(internal)]
+#[Scalar(internal)]
 impl ScalarType for NaiveDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

@@ -1,7 +1,7 @@
-use crate::GQLSimpleObject;
+use crate::SimpleObject;
 
 /// Information about pagination in a connection
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 #[graphql(internal)]
 pub struct PageInfo {
     /// When paginating backwards, are there more items?

@@ -49,7 +49,7 @@ impl Reject for BadRequest {}
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     #[field]
 ///     async fn value(&self, ctx: &Context<'_>) -> i32 {
@@ -145,12 +145,12 @@ where
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {}
 ///
 /// struct SubscriptionRoot;
 ///
-/// #[GQLSubscription]
+/// #[Subscription]
 /// impl SubscriptionRoot {
 ///     #[field]
 ///     async fn tick(&self) -> impl Stream<Item = String> {

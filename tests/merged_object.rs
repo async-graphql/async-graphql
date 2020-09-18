@@ -1,17 +1,17 @@
 use async_graphql::*;
 use futures::{Stream, StreamExt};
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct Object1 {
     a: i32,
 }
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct Object2 {
     b: i32,
 }
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct Object3 {
     c: i32,
 }
@@ -23,7 +23,7 @@ pub async fn test_merged_object() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn obj(&self) -> MyObj {
             MergedObject(
@@ -57,12 +57,12 @@ pub async fn test_merged_object() {
 
 #[async_std::test]
 pub async fn test_merged_object_macro() {
-    #[derive(GQLMergedObject)]
+    #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn obj(&self) -> MyObj {
             MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 })
@@ -85,12 +85,12 @@ pub async fn test_merged_object_macro() {
 
 #[async_std::test]
 pub async fn test_merged_object_derive() {
-    #[derive(GQLMergedObject)]
+    #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn obj(&self) -> MyObj {
             MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 })
@@ -116,7 +116,7 @@ pub async fn test_merged_object_default() {
     mod a {
         use super::*;
 
-        #[derive(GQLSimpleObject)]
+        #[derive(SimpleObject)]
         pub struct QueryA {
             pub a: i32,
         }
@@ -131,7 +131,7 @@ pub async fn test_merged_object_default() {
     mod b {
         use super::*;
 
-        #[derive(GQLSimpleObject)]
+        #[derive(SimpleObject)]
         pub struct QueryB {
             pub b: i32,
         }
@@ -143,7 +143,7 @@ pub async fn test_merged_object_default() {
         }
     }
 
-    #[derive(GQLMergedObject, Default)]
+    #[derive(MergedObject, Default)]
     struct Query(a::QueryA, b::QueryB);
 
     let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
@@ -162,7 +162,7 @@ pub async fn test_merged_subscription() {
     #[derive(Default)]
     struct Subscription1;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl Subscription1 {
         async fn events1(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(0..10)
@@ -172,19 +172,19 @@ pub async fn test_merged_subscription() {
     #[derive(Default)]
     struct Subscription2;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl Subscription2 {
         async fn events2(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(10..20)
         }
     }
 
-    #[derive(GQLMergedSubscription, Default)]
+    #[derive(MergedSubscription, Default)]
     struct Subscription(Subscription1, Subscription2);
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {}
 
     let schema = Schema::new(Query, EmptyMutation, Subscription::default());

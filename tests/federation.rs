@@ -6,7 +6,7 @@ struct User {
     id: ID,
 }
 
-#[GQLObject(extends)]
+#[Object(extends)]
 impl User {
     #[field(external)]
     async fn id(&self) -> &ID {
@@ -20,7 +20,7 @@ impl User {
 
 struct Review;
 
-#[GQLObject]
+#[Object]
 impl Review {
     async fn body(&self) -> String {
         todo!()
@@ -40,7 +40,7 @@ struct Product {
     upc: String,
 }
 
-#[GQLObject(extends)]
+#[Object(extends)]
 impl Product {
     #[field(external)]
     async fn upc(&self) -> &str {
@@ -54,7 +54,7 @@ impl Product {
 
 struct QueryRoot;
 
-#[GQLObject]
+#[Object]
 impl QueryRoot {
     #[entity]
     async fn find_user_by_id(&self, id: ID) -> User {

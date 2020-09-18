@@ -13,7 +13,7 @@ pub async fn test_json_scalar() {
         data: MyDataOutput,
     }
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn data(&self) -> Json<MyData> {
             let mut items = HashMap::new();

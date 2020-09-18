@@ -2,15 +2,15 @@ use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, Error, GQLSimpleObject, OutputValueType,
-    Positioned, QueryError, Result, Type,
+    registry, Any, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
+    Result, SimpleObject, Type,
 };
 
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
 /// Federation service
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 #[graphql(internal, name = "_Service")]
 struct Service {
     sdl: Option<String>,

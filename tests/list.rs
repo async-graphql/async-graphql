@@ -4,7 +4,7 @@ use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
 
 #[async_std::test]
 pub async fn test_list_type() {
-    #[derive(GQLInputObject)]
+    #[derive(InputObject)]
     struct MyInput {
         value: Vec<i32>,
     }
@@ -17,7 +17,7 @@ pub async fn test_list_type() {
         value_vec_deque: VecDeque<i32>,
     }
 
-    #[GQLObject]
+    #[Object]
     impl Root {
         async fn value_vec(&self) -> Vec<i32> {
             self.value_vec.clone()

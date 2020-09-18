@@ -7,7 +7,7 @@
 ```rust
 use async_graphql::*;
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
 
@@ -17,7 +17,7 @@ struct Coordinate {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn users_at_location(&self, coordinate: Coordinate, radius: f64) -> Vec<User> {
         // 将坐标写入数据库

@@ -1,8 +1,8 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
-    ContextSelectionSet, GQLScalar, InputValueResult, OutputValueType, Positioned, Result,
-    ScalarType, Type, Value,
+    ContextSelectionSet, InputValueResult, OutputValueType, Positioned, Result, Scalar, ScalarType,
+    Type, Value,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -37,7 +37,7 @@ impl<T: DeserializeOwned + Serialize> From<T> for Json<T> {
 }
 
 /// A scalar that can represent any JSON value.
-#[GQLScalar(internal, name = "JSON")]
+#[Scalar(internal, name = "JSON")]
 impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     fn parse(value: Value) -> InputValueResult<Self> {
         Ok(serde_json::from_value(value.into_json()?)?)
@@ -117,7 +117,7 @@ mod test {
 
         struct Query;
 
-        #[GQLObject(internal)]
+        #[Object(internal)]
         impl Query {
             async fn obj(&self, input: Json<MyStruct>) -> Json<MyStruct> {
                 input
@@ -149,7 +149,7 @@ mod test {
 
         struct Query;
 
-        #[GQLObject(internal)]
+        #[Object(internal)]
         impl Query {
             async fn obj(&self) -> OutputJson<MyStruct> {
                 MyStruct {

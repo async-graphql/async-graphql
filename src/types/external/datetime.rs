@@ -1,10 +1,10 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use chrono::{DateTime, FixedOffset, Local, Utc};
 
 /// Implement the DateTime<FixedOffset> scalar
 ///
 /// The input/output is a string in RFC3339 format.
-#[GQLScalar(internal, name = "DateTime")]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for DateTime<FixedOffset> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
@@ -21,7 +21,7 @@ impl ScalarType for DateTime<FixedOffset> {
 /// Implement the DateTime<Local> scalar
 ///
 /// The input/output is a string in RFC3339 format.
-#[GQLScalar(internal, name = "DateTime")]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for DateTime<Local> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
@@ -38,7 +38,7 @@ impl ScalarType for DateTime<Local> {
 /// Implement the DateTime<Utc> scalar
 ///
 /// The input/output is a string in RFC3339 format.
-#[GQLScalar(internal, name = "DateTime")]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for DateTime<Utc> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {

@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_batch_request() {
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn value(&self, a: i32, b: i32) -> i32 {
             a + b

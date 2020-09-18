@@ -5,18 +5,18 @@ use futures::{Stream, StreamExt, TryStreamExt};
 pub async fn test_subscription() {
     struct QueryRoot;
 
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
             futures::stream::iter(start..end)
@@ -62,12 +62,12 @@ pub async fn test_subscription() {
 pub async fn test_subscription_with_ctx_data() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct MyObject;
 
-    #[GQLObject]
+    #[Object]
     impl MyObject {
         async fn value(&self, ctx: &Context<'_>) -> i32 {
             *ctx.data_unchecked::<i32>()
@@ -76,7 +76,7 @@ pub async fn test_subscription_with_ctx_data() {
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
             let value = *ctx.data_unchecked::<i32>();
@@ -111,14 +111,14 @@ pub async fn test_subscription_with_ctx_data() {
 pub async fn test_subscription_with_token() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
     struct Token(String);
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
             if ctx.data_unchecked::<Token>().0 != "123456" {
@@ -161,18 +161,18 @@ pub async fn test_subscription_with_token() {
 pub async fn test_subscription_inline_fragment() {
     struct QueryRoot;
 
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
@@ -208,24 +208,24 @@ pub async fn test_subscription_inline_fragment() {
 pub async fn test_subscription_fragment() {
     struct QueryRoot;
 
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "a", type = "&i32"))]
     enum MyInterface {
         Event(Event),
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
@@ -263,24 +263,24 @@ pub async fn test_subscription_fragment() {
 pub async fn test_subscription_fragment2() {
     struct QueryRoot;
 
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "a", type = "&i32"))]
     enum MyInterface {
         Event(Event),
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
             futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
@@ -323,7 +323,7 @@ pub async fn test_subscription_error() {
         value: i32,
     }
 
-    #[GQLObject]
+    #[Object]
     impl Event {
         async fn value(&self) -> FieldResult<i32> {
             if self.value < 5 {
@@ -334,12 +334,12 @@ pub async fn test_subscription_error() {
         }
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
             futures::stream::iter((0..10).map(|n| Event { value: n }))
@@ -380,12 +380,12 @@ pub async fn test_subscription_error() {
 pub async fn test_subscription_fieldresult() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = FieldResult<i32>> {
             futures::stream::iter(0..5)

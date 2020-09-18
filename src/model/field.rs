@@ -1,5 +1,5 @@
 use crate::model::{__InputValue, __Type};
-use crate::{registry, GQLObject};
+use crate::{registry, Object};
 use itertools::Itertools;
 
 pub struct __Field<'a> {
@@ -8,7 +8,7 @@ pub struct __Field<'a> {
 }
 
 /// Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.
-#[GQLObject(internal)]
+#[Object(internal)]
 impl<'a> __Field<'a> {
     async fn name(&self) -> String {
         self.field.name.to_string()

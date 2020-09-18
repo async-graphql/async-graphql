@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_error_extensions() {
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn extend_err(&self) -> FieldResult<i32> {
             Err("my error".extend_with(|err| {

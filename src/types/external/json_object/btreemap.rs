@@ -1,12 +1,11 @@
 use crate::parser::types::Name;
 use crate::{
-    GQLScalar, InputValueError, InputValueResult, InputValueType, OutputValueType, ScalarType,
-    Value,
+    InputValueError, InputValueResult, InputValueType, OutputValueType, Scalar, ScalarType, Value,
 };
 use std::collections::BTreeMap;
 
 /// A scalar that can represent any JSON Object value.
-#[GQLScalar(internal, name = "JSONObject")]
+#[Scalar(internal, name = "JSONObject")]
 impl<T> ScalarType for BTreeMap<String, T>
 where
     T: OutputValueType + InputValueType + Send + Sync,

@@ -9,7 +9,7 @@
 ```rust
 use async_graphql::*;
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct MyObject {
     /// Value a
     a: i32,

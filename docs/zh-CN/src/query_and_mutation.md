@@ -9,7 +9,7 @@ use async_graphql::*;
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn user(&self, username: String) -> FieldResult<Option<User>> {
         // 在数据库中查找用户
@@ -29,7 +29,7 @@ use async_graphql::*;
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn signup(&self, username: String, password: String) -> Result<bool> {
         // 用户注册

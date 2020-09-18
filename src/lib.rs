@@ -234,7 +234,7 @@ pub use subscription::SubscriptionType;
 /// You can define a context as an argument to a method, and the context should be the first argument to the method.
 ///
 /// ```ignore
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     async fn value(&self, ctx: &Context<'_>) -> { ... }
 /// }
@@ -249,7 +249,7 @@ pub use subscription::SubscriptionType;
 ///     value: i32,
 /// }
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self) -> i32 {
@@ -289,7 +289,7 @@ pub use subscription::SubscriptionType;
 ///     }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLObject;
+pub use async_graphql_derive::Object;
 
 /// Define a GraphQL object with fields
 ///
@@ -325,7 +325,7 @@ pub use async_graphql_derive::GQLObject;
 /// ```rust
 /// use async_graphql::*;
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct QueryRoot {
 ///     value: i32,
 /// }
@@ -338,7 +338,7 @@ pub use async_graphql_derive::GQLObject;
 ///     }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLSimpleObject;
+pub use async_graphql_derive::SimpleObject;
 
 /// Define a GraphQL enum
 ///
@@ -364,7 +364,7 @@ pub use async_graphql_derive::GQLSimpleObject;
 /// ```rust
 /// use async_graphql::*;
 ///
-/// #[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+/// #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 /// enum MyEnum {
 ///     A,
 ///     #[item(name = "b")] B,
@@ -375,7 +375,7 @@ pub use async_graphql_derive::GQLSimpleObject;
 ///     value2: MyEnum,
 /// }
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value1(&self) -> MyEnum {
@@ -394,7 +394,7 @@ pub use async_graphql_derive::GQLSimpleObject;
 ///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLEnum;
+pub use async_graphql_derive::Enum;
 
 /// Define a GraphQL input object
 ///
@@ -424,7 +424,7 @@ pub use async_graphql_derive::GQLEnum;
 /// ```rust
 /// use async_graphql::*;
 ///
-/// #[derive(GQLInputObject)]
+/// #[derive(InputObject)]
 /// struct MyInputObject {
 ///     a: i32,
 ///     #[field(default = 10)]
@@ -433,7 +433,7 @@ pub use async_graphql_derive::GQLEnum;
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     #[field(desc = "value")]
 ///     async fn value(&self, input: MyInputObject) -> i32 {
@@ -451,7 +451,7 @@ pub use async_graphql_derive::GQLEnum;
 ///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLInputObject;
+pub use async_graphql_derive::InputObject;
 
 /// Define a GraphQL interface
 ///
@@ -491,7 +491,7 @@ pub use async_graphql_derive::GQLInputObject;
 /// Define TypeA, TypeB, TypeC... Implement the MyInterface
 ///
 /// ```ignore
-/// #[derive(GQLInterface)]
+/// #[derive(Interface)]
 /// enum MyInterface {
 ///     TypeA(TypeA),
 ///     TypeB(TypeB),
@@ -512,7 +512,7 @@ pub use async_graphql_derive::GQLInputObject;
 ///     value: i32,
 /// }
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl TypeA {
 ///     /// Returns data borrowed from the context
 ///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> FieldResult<&'a str> {
@@ -536,7 +536,7 @@ pub use async_graphql_derive::GQLInputObject;
 ///     }
 /// }
 ///
-/// #[derive(GQLInterface)]
+/// #[derive(Interface)]
 /// #[graphql(
 ///     field(name = "value_a", type = "&'ctx str"),
 ///     field(name = "value_b", type = "&i32"),
@@ -551,7 +551,7 @@ pub use async_graphql_derive::GQLInputObject;
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     async fn type_a(&self) -> MyInterface {
 ///         TypeA { value: 10 }.into()
@@ -579,7 +579,7 @@ pub use async_graphql_derive::GQLInputObject;
 ///     }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLInterface;
+pub use async_graphql_derive::Interface;
 
 /// Define a GraphQL union
 ///
@@ -599,17 +599,17 @@ pub use async_graphql_derive::GQLInterface;
 /// ```rust
 /// use async_graphql::*;
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct TypeA {
 ///     value_a: i32,
 /// }
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct TypeB {
 ///     value_b: i32
 /// }
 ///
-/// #[derive(GQLUnion)]
+/// #[derive(Union)]
 /// enum MyUnion {
 ///     TypeA(TypeA),
 ///     TypeB(TypeB),
@@ -617,7 +617,7 @@ pub use async_graphql_derive::GQLInterface;
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     async fn all_data(&self) -> Vec<MyUnion> {
 ///         vec![TypeA { value_a: 10 }.into(), TypeB { value_b: 20 }.into()]
@@ -645,7 +645,7 @@ pub use async_graphql_derive::GQLInterface;
 ///     }));
 /// });
 /// ```
-pub use async_graphql_derive::GQLUnion;
+pub use async_graphql_derive::Union;
 
 /// Define a GraphQL subscription
 ///
@@ -692,7 +692,7 @@ pub use async_graphql_derive::GQLUnion;
 ///
 /// struct SubscriptionRoot;
 ///
-/// #[GQLSubscription]
+/// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn value(&self, condition: i32) -> impl Stream<Item = i32> {
 ///         // Returns the number from 0 to `condition`.
@@ -700,7 +700,7 @@ pub use async_graphql_derive::GQLUnion;
 ///     }
 /// }
 /// ```
-pub use async_graphql_derive::GQLSubscription;
+pub use async_graphql_derive::Subscription;
 
 /// Define a Scalar
 ///
@@ -711,7 +711,7 @@ pub use async_graphql_derive::GQLSubscription;
 /// | name        | Scalar name               | string   | Y        |
 /// | desc        | Scalar description        | string   | Y        |
 ///
-pub use async_graphql_derive::GQLScalar;
+pub use async_graphql_derive::Scalar;
 
 /// Define a merged object with multiple object types.
 ///
@@ -731,27 +731,27 @@ pub use async_graphql_derive::GQLScalar;
 /// ```rust
 /// use async_graphql::*;
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 ///  struct Object1 {
 ///     a: i32,
 ///  }
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct Object2 {
 ///     b: i32,
 /// }
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct Object3 {
 ///     c: i32,
 /// }
 ///
-/// #[derive(GQLMergedObject)]
+/// #[derive(MergedObject)]
 /// struct MyObj(Object1, Object2, Object3);
 ///
 /// let obj = MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
 /// ```
-pub use async_graphql_derive::GQLMergedObject;
+pub use async_graphql_derive::MergedObject;
 
 /// Define a merged subscription with multiple subscription types.
 ///
@@ -773,7 +773,7 @@ pub use async_graphql_derive::GQLMergedObject;
 /// #[derive(Default)]
 /// struct Subscription1;
 ///
-/// #[GQLSubscription]
+/// #[Subscription]
 /// impl Subscription1 {
 ///     async fn events1(&self) -> impl Stream<Item = i32> {
 ///         futures::stream::iter(0..10)
@@ -783,14 +783,14 @@ pub use async_graphql_derive::GQLMergedObject;
 /// #[derive(Default)]
 /// struct Subscription2;
 ///
-/// #[GQLSubscription]
+/// #[Subscription]
 /// impl Subscription2 {
 ///     async fn events2(&self) -> impl Stream<Item = i32> {
 ///         futures::stream::iter(10..20)
 ///    }
 /// }
 ///
-/// #[derive(GQLMergedSubscription, Default)]
+/// #[derive(MergedSubscription, Default)]
 /// struct Subscription(Subscription1, Subscription2);
 /// ```
-pub use async_graphql_derive::GQLMergedSubscription;
+pub use async_graphql_derive::MergedSubscription;

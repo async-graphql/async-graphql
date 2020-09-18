@@ -5,7 +5,7 @@ mod cursor;
 mod edge;
 mod page_info;
 
-use crate::{FieldResult, GQLSimpleObject};
+use crate::{FieldResult, SimpleObject};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
@@ -14,7 +14,7 @@ pub use page_info::PageInfo;
 use std::fmt::Display;
 
 /// Empty additional fields
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 #[graphql(internal)]
 pub struct EmptyFields;
 
@@ -30,12 +30,12 @@ pub struct EmptyFields;
 ///
 /// struct Numbers;
 ///
-/// #[derive(GQLSimpleObject)]
+/// #[derive(SimpleObject)]
 /// struct Diff {
 ///     diff: i32,
 /// }
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl QueryRoot {
 ///     async fn numbers(&self,
 ///         after: Option<String>,

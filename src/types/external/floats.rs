@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
-#[GQLScalar(internal, name = "Float")]
+#[Scalar(internal, name = "Float")]
 impl ScalarType for f32 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -26,7 +26,7 @@ impl ScalarType for f32 {
 }
 
 /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
-#[GQLScalar(internal, name = "Float")]
+#[Scalar(internal, name = "Float")]
 impl ScalarType for f64 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

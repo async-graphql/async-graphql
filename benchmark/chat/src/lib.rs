@@ -73,7 +73,7 @@ lazy_static::lazy_static! {
 
 pub struct Chat;
 
-#[GQLObject]
+#[Object]
 impl Chat {
     pub async fn id(&self) -> ID {
         ID::from(&CHAT.id)
@@ -116,7 +116,7 @@ impl Chat {
 
 pub struct Message;
 
-#[GQLObject]
+#[Object]
 impl Message {
     pub async fn id(&self) -> ID {
         ID::from(&MESSAGE.id)
@@ -141,7 +141,7 @@ impl Message {
 
 pub struct User;
 
-#[GQLObject]
+#[Object]
 impl User {
     pub async fn id(&self) -> ID {
         ID::from(&USER.id)
@@ -169,7 +169,7 @@ impl User {
 
 pub struct UserProfile;
 
-#[GQLObject]
+#[Object]
 impl UserProfile {
     pub async fn email(&self) -> &String {
         &PROFILE.email
@@ -193,7 +193,7 @@ impl UserProfile {
 
 pub struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn chats(&self) -> Vec<Chat> {
         let mut res = vec![];

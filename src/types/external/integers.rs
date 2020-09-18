@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for i8 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -35,7 +35,7 @@ impl ScalarType for i8 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for i16 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -69,7 +69,7 @@ impl ScalarType for i16 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for i32 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -103,7 +103,7 @@ impl ScalarType for i32 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for i64 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -137,7 +137,7 @@ impl ScalarType for i64 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for u8 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -171,7 +171,7 @@ impl ScalarType for u8 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for u16 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -205,7 +205,7 @@ impl ScalarType for u16 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for u32 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -239,7 +239,7 @@ impl ScalarType for u32 {
 }
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
-#[GQLScalar(internal, name = "Int")]
+#[Scalar(internal, name = "Int")]
 impl ScalarType for u64 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

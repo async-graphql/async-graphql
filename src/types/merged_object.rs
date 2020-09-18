@@ -2,8 +2,8 @@ use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    CacheControl, Context, ContextSelectionSet, Error, GQLSimpleObject, GQLSubscription,
-    OutputValueType, Positioned, QueryError, Result, SubscriptionType, Type,
+    CacheControl, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
+    Result, SimpleObject, Subscription, SubscriptionType, Type,
 };
 use futures::{future::Either, stream, Stream, StreamExt};
 use indexmap::IndexMap;
@@ -122,7 +122,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(GQLSimpleObject, Default)]
+#[derive(SimpleObject, Default)]
 #[graphql(internal)]
 pub struct MergedObjectTail;
 
@@ -130,5 +130,5 @@ pub struct MergedObjectTail;
 #[derive(Default)]
 pub struct MergedObjectSubscriptionTail;
 
-#[GQLSubscription(internal)]
+#[Subscription(internal)]
 impl MergedObjectSubscriptionTail {}

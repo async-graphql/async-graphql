@@ -24,7 +24,7 @@ use syn::{AttributeArgs, ItemImpl};
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn GQLObject(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
@@ -36,7 +36,7 @@ pub fn GQLObject(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLSimpleObject, attributes(field, graphql))]
+#[proc_macro_derive(SimpleObject, attributes(field, graphql))]
 pub fn derive_simple_object(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -52,7 +52,7 @@ pub fn derive_simple_object(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLEnum, attributes(item, graphql))]
+#[proc_macro_derive(Enum, attributes(item, graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -68,7 +68,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLInputObject, attributes(field, graphql))]
+#[proc_macro_derive(InputObject, attributes(field, graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -84,7 +84,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLInterface, attributes(graphql))]
+#[proc_macro_derive(Interface, attributes(graphql))]
 pub fn derive_interface(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -100,7 +100,7 @@ pub fn derive_interface(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLUnion, attributes(graphql))]
+#[proc_macro_derive(Union, attributes(graphql))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -118,7 +118,7 @@ pub fn derive_union(input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn GQLSubscription(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn Subscription(args: TokenStream, input: TokenStream) -> TokenStream {
     let object_args = match args::Object::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(object_args) => object_args,
         Err(err) => return err.to_compile_error().into(),
@@ -132,7 +132,7 @@ pub fn GQLSubscription(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]
-pub fn GQLScalar(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     let scalar_args = match args::Scalar::parse(parse_macro_input!(args as AttributeArgs)) {
         Ok(scalar_args) => scalar_args,
         Err(err) => return err.to_compile_error().into(),
@@ -144,7 +144,7 @@ pub fn GQLScalar(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLMergedObject, attributes(item, graphql))]
+#[proc_macro_derive(MergedObject, attributes(item, graphql))]
 pub fn derive_merged_object(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,
@@ -160,7 +160,7 @@ pub fn derive_merged_object(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(GQLMergedSubscription, attributes(item, graphql))]
+#[proc_macro_derive(MergedSubscription, attributes(item, graphql))]
 pub fn derive_merged_subscription(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,

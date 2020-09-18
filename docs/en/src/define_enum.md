@@ -8,7 +8,7 @@ It's easy to define an `Enum`, here we have an example:
 use async_graphql::*;
 
 /// One of the films in the Star Wars Trilogy
-#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 pub enum Episode {
     /// Released in 1977.
     NewHope,

@@ -489,13 +489,13 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// ```no_run
     /// use async_graphql::*;
     ///
-    /// #[derive(GQLSimpleObject)]
+    /// #[derive(SimpleObject)]
     /// struct Detail {
     ///     c: i32,
     ///     d: i32,
     /// }
     ///
-    /// #[derive(GQLSimpleObject)]
+    /// #[derive(SimpleObject)]
     /// struct MyObj {
     ///     a: i32,
     ///     b: i32,
@@ -504,7 +504,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     ///
     /// struct Query;
     ///
-    /// #[GQLObject]
+    /// #[Object]
     /// impl Query {
     ///     async fn obj(&self, ctx: &Context<'_>) -> MyObj {
     ///         if ctx.look_ahead().field("a").exists() {

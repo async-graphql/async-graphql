@@ -1,11 +1,11 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use bson::oid::ObjectId;
 #[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
 #[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
 
-#[GQLScalar(internal)]
+#[Scalar(internal)]
 impl ScalarType for ObjectId {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
@@ -20,7 +20,7 @@ impl ScalarType for ObjectId {
 }
 
 #[cfg(feature = "chrono")]
-#[GQLScalar(internal, name = "DateTime")]
+#[Scalar(internal, name = "DateTime")]
 impl ScalarType for UtcDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         DateTime::<Utc>::parse(value).map(UtcDateTime::from)

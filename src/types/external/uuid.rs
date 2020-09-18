@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use uuid::Uuid;
 
-#[GQLScalar(internal, name = "UUID")]
+#[Scalar(internal, name = "UUID")]
 impl ScalarType for Uuid {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

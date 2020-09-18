@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_input_value_custom_error() {
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn parse_int(&self, _n: i8) -> bool {
             true

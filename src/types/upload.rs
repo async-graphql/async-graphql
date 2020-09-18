@@ -21,7 +21,7 @@ use std::io::Read;
 ///
 /// struct MutationRoot;
 ///
-/// #[GQLObject]
+/// #[Object]
 /// impl MutationRoot {
 ///     async fn upload(&self, file: Upload) -> bool {
 ///         println!("upload: filename={}", file.filename());

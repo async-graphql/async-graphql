@@ -2,7 +2,7 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_optional_type() {
-    #[derive(GQLInputObject)]
+    #[derive(InputObject)]
     struct MyInput {
         value: Option<i32>,
     }
@@ -12,7 +12,7 @@ pub async fn test_optional_type() {
         value2: Option<i32>,
     }
 
-    #[GQLObject]
+    #[Object]
     impl Root {
         async fn value1(&self) -> Option<i32> {
             self.value1

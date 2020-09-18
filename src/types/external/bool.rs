@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// The `Boolean` scalar type represents `true` or `false`.
-#[GQLScalar(internal, name = "Boolean")]
+#[Scalar(internal, name = "Boolean")]
 impl ScalarType for bool {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

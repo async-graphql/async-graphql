@@ -6,7 +6,7 @@ struct Circle {
     radius: f32,
 }
 
-#[GQLObject(desc = "Circle")]
+#[Object(desc = "Circle")]
 impl Circle {
     async fn scale(&self, s: f32) -> TestInterface {
         Circle {
@@ -21,7 +21,7 @@ struct Square {
     width: f32,
 }
 
-#[GQLObject(desc = "Square")]
+#[Object(desc = "Square")]
 impl Square {
     #[field(deprecation = "Field scale is deprecated")]
     async fn scale(&self, s: f32) -> TestInterface {
@@ -32,21 +32,21 @@ impl Square {
     }
 }
 
-#[derive(Clone, Debug, GQLInterface)]
+#[derive(Clone, Debug, Interface)]
 #[graphql(field(name = "scale", type = "TestInterface", arg(name = "s", type = "f32")))]
 enum TestInterface {
     Circle(Circle),
     Square(Square),
 }
 
-#[derive(Clone, Debug, GQLUnion)]
+#[derive(Clone, Debug, Union)]
 #[graphql(desc = "Test Union")]
 enum TestUnion {
     Circle(Circle),
     Square(Square),
 }
 
-#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 #[graphql(desc = "Test Enum")]
 enum TestEnum {
     #[item(desc = "Kind 1")]
@@ -56,12 +56,12 @@ enum TestEnum {
     Kind2,
 }
 
-#[derive(Clone, Debug, GQLSimpleObject)]
+#[derive(Clone, Debug, SimpleObject)]
 struct SimpleList {
     items: Vec<String>,
 }
 
-#[derive(Clone, Debug, GQLSimpleObject)]
+#[derive(Clone, Debug, SimpleObject)]
 struct SimpleOption {
     required: i32,
     optional: Option<i32>,
@@ -71,7 +71,7 @@ struct SimpleOption {
 #[derive(Clone, Debug)]
 struct TestScalar(i32);
 
-#[GQLScalar(desc = "Test scalar")]
+#[Scalar(desc = "Test scalar")]
 impl ScalarType for TestScalar {
     fn parse(_value: Value) -> InputValueResult<Self> {
         Ok(TestScalar(42))
@@ -88,7 +88,7 @@ impl ScalarType for TestScalar {
 
 /// Is SimpleObject
 /// and some more ```lorem ipsum```
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct SimpleObject {
     /// Value a with # 'some' `markdown`"."
     /// and some more lorem ipsum
@@ -120,7 +120,7 @@ struct SimpleObject {
 
 struct Query;
 
-#[GQLObject(desc = "Global query")]
+#[Object(desc = "Global query")]
 impl Query {
     /// Get a simple object
     async fn simple_object(&self) -> SimpleObject {
@@ -128,7 +128,7 @@ impl Query {
     }
 }
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 #[graphql(desc = "Simple Input")]
 pub struct SimpleInput {
     pub a: String,
@@ -136,7 +136,7 @@ pub struct SimpleInput {
 
 struct Mutation;
 
-#[GQLObject(desc = "Global mutation")]
+#[Object(desc = "Global mutation")]
 impl Mutation {
     /// simple_mutation description
     /// line2
@@ -148,7 +148,7 @@ impl Mutation {
 
 struct Subscription;
 
-#[GQLSubscription(desc = "Global subscription")]
+#[Subscription(desc = "Global subscription")]
 impl Subscription {
     /// simple_subscription description
     async fn simple_subscription(&self, #[arg(default = 1)] step: i32) -> impl Stream<Item = i32> {

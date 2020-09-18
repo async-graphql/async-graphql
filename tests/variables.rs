@@ -4,7 +4,7 @@ use async_graphql::*;
 pub async fn test_variables() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
@@ -42,7 +42,7 @@ pub async fn test_variables() {
 pub async fn test_variable_default_value() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
@@ -71,7 +71,7 @@ pub async fn test_variable_default_value() {
 pub async fn test_variable_no_value() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         pub async fn int_val(&self, value: Option<i32>) -> i32 {
             value.unwrap_or(10)
@@ -102,7 +102,7 @@ pub async fn test_variable_no_value() {
 pub async fn test_variable_null() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         pub async fn int_val(&self, value: Option<i32>) -> i32 {
             value.unwrap_or(10)
@@ -131,14 +131,14 @@ pub async fn test_variable_null() {
 
 #[async_std::test]
 pub async fn test_variable_in_input_object() {
-    #[derive(GQLInputObject)]
+    #[derive(InputObject)]
     struct MyInput {
         value: i32,
     }
 
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         async fn test(&self, input: MyInput) -> i32 {
             input.value
@@ -151,7 +151,7 @@ pub async fn test_variable_in_input_object() {
 
     struct MutationRoot;
 
-    #[GQLObject]
+    #[Object]
     impl MutationRoot {
         async fn test(&self, input: MyInput) -> i32 {
             input.value

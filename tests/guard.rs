@@ -42,7 +42,7 @@ impl Guard for UserGuard {
 
 #[async_std::test]
 pub async fn test_guard() {
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct MyObj {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         value: i32,
@@ -50,7 +50,7 @@ pub async fn test_guard() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         async fn value(&self) -> i32 {
@@ -64,7 +64,7 @@ pub async fn test_guard() {
 
     struct Subscription;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl Subscription {
         #[field(guard(RoleGuard(role = "Role::Admin")))]
         async fn values(&self) -> impl Stream<Item = i32> {
@@ -168,7 +168,7 @@ pub async fn test_guard() {
 
 #[async_std::test]
 pub async fn test_multiple_guards() {
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Query {
         #[field(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
         value: i32,
@@ -272,7 +272,7 @@ pub async fn test_guard_forward_arguments() {
 
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         #[field(guard(UserGuard(id = "@id")))]
         async fn user(&self, id: ID) -> ID {

@@ -6,12 +6,12 @@ use futures::{SinkExt, Stream, StreamExt};
 pub async fn test_subscription_ws_transport() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(0..10)
@@ -77,12 +77,12 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
             if ctx.data_unchecked::<Token>().0 != "123456" {
@@ -168,7 +168,7 @@ pub async fn test_subscription_ws_transport_error() {
         value: i32,
     }
 
-    #[GQLObject]
+    #[Object]
     impl Event {
         async fn value(&self) -> FieldResult<i32> {
             if self.value < 5 {
@@ -179,12 +179,12 @@ pub async fn test_subscription_ws_transport_error() {
         }
     }
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {}
 
     struct SubscriptionRoot;
 
-    #[GQLSubscription]
+    #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
             futures::stream::iter((0..10).map(|n| Event { value: n }))
@@ -255,7 +255,7 @@ pub async fn test_subscription_ws_transport_error() {
 pub async fn test_query_over_websocket() {
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         async fn value(&self) -> i32 {
             999

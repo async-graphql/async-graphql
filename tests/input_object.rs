@@ -2,7 +2,7 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_input_object_default_value() {
-    #[derive(GQLInputObject)]
+    #[derive(InputObject)]
     struct MyInput {
         #[field(default = 999)]
         a: i32,
@@ -28,7 +28,7 @@ pub async fn test_input_object_default_value() {
         e: Option<i32>,
     }
 
-    #[GQLObject]
+    #[Object]
     impl MyOutput {
         async fn a(&self) -> i32 {
             self.a
@@ -53,7 +53,7 @@ pub async fn test_input_object_default_value() {
 
     struct Root;
 
-    #[GQLObject]
+    #[Object]
     impl Root {
         async fn a(&self, input: MyInput) -> MyOutput {
             MyOutput {
@@ -91,7 +91,7 @@ pub async fn test_input_object_default_value() {
 pub async fn test_inputobject_derive_and_item_attributes() {
     use serde::Deserialize;
 
-    #[derive(Deserialize, PartialEq, Debug, GQLInputObject)]
+    #[derive(Deserialize, PartialEq, Debug, InputObject)]
     struct MyInputObject {
         #[serde(alias = "other")]
         real: i32,
@@ -105,12 +105,12 @@ pub async fn test_inputobject_derive_and_item_attributes() {
 
 #[async_std::test]
 pub async fn test_inputobject_flatten_recursive() {
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct A {
         a: i32,
     }
 
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct B {
         #[field(default = 70)]
         b: i32,
@@ -118,7 +118,7 @@ pub async fn test_inputobject_flatten_recursive() {
         a_obj: A,
     }
 
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct MyInputObject {
         #[field(flatten)]
         b_obj: B,
@@ -163,7 +163,7 @@ pub async fn test_inputobject_flatten_recursive() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn test(&self, input: MyInputObject) -> i32 {
             input.c + input.b_obj.b + input.b_obj.a_obj.a
@@ -236,22 +236,22 @@ pub async fn test_inputobject_flatten_recursive() {
 
 #[async_std::test]
 pub async fn test_inputobject_flatten_multiple() {
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct A {
         a: i32,
     }
 
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct B {
         b: i32,
     }
 
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct C {
         c: i32,
     }
 
-    #[derive(GQLInputObject, Debug, Eq, PartialEq)]
+    #[derive(InputObject, Debug, Eq, PartialEq)]
     struct ABC {
         #[field(flatten)]
         a: A,

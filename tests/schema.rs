@@ -2,7 +2,7 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_schema_default() {
-    #[derive(GQLSimpleObject, Default)]
+    #[derive(SimpleObject, Default)]
     struct Query;
 
     type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;

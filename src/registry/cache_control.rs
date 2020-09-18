@@ -7,7 +7,7 @@
 ///
 /// struct QueryRoot;
 ///
-/// #[GQLObject(cache_control(max_age = 60))]
+/// #[Object(cache_control(max_age = 60))]
 /// impl QueryRoot {
 ///     #[field(cache_control(max_age = 30))]
 ///     async fn value1(&self) -> i32 {

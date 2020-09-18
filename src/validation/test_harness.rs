@@ -7,7 +7,7 @@ use crate::validation::visitor::{visit, Visitor, VisitorContext};
 use crate::*;
 use once_cell::sync::Lazy;
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 #[graphql(internal)]
 struct TestInput {
     id: i32,
@@ -23,7 +23,7 @@ impl Default for TestInput {
     }
 }
 
-#[derive(GQLEnum, Eq, PartialEq, Copy, Clone)]
+#[derive(Enum, Eq, PartialEq, Copy, Clone)]
 #[graphql(internal)]
 enum DogCommand {
     Sit,
@@ -33,7 +33,7 @@ enum DogCommand {
 
 struct Dog;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl Dog {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -64,7 +64,7 @@ impl Dog {
     }
 }
 
-#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 #[graphql(internal)]
 enum FurColor {
     Brown,
@@ -75,7 +75,7 @@ enum FurColor {
 
 struct Cat;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl Cat {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -98,7 +98,7 @@ impl Cat {
     }
 }
 
-#[derive(GQLUnion)]
+#[derive(Union)]
 #[graphql(internal)]
 enum CatOrDog {
     Cat(Cat),
@@ -107,7 +107,7 @@ enum CatOrDog {
 
 struct Human;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl Human {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -128,7 +128,7 @@ impl Human {
 
 struct Alien;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl Alien {
     async fn name(&self, surname: Option<bool>) -> Option<String> {
         unimplemented!()
@@ -143,21 +143,21 @@ impl Alien {
     }
 }
 
-#[derive(GQLUnion)]
+#[derive(Union)]
 #[graphql(internal)]
 enum DogOrHuman {
     Dog(Dog),
     Human(Human),
 }
 
-#[derive(GQLUnion)]
+#[derive(Union)]
 #[graphql(internal)]
 enum HumanOrAlien {
     Human(Human),
     Alien(Alien),
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     internal,
     field(
@@ -173,7 +173,7 @@ enum Being {
     Alien(Alien),
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     internal,
     field(
@@ -187,7 +187,7 @@ enum Pet {
     Cat(Cat),
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     internal,
     field(
@@ -200,14 +200,14 @@ enum Canine {
     Dog(Dog),
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(internal, field(name = "iq", type = "Option<i32>"))]
 enum Intelligent {
     Human(Human),
     Alien(Alien),
 }
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 #[graphql(internal)]
 struct ComplexInput {
     required_field: bool,
@@ -219,7 +219,7 @@ struct ComplexInput {
 
 struct ComplicatedArgs;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl ComplicatedArgs {
     async fn int_arg_field(&self, int_arg: Option<i32>) -> Option<String> {
         unimplemented!()
@@ -285,7 +285,7 @@ impl ComplicatedArgs {
 
 pub struct QueryRoot;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl QueryRoot {
     async fn human(&self, id: Option<ID>) -> Option<Human> {
         unimplemented!()
@@ -334,7 +334,7 @@ impl QueryRoot {
 
 pub struct MutationRoot;
 
-#[GQLObject(internal)]
+#[Object(internal)]
 impl MutationRoot {
     async fn test_input(&self, #[arg(default)] input: TestInput) -> i32 {
         unimplemented!()

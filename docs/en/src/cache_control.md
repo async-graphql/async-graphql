@@ -15,7 +15,7 @@ when querying multiple resolvers, the results of all cache control parameters wi
 We can use `QueryResponse` to get a merged cache control result from a query result, and call `CacheControl::value` to get the corresponding HTTP header.
 
 ```rust
-#[GQLObject(cache_control(max_age = 60))]
+#[Object(cache_control(max_age = 60))]
 impl Query {
     #[field(cache_control(max_age = 30))]
     async fn value1(&self) -> i32 {

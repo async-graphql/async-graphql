@@ -1,4 +1,4 @@
-use crate::{GQLScalar, InputValueResult, ScalarType, Value};
+use crate::{InputValueResult, Scalar, ScalarType, Value};
 use serde::de::DeserializeOwned;
 
 /// Any scalar (For [Apollo Federation](https://www.apollographql.com/docs/apollo-server/federation/introduction))
@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 pub struct Any(pub Value);
 
 /// The `_Any` scalar is used to pass representations of entities from external services into the root `_entities` field for execution.
-#[GQLScalar(internal, name = "_Any")]
+#[Scalar(internal, name = "_Any")]
 impl ScalarType for Any {
     fn parse(value: Value) -> InputValueResult<Self> {
         Ok(Self(value))

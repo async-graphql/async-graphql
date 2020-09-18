@@ -15,7 +15,7 @@ struct MyObject {
     value: i32,
 }
 
-#[GQLObject]
+#[Object]
 impl MyObject {
     async fn value(&self) -> String {
         self.value.to_string()

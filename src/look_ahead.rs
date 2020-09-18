@@ -67,14 +67,14 @@ mod tests {
 
     #[async_std::test]
     async fn test_look_ahead() {
-        #[derive(GQLSimpleObject)]
+        #[derive(SimpleObject)]
         #[graphql(internal)]
         struct Detail {
             c: i32,
             d: i32,
         }
 
-        #[derive(GQLSimpleObject)]
+        #[derive(SimpleObject)]
         #[graphql(internal)]
         struct MyObj {
             a: i32,
@@ -84,7 +84,7 @@ mod tests {
 
         struct Query;
 
-        #[GQLObject(internal)]
+        #[Object(internal)]
         impl Query {
             async fn obj(&self, ctx: &Context<'_>, n: i32) -> MyObj {
                 if ctx.look_ahead().field("a").exists() {

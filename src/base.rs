@@ -59,7 +59,7 @@ pub trait OutputValueType: Type {
 ///
 /// struct MyInt(i32);
 ///
-/// #[GQLScalar]
+/// #[Scalar]
 /// impl ScalarType for MyInt {
 ///     fn parse(value: Value) -> InputValueResult<Self> {
 ///         if let Value::Number(n) = &value {

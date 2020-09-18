@@ -12,7 +12,7 @@ use async_graphql::*;
 
 struct StringNumber(i64);
 
-#[GQLScalar]
+#[Scalar]
 impl ScalarType for StringNumber {
     fn parse(value: Value) -> InputValueResult<Self> {
         if let Value::String(value) = &value {

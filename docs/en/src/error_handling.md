@@ -16,7 +16,7 @@ use async_graphql::*;
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn parse_with_extensions(&self, input: String) -> FieldResult<i32> {

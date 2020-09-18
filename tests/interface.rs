@@ -2,13 +2,13 @@ use async_graphql::*;
 
 #[async_std::test]
 pub async fn test_interface_simple_object() {
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "id", type = "&i32"))]
     enum Node {
         MyObj(MyObj),
@@ -16,7 +16,7 @@ pub async fn test_interface_simple_object() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -47,13 +47,13 @@ pub async fn test_interface_simple_object() {
 
 #[async_std::test]
 pub async fn test_interface_simple_object2() {
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct MyObj {
         id: i32,
         title: String,
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "id", type = "&i32"))]
     enum Node {
         MyObj(MyObj),
@@ -61,7 +61,7 @@ pub async fn test_interface_simple_object2() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn node(&self) -> Node {
             MyObj {
@@ -94,7 +94,7 @@ pub async fn test_interface_simple_object2() {
 pub async fn test_multiple_interfaces() {
     struct MyObj;
 
-    #[GQLObject]
+    #[Object]
     impl MyObj {
         async fn value_a(&self) -> i32 {
             1
@@ -109,13 +109,13 @@ pub async fn test_multiple_interfaces() {
         }
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "value_a", type = "i32"))]
     enum InterfaceA {
         MyObj(MyObj),
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "value_b", type = "i32"))]
     enum InterfaceB {
         MyObj(MyObj),
@@ -123,7 +123,7 @@ pub async fn test_multiple_interfaces() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn my_obj(&self) -> InterfaceB {
             MyObj.into()
@@ -162,7 +162,7 @@ pub async fn test_multiple_interfaces() {
 pub async fn test_multiple_objects_in_multiple_interfaces() {
     struct MyObjOne;
 
-    #[GQLObject]
+    #[Object]
     impl MyObjOne {
         async fn value_a(&self) -> i32 {
             1
@@ -179,21 +179,21 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
 
     struct MyObjTwo;
 
-    #[GQLObject]
+    #[Object]
     impl MyObjTwo {
         async fn value_a(&self) -> i32 {
             1
         }
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "value_a", type = "i32"))]
     enum InterfaceA {
         MyObjOne(MyObjOne),
         MyObjTwo(MyObjTwo),
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "value_b", type = "i32"))]
     enum InterfaceB {
         MyObjOne(MyObjOne),
@@ -201,7 +201,7 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn my_obj(&self) -> Vec<InterfaceA> {
             vec![MyObjOne.into(), MyObjTwo.into()]
@@ -242,14 +242,14 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
 pub async fn test_interface_field_result() {
     struct MyObj;
 
-    #[GQLObject]
+    #[Object]
     impl MyObj {
         async fn value(&self) -> FieldResult<i32> {
             Ok(10)
         }
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "value", type = "FieldResult<i32>"))]
     enum Node {
         MyObj(MyObj),
@@ -257,7 +257,7 @@ pub async fn test_interface_field_result() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn node(&self) -> Node {
             MyObj.into()
@@ -286,7 +286,7 @@ pub async fn test_interface_field_result() {
 pub async fn test_interface_field_method() {
     struct A;
 
-    #[GQLObject]
+    #[Object]
     impl A {
         #[field(name = "created_at")]
         pub async fn created_at(&self) -> i32 {
@@ -296,7 +296,7 @@ pub async fn test_interface_field_method() {
 
     struct B;
 
-    #[GQLObject]
+    #[Object]
     impl B {
         #[field(name = "created_at")]
         pub async fn created_at(&self) -> i32 {
@@ -304,7 +304,7 @@ pub async fn test_interface_field_method() {
         }
     }
 
-    #[derive(GQLInterface)]
+    #[derive(Interface)]
     #[graphql(field(name = "created_at", method = "created_at", type = "i32"))]
     enum MyInterface {
         A(A),
@@ -313,7 +313,7 @@ pub async fn test_interface_field_method() {
 
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         async fn test(&self) -> MyInterface {
             A.into()

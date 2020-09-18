@@ -1,7 +1,7 @@
-use crate::{GQLScalar, InputValueError, InputValueResult, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use url::Url;
 
-#[GQLScalar(internal)]
+#[Scalar(internal)]
 impl ScalarType for Url {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

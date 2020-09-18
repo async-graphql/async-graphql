@@ -22,7 +22,7 @@ impl PostGuard<i32> for RoleGuard {
     }
 }
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct MyObj {
     #[field(owned, post_guard(UserGuard(username = r#""test""#, value = "88")))]
     value: i32,
@@ -63,7 +63,7 @@ impl PostGuard<MyObj> for UserGuard {
 pub async fn test_post_guard() {
     struct Query;
 
-    #[GQLObject]
+    #[Object]
     impl Query {
         #[field(post_guard(UserGuard(username = r#""test""#, value = "99")))]
         async fn value(&self) -> i32 {
@@ -136,7 +136,7 @@ pub async fn test_post_guard() {
 
 #[async_std::test]
 pub async fn test_multiple_post_guards() {
-    #[derive(GQLSimpleObject)]
+    #[derive(SimpleObject)]
     struct Query {
         #[field(post_guard(
             RoleGuard(role = "Role::Admin"),
@@ -244,7 +244,7 @@ pub async fn test_post_guard_forward_arguments() {
 
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         #[field(post_guard(UserGuard(id = "@_id")))]
         async fn user(&self, _id: ID) -> ID {
@@ -300,7 +300,7 @@ pub async fn test_post_guard_generic() {
 
     struct QueryRoot;
 
-    #[GQLObject]
+    #[Object]
     impl QueryRoot {
         #[field(post_guard(UserGuard(id = r#""abc""#)))]
         async fn user(&self) -> ID {
