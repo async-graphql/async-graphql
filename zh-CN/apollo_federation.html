@@ -182,7 +182,7 @@
 </span><span class="boring">fn main() {
 </span>struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[entity]
     async fn find_user_by_id(&amp;self, id: ID) -&gt; User {

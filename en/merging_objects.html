@@ -164,14 +164,14 @@
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl Query {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
@@ -179,27 +179,27 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Instead, the <code>#[derive(GQLMergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
-<p><strong>Tip:</strong> Every <code>#[GQLObject]</code> needs a unique name, even in a <code>GQLMergedObject</code>, so make sure to give each object you're merging its own name.</p>
+<p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
+<p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl UserQuery {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl MovieQuery {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
     }
 }
 
-#[derive(GQLMergedObject, Default)]
+#[derive(MergedObject, Default)]
 struct Query(UserQuery, MovieQuery);
 
 let schema = Schema::new(
@@ -210,7 +210,7 @@ let schema = Schema::new(
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#merging-subscriptions" id="merging-subscriptions">Merging Subscriptions</a></h1>
-<p>Along with <code>GQLMergedObject</code>, you can derive <code>GQLMergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
+<p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -219,7 +219,7 @@ let schema = Schema::new(
 </span>#[derive(Default)]
 struct Subscription1;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription1 {
     async fn events1(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(0..10)
@@ -229,14 +229,14 @@ impl Subscription1 {
 #[derive(Default)]
 struct Subscription2;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription2 {
     async fn events2(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(10..20)
     }
 }
 
-#[derive(GQLMergedSubscription, Default)]
+#[derive(MergedSubscription, Default)]
 struct Subscription(Subscription1, Subscription2);
 
 let schema = Schema::new(

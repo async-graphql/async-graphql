@@ -185,7 +185,7 @@ async-graphql-tide = &quot;1.18.0&quot; # 如果你需要集成到Tide
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field(desc = &quot;Returns the sum of a and b&quot;)]
     async fn add(&amp;self, a: i32, b: i32) -&gt; i32 {
@@ -224,7 +224,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct MyObject {
     /// Value a
     a: i32,
@@ -251,7 +251,7 @@ struct MyObject {
     value: i32,
 }
 
-#[GQLObject]
+#[Object]
 impl MyObject {
     async fn value(&amp;self) -&gt; String {
         self.value.to_string()
@@ -278,7 +278,7 @@ impl MyObject {
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
@@ -306,7 +306,7 @@ impl Query {
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
@@ -323,14 +323,14 @@ impl Query {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl MyObject {
     async fn field1(&amp;self) -&gt; i32 {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl MyObject {
     async fn field2(&amp;self) -&gt; i32 {
         todo!()    
@@ -338,26 +338,26 @@ impl MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>用 <code>#[derive(GQLMergedObject)]</code> 宏允许你合并多个独立的GQLObject为一个.</p>
-<p><strong>提示:</strong> 每个<code>#[GQLObject]</code>需要一个唯一的名称，即使在一个<code>GQLMergedObject</code>内，所以确保每个对象有单独的名称。</p>
+<p>用 <code>#[derive(MergedObject)]</code> 宏允许你合并多个独立的Object为一个.</p>
+<p><strong>提示:</strong> 每个<code>#[Object]</code>需要一个唯一的名称，即使在一个<code>MergedObject</code>内，所以确保每个对象有单独的名称。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl UserQuery {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl MovieQuery {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
     }
 }
 
-#[derive(GQLMergedObject, Default)]
+#[derive(MergedObject, Default)]
 struct Query(UserQuery, MovieQuery);
 
 let schema = Schema::new(
@@ -368,7 +368,7 @@ let schema = Schema::new(
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#合并订阅" id="合并订阅">合并订阅</a></h1>
-<p>和<code>GQLMergedObject</code>一样，你可以派生<code>GQLMergedSubscription</code>来合并单独的<code>＃[Subscription]</code>块。</p>
+<p>和<code>MergedObject</code>一样，你可以派生<code>MergedSubscription</code>来合并单独的<code>＃[Subscription]</code>块。</p>
 <p>像合并对象一样，每个订阅块都需要一个唯一的名称。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -376,7 +376,7 @@ let schema = Schema::new(
 </span>#[derive(Default)]
 struct Subscription1;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription1 {
     async fn events1(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(0..10)
@@ -386,14 +386,14 @@ impl Subscription1 {
 #[derive(Default)]
 struct Subscription2;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription2 {
     async fn events2(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(10..20)
     }
 }
 
-#[derive(GQLMergedSubscription, Default)]
+#[derive(MergedSubscription, Default)]
 struct Subscription(Subscription1, Subscription2);
 
 let schema = Schema::new(
@@ -412,7 +412,7 @@ let schema = Schema::new(
 </span>use async_graphql::*;
 
 /// One of the films in the Star Wars Trilogy
-#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 pub enum Episode {
     /// Released in 1977.
     NewHope,
@@ -444,7 +444,7 @@ struct Circle {
     radius: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Circle {
     async fn area(&amp;self) -&gt; f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -464,7 +464,7 @@ struct Square {
     width: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Square {
     async fn area(&amp;self) -&gt; f32 {
         self.width * self.width
@@ -480,7 +480,7 @@ impl Square {
     }
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
@@ -504,7 +504,7 @@ struct Circle {
     radius: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Circle {
     async fn area(&amp;self) -&gt; f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -519,7 +519,7 @@ struct Square {
     width: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Square {
     async fn area(&amp;self) -&gt; f32 {
         self.width * self.width
@@ -530,7 +530,7 @@ impl Square {
     }
 }
 
-#[derive(GQLUnion)]
+#[derive(Union)]
 enum Shape {
     Circle(Circle),
     Square(Square),
@@ -545,7 +545,7 @@ enum Shape {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
 
@@ -555,7 +555,7 @@ struct Coordinate {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // 将坐标写入数据库
@@ -578,7 +578,7 @@ fn my_default() -&gt; i32 {
     30
 }
 
-#[GQLObject]
+#[Object]
 impl Query {
     // value参数的默认值为0，它会调用i32::default()
     fn test1(&amp;self, #[arg(default)] value: i32) {}
@@ -597,7 +597,7 @@ impl Query {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     field(name = &quot;test1&quot;, arg(name = &quot;value&quot;, default)),
     field(name = &quot;test2&quot;, arg(name = &quot;value&quot;, default = 10)),
@@ -614,7 +614,7 @@ enum MyInterface {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-<span class="boring">derive(GQLInputObject)
+<span class="boring">derive(InputObject)
 </span>struct MyInputObject {
     #[field(default)]
     value1: i32,
@@ -640,7 +640,7 @@ enum MyInterface {
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // 在数据库中查找用户
@@ -659,7 +659,7 @@ impl Query {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn signup(&amp;self, username: String, password: String) -&gt; Result&lt;bool&gt; {
         // 用户注册
@@ -681,7 +681,7 @@ impl Mutation {
 
 struct Subscription;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription {
     async fn integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
         let mut value = 0;
@@ -706,7 +706,7 @@ use async_graphql::validators::{Email, MAC};
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn input(#[arg(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
     }
@@ -722,7 +722,7 @@ use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn input(#[validator(
         or(
@@ -772,7 +772,7 @@ impl InputValueValidator for MustBeZero {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject(cache_control(max_age = 60))]
+</span>#[Object(cache_control(max_age = 60))]
 impl Query {
     #[field(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {
@@ -809,7 +809,7 @@ use async_graphql::connection::*;
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn numbers(&amp;self,
@@ -1116,7 +1116,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 
 struct StringNumber(i64);
 
-#[GQLScalar]
+#[Scalar]
 impl ScalarType for StringNumber {
     fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = &amp;value {
@@ -1163,7 +1163,7 @@ impl ScalarType for StringNumber {
 </span><span class="boring">fn main() {
 </span>struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[entity]
     async fn find_user_by_id(&amp;self, id: ID) -&gt; User {

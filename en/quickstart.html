@@ -178,7 +178,7 @@ async-graphql-tide = &quot;1.18.0&quot; # If you need to integrate into tide
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field(desc = &quot;Returns the sum of a and b&quot;)]
     async fn add(&amp;self, a: i32, b: i32) -&gt; i32 {

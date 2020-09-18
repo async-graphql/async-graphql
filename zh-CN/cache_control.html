@@ -170,7 +170,7 @@
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject(cache_control(max_age = 60))]
+</span>#[Object(cache_control(max_age = 60))]
 impl Query {
     #[field(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {

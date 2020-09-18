@@ -201,7 +201,7 @@ async-graphql-tide = &quot;1.18.0&quot; # If you need to integrate into tide
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field(desc = &quot;Returns the sum of a and b&quot;)]
     async fn add(&amp;self, a: i32, b: i32) -&gt; i32 {
@@ -238,7 +238,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLSimpleObject)]
+#[derive(SimpleObject)]
 struct MyObject {
     /// Value a
     a: i32,
@@ -267,7 +267,7 @@ struct MyObject {
     value: i32,
 }
 
-#[GQLObject]
+#[Object]
 impl MyObject {
     async fn value(&amp;self) -&gt; String {
         self.value.to_string()
@@ -294,7 +294,7 @@ impl MyObject {
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
@@ -323,7 +323,7 @@ See the <a href="error_extensions.html">Error Extensions</a> section of this boo
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
@@ -339,14 +339,14 @@ impl Query {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl Query {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
@@ -354,27 +354,27 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Instead, the <code>#[derive(GQLMergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
-<p><strong>Tip:</strong> Every <code>#[GQLObject]</code> needs a unique name, even in a <code>GQLMergedObject</code>, so make sure to give each object you're merging its own name.</p>
+<p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
+<p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject]
+</span>#[Object]
 impl UserQuery {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
     }
 }
 
-#[GQLObject]
+#[Object]
 impl MovieQuery {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
     }
 }
 
-#[derive(GQLMergedObject, Default)]
+#[derive(MergedObject, Default)]
 struct Query(UserQuery, MovieQuery);
 
 let schema = Schema::new(
@@ -385,7 +385,7 @@ let schema = Schema::new(
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#merging-subscriptions" id="merging-subscriptions">Merging Subscriptions</a></h1>
-<p>Along with <code>GQLMergedObject</code>, you can derive <code>GQLMergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
+<p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -394,7 +394,7 @@ let schema = Schema::new(
 </span>#[derive(Default)]
 struct Subscription1;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription1 {
     async fn events1(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(0..10)
@@ -404,14 +404,14 @@ impl Subscription1 {
 #[derive(Default)]
 struct Subscription2;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription2 {
     async fn events2(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
         futures::stream::iter(10..20)
     }
 }
 
-#[derive(GQLMergedSubscription, Default)]
+#[derive(MergedSubscription, Default)]
 struct Subscription(Subscription1, Subscription2);
 
 let schema = Schema::new(
@@ -430,7 +430,7 @@ let schema = Schema::new(
 </span>use async_graphql::*;
 
 /// One of the films in the Star Wars Trilogy
-#[derive(GQLEnum, Copy, Clone, Eq, PartialEq)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 pub enum Episode {
     /// Released in 1977.
     NewHope,
@@ -465,7 +465,7 @@ struct Circle {
     radius: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Circle {
     async fn area(&amp;self) -&gt; f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -485,7 +485,7 @@ struct Square {
     width: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Square {
     async fn area(&amp;self) -&gt; f32 {
         self.width * self.width
@@ -501,7 +501,7 @@ impl Square {
     }
 }
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     field(name = &quot;area&quot;, type = &quot;f32&quot;),
     field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;))
@@ -526,7 +526,7 @@ struct Circle {
     radius: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Circle {
     async fn area(&amp;self) -&gt; f32 {
         std::f32::consts::PI * self.radius * self.radius
@@ -541,7 +541,7 @@ struct Square {
     width: f32,
 }
 
-#[GQLObject]
+#[Object]
 impl Square {
     async fn area(&amp;self) -&gt; f32 {
         self.width * self.width
@@ -552,7 +552,7 @@ impl Square {
     }
 }
 
-#[derive(GQLUnion)]
+#[derive(Union)]
 enum Shape {
     Circle(Circle),
     Square(Square),
@@ -571,7 +571,7 @@ You can add optional <code>#[field]</code> attributes to add descriptions or ren
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
 
@@ -581,7 +581,7 @@ struct Coordinate {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // Writes coordination to database.
@@ -605,7 +605,7 @@ fn my_default() -&gt; i32 {
     30
 }
 
-#[GQLObject]
+#[Object]
 impl Query {
     // The default value of the value parameter is 0, it will call i32::default()
     fn test1(&amp;self, #[arg(default)] value: i32) {}
@@ -624,7 +624,7 @@ impl Query {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     field(name = &quot;test1&quot;, arg(name = &quot;value&quot;, default)),
     field(name = &quot;test2&quot;, arg(name = &quot;value&quot;, default = 10)),
@@ -641,7 +641,7 @@ enum MyInterface {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-<span class="boring">derive(GQLInputObject)
+<span class="boring">derive(InputObject)
 </span>struct MyInputObject {
     #[field(default)]
     value1: i32,
@@ -667,7 +667,7 @@ enum MyInterface {
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // Look up users from the database
@@ -686,7 +686,7 @@ impl Query {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn signup(&amp;self, username: String, password: String) -&gt; Result&lt;bool&gt; {
         // User signup
@@ -708,7 +708,7 @@ impl Mutation {
 
 struct Subscription;
 
-#[GQLSubscription]
+#[Subscription]
 impl Subscription {
     async fn integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
         let mut value = 0;
@@ -733,7 +733,7 @@ use async_graphql::validators::{Email, MAC};
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn input(#[arg(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
     }
@@ -749,7 +749,7 @@ use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn input(#[validator(
         or(
@@ -801,7 +801,7 @@ impl InputValueValidator for MustBeZero {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[GQLObject(cache_control(max_age = 60))]
+</span>#[Object(cache_control(max_age = 60))]
 impl Query {
     #[field(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {
@@ -837,7 +837,7 @@ use async_graphql::connection::*;
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn numbers(&amp;self,
@@ -1154,7 +1154,7 @@ convert it into a <code>async_graphql::Request</code>.</p>
 
 struct StringNumber(i64);
 
-#[GQLScalar]
+#[Scalar]
 impl ScalarType for StringNumber {
     fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = &amp;value {
@@ -1197,7 +1197,7 @@ impl ScalarType for StringNumber {
 </span><span class="boring">fn main() {
 </span>struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[entity]
     async fn find_user_by_id(&amp;self, id: ID) -&gt; User {

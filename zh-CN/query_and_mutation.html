@@ -169,7 +169,7 @@
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
         // 在数据库中查找用户
@@ -188,7 +188,7 @@ impl Query {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn signup(&amp;self, username: String, password: String) -&gt; Result&lt;bool&gt; {
         // 用户注册

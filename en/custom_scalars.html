@@ -170,7 +170,7 @@
 
 struct StringNumber(i64);
 
-#[GQLScalar]
+#[Scalar]
 impl ScalarType for StringNumber {
     fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; {
         if let Value::String(value) = &amp;value {

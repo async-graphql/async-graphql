@@ -177,7 +177,7 @@ See the <a href="error_extensions.html">Error Extensions</a> section of this boo
 
 struct Query;
 
-#[GQLObject]
+#[Object]
 impl Query {
     #[field]
     async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {

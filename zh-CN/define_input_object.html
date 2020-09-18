@@ -167,7 +167,7 @@
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInputObject)]
+#[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
 
@@ -177,7 +177,7 @@ struct Coordinate {
 
 struct Mutation;
 
-#[GQLObject]
+#[Object]
 impl Mutation {
     async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // 将坐标写入数据库

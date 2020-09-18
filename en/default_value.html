@@ -174,7 +174,7 @@ fn my_default() -&gt; i32 {
     30
 }
 
-#[GQLObject]
+#[Object]
 impl Query {
     // The default value of the value parameter is 0, it will call i32::default()
     fn test1(&amp;self, #[arg(default)] value: i32) {}
@@ -193,7 +193,7 @@ impl Query {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-#[derive(GQLInterface)]
+#[derive(Interface)]
 #[graphql(
     field(name = &quot;test1&quot;, arg(name = &quot;value&quot;, default)),
     field(name = &quot;test2&quot;, arg(name = &quot;value&quot;, default = 10)),
@@ -210,7 +210,7 @@ enum MyInterface {
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
 
-<span class="boring">derive(GQLInputObject)
+<span class="boring">derive(InputObject)
 </span>struct MyInputObject {
     #[field(default)]
     value1: i32,
