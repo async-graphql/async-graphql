@@ -140,13 +140,13 @@ pub use async_stream;
 #[doc(hidden)]
 pub use async_trait;
 #[doc(hidden)]
+pub use context::ContextSelectionSet;
+#[doc(hidden)]
 pub use futures;
 #[doc(hidden)]
 pub use indexmap;
 #[doc(hidden)]
 pub use serde_json;
-#[doc(hidden)]
-pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
 
