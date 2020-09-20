@@ -1,4 +1,5 @@
 use crate::{registry, InputValueResult, InputValueType, Type, Value};
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
@@ -45,6 +46,7 @@ use std::borrow::Cow;
 /// }
 /// ```
 #[allow(missing_docs)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum MaybeUndefined<T> {
     Undefined,
     Null,
