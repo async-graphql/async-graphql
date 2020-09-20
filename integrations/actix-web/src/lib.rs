@@ -9,7 +9,7 @@ use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 use async_graphql::http::MultipartOptions;
-use async_graphql::{ParseRequestError, Request, Response};
+use async_graphql::ParseRequestError;
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::io::ErrorKind;
@@ -21,20 +21,20 @@ pub use subscription::WSSubscription;
 
 /// Extractor for GraphQL request
 ///
-/// It's a wrapper of `async_graphql::Request`, you can use `GQLRequest::into_inner` unwrap it to `async_graphql::Request`.
+/// It's a wrapper of `async_graphql::Request`, you can use `Request::into_inner` unwrap it to `async_graphql::Request`.
 /// `async_graphql::http::MultipartOptions` allows to configure extraction process.
-pub struct GQLRequest(Request);
+pub struct Request(async_graphql::Request);
 
-impl GQLRequest {
+impl Request {
     /// Unwraps the value to `async_graphql::Request`.
-    pub fn into_inner(self) -> Request {
+    pub fn into_inner(self) -> async_graphql::Request {
         self.0
     }
 }
 
-impl FromRequest for GQLRequest {
+impl FromRequest for Request {
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<GQLRequest, Error>>>>;
+    type Future = Pin<Box<dyn Future<Output = Result<Request, Error>>>>;
     type Config = MultipartOptions;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
@@ -44,7 +44,7 @@ impl FromRequest for GQLRequest {
             let res = web::Query::<async_graphql::Request>::from_query(req.query_string());
             Box::pin(async move {
                 let gql_request = res?;
-                Ok(GQLRequest(gql_request.into_inner()))
+                Ok(Request(gql_request.into_inner()))
             })
         } else {
             let content_type = req
@@ -66,7 +66,7 @@ impl FromRequest for GQLRequest {
             });
 
             Box::pin(async move {
-                Ok(GQLRequest(
+                Ok(Request(
                     async_graphql::http::receive_body(
                         content_type,
                         rx.map_err(|err| io::Error::new(ErrorKind::Other, err))
@@ -87,15 +87,15 @@ impl FromRequest for GQLRequest {
 }
 
 /// Responder for GraphQL response
-pub struct GQLResponse(Response);
+pub struct Response(async_graphql::Response);
 
-impl From<Response> for GQLResponse {
-    fn from(resp: Response) -> Self {
-        GQLResponse(resp)
+impl From<async_graphql::Response> for Response {
+    fn from(resp: async_graphql::Response) -> Self {
+        Response(resp)
     }
 }
 
-impl Responder for GQLResponse {
+impl Responder for Response {
     type Error = Error;
     type Future = Ready<Result<HttpResponse, Error>>;
 
@@ -108,7 +108,7 @@ impl Responder for GQLResponse {
     }
 }
 
-fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &Response) {
+fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &async_graphql::Response) {
     if resp.is_ok() {
         if let Some(cache_control) = resp.cache_control.value() {
             builder.header("cache-control", cache_control);

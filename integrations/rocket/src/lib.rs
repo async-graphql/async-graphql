@@ -13,7 +13,7 @@ use rocket::{
     http::{ContentType, Header, Status},
     request::{self, FromQuery, Outcome},
     response::{self, Responder, ResponseBuilder},
-    Request, Response, State,
+    Request as RocketRequest, Response as RocketResponse, State,
 };
 use std::{io::Cursor, sync::Arc};
 use tokio_util::compat::Tokio02AsyncReadCompatExt;
@@ -28,7 +28,7 @@ use yansi::Paint;
 /// ```rust,no_run
 ///
 /// use async_graphql::{EmptyMutation, EmptySubscription, Schema, Object};
-/// use async_graphql_rocket::{GQLRequest, GraphQL, GQLResponse};
+/// use async_graphql_rocket::{Request, GraphQL, Response};
 /// use rocket::{response::content, routes, State, http::Status};
 ///
 /// type ExampleSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
@@ -43,13 +43,13 @@ use yansi::Paint;
 /// }
 ///
 /// #[rocket::post("/?<query..>")]
-/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: GQLRequest) -> Result<GQLResponse, Status> {
+/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: Request) -> Result<Response, Status> {
 ///     query.execute(&schema)
 ///         .await
 /// }
 ///
 /// #[rocket::post("/", data = "<request>", format = "application/json")]
-/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: GQLRequest) -> Result<GQLResponse, Status> {
+/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: Request) -> Result<Response, Status> {
 ///     request.execute(&schema)
 ///         .await
 /// }
@@ -133,23 +133,23 @@ impl GraphQL {
 ///
 /// ```rust,no_run,ignore
 /// #[rocket::post("/?<query..>")]
-/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: GQLRequest) -> Result<GQLResponse, Status> {
+/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: Request) -> Result<Response, Status> {
 ///     query.execute(&schema)
 ///         .await
 /// }
 ///
 /// #[rocket::post("/", data = "<request>", format = "application/json")]
-/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: GQLRequest) -> Result<GQLResponse, Status> {
+/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: Request) -> Result<Response, Status> {
 ///     request.execute(&schema)
 ///         .await
 /// }
 /// ```
-pub struct GQLRequest(pub async_graphql::Request);
+pub struct Request(pub async_graphql::Request);
 
-impl GQLRequest {
+impl Request {
     /// Mimics `async_graphql::Schema.execute()`.
     /// Executes the query, always return a complete result.
-    pub async fn execute<Q, M, S>(self, schema: &Schema<Q, M, S>) -> Result<GQLResponse, Status>
+    pub async fn execute<Q, M, S>(self, schema: &Schema<Q, M, S>) -> Result<Response, Status>
     where
         Q: ObjectType + Send + Sync + 'static,
         M: ObjectType + Send + Sync + 'static,
@@ -159,7 +159,7 @@ impl GQLRequest {
             .execute(self.0)
             .await
             .into_result()
-            .map(GQLResponse)
+            .map(Response)
             .map_err(|e| {
                 error!("{}", e);
                 Status::BadRequest
@@ -167,7 +167,7 @@ impl GQLRequest {
     }
 }
 
-impl<'q> FromQuery<'q> for GQLRequest {
+impl<'q> FromQuery<'q> for Request {
     type Error = String;
 
     fn from_query(query_items: request::Query) -> Result<Self, Self::Error> {
@@ -222,7 +222,7 @@ impl<'q> FromQuery<'q> for GQLRequest {
                 request = request.operation_name(operation_name);
             }
 
-            Ok(GQLRequest(request))
+            Ok(Request(request))
         } else {
             Err(r#"Parameter "query" missing from request."#.to_string())
         }
@@ -230,10 +230,10 @@ impl<'q> FromQuery<'q> for GQLRequest {
 }
 
 #[rocket::async_trait]
-impl FromData for GQLRequest {
+impl FromData for Request {
     type Error = String;
 
-    async fn from_data(req: &Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
+    async fn from_data(req: &RocketRequest<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
         let opts = match req.guard::<State<'_, Arc<MultipartOptions>>>().await {
             Outcome::Success(opts) => opts,
             Outcome::Failure(_) => {
@@ -255,22 +255,22 @@ impl FromData for GQLRequest {
         .await;
 
         match request {
-            Ok(request) => data::Outcome::Success(GQLRequest(request)),
+            Ok(request) => data::Outcome::Success(Request(request)),
             Err(e) => data::Outcome::Failure((Status::BadRequest, format!("{}", e))),
         }
     }
 }
 
 /// Wrapper around `async-graphql::Response` for implementing the trait
-/// `rocket::response::responder::Responder`, so that `GQLResponse` can directly be returned
+/// `rocket::response::responder::Responder`, so that `Response` can directly be returned
 /// from a Rocket Route function.
-pub struct GQLResponse(pub async_graphql::Response);
+pub struct Response(pub async_graphql::Response);
 
-impl<'r> Responder<'r, 'static> for GQLResponse {
-    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+impl<'r> Responder<'r, 'static> for Response {
+    fn respond_to(self, _: &'r RocketRequest<'_>) -> response::Result<'static> {
         let body = serde_json::to_string(&self.0).unwrap();
 
-        Response::build()
+        RocketResponse::build()
             .header(ContentType::new("application", "json"))
             .status(Status::Ok)
             .sized_body(body.len(), Cursor::new(body))

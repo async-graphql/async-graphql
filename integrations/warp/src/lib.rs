@@ -15,7 +15,7 @@ use std::io::{self, ErrorKind};
 use std::sync::Arc;
 use warp::filters::ws;
 use warp::reject::Reject;
-use warp::reply::Response;
+use warp::reply::Response as WarpResponse;
 use warp::{Buf, Filter, Rejection, Reply};
 
 /// Bad request error
@@ -63,7 +63,7 @@ impl Reject for BadRequest {}
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let filter = async_graphql_warp::graphql(schema).
 ///             and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
-///         Ok::<_, Infallible>(GQLResponse::from(schema.execute(request).await))
+///         Ok::<_, Infallible>(async_graphql_warp::Response::from(schema.execute(request).await))
 ///     });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// }
@@ -226,15 +226,15 @@ where
 }
 
 /// GraphQL reply
-pub struct GQLResponse(async_graphql::Response);
+pub struct Response(async_graphql::Response);
 
-impl From<async_graphql::Response> for GQLResponse {
+impl From<async_graphql::Response> for Response {
     fn from(resp: async_graphql::Response) -> Self {
-        GQLResponse(resp)
+        Response(resp)
     }
 }
 
-fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Response) {
+fn add_cache_control(http_resp: &mut WarpResponse, resp: &async_graphql::Response) {
     if resp.is_ok() {
         if let Some(cache_control) = resp.cache_control.value() {
             if let Ok(value) = cache_control.parse() {
@@ -244,8 +244,8 @@ fn add_cache_control(http_resp: &mut Response, resp: &async_graphql::Response) {
     }
 }
 
-impl Reply for GQLResponse {
-    fn into_response(self) -> Response {
+impl Reply for Response {
+    fn into_response(self) -> WarpResponse {
         let mut resp = warp::reply::with_header(
             warp::reply::json(&self.0),
             "content-type",
