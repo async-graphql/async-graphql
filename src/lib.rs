@@ -163,6 +163,7 @@ pub use look_ahead::Lookahead;
 pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
+pub use resolver_utils::ObjectType;
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
