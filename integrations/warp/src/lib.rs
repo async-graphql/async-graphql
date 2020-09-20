@@ -14,7 +14,6 @@ use hyper::Method;
 use std::io::{self, ErrorKind};
 use std::sync::Arc;
 use warp::filters::ws;
-use warp::filters::BoxedFilter;
 use warp::reject::Reject;
 use warp::reply::Response;
 use warp::{Buf, Filter, Rejection, Reply};
@@ -71,10 +70,13 @@ impl Reject for BadRequest {}
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<((
-    Schema<Query, Mutation, Subscription>,
-    async_graphql::Request,
-),)>
+) -> impl Filter<
+    Extract = ((
+        Schema<Query, Mutation, Subscription>,
+        async_graphql::Request,
+    ),),
+    Error = Rejection,
+> + Clone
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -87,10 +89,13 @@ where
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: MultipartOptions,
-) -> BoxedFilter<((
-    Schema<Query, Mutation, Subscription>,
-    async_graphql::Request,
-),)>
+) -> impl Filter<
+    Extract = ((
+        Schema<Query, Mutation, Subscription>,
+        async_graphql::Request,
+    ),),
+    Error = Rejection,
+> + Clone
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
@@ -129,7 +134,6 @@ where
                 }
             },
         )
-        .boxed()
 }
 
 /// GraphQL subscription filter
@@ -168,7 +172,7 @@ where
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-) -> BoxedFilter<(impl Reply,)>
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -185,7 +189,7 @@ where
 pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
     schema: Schema<Query, Mutation, Subscription>,
     initializer: Option<F>,
-) -> BoxedFilter<(impl Reply,)>
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
@@ -219,7 +223,6 @@ where
             },
         )
         .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
-        .boxed()
 }
 
 /// GraphQL reply

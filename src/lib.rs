@@ -127,27 +127,30 @@ mod validation;
 
 pub mod extensions;
 pub mod guard;
+pub mod http;
 pub mod types;
 pub mod validators;
 
 #[doc(hidden)]
-pub mod resolver_utils;
+pub mod registry;
 #[doc(hidden)]
-pub use async_graphql_parser as parser;
-
+pub mod resolver_utils;
 #[doc(hidden)]
 pub use async_stream;
 #[doc(hidden)]
 pub use async_trait;
+#[doc(hidden)]
+pub use context::ContextSelectionSet;
 #[doc(hidden)]
 pub use futures;
 #[doc(hidden)]
 pub use indexmap;
 #[doc(hidden)]
 pub use serde_json;
+#[doc(hidden)]
+pub use subscription::SubscriptionType;
 
-pub mod http;
-
+pub use async_graphql_parser as parser;
 pub use base::{InputValueType, OutputValueType, ScalarType, Type};
 pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, Variables,
@@ -157,26 +160,21 @@ pub use error::{
     ParseRequestError, QueryError, ResultExt, RuleError,
 };
 pub use look_ahead::Lookahead;
-pub use parser::{types::ConstValue as Value, Pos, Positioned};
+pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
-pub use serde_json::Number;
-pub use types::*;
 pub use validation::ValidationMode;
+
+#[doc(no_inline)]
+pub use parser::{Pos, Positioned};
+pub use types::*;
 
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;
 
 // internal types
-#[doc(hidden)]
-pub use context::ContextSelectionSet;
-
-#[doc(hidden)]
-pub mod registry;
-#[doc(hidden)]
-pub use subscription::SubscriptionType;
 
 /// Define a GraphQL object with methods
 ///
