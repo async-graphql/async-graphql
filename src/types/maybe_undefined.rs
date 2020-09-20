@@ -46,7 +46,8 @@ use std::borrow::Cow;
 /// }
 /// ```
 #[allow(missing_docs)]
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
+#[serde(untagged)]
 pub enum MaybeUndefined<T> {
     Undefined,
     Null,
