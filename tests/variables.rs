@@ -223,3 +223,51 @@ pub async fn test_variable_in_input_object() {
         );
     }
 }
+
+#[async_std::test]
+pub async fn test_variables_enum() {
+    #[derive(Enum, Eq, PartialEq, Copy, Clone)]
+    enum MyEnum {
+        A,
+        B,
+        C,
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn value(&self, value: MyEnum) -> i32 {
+            match value {
+                MyEnum::A => 1,
+                MyEnum::B => 2,
+                MyEnum::C => 3,
+            }
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let query = Request::new(
+        r#"
+            query QueryWithVariables($value1: MyEnum, $value2: MyEnum, $value3: MyEnum) {
+                a: value(value: $value1)
+                b: value(value: $value2)
+                c: value(value: $value3)
+            }
+        "#,
+    )
+    .variables(Variables::from_json(serde_json::json!({
+        "value1": "A",
+        "value2": "B",
+        "value3": "C",
+    })));
+
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        serde_json::json!({
+            "a": 1,
+            "b": 2,
+            "c": 3,
+        })
+    );
+}
