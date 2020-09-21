@@ -1,5 +1,5 @@
 use crate::{registry, InputValueResult, InputValueType, Type, Value};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::borrow::Cow;
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
