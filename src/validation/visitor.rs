@@ -1,8 +1,8 @@
 use crate::error::RuleError;
 use crate::parser::types::{
-    Directive, ExecutableDefinition, ExecutableDocument, Field, FragmentDefinition, FragmentSpread,
-    InlineFragment, Name, OperationDefinition, OperationType, Selection, SelectionSet,
-    TypeCondition, Value, VariableDefinition,
+    Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Name,
+    OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, Value,
+    VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
 use crate::{Pos, Positioned, Variables};
@@ -14,7 +14,7 @@ pub struct VisitorContext<'a> {
     pub errors: Vec<RuleError>,
     type_stack: Vec<Option<&'a registry::MetaType>>,
     input_type: Vec<Option<MetaTypeName<'a>>>,
-    fragments: HashMap<&'a str, &'a Positioned<FragmentDefinition>>,
+    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
 }
 
 impl<'a> VisitorContext<'a> {
@@ -29,16 +29,7 @@ impl<'a> VisitorContext<'a> {
             errors: Default::default(),
             type_stack: Default::default(),
             input_type: Default::default(),
-            fragments: doc
-                .definitions
-                .iter()
-                .filter_map(|d| match &d {
-                    ExecutableDefinition::Fragment(fragment) => {
-                        Some((&*fragment.node.name.node, fragment))
-                    }
-                    _ => None,
-                })
-                .collect(),
+            fragments: &doc.fragments,
         }
     }
 
@@ -93,7 +84,7 @@ impl<'a> VisitorContext<'a> {
     }
 
     pub fn fragment(&self, name: &str) -> Option<&'a Positioned<FragmentDefinition>> {
-        self.fragments.get(name).copied()
+        self.fragments.get(name)
     }
 }
 
@@ -104,12 +95,14 @@ pub trait Visitor<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
     }
     fn exit_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
     }
@@ -117,12 +110,14 @@ pub trait Visitor<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
     }
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
     }
@@ -277,37 +272,49 @@ where
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.0.enter_operation_definition(ctx, operation_definition);
-        self.1.enter_operation_definition(ctx, operation_definition);
+        self.0
+            .enter_operation_definition(ctx, name, operation_definition);
+        self.1
+            .enter_operation_definition(ctx, name, operation_definition);
     }
 
     fn exit_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.0.exit_operation_definition(ctx, operation_definition);
-        self.1.exit_operation_definition(ctx, operation_definition);
+        self.0
+            .exit_operation_definition(ctx, name, operation_definition);
+        self.1
+            .exit_operation_definition(ctx, name, operation_definition);
     }
 
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.0.enter_fragment_definition(ctx, fragment_definition);
-        self.1.enter_fragment_definition(ctx, fragment_definition);
+        self.0
+            .enter_fragment_definition(ctx, name, fragment_definition);
+        self.1
+            .enter_fragment_definition(ctx, name, fragment_definition);
     }
 
     fn exit_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.0.exit_fragment_definition(ctx, fragment_definition);
-        self.1.exit_fragment_definition(ctx, fragment_definition);
+        self.0
+            .exit_fragment_definition(ctx, name, fragment_definition);
+        self.1
+            .exit_fragment_definition(ctx, name, fragment_definition);
     }
 
     fn enter_variable_definition(
@@ -455,36 +462,30 @@ pub fn visit<'a, V: Visitor<'a>>(
     doc: &'a ExecutableDocument,
 ) {
     v.enter_document(ctx, doc);
-    visit_definitions(v, ctx, doc);
-    v.exit_document(ctx, doc);
-}
 
-fn visit_definitions<'a, V: Visitor<'a>>(
-    v: &mut V,
-    ctx: &mut VisitorContext<'a>,
-    doc: &'a ExecutableDocument,
-) {
-    for d in &doc.definitions {
-        match d {
-            ExecutableDefinition::Operation(operation) => {
-                visit_operation_definition(v, ctx, operation);
-            }
-            ExecutableDefinition::Fragment(fragment) => {
-                let TypeCondition { on: name } = &fragment.node.type_condition.node;
-                ctx.with_type(ctx.registry.types.get(name.node.as_str()), |ctx| {
-                    visit_fragment_definition(v, ctx, fragment)
-                });
-            }
-        }
+    for (name, fragment) in &doc.fragments {
+        ctx.with_type(
+            ctx.registry
+                .types
+                .get(fragment.node.type_condition.node.on.node.as_str()),
+            |ctx| visit_fragment_definition(v, ctx, name, fragment),
+        )
     }
+
+    for (name, operation) in doc.operations.iter() {
+        visit_operation_definition(v, ctx, name, operation);
+    }
+
+    v.exit_document(ctx, doc);
 }
 
 fn visit_operation_definition<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
+    name: Option<&'a Name>,
     operation: &'a Positioned<OperationDefinition>,
 ) {
-    v.enter_operation_definition(ctx, operation);
+    v.enter_operation_definition(ctx, name, operation);
     let root_name = match &operation.node.ty {
         OperationType::Query => Some(&*ctx.registry.query_type),
         OperationType::Mutation => ctx.registry.mutation_type.as_deref(),
@@ -503,7 +504,7 @@ fn visit_operation_definition<'a, V: Visitor<'a>>(
             format!("Schema is not configured for {}s.", operation.node.ty),
         );
     }
-    v.exit_operation_definition(ctx, operation);
+    v.exit_operation_definition(ctx, name, operation);
 }
 
 fn visit_selection_set<'a, V: Visitor<'a>>(
@@ -682,12 +683,13 @@ fn visit_directives<'a, V: Visitor<'a>>(
 fn visit_fragment_definition<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
+    name: &'a Name,
     fragment: &'a Positioned<FragmentDefinition>,
 ) {
-    v.enter_fragment_definition(ctx, fragment);
+    v.enter_fragment_definition(ctx, name, fragment);
     visit_directives(v, ctx, &fragment.node.directives);
     visit_selection_set(v, ctx, &fragment.node.selection_set);
-    v.exit_fragment_definition(ctx, fragment);
+    v.exit_fragment_definition(ctx, name, fragment);
 }
 
 fn visit_fragment_spread<'a, V: Visitor<'a>>(

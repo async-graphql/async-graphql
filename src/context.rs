@@ -1,7 +1,8 @@
 use crate::base::Type;
 use crate::extensions::Extensions;
 use crate::parser::types::{
-    Directive, ExecutableDocumentData, Field, Name, SelectionSet, Value as InputValue,
+    Directive, Field, FragmentDefinition, Name, OperationDefinition, SelectionSet,
+    Value as InputValue,
 };
 use crate::schema::SchemaEnv;
 use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Value};
@@ -9,7 +10,7 @@ use fnv::FnvHashMap;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::{Deserialize, Serialize};
 use std::any::{Any, TypeId};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::convert::TryFrom;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::ops::Deref;
@@ -242,7 +243,8 @@ pub struct ContextBase<'a, T> {
 pub struct QueryEnvInner {
     pub extensions: spin::Mutex<Extensions>,
     pub variables: Variables,
-    pub document: ExecutableDocumentData,
+    pub operation: Positioned<OperationDefinition>,
+    pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub ctx_data: Arc<Data>,
 }
 
@@ -263,13 +265,15 @@ impl QueryEnv {
     pub fn new(
         extensions: spin::Mutex<Extensions>,
         variables: Variables,
-        document: ExecutableDocumentData,
+        operation: Positioned<OperationDefinition>,
+        fragments: HashMap<Name, Positioned<FragmentDefinition>>,
         ctx_data: Arc<Data>,
     ) -> QueryEnv {
         QueryEnv(Arc::new(QueryEnvInner {
             extensions,
             variables,
-            document,
+            operation,
+            fragments,
             ctx_data,
         }))
     }
@@ -372,7 +376,6 @@ impl<'a, T> ContextBase<'a, T> {
 
     fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
         self.query_env
-            .document
             .operation
             .node
             .variable_definitions
@@ -519,6 +522,6 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// }
     /// ```
     pub fn look_ahead(&self) -> Lookahead {
-        Lookahead::new(&self.query_env.document, &self.item.node)
+        Lookahead::new(&self.query_env.fragments, &self.item.node)
     }
 }

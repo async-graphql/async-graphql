@@ -1,4 +1,4 @@
-use crate::parser::types::{FragmentDefinition, InlineFragment, TypeCondition};
+use crate::parser::types::{FragmentDefinition, InlineFragment, Name};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -9,16 +9,16 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         if let Some(current_type) = ctx.current_type() {
             if !current_type.is_composite() {
-                let TypeCondition { on: name } = &fragment_definition.node.type_condition.node;
                 ctx.report_error(
                     vec![fragment_definition.pos],
                     format!(
                         "Fragment \"{}\" cannot condition non composite type \"{}\"",
-                        fragment_definition.node.name, name
+                        name, fragment_definition.node.type_condition.node.on.node,
                     ),
                 );
             }
@@ -60,6 +60,7 @@ mod tests {
           fragment validFragment on Dog {
             barks
           }
+          { __typename }
         "#,
         );
     }
@@ -72,6 +73,7 @@ mod tests {
           fragment validFragment on Pet {
             name
           }
+          { __typename }
         "#,
         );
     }
@@ -86,6 +88,7 @@ mod tests {
               barks
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -100,6 +103,7 @@ mod tests {
               name
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -112,6 +116,7 @@ mod tests {
           fragment validFragment on CatOrDog {
             __typename
           }
+          { __typename }
         "#,
         );
     }
@@ -124,6 +129,7 @@ mod tests {
           fragment scalarFragment on Boolean {
             bad
           }
+          { __typename }
         "#,
         );
     }
@@ -136,6 +142,7 @@ mod tests {
           fragment scalarFragment on FurColor {
             bad
           }
+          { __typename }
         "#,
         );
     }
@@ -148,6 +155,7 @@ mod tests {
           fragment inputFragment on ComplexInput {
             stringField
           }
+          { __typename }
         "#,
         );
     }
@@ -162,6 +170,7 @@ mod tests {
               barks
             }
           }
+          { __typename }
         "#,
         );
     }

@@ -73,23 +73,15 @@ fn parse_schema_definition(
         let name = parse_name(pairs.next().unwrap(), pc)?;
 
         match operation_type.node {
-            OperationType::Query => {
-                if query.is_some() {
-                    return Err(operation_type.error_here("multiple query roots"));
-                }
-                query = Some(name);
-            }
-            OperationType::Mutation => {
-                if mutation.is_some() {
-                    return Err(operation_type.error_here("multiple mutation roots"));
-                }
-                mutation = Some(name);
-            }
-            OperationType::Subscription => {
-                if subscription.is_some() {
-                    return Err(operation_type.error_here("multiple subscription roots"));
-                }
-                subscription = Some(name);
+            OperationType::Query if query.is_none() => query = Some(name),
+            OperationType::Mutation if mutation.is_none() => mutation = Some(name),
+            OperationType::Subscription if subscription.is_none() => subscription = Some(name),
+            _ => {
+                return Err(Error::MultipleRoots {
+                    root: operation_type.node,
+                    schema: pos,
+                    pos: operation_type.pos,
+                })
             }
         }
 
@@ -97,7 +89,7 @@ fn parse_schema_definition(
     }
 
     if !extend && query.is_none() {
-        return Err(Error::new("missing query root", pos));
+        return Err(Error::MissingQueryRoot { pos });
     }
 
     Ok(Positioned::new(

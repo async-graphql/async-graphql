@@ -1,5 +1,5 @@
 use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, Value,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition, Value,
     VariableDefinition,
 };
 use crate::registry::MetaTypeName;
@@ -72,23 +72,19 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Positioned<OperationDefinition>,
+        name: Option<&'a Name>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(
-            operation_definition
-                .node
-                .name
-                .as_ref()
-                .map(|name| &*name.node),
-        ));
+        self.current_scope = Some(Scope::Operation(name.map(|name| name.as_str())));
     }
 
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Positioned<FragmentDefinition>,
+        name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
+        self.current_scope = Some(Scope::Fragment(name));
     }
 
     fn enter_variable_definition(

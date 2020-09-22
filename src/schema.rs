@@ -2,21 +2,23 @@ use crate::context::{Data, ResolveId};
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::parser::types::OperationType;
+use crate::parser::types::{
+    DocumentOperations, FragmentDefinition, Name, OperationDefinition, OperationType,
+};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_object, resolve_object_serial, ObjectType};
 use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, Error, Pos, QueryEnv, QueryError,
-    Request, Response, Result, SubscriptionType, Type, Variables, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, Error, Pos, Positioned, QueryEnv,
+    QueryError, Request, Response, Result, SubscriptionType, Type, Variables, ID,
 };
-use async_graphql_parser::types::ExecutableDocumentData;
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
+use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
@@ -302,11 +304,14 @@ where
         Self::build(query, mutation, subscription).finish()
     }
 
+    // TODO: Remove the allow
+    #[allow(clippy::type_complexity)]
     fn prepare_request(
         &self,
         request: &Request,
     ) -> Result<(
-        ExecutableDocumentData,
+        Positioned<OperationDefinition>,
+        HashMap<Name, Positioned<FragmentDefinition>>,
         CacheControl,
         spin::Mutex<Extensions>,
     )> {
@@ -356,54 +361,66 @@ where
             }
         }
 
-        let document = match document.into_data(request.operation_name.as_deref()) {
-            Some(document) => document,
-            None => {
-                let err = if let Some(operation_name) = &request.operation_name {
-                    Error::Query {
-                        pos: Pos::default(),
-                        path: None,
-                        err: QueryError::UnknownOperationNamed {
-                            name: operation_name.to_string(),
-                        },
-                    }
-                } else {
-                    Error::Query {
-                        pos: Pos::default(),
-                        path: None,
-                        err: QueryError::MissingOperation,
-                    }
-                };
+        let operation = if let Some(operation_name) = &request.operation_name {
+            match document.operations {
+                DocumentOperations::Single(_) => None,
+                DocumentOperations::Multiple(mut operations) => {
+                    operations.remove(operation_name.as_str())
+                }
+            }
+            .ok_or_else(|| QueryError::UnknownOperationNamed {
+                name: operation_name.clone(),
+            })
+        } else {
+            match document.operations {
+                DocumentOperations::Single(operation) => Ok(operation),
+                DocumentOperations::Multiple(map) if map.len() == 1 => {
+                    Ok(map.into_iter().next().unwrap().1)
+                }
+                DocumentOperations::Multiple(_) => Err(QueryError::RequiredOperationName),
+            }
+        };
+        let operation = match operation {
+            Ok(operation) => operation,
+            Err(e) => {
+                let err = e.into_error(Pos::default());
                 extensions.lock().error(&err);
                 return Err(err);
             }
         };
 
-        Ok((document, cache_control, extensions))
+        Ok((operation, document.fragments, cache_control, extensions))
     }
 
     async fn execute_once(
         &self,
-        document: ExecutableDocumentData,
+        operation: Positioned<OperationDefinition>,
+        fragments: HashMap<Name, Positioned<FragmentDefinition>>,
         extensions: spin::Mutex<Extensions>,
         variables: Variables,
         ctx_data: Data,
     ) -> Response {
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(extensions, variables, document, Arc::new(ctx_data));
+        let env = QueryEnv::new(
+            extensions,
+            variables,
+            operation,
+            fragments,
+            Arc::new(ctx_data),
+        );
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
             inc_resolve_id: &inc_resolve_id,
-            item: &env.document.operation.node.selection_set,
+            item: &env.operation.node.selection_set,
             schema_env: &self.env,
             query_env: &env,
         };
 
         env.extensions.lock().execution_start();
 
-        let data = match &env.document.operation.node.ty {
+        let data = match &env.operation.node.ty {
             OperationType::Query => resolve_object(&ctx, &self.query).await,
             OperationType::Mutation => resolve_object_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
@@ -426,8 +443,14 @@ where
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
         match self.prepare_request(&request) {
-            Ok((document, cache_control, extensions)) => self
-                .execute_once(document, extensions, request.variables, request.data)
+            Ok((operation, fragments, cache_control, extensions)) => self
+                .execute_once(
+                    operation,
+                    fragments,
+                    extensions,
+                    request.variables,
+                    request.data,
+                )
                 .await
                 .cache_control(cache_control),
             Err(e) => Response::from_error(e),
@@ -456,7 +479,7 @@ where
 
         async_stream::stream! {
             let request = request.into();
-            let (document, cache_control, extensions) = match schema.prepare_request(&request) {
+            let (operation, fragments, cache_control, extensions) = match schema.prepare_request(&request) {
                 Ok(res) => res,
                 Err(err) => {
                     yield Response::from(err);
@@ -464,9 +487,9 @@ where
                 }
             };
 
-            if document.operation.node.ty != OperationType::Subscription {
+            if operation.node.ty != OperationType::Subscription {
                 yield schema
-                    .execute_once(document, extensions, request.variables, request.data)
+                    .execute_once(operation, fragments, extensions, request.variables, request.data)
                     .await
                     .cache_control(cache_control);
                 return;
@@ -476,14 +499,15 @@ where
             let env = QueryEnv::new(
                 extensions,
                 request.variables,
-                document,
+                operation,
+                fragments,
                 ctx_data,
             );
 
             let ctx = env.create_context(
                 &schema.env,
                 None,
-                &env.document.operation.node.selection_set,
+                &env.operation.node.selection_set,
                 &resolve_id,
             );
 

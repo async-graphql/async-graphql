@@ -6,12 +6,12 @@
 //!
 //! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/June2018/).
 
-use crate::pos::{Pos, Positioned};
+use crate::pos::Positioned;
 use serde::de::{Deserializer, Error as _, Unexpected};
 use serde::ser::{Error as _, Serializer};
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{hash_map, BTreeMap, HashMap};
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter, Write};
 use std::fs::File;

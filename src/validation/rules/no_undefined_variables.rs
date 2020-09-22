@@ -76,13 +76,10 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let name = operation_definition
-            .node
-            .name
-            .as_ref()
-            .map(|name| &*name.node);
+        let name = name.map(|name| name.as_str());
         self.current_scope = Some(Scope::Operation(name));
         self.defined_variables
             .insert(name, (operation_definition.pos, HashSet::new()));
@@ -91,9 +88,10 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Positioned<FragmentDefinition>,
+        name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
+        self.current_scope = Some(Scope::Fragment(name));
     }
 
     fn enter_variable_definition(

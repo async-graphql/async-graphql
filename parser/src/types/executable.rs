@@ -7,91 +7,87 @@ use super::*;
 /// [Reference](https://spec.graphql.org/June2018/#ExecutableDocument).
 #[derive(Debug, Clone)]
 pub struct ExecutableDocument {
-    /// The definitions of the document.
-    pub definitions: Vec<ExecutableDefinition>,
-}
-
-impl ExecutableDocument {
-    /// Convert the document into an [`ExecutableDocumentData`](struct.ExecutableDocumentData.html).
-    /// Will return `None` if there is no operation in the document.
-    ///
-    /// The `operation_name` parameter, if set, makes sure that the main operation of the document,
-    /// if named, will have that name.
-    #[must_use]
-    pub fn into_data(self, operation_name: Option<&str>) -> Option<ExecutableDocumentData> {
-        let mut operation = None;
-        let mut fragments = HashMap::new();
-
-        for definition in self.definitions {
-            match definition {
-                ExecutableDefinition::Operation(op)
-                    if operation_name
-                        .zip(op.node.name.as_ref())
-                        .map_or(false, |(required_name, op_name)| {
-                            required_name != op_name.node
-                        }) => {}
-                ExecutableDefinition::Operation(op) => {
-                    operation.get_or_insert(op);
-                }
-                ExecutableDefinition::Fragment(fragment) => {
-                    fragments.insert(fragment.node.name.node.clone(), fragment);
-                }
-            }
-        }
-        operation.map(|operation| ExecutableDocumentData {
-            operation,
-            fragments,
-        })
-    }
-}
-
-/// The data of an executable document. This is a [`ExecutableDocument`](struct.ExecutableDocument.html) with at least
-/// one operation, and any number of fragments.
-#[derive(Debug, Clone)]
-pub struct ExecutableDocumentData {
-    /// The main operation of the document.
-    pub operation: Positioned<OperationDefinition>,
+    /// The operations of the document.
+    pub operations: DocumentOperations,
     /// The fragments of the document.
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
 }
 
-/// An executable definition in a query; a query, mutation, subscription or fragment definition.
+/// The operations of a GraphQL document.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#ExecutableDefinition).
+/// There is either one anonymous operation or many named operations.
 #[derive(Debug, Clone)]
-pub enum ExecutableDefinition {
-    /// The definition of an operation.
-    Operation(Positioned<OperationDefinition>),
-    /// The definition of a fragment.
-    Fragment(Positioned<FragmentDefinition>),
+pub enum DocumentOperations {
+    /// The document contains a single anonymous operation.
+    Single(Positioned<OperationDefinition>),
+    /// The document contains many named operations.
+    Multiple(HashMap<Name, Positioned<OperationDefinition>>),
 }
 
-impl ExecutableDefinition {
-    /// Get the position of the definition.
+impl DocumentOperations {
+    /// Iterate over the operations of the document.
     #[must_use]
-    pub fn pos(&self) -> Pos {
-        match self {
-            Self::Operation(op) => op.pos,
-            Self::Fragment(frag) => frag.pos,
+    pub fn iter(&self) -> OperationsIter<'_> {
+        OperationsIter(match self {
+            Self::Single(op) => OperationsIterInner::Single(Some(op)),
+            Self::Multiple(ops) => OperationsIterInner::Multiple(ops.iter()),
+        })
+    }
+}
+
+// TODO: This is not implemented as I would like to later implement IntoIterator for
+// DocumentOperations (not a reference) without having a breaking change.
+//
+//impl<'a> IntoIterator for &'a DocumentOperations {
+//    type Item = &'a Positioned<OperationDefinition>;
+//    type IntoIter = OperationsIter<'a>;
+//
+//    fn into_iter(self) -> Self::IntoIter {
+//        self.iter()
+//    }
+//}
+
+/// An iterator over the operations of a document.
+#[derive(Debug, Clone)]
+pub struct OperationsIter<'a>(OperationsIterInner<'a>);
+
+impl<'a> Iterator for OperationsIter<'a> {
+    type Item = (Option<&'a Name>, &'a Positioned<OperationDefinition>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &mut self.0 {
+            OperationsIterInner::Single(op) => op.take().map(|op| (None, op)),
+            OperationsIterInner::Multiple(iter) => iter.next().map(|(name, op)| (Some(name), op)),
         }
     }
 
-    /// Get a reference to the directives of the definition.
-    #[must_use]
-    pub fn directives(&self) -> &Vec<Positioned<Directive>> {
-        match self {
-            Self::Operation(op) => &op.node.directives,
-            Self::Fragment(frag) => &frag.node.directives,
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = self.len();
+        (size, Some(size))
+    }
+}
+
+impl<'a> std::iter::FusedIterator for OperationsIter<'a> {}
+
+impl<'a> ExactSizeIterator for OperationsIter<'a> {
+    fn len(&self) -> usize {
+        match &self.0 {
+            OperationsIterInner::Single(opt) => {
+                if opt.is_some() {
+                    1
+                } else {
+                    0
+                }
+            }
+            OperationsIterInner::Multiple(iter) => iter.len(),
         }
     }
-    /// Get a mutable reference to the directives of the definition.
-    #[must_use]
-    pub fn directives_mut(&mut self) -> &mut Vec<Positioned<Directive>> {
-        match self {
-            Self::Operation(op) => &mut op.node.directives,
-            Self::Fragment(frag) => &mut frag.node.directives,
-        }
-    }
+}
+
+#[derive(Debug, Clone)]
+enum OperationsIterInner<'a> {
+    Single(Option<&'a Positioned<OperationDefinition>>),
+    Multiple(hash_map::Iter<'a, Name, Positioned<OperationDefinition>>),
 }
 
 /// A GraphQL operation, such as `mutation($content:String!) { makePost(content: $content) { id } }`.
@@ -101,8 +97,6 @@ impl ExecutableDefinition {
 pub struct OperationDefinition {
     /// The type of operation.
     pub ty: OperationType,
-    /// The name of the operation.
-    pub name: Option<Positioned<Name>>,
     /// The variable definitions.
     pub variable_definitions: Vec<Positioned<VariableDefinition>>,
     /// The operation's directives.
@@ -249,8 +243,6 @@ pub struct InlineFragment {
 /// [Reference](https://spec.graphql.org/June2018/#FragmentDefinition).
 #[derive(Debug, Clone)]
 pub struct FragmentDefinition {
-    /// The name of the fragment. Any name is allowed except `on`.
-    pub name: Positioned<Name>,
     /// The type this fragment operates on.
     pub type_condition: Positioned<TypeCondition>,
     /// Directives in the fragment.

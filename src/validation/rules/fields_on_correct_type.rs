@@ -68,6 +68,7 @@ mod tests {
             __typename
             name
           }
+          { __typename }
         "#,
         );
     }
@@ -81,6 +82,7 @@ mod tests {
             tn : __typename
             otherName : name
           }
+          { __typename }
         "#,
         );
     }
@@ -94,6 +96,7 @@ mod tests {
             __typename
             name
           }
+          { __typename }
         "#,
         );
     }
@@ -106,6 +109,7 @@ mod tests {
           fragment interfaceFieldSelection on Pet {
             otherName : name
           }
+          { __typename }
         "#,
         );
     }
@@ -118,6 +122,7 @@ mod tests {
           fragment lyingAliasSelection on Dog {
             name : nickname
           }
+          { __typename }
         "#,
         );
     }
@@ -130,6 +135,7 @@ mod tests {
           fragment unknownSelection on UnknownType {
             unknownField
           }
+          { __typename }
         "#,
         );
     }
@@ -146,6 +152,7 @@ mod tests {
               }
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -158,6 +165,7 @@ mod tests {
           fragment fieldNotDefined on Dog {
             meowVolume
           }
+          { __typename }
         "#,
         );
     }
@@ -172,6 +180,7 @@ mod tests {
               deeper_unknown_field
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -186,6 +195,7 @@ mod tests {
               unknown_field
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -200,6 +210,7 @@ mod tests {
               meowVolume
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -212,6 +223,7 @@ mod tests {
           fragment aliasedFieldTargetNotDefined on Dog {
             volume : mooVolume
           }
+          { __typename }
         "#,
         );
     }
@@ -224,6 +236,7 @@ mod tests {
           fragment aliasedLyingFieldTargetNotDefined on Dog {
             barkVolume : kawVolume
           }
+          { __typename }
         "#,
         );
     }
@@ -236,6 +249,7 @@ mod tests {
           fragment notDefinedOnInterface on Pet {
             tailLength
           }
+          { __typename }
         "#,
         );
     }
@@ -248,6 +262,7 @@ mod tests {
           fragment definedOnImplementorsButNotInterface on Pet {
             nickname
           }
+          { __typename }
         "#,
         );
     }
@@ -260,6 +275,7 @@ mod tests {
           fragment definedOnImplementorsButNotInterface on Pet {
             __typename
           }
+          { __typename }
         "#,
         );
     }
@@ -272,6 +288,7 @@ mod tests {
           fragment definedOnImplementorsQueriedOnUnion on CatOrDog {
             name
           }
+          { __typename }
         "#,
         );
     }
@@ -290,6 +307,7 @@ mod tests {
               name
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -307,6 +325,7 @@ mod tests {
               name
             }
           }
+          { __typename }
         "#,
         );
     }

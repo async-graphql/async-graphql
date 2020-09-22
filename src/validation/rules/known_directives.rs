@@ -1,7 +1,7 @@
 use crate::model::__DirectiveLocation;
 use crate::parser::types::{
-    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
-    OperationType,
+    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, Name,
+    OperationDefinition, OperationType,
 };
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
@@ -15,6 +15,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         self.location_stack
@@ -28,6 +29,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         self.location_stack.pop();
@@ -36,6 +38,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.location_stack
@@ -45,6 +48,7 @@ impl<'a> Visitor<'a> for KnownDirectives {
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.location_stack.pop();

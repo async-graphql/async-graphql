@@ -33,8 +33,8 @@ impl Serialize for Error {
             Error::Parse(err) => {
                 let mut seq = serializer.serialize_seq(Some(1))?;
                 seq.serialize_element(&serde_json::json! ({
-                    "message": err.message,
-                    "locations": [{"line": err.pos.line, "column": err.pos.column}]
+                    "message": err.to_string(),
+                    "locations": err.positions(),
                 }))?;
                 seq.end()
             }

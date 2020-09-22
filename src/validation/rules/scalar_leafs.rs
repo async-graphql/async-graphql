@@ -47,6 +47,7 @@ mod tests {
           fragment scalarSelection on Dog {
             barks
           }
+          { __typename }
         "#,
         );
     }
@@ -83,6 +84,7 @@ mod tests {
           fragment scalarSelectionWithArgs on Dog {
             doesKnowCommand(dogCommand: SIT)
           }
+          { __typename }
         "#,
         );
     }
@@ -95,6 +97,7 @@ mod tests {
           fragment scalarSelectionsNotAllowedOnBoolean on Dog {
             barks { sinceWhen }
           }
+          { __typename }
         "#,
         );
     }
@@ -107,6 +110,7 @@ mod tests {
           fragment scalarSelectionsNotAllowedOnEnum on Cat {
             furColor { inHexdec }
           }
+          { __typename }
         "#,
         );
     }
@@ -119,6 +123,7 @@ mod tests {
           fragment scalarSelectionsNotAllowedWithArgs on Dog {
             doesKnowCommand(dogCommand: SIT) { sinceWhen }
           }
+          { __typename }
         "#,
         );
     }
@@ -131,6 +136,7 @@ mod tests {
           fragment scalarSelectionsNotAllowedWithDirectives on Dog {
             name @include(if: true) { isAlsoHumanName }
           }
+          { __typename }
         "#,
         );
     }
@@ -143,6 +149,7 @@ mod tests {
           fragment scalarSelectionsNotAllowedWithDirectivesAndArgs on Dog {
             doesKnowCommand(dogCommand: SIT) @include(if: true) { sinceWhen }
           }
+          { __typename }
         "#,
         );
     }

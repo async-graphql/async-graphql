@@ -1,8 +1,6 @@
-use crate::Error;
 use pest::iterators::Pair;
 use pest::RuleType;
-use serde::ser::SerializeMap;
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::fmt;
@@ -10,7 +8,10 @@ use std::hash::{Hash, Hasher};
 use std::str::Chars;
 
 /// Original position of an element in source code.
-#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash)]
+///
+/// You can serialize and deserialize it to the GraphQL `locations` format
+/// ([reference](https://spec.graphql.org/June2018/#sec-Errors)).
+#[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize, Deserialize)]
 pub struct Pos {
     /// One-based line number.
     pub line: usize,
@@ -31,15 +32,9 @@ impl fmt::Display for Pos {
     }
 }
 
-impl Serialize for Pos {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut map = serializer.serialize_map(Some(2))?;
-        map.serialize_entry("line", &self.line)?;
-        map.serialize_entry("column", &self.column)?;
-        map.end()
+impl From<(usize, usize)> for Pos {
+    fn from((line, column): (usize, usize)) -> Self {
+        Self { line, column }
     }
 }
 
@@ -78,10 +73,6 @@ impl<T> Positioned<T> {
     #[must_use]
     pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Positioned<U> {
         Positioned::new(f(self.node), self.pos)
-    }
-
-    pub(crate) fn error_here(&self, message: impl Into<String>) -> Error {
-        Error::new(message, self.pos)
     }
 }
 

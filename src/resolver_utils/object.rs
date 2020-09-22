@@ -220,11 +220,8 @@ impl<'a> Fields<'a> {
                     let (type_condition, selection_set) = match selection {
                         Selection::Field(_) => unreachable!(),
                         Selection::FragmentSpread(spread) => {
-                            let fragment = ctx
-                                .query_env
-                                .document
-                                .fragments
-                                .get(&spread.node.fragment_name.node);
+                            let fragment =
+                                ctx.query_env.fragments.get(&spread.node.fragment_name.node);
                             let fragment = match fragment {
                                 Some(fragment) => fragment,
                                 None => {

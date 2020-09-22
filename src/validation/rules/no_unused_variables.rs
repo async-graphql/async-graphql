@@ -76,13 +76,10 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Positioned<OperationDefinition>,
+        name: Option<&'a Name>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let op_name = operation_definition
-            .node
-            .name
-            .as_ref()
-            .map(|name| &*name.node);
+        let op_name = name.map(|name| name.as_str());
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, HashSet::new());
     }
@@ -90,9 +87,10 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Positioned<FragmentDefinition>,
+        name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
+        self.current_scope = Some(Scope::Fragment(name));
     }
 
     fn enter_variable_definition(

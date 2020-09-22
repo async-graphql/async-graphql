@@ -1,5 +1,5 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::parser::types::{ExecutableDefinition, ExecutableDocument, OperationType, Selection};
+use crate::parser::types::{ExecutableDocument, OperationType, Selection};
 use crate::{Error, Variables};
 use itertools::Itertools;
 use log::{error, info, trace};
@@ -34,13 +34,10 @@ impl Extension for Logger {
 
     fn parse_end(&mut self, document: &ExecutableDocument) {
         let is_schema = document
-            .definitions
+            .operations
             .iter()
-            .filter_map(|definition| match definition {
-                ExecutableDefinition::Operation(operation) if operation.node.ty == OperationType::Query => Some(operation),
-                _ => None,
-            })
-            .any(|operation| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
+            .filter(|(_, operation)| operation.node.ty == OperationType::Query)
+            .any(|(_, operation)| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
 
         if is_schema {
             self.enabled = false;
@@ -67,7 +64,19 @@ impl Extension for Logger {
     fn error(&mut self, err: &Error) {
         match err {
             Error::Parse(err) => {
-                error!(target: "async-graphql", "[ParseError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, err.pos.line, err.pos.column, self.query, self.variables, err)
+                error!(
+                    target: "async-graphql", "[ParseError] id: \"{}\", {}query: \"{}\", variables: {}, {}",
+                    self.id,
+                    if let Some(pos) = err.positions().next() {
+                        // TODO: Make this more efficient
+                        format!("pos: [{}:{}], ", pos.line, pos.column)
+                    } else {
+                        String::new()
+                    },
+                    self.query,
+                    self.variables,
+                    err
+                )
             }
             Error::Query { pos, path, err } => {
                 if let Some(path) = path {

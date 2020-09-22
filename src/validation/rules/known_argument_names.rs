@@ -128,6 +128,7 @@ mod tests {
           fragment argOnRequiredArg on Dog {
             doesKnowCommand(dogCommand: SIT)
           }
+          { __typename }
         "#,
         );
     }
@@ -140,6 +141,7 @@ mod tests {
           fragment multipleArgs on ComplicatedArgs {
             multipleReqs(req1: 1, req2: 2)
           }
+          { __typename }
         "#,
         );
     }
@@ -152,6 +154,7 @@ mod tests {
           fragment argOnUnknownField on Dog {
             unknownField(unknownArg: SIT)
           }
+          { __typename }
         "#,
         );
     }
@@ -164,6 +167,7 @@ mod tests {
           fragment multipleArgsReverseOrder on ComplicatedArgs {
             multipleReqs(req2: 2, req1: 1)
           }
+          { __typename }
         "#,
         );
     }
@@ -176,6 +180,7 @@ mod tests {
           fragment noArgOnOptionalArg on Dog {
             isHousetrained
           }
+          { __typename }
         "#,
         );
     }
@@ -233,6 +238,7 @@ mod tests {
           fragment invalidArgName on Dog {
             doesKnowCommand(unknown: true)
           }
+          { __typename }
         "#,
         );
     }
@@ -245,6 +251,7 @@ mod tests {
           fragment oneGoodArgOneInvalidArg on Dog {
             doesKnowCommand(whoknows: 1, dogCommand: SIT, unknown: true)
           }
+          { __typename }
         "#,
         );
     }

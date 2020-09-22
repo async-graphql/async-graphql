@@ -1,4 +1,4 @@
-use crate::parser::types::{OperationDefinition, VariableDefinition};
+use crate::parser::types::{Name, OperationDefinition, VariableDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashSet;
@@ -12,6 +12,7 @@ impl<'a> Visitor<'a> for UniqueVariableNames<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         self.names.clear();

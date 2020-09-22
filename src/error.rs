@@ -192,9 +192,9 @@ pub enum QueryError {
         object: String,
     },
 
-    /// An operation was missing from the query.
-    #[error("Missing operation")]
-    MissingOperation,
+    /// `operation_name` in the request was required but not provided.
+    #[error("Operation name required in request")]
+    RequiredOperationName,
 
     /// The operation name was unknown.
     #[error("Unknown operation named \"{name}\"")]

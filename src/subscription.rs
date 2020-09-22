@@ -41,7 +41,6 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync
             Selection::FragmentSpread(fragment_spread) => {
                 if let Some(fragment) = ctx
                     .query_env
-                    .document
                     .fragments
                     .get(&fragment_spread.node.fragment_name.node)
                 {

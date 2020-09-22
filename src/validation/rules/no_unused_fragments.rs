@@ -1,6 +1,5 @@
 use crate::parser::types::{
-    ExecutableDefinition, ExecutableDocument, FragmentDefinition, FragmentSpread,
-    OperationDefinition,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition,
 };
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
@@ -36,19 +35,11 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         let mut reachable = HashSet::new();
 
-        for def in &doc.definitions {
-            if let ExecutableDefinition::Operation(operation_definition) = def {
-                self.find_reachable_fragments(
-                    &Scope::Operation(
-                        operation_definition
-                            .node
-                            .name
-                            .as_ref()
-                            .map(|name| &*name.node),
-                    ),
-                    &mut reachable,
-                );
-            }
+        for (name, _) in doc.operations.iter() {
+            self.find_reachable_fragments(
+                &Scope::Operation(name.map(|name| name.as_str())),
+                &mut reachable,
+            );
         }
 
         for (fragment_name, pos) in &self.defined_fragments {
@@ -64,25 +55,21 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     fn enter_operation_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        operation_definition: &'a Positioned<OperationDefinition>,
+        name: Option<&'a Name>,
+        _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(
-            operation_definition
-                .node
-                .name
-                .as_ref()
-                .map(|name| &*name.node),
-        ));
+        self.current_scope = Some(Scope::Operation(name.map(|name| name.as_str())));
     }
 
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_scope = Some(Scope::Fragment(&fragment_definition.node.name.node));
+        self.current_scope = Some(Scope::Fragment(name));
         self.defined_fragments
-            .insert((&fragment_definition.node.name.node, fragment_definition.pos));
+            .insert((name, fragment_definition.pos));
     }
 
     fn enter_fragment_spread(

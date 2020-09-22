@@ -1,6 +1,4 @@
-use crate::parser::types::{
-    ExecutableDefinition, ExecutableDocument, FragmentSpread, InlineFragment, TypeCondition,
-};
+use crate::parser::types::{ExecutableDocument, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 use std::collections::HashMap;
@@ -12,12 +10,9 @@ pub struct PossibleFragmentSpreads<'a> {
 
 impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
     fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
-        for d in &doc.definitions {
-            if let ExecutableDefinition::Fragment(fragment) = &d {
-                let TypeCondition { on: type_name } = &fragment.node.type_condition.node;
-                self.fragment_types
-                    .insert(&fragment.node.name.node, &type_name.node);
-            }
+        for (name, fragment) in doc.fragments.iter() {
+            self.fragment_types
+                .insert(name.as_str(), &fragment.node.type_condition.node.on.node);
         }
     }
 
@@ -91,6 +86,7 @@ mod tests {
             r#"
           fragment objectWithinObject on Dog { ...dogFragment }
           fragment dogFragment on Dog { barkVolume }
+          { __typename }
         "#,
         );
     }
@@ -101,6 +97,7 @@ mod tests {
             factory,
             r#"
           fragment objectWithinObjectAnon on Dog { ... on Dog { barkVolume } }
+          { __typename }
         "#,
         );
     }
@@ -112,6 +109,7 @@ mod tests {
             r#"
           fragment objectWithinInterface on Pet { ...dogFragment }
           fragment dogFragment on Dog { barkVolume }
+          { __typename }
         "#,
         );
     }
@@ -123,6 +121,7 @@ mod tests {
             r#"
           fragment objectWithinUnion on CatOrDog { ...dogFragment }
           fragment dogFragment on Dog { barkVolume }
+          { __typename }
         "#,
         );
     }
@@ -134,6 +133,7 @@ mod tests {
             r#"
           fragment unionWithinObject on Dog { ...catOrDogFragment }
           fragment catOrDogFragment on CatOrDog { __typename }
+          { __typename }
         "#,
         );
     }
@@ -145,6 +145,7 @@ mod tests {
             r#"
           fragment unionWithinInterface on Pet { ...catOrDogFragment }
           fragment catOrDogFragment on CatOrDog { __typename }
+          { __typename }
         "#,
         );
     }
@@ -156,6 +157,7 @@ mod tests {
             r#"
           fragment unionWithinUnion on DogOrHuman { ...catOrDogFragment }
           fragment catOrDogFragment on CatOrDog { __typename }
+          { __typename }
         "#,
         );
     }
@@ -167,6 +169,7 @@ mod tests {
             r#"
           fragment interfaceWithinObject on Dog { ...petFragment }
           fragment petFragment on Pet { name }
+          { __typename }
         "#,
         );
     }
@@ -178,6 +181,7 @@ mod tests {
             r#"
           fragment interfaceWithinInterface on Pet { ...beingFragment }
           fragment beingFragment on Being { name }
+          { __typename }
         "#,
         );
     }
@@ -188,6 +192,7 @@ mod tests {
             factory,
             r#"
           fragment interfaceWithinInterface on Pet { ... on Being { name } }
+          { __typename }
         "#,
         );
     }
@@ -199,6 +204,7 @@ mod tests {
             r#"
           fragment interfaceWithinUnion on CatOrDog { ...petFragment }
           fragment petFragment on Pet { name }
+          { __typename }
         "#,
         );
     }
@@ -210,6 +216,7 @@ mod tests {
             r#"
           fragment invalidObjectWithinObject on Cat { ...dogFragment }
           fragment dogFragment on Dog { barkVolume }
+          { __typename }
         "#,
         );
     }
@@ -222,6 +229,7 @@ mod tests {
           fragment invalidObjectWithinObjectAnon on Cat {
             ... on Dog { barkVolume }
           }
+          { __typename }
         "#,
         );
     }
@@ -233,6 +241,7 @@ mod tests {
             r#"
           fragment invalidObjectWithinInterface on Pet { ...humanFragment }
           fragment humanFragment on Human { pets { name } }
+          { __typename }
         "#,
         );
     }
@@ -244,6 +253,7 @@ mod tests {
             r#"
           fragment invalidObjectWithinUnion on CatOrDog { ...humanFragment }
           fragment humanFragment on Human { pets { name } }
+          { __typename }
         "#,
         );
     }
@@ -255,6 +265,7 @@ mod tests {
             r#"
           fragment invalidUnionWithinObject on Human { ...catOrDogFragment }
           fragment catOrDogFragment on CatOrDog { __typename }
+          { __typename }
         "#,
         );
     }
@@ -266,6 +277,7 @@ mod tests {
             r#"
           fragment invalidUnionWithinInterface on Pet { ...humanOrAlienFragment }
           fragment humanOrAlienFragment on HumanOrAlien { __typename }
+          { __typename }
         "#,
         );
     }
@@ -277,6 +289,7 @@ mod tests {
             r#"
           fragment invalidUnionWithinUnion on CatOrDog { ...humanOrAlienFragment }
           fragment humanOrAlienFragment on HumanOrAlien { __typename }
+          { __typename }
         "#,
         );
     }
@@ -288,6 +301,7 @@ mod tests {
             r#"
           fragment invalidInterfaceWithinObject on Cat { ...intelligentFragment }
           fragment intelligentFragment on Intelligent { iq }
+          { __typename }
         "#,
         );
     }
@@ -301,6 +315,7 @@ mod tests {
             ...intelligentFragment
           }
           fragment intelligentFragment on Intelligent { iq }
+          { __typename }
         "#,
         );
     }
@@ -313,6 +328,7 @@ mod tests {
           fragment invalidInterfaceWithinInterfaceAnon on Pet {
             ...on Intelligent { iq }
           }
+          { __typename }
         "#,
         );
     }
@@ -324,6 +340,7 @@ mod tests {
             r#"
           fragment invalidInterfaceWithinUnion on HumanOrAlien { ...petFragment }
           fragment petFragment on Pet { name }
+          { __typename }
         "#,
         );
     }

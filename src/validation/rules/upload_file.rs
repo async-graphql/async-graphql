@@ -1,4 +1,4 @@
-use crate::parser::types::{OperationDefinition, OperationType};
+use crate::parser::types::{Name, OperationDefinition, OperationType};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
 
@@ -9,6 +9,7 @@ impl<'a> Visitor<'a> for UploadFile {
     fn enter_operation_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        _name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
         for var in &operation_definition.node.variable_definitions {

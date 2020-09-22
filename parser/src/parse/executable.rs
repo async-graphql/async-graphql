@@ -7,52 +7,133 @@ use super::*;
 /// Fails if the query is not a valid GraphQL document.
 pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
     let mut pc = PositionCalculator::new(input.as_ref());
-    Ok(parse_executable_document(
+
+    let items = parse_definition_items(
         exactly_one(GraphQLParser::parse(
             Rule::executable_document,
             input.as_ref(),
         )?),
         &mut pc,
-    )?)
-}
+    )?;
 
-fn parse_executable_document(
-    pair: Pair<Rule>,
-    pc: &mut PositionCalculator,
-) -> Result<ExecutableDocument> {
-    debug_assert_eq!(pair.as_rule(), Rule::executable_document);
+    let mut operations = None;
+    let mut fragments: HashMap<_, Positioned<FragmentDefinition>> = HashMap::new();
+
+    for item in items {
+        match item {
+            DefinitionItem::Operation(item) => {
+                if let Some(name) = item.node.name {
+                    let operations = operations
+                        .get_or_insert_with(|| DocumentOperations::Multiple(HashMap::new()));
+                    let operations = match operations {
+                        DocumentOperations::Single(anonymous) => {
+                            return Err(Error::MultipleOperations {
+                                anonymous: anonymous.pos,
+                                operation: item.pos,
+                            })
+                        }
+                        DocumentOperations::Multiple(operations) => operations,
+                    };
+
+                    match operations.entry(name.node) {
+                        hash_map::Entry::Occupied(entry) => {
+                            let (name, first) = entry.remove_entry();
+                            return Err(Error::OperationDuplicated {
+                                operation: name,
+                                first: first.pos,
+                                second: item.pos,
+                            });
+                        }
+                        hash_map::Entry::Vacant(entry) => {
+                            entry.insert(Positioned::new(item.node.definition, item.pos));
+                        }
+                    }
+                } else {
+                    match operations {
+                        Some(operations) => {
+                            return Err(Error::MultipleOperations {
+                                anonymous: item.pos,
+                                operation: match operations {
+                                    DocumentOperations::Single(single) => single.pos,
+                                    DocumentOperations::Multiple(map) => {
+                                        map.values().next().unwrap().pos
+                                    }
+                                },
+                            });
+                        }
+                        None => {
+                            operations = Some(DocumentOperations::Single(Positioned::new(
+                                item.node.definition,
+                                item.pos,
+                            )));
+                        }
+                    }
+                }
+            }
+            DefinitionItem::Fragment(item) => match fragments.entry(item.node.name.node) {
+                hash_map::Entry::Occupied(entry) => {
+                    let (name, first) = entry.remove_entry();
+                    return Err(Error::FragmentDuplicated {
+                        fragment: name,
+                        first: first.pos,
+                        second: item.pos,
+                    });
+                }
+                hash_map::Entry::Vacant(entry) => {
+                    entry.insert(Positioned::new(item.node.definition, item.pos));
+                }
+            },
+        }
+    }
 
     Ok(ExecutableDocument {
-        definitions: pair
-            .into_inner()
-            .filter(|pair| pair.as_rule() != Rule::EOI)
-            .map(|pair| parse_executable_definition(pair, pc))
-            .collect::<Result<_>>()?,
+        operations: operations.ok_or(Error::MissingOperation)?,
+        fragments,
     })
 }
 
-fn parse_executable_definition(
+fn parse_definition_items(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<ExecutableDefinition> {
+) -> Result<Vec<DefinitionItem>> {
+    debug_assert_eq!(pair.as_rule(), Rule::executable_document);
+
+    Ok(pair
+        .into_inner()
+        .filter(|pair| pair.as_rule() != Rule::EOI)
+        .map(|pair| parse_definition_item(pair, pc))
+        .collect::<Result<_>>()?)
+}
+
+enum DefinitionItem {
+    Operation(Positioned<OperationDefinitionItem>),
+    Fragment(Positioned<FragmentDefinitionItem>),
+}
+
+fn parse_definition_item(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<DefinitionItem> {
     debug_assert_eq!(pair.as_rule(), Rule::executable_definition);
 
     let pair = exactly_one(pair.into_inner());
     Ok(match pair.as_rule() {
         Rule::operation_definition => {
-            ExecutableDefinition::Operation(parse_operation_definition(pair, pc)?)
+            DefinitionItem::Operation(parse_operation_definition_item(pair, pc)?)
         }
         Rule::fragment_definition => {
-            ExecutableDefinition::Fragment(parse_fragment_definition(pair, pc)?)
+            DefinitionItem::Fragment(parse_fragment_definition_item(pair, pc)?)
         }
         _ => unreachable!(),
     })
 }
 
-fn parse_operation_definition(
+struct OperationDefinitionItem {
+    name: Option<Positioned<Name>>,
+    definition: OperationDefinition,
+}
+
+fn parse_operation_definition_item(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<Positioned<OperationDefinition>> {
+) -> Result<Positioned<OperationDefinitionItem>> {
     debug_assert_eq!(pair.as_rule(), Rule::operation_definition);
 
     let pos = pc.step(&pair);
@@ -60,12 +141,14 @@ fn parse_operation_definition(
     Ok(Positioned::new(
         match pair.as_rule() {
             Rule::named_operation_definition => parse_named_operation_definition(pair, pc)?,
-            Rule::selection_set => OperationDefinition {
-                ty: OperationType::Query,
+            Rule::selection_set => OperationDefinitionItem {
                 name: None,
-                variable_definitions: Vec::new(),
-                directives: Vec::new(),
-                selection_set: parse_selection_set(pair, pc)?,
+                definition: OperationDefinition {
+                    ty: OperationType::Query,
+                    variable_definitions: Vec::new(),
+                    directives: Vec::new(),
+                    selection_set: parse_selection_set(pair, pc)?,
+                },
             },
             _ => unreachable!(),
         },
@@ -76,7 +159,7 @@ fn parse_operation_definition(
 fn parse_named_operation_definition(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<OperationDefinition> {
+) -> Result<OperationDefinitionItem> {
     debug_assert_eq!(pair.as_rule(), Rule::named_operation_definition);
 
     let mut pairs = pair.into_inner();
@@ -91,12 +174,14 @@ fn parse_named_operation_definition(
 
     debug_assert_eq!(pairs.next(), None);
 
-    Ok(OperationDefinition {
-        ty: ty.node,
+    Ok(OperationDefinitionItem {
         name,
-        variable_definitions: variable_definitions.unwrap_or_default(),
-        directives,
-        selection_set,
+        definition: OperationDefinition {
+            ty: ty.node,
+            variable_definitions: variable_definitions.unwrap_or_default(),
+            directives,
+            selection_set,
+        },
     })
 }
 
@@ -259,10 +344,15 @@ fn parse_inline_fragment(
     ))
 }
 
-fn parse_fragment_definition(
+struct FragmentDefinitionItem {
+    name: Positioned<Name>,
+    definition: FragmentDefinition,
+}
+
+fn parse_fragment_definition_item(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
-) -> Result<Positioned<FragmentDefinition>> {
+) -> Result<Positioned<FragmentDefinitionItem>> {
     debug_assert_eq!(pair.as_rule(), Rule::fragment_definition);
 
     let pos = pc.step(&pair);
@@ -276,11 +366,13 @@ fn parse_fragment_definition(
     debug_assert_eq!(pairs.next(), None);
 
     Ok(Positioned::new(
-        FragmentDefinition {
+        FragmentDefinitionItem {
             name,
-            type_condition,
-            directives,
-            selection_set,
+            definition: FragmentDefinition {
+                type_condition,
+                directives,
+                selection_set,
+            },
         },
         pos,
     ))
@@ -310,6 +402,8 @@ mod tests {
     fn test_parser() {
         for entry in fs::read_dir("tests/executables").unwrap() {
             if let Ok(entry) = entry {
+                eprintln!("Parsing file {}", entry.path().display());
+
                 GraphQLParser::parse(
                     Rule::executable_document,
                     &fs::read_to_string(entry.path()).unwrap(),
@@ -323,6 +417,8 @@ mod tests {
     fn test_parser_ast() {
         for entry in fs::read_dir("tests/executables").unwrap() {
             if let Ok(entry) = entry {
+                eprintln!("Parsing and transforming file {}", entry.path().display());
+
                 parse_query(fs::read_to_string(entry.path()).unwrap()).unwrap();
             }
         }

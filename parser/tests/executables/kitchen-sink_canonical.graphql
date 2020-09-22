@@ -44,7 +44,7 @@ fragment frag on Friend {
   foo(size: $size, bar: $b, obj: {key: "value"})
 }
 
-{
+query otherQuery {
   unnamed(truthy: true, falsey: false, nullish: null)
   query
 }

@@ -1,4 +1,6 @@
-use crate::parser::types::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
+use crate::parser::types::{
+    FragmentDefinition, InlineFragment, Name, TypeCondition, VariableDefinition,
+};
 use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
@@ -10,6 +12,7 @@ impl<'a> Visitor<'a> for KnownTypeNames {
     fn enter_fragment_definition(
         &mut self,
         ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         let TypeCondition { on: name } = &fragment_definition.node.type_condition.node;

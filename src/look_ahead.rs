@@ -1,15 +1,20 @@
-use crate::parser::types::{ExecutableDocumentData, Field, Selection, SelectionSet};
+use crate::parser::types::{Field, FragmentDefinition, Name, Selection, SelectionSet};
+use crate::Positioned;
+use std::collections::HashMap;
 
 /// A selection performed by a query.
 pub struct Lookahead<'a> {
-    document: &'a ExecutableDocumentData,
+    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     field: Option<&'a Field>,
 }
 
 impl<'a> Lookahead<'a> {
-    pub(crate) fn new(document: &'a ExecutableDocumentData, field: &'a Field) -> Self {
+    pub(crate) fn new(
+        fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
+        field: &'a Field,
+    ) -> Self {
         Self {
-            document,
+            fragments,
             field: Some(field),
         }
     }
@@ -21,10 +26,10 @@ impl<'a> Lookahead<'a> {
     /// represents `{ b }`.
     pub fn field(&self, name: &str) -> Self {
         Self {
-            document: self.document,
+            fragments: self.fragments,
             field: self
                 .field
-                .and_then(|field| find(self.document, &field.selection_set.node, name)),
+                .and_then(|field| find(self.fragments, &field.selection_set.node, name)),
         }
     }
 
@@ -36,7 +41,7 @@ impl<'a> Lookahead<'a> {
 }
 
 fn find<'a>(
-    document: &'a ExecutableDocumentData,
+    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     selection_set: &'a SelectionSet,
     name: &str,
 ) -> Option<&'a Field> {
@@ -52,12 +57,11 @@ fn find<'a>(
                 }
             }
             Selection::InlineFragment(fragment) => {
-                find(document, &fragment.node.selection_set.node, name)
+                find(fragments, &fragment.node.selection_set.node, name)
             }
-            Selection::FragmentSpread(spread) => document
-                .fragments
+            Selection::FragmentSpread(spread) => fragments
                 .get(&spread.node.fragment_name.node)
-                .and_then(|fragment| find(document, &fragment.node.selection_set.node, name)),
+                .and_then(|fragment| find(fragments, &fragment.node.selection_set.node, name)),
         })
 }
 

@@ -1,5 +1,5 @@
 use crate::error::RuleError;
-use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread};
+use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread, Name};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Pos, Positioned};
 use std::collections::{HashMap, HashSet};
@@ -75,16 +75,17 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
     fn enter_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
-        fragment_definition: &'a Positioned<FragmentDefinition>,
+        name: &'a Name,
+        _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        self.current_fragment = Some(&fragment_definition.node.name.node);
-        self.fragment_order
-            .push(&fragment_definition.node.name.node);
+        self.current_fragment = Some(name);
+        self.fragment_order.push(name);
     }
 
     fn exit_fragment_definition(
         &mut self,
         _ctx: &mut VisitorContext<'a>,
+        _name: &'a Name,
         _fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
         self.current_fragment = None;
@@ -122,6 +123,7 @@ mod tests {
             r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { name }
+          { __typename }
         "#,
         );
     }
@@ -133,6 +135,7 @@ mod tests {
             r#"
           fragment fragA on Dog { ...fragB, ...fragB }
           fragment fragB on Dog { name }
+          { __typename }
         "#,
         );
     }
@@ -145,6 +148,7 @@ mod tests {
           fragment fragA on Dog { ...fragB, ...fragC }
           fragment fragB on Dog { ...fragC }
           fragment fragC on Dog { name }
+          { __typename }
         "#,
         );
     }
@@ -162,6 +166,7 @@ mod tests {
             ... on Dog { ...nameFragment }
             ... on Cat { ...nameFragment }
           }
+          { __typename }
         "#,
         );
     }
@@ -174,6 +179,7 @@ mod tests {
           fragment nameFragment on Pet {
             ...UnknownFragment
           }
+          { __typename }
         "#,
         );
     }
@@ -184,6 +190,7 @@ mod tests {
             factory,
             r#"
           fragment fragA on Human { relatives { ...fragA } },
+          { __typename }
         "#,
         );
     }
@@ -194,6 +201,7 @@ mod tests {
             factory,
             r#"
           fragment fragA on Dog { ...fragA }
+          { __typename }
         "#,
         );
     }
@@ -208,6 +216,7 @@ mod tests {
               ...fragA
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -219,6 +228,7 @@ mod tests {
             r#"
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragA }
+          { __typename }
         "#,
         );
     }
@@ -230,6 +240,7 @@ mod tests {
             r#"
           fragment fragB on Dog { ...fragA }
           fragment fragA on Dog { ...fragB }
+          { __typename }
         "#,
         );
     }
@@ -249,6 +260,7 @@ mod tests {
               ...fragA
             }
           }
+          { __typename }
         "#,
         );
     }
@@ -266,6 +278,7 @@ mod tests {
           fragment fragZ on Dog { ...fragO }
           fragment fragO on Dog { ...fragP }
           fragment fragP on Dog { ...fragA, ...fragX }
+          { __typename }
         "#,
         );
     }
@@ -278,6 +291,7 @@ mod tests {
           fragment fragA on Dog { ...fragB, ...fragC }
           fragment fragB on Dog { ...fragA }
           fragment fragC on Dog { ...fragA }
+          { __typename }
         "#,
         );
     }
@@ -290,6 +304,7 @@ mod tests {
           fragment fragA on Dog { ...fragC }
           fragment fragB on Dog { ...fragC }
           fragment fragC on Dog { ...fragA, ...fragB }
+          { __typename }
         "#,
         );
     }
@@ -302,6 +317,7 @@ mod tests {
           fragment fragA on Dog { ...fragB }
           fragment fragB on Dog { ...fragB, ...fragC }
           fragment fragC on Dog { ...fragA, ...fragB }
+          { __typename }
         "#,
         );
     }
