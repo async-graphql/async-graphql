@@ -320,6 +320,7 @@ where
             self.0
                 .extensions
                 .iter()
+                .chain(request.extensions.iter())
                 .map(|factory| factory())
                 .collect_vec(),
         ));

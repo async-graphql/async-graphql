@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
 use crate::parser::types::{ConstValue, Value};
-use crate::{registry, QueryPathSegment, Variables};
+use crate::{registry, QueryPathSegment};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -36,7 +36,6 @@ fn referenced_variables_to_vec<'a>(value: &'a Value, vars: &mut Vec<&'a str>) {
 
 pub fn is_valid_input_value(
     registry: &registry::Registry,
-    variables: Option<&Variables>,
     type_name: &str,
     value: &ConstValue,
     path_node: QueryPathNode,
@@ -47,13 +46,12 @@ pub fn is_valid_input_value(
                 &path_node,
                 format!("expected type \"{}\"", type_name),
             )),
-            _ => is_valid_input_value(registry, variables, type_name, value, path_node),
+            _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::MetaTypeName::List(type_name) => match value {
             ConstValue::List(elems) => elems.iter().enumerate().find_map(|(idx, elem)| {
                 is_valid_input_value(
                     registry,
-                    variables,
                     type_name,
                     elem,
                     QueryPathNode {
@@ -62,7 +60,7 @@ pub fn is_valid_input_value(
                     },
                 )
             }),
-            _ => is_valid_input_value(registry, variables, type_name, value, path_node),
+            _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::MetaTypeName::Named(type_name) => {
             if let ConstValue::Null = value {
@@ -86,6 +84,19 @@ pub fn is_valid_input_value(
                     ..
                 } => match value {
                     ConstValue::Enum(name) => {
+                        if !enum_values.contains_key(name.as_str()) {
+                            Some(valid_error(
+                                &path_node,
+                                format!(
+                                    "enumeration type \"{}\" does not contain the value \"{}\"",
+                                    enum_name, name
+                                ),
+                            ))
+                        } else {
+                            None
+                        }
+                    }
+                    ConstValue::String(name) => {
                         if !enum_values.contains_key(name.as_str()) {
                             Some(valid_error(
                                 &path_node,
@@ -131,7 +142,6 @@ pub fn is_valid_input_value(
 
                                 if let Some(reason) = is_valid_input_value(
                                     registry,
-                                    variables,
                                     &field.ty,
                                     value,
                                     QueryPathNode {

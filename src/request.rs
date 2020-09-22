@@ -1,3 +1,4 @@
+use crate::extensions::{BoxExtension, Extension};
 use crate::parser::types::UploadValue;
 use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
@@ -8,22 +9,29 @@ use std::fs::File;
 ///
 /// This can be deserialized from a structure of the query string, the operation name and the
 /// variables. The names are all in `camelCase` (e.g. `operationName`).
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     /// The query source of the request.
     pub query: String,
+
     /// The operation name of the request.
     #[serde(default, rename = "operationName")]
     pub operation_name: Option<String>,
+
     /// The variables of the request.
     #[serde(default)]
     pub variables: Variables,
+
     /// The data of the request that can be accessed through `Context::data`.
     ///
     /// **This data is only valid for this request**
     #[serde(skip)]
     pub data: Data,
+
+    /// Extensions for this request.
+    #[serde(skip)]
+    pub extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 impl Request {
@@ -34,6 +42,7 @@ impl Request {
             operation_name: None,
             variables: Variables::default(),
             data: Data::default(),
+            extensions: Vec::default(),
         }
     }
 
@@ -79,6 +88,16 @@ impl Request {
             content,
         });
     }
+
+    /// Add an extension
+    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
+        mut self,
+        extension_factory: F,
+    ) -> Self {
+        self.extensions
+            .push(Box::new(move || Box::new(extension_factory())));
+        self
+    }
 }
 
 impl<T: Into<String>> From<T> for Request {
@@ -90,7 +109,7 @@ impl<T: Into<String>> From<T> for Request {
 /// Batch support for GraphQL requests, which is either a single query, or an array of queries
 ///
 /// **Reference:** <https://www.apollographql.com/blog/batching-client-graphql-queries-a685f5bcd41b/>
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(untagged)]
 pub enum BatchRequest {
     /// Single query

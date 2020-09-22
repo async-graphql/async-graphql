@@ -4,7 +4,7 @@
 //! <!-- CI -->
 //! <img src="https://github.com/async-graphql/async-graphql/workflows/CI/badge.svg" />
 //! <!-- codecov -->
-//  <img src="https://codecov.io/gh/async-graphql/async-graphql/branch/master/graph/badge.svg" />
+//! <img src="https://codecov.io/gh/async-graphql/async-graphql/branch/master/graph/badge.svg" />
 //! <!-- Crates version -->
 //! <a href="https://crates.io/crates/async-graphql">
 //! <img src="https://img.shields.io/crates/v/async-graphql.svg?style=flat-square"
@@ -163,6 +163,7 @@ pub use look_ahead::Lookahead;
 pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
+pub use resolver_utils::ObjectType;
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
