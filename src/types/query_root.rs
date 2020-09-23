@@ -130,7 +130,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
                 &Service {
-                    sdl: Some(ctx.schema_env.registry.create_federation_sdl()),
+                    sdl: Some(ctx.schema_env.registry.export_sdl(true)),
                 },
                 &ctx_obj,
                 ctx.item,

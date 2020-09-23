@@ -1,9 +1,9 @@
 mod cache_control;
-mod federation;
+mod export_sdl;
 
 use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
 use crate::validators::InputValueValidator;
-use crate::{model, Value};
+use crate::{model, Any, Type, Value};
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
 use std::collections::{HashMap, HashSet};
@@ -253,10 +253,11 @@ pub struct MetaDirective {
 }
 
 pub struct Registry {
-    pub types: HashMap<String, MetaType>,
+    pub types: IndexMap<String, MetaType>,
     pub directives: HashMap<String, MetaDirective>,
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
+    pub is_empty_query: bool,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
 }
@@ -367,5 +368,86 @@ impl Registry {
                 possible_types,
             },
         );
+    }
+
+    pub(crate) fn create_federation_types(&mut self) {
+        Any::create_type_info(self);
+
+        self.types.insert(
+            "_Service".to_string(),
+            MetaType::Object {
+                name: "_Service".to_string(),
+                description: None,
+                fields: {
+                    let mut fields = IndexMap::new();
+                    fields.insert(
+                        "sdl".to_string(),
+                        MetaField {
+                            name: "sdl".to_string(),
+                            description: None,
+                            args: Default::default(),
+                            ty: "String".to_string(),
+                            deprecation: None,
+                            cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
+                        },
+                    );
+                    fields
+                },
+                cache_control: Default::default(),
+                extends: false,
+                keys: None,
+            },
+        );
+
+        self.create_entity_type();
+
+        let query_root = self.types.get_mut(&self.query_type).unwrap();
+        if let MetaType::Object { fields, .. } = query_root {
+            fields.insert(
+                "_service".to_string(),
+                MetaField {
+                    name: "_service".to_string(),
+                    description: None,
+                    args: Default::default(),
+                    ty: "_Service!".to_string(),
+                    deprecation: None,
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                },
+            );
+
+            fields.insert(
+                "_entities".to_string(),
+                MetaField {
+                    name: "_entities".to_string(),
+                    description: None,
+                    args: {
+                        let mut args = IndexMap::new();
+                        args.insert(
+                            "representations",
+                            MetaInputValue {
+                                name: "representations",
+                                description: None,
+                                ty: "[_Any!]!".to_string(),
+                                default_value: None,
+                                validator: None,
+                            },
+                        );
+                        args
+                    },
+                    ty: "[_Entity]!".to_string(),
+                    deprecation: None,
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                },
+            );
+        }
     }
 }

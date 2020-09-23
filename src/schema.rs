@@ -197,10 +197,29 @@ where
         mutation: Mutation,
         subscription: Subscription,
     ) -> SchemaBuilder<Query, Mutation, Subscription> {
+        SchemaBuilder {
+            validation_mode: ValidationMode::Strict,
+            query: QueryRoot {
+                inner: query,
+                disable_introspection: false,
+            },
+            mutation,
+            subscription,
+            registry: Self::create_registry(),
+            data: Default::default(),
+            complexity: None,
+            depth: None,
+            extensions: Default::default(),
+            enable_federation: false,
+        }
+    }
+
+    fn create_registry() -> Registry {
         let mut registry = Registry {
             types: Default::default(),
             directives: Default::default(),
             implements: Default::default(),
+            is_empty_query: Query::is_empty(),
             query_type: Query::type_name().to_string(),
             mutation_type: if Mutation::is_empty() {
                 None
@@ -278,21 +297,7 @@ where
             Subscription::create_type_info(&mut registry);
         }
 
-        SchemaBuilder {
-            validation_mode: ValidationMode::Strict,
-            query: QueryRoot {
-                inner: query,
-                disable_introspection: false,
-            },
-            mutation,
-            subscription,
-            registry,
-            data: Default::default(),
-            complexity: None,
-            depth: None,
-            extensions: Default::default(),
-            enable_federation: false,
-        }
+        registry
     }
 
     /// Create a schema
@@ -302,6 +307,11 @@ where
         subscription: Subscription,
     ) -> Schema<Query, Mutation, Subscription> {
         Self::build(query, mutation, subscription).finish()
+    }
+
+    /// Returns SDL(Schema Definition Language) of this schema.
+    pub fn sdl() -> String {
+        Self::create_registry().export_sdl(false)
     }
 
     // TODO: Remove the allow
