@@ -168,9 +168,9 @@ pub use validation::ValidationMode;
 
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
-pub use types::*;
 #[doc(no_inline)]
 pub use resolver_utils::{EnumType, ObjectType, ScalarType};
+pub use types::*;
 
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;

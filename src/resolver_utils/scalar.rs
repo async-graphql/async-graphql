@@ -1,4 +1,4 @@
-use crate::{Value, InputValueResult};
+use crate::{InputValueResult, Value};
 
 /// A GraphQL scalar.
 ///
