@@ -9,9 +9,9 @@ pub struct EnumItem<T> {
     pub value: T,
 }
 
-/// An enum value.
+/// A GraphQL enum.
 pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
-    /// Get a list of the variants of the enum value.
+    /// Get a list of possible variants of the enum and their values.
     fn items() -> &'static [EnumItem<Self>];
 }
 

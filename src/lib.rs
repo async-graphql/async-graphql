@@ -128,13 +128,12 @@ mod validation;
 pub mod extensions;
 pub mod guard;
 pub mod http;
+pub mod resolver_utils;
 pub mod types;
 pub mod validators;
 
 #[doc(hidden)]
 pub mod registry;
-#[doc(hidden)]
-pub mod resolver_utils;
 #[doc(hidden)]
 pub use async_stream;
 #[doc(hidden)]
@@ -151,7 +150,7 @@ pub use serde_json;
 pub use subscription::SubscriptionType;
 
 pub use async_graphql_parser as parser;
-pub use base::{InputValueType, OutputValueType, ScalarType, Type};
+pub use base::{InputValueType, OutputValueType, Type};
 pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, Variables,
 };
@@ -163,7 +162,6 @@ pub use look_ahead::Lookahead;
 pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
-pub use resolver_utils::ObjectType;
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
@@ -171,6 +169,8 @@ pub use validation::ValidationMode;
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
 pub use types::*;
+#[doc(no_inline)]
+pub use resolver_utils::{EnumType, ObjectType, ScalarType};
 
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;

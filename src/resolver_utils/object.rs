@@ -36,7 +36,9 @@ pub trait ObjectType: OutputValueType {
         fields.add_set(ctx, self)
     }
 
-    /// Query entities with params
+    /// Find the GraphQL entity with the given name from the parameter.
+    ///
+    /// Objects should override this in case they are the query root.
     async fn find_entity(&self, ctx: &Context<'_>, _params: &Value) -> Result<serde_json::Value> {
         Err(QueryError::EntityNotFound.into_error(ctx.item.pos))
     }
@@ -105,7 +107,7 @@ pub async fn resolve_object_serial<'a, T: ObjectType + Send + Sync>(
 type BoxFieldFuture<'a> =
     Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
 
-/// A set of fields on an object.
+/// A set of fields on an object that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 
 impl<'a> Fields<'a> {
