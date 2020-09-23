@@ -49,7 +49,12 @@ impl Registry {
             }
 
             if field.description.is_some() && !federation {
-                writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", field.description.unwrap().replace("\n", "\n\t")).ok();
+                writeln!(
+                    sdl,
+                    "\t\"\"\"\n\t{}\n\t\"\"\"",
+                    field.description.unwrap().replace("\n", "\n\t")
+                )
+                .ok();
             }
             if !field.args.is_empty() {
                 write!(
@@ -87,9 +92,7 @@ impl Registry {
     fn export_type(&self, ty: &MetaType, sdl: &mut String, federation: bool) {
         match ty {
             MetaType::Scalar {
-                name,
-                description,
-                ..
+                name, description, ..
             } => {
                 const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID"];
                 const FEDERATION_SCALARS: &[&str] = &["Any"];
@@ -174,7 +177,8 @@ impl Registry {
                 writeln!(sdl, "}}").ok();
             }
             MetaType::Enum {
-                name, enum_values,
+                name,
+                enum_values,
                 description,
                 ..
             } => {
