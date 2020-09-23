@@ -98,6 +98,19 @@ pub fn is_valid_input_value(
                             None
                         }
                     }
+                    ConstValue::String(name) => {
+                        if !enum_values.contains_key(name.as_str()) {
+                            Some(valid_error(
+                                &path_node,
+                                format!(
+                                    "enumeration type \"{}\" does not contain the value \"{}\"",
+                                    enum_name, name
+                                ),
+                            ))
+                        } else {
+                            None
+                        }
+                    }
                     _ => Some(valid_error(
                         &path_node,
                         format!("expected type \"{}\"", type_name),
