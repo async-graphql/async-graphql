@@ -14,9 +14,6 @@ fn quickstart() -> Result<()> {
         let listen_addr = test_utils::find_listen_addr().await;
 
         let server = Task::<Result<()>>::spawn(async move {
-            use async_graphql_tide::{RequestExt, ResponseExt};
-            use tide::{http::StatusCode, Request, Response};
-
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
@@ -26,14 +23,11 @@ fn quickstart() -> Result<()> {
                 }
             }
 
-            async fn graphql(req: Request<()>) -> tide::Result<Response> {
-                let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-                let request = req.body_graphql().await?;
-                Ok(Response::new(StatusCode::Ok).body_graphql(schema.execute(request).await)?)
-            }
+            let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 
             let mut app = tide::new();
-            app.at("/").post(graphql).get(graphql);
+            let endpoint = async_graphql_tide::endpoint(schema);
+            app.at("/").post(endpoint.clone()).get(endpoint);
             app.listen(listen_addr).await?;
 
             Ok(())
@@ -108,28 +102,23 @@ fn hello() -> Result<()> {
                 }
             }
 
-            #[derive(Clone)]
-            struct AppState {
-                schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
-            }
             let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 
-            let app_state = AppState { schema };
-            let mut app = tide::with_state(app_state);
+            let mut app = tide::new();
 
-            app.at("/").post(|req: Request<AppState>| async move {
-                let schema = req.state().schema.clone();
-                let name = &req
-                    .header("name")
-                    .and_then(|values| values.get(0).map(|value| value.to_string()));
-
-                async_graphql_tide::graphql(req, schema, |mut query_builder| {
+            app.at("/").post(move |req: Request<()>| {
+                let schema = schema.clone();
+                async move {
+                    let name = req
+                        .header("name")
+                        .and_then(|values| values.get(0))
+                        .map(ToString::to_string);
+                    let mut req = async_graphql_tide::receive_request(req).await?;
                     if let Some(name) = name {
-                        query_builder = query_builder.data(Hello(name.to_string()))
+                        req = req.data(Hello(name));
                     }
-                    query_builder
-                })
-                .await
+                    async_graphql_tide::respond(schema.execute(req).await)
+                }
             });
             app.listen(listen_addr).await?;
 
@@ -191,8 +180,6 @@ fn upload() -> Result<()> {
         let listen_addr = test_utils::find_listen_addr().await;
 
         let server = Task::<Result<()>>::spawn(async move {
-            use tide::Request;
-
             struct QueryRoot;
             #[Object]
             impl QueryRoot {}
@@ -223,11 +210,10 @@ fn upload() -> Result<()> {
                 }
             }
 
+            let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
+
             let mut app = tide::new();
-            app.at("/").post(|req: Request<()>| async move {
-                let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
-                async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
-            });
+            app.at("/").post(async_graphql_tide::endpoint(schema));
             app.listen(listen_addr).await?;
 
             Ok(())

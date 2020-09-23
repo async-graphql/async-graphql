@@ -1,4 +1,7 @@
 //! Async-graphql integration with Tide
+//!
+//! # Examples
+//! *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
 
 #![warn(missing_docs)]
 #![allow(clippy::type_complexity)]
@@ -8,135 +11,100 @@
 use async_graphql::http::MultipartOptions;
 use async_graphql::{resolver_utils::ObjectType, Schema, SubscriptionType};
 use async_trait::async_trait;
-use std::str::FromStr;
 use tide::{
-    http::{headers, Method},
+    http::{
+        headers::{self, HeaderValue},
+        Method,
+    },
     Body, Request, Response, StatusCode,
 };
 
-/// GraphQL request handler
-///
-///
-/// # Examples
-/// *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
-///
-/// ```no_run
-/// use async_graphql::*;
-/// use async_std::task;
-/// use tide::Request;
-///
-/// struct QueryRoot;
-/// #[Object]
-/// impl QueryRoot {
-///     #[field(desc = "Returns the sum of a and b")]
-///     async fn add(&self, a: i32, b: i32) -> i32 {
-///         a + b
-///     }
-/// }
-///
-/// fn main() -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
-///     task::block_on(async {
-///         let mut app = tide::new();
-///         app.at("/").post(|req: Request<()>| async move {
-///             let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-///             async_graphql_tide::graphql(req, schema, |query_builder| query_builder).await
-///         });
-///         app.listen("0.0.0.0:8000").await?;
-///
-///         Ok(())
-///     })
-/// }
-/// ```
-pub async fn graphql<Query, Mutation, Subscription, TideState, F>(
-    req: Request<TideState>,
+/// Create a new GraphQL endpoint with the schema and default multipart options.
+pub fn endpoint<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-    configuration: F,
-) -> tide::Result<Response>
-where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-    TideState: Clone + Send + Sync + 'static,
-    F: FnOnce(async_graphql::Request) -> async_graphql::Request + Send,
-{
-    graphql_opts(req, schema, configuration, Default::default()).await
+) -> Endpoint<Query, Mutation, Subscription> {
+    endpoint_options(schema, MultipartOptions::default())
 }
 
-/// Similar to graphql, but you can set the options `async_graphql::MultipartOptions`.
-pub async fn graphql_opts<Query, Mutation, Subscription, TideState, F>(
-    req: Request<TideState>,
+/// Create a new GraphQL endpoint with the schema and custom multipart options.
+pub fn endpoint_options<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
-    configuration: F,
     opts: MultipartOptions,
-) -> tide::Result<Response>
+) -> Endpoint<Query, Mutation, Subscription> {
+    Endpoint { schema, opts }
+}
+
+/// A GraphQL endpoint.
+pub struct Endpoint<Query, Mutation, Subscription> {
+    /// The schema of the endpoint.
+    pub schema: Schema<Query, Mutation, Subscription>,
+    /// The multipart options of the endpoint.
+    pub opts: MultipartOptions,
+}
+
+// Manual impl to remove bounds on generics
+impl<Query, Mutation, Subscription> Clone for Endpoint<Query, Mutation, Subscription> {
+    fn clone(&self) -> Self {
+        Self {
+            schema: self.schema.clone(),
+            opts: self.opts,
+        }
+    }
+}
+
+#[async_trait]
+impl<Query, Mutation, Subscription, TideState> tide::Endpoint<TideState>
+    for Endpoint<Query, Mutation, Subscription>
 where
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
     TideState: Clone + Send + Sync + 'static,
-    F: FnOnce(async_graphql::Request) -> async_graphql::Request + Send,
 {
-    let request = req.body_graphql_opts(opts).await?;
-    Response::new(StatusCode::Ok).body_graphql(schema.execute(configuration(request)).await)
-}
-
-/// Tide request extension
-///
-#[async_trait]
-pub trait RequestExt<State: Clone + Send + Sync + 'static>: Sized {
-    /// Convert a query to `async_graphql::Request`.
-    async fn body_graphql(self) -> tide::Result<async_graphql::Request> {
-        self.body_graphql_opts(Default::default()).await
+    async fn call(&self, request: Request<TideState>) -> tide::Result {
+        respond(
+            self.schema
+                .execute(receive_request_opts(request, self.opts).await?)
+                .await,
+        )
     }
-
-    /// Similar to `RequestExt::body_graphql`, but you can set the options `async_graphql::MultipartOptions`.
-    async fn body_graphql_opts(
-        self,
-        opts: MultipartOptions,
-    ) -> tide::Result<async_graphql::Request>;
 }
 
-#[async_trait]
-impl<State: Clone + Send + Sync + 'static> RequestExt<State> for Request<State> {
-    async fn body_graphql_opts(
-        self,
-        opts: MultipartOptions,
-    ) -> tide::Result<async_graphql::Request> {
-        if self.method() == Method::Get {
-            Ok(self.query::<async_graphql::Request>()?)
-        } else {
-            let content_type = self
-                .header(&headers::CONTENT_TYPE)
-                .and_then(|values| values.get(0).map(|value| value.to_string()));
-            async_graphql::http::receive_body(content_type, self, opts)
-                .await
-                .map_err(|err| tide::Error::new(StatusCode::BadRequest, err))
+/// Convert a Tide request to a GraphQL request.
+pub async fn receive_request<State: Clone + Send + Sync + 'static>(
+    request: Request<State>,
+) -> tide::Result<async_graphql::Request> {
+    receive_request_opts(request, Default::default()).await
+}
+
+/// Convert a Tide request to a GraphQL request with options on how to receive multipart.
+pub async fn receive_request_opts<State: Clone + Send + Sync + 'static>(
+    mut request: Request<State>,
+    opts: MultipartOptions,
+) -> tide::Result<async_graphql::Request> {
+    if request.method() == Method::Get {
+        request.query()
+    } else {
+        let body = request.take_body();
+        let content_type = request
+            .header(headers::CONTENT_TYPE)
+            .and_then(|values| values.get(0))
+            .map(HeaderValue::as_str);
+
+        async_graphql::http::receive_body(content_type, body, opts)
+            .await
+            .map_err(|e| tide::Error::new(StatusCode::BadRequest, e))
+    }
+}
+
+/// Convert a GraphQL response to a Tide response.
+pub fn respond(gql: async_graphql::Response) -> tide::Result {
+    let mut response = Response::new(StatusCode::Ok);
+    if gql.is_ok() {
+        if let Some(cache_control) = gql.cache_control.value() {
+            response.insert_header(headers::CACHE_CONTROL, cache_control);
         }
     }
-}
-
-/// Tide response extension
-///
-pub trait ResponseExt: Sized {
-    /// Set body as the result of a GraphQL query.
-    fn body_graphql(self, res: async_graphql::Response) -> tide::Result<Self>;
-}
-
-impl ResponseExt for Response {
-    fn body_graphql(self, res: async_graphql::Response) -> tide::Result<Self> {
-        let mut resp = add_cache_control(self, &res);
-        resp.set_body(Body::from_json(&res)?);
-        Ok(resp)
-    }
-}
-
-fn add_cache_control(mut http_resp: Response, resp: &async_graphql::Response) -> Response {
-    if resp.is_ok() {
-        if let Some(cache_control) = resp.cache_control.value() {
-            if let Ok(header) = tide::http::headers::HeaderName::from_str("cache-control") {
-                http_resp.insert_header(header, cache_control);
-            }
-        }
-    }
-    http_resp
+    response.set_body(Body::from_json(&gql)?);
+    Ok(response)
 }

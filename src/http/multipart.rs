@@ -10,7 +10,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 /// Options for `receive_multipart`.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Copy)]
 #[non_exhaustive]
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 pub struct MultipartOptions {
