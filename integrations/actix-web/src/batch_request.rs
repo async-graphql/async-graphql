@@ -1,4 +1,4 @@
-use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
+use actix_web::dev::{Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 use async_graphql::http::MultipartOptions;
@@ -10,14 +10,14 @@ use futures::{Future, SinkExt, StreamExt, TryFutureExt, TryStreamExt};
 use std::io;
 use std::pin::Pin;
 
-/// Extractor for GraphQL batch request
+/// Extractor for GraphQL batch request.
 ///
-/// It's a wrapper of `async_graphql::Request`, you can use `Request::into_inner` unwrap it to `async_graphql::Request`.
 /// `async_graphql::http::MultipartOptions` allows to configure extraction process.
-pub struct BatchRequest(async_graphql::BatchRequest);
+pub struct BatchRequest(pub async_graphql::BatchRequest);
 
 impl BatchRequest {
     /// Unwraps the value to `async_graphql::Request`.
+    #[must_use]
     pub fn into_inner(self) -> async_graphql::BatchRequest {
         self.0
     }
@@ -70,7 +70,7 @@ impl FromRequest for BatchRequest {
 }
 
 /// Responder for GraphQL batch response
-pub struct BatchResponse(async_graphql::BatchResponse);
+pub struct BatchResponse(pub async_graphql::BatchResponse);
 
 impl From<async_graphql::BatchResponse> for BatchResponse {
     fn from(resp: async_graphql::BatchResponse) -> Self {
@@ -85,16 +85,11 @@ impl Responder for BatchResponse {
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
-        add_cache_control(&mut res, &self.0);
-        let res = res.body(serde_json::to_string(&self.0).unwrap());
-        futures::future::ok(res)
-    }
-}
-
-fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &async_graphql::BatchResponse) {
-    if resp.is_ok() {
-        if let Some(cache_control) = resp.cache_control().value() {
-            builder.header("cache-control", cache_control);
+        if self.0.is_ok() {
+            if let Some(cache_control) = self.0.cache_control().value() {
+                res.header("cache-control", cache_control);
+            }
         }
+        futures::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
     }
 }

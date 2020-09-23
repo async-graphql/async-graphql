@@ -1,4 +1,4 @@
-use actix_web::dev::{HttpResponseBuilder, Payload, PayloadStream};
+use actix_web::dev::{Payload, PayloadStream};
 use actix_web::http::StatusCode;
 use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder};
 use async_graphql::http::MultipartOptions;
@@ -6,21 +6,27 @@ use async_graphql::ParseRequestError;
 use futures::channel::mpsc;
 use futures::future::Ready;
 use futures::io::ErrorKind;
-use futures::{Future, SinkExt, StreamExt, TryFutureExt, TryStreamExt};
+use futures::{Future, SinkExt, StreamExt, TryStreamExt};
 use http::Method;
 use std::io;
 use std::pin::Pin;
 
-/// Extractor for GraphQL request
+/// Extractor for GraphQL request.
 ///
-/// It's a wrapper of `async_graphql::Request`, you can use `Request::into_inner` unwrap it to `async_graphql::Request`.
 /// `async_graphql::http::MultipartOptions` allows to configure extraction process.
-pub struct Request(async_graphql::Request);
+pub struct Request(pub async_graphql::Request);
 
 impl Request {
     /// Unwraps the value to `async_graphql::Request`.
+    #[must_use]
     pub fn into_inner(self) -> async_graphql::Request {
         self.0
+    }
+}
+
+impl From<Request> for async_graphql::Request {
+    fn from(req: Request) -> Self {
+        req.0
     }
 }
 
@@ -65,21 +71,21 @@ impl FromRequest for Request {
                             .into_async_read(),
                         config,
                     )
+                    .await
                     .map_err(|err| match err {
                         ParseRequestError::PayloadTooLarge => {
                             actix_web::error::ErrorPayloadTooLarge(err)
                         }
                         _ => actix_web::error::ErrorBadRequest(err),
-                    })
-                    .await?,
+                    })?,
                 ))
             })
         }
     }
 }
 
-/// Responder for GraphQL response
-pub struct Response(async_graphql::Response);
+/// Responder for GraphQL response.
+pub struct Response(pub async_graphql::Response);
 
 impl From<async_graphql::Response> for Response {
     fn from(resp: async_graphql::Response) -> Self {
@@ -94,16 +100,11 @@ impl Responder for Response {
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
-        add_cache_control(&mut res, &self.0);
-        let res = res.body(serde_json::to_string(&self.0).unwrap());
-        futures::future::ok(res)
-    }
-}
-
-fn add_cache_control(builder: &mut HttpResponseBuilder, resp: &async_graphql::Response) {
-    if resp.is_ok() {
-        if let Some(cache_control) = resp.cache_control.value() {
-            builder.header("cache-control", cache_control);
+        if self.0.is_ok() {
+            if let Some(cache_control) = self.0.cache_control.value() {
+                res.header("cache-control", cache_control);
+            }
         }
+        futures::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
     }
 }
