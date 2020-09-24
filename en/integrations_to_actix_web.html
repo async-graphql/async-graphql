@@ -160,8 +160,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
-<p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>GQLRequest</code>.
-This is actually an abstraction around <code>async_graphql::Request</code> and you can call <code>GQLRequest::into_inner</code> to 
+<p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>Request</code>.
+This is actually an abstraction around <code>async_graphql::Request</code> and you can call <code>Request::into_inner</code> to 
 convert it into a <code>async_graphql::Request</code>.</p>
 <p><code>WSSubscription</code> is an Actor that supports WebSocket subscriptions.</p>
 <h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
@@ -172,9 +172,9 @@ convert it into a <code>async_graphql::Request</code>.</p>
 </span>async fn index(
     // Schema now accessible here
     schema: web::Data&lt;Schema&gt;,
-    request: GQLRequest,
-) -&gt; web::Json&lt;GQLResponse&gt; {
-    web::Json(GQLResponse(schema.execute(request.into_inner()).await)
+    request: Request,
+) -&gt; web::Json&lt;Response&gt; {
+    web::Json(Response(schema.execute(request.into_inner()).await)
 }
 
 <span class="boring">}
