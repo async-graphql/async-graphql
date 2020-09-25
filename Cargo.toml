@@ -14,7 +14,7 @@ categories = ["network-programming", "asynchronous"]
 readme = "README.md"
 
 [features]
-default = ["apollo_tracing", "bson", "chrono", "chrono-tz", "log", "multipart", "tracing", "url", "unblock"]
+default = ["apollo_tracing", "uuid", "bson", "chrono", "chrono-tz", "log", "multipart", "tracing", "url", "unblock"]
 apollo_tracing = ["chrono"]
 multipart = ["multer", "bytes", "tempfile"]
 unblock = ["blocking"]
@@ -38,9 +38,9 @@ serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 spin = "0.5.2"
 thiserror = "1.0.11"
-uuid = { version = "0.8.1", features = ["v4", "serde"] }
 
 # Feature optional dependencies
+uuid = { version = "0.8.1", optional = true, features = ["v4", "serde"] }
 bson = { version = "1.0.0", optional = true }
 chrono = { version = "0.4.15", optional = true }
 chrono-tz = { version = "0.5.1", optional = true }

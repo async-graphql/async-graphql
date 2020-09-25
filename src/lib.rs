@@ -106,6 +106,7 @@
 //! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
+//! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
 
 #![warn(missing_docs)]
 #![allow(clippy::trivially_copy_pass_by_ref)]

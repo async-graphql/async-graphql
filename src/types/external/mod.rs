@@ -9,7 +9,6 @@ mod list;
 mod non_zero_integers;
 mod optional;
 mod string;
-mod uuid;
 
 #[cfg(feature = "bson")]
 mod bson;
@@ -21,3 +20,5 @@ mod datetime;
 mod naive_time;
 #[cfg(feature = "url")]
 mod url;
+#[cfg(feature = "uuid")]
+mod uuid;

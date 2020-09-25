@@ -4,12 +4,10 @@ use crate::{Error, Variables};
 use itertools::Itertools;
 use log::{error, info, trace};
 use std::borrow::Cow;
-use uuid::Uuid;
 
 /// Logger extension
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "log")))]
 pub struct Logger {
-    id: Uuid,
     enabled: bool,
     query: String,
     variables: Variables,
@@ -18,7 +16,6 @@ pub struct Logger {
 impl Default for Logger {
     fn default() -> Self {
         Self {
-            id: Uuid::new_v4(),
             enabled: true,
             query: String::new(),
             variables: Default::default(),
@@ -44,29 +41,28 @@ impl Extension for Logger {
             return;
         }
 
-        info!(target: "async-graphql", "[Query] id: \"{}\", query: \"{}\", variables: {}", self.id, &self.query, self.variables);
+        info!(target: "async-graphql", "[Query] query: \"{}\", variables: {}", &self.query, self.variables);
     }
 
     fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
-        trace!(target: "async-graphql", "[ResolveStart] id: \"{}\", path: \"{}\"", self.id, info.path_node);
+        trace!(target: "async-graphql", "[ResolveStart] path: \"{}\"", info.path_node);
     }
 
     fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
-        trace!(target: "async-graphql", "[ResolveEnd] id: \"{}\", path: \"{}\"", self.id, info.path_node);
+        trace!(target: "async-graphql", "[ResolveEnd] path: \"{}\"", info.path_node);
     }
 
     fn error(&mut self, err: &Error) {
         match err {
             Error::Parse(err) => {
                 error!(
-                    target: "async-graphql", "[ParseError] id: \"{}\", {}query: \"{}\", variables: {}, {}",
-                    self.id,
+                    target: "async-graphql", "[ParseError] {}query: \"{}\", variables: {}, {}",
                     if let Some(pos) = err.positions().next() {
                         // TODO: Make this more efficient
                         format!("pos: [{}:{}], ", pos.line, pos.column)
@@ -92,9 +88,9 @@ impl Extension for Logger {
                     } else {
                         String::new()
                     };
-                    error!(target: "async-graphql", "[QueryError] id: \"{}\", path: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, path, pos.line, pos.column, self.query, self.variables, err)
+                    error!(target: "async-graphql", "[QueryError] path: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", path, pos.line, pos.column, self.query, self.variables, err)
                 } else {
-                    error!(target: "async-graphql", "[QueryError] id: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", self.id, pos.line, pos.column, self.query, self.variables, err)
+                    error!(target: "async-graphql", "[QueryError] pos: [{}:{}], query: \"{}\", variables: {}, {}", pos.line, pos.column, self.query, self.variables, err)
                 }
             }
             Error::Rule { errors } => {
@@ -104,7 +100,7 @@ impl Extension for Logger {
                         .iter()
                         .map(|pos| format!("{}:{}", pos.line, pos.column))
                         .join(", ");
-                    error!(target: "async-graphql", "[ValidationError] id: \"{}\", pos: [{}], query: \"{}\", variables: {}, {}", self.id, locations, self.query, self.variables, error.message)
+                    error!(target: "async-graphql", "[ValidationError] pos: [{}], query: \"{}\", variables: {}, {}", locations, self.query, self.variables, error.message)
                 }
             }
         }
