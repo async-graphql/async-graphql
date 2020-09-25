@@ -1,4 +1,5 @@
 use crate::parser::types::Field;
+use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Positioned,
     Result, Type, Value,
@@ -51,11 +52,6 @@ impl<T: OutputValueType + Send + Sync + Ord> OutputValueType for BTreeSet<T> {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        let mut futures = Vec::with_capacity(self.len());
-        for (idx, item) in self.iter().enumerate() {
-            let ctx_idx = ctx.with_index(idx);
-            futures.push(async move { OutputValueType::resolve(item, &ctx_idx, field).await });
-        }
-        Ok(futures::future::try_join_all(futures).await?.into())
+        resolve_list(ctx, field, self).await
     }
 }

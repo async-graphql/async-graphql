@@ -1,8 +1,8 @@
 use crate::extensions::{Extension, ResolveInfo};
 use crate::Variables;
+use async_graphql_parser::types::ExecutableDocument;
 use std::collections::BTreeMap;
-use tracing::{event, span, Id, Level};
-use uuid::Uuid;
+use tracing::{span, Level, Span};
 
 /// Tracing extension
 ///
@@ -12,63 +12,109 @@ use uuid::Uuid;
 #[derive(Default)]
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
 pub struct Tracing {
-    root_id: Option<Id>,
-    fields: BTreeMap<usize, Id>,
+    root: Option<Span>,
+    parse: Option<Span>,
+    validation: Option<Span>,
+    execute: Option<Span>,
+    fields: BTreeMap<usize, Span>,
 }
 
 impl Extension for Tracing {
     #[allow(clippy::deref_addrof)]
-    fn parse_start(&mut self, query_source: &str, variables: &Variables) {
-        let root_span: tracing::Span = span!(
+    fn parse_start(&mut self, query_source: &str, _variables: &Variables) {
+        let root_span = span!(
             target: "async_graphql::graphql",
-            parent:None,
+            parent: None,
             Level::INFO,
-            "graphql",
-            id = %Uuid::new_v4().to_string(),
+            "query",
+            source = %query_source
         );
 
-        if let Some(id) = root_span.id() {
-            tracing::dispatcher::get_default(|d| d.enter(&id));
-            self.root_id.replace(id);
-        }
-
-        event!(
-            target: "async_graphql::query",
-            Level::DEBUG,
-            %variables,
-            query = %query_source
+        let parse_span = span!(
+            target: "async_graphql::graphql",
+            parent: &root_span,
+            Level::INFO,
+            "parse"
         );
+
+        root_span.with_subscriber(|(id, d)| d.enter(id));
+        self.root.replace(root_span);
+
+        parse_span.with_subscriber(|(id, d)| d.enter(id));
+        self.parse.replace(parse_span);
+    }
+
+    fn parse_end(&mut self, _document: &ExecutableDocument) {
+        self.parse
+            .take()
+            .unwrap()
+            .with_subscriber(|(id, d)| d.exit(id));
+    }
+
+    fn validation_start(&mut self) {
+        let parent = self.root.as_ref().unwrap();
+        let validation_span = span!(
+            target: "async_graphql::graphql",
+            parent: parent,
+            Level::INFO,
+            "validation"
+        );
+        validation_span.with_subscriber(|(id, d)| d.enter(id));
+        self.validation.replace(validation_span);
+    }
+
+    fn validation_end(&mut self) {
+        self.validation
+            .take()
+            .unwrap()
+            .with_subscriber(|(id, d)| d.exit(id));
+    }
+
+    fn execution_start(&mut self) {
+        let parent = self.root.as_ref().unwrap();
+        let execute_span = span!(
+            target: "async_graphql::graphql",
+            parent: parent,
+            Level::INFO,
+            "execute"
+        );
+        execute_span.with_subscriber(|(id, d)| d.enter(id));
+        self.execute.replace(execute_span);
     }
 
     fn execution_end(&mut self) {
-        if let Some(id) = self.root_id.take() {
-            tracing::dispatcher::get_default(|d| d.exit(&id));
-        }
+        self.execute
+            .take()
+            .unwrap()
+            .with_subscriber(|(id, d)| d.exit(id));
+
+        self.root
+            .take()
+            .unwrap()
+            .with_subscriber(|(id, d)| d.exit(id));
     }
 
     fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
-        let parent_span = info
-            .resolve_id
-            .parent
-            .and_then(|id| self.fields.get(&id))
-            .or_else(|| self.root_id.as_ref())
-            .cloned();
+        let parent_span = match info.resolve_id.parent {
+            Some(parent_id) if parent_id > 0 => self.fields.get(&parent_id).unwrap(),
+            _ => self.execute.as_ref().unwrap(),
+        };
+
         let span = span!(
-            target: "async_graphql::field",
+            target: "async_graphql::graphql",
             parent: parent_span,
             Level::INFO,
             "field",
-            path = %info.path_node,
+            id = %info.resolve_id.current,
+            path = %info.path_node
         );
-        if let Some(id) = span.id() {
-            tracing::dispatcher::get_default(|d| d.enter(&id));
-            self.fields.insert(info.resolve_id.current, id);
-        }
+        span.with_subscriber(|(id, d)| d.enter(id));
+        self.fields.insert(info.resolve_id.current, span);
     }
 
     fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
-        if let Some(id) = self.fields.remove(&info.resolve_id.current) {
-            tracing::dispatcher::get_default(|d| d.exit(&id));
+        if let Some(span) = self.fields.remove(&info.resolve_id.current) {
+            span.with_subscriber(|(id, d)| d.exit(id));
         }
     }
 }
