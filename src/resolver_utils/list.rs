@@ -18,6 +18,8 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
                 path_node: ctx_idx.path_node.as_ref().unwrap(),
                 parent_type: &Vec::<T>::type_name(),
                 return_type: &T::type_name(),
+                schema_env: ctx.schema_env,
+                query_env: ctx.query_env,
             };
 
             ctx_idx

@@ -90,6 +90,14 @@ impl From<Variables> for Value {
 #[derive(Default)]
 pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
 
+impl Deref for Data {
+    type Target = FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Data {
     /// Insert data.
     pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {

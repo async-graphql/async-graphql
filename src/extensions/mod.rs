@@ -8,7 +8,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Result, Variables};
+use crate::{FieldResult, QueryEnv, Result, SchemaEnv, Variables};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -19,6 +19,7 @@ pub use self::tracing::Tracing;
 use crate::parser::types::ExecutableDocument;
 use crate::Error;
 use serde_json::Value;
+use std::any::{Any, TypeId};
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 
@@ -39,6 +40,42 @@ pub struct ResolveInfo<'a> {
 
     /// Current return type, is qualified name.
     pub return_type: &'a str,
+
+    pub(crate) schema_env: &'a SchemaEnv,
+    pub(crate) query_env: &'a QueryEnv,
+}
+
+impl<'a> ResolveInfo<'a> {
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `FieldError` if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
+        self.data_opt::<D>()
+            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the specified data type does not exist.
+    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &D {
+        self.data_opt::<D>()
+            .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema` or `None` if the specified type data does not exist.
+    pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&D> {
+        self.query_env
+            .ctx_data
+            .get(&TypeId::of::<D>())
+            .or_else(|| self.schema_env.data.get(&TypeId::of::<D>()))
+            .and_then(|d| d.downcast_ref::<D>())
+    }
 }
 
 /// Represents a GraphQL extension

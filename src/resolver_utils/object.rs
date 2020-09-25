@@ -194,6 +194,8 @@ impl<'a> Fields<'a> {
                                         })
                                     }
                                 },
+                                schema_env: ctx.schema_env,
+                                query_env: ctx.query_env,
                             };
 
                             ctx_field
