@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-warp"
-version = "2.0.0-alpha.15"
+version = "2.0.0-alpha.16"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "async-graphql for warp"
@@ -13,7 +13,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "2.0.0-alpha.15" }
+async-graphql = { path = "../..", version = "2.0.0-alpha.16" }
 warp = "0.2.2"
 futures = "0.3.0"
 bytes = "0.5.4"
