@@ -121,6 +121,18 @@ impl BatchResponse {
     }
 }
 
+impl From<Response> for BatchResponse {
+    fn from(response: Response) -> Self {
+        Self::Single(response)
+    }
+}
+
+impl From<Vec<Response>> for BatchResponse {
+    fn from(responses: Vec<Response>) -> Self {
+        Self::Batch(responses)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

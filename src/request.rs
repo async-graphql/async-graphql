@@ -3,6 +3,7 @@ use crate::parser::types::UploadValue;
 use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
 use std::any::Any;
+use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
 
 /// GraphQL request.
@@ -106,10 +107,20 @@ impl<T: Into<String>> From<T> for Request {
     }
 }
 
+impl Debug for Request {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("Request")
+            .field("query", &self.query)
+            .field("operation_name", &self.operation_name)
+            .field("variables", &self.variables)
+            .finish()
+    }
+}
+
 /// Batch support for GraphQL requests, which is either a single query, or an array of queries
 ///
 /// **Reference:** <https://www.apollographql.com/blog/batching-client-graphql-queries-a685f5bcd41b/>
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum BatchRequest {
     /// Single query
@@ -121,7 +132,13 @@ pub enum BatchRequest {
 }
 
 impl BatchRequest {
-    pub(crate) fn into_single(self) -> Result<Request, ParseRequestError> {
+    /// Attempt to convert the batch request into a single request.
+    ///
+    /// # Errors
+    ///
+    /// Fails if the batch request is a list of requests with a message saying that batch requests
+    /// aren't supported.
+    pub fn into_single(self) -> Result<Request, ParseRequestError> {
         match self {
             Self::Single(req) => Ok(req),
             Self::Batch(_) => Err(ParseRequestError::UnsupportedBatch),
