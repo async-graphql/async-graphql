@@ -57,13 +57,8 @@ fn quickstart() -> Result<()> {
                 .no_proxy()
                 .build()
                 .unwrap()
-                .get(
-                    format!(
-                        "http://{}?query=%7B%20add%28a%3A%2010%2C%20b%3A%2020%29%20%7D",
-                        listen_addr
-                    )
-                    .as_str(),
-                )
+                .get(format!("http://{}", listen_addr).as_str())
+                .query(&[("query", "{ add(a: 10, b: 20) }")])
                 .send()
                 .await?;
 

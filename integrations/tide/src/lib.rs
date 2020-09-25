@@ -124,7 +124,7 @@ pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
     opts: MultipartOptions,
 ) -> tide::Result<async_graphql::BatchRequest> {
     if request.method() == Method::Get {
-        request.query()
+        request.query::<async_graphql::Request>().map(Into::into)
     } else {
         let body = request.take_body();
         let content_type = request
