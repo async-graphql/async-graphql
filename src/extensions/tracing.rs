@@ -1,5 +1,5 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::Variables;
+use crate::{Error, Variables};
 use async_graphql_parser::types::ExecutableDocument;
 use std::collections::BTreeMap;
 use tracing::{span, Level, Span};
@@ -115,5 +115,9 @@ impl Extension for Tracing {
         if let Some(span) = self.fields.remove(&info.resolve_id.current) {
             span.with_subscriber(|(id, d)| d.exit(id));
         }
+    }
+
+    fn error(&mut self, err: &Error) {
+        tracing::error!(target: "async_graphql::graphql", error = %err);
     }
 }
