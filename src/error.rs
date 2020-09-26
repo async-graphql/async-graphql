@@ -1,5 +1,6 @@
 use crate::{Pos, QueryPathNode, Value};
-use std::fmt::{Debug, Display};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use std::ops::Deref;
 use thiserror::Error;
 
 /// An error in the format of an input value.
@@ -382,6 +383,27 @@ pub struct RuleError {
     pub message: String,
 }
 
+impl Display for RuleError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        for (idx, loc) in self.locations.iter().enumerate() {
+            if idx == 0 {
+                write!(f, "[")?;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            write!(f, "{}:{}", loc.line, loc.column)?;
+
+            if idx == self.locations.len() - 1 {
+                write!(f, "] ")?;
+            }
+        }
+
+        write!(f, "{}", self.message)?;
+        Ok(())
+    }
+}
+
 /// An error serving a GraphQL query.
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
@@ -403,9 +425,45 @@ pub enum Error {
     },
 
     /// The query statement verification failed.
-    #[error("Rule error")]
+    #[error("Rule error:\n{errors}")]
     Rule {
         /// List of errors.
-        errors: Vec<RuleError>,
+        errors: RuleErrors,
     },
+}
+
+/// A collection of RuleError.
+#[derive(Debug, PartialEq)]
+pub struct RuleErrors(Vec<RuleError>);
+
+impl From<Vec<RuleError>> for RuleErrors {
+    fn from(errors: Vec<RuleError>) -> Self {
+        Self(errors)
+    }
+}
+
+impl Deref for RuleErrors {
+    type Target = Vec<RuleError>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl IntoIterator for RuleErrors {
+    type Item = RuleError;
+    type IntoIter = std::vec::IntoIter<RuleError>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl Display for RuleErrors {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        for err in &self.0 {
+            writeln!(f, "  {}", err)?;
+        }
+        Ok(())
+    }
 }

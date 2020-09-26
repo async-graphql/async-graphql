@@ -89,7 +89,9 @@ pub fn check_rules(
     }
 
     if !ctx.errors.is_empty() {
-        return Err(Error::Rule { errors: ctx.errors });
+        return Err(Error::Rule {
+            errors: ctx.errors.into(),
+        });
     }
     Ok(CheckResult {
         cache_control,

@@ -355,7 +355,9 @@ where
     let mut visitor = factory();
     visit(&mut visitor, &mut ctx, doc);
     if !ctx.errors.is_empty() {
-        return Err(Error::Rule { errors: ctx.errors });
+        return Err(Error::Rule {
+            errors: ctx.errors.into(),
+        });
     }
     Ok(())
 }

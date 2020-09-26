@@ -72,7 +72,7 @@ impl Serialize for Error {
             }
             Error::Rule { errors } => {
                 let mut seq = serializer.serialize_seq(Some(errors.len()))?;
-                for error in errors {
+                for error in errors.iter() {
                     seq.serialize_element(&serde_json::json!({
                         "message": error.message,
                         "locations": error.locations.iter().map(|pos| serde_json::json!({"line": pos.line, "column": pos.column})).collect_vec(),

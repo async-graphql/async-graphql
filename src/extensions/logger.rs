@@ -94,7 +94,7 @@ impl Extension for Logger {
                 }
             }
             Error::Rule { errors } => {
-                for error in errors {
+                for error in errors.iter() {
                     let locations = error
                         .locations
                         .iter()

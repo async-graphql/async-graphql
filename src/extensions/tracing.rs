@@ -46,69 +46,69 @@ impl Extension for Tracing {
     fn parse_end(&mut self, _document: &ExecutableDocument) {
         self.parse
             .take()
-            .unwrap()
-            .with_subscriber(|(id, d)| d.exit(id));
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
     }
 
     fn validation_start(&mut self) {
-        let parent = self.root.as_ref().unwrap();
-        let validation_span = span!(
-            target: "async_graphql::graphql",
-            parent: parent,
-            Level::INFO,
-            "validation"
-        );
-        validation_span.with_subscriber(|(id, d)| d.enter(id));
-        self.validation.replace(validation_span);
+        if let Some(parent) = &self.root {
+            let validation_span = span!(
+                target: "async_graphql::graphql",
+                parent: parent,
+                Level::INFO,
+                "validation"
+            );
+            validation_span.with_subscriber(|(id, d)| d.enter(id));
+            self.validation.replace(validation_span);
+        }
     }
 
     fn validation_end(&mut self) {
         self.validation
             .take()
-            .unwrap()
-            .with_subscriber(|(id, d)| d.exit(id));
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
     }
 
     fn execution_start(&mut self) {
-        let parent = self.root.as_ref().unwrap();
-        let execute_span = span!(
-            target: "async_graphql::graphql",
-            parent: parent,
-            Level::INFO,
-            "execute"
-        );
-        execute_span.with_subscriber(|(id, d)| d.enter(id));
-        self.execute.replace(execute_span);
+        if let Some(parent) = &self.root {
+            let execute_span = span!(
+                target: "async_graphql::graphql",
+                parent: parent,
+                Level::INFO,
+                "execute"
+            );
+            execute_span.with_subscriber(|(id, d)| d.enter(id));
+            self.execute.replace(execute_span);
+        }
     }
 
     fn execution_end(&mut self) {
         self.execute
             .take()
-            .unwrap()
-            .with_subscriber(|(id, d)| d.exit(id));
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
 
         self.root
             .take()
-            .unwrap()
-            .with_subscriber(|(id, d)| d.exit(id));
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
     }
 
     fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
         let parent_span = match info.resolve_id.parent {
-            Some(parent_id) if parent_id > 0 => self.fields.get(&parent_id).unwrap(),
-            _ => self.execute.as_ref().unwrap(),
+            Some(parent_id) if parent_id > 0 => self.fields.get(&parent_id),
+            _ => self.execute.as_ref(),
         };
 
-        let span = span!(
-            target: "async_graphql::graphql",
-            parent: parent_span,
-            Level::INFO,
-            "field",
-            id = %info.resolve_id.current,
-            path = %info.path_node
-        );
-        span.with_subscriber(|(id, d)| d.enter(id));
-        self.fields.insert(info.resolve_id.current, span);
+        if let Some(parent_span) = parent_span {
+            let span = span!(
+                target: "async_graphql::graphql",
+                parent: parent_span,
+                Level::INFO,
+                "field",
+                id = %info.resolve_id.current,
+                path = %info.path_node
+            );
+            span.with_subscriber(|(id, d)| d.enter(id));
+            self.fields.insert(info.resolve_id.current, span);
+        }
     }
 
     fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
@@ -118,6 +118,24 @@ impl Extension for Tracing {
     }
 
     fn error(&mut self, err: &Error) {
-        tracing::error!(target: "async_graphql::graphql", error = %err);
+        tracing::error!(target: "async_graphql::graphql", error = %err.to_string());
+
+        for span in self.fields.values() {
+            span.with_subscriber(|(id, d)| d.exit(id));
+        }
+        self.fields.clear();
+
+        self.execute
+            .take()
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        self.validation
+            .take()
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        self.parse
+            .take()
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        self.root
+            .take()
+            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
     }
 }

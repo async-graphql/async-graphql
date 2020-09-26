@@ -73,6 +73,7 @@ pub async fn test_input_validator_string_min_length() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -90,6 +91,7 @@ pub async fn test_input_validator_string_min_length() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -183,6 +185,7 @@ pub async fn test_input_validator_string_max_length() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -200,6 +203,7 @@ pub async fn test_input_validator_string_max_length() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -320,6 +324,7 @@ pub async fn test_input_validator_string_email() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -338,6 +343,7 @@ pub async fn test_input_validator_string_email() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -468,6 +474,7 @@ pub async fn test_input_validator_string_mac() {
                     }),
                     message: field_error_msg.clone()
                 })
+                .into()
             }
         );
 
@@ -486,6 +493,7 @@ pub async fn test_input_validator_string_mac() {
                     }),
                     message: object_error_msg.clone()
                 })
+                .into()
             }
         );
 
@@ -503,6 +511,7 @@ pub async fn test_input_validator_string_mac() {
                     }),
                     message: field_error_msg
                 })
+                .into()
             }
         );
 
@@ -521,6 +530,7 @@ pub async fn test_input_validator_string_mac() {
                     }),
                     message: object_error_msg
                 })
+                .into()
             }
         );
     }
@@ -578,6 +588,7 @@ pub async fn test_input_validator_string_mac() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -596,6 +607,7 @@ pub async fn test_input_validator_string_mac() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -637,6 +649,7 @@ pub async fn test_input_validator_string_mac() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -655,6 +668,7 @@ pub async fn test_input_validator_string_mac() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         }
@@ -715,6 +729,7 @@ pub async fn test_input_validator_int_range() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -732,6 +747,7 @@ pub async fn test_input_validator_int_range() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -820,6 +836,7 @@ pub async fn test_input_validator_int_less_than() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -837,6 +854,7 @@ pub async fn test_input_validator_int_less_than() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -927,6 +945,7 @@ pub async fn test_input_validator_int_greater_than() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -944,6 +963,7 @@ pub async fn test_input_validator_int_greater_than() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1027,6 +1047,7 @@ pub async fn test_input_validator_int_nonzero() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1044,6 +1065,7 @@ pub async fn test_input_validator_int_nonzero() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1128,6 +1150,7 @@ pub async fn test_input_validator_int_equal() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1145,6 +1168,7 @@ pub async fn test_input_validator_int_equal() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1244,6 +1268,7 @@ pub async fn test_input_validator_list_max_length() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1261,6 +1286,7 @@ pub async fn test_input_validator_list_max_length() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1360,6 +1386,7 @@ pub async fn test_input_validator_list_min_length() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1377,6 +1404,7 @@ pub async fn test_input_validator_list_min_length() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1484,6 +1512,7 @@ pub async fn test_input_validator_operator_or() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1501,6 +1530,7 @@ pub async fn test_input_validator_operator_or() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1601,6 +1631,7 @@ pub async fn test_input_validator_operator_and() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1618,6 +1649,7 @@ pub async fn test_input_validator_operator_and() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
@@ -1724,6 +1756,7 @@ pub async fn test_input_validator_variable() {
                         }),
                         message: field_error_msg
                     })
+                    .into()
                 }
             );
 
@@ -1741,6 +1774,7 @@ pub async fn test_input_validator_variable() {
                         }),
                         message: object_error_msg
                     })
+                    .into()
                 }
             );
         } else {
