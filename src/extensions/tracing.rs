@@ -69,16 +69,25 @@ impl Extension for Tracing {
     }
 
     fn execution_start(&mut self) {
-        if let Some(parent) = &self.root {
-            let execute_span = span!(
+        let execute_span = if let Some(parent) = &self.root {
+            span!(
                 target: "async_graphql::graphql",
                 parent: parent,
                 Level::INFO,
                 "execute"
-            );
-            execute_span.with_subscriber(|(id, d)| d.enter(id));
-            self.execute.replace(execute_span);
-        }
+            )
+        } else {
+            // For every step of the subscription stream.
+            span!(
+                target: "async_graphql::graphql",
+                parent: None,
+                Level::INFO,
+                "execute"
+            )
+        };
+
+        execute_span.with_subscriber(|(id, d)| d.enter(id));
+        self.execute.replace(execute_span);
     }
 
     fn execution_end(&mut self) {
@@ -104,7 +113,9 @@ impl Extension for Tracing {
                 Level::INFO,
                 "field",
                 id = %info.resolve_id.current,
-                path = %info.path_node
+                path = %info.path_node,
+                parent_type = %info.parent_type,
+                return_type = %info.return_type,
             );
             span.with_subscriber(|(id, d)| d.enter(id));
             self.fields.insert(info.resolve_id.current, span);

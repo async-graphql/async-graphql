@@ -519,16 +519,20 @@ where
                 &schema.env,
                 None,
                 &env.operation.node.selection_set,
+                ResolveId::root(),
                 &resolve_id,
             );
 
-            // TODO: Invoke extensions
+            env.extensions.lock().execution_start();
 
             let mut streams = Vec::new();
             if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                env.extensions.lock().execution_end();
                 yield Response::from(e);
                 return;
             }
+
+            env.extensions.lock().execution_end();
 
             let mut stream = stream::select_all(streams);
             while let Some(data) = stream.next().await {

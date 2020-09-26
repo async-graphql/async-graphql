@@ -41,8 +41,11 @@ pub struct ResolveInfo<'a> {
     /// Current return type, is qualified name.
     pub return_type: &'a str,
 
-    pub(crate) schema_env: &'a SchemaEnv,
-    pub(crate) query_env: &'a QueryEnv,
+    #[doc(hidden)]
+    pub schema_env: &'a SchemaEnv,
+
+    #[doc(hidden)]
+    pub query_env: &'a QueryEnv,
 }
 
 impl<'a> ResolveInfo<'a> {

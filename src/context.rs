@@ -214,7 +214,8 @@ pub struct ResolveId {
 }
 
 impl ResolveId {
-    pub(crate) fn root() -> ResolveId {
+    #[doc(hidden)]
+    pub fn root() -> ResolveId {
         ResolveId {
             parent: None,
             current: 0,
@@ -292,11 +293,12 @@ impl QueryEnv {
         schema_env: &'a SchemaEnv,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
+        resolve_id: ResolveId,
         inc_resolve_id: &'a AtomicUsize,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
-            resolve_id: ResolveId::root(),
+            resolve_id,
             inc_resolve_id,
             item,
             schema_env,
@@ -306,7 +308,8 @@ impl QueryEnv {
 }
 
 impl<'a, T> ContextBase<'a, T> {
-    fn get_child_resolve_id(&self) -> ResolveId {
+    #[doc(hidden)]
+    pub fn get_child_resolve_id(&self) -> ResolveId {
         let id = self
             .inc_resolve_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed)

@@ -153,7 +153,7 @@ pub use subscription::SubscriptionType;
 pub use async_graphql_parser as parser;
 pub use base::{InputValueType, OutputValueType, Type};
 pub use context::{
-    Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, Variables,
+    Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, ResolveId, Variables,
 };
 pub use error::{
     Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,

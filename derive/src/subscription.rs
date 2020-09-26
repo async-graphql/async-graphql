@@ -267,7 +267,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             let field = field.clone();
                             let field_name = field_name.clone();
                             async move {
-                                let resolve_id = ::std::sync::atomic::AtomicUsize::default();
+                                let resolve_id = #crate_name::ResolveId {
+                                    parent: Some(0),
+                                    current: 1,
+                                };
+                                let inc_resolve_id = ::std::sync::atomic::AtomicUsize::new(1);
                                 let ctx_selection_set = query_env.create_context(
                                     &schema_env,
                                     Some(#crate_name::QueryPathNode {
@@ -275,15 +279,35 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         segment: #crate_name::QueryPathSegment::Name(&field_name),
                                     }),
                                     &field.node.selection_set,
-                                    &resolve_id,
+                                    resolve_id,
+                                    &inc_resolve_id,
                                 );
-                                #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
+
+                                #crate_name::extensions::Extension::execution_start(&mut *query_env.extensions.lock());
+
+                                #[allow(bare_trait_objects)]
+                                let ri = #crate_name::extensions::ResolveInfo {
+                                    resolve_id,
+                                    path_node: ctx_selection_set.path_node.as_ref().unwrap(),
+                                    parent_type: #gql_typename,
+                                    return_type: &<<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                    schema_env: &schema_env,
+                                    query_env: &query_env,
+                                };
+
+                                #crate_name::extensions::Extension::resolve_start(&mut *query_env.extensions.lock(), &ri);
+
+                                let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
                                     .await
                                     .map(|value| {
                                         #crate_name::serde_json::json!({
                                             field_name.as_str(): value
                                         })
-                                    })
+                                    });
+
+                                #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ri);
+                                #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock());
+                                res
                             }
                         }
                     });
