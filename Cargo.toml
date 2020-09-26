@@ -14,10 +14,11 @@ categories = ["network-programming", "asynchronous"]
 readme = "README.md"
 
 [features]
-default = ["apollo_tracing", "uuid", "bson", "chrono", "chrono-tz", "log", "multipart", "tracing", "url", "unblock"]
+default = ["apollo_tracing", "uuid", "bson", "chrono", "chrono-tz", "log", "multipart", "tracing", "url", "unblock", "string_number"]
 apollo_tracing = ["chrono"]
 multipart = ["multer", "bytes", "tempfile"]
 unblock = ["blocking"]
+string_number = ["num-traits"]
 # Used for doc(cfg())
 nightly = []
 
@@ -47,6 +48,7 @@ chrono-tz = { version = "0.5.1", optional = true }
 log = { version = "0.4.11", optional = true }
 tracing = { version = "0.1.19", optional = true }
 url = { version = "2.1.1", optional = true }
+num-traits = { version = "0.2.12", optional = true }
 
 bytes = { version = "0.5.4", optional = true }
 multer = { version = "1.2.2", optional = true }
