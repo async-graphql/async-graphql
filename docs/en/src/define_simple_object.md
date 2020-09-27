@@ -8,6 +8,7 @@ The example below defines an object `MyObject` which includes the fields `a` and
 use async_graphql::*;
 
 #[derive(SimpleObject)]
+#[graphql(desc = "An optional description")]
 struct MyObject {
     /// Value a
     a: i32,
