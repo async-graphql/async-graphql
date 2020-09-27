@@ -21,3 +21,42 @@ pub enum Episode {
     Jedi,
 }
 ```
+
+## Wrapping a remote enum
+
+In sum scenarios, you may not be in control of the enums that you want to expose via GraphQL. In order to provide an `Enum` type, a common workaround is to create a new enum that has parity with the existing, remote enum type.
+
+```rust
+use async_graphql::*;
+
+/// Provides parity with a remote enum type
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum LocalEnum {
+    A,
+    B,
+    C,
+}
+
+/// Conversion interface from remote type to our local GraphQL enum type
+impl From<remote_crate::RemoteEnum> for LocalEnum {
+    fn from(e: remote_crate::RemoteEnum) -> Self {
+        match e {
+            remote_crate::RemoteEnum::A => Self::A,
+            remote_crate::RemoteEnum::B => Self::B,
+            remote_crate::RemoteEnum::C => Self::C,
+        }
+    }
+}
+```
+
+The process is tedious and requires multiple steps to keep the local and remote enums in sync. `async_graphql` provides a handy feature to generate the `From<remote_crate::RemoteEnum> for LocalEnum` as well as an opposite direction of `From<LocalEnum> for remote_crate::RemoteEnum` via an additional attribute after deriving `Enum`:
+
+```rust
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+#[graphql(remote = "remote_crate::RemoteEnum")]
+enum LocalEnum {
+    A,
+    B,
+    C,
+}
+```
