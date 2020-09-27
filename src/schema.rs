@@ -214,12 +214,11 @@ where
         }
     }
 
-    fn create_registry() -> Registry {
+    pub fn create_registry() -> Registry {
         let mut registry = Registry {
             types: Default::default(),
             directives: Default::default(),
             implements: Default::default(),
-            is_empty_query: Query::is_empty(),
             query_type: Query::type_name().to_string(),
             mutation_type: if Mutation::is_empty() {
                 None
