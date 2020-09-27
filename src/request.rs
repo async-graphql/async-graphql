@@ -21,7 +21,7 @@ pub struct Request {
     pub operation_name: Option<String>,
 
     /// The variables of the request.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_variables")]
     pub variables: Variables,
 
     /// The data of the request that can be accessed through `Context::data`.
@@ -33,6 +33,12 @@ pub struct Request {
     /// Extensions for this request.
     #[serde(skip)]
     pub extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+}
+
+fn deserialize_variables<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Variables, D::Error> {
+    Ok(Option::<Variables>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 impl Request {
@@ -222,6 +228,17 @@ mod tests {
         );
         assert!(request.operation_name.is_none());
         assert_eq!(request.query, "{ a b c }");
+    }
+
+    #[test]
+    fn test_deserialize_request_with_null_variables() {
+        let request: Request = serde_json::from_value(json! ({
+            "query": "{ a b c }",
+            "variables": null
+        }))
+        .unwrap();
+        assert!(request.operation_name.is_none());
+        assert!(request.variables.0.is_empty());
     }
 
     #[test]
