@@ -326,6 +326,7 @@ pub struct Enum {
     pub internal: bool,
     pub name: Option<String>,
     pub desc: Option<String>,
+    pub remote: Option<String>,
 }
 
 impl Enum {
@@ -333,6 +334,7 @@ impl Enum {
         let mut internal = false;
         let mut name = None;
         let mut desc = None;
+        let mut remote = None;
 
         for arg in args {
             match arg {
@@ -358,6 +360,15 @@ impl Enum {
                                 "Attribute 'desc' should be a string.",
                             ));
                         }
+                    } else if nv.path.is_ident("remote") {
+                        if let syn::Lit::Str(lit) = nv.lit {
+                            remote = Some(lit.value());
+                        } else {
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Attribute 'remote' should be a string.",
+                            ));
+                        }
                     }
                 }
                 _ => {}
@@ -368,6 +379,7 @@ impl Enum {
             internal,
             name,
             desc,
+            remote,
         })
     }
 }

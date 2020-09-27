@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{get_cfg_attrs, get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -39,11 +39,6 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         }
 
         let item_ident = &variant.ident;
-        let item_attrs = variant
-            .attrs
-            .iter()
-            .filter(|attr| !attr.path.is_ident("item"))
-            .collect::<Vec<_>>();
         let mut item_args = args::EnumItem::parse(&variant.attrs)?;
         let gql_item_name = item_args
             .name
@@ -59,7 +54,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .as_ref()
             .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
-        enum_items.push(quote! { #(#item_attrs)* #item_ident});
+        enum_items.push((get_cfg_attrs(&variant.attrs), item_ident));
         items.push(quote! {
             #crate_name::resolver_utils::EnumItem {
                 name: #gql_item_name,
@@ -74,6 +69,49 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             });
         });
     }
+
+    let remote_conversion = if let Some(remote) = &enum_args.remote {
+        let remote_ty = if let Ok(ty) = syn::parse_str::<syn::Type>(remote) {
+            ty
+        } else {
+            return Err(Error::new_spanned(
+                remote,
+                format!("Invalid remote type: '{}'", remote),
+            ));
+        };
+
+        let local_to_remote_items = enum_items.iter().map(|(cfg_attrs, item)| {
+            quote! {
+                #(#cfg_attrs)*
+                #ident::#item => #remote_ty::#item,
+            }
+        });
+        let remote_to_local_items = enum_items.iter().map(|(cfg_attrs, item)| {
+            quote! {
+                #(#cfg_attrs)*
+                #remote_ty::#item => #ident::#item,
+            }
+        });
+        Some(quote! {
+            impl ::std::convert::From<#ident> for #remote_ty {
+                fn from(value: #ident) -> Self {
+                    match value {
+                        #(#local_to_remote_items)*
+                    }
+                }
+            }
+
+            impl ::std::convert::From<#remote_ty> for #ident {
+                fn from(value: #remote_ty) -> Self {
+                    match value {
+                        #(#remote_to_local_items)*
+                    }
+                }
+            }
+        })
+    } else {
+        None
+    };
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
@@ -121,6 +159,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                 Ok(#crate_name::resolver_utils::enum_value(*self).into_json().unwrap())
             }
         }
+
+        #remote_conversion
 
         impl #crate_name::type_mark::TypeMarkEnum for #ident {}
     };
