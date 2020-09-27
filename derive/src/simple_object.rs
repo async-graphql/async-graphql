@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{feature_block, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -103,33 +103,20 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     .post_guard
                     .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
 
-                let features = &field.features;
                 getters.push(if !field.owned {
-                    let block = feature_block(
-                        &crate_name,
-                        &features,
-                        &field_name,
-                        quote! { Ok(&self.#ident) },
-                    );
                     quote! {
                          #[inline]
                          #[allow(missing_docs)]
                          #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
-                             #block
+                             Ok(&self.#ident)
                          }
                     }
                 } else {
-                    let block = feature_block(
-                        &crate_name,
-                        &features,
-                        &field_name,
-                        quote! { Ok(self.#ident.clone()) },
-                    );
                     quote! {
                         #[inline]
                         #[allow(missing_docs)]
                         #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
-                            #block
+                            Ok(self.#ident.clone())
                         }
                     }
                 });

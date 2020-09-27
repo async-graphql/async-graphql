@@ -205,7 +205,6 @@ pub struct Field {
     pub owned: bool,
     pub guard: Option<TokenStream>,
     pub post_guard: Option<TokenStream>,
-    pub features: Vec<String>,
 }
 
 impl Field {
@@ -217,7 +216,6 @@ impl Field {
         let mut external = false;
         let mut provides = None;
         let mut requires = None;
-        let mut features = Vec::new();
         let mut owned = false;
         let mut guard = None;
         let mut post_guard = None;
@@ -290,20 +288,6 @@ impl Field {
                                             "Attribute 'requires' should be a string.",
                                         ));
                                     }
-                                } else if nv.path.is_ident("feature") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        features = lit
-                                            .value()
-                                            .to_string()
-                                            .split(',')
-                                            .map(|s| s.trim().to_string())
-                                            .collect();
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'feature' should be a string.",
-                                        ));
-                                    }
                                 }
                             }
                             NestedMeta::Meta(Meta::List(ls)) => {
@@ -334,7 +318,6 @@ impl Field {
             owned,
             guard,
             post_guard,
-            features,
         }))
     }
 }

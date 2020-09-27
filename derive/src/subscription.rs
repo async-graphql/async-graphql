@@ -1,6 +1,6 @@
 use crate::args;
 use crate::output_type::OutputType;
-use crate::utils::{feature_block, get_crate_name, get_param_getter_ident, get_rustdoc};
+use crate::utils::{get_cfg_attrs, get_crate_name, get_param_getter_ident, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -59,7 +59,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .as_ref()
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
-                let features = field.features;
+                let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(
@@ -207,14 +207,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     .expect("invalid result type");
                 }
 
-                method.block =
-                    syn::parse2::<Block>(feature_block(&crate_name, &features, &field_name, {
-                        let block = &method.block;
-                        quote! { #block }
-                    }))
-                    .expect("invalid block");
-
                 schema_fields.push(quote! {
+                    #(#cfg_attrs)*
                     fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
                         name: #field_name.to_string(),
                         description: #field_desc,
@@ -327,6 +321,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 };
 
                 create_stream.push(quote! {
+                    #(#cfg_attrs)*
                     if ctx.item.node.name.node == #field_name {
                         return ::std::boxed::Box::pin(
                             #crate_name::futures::TryStreamExt::try_flatten(

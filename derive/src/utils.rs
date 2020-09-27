@@ -278,29 +278,10 @@ pub fn get_param_getter_ident(name: &str) -> Ident {
     Ident::new(&format!("__{}_getter", name), Span::call_site())
 }
 
-pub fn feature_block(
-    crate_name: &TokenStream,
-    features: &[String],
-    field_name: &str,
-    block: TokenStream,
-) -> TokenStream {
-    if !features.is_empty() {
-        let error_message = format!(
-            "`{}` is only available if the features `{}` are enabled",
-            field_name,
-            features.join(",")
-        );
-        quote!({
-            #[cfg(not(all(#(feature = #features),*)))]
-            {
-                return Err(#crate_name::FieldError::from(#error_message)).map_err(::std::convert::Into::into);
-            }
-            #[cfg(all(#(feature = #features),*))]
-            {
-                #block
-            }
-        })
-    } else {
-        block
-    }
+pub fn get_cfg_attrs(attrs: &[Attribute]) -> Vec<Attribute> {
+    attrs
+        .iter()
+        .filter(|attr| !attr.path.segments.is_empty() && attr.path.segments[0].ident == "cfg")
+        .cloned()
+        .collect()
 }
