@@ -354,6 +354,7 @@ pub use async_graphql_derive::SimpleObject;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Enum name                 | string   | Y        |
 /// | desc        | Enum description          | string   | Y        |
+/// | remote      | Derive a remote enum      | string   | Y        |
 ///
 /// # Item parameters
 ///
