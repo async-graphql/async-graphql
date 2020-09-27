@@ -1,5 +1,6 @@
 use crate::parser::types::Field;
 use crate::resolver_utils::ObjectType;
+use crate::type_mark::TypeMarkObject;
 use crate::{
     registry, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError, Result,
     Type,
@@ -67,3 +68,5 @@ impl OutputValueType for EmptyMutation {
         })
     }
 }
+
+impl TypeMarkObject for EmptyMutation {}

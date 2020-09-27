@@ -1,6 +1,7 @@
 use crate::connection::EmptyFields;
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
+use crate::type_mark::TypeMarkObject;
 use crate::types::connection::CursorType;
 use crate::{registry, Context, ContextSelectionSet, OutputValueType, Positioned, Result, Type};
 use indexmap::map::IndexMap;
@@ -137,3 +138,5 @@ where
         resolve_object(ctx, self).await
     }
 }
+
+impl<C, T, E> TypeMarkObject for Edge<C, T, E> {}

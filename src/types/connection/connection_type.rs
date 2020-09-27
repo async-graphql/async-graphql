@@ -2,6 +2,7 @@ use crate::connection::edge::Edge;
 use crate::connection::page_info::PageInfo;
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
+use crate::type_mark::TypeMarkObject;
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
     registry, Context, ContextSelectionSet, FieldResult, OutputValueType, Positioned, Result, Type,
@@ -230,3 +231,5 @@ where
         resolve_object(ctx, self).await
     }
 }
+
+impl<C, T, EC, EE> TypeMarkObject for Connection<C, T, EC, EE> {}

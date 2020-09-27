@@ -385,6 +385,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 ::std::boxed::Box::pin(#crate_name::futures::stream::once(async { Err(error) }))
             }
         }
+
+        impl #crate_name::type_mark::TypeMarkSubscription for #self_ty #where_clause {}
     };
     Ok(expanded.into())
 }

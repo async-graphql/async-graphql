@@ -521,6 +521,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }
+
+        impl #generics #crate_name::type_mark::TypeMarkObject for #self_ty #where_clause {}
     };
     Ok(expanded.into())
 }

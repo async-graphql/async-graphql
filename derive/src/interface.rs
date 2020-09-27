@@ -326,6 +326,8 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }
+
+        impl #generics #crate_name::type_mark::TypeMarkInterface for #ident #generics {}
     };
     Ok(expanded.into())
 }

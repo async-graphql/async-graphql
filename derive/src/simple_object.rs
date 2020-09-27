@@ -192,6 +192,8 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }
+
+        impl #generics #crate_name::type_mark::TypeMarkObject for #ident #generics #where_clause {}
     };
     Ok(expanded.into())
 }

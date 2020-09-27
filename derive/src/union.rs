@@ -69,6 +69,8 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
 
             enum_names.push(enum_name);
             type_into_impls.push(quote! {
+                #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkObject);
+
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #generics ::std::convert::From<#p> for #ident #generics {
                     fn from(obj: #p) -> Self {
@@ -149,6 +151,8 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }
+
+        impl #generics #crate_name::type_mark::TypeMarkEnum for #ident #generics {}
     };
     Ok(expanded.into())
 }

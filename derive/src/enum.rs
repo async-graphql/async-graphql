@@ -121,6 +121,8 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
                 Ok(#crate_name::resolver_utils::enum_value(*self).into_json().unwrap())
             }
         }
+
+        impl #crate_name::type_mark::TypeMarkEnum for #ident {}
     };
     Ok(expanded.into())
 }

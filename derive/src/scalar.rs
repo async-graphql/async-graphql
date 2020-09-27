@@ -68,6 +68,8 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
                 Ok(#crate_name::ScalarType::to_value(self).into_json().unwrap())
             }
         }
+
+        impl #generic #crate_name::type_mark::TypeMarkScalar for #self_ty #where_clause {}
     };
     Ok(expanded.into())
 }

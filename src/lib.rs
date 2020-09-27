@@ -136,6 +136,9 @@ pub mod validators;
 #[doc(hidden)]
 pub mod registry;
 #[doc(hidden)]
+pub mod type_mark;
+
+#[doc(hidden)]
 pub use async_stream;
 #[doc(hidden)]
 pub use async_trait;
@@ -147,6 +150,8 @@ pub use futures;
 pub use indexmap;
 #[doc(hidden)]
 pub use serde_json;
+#[doc(hidden)]
+pub use static_assertions;
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
 
