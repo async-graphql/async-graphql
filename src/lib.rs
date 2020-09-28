@@ -597,6 +597,12 @@ pub use async_graphql_derive::Interface;
 /// | name        | Object name               | string   | Y        |
 /// | desc        | Object description        | string   | Y        |
 ///
+/// # Item parameters
+///
+/// | Attribute    | description                              | Type     | Optional |
+/// |--------------|------------------------------------------|----------|----------|
+/// | flatten      | Similar to serde (flatten)               | boolean  | Y        |
+///
 /// # Define a union
 ///
 /// Define TypeA, TypeB, ... as MyUnion
