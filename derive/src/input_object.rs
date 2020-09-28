@@ -60,6 +60,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
+                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::type_mark::TypeMarkInputObject);
                 #ty::create_type_info(registry);
                 if let Some(#crate_name::registry::MetaType::InputObject{ input_fields, .. }) =
                     registry.types.remove(&*<#ty as #crate_name::Type>::type_name()) {

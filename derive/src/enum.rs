@@ -1,5 +1,5 @@
 use crate::args;
-use crate::utils::{get_cfg_attrs, get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -54,7 +54,7 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             .as_ref()
             .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
-        enum_items.push((get_cfg_attrs(&variant.attrs), item_ident));
+        enum_items.push(item_ident);
         items.push(quote! {
             #crate_name::resolver_utils::EnumItem {
                 name: #gql_item_name,
@@ -80,15 +80,13 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
             ));
         };
 
-        let local_to_remote_items = enum_items.iter().map(|(cfg_attrs, item)| {
+        let local_to_remote_items = enum_items.iter().map(|item| {
             quote! {
-                #(#cfg_attrs)*
                 #ident::#item => #remote_ty::#item,
             }
         });
-        let remote_to_local_items = enum_items.iter().map(|(cfg_attrs, item)| {
+        let remote_to_local_items = enum_items.iter().map(|item| {
             quote! {
-                #(#cfg_attrs)*
                 #remote_ty::#item => #ident::#item,
             }
         });
