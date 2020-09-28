@@ -182,6 +182,49 @@ pub enum Episode {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#wrapping-a-remote-enum" id="wrapping-a-remote-enum">Wrapping a remote enum</a></h2>
+<p>Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the 
+trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
+expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new 
+enum that has parity with the existing, remote enum type.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+/// Provides parity with a remote enum type
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum LocalEnum {
+    A,
+    B,
+    C,
+}
+
+/// Conversion interface from remote type to our local GraphQL enum type
+impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
+    fn from(e: remote_crate::RemoteEnum) -&gt; Self {
+        match e {
+            remote_crate::RemoteEnum::A =&gt; Self::A,
+            remote_crate::RemoteEnum::B =&gt; Self::B,
+            remote_crate::RemoteEnum::C =&gt; Self::C,
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The process is tedious and requires multiple steps to keep the local and remote enums in sync. <code>Async_graphql</code> provides a handy feature to generate the <code>From&lt;remote_crate::RemoteEnum&gt; for LocalEnum</code> as well as an opposite direction of <code>From&lt;LocalEnum&gt; for remote_crate::RemoteEnum</code> via an additional attribute after deriving <code>Enum</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+#[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
+enum LocalEnum {
+    A,
+    B,
+    C,
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

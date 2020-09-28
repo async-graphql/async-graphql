@@ -182,6 +182,46 @@ pub enum Episode {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#封装外部枚举类型" id="封装外部枚举类型">封装外部枚举类型</a></h2>
+<p>Rust的 <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">孤儿规则</a> 要求特质或您要实现特质的类型必须在相同的板条箱中定义，因此你不能向GraphQL公开外部枚举类型。 为了创建<code>Enum</code>类型，一种常见的解决方法是创建一个新的与现有远程枚举类型同等的枚举。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+/// Provides parity with a remote enum type
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum LocalEnum {
+    A,
+    B,
+    C,
+}
+
+/// Conversion interface from remote type to our local GraphQL enum type
+impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
+    fn from(e: remote_crate::RemoteEnum) -&gt; Self {
+        match e {
+            remote_crate::RemoteEnum::A =&gt; Self::A,
+            remote_crate::RemoteEnum::B =&gt; Self::B,
+            remote_crate::RemoteEnum::C =&gt; Self::C,
+        }
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>该过程很繁琐，需要多个步骤才能使本地枚举和远程枚举保持同步。<code>Async_graphql</code>提供了一个方便的功能，可在派生<code>Enum</code>之后通过附加属性生成LocalEnum的<code>From &lt;remote_crate::RemoteEnum&gt;</code>以及相反的<code>From&lt;LocalEnum&gt; for remote_crate::RemoteEnum</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+#[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
+enum LocalEnum {
+    A,
+    B,
+    C,
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
