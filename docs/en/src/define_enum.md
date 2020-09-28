@@ -24,7 +24,10 @@ pub enum Episode {
 
 ## Wrapping a remote enum
 
-In sum scenarios, you may not be in control of the enums that you want to expose via GraphQL. In order to provide an `Enum` type, a common workaround is to create a new enum that has parity with the existing, remote enum type.
+Rust's [orphan rule](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits) requires that either the 
+trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
+expose remote enumeration types to GraphQL. In order to provide an `Enum` type, a common workaround is to create a new 
+enum that has parity with the existing, remote enum type.
 
 ```rust
 use async_graphql::*;
@@ -49,7 +52,7 @@ impl From<remote_crate::RemoteEnum> for LocalEnum {
 }
 ```
 
-The process is tedious and requires multiple steps to keep the local and remote enums in sync. `async_graphql` provides a handy feature to generate the `From<remote_crate::RemoteEnum> for LocalEnum` as well as an opposite direction of `From<LocalEnum> for remote_crate::RemoteEnum` via an additional attribute after deriving `Enum`:
+The process is tedious and requires multiple steps to keep the local and remote enums in sync. `Async_graphql` provides a handy feature to generate the `From<remote_crate::RemoteEnum> for LocalEnum` as well as an opposite direction of `From<LocalEnum> for remote_crate::RemoteEnum` via an additional attribute after deriving `Enum`:
 
 ```rust
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
