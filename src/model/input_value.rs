@@ -17,7 +17,7 @@ impl<'a> __InputValue<'a> {
         self.input_value.description.map(|s| s.to_string())
     }
 
-    #[field(name = "type")]
+    #[graphql(name = "type")]
     async fn ty(&self) -> __Type<'a> {
         __Type::new(self.registry, &self.input_value.ty)
     }

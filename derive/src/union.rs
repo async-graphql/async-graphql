@@ -1,21 +1,19 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
 use std::collections::HashSet;
-use syn::{Data, DeriveInput, Error, Fields, Result, Type};
+use syn::{Error, Type};
 
-pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
-    let ident = &input.ident;
-    let generics = &input.generics;
-    let s = match &input.data {
+    let ident = &union_args.ident;
+    let generics = &union_args.generics;
+    let s = match &union_args.data {
         Data::Enum(s) => s,
         _ => {
-            return Err(Error::new_spanned(
-                input,
-                "Unions can only be applied to an enum.",
-            ))
+            return Err(Error::new_spanned(&ident, "Union can only be applied to an enum.").into())
         }
     };
     let mut enum_names = Vec::new();
@@ -23,10 +21,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     let mut type_into_impls = Vec::new();
     let gql_typename = union_args.name.clone().unwrap_or_else(|| ident.to_string());
 
-    let desc = union_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+    let desc = get_rustdoc(&union_args.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
@@ -35,44 +30,42 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
     let mut get_introspection_typename = Vec::new();
     let mut collect_all_fields = Vec::new();
 
-    for variant in s.variants.iter() {
+    for variant in s {
         let enum_name = &variant.ident;
-        let field = match &variant.fields {
-            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => fields.unnamed.first().unwrap(),
-            Fields::Unnamed(_) => {
+        let ty = match variant.fields.style {
+            Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
+            Style::Tuple => {
                 return Err(Error::new_spanned(
-                    variant,
+                    enum_name,
                     "Only single value variants are supported",
-                ))
+                )
+                .into())
             }
-            Fields::Unit => {
-                return Err(Error::new_spanned(
-                    variant,
-                    "Empty variants are not supported",
-                ))
+            Style::Unit => {
+                return Err(
+                    Error::new_spanned(enum_name, "Empty variants are not supported").into(),
+                )
             }
-            Fields::Named(_) => {
+            Style::Struct => {
                 return Err(Error::new_spanned(
-                    variant,
+                    enum_name,
                     "Variants with named fields are not supported",
-                ))
+                )
+                .into())
             }
         };
 
-        if let Type::Path(p) = &field.ty {
+        if let Type::Path(p) = &ty {
             // This validates that the field type wasn't already used
-            let item_args = args::UnionItem::parse(&variant.attrs)?;
-
             if !enum_items.insert(p) {
-                return Err(Error::new_spanned(
-                    field,
-                    "This type already used in another variant",
-                ));
+                return Err(
+                    Error::new_spanned(&ty, "This type already used in another variant").into(),
+                );
             }
 
             enum_names.push(enum_name);
 
-            if !item_args.flatten {
+            if !variant.flatten {
                 type_into_impls.push(quote! {
                     #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkObject);
 
@@ -100,7 +93,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 <#p as #crate_name::Type>::create_type_info(registry);
             });
 
-            if !item_args.flatten {
+            if !variant.flatten {
                 possible_types.push(quote! {
                     possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
                 });
@@ -113,7 +106,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 });
             }
 
-            if !item_args.flatten {
+            if !variant.flatten {
                 get_introspection_typename.push(quote! {
                     #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
                 });
@@ -127,7 +120,7 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
             });
         } else {
-            return Err(Error::new_spanned(field, "Invalid type"));
+            return Err(Error::new_spanned(ty, "Invalid type").into());
         }
     }
 

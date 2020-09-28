@@ -1,13 +1,13 @@
-use crate::utils::{
-    get_rustdoc, parse_default, parse_default_with, parse_guards, parse_post_guards,
-    parse_validator,
-};
-use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{Attribute, AttributeArgs, Error, Lit, Meta, MetaList, NestedMeta, Result, Type};
+use darling::ast::{Data, Fields};
+use darling::util::Ignored;
+use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
+use syn::{Attribute, Generics, Ident, Lit, LitStr, Meta, Type, Visibility};
 
+#[derive(FromMeta)]
+#[darling(default)]
 pub struct CacheControl {
-    pub public: bool,
+    public: bool,
+    private: bool,
     pub max_age: usize,
 }
 
@@ -15,929 +15,342 @@ impl Default for CacheControl {
     fn default() -> Self {
         Self {
             public: true,
+            private: false,
             max_age: 0,
         }
     }
 }
 
 impl CacheControl {
-    pub fn parse(ls: &MetaList) -> Result<Self> {
-        let mut cache_control = Self {
-            public: true,
-            max_age: 0,
-        };
-
-        for meta in &ls.nested {
-            match meta {
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("max_age") {
-                        if let Lit::Int(n) = &nv.lit {
-                            match n.base10_parse::<usize>() {
-                                Ok(n) => cache_control.max_age = n,
-                                Err(err) => {
-                                    return Err(Error::new_spanned(&nv.lit, err));
-                                }
-                            }
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'max_age' must be integer.",
-                            ));
-                        }
-                    }
-                }
-                NestedMeta::Meta(Meta::Path(p)) => {
-                    if p.is_ident("public") {
-                        cache_control.public = true;
-                    } else if p.is_ident("private") {
-                        cache_control.public = false;
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(cache_control)
+    pub fn is_public(&self) -> bool {
+        !self.private && self.public
     }
 }
 
-pub struct Object {
-    pub internal: bool,
+#[derive(Debug)]
+pub enum DefaultValue {
+    Default,
+    Value(Lit),
+}
+
+impl FromMeta for DefaultValue {
+    fn from_word() -> darling::Result<Self> {
+        Ok(DefaultValue::Default)
+    }
+
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        Ok(DefaultValue::Value(value.clone()))
+    }
+}
+
+#[derive(FromField)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct SimpleObjectField {
+    pub ident: Option<Ident>,
+    pub ty: Type,
+    pub vis: Visibility,
+    pub attrs: Vec<Attribute>,
+
+    #[darling(default)]
+    pub skip: bool,
+    #[darling(default)]
     pub name: Option<String>,
-    pub desc: Option<String>,
+    #[darling(default)]
+    pub deprecation: Option<String>,
+    #[darling(default)]
+    pub owned: bool,
+    #[darling(default)]
     pub cache_control: CacheControl,
+    #[darling(default)]
+    pub external: bool,
+    #[darling(default)]
+    pub provides: Option<String>,
+    #[darling(default)]
+    pub requires: Option<String>,
+    #[darling(default)]
+    pub guard: Option<Meta>,
+    #[darling(default)]
+    pub post_guard: Option<Meta>,
+}
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct SimpleObject {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<Ignored, SimpleObjectField>,
+
+    #[darling(default)]
+    pub internal: bool,
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub cache_control: CacheControl,
+    #[darling(default)]
     pub extends: bool,
 }
 
-impl Object {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-        let mut name = None;
-        let mut desc = None;
-        let mut cache_control = CacheControl::default();
-        let mut extends = false;
-
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
-                }
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("extends") => {
-                    extends = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                NestedMeta::Meta(Meta::List(ls)) => {
-                    if ls.path.is_ident("cache_control") {
-                        cache_control = CacheControl::parse(&ls)?;
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            internal,
-            name,
-            desc,
-            cache_control,
-            extends,
-        })
-    }
-}
-
+#[derive(FromMeta, Default)]
+#[darling(default)]
 pub struct Argument {
     pub name: Option<String>,
     pub desc: Option<String>,
-    pub default: Option<TokenStream>,
-    pub validator: TokenStream,
+    pub default: Option<DefaultValue>,
+    pub default_with: Option<LitStr>,
+    pub validator: Option<Meta>,
     pub key: bool, // for entity
 }
 
-impl Argument {
-    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Self> {
-        let mut name = None;
-        let mut desc = None;
-        let mut default = None;
-        let mut validator = quote! { None };
-        let mut key = false;
-
-        for attr in attrs {
-            match attr.parse_meta()? {
-                Meta::List(ls) if ls.path.is_ident("arg") => {
-                    for meta in &ls.nested {
-                        if let NestedMeta::Meta(Meta::Path(p)) = meta {
-                            if p.is_ident("default") {
-                                default = Some(quote! { Default::default() });
-                            } else if p.is_ident("key") {
-                                key = true;
-                            }
-                        } else if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
-                            if nv.path.is_ident("name") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    name = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'name' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("desc") {
-                                if let syn::Lit::Str(lit) = &nv.lit {
-                                    desc = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'desc' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("default") {
-                                default = Some(parse_default(&nv.lit)?);
-                            } else if nv.path.is_ident("default_with") {
-                                default = Some(parse_default_with(&nv.lit)?);
-                            }
-                        }
-                    }
-
-                    validator = parse_validator(crate_name, &ls)?;
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            name,
-            desc,
-            default,
-            validator,
-            key,
-        })
-    }
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct Object {
+    pub internal: bool,
+    pub name: Option<String>,
+    pub cache_control: CacheControl,
+    pub extends: bool,
 }
 
-pub struct Field {
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct ObjectField {
+    pub skip: bool,
+    pub entity: bool,
     pub name: Option<String>,
-    pub desc: Option<String>,
     pub deprecation: Option<String>,
     pub cache_control: CacheControl,
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
-    pub owned: bool,
-    pub guard: Option<TokenStream>,
-    pub post_guard: Option<TokenStream>,
+    pub guard: Option<Meta>,
+    pub post_guard: Option<Meta>,
 }
 
-impl Field {
-    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
-        let mut name = None;
-        let mut desc = None;
-        let mut deprecation = None;
-        let mut cache_control = CacheControl::default();
-        let mut external = false;
-        let mut provides = None;
-        let mut requires = None;
-        let mut owned = false;
-        let mut guard = None;
-        let mut post_guard = None;
-
-        for attr in attrs {
-            match attr.parse_meta()? {
-                Meta::List(ls) if ls.path.is_ident("field") => {
-                    guard = parse_guards(crate_name, &ls)?;
-                    post_guard = parse_post_guards(crate_name, &ls)?;
-                    for meta in &ls.nested {
-                        match meta {
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
-                                return Ok(None);
-                            }
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
-                                external = true;
-                            }
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("owned") => {
-                                owned = true;
-                            }
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("ref") => {
-                                return Err(Error::new_spanned(
-                                    &p,
-                                    "Attribute `ref` is no longer supported. By default, all fields resolver return borrowed value. If you want to return ownership value, use `owned` attribute.",
-                                ));
-                            }
-                            NestedMeta::Meta(Meta::NameValue(nv)) => {
-                                if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        name = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'name' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        desc = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'desc' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("deprecation") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        deprecation = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'deprecation' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("provides") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        provides = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'provides' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("requires") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        requires = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'requires' should be a string.",
-                                        ));
-                                    }
-                                }
-                            }
-                            NestedMeta::Meta(Meta::List(ls)) => {
-                                if ls.path.is_ident("cache_control") {
-                                    cache_control = CacheControl::parse(ls)?;
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        if desc.is_none() {
-            desc = get_rustdoc(attrs)?;
-        }
-
-        Ok(Some(Self {
-            name,
-            desc,
-            deprecation,
-            cache_control,
-            external,
-            provides,
-            requires,
-            owned,
-            guard,
-            post_guard,
-        }))
-    }
-}
-
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
 pub struct Enum {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<EnumItem, Ignored>,
+
+    #[darling(default)]
     pub internal: bool,
+    #[darling(default)]
     pub name: Option<String>,
-    pub desc: Option<String>,
+    #[darling(default)]
     pub remote: Option<String>,
 }
 
-impl Enum {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-        let mut name = None;
-        let mut desc = None;
-        let mut remote = None;
-
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("remote") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            remote = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'remote' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            internal,
-            name,
-            desc,
-            remote,
-        })
-    }
-}
-
+#[derive(FromVariant)]
+#[darling(attributes(graphql), forward_attrs(doc))]
 pub struct EnumItem {
+    pub ident: Ident,
+    pub attrs: Vec<Attribute>,
+    pub fields: Fields<Ignored>,
+
+    #[darling(default)]
     pub name: Option<String>,
-    pub desc: Option<String>,
+    #[darling(default)]
     pub deprecation: Option<String>,
 }
 
-impl EnumItem {
-    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
-        let mut name = None;
-        let mut desc = None;
-        let mut deprecation = None;
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct Union {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<UnionItem, Ignored>,
 
-        for attr in attrs {
-            if attr.path.is_ident("item") {
-                if let Meta::List(args) = attr.parse_meta()? {
-                    for meta in args.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
-                            if nv.path.is_ident("name") {
-                                if let syn::Lit::Str(lit) = nv.lit {
-                                    name = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'name' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("desc") {
-                                if let syn::Lit::Str(lit) = nv.lit {
-                                    desc = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'desc' should be a string.",
-                                    ));
-                                }
-                            } else if nv.path.is_ident("deprecation") {
-                                if let syn::Lit::Str(lit) = nv.lit {
-                                    deprecation = Some(lit.value());
-                                } else {
-                                    return Err(Error::new_spanned(
-                                        &nv.lit,
-                                        "Attribute 'deprecation' should be a string.",
-                                    ));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if desc.is_none() {
-            desc = get_rustdoc(attrs)?;
-        }
-
-        Ok(Self {
-            name,
-            desc,
-            deprecation,
-        })
-    }
-}
-
-pub struct UnionItem {
-    pub flatten: bool,
-}
-
-impl UnionItem {
-    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
-        let mut flatten = false;
-
-        for attr in attrs {
-            if attr.path.is_ident("item") {
-                if let Meta::List(args) = attr.parse_meta()? {
-                    for meta in args.nested {
-                        if let NestedMeta::Meta(Meta::Path(p)) = meta {
-                            if p.is_ident("flatten") {
-                                flatten = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(Self { flatten })
-    }
-}
-
-pub struct InputField {
-    pub name: Option<String>,
-    pub desc: Option<String>,
-    pub default: Option<TokenStream>,
-    pub validator: TokenStream,
-    pub flatten: bool,
-}
-
-impl InputField {
-    pub fn parse(crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Self> {
-        let mut name = None;
-        let mut desc = None;
-        let mut default = None;
-        let mut validator = quote! { None };
-        let mut flatten = false;
-
-        for attr in attrs {
-            if attr.path.is_ident("field") {
-                if let Meta::List(args) = &attr.parse_meta()? {
-                    for meta in &args.nested {
-                        match meta {
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("skip") => {
-                                return Err(Error::new_spanned(
-                                    meta,
-                                    "Fields on InputObject are not allowed to be skipped",
-                                ));
-                            }
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("default") => {
-                                default = Some(quote! { Default::default() });
-                            }
-                            NestedMeta::Meta(Meta::Path(p)) if p.is_ident("flatten") => {
-                                flatten = true;
-                            }
-                            NestedMeta::Meta(Meta::NameValue(nv)) => {
-                                if nv.path.is_ident("name") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        name = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'name' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("desc") {
-                                    if let syn::Lit::Str(lit) = &nv.lit {
-                                        desc = Some(lit.value());
-                                    } else {
-                                        return Err(Error::new_spanned(
-                                            &nv.lit,
-                                            "Attribute 'desc' should be a string.",
-                                        ));
-                                    }
-                                } else if nv.path.is_ident("default") {
-                                    default = Some(parse_default(&nv.lit)?);
-                                } else if nv.path.is_ident("default_with") {
-                                    default = Some(parse_default_with(&nv.lit)?);
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    validator = parse_validator(crate_name, &args)?;
-                }
-            }
-        }
-
-        if desc.is_none() {
-            desc = get_rustdoc(attrs)?;
-        }
-
-        Ok(Self {
-            name,
-            desc,
-            default,
-            validator,
-            flatten,
-        })
-    }
-}
-
-pub struct InputObject {
+    #[darling(default)]
     pub internal: bool,
+    #[darling(default)]
     pub name: Option<String>,
-    pub desc: Option<String>,
 }
 
-impl InputObject {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-        let mut name = None;
-        let mut desc = None;
+#[derive(FromVariant)]
+#[darling(attributes(graphql))]
+pub struct UnionItem {
+    pub ident: Ident,
+    pub fields: Fields<syn::Type>,
 
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            internal,
-            name,
-            desc,
-        })
-    }
+    #[darling(default)]
+    pub flatten: bool,
 }
 
+#[derive(FromField)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct InputObjectField {
+    pub ident: Option<Ident>,
+    pub ty: Type,
+    pub vis: Visibility,
+    pub attrs: Vec<Attribute>,
+
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub default: Option<DefaultValue>,
+    #[darling(default)]
+    pub default_with: Option<LitStr>,
+    #[darling(default)]
+    pub validator: Option<Meta>,
+    #[darling(default)]
+    pub flatten: bool,
+}
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct InputObject {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<Ignored, InputObjectField>,
+
+    #[darling(default)]
+    pub internal: bool,
+    #[darling(default)]
+    pub name: Option<String>,
+}
+
+#[derive(FromMeta)]
 pub struct InterfaceFieldArgument {
     pub name: String,
+    #[darling(default)]
     pub desc: Option<String>,
-    pub ty: Type,
-    pub default: Option<TokenStream>,
+    #[darling(rename = "type")]
+    pub ty: LitStr,
+    #[darling(default)]
+    pub default: Option<DefaultValue>,
+    #[darling(default)]
+    pub default_with: Option<LitStr>,
 }
 
-impl InterfaceFieldArgument {
-    pub fn parse(ls: &MetaList) -> Result<Self> {
-        let mut name = None;
-        let mut desc = None;
-        let mut ty = None;
-        let mut default = None;
-
-        for meta in &ls.nested {
-            if let NestedMeta::Meta(Meta::Path(p)) = meta {
-                if p.is_ident("default") {
-                    default = Some(quote! { Default::default() });
-                }
-            } else if let NestedMeta::Meta(Meta::NameValue(nv)) = meta {
-                if nv.path.is_ident("name") {
-                    if let syn::Lit::Str(lit) = &nv.lit {
-                        name = Some(lit.value());
-                    } else {
-                        return Err(Error::new_spanned(
-                            &nv.lit,
-                            "Attribute 'name' should be a string.",
-                        ));
-                    }
-                } else if nv.path.is_ident("desc") {
-                    if let syn::Lit::Str(lit) = &nv.lit {
-                        desc = Some(lit.value());
-                    } else {
-                        return Err(Error::new_spanned(
-                            &nv.lit,
-                            "Attribute 'desc' should be a string.",
-                        ));
-                    }
-                } else if nv.path.is_ident("type") {
-                    if let syn::Lit::Str(lit) = &nv.lit {
-                        if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
-                            ty = Some(ty2);
-                        } else {
-                            return Err(Error::new_spanned(&lit, "Expect type"));
-                        }
-                    } else {
-                        return Err(Error::new_spanned(
-                            &nv.lit,
-                            "Attribute 'type' should be a string.",
-                        ));
-                    }
-                } else if nv.path.is_ident("default") {
-                    default = Some(parse_default(&nv.lit)?);
-                } else if nv.path.is_ident("default_with") {
-                    default = Some(parse_default_with(&nv.lit)?);
-                }
-            }
-        }
-
-        if name.is_none() {
-            return Err(Error::new_spanned(ls, "Missing name"));
-        }
-
-        if ty.is_none() {
-            return Err(Error::new_spanned(ls, "Missing type"));
-        }
-
-        Ok(Self {
-            name: name.unwrap(),
-            desc,
-            ty: ty.unwrap(),
-            default,
-        })
-    }
-}
-
+#[derive(FromMeta)]
 pub struct InterfaceField {
     pub name: String,
+    #[darling(rename = "type")]
+    pub ty: LitStr,
+    #[darling(default)]
     pub method: Option<String>,
+    #[darling(default)]
     pub desc: Option<String>,
-    pub ty: Type,
+    #[darling(default, multiple, rename = "arg")]
     pub args: Vec<InterfaceFieldArgument>,
+    #[darling(default)]
     pub deprecation: Option<String>,
+    #[darling(default)]
     pub external: bool,
+    #[darling(default)]
     pub provides: Option<String>,
+    #[darling(default)]
     pub requires: Option<String>,
 }
 
-impl InterfaceField {
-    pub fn parse(ls: &MetaList) -> Result<Self> {
-        let mut name = None;
-        let mut method = None;
-        let mut desc = None;
-        let mut ty = None;
-        let mut args = Vec::new();
-        let mut deprecation = None;
-        let mut external = false;
-        let mut provides = None;
-        let mut requires = None;
-
-        for meta in &ls.nested {
-            match meta {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("external") => {
-                    external = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("method") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            method = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'method' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("type") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            if let Ok(ty2) = syn::parse_str::<syn::Type>(&lit.value()) {
-                                ty = Some(ty2);
-                            } else {
-                                return Err(Error::new_spanned(&lit, "Expect type"));
-                            }
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'type' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("deprecation") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            deprecation = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'deprecation' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("provides") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            provides = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'provides' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("requires") {
-                        if let syn::Lit::Str(lit) = &nv.lit {
-                            requires = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'requires' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("arg") => {
-                    args.push(InterfaceFieldArgument::parse(ls)?);
-                }
-                _ => {}
-            }
-        }
-
-        if name.is_none() {
-            return Err(Error::new_spanned(ls, "Missing name"));
-        }
-
-        if ty.is_none() {
-            return Err(Error::new_spanned(ls, "Missing type"));
-        }
-
-        Ok(Self {
-            name: name.unwrap(),
-            method,
-            desc,
-            ty: ty.unwrap(),
-            args,
-            deprecation,
-            external,
-            requires,
-            provides,
-        })
-    }
+#[derive(FromVariant)]
+pub struct InterfaceMember {
+    pub ident: Ident,
+    pub fields: Fields<syn::Type>,
 }
 
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
 pub struct Interface {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<InterfaceMember, Ignored>,
+
+    #[darling(default)]
     pub internal: bool,
+    #[darling(default)]
     pub name: Option<String>,
-    pub desc: Option<String>,
+    #[darling(default, multiple, rename = "field")]
     pub fields: Vec<InterfaceField>,
+    #[darling(default)]
     pub extends: bool,
 }
 
-impl Interface {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-        let mut name = None;
-        let mut desc = None;
-        let mut fields = Vec::new();
-        let mut extends = false;
-
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("internal") => {
-                    internal = true;
-                }
-                NestedMeta::Meta(Meta::Path(p)) if p.is_ident("extends") => {
-                    extends = true;
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                NestedMeta::Meta(Meta::List(ls)) if ls.path.is_ident("field") => {
-                    fields.push(InterfaceField::parse(&ls)?);
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            internal,
-            name,
-            desc,
-            fields,
-            extends,
-        })
-    }
-}
-
+#[derive(FromMeta, Default)]
+#[darling(default)]
 pub struct Scalar {
     pub internal: bool,
     pub name: Option<String>,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct Subscription {
+    pub internal: bool,
+    pub name: Option<String>,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct SubscriptionFieldArgument {
+    pub name: Option<String>,
     pub desc: Option<String>,
+    pub default: Option<DefaultValue>,
+    pub default_with: Option<LitStr>,
+    pub validator: Option<Meta>,
 }
 
-impl Scalar {
-    pub fn parse(args: AttributeArgs) -> Result<Self> {
-        let mut internal = false;
-        let mut name = None;
-        let mut desc = None;
-
-        for arg in args {
-            match arg {
-                NestedMeta::Meta(Meta::Path(p)) => {
-                    if p.is_ident("internal") {
-                        internal = true;
-                    }
-                }
-                NestedMeta::Meta(Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("name") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            name = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'name' should be a string.",
-                            ));
-                        }
-                    } else if nv.path.is_ident("desc") {
-                        if let syn::Lit::Str(lit) = nv.lit {
-                            desc = Some(lit.value());
-                        } else {
-                            return Err(Error::new_spanned(
-                                &nv.lit,
-                                "Attribute 'desc' should be a string.",
-                            ));
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(Self {
-            internal,
-            name,
-            desc,
-        })
-    }
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct SubscriptionField {
+    pub skip: bool,
+    pub name: Option<String>,
+    pub deprecation: Option<String>,
+    pub guard: Option<Meta>,
+    pub post_guard: Option<Meta>,
 }
 
-pub struct Entity {}
+#[derive(FromMeta, Default)]
+#[darling(default, allow_unknown_fields)]
+pub struct SubscriptionFieldWrapper {
+    pub graphql: SubscriptionField,
+}
 
-impl Entity {
-    pub fn parse(_crate_name: &TokenStream, attrs: &[Attribute]) -> Result<Option<Self>> {
-        for attr in attrs {
-            match attr.parse_meta()? {
-                Meta::List(ls) if ls.path.is_ident("entity") => {
-                    return Ok(Some(Self {}));
-                }
-                Meta::Path(p) if p.is_ident("entity") => {
-                    return Ok(Some(Self {}));
-                }
-                _ => {}
-            }
-        }
+#[derive(FromField)]
+pub struct MergedObjectField {
+    pub ident: Option<Ident>,
+    pub ty: Type,
+}
 
-        Ok(None)
-    }
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct MergedObject {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<Ignored, MergedObjectField>,
+
+    #[darling(default)]
+    pub internal: bool,
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub cache_control: CacheControl,
+    #[darling(default)]
+    pub extends: bool,
+}
+
+#[derive(FromField)]
+pub struct MergedSubscriptionField {
+    pub ident: Option<Ident>,
+    pub ty: Type,
+}
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct MergedSubscription {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<Ignored, MergedSubscriptionField>,
+
+    #[darling(default)]
+    pub internal: bool,
+    #[darling(default)]
+    pub name: Option<String>,
 }

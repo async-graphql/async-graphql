@@ -1,17 +1,24 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{
+    generate_default, generate_validator, get_crate_name, get_rustdoc, GeneratorResult,
+};
+use darling::ast::Data;
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Data, DeriveInput, Error, Result};
+use syn::Error;
 
-pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
-    let ident = &input.ident;
-    let s = match &input.data {
+    let ident = &object_args.ident;
+    let s = match &object_args.data {
         Data::Struct(s) => s,
-        _ => return Err(Error::new_spanned(input, "It should be a struct.")),
+        _ => {
+            return Err(
+                Error::new_spanned(ident, "InputObject can only be applied to an struct.").into(),
+            )
+        }
     };
 
     let mut struct_fields = Vec::new();
@@ -35,10 +42,7 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
         .clone()
         .unwrap_or_else(|| ident.to_string());
 
-    let desc = object_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+    let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
@@ -49,14 +53,14 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
     let mut flatten_fields = Vec::new();
 
     for field in &s.fields {
-        let field_args = args::InputField::parse(&crate_name, &field.attrs)?;
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
-        let name = field_args
+        let name = field
             .name
+            .clone()
             .unwrap_or_else(|| ident.unraw().to_string().to_camel_case());
 
-        if field_args.flatten {
+        if field.flatten {
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
@@ -82,21 +86,25 @@ pub fn generate(object_args: &args::InputObject, input: &DeriveInput) -> Result<
             continue;
         }
 
-        let validator = &field_args.validator;
-        let desc = field_args
-            .desc
-            .as_ref()
-            .map(|s| quote! {Some(#s)})
+        let validator = match &field.validator {
+            Some(meta) => {
+                let stream = generate_validator(&crate_name, meta)?;
+                quote!(Some(#stream))
+            }
+            None => quote!(None),
+        };
+        let desc = get_rustdoc(&field.attrs)?
+            .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
-        let schema_default = field_args
-            .default
+        let default = generate_default(&field.default, &field.default_with)?;
+        let schema_default = default
             .as_ref()
             .map(|value| {
                 quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
             })
             .unwrap_or_else(|| quote! {None});
 
-        if let Some(default) = &field_args.default {
+        if let Some(default) = default {
             get_fields.push(quote! {
                 let #ident: #ty = {
                     match obj.get(#name) {

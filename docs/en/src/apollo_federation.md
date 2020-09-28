@@ -23,7 +23,7 @@ impl Query {
     }
 
     #[entity]
-    async fn find_user_by_id_with_username(&self, #[arg(key)] id: ID, username: String) -> User {
+    async fn find_user_by_id_with_username(&self, #[graphql(key)] id: ID, username: String) -> User {
         User { ... }
     }
 

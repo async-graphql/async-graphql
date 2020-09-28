@@ -11,7 +11,7 @@ pub async fn test_input_validator_string_min_length() {
 
     #[derive(InputObject)]
     struct InputMaxLength {
-        #[field(validator(StringMinLength(length = "6")))]
+        #[graphql(validator(StringMinLength(length = "6")))]
         pub id: String,
     }
 
@@ -19,7 +19,7 @@ pub async fn test_input_validator_string_min_length() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(StringMinLength(length = "6")))] _id: String,
+            #[graphql(validator(StringMinLength(length = "6")))] _id: String,
         ) -> bool {
             true
         }
@@ -129,7 +129,7 @@ pub async fn test_input_validator_string_max_length() {
 
     #[derive(InputObject)]
     struct InputMaxLength {
-        #[field(validator(StringMaxLength(length = "6")))]
+        #[graphql(validator(StringMaxLength(length = "6")))]
         pub id: String,
     }
 
@@ -137,7 +137,7 @@ pub async fn test_input_validator_string_max_length() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(StringMaxLength(length = "6")))] _id: String,
+            #[graphql(validator(StringMaxLength(length = "6")))] _id: String,
         ) -> bool {
             true
         }
@@ -241,13 +241,13 @@ pub async fn test_input_validator_string_email() {
 
     #[derive(InputObject)]
     struct InputEmail {
-        #[field(validator(Email))]
+        #[graphql(validator(Email))]
         pub email: String,
     }
 
     #[Object]
     impl QueryRoot {
-        async fn field_parameter(&self, #[arg(validator(Email))] _email: String) -> bool {
+        async fn field_parameter(&self, #[graphql(validator(Email))] _email: String) -> bool {
             true
         }
 
@@ -384,13 +384,13 @@ pub async fn test_input_validator_string_mac() {
 
     #[derive(InputObject)]
     struct InputMACWithColon {
-        #[field(validator(MAC(colon = "true")))]
+        #[graphql(validator(MAC(colon = "true")))]
         pub mac: String,
     }
 
     #[derive(InputObject)]
     struct InputMACWithoutColon {
-        #[field(validator(MAC(colon = "false")))]
+        #[graphql(validator(MAC(colon = "false")))]
         pub mac: String,
     }
 
@@ -398,7 +398,7 @@ pub async fn test_input_validator_string_mac() {
     impl QueryRootWithColon {
         async fn field_parameter(
             &self,
-            #[arg(validator(MAC(colon = "true")))] _mac: String,
+            #[graphql(validator(MAC(colon = "true")))] _mac: String,
         ) -> bool {
             true
         }
@@ -412,7 +412,7 @@ pub async fn test_input_validator_string_mac() {
     impl QueryRootWithoutColon {
         async fn field_parameter(
             &self,
-            #[arg(validator(MAC(colon = "false")))] _mac: String,
+            #[graphql(validator(MAC(colon = "false")))] _mac: String,
         ) -> bool {
             true
         }
@@ -681,7 +681,7 @@ pub async fn test_input_validator_int_range() {
 
     #[derive(InputObject)]
     struct InputIntRange {
-        #[field(validator(IntRange(min = "-2", max = "5")))]
+        #[graphql(validator(IntRange(min = "-2", max = "5")))]
         pub id: i32,
     }
 
@@ -689,7 +689,7 @@ pub async fn test_input_validator_int_range() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(IntRange(min = "-2", max = "5")))] _id: i32,
+            #[graphql(validator(IntRange(min = "-2", max = "5")))] _id: i32,
         ) -> bool {
             true
         }
@@ -785,7 +785,7 @@ pub async fn test_input_validator_int_less_than() {
 
     #[derive(InputObject)]
     struct InputIntLessThan {
-        #[field(validator(IntLessThan(value = "5")))]
+        #[graphql(validator(IntLessThan(value = "5")))]
         pub id: i32,
     }
 
@@ -793,7 +793,7 @@ pub async fn test_input_validator_int_less_than() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(IntLessThan(value = "5")))] _id: i32,
+            #[graphql(validator(IntLessThan(value = "5")))] _id: i32,
         ) -> bool {
             true
         }
@@ -892,7 +892,7 @@ pub async fn test_input_validator_int_greater_than() {
 
     #[derive(InputObject)]
     struct InputIntGreaterThan {
-        #[field(validator(IntGreaterThan(value = "3")))]
+        #[graphql(validator(IntGreaterThan(value = "3")))]
         pub id: i32,
     }
 
@@ -900,7 +900,7 @@ pub async fn test_input_validator_int_greater_than() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(IntGreaterThan(value = "3")))] _id: i32,
+            #[graphql(validator(IntGreaterThan(value = "3")))] _id: i32,
         ) -> bool {
             true
         }
@@ -1001,13 +1001,13 @@ pub async fn test_input_validator_int_nonzero() {
 
     #[derive(InputObject)]
     struct InputIntNonZero {
-        #[field(validator(IntNonZero))]
+        #[graphql(validator(IntNonZero))]
         pub id: i32,
     }
 
     #[Object]
     impl QueryRoot {
-        async fn field_parameter(&self, #[arg(validator(IntNonZero))] _id: i32) -> bool {
+        async fn field_parameter(&self, #[graphql(validator(IntNonZero))] _id: i32) -> bool {
             true
         }
 
@@ -1103,13 +1103,16 @@ pub async fn test_input_validator_int_equal() {
 
     #[derive(InputObject)]
     struct InputIntEqual {
-        #[field(validator(IntEqual(value = "5")))]
+        #[graphql(validator(IntEqual(value = "5")))]
         pub id: i32,
     }
 
     #[Object]
     impl QueryRoot {
-        async fn field_parameter(&self, #[arg(validator(IntEqual(value = "5")))] _id: i32) -> bool {
+        async fn field_parameter(
+            &self,
+            #[graphql(validator(IntEqual(value = "5")))] _id: i32,
+        ) -> bool {
             true
         }
 
@@ -1206,7 +1209,7 @@ pub async fn test_input_validator_list_max_length() {
 
     #[derive(InputObject)]
     struct InputListMaxLength {
-        #[field(validator(ListMaxLength(length = "5")))]
+        #[graphql(validator(ListMaxLength(length = "5")))]
         pub id: Vec<i32>,
     }
 
@@ -1214,7 +1217,7 @@ pub async fn test_input_validator_list_max_length() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(ListMaxLength(length = "5")))] _id: Vec<i32>,
+            #[graphql(validator(ListMaxLength(length = "5")))] _id: Vec<i32>,
         ) -> bool {
             true
         }
@@ -1324,7 +1327,7 @@ pub async fn test_input_validator_list_min_length() {
 
     #[derive(InputObject)]
     struct InputListMinLength {
-        #[field(validator(ListMinLength(length = "4")))]
+        #[graphql(validator(ListMinLength(length = "4")))]
         pub id: Vec<i32>,
     }
 
@@ -1332,7 +1335,7 @@ pub async fn test_input_validator_list_min_length() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(ListMinLength(length = "4")))] _id: Vec<i32>,
+            #[graphql(validator(ListMinLength(length = "4")))] _id: Vec<i32>,
         ) -> bool {
             true
         }
@@ -1442,7 +1445,7 @@ pub async fn test_input_validator_operator_or() {
 
     #[derive(InputObject)]
     struct InputOrValidator {
-        #[field(validator(or(Email, MAC(colon = "false"))))]
+        #[graphql(validator(or(Email, MAC(colon = "false"))))]
         pub id: String,
     }
 
@@ -1450,7 +1453,7 @@ pub async fn test_input_validator_operator_or() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(or(Email, MAC(colon = "false"))))] _id: String,
+            #[graphql(validator(or(Email, MAC(colon = "false"))))] _id: String,
         ) -> bool {
             true
         }
@@ -1568,7 +1571,7 @@ pub async fn test_input_validator_operator_and() {
 
     #[derive(InputObject)]
     struct InputAndValidator {
-        #[field(validator(and(Email, StringMinLength(length = "14"))))]
+        #[graphql(validator(and(Email, StringMinLength(length = "14"))))]
         pub email: String,
     }
 
@@ -1576,7 +1579,7 @@ pub async fn test_input_validator_operator_and() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(and(Email, StringMinLength(length = "14"))))] _email: String,
+            #[graphql(validator(and(Email, StringMinLength(length = "14"))))] _email: String,
         ) -> bool {
             true
         }
@@ -1687,7 +1690,7 @@ pub async fn test_input_validator_variable() {
 
     #[derive(InputObject)]
     struct InputMaxLength {
-        #[field(validator(StringMinLength(length = "6")))]
+        #[graphql(validator(StringMinLength(length = "6")))]
         pub id: String,
     }
 
@@ -1695,7 +1698,7 @@ pub async fn test_input_validator_variable() {
     impl QueryRoot {
         async fn field_parameter(
             &self,
-            #[arg(validator(StringMinLength(length = "6")))] _id: String,
+            #[graphql(validator(StringMinLength(length = "6")))] _id: String,
         ) -> bool {
             true
         }

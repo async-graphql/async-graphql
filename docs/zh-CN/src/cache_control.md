@@ -17,11 +17,11 @@
 ```rust
 #[Object(cache_control(max_age = 60))]
 impl Query {
-    #[field(cache_control(max_age = 30))]
+    #[graphql(cache_control(max_age = 30))]
     async fn value1(&self) -> i32 {
     }
 
-    #[field(cache_control(private))]
+    #[graphql(cache_control(private))]
     async fn value2(&self) -> i32 {
     }
 

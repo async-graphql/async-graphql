@@ -1,13 +1,20 @@
 use crate::args;
 use crate::output_type::OutputType;
-use crate::utils::{get_cfg_attrs, get_crate_name, get_param_getter_ident, get_rustdoc};
+use crate::utils::{
+    generate_default, generate_guards, generate_post_guards, generate_validator, get_cfg_attrs,
+    get_crate_name, get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
+    GeneratorResult,
+};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, Result, ReturnType, Type, TypeReference};
+use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
 
-pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<TokenStream> {
+pub fn generate(
+    object_args: &args::Object,
+    item_impl: &mut ItemImpl,
+) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let (self_ty, self_name) = match item_impl.self_ty.as_ref() {
         Type::Path(path) => (
@@ -18,21 +25,17 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 .map(|s| s.ident.to_string())
                 .unwrap(),
         ),
-        _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type")),
+        _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type").into()),
     };
     let generics = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
     let extends = object_args.extends;
-
     let gql_typename = object_args
         .name
         .clone()
         .unwrap_or_else(|| self_name.clone());
 
-    let desc = object_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&item_impl.attrs).ok().flatten())
+    let desc = get_rustdoc(&item_impl.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
@@ -44,17 +47,20 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            if args::Entity::parse(&crate_name, &method.attrs)?.is_some() {
+            let method_args: args::ObjectField =
+                parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
+
+            if method_args.entity {
                 let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(&method, "Must be asynchronous"));
+                    return Err(Error::new_spanned(&method, "Must be asynchronous").into());
                 }
 
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
+                        return Err(Error::new_spanned(&method.sig.output, "Missing type").into())
                     }
                 };
                 let mut create_ctx = true;
@@ -66,14 +72,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             return Err(Error::new_spanned(
                                 receiver,
                                 "The self receiver must be the first parameter.",
-                            ));
+                            )
+                            .into());
                         }
                     } else if let FnArg::Typed(pat) = arg {
                         if idx == 0 {
                             return Err(Error::new_spanned(
                                 pat,
                                 "The self receiver must be the first parameter.",
-                            ));
+                            )
+                            .into());
                         }
 
                         match (&*pat.pat, &*pat.ty) {
@@ -81,7 +89,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                 args.push((
                                     arg_ident.clone(),
                                     arg_ty.clone(),
-                                    args::Argument::parse(&crate_name, &pat.attrs)?,
+                                    parse_graphql_attrs::<args::Argument>(&pat.attrs)?
+                                        .unwrap_or_default(),
                                 ));
                                 pat.attrs.clear();
                             }
@@ -93,13 +102,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         return Err(Error::new_spanned(
                                             arg,
                                             "The Context must be the second argument.",
-                                        ));
+                                        )
+                                        .into());
                                     } else {
                                         create_ctx = false;
                                     }
                                 }
                             }
-                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
+                            _ => {
+                                return Err(Error::new_spanned(arg, "Invalid argument type.").into())
+                            }
                         }
                     }
                 }
@@ -123,7 +135,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     return Err(Error::new_spanned(
                         method,
                         "Entity need to have at least one key.",
-                    ));
+                    )
+                    .into());
                 }
 
                 for (ident, ty, args::Argument { name, key, .. }) in &args {
@@ -194,53 +207,41 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         }
                     },
                 ));
-
-                method.attrs.remove(
-                    method
-                        .attrs
-                        .iter()
-                        .enumerate()
-                        .find(|(_, a)| a.path.is_ident("entity"))
-                        .map(|(idx, _)| idx)
-                        .unwrap(),
-                );
-            } else if let Some(field) = args::Field::parse(&crate_name, &method.attrs)? {
+            } else if !method_args.skip {
                 if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(&method, "Must be asynchronous"));
+                    return Err(Error::new_spanned(&method, "Must be asynchronous").into());
                 }
 
-                let field_name = field
+                let field_name = method_args
                     .name
                     .clone()
                     .unwrap_or_else(|| method.sig.ident.unraw().to_string().to_camel_case());
-                let field_desc = field
-                    .desc
-                    .as_ref()
-                    .map(|s| quote! {Some(#s)})
+                let field_desc = get_rustdoc(&method.attrs)?
+                    .map(|s| quote! { Some(#s) })
                     .unwrap_or_else(|| quote! {None});
-                let field_deprecation = field
+                let field_deprecation = method_args
                     .deprecation
                     .as_ref()
                     .map(|s| quote! {Some(#s)})
                     .unwrap_or_else(|| quote! {None});
-                let external = field.external;
-                let requires = match &field.requires {
+                let external = method_args.external;
+                let requires = match &method_args.requires {
                     Some(requires) => quote! { Some(#requires) },
                     None => quote! { None },
                 };
-                let provides = match &field.provides {
+                let provides = match &method_args.provides {
                     Some(provides) => quote! { Some(#provides) },
                     None => quote! { None },
                 };
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type"))
+                        return Err(Error::new_spanned(&method.sig.output, "Missing type").into())
                     }
                 };
                 let cache_control = {
-                    let public = field.cache_control.public;
-                    let max_age = field.cache_control.max_age;
+                    let public = method_args.cache_control.is_public();
+                    let max_age = method_args.cache_control.max_age;
                     quote! {
                         #crate_name::CacheControl {
                             public: #public,
@@ -259,14 +260,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             return Err(Error::new_spanned(
                                 receiver,
                                 "The self receiver must be the first parameter.",
-                            ));
+                            )
+                            .into());
                         }
                     } else if let FnArg::Typed(pat) = arg {
                         if idx == 0 {
                             return Err(Error::new_spanned(
                                 pat,
                                 "The self receiver must be the first parameter.",
-                            ));
+                            )
+                            .into());
                         }
 
                         match (&*pat.pat, &*pat.ty) {
@@ -274,7 +277,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                 args.push((
                                     arg_ident.clone(),
                                     arg_ty.clone(),
-                                    args::Argument::parse(&crate_name, &pat.attrs)?,
+                                    parse_graphql_attrs::<args::Argument>(&pat.attrs)?
+                                        .unwrap_or_default(),
                                 ));
                                 pat.attrs.clear();
                             }
@@ -286,13 +290,16 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                         return Err(Error::new_spanned(
                                             arg,
                                             "The Context must be the second argument.",
-                                        ));
+                                        )
+                                        .into());
                                     }
 
                                     create_ctx = false;
                                 }
                             }
-                            _ => return Err(Error::new_spanned(arg, "Invalid argument type.")),
+                            _ => {
+                                return Err(Error::new_spanned(arg, "Invalid argument type.").into())
+                            }
                         }
                     }
                 }
@@ -314,6 +321,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         name,
                         desc,
                         default,
+                        default_with,
                         validator,
                         ..
                     },
@@ -326,12 +334,21 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         .as_ref()
                         .map(|s| quote! {Some(#s)})
                         .unwrap_or_else(|| quote! {None});
+                    let default = generate_default(&default, &default_with)?;
                     let schema_default = default
                         .as_ref()
                         .map(|value| {
                             quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
                         })
                         .unwrap_or_else(|| quote! {None});
+
+                    let validator = match &validator {
+                        Some(meta) => {
+                            let stream = generate_validator(&crate_name, meta)?;
+                            quote!(Some(#stream))
+                        }
+                        None => quote!(None),
+                    };
 
                     schema_args.push(quote! {
                         args.insert(#name, #crate_name::registry::MetaInputValue {
@@ -401,14 +418,23 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     }
                 };
 
-                let guard = field
-                    .guard
+                let guard = match &method_args.guard {
+                    Some(meta_list) => generate_guards(&crate_name, meta_list)?,
+                    None => None,
+                };
+
+                let guard = guard
                     .map(|guard| quote! {
                         #guard.check(ctx).await
                             .map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
                     });
-                let post_guard = field
-                    .post_guard
+
+                let post_guard = match &method_args.post_guard {
+                    Some(meta_list) => generate_post_guards(&crate_name, meta_list)?,
+                    None => None,
+                };
+
+                let post_guard = post_guard
                     .map(|guard| quote! {
                         #guard.check(ctx, &res).await
                             .map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
@@ -425,28 +451,14 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
                     }
                 });
-
-                if let Some((idx, _)) = method
-                    .attrs
-                    .iter()
-                    .enumerate()
-                    .find(|(_, a)| a.path.is_ident("field"))
-                {
-                    method.attrs.remove(idx);
-                }
-            } else if let Some((idx, _)) = method
-                .attrs
-                .iter()
-                .enumerate()
-                .find(|(_, a)| a.path.is_ident("field"))
-            {
-                method.attrs.remove(idx);
             }
+
+            remove_graphql_attrs(&mut method.attrs);
         }
     }
 
     let cache_control = {
-        let public = object_args.cache_control.public;
+        let public = object_args.cache_control.is_public();
         let max_age = object_args.cache_control.max_age;
         quote! {
             #crate_name::CacheControl {

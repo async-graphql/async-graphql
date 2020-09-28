@@ -1,25 +1,25 @@
 use crate::args;
 use crate::args::{InterfaceField, InterfaceFieldArgument};
 use crate::output_type::OutputType;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{generate_default, get_crate_name, get_rustdoc, GeneratorResult};
+use darling::ast::{Data, Style};
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use std::collections::HashSet;
-use syn::{Data, DeriveInput, Error, Fields, Result, Type};
+use syn::{Error, Type};
 
-pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
-    let ident = &input.ident;
-    let generics = &input.generics;
-    let s = match &input.data {
+    let ident = &interface_args.ident;
+    let generics = &interface_args.generics;
+    let s = match &interface_args.data {
         Data::Enum(s) => s,
         _ => {
-            return Err(Error::new_spanned(
-                input,
-                "Interfaces can only be applied to an enum.",
-            ))
+            return Err(
+                Error::new_spanned(ident, "Interface can only be applied to an enum.").into(),
+            )
         }
     };
     let extends = interface_args.extends;
@@ -31,10 +31,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         .clone()
         .unwrap_or_else(|| ident.to_string());
 
-    let desc = interface_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+    let desc = get_rustdoc(&interface_args.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
@@ -43,36 +40,37 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
     let mut get_introspection_typename = Vec::new();
     let mut collect_all_fields = Vec::new();
 
-    for variant in s.variants.iter() {
+    for variant in s {
         let enum_name = &variant.ident;
-        let field = match &variant.fields {
-            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => fields.unnamed.first().unwrap(),
-            Fields::Unnamed(_) => {
+        let ty = match variant.fields.style {
+            Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
+            Style::Tuple => {
                 return Err(Error::new_spanned(
-                    variant,
+                    enum_name,
                     "Only single value variants are supported",
-                ))
+                )
+                .into())
             }
-            Fields::Unit => {
-                return Err(Error::new_spanned(
-                    variant,
-                    "Empty variants are not supported",
-                ))
+            Style::Unit => {
+                return Err(
+                    Error::new_spanned(enum_name, "Empty variants are not supported").into(),
+                )
             }
-            Fields::Named(_) => {
+            Style::Struct => {
                 return Err(Error::new_spanned(
-                    variant,
+                    enum_name,
                     "Variants with named fields are not supported",
-                ))
+                )
+                .into())
             }
         };
-        if let Type::Path(p) = &field.ty {
+
+        if let Type::Path(p) = ty {
             // This validates that the field type wasn't already used
             if !enum_items.insert(p) {
-                return Err(Error::new_spanned(
-                    field,
-                    "This type already used in another variant",
-                ));
+                return Err(
+                    Error::new_spanned(ty, "This type already used in another variant").into(),
+                );
             }
 
             type_into_impls.push(quote! {
@@ -102,7 +100,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
                 #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
             });
         } else {
-            return Err(Error::new_spanned(field, "Invalid type"));
+            return Err(Error::new_spanned(ty, "Invalid type").into());
         }
     }
 
@@ -128,6 +126,10 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             let method_name = Ident::new(&name, Span::call_site());
             (name.to_camel_case(), method_name)
         };
+        let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
+            Ok(ty) => ty,
+            Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
+        };
         let mut calls = Vec::new();
         let mut use_params = Vec::new();
         let mut decl_params = Vec::new();
@@ -150,14 +152,20 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             desc,
             ty,
             default,
+            default_with,
         } in args
         {
             let ident = Ident::new(name, Span::call_site());
             let name = name.to_camel_case();
+            let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
+                Ok(ty) => ty,
+                Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
+            };
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
 
-            let get_default = match default {
+            let default = generate_default(&default, &default_with)?;
+            let get_default = match &default {
                 Some(default) => quote! { Some(|| -> #ty { #default }) },
                 None => quote! { None },
             };
@@ -201,7 +209,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
             .map(|s| quote! {Some(#s)})
             .unwrap_or_else(|| quote! {None});
 
-        let oty = OutputType::parse(ty)?;
+        let oty = OutputType::parse(&ty)?;
         let ty = match oty {
             OutputType::Value(ty) => ty,
             OutputType::Result(_, ty) => ty,

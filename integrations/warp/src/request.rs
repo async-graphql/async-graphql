@@ -28,7 +28,6 @@ use warp::{Buf, Filter, Rejection, Reply};
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field]
 ///     async fn value(&self, ctx: &Context<'_>) -> i32 {
 ///         unimplemented!()
 ///     }

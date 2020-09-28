@@ -309,10 +309,10 @@ pub async fn test_union_flatten() {
 
     #[derive(Union)]
     enum MyUnion {
-        #[item(flatten)]
+        #[graphql(flatten)]
         Inner1(InnerUnion1),
 
-        #[item(flatten)]
+        #[graphql(flatten)]
         Inner2(InnerUnion2),
     }
 

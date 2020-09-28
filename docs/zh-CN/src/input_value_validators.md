@@ -14,7 +14,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[arg(validator(or(Email, MAC(colon = "false"))))] a: String) {
+    async fn input(#[graphql(validator(or(Email, MAC(colon = "false"))))] a: String) {
     }
 }
 ```

@@ -1,10 +1,13 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Error, ItemImpl, Result, Type};
+use syn::{Error, ItemImpl, Type};
 
-pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<TokenStream> {
+pub fn generate(
+    scalar_args: &args::Scalar,
+    item_impl: &mut ItemImpl,
+) -> GeneratorResult<TokenStream> {
     let self_name = match item_impl.self_ty.as_ref() {
         Type::Path(path) => path
             .path
@@ -12,16 +15,13 @@ pub fn generate(scalar_args: &args::Scalar, item_impl: &mut ItemImpl) -> Result<
             .last()
             .map(|s| s.ident.to_string())
             .unwrap(),
-        _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type")),
+        _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type").into()),
     };
     let gql_typename = scalar_args
         .name
         .clone()
         .unwrap_or_else(|| self_name.clone());
-    let desc = scalar_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&item_impl.attrs).ok().flatten())
+    let desc = get_rustdoc(&item_impl.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
     let self_ty = &item_impl.self_ty;

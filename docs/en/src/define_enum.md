@@ -17,7 +17,7 @@ pub enum Episode {
     Empire,
 
     /// Released in 1983.
-    #[item(name="AAA")]
+    #[graphql(name="AAA")]
     Jedi,
 }
 ```

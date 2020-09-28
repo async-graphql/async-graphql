@@ -1,25 +1,23 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use darling::ast::Data;
 use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Data, DeriveInput, Error, Result};
+use syn::Error;
 
-pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
-    let ident = &input.ident;
-    let e = match &input.data {
+    let ident = &enum_args.ident;
+    let e = match &enum_args.data {
         Data::Enum(e) => e,
-        _ => return Err(Error::new_spanned(input, "It should be a enum")),
+        _ => return Err(Error::new_spanned(ident, "Enum can only be applied to an enum.").into()),
     };
 
     let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
 
-    let desc = enum_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+    let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
@@ -27,33 +25,33 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
     let mut items = Vec::new();
     let mut schema_enum_items = Vec::new();
 
-    for variant in &e.variants {
+    for variant in e {
         if !variant.fields.is_empty() {
             return Err(Error::new_spanned(
-                &variant,
+                &variant.ident,
                 format!(
                     "Invalid enum variant {}.\nGraphQL enums may only contain unit variants.",
                     variant.ident
                 ),
-            ));
+            )
+            .into());
         }
 
         let item_ident = &variant.ident;
-        let mut item_args = args::EnumItem::parse(&variant.attrs)?;
-        let gql_item_name = item_args
+        let gql_item_name = variant
             .name
+            .clone()
             .take()
             .unwrap_or_else(|| variant.ident.unraw().to_string().to_screaming_snake_case());
-        let item_deprecation = item_args
+        let item_deprecation = variant
             .deprecation
             .as_ref()
             .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
-        let item_desc = item_args
-            .desc
-            .as_ref()
+        let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { Some(#s) })
             .unwrap_or_else(|| quote! {None});
+
         enum_items.push(item_ident);
         items.push(quote! {
             #crate_name::resolver_utils::EnumItem {
@@ -74,10 +72,9 @@ pub fn generate(enum_args: &args::Enum, input: &DeriveInput) -> Result<TokenStre
         let remote_ty = if let Ok(ty) = syn::parse_str::<syn::Type>(remote) {
             ty
         } else {
-            return Err(Error::new_spanned(
-                remote,
-                format!("Invalid remote type: '{}'", remote),
-            ));
+            return Err(
+                Error::new_spanned(remote, format!("Invalid remote type: '{}'", remote)).into(),
+            );
         };
 
         let local_to_remote_items = enum_items.iter().map(|item| {

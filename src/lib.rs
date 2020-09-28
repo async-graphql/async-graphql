@@ -181,8 +181,6 @@ pub use types::*;
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;
 
-// internal types
-
 /// Define a GraphQL object with methods
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_complex_object.html).*
@@ -194,7 +192,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
-/// | desc          | Object description        | string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
@@ -202,6 +199,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 ///
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
+/// | skip          | Skip this field           | bool     | Y        |
 /// | name          | Field name                | string   | Y        |
 /// | desc          | Field description         | string   | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
@@ -210,6 +208,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Field argument parameters
 ///
@@ -221,6 +220,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
+/// | key          | Is entity key                            | bool        | Y        |
 ///
 /// # Valid field return types
 ///
@@ -229,6 +229,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// - `Vec<T>`, such as `Vec<i32>`
 /// - Slices, such as `&[i32]`
 /// - `Option<T>`, such as `Option<i32>`
+/// - `BTree<T>`, `HashMap<T>`, `HashSet<T>`, `BTreeSet<T>`, `LinkedList<T>`, `VecDeque<T>`
 /// - GraphQL objects.
 /// - GraphQL enums.
 /// - References to any of the above types, such as `&i32` or `&Option<String>`.
@@ -256,22 +257,22 @@ pub type Result<T> = std::result::Result<T, Error>;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field(desc = "value")]
+///     /// value
 ///     async fn value(&self) -> i32 {
 ///         self.value
 ///     }
 ///
-///     #[field(desc = "reference value")]
+///     /// reference value
 ///     async fn value_ref(&self) -> &i32 {
 ///         &self.value
 ///     }
 ///
-///     #[field(desc = "value with error")]
+///     /// value with error
 ///     async fn value_with_error(&self) -> FieldResult<i32> {
 ///         Ok(self.value)
 ///     }
 ///
-///     async fn value_with_arg(&self, #[arg(default = 1)] a: i32) -> i32 {
+///     async fn value_with_arg(&self, #[graphql(default = 1)] a: i32) -> i32 {
 ///         a
 ///     }
 /// }
@@ -307,15 +308,15 @@ pub use async_graphql_derive::Object;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
-/// | desc          | Object description        | string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
 /// # Field parameters
 ///
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
+/// | skip          | Skip this field           | bool     | Y        |
 /// | name          | Field name                | string   | Y        |
-/// | desc          | Field description         | string   | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
 /// | owned         | Field resolver return a ownedship value  | bool   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
@@ -323,6 +324,7 @@ pub use async_graphql_derive::Object;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Examples
 ///
@@ -353,7 +355,6 @@ pub use async_graphql_derive::SimpleObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Enum name                 | string   | Y        |
-/// | desc        | Enum description          | string   | Y        |
 /// | remote      | Derive a remote enum      | string   | Y        |
 ///
 /// # Item parameters
@@ -361,7 +362,6 @@ pub use async_graphql_derive::SimpleObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Item name                 | string   | Y        |
-/// | desc        | Item description          | string   | Y        |
 /// | deprecation | Item deprecation reason   | string   | Y        |
 ///
 /// # Examples
@@ -372,7 +372,7 @@ pub use async_graphql_derive::SimpleObject;
 /// #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 /// enum MyEnum {
 ///     A,
-///     #[item(name = "b")] B,
+///     #[graphql(name = "b")] B,
 /// }
 ///
 /// struct QueryRoot {
@@ -382,12 +382,12 @@ pub use async_graphql_derive::SimpleObject;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field(desc = "value")]
+///     /// value1
 ///     async fn value1(&self) -> MyEnum {
 ///         self.value1
 ///     }
 ///
-///     #[field(desc = "value")]
+///     /// value2
 ///     async fn value2(&self) -> MyEnum {
 ///         self.value2
 ///     }
@@ -410,19 +410,17 @@ pub use async_graphql_derive::Enum;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
-/// | desc        | Object description        | string   | Y        |
 ///
 /// # Field parameters
 ///
-/// | Attribute    | description                              | Type     | Optional |
-/// |--------------|------------------------------------------|----------|----------|
-/// | name         | Field name                               | string   | Y        |
-/// | desc         | Field description                        | string   | Y        |
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|-------------|----------|
+/// | name         | Field name                               | string      | Y        |
 /// | default      | Use `Default::default` for default value | none        | Y        |
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
-/// | flatten      | Similar to serde (flatten)               | boolean | Y |
+/// | flatten      | Similar to serde (flatten)               | boolean     | Y        |
 ///
 /// # Examples
 ///
@@ -432,7 +430,7 @@ pub use async_graphql_derive::Enum;
 /// #[derive(InputObject)]
 /// struct MyInputObject {
 ///     a: i32,
-///     #[field(default = 10)]
+///     #[graphql(default = 10)]
 ///     b: i32,
 /// }
 ///
@@ -440,7 +438,7 @@ pub use async_graphql_derive::Enum;
 ///
 /// #[Object]
 /// impl QueryRoot {
-///     #[field(desc = "value")]
+///     /// value
 ///     async fn value(&self, input: MyInputObject) -> i32 {
 ///         input.a * input.b
 ///     }
@@ -467,18 +465,22 @@ pub use async_graphql_derive::InputObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
-/// | desc        | Object description        | string   | Y        |
+/// | field      | Fields of this Interface  | [InterfaceField] | N |
+/// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
 /// # Field parameters
 ///
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | N        |
-/// | method      | Rust resolver method name. If specified, `name` will not be camelCased in schema definition | string | Y |
 /// | type        | Field type                | string   | N        |
+/// | method      | Rust resolver method name. If specified, `name` will not be camelCased in schema definition | string | Y |
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
-/// | args        | Field arguments           |          | Y        |
+/// | arg         | Field arguments           | [InterfaceFieldArgument]          | Y        |
+/// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
+/// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
+/// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 ///
 /// # Field argument parameters
 ///
@@ -535,7 +537,7 @@ pub use async_graphql_derive::InputObject;
 ///     }
 ///
 ///     /// Disabled name transformation, don't forget "method" argument in interface!
-///     #[field(name = "value_d")]
+///     #[graphql(name = "value_d")]
 ///     async fn value_d(&self) -> i32 {
 ///         &self.value + 1
 ///     }
@@ -595,7 +597,6 @@ pub use async_graphql_derive::Interface;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
-/// | desc        | Object description        | string   | Y        |
 ///
 /// # Item parameters
 ///
@@ -672,21 +673,20 @@ pub use async_graphql_derive::Union;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
-/// | desc        | Object description        | string   | Y        |
 ///
 /// # Field parameters
 ///
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | Y        |
-/// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Field argument parameters
 ///
 /// | Attribute    | description                              | Type        | Optional |
-/// |--------------|------------------------------------------|-------------|----------|
+/// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Argument name                            | string      | Y        |
 /// | desc         | Argument description                     | string      | Y        |
 /// | default      | Use `Default::default` for default value | none        | Y        |
@@ -719,7 +719,6 @@ pub use async_graphql_derive::Subscription;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Scalar name               | string   | Y        |
-/// | desc        | Scalar description        | string   | Y        |
 ///
 pub use async_graphql_derive::Scalar;
 
@@ -732,7 +731,6 @@ pub use async_graphql_derive::Scalar;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
-/// | desc          | Object description        | string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
@@ -772,7 +770,6 @@ pub use async_graphql_derive::MergedObject;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
-/// | desc          | Object description        | string   | Y        |
 ///
 /// # Examples
 ///

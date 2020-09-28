@@ -11,7 +11,7 @@ struct Subscription;
 
 #[Subscription]
 impl Subscription {
-    async fn integers(&self, #[arg(default = "1")] step: i32) -> impl Stream<Item = i32> {
+    async fn integers(&self, #[graphql(default = "1")] step: i32) -> impl Stream<Item = i32> {
         let mut value = 0;
         tokio::time::interval(Duration::from_secs(1)).map(move |_| {
             value += step;

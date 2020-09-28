@@ -288,7 +288,7 @@ pub async fn test_interface_field_method() {
 
     #[Object]
     impl A {
-        #[field(name = "created_at")]
+        #[graphql(name = "created_at")]
         pub async fn created_at(&self) -> i32 {
             1
         }
@@ -298,7 +298,7 @@ pub async fn test_interface_field_method() {
 
     #[Object]
     impl B {
-        #[field(name = "created_at")]
+        #[graphql(name = "created_at")]
         pub async fn created_at(&self) -> i32 {
             2
         }
