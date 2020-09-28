@@ -58,8 +58,11 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
                 ))
             }
         };
+
         if let Type::Path(p) = &field.ty {
             // This validates that the field type wasn't already used
+            let item_args = args::UnionItem::parse(&variant.attrs)?;
+
             if !enum_items.insert(p) {
                 return Err(Error::new_spanned(
                     field,
@@ -68,25 +71,58 @@ pub fn generate(union_args: &args::Interface, input: &DeriveInput) -> Result<Tok
             }
 
             enum_names.push(enum_name);
-            type_into_impls.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkObject);
 
-                #[allow(clippy::all, clippy::pedantic)]
-                impl #generics ::std::convert::From<#p> for #ident #generics {
-                    fn from(obj: #p) -> Self {
-                        #ident::#enum_name(obj)
+            if !item_args.flatten {
+                type_into_impls.push(quote! {
+                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkObject);
+
+                    #[allow(clippy::all, clippy::pedantic)]
+                    impl #generics ::std::convert::From<#p> for #ident #generics {
+                        fn from(obj: #p) -> Self {
+                            #ident::#enum_name(obj)
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                type_into_impls.push(quote! {
+                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkEnum);
+
+                    #[allow(clippy::all, clippy::pedantic)]
+                    impl #generics ::std::convert::From<#p> for #ident #generics {
+                        fn from(obj: #p) -> Self {
+                            #ident::#enum_name(obj)
+                        }
+                    }
+                });
+            }
+
             registry_types.push(quote! {
                 <#p as #crate_name::Type>::create_type_info(registry);
             });
-            possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
-            });
-            get_introspection_typename.push(quote! {
-                #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
-            });
+
+            if !item_args.flatten {
+                possible_types.push(quote! {
+                    possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
+                });
+            } else {
+                possible_types.push(quote! {
+                    if let Some(#crate_name::registry::MetaType::Union { possible_types: possible_types2, .. }) =
+                        registry.types.remove(&*<#p as #crate_name::Type>::type_name()) {
+                        possible_types.extend(possible_types2);
+                    }
+                });
+            }
+
+            if !item_args.flatten {
+                get_introspection_typename.push(quote! {
+                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+                });
+            } else {
+                get_introspection_typename.push(quote! {
+                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::introspection_type_name(obj)
+                });
+            }
+
             collect_all_fields.push(quote! {
                 #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
             });

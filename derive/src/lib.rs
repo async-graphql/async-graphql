@@ -100,7 +100,7 @@ pub fn derive_interface(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(Union, attributes(graphql))]
+#[proc_macro_derive(Union, attributes(graphql, item))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
     let (args, input) = match parse_derive(input.into()) {
         Ok(r) => r,

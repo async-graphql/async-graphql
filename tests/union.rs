@@ -284,3 +284,74 @@ pub async fn test_union_field_result() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_union_flatten() {
+    #[derive(SimpleObject)]
+    struct MyObj1 {
+        value1: i32,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyObj2 {
+        value2: i32,
+    }
+
+    #[derive(Union)]
+    enum InnerUnion1 {
+        A(MyObj1),
+    }
+
+    #[derive(Union)]
+    enum InnerUnion2 {
+        B(MyObj2),
+    }
+
+    #[derive(Union)]
+    enum MyUnion {
+        #[item(flatten)]
+        Inner1(InnerUnion1),
+
+        #[item(flatten)]
+        Inner2(InnerUnion2),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value1(&self) -> MyUnion {
+            InnerUnion1::A(MyObj1 { value1: 99 }).into()
+        }
+
+        async fn value2(&self) -> MyUnion {
+            InnerUnion2::B(MyObj2 { value2: 88 }).into()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"
+    {
+        value1 {
+            ... on MyObj1 {
+                value1
+            }
+        }
+        value2 {
+            ... on MyObj2 {
+                value2
+            }
+        }
+    }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        serde_json::json!({
+            "value1": {
+                "value1": 99,
+            },
+            "value2": {
+                "value2": 88,
+            }
+        })
+    );
+}

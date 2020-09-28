@@ -447,6 +447,32 @@ impl EnumItem {
     }
 }
 
+pub struct UnionItem {
+    pub flatten: bool,
+}
+
+impl UnionItem {
+    pub fn parse(attrs: &[Attribute]) -> Result<Self> {
+        let mut flatten = false;
+
+        for attr in attrs {
+            if attr.path.is_ident("item") {
+                if let Meta::List(args) = attr.parse_meta()? {
+                    for meta in args.nested {
+                        if let NestedMeta::Meta(Meta::Path(p)) = meta {
+                            if p.is_ident("flatten") {
+                                flatten = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(Self { flatten })
+    }
+}
+
 pub struct InputField {
     pub name: Option<String>,
     pub desc: Option<String>,
