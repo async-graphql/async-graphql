@@ -11,8 +11,8 @@ use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, Error, Pos, Positioned, QueryEnv,
-    QueryError, Request, Response, Result, SubscriptionType, Type, Variables, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, Positioned, QueryEnv, Request,
+    Response, ServerError, SubscriptionType, Type, Variables, ID,
 };
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
@@ -319,12 +319,15 @@ where
     fn prepare_request(
         &self,
         request: &Request,
-    ) -> Result<(
-        Positioned<OperationDefinition>,
-        HashMap<Name, Positioned<FragmentDefinition>>,
-        CacheControl,
-        spin::Mutex<Extensions>,
-    )> {
+    ) -> Result<
+        (
+            Positioned<OperationDefinition>,
+            HashMap<Name, Positioned<FragmentDefinition>>,
+            CacheControl,
+            spin::Mutex<Extensions>,
+        ),
+        Vec<ServerError>,
+    > {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
@@ -339,7 +342,7 @@ where
             .lock()
             .parse_start(&request.query, &request.variables);
         let document = parse_query(&request.query)
-            .map_err(Into::<Error>::into)
+            .map_err(Into::<ServerError>::into)
             .log_error(&extensions)?;
         extensions.lock().parse_end(&document);
 
@@ -361,14 +364,14 @@ where
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if complexity > limit_complexity {
-                return Err(QueryError::TooComplex.into_error(Pos::default()))
-                    .log_error(&extensions);
+                return Err(vec![ServerError::new("Query is too complex.")]).log_error(&extensions);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if depth > limit_depth {
-                return Err(QueryError::TooDeep.into_error(Pos::default())).log_error(&extensions);
+                return Err(vec![ServerError::new("Query is nested too deep.")])
+                    .log_error(&extensions);
             }
         }
 
@@ -379,8 +382,8 @@ where
                     operations.remove(operation_name.as_str())
                 }
             }
-            .ok_or_else(|| QueryError::UnknownOperationNamed {
-                name: operation_name.clone(),
+            .ok_or_else(|| {
+                ServerError::new(format!(r#"Unknown operation named "{}""#, operation_name))
             })
         } else {
             match document.operations {
@@ -388,15 +391,16 @@ where
                 DocumentOperations::Multiple(map) if map.len() == 1 => {
                     Ok(map.into_iter().next().unwrap().1)
                 }
-                DocumentOperations::Multiple(_) => Err(QueryError::RequiredOperationName),
+                DocumentOperations::Multiple(_) => {
+                    Err(ServerError::new("Operation name required in request."))
+                }
             }
         };
         let operation = match operation {
             Ok(operation) => operation,
             Err(e) => {
-                let err = e.into_error(Pos::default());
-                extensions.lock().error(&err);
-                return Err(err);
+                extensions.lock().error(&e);
+                return Err(vec![e]);
             }
         };
 
@@ -435,19 +439,20 @@ where
             OperationType::Query => resolve_object(&ctx, &self.query).await,
             OperationType::Mutation => resolve_object_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
-                return Error::Query {
-                    pos: Pos::default(),
-                    path: None,
-                    err: QueryError::NotSupported,
-                }
-                .into()
+                return Response::from_errors(vec![ServerError::new(
+                    "Subscriptions are not supported on this transport.",
+                )])
             }
         };
 
         env.extensions.lock().execution_end();
         let extensions = env.extensions.lock().result();
 
-        Response::from_result(data).extensions(extensions)
+        match data {
+            Ok(data) => Response::new(data),
+            Err(e) => Response::from_errors(vec![e]),
+        }
+        .extensions(extensions)
     }
 
     /// Execute an GraphQL query.
@@ -464,7 +469,7 @@ where
                 )
                 .await
                 .cache_control(cache_control),
-            Err(e) => Response::from_error(e),
+            Err(errors) => Response::from_errors(errors),
         }
     }
 
@@ -492,8 +497,8 @@ where
             let request = request.into();
             let (operation, fragments, cache_control, extensions) = match schema.prepare_request(&request) {
                 Ok(res) => res,
-                Err(err) => {
-                    yield Response::from(err);
+                Err(errors) => {
+                    yield Response::from_errors(errors);
                     return;
                 }
             };
@@ -526,7 +531,7 @@ where
 
             let mut streams = Vec::new();
             if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
-                yield Response::from(e);
+                yield Response::from_errors(vec![e]);
                 return;
             }
 
@@ -534,7 +539,14 @@ where
             while let Some(data) = stream.next().await {
                 let is_err = data.is_err();
                 let extensions = env.extensions.lock().result();
-                yield Response::from_result(data).extensions(extensions);
+                yield match data {
+                    Ok((name, value)) => Response::new(
+                        serde_json::json!({
+                            name: value,
+                        })
+                    ),
+                    Err(e) => Response::from_errors(vec![e]),
+                }.extensions(extensions);
                 if is_err {
                     break;
                 }

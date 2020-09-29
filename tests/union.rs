@@ -248,7 +248,7 @@ pub async fn test_union_field_result() {
 
     #[Object]
     impl MyObj {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> Result<i32> {
             Ok(10)
         }
     }

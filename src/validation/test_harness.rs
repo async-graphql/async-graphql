@@ -3,7 +3,7 @@
 #![allow(unreachable_code)]
 
 use crate::parser::types::ExecutableDocument;
-use crate::validation::visitor::{visit, Visitor, VisitorContext};
+use crate::validation::visitor::{visit, RuleError, Visitor, VisitorContext};
 use crate::*;
 use once_cell::sync::Lazy;
 
@@ -344,7 +344,10 @@ impl MutationRoot {
 static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, EmptySubscription>> =
     Lazy::new(|| Schema::new(QueryRoot, MutationRoot, EmptySubscription));
 
-pub fn validate<'a, V, F>(doc: &'a ExecutableDocument, factory: F) -> Result<()>
+pub(crate) fn validate<'a, V, F>(
+    doc: &'a ExecutableDocument,
+    factory: F,
+) -> Result<(), Vec<RuleError>>
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
@@ -354,12 +357,11 @@ where
     let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();
     visit(&mut visitor, &mut ctx, doc);
-    if !ctx.errors.is_empty() {
-        return Err(Error::Rule {
-            errors: ctx.errors.into(),
-        });
+    if ctx.errors.is_empty() {
+        Ok(())
+    } else {
+        Err(ctx.errors)
     }
-    Ok(())
 }
 
 pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
@@ -367,14 +369,12 @@ where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if let Err(err) = validate(doc, factory) {
-        if let Error::Rule { errors } = err {
-            for err in errors {
-                if let Some(position) = err.locations.first() {
-                    print!("[{}:{}] ", position.line, position.column);
-                }
-                println!("{}", err.message);
+    if let Err(errors) = validate(doc, factory) {
+        for err in errors {
+            if let Some(position) = err.locations.first() {
+                print!("[{}:{}] ", position.line, position.column);
             }
+            println!("{}", err.message);
         }
         panic!("Expected rule to pass, but errors found");
     }

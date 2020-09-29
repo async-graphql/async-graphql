@@ -98,10 +98,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 let ident = &item.ident;
                 let guard = field
                     .guard
-                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
+                    .map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
                 let post_guard = field
                     .post_guard
-                    .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
+                    .map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
 
                 let features = &field.features;
                 getters.push(if !field.owned {
@@ -114,7 +114,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     quote! {
                          #[inline]
                          #[allow(missing_docs)]
-                         #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                         #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<&#ty> {
                              #block
                          }
                     }
@@ -128,7 +128,7 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                     quote! {
                         #[inline]
                         #[allow(missing_docs)]
-                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                        #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
                             #block
                         }
                     }
@@ -137,10 +137,10 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
                 resolvers.push(quote! {
                     if ctx.item.node.name.node == #field_name {
                         #guard
-                        let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                        let res = self.#ident(ctx).await.map_err(|e| e.into_server_error().at(ctx.item.pos))?;
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         #post_guard
-                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
+                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                     }
                 });
             }
@@ -189,19 +189,16 @@ pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<Token
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::serde_json::Value>> {
                 #(#resolvers)*
-                Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.item.node.name.to_string(),
-                    object: #gql_typename.to_string(),
-                }.into_error(ctx.item.pos))
+                Ok(None)
             }
         }
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::serde_json::Value> {
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }

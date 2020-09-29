@@ -1,8 +1,8 @@
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Positioned,
-    Result, Type, Value,
+    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
+    OutputValueType, Positioned, ServerResult, Type, Value,
 };
 use std::borrow::Cow;
 use std::collections::BTreeSet;
@@ -25,16 +25,16 @@ impl<T: Type> Type for BTreeSet<T> {
 impl<T: InputValueType + Ord> InputValueType for BTreeSet<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
-            Value::List(values) => {
-                let mut result = Self::default();
-                for elem_value in values {
-                    result.extend(std::iter::once(InputValueType::parse(Some(elem_value))?));
-                }
-                Ok(result)
-            }
+            Value::List(values) => values
+                .into_iter()
+                .map(|value| InputValueType::parse(Some(value)))
+                .collect::<Result<_, _>>()
+                .map_err(InputValueError::propogate),
             value => Ok({
                 let mut result = Self::default();
-                result.extend(std::iter::once(InputValueType::parse(Some(value))?));
+                result.insert(
+                    InputValueType::parse(Some(value)).map_err(InputValueError::propogate)?,
+                );
                 result
             }),
         }
@@ -51,7 +51,7 @@ impl<T: OutputValueType + Send + Sync + Ord> OutputValueType for BTreeSet<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_list(ctx, field, self).await
     }
 }

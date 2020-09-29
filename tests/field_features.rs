@@ -85,14 +85,12 @@ pub async fn test_field_features() {
     let query = "{ valueAbc }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos { column: 3, line: 1 },
-            path: Some(serde_json::json!(["valueAbc"])),
-            err: QueryError::FieldError {
-                err: "`valueAbc` is only available if the features `abc` are enabled".to_string(),
-                extended_error: None
-            }
-        }
+        vec![ServerError {
+            message: "`valueAbc` is only available if the features `abc` are enabled".to_string(),
+            locations: vec![Pos { column: 3, line: 1 }],
+            path: vec![PathSegment::Field("valueAbc".to_owned())],
+            extensions: None,
+        }]
     );
 
     let query = "{ obj { value } }";
@@ -114,14 +112,15 @@ pub async fn test_field_features() {
     let query = "{ obj { valueAbc } }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos { column: 9, line: 1 },
-            path: Some(serde_json::json!(["obj", "valueAbc"])),
-            err: QueryError::FieldError {
-                err: "`valueAbc` is only available if the features `abc` are enabled".to_string(),
-                extended_error: None
-            }
-        }
+        vec![ServerError {
+            message: "`valueAbc` is only available if the features `abc` are enabled".to_string(),
+            locations: vec![Pos { column: 9, line: 1 }],
+            path: vec![
+                PathSegment::Field("obj".to_owned()),
+                PathSegment::Field("valueAbc".to_owned())
+            ],
+            extensions: None,
+        }]
     );
 
     let mut stream = schema.execute_stream("subscription { values }").boxed();
@@ -150,18 +149,15 @@ pub async fn test_field_features() {
             .next()
             .await
             .unwrap()
-            .error
-            .unwrap(),
-        Error::Query {
-            pos: Pos {
+            .errors,
+        vec![ServerError {
+            message: "`valuesAbc` is only available if the features `abc` are enabled".to_string(),
+            locations: vec![Pos {
                 column: 16,
                 line: 1
-            },
-            path: Some(serde_json::json!(["valuesAbc"])),
-            err: QueryError::FieldError {
-                err: "`valuesAbc` is only available if the features `abc` are enabled".to_string(),
-                extended_error: None
-            }
-        }
+            }],
+            path: vec![PathSegment::Field("valuesAbc".to_owned())],
+            extensions: None,
+        }]
     );
 }

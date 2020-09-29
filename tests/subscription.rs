@@ -120,7 +120,7 @@ pub async fn test_subscription_with_token() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+        async fn values(&self, ctx: &Context<'_>) -> Result<impl Stream<Item = i32>> {
             if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
@@ -325,7 +325,7 @@ pub async fn test_subscription_error() {
 
     #[Object]
     impl Event {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> Result<i32> {
             if self.value < 5 {
                 Ok(self.value)
             } else {
@@ -360,17 +360,18 @@ pub async fn test_subscription_error() {
     }
     assert_eq!(
         stream.next().await,
-        Some(Err(Error::Query {
-            pos: Pos {
+        Some(Err(vec![ServerError {
+            message: "TestError".to_string(),
+            locations: vec![Pos {
                 line: 1,
                 column: 25
-            },
-            path: Some(serde_json::json!(["events", "value"])),
-            err: QueryError::FieldError {
-                err: "TestError".to_string(),
-                extended_error: None,
-            },
-        }))
+            }],
+            path: vec![
+                PathSegment::Field("events".to_owned()),
+                PathSegment::Field("value".to_owned())
+            ],
+            extensions: None,
+        }]))
     );
 
     assert!(stream.next().await.is_none());
@@ -387,9 +388,9 @@ pub async fn test_subscription_fieldresult() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        async fn values(&self) -> impl Stream<Item = FieldResult<i32>> {
+        async fn values(&self) -> impl Stream<Item = Result<i32>> {
             futures::stream::iter(0..5)
-                .map(FieldResult::Ok)
+                .map(Result::Ok)
                 .chain(futures::stream::once(
                     async move { Err("StreamErr".into()) },
                 ))
@@ -410,17 +411,15 @@ pub async fn test_subscription_fieldresult() {
     }
     assert_eq!(
         stream.next().await,
-        Some(Err(Error::Query {
-            pos: Pos {
+        Some(Err(vec![ServerError {
+            message: "StreamErr".to_string(),
+            locations: vec![Pos {
                 line: 1,
                 column: 16
-            },
-            path: Some(serde_json::json!(["values"])),
-            err: QueryError::FieldError {
-                err: "StreamErr".to_string(),
-                extended_error: None,
-            },
-        }))
+            }],
+            path: vec![PathSegment::Field("values".to_owned())],
+            extensions: None,
+        }]))
     );
 
     assert!(stream.next().await.is_none());

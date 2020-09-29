@@ -12,14 +12,12 @@ where
 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::Object(map) => {
-                let mut result = BTreeMap::new();
-                for (name, value) in map {
-                    result.insert(name.to_string(), T::parse(Some(value))?);
-                }
-                Ok(result)
-            }
-            _ => Err(InputValueError::ExpectedType(value)),
+            Value::Object(map) => map
+                .into_iter()
+                .map(|(name, value)| Ok((name.into_string(), T::parse(Some(value))?)))
+                .collect::<Result<_, _>>()
+                .map_err(InputValueError::propogate),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

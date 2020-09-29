@@ -8,7 +8,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{FieldResult, QueryEnv, Result, SchemaEnv, Variables};
+use crate::{QueryEnv, Result, SchemaEnv, ServerError, ServerResult, Variables};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -52,10 +52,14 @@ impl<'a> ResolveInfo<'a> {
     ///
     /// # Errors
     ///
-    /// Returns a `FieldError` if the specified type data does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
-        self.data_opt::<D>()
-            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    /// Returns a `Error` if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> Result<&D> {
+        self.data_opt::<D>().ok_or_else(|| {
+            Error::new(format!(
+                "Data `{}` does not exist.",
+                std::any::type_name::<D>()
+            ))
+        })
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
@@ -111,7 +115,7 @@ pub trait Extension: Sync + Send + 'static {
     fn resolve_end(&mut self, info: &ResolveInfo<'_>) {}
 
     /// Called when an error occurs.
-    fn error(&mut self, err: &Error) {}
+    fn error(&mut self, err: &ServerError) {}
 
     /// Get the results
     fn result(&mut self) -> Option<serde_json::Value> {
@@ -123,10 +127,21 @@ pub(crate) trait ErrorLogger {
     fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self;
 }
 
-impl<T> ErrorLogger for Result<T> {
+impl<T> ErrorLogger for ServerResult<T> {
     fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self {
         if let Err(err) = &self {
             extensions.lock().error(err);
+        }
+        self
+    }
+}
+impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
+    fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self {
+        if let Err(errors) = &self {
+            let mut extensions = extensions.lock();
+            for error in errors {
+                extensions.error(error);
+            }
         }
         self
     }
@@ -167,7 +182,7 @@ impl Extension for Extensions {
         self.0.iter_mut().for_each(|e| e.resolve_end(resolve_id));
     }
 
-    fn error(&mut self, err: &Error) {
+    fn error(&mut self, err: &ServerError) {
         self.0.iter_mut().for_each(|e| e.error(err));
     }
 

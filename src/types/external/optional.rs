@@ -1,7 +1,7 @@
 use crate::parser::types::Field;
 use crate::{
-    registry, ContextSelectionSet, InputValueResult, InputValueType, OutputValueType, Positioned,
-    Result, Type, Value,
+    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
+    OutputValueType, Positioned, ServerResult, Type, Value,
 };
 use std::borrow::Cow;
 
@@ -24,7 +24,9 @@ impl<T: InputValueType> InputValueType for Option<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
             Value::Null => Ok(None),
-            value => Ok(Some(T::parse(Some(value))?)),
+            value => Ok(Some(
+                T::parse(Some(value)).map_err(InputValueError::propogate)?,
+            )),
         }
     }
 
@@ -42,7 +44,7 @@ impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> where {
+    ) -> ServerResult<serde_json::Value> {
         if let Some(inner) = self {
             OutputValueType::resolve(inner, ctx, field).await
         } else {

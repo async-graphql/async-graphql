@@ -1,7 +1,7 @@
 use crate::parser::types::Field;
 use crate::resolver_utils::ObjectType;
 use crate::{
-    registry, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError, Result,
+    registry, Context, ContextSelectionSet, OutputValueType, Positioned, ServerError, ServerResult,
     Type,
 };
 use std::borrow::Cow;
@@ -48,7 +48,7 @@ impl ObjectType for EmptyMutation {
         true
     }
 
-    async fn resolve_field(&self, _ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, _ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         unreachable!()
     }
 }
@@ -59,11 +59,7 @@ impl OutputValueType for EmptyMutation {
         &self,
         _ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
-        Err(Error::Query {
-            pos: field.pos,
-            path: None,
-            err: QueryError::NotConfiguredMutations,
-        })
+    ) -> ServerResult<serde_json::Value> {
+        Err(ServerError::new("Schema is not configured for mutations.").at(field.pos))
     }
 }

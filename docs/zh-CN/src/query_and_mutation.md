@@ -11,7 +11,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn user(&self, username: String) -> FieldResult<Option<User>> {
+    async fn user(&self, username: String) -> Result<Option<User>> {
         // 在数据库中查找用户
     }
 }

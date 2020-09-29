@@ -38,11 +38,12 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 0, column: 0 },
-            path: None,
-            err: QueryError::TooComplex,
-        }
+        vec![ServerError {
+            message: "Query is too complex.".to_owned(),
+            locations: Vec::new(),
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 
     let query = "{ a:value b:value }";
@@ -63,11 +64,12 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 0, column: 0 },
-            path: None,
-            err: QueryError::TooComplex,
-        }
+        vec![ServerError {
+            message: "Query is too complex.".to_owned(),
+            locations: Vec::new(),
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 
     let query = "{ obj { a } }";
@@ -96,11 +98,12 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 0, column: 0 },
-            path: None,
-            err: QueryError::TooDeep,
-        }
+        vec![ServerError {
+            message: "Query is nested too deep.".to_owned(),
+            locations: Vec::new(),
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 
     let query = r#"

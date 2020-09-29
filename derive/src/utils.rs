@@ -293,7 +293,7 @@ pub fn feature_block(
         quote!({
             #[cfg(not(all(#(feature = #features),*)))]
             {
-                return Err(#crate_name::FieldError::from(#error_message)).map_err(::std::convert::Into::into);
+                return Err(#crate_name::Error::new(#error_message)).map_err(::std::convert::Into::into);
             }
             #[cfg(all(#(feature = #features),*))]
             {

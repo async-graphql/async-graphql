@@ -19,7 +19,7 @@ use crate::{InputValueResult, Value};
 ///                 return Ok(MyInt(n as i32));
 ///             }
 ///         }
-///         Err(InputValueError::ExpectedType(value))
+///         Err(InputValueError::expected_type(value))
 ///     }
 ///
 ///     fn to_value(&self) -> Value {
@@ -28,7 +28,7 @@ use crate::{InputValueResult, Value};
 /// }
 /// ```
 pub trait ScalarType: Sized + Send {
-    /// Parse a scalar value, return `Some(Self)` if successful, otherwise return `None`.
+    /// Parse a scalar value.
     fn parse(value: Value) -> InputValueResult<Self>;
 
     /// Checks for a valid scalar value.

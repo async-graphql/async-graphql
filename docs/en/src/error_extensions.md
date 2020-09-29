@@ -9,16 +9,16 @@ To quote the [graphql-spec](https://spec.graphql.org/June2018/#example-fce18):
 I would recommend on checking out this [async-graphql example](https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs) as a quickstart.
 
 ## General Concept
-In `async-graphql` all user-facing errors are cast to the `FieldError` type which by default provides
-the error message exposed by `std::fmt::Display`. However `FieldError` also provides an additional
+In `async-graphql` all user-facing errors are cast to the `Error` type which by default provides
+the error message exposed by `std::fmt::Display`. However `Error` also provides an additional
 field `Option<serde_json::Value>` which - if given some valid `serde_json::Map` - will be exposed as the extensions key to any error.
 
 A resolver looks like this:
 
 ```rust
-async fn parse_with_extensions(&self) -> Result<i32, FieldError> {
+async fn parse_with_extensions(&self) -> Result<i32, Error> {
     let my_extension = json!({ "details": "CAN_NOT_FETCH" });
-    Err(FieldError("MyMessage", Some(my_extension)))
+    Err(Error("MyMessage", Some(my_extension)))
  }
 ```
 
@@ -41,16 +41,16 @@ may then return a response like this:
 
 
 ## ErrorExtensions
-Constructing new `FieldError`s by hand quickly becomes tedious. That is why `async-graphql` provides
-two convenience traits for casting your errors to the appropriate `FieldError` with
+Constructing new `Error`s by hand quickly becomes tedious. That is why `async-graphql` provides
+two convenience traits for casting your errors to the appropriate `Error` with
 extensions.
 
 The easiest way to provide extensions to any error is by calling `extend_with` on the error.
-This will on the fly convert any error into a `FieldError` with the given extension.
+This will on the fly convert any error into a `Error` with the given extension.
 
 ```rust
 use std::num::ParseIntError;
-async fn parse_with_extensions(&self) -> FieldResult<i32> {
+async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .map_err(|err: ParseIntError| err.extend_with(|_err| json!({"code": 404})))?)
@@ -78,7 +78,7 @@ pub enum MyError {
 
 impl ErrorExtensions for MyError {
     // lets define our base extensions
-    fn extend(&self) -> FieldError {
+    fn extend(&self) -> Error {
         let extensions = match self {
             MyError::NotFound => json!({"code": "NOT_FOUND"}),
             MyError::ServerError(reason) => json!({ "reason": reason }),
@@ -87,7 +87,7 @@ impl ErrorExtensions for MyError {
             }
         };
 
-        FieldError(format!("{}", self), Some(extensions))
+        Error(format!("{}", self), Some(extensions))
     }
 }
 ```
@@ -96,7 +96,7 @@ This way you only need to call `extend` on your error to deliver the error messa
 Or further extend your error through `extend_with`.
 
 ```rust
-async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
+async fn parse_with_extensions_result(&self) -> Result<i32> {
     // Err(MyError::NotFound.extend())
     // OR
     Err(MyError::NotFound.extend_with(|_| json!({ "on_the_fly": "some_more_info" })))
@@ -124,7 +124,7 @@ This trait enables you to call `extend_err` directly on results. So the above co
 
 ```rust
 use async_graphql::*;
-async fn parse_with_extensions(&self) -> FieldResult<i32> {
+async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .extend_err(|_| json!({"code": 404}))?)
@@ -138,7 +138,7 @@ we can chain the extension together.
 
 ```rust
 use async_graphql::*;
-async fn parse_with_extensions(&self) -> FieldResult<i32> {
+async fn parse_with_extensions(&self) -> Result<i32> {
     match "234a".parse() {
         Ok(n) => Ok(n),
         Err(e) => Err(e
@@ -175,7 +175,7 @@ instead of `E: std::fmt::Display`. Some specialization is provided through
 The disadvantage is that the below code does **NOT** compile:
 
 ```rust,ignore,does_not_compile
-async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
+async fn parse_with_extensions_result(&self) -> Result<i32> {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
     "234a".parse().extend_err(|_| json!({"code": 404}))
@@ -185,7 +185,7 @@ async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
 however this does:
 
 ```rust,ignore,does_not_compile
-async fn parse_with_extensions_result(&self) -> FieldResult<i32> {
+async fn parse_with_extensions_result(&self) -> Result<i32> {
     // does work because ErrorExtensions is implemented for &ParseIntError
     "234a"
       .parse()

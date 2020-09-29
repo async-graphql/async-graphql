@@ -180,7 +180,7 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                     };
                     let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                     get_params.push(quote! {
-                        let #param_getter_name = || -> #crate_name::Result<#ty> { ctx.param_value(#name, #default) };
+                        let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
                         let #ident: #ty = ctx.param_value(#name, #default)?;
                     });
                 }
@@ -201,10 +201,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                         }
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
-                    method.sig.output = syn::parse2::<ReturnType>(
-                        quote! { -> #crate_name::FieldResult<#inner_ty> },
-                    )
-                    .expect("invalid result type");
+                    method.sig.output =
+                        syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
+                            .expect("invalid result type");
                 }
 
                 method.block =
@@ -235,13 +234,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                 let create_field_stream = quote! {
                     self.#ident(ctx, #(#use_params),*)
                         .await
-                        .map_err(|err| {
-                            err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref())
-                        })?
+                        .map_err(|err| err.into_server_error().at(ctx.item.pos))?
                 };
 
                 let guard = field.guard.map(|guard| quote! {
-                    #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                    #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                 });
                 if field.post_guard.is_some() {
                     return Err(Error::new_spanned(
@@ -268,6 +265,8 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                             let field_name = field_name.clone();
                             async move {
                                 let resolve_id = ::std::sync::atomic::AtomicUsize::default();
+                                // TODO: Replace this with ctx.with_selection_set like it is in
+                                // object.rs
                                 let ctx_selection_set = query_env.create_context(
                                     &schema_env,
                                     Some(#crate_name::QueryPathNode {
@@ -279,15 +278,10 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
                                 );
                                 #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
                                     .await
-                                    .map(|value| {
-                                        #crate_name::serde_json::json!({
-                                            field_name.as_str(): value
-                                        })
-                                    })
                             }
                         }
                     });
-                    #crate_name::Result::Ok(#crate_name::futures::StreamExt::scan(
+                    #crate_name::ServerResult::Ok(#crate_name::futures::StreamExt::scan(
                         stream,
                         false,
                         |errored, item| {
@@ -304,11 +298,11 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
 
                 create_stream.push(quote! {
                     if ctx.item.node.name.node == #field_name {
-                        return ::std::boxed::Box::pin(
+                        return Some(::std::boxed::Box::pin(
                             #crate_name::futures::TryStreamExt::try_flatten(
                                 #crate_name::futures::stream::once((move || async move { #stream_fn })())
                             )
-                        );
+                        ));
                     }
                 });
             }
@@ -356,14 +350,9 @@ pub fn generate(object_args: &args::Object, item_impl: &mut ItemImpl) -> Result<
             fn create_field_stream<'a>(
                 &'a self,
                 ctx: &'a #crate_name::Context<'a>,
-            ) -> ::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send + 'a>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::serde_json::Value>> + Send + 'a>>> {
                 #(#create_stream)*
-                let error = #crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.item.node.name.to_string(),
-                    object: #gql_typename.to_string(),
-                }
-                    .into_error(ctx.item.pos);
-                ::std::boxed::Box::pin(#crate_name::futures::stream::once(async { Err(error) }))
+                None
             }
         }
     };

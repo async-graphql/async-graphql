@@ -1,8 +1,9 @@
 use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
-use crate::{Context, ContextSelectionSet, Error, OutputValueType, QueryError, Result, Value};
-use futures::TryFutureExt;
+use crate::{
+    Context, ContextSelectionSet, OutputValueType, PathSegment, ServerError, ServerResult, Value,
+};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -19,7 +20,9 @@ pub trait ObjectType: OutputValueType {
     }
 
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value>;
+    ///
+    /// If the field was not found returns None.
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>>;
 
     /// Collect all the fields of the object that are queried in the selection set.
     ///
@@ -29,7 +32,7 @@ pub trait ObjectType: OutputValueType {
         &'a self,
         ctx: &ContextSelectionSet<'a>,
         fields: &mut Fields<'a>,
-    ) -> Result<()>
+    ) -> ServerResult<()>
     where
         Self: Sized + Send + Sync,
     {
@@ -39,14 +42,18 @@ pub trait ObjectType: OutputValueType {
     /// Find the GraphQL entity with the given name from the parameter.
     ///
     /// Objects should override this in case they are the query root.
-    async fn find_entity(&self, ctx: &Context<'_>, _params: &Value) -> Result<serde_json::Value> {
-        Err(QueryError::EntityNotFound.into_error(ctx.item.pos))
+    async fn find_entity(
+        &self,
+        _: &Context<'_>,
+        _params: &Value,
+    ) -> ServerResult<Option<serde_json::Value>> {
+        Ok(None)
     }
 }
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for &T {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         T::resolve_field(*self, ctx).await
     }
 }
@@ -57,7 +64,7 @@ impl<T: ObjectType + Send + Sync> ObjectType for &T {
 pub async fn resolve_object<'a, T: ObjectType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
+) -> ServerResult<serde_json::Value> {
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
     let futures = fields.0;
@@ -82,7 +89,7 @@ pub async fn resolve_object<'a, T: ObjectType + Send + Sync>(
 pub async fn resolve_object_serial<'a, T: ObjectType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> Result<serde_json::Value> {
+) -> ServerResult<serde_json::Value> {
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
     let futures = fields.0;
@@ -105,7 +112,7 @@ pub async fn resolve_object_serial<'a, T: ObjectType + Send + Sync>(
 }
 
 type BoxFieldFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
+    Pin<Box<dyn Future<Output = ServerResult<(String, serde_json::Value)>> + 'a + Send>>;
 
 /// A set of fields on an object that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
@@ -116,7 +123,7 @@ impl<'a> Fields<'a> {
         &mut self,
         ctx: &ContextSelectionSet<'a>,
         root: &'a T,
-    ) -> Result<()> {
+    ) -> ServerResult<()> {
         for selection in &ctx.item.node.items {
             if ctx.is_skip(&selection.node.directives())? {
                 continue;
@@ -179,19 +186,13 @@ impl<'a> Fields<'a> {
                                 {
                                     Some(ty) => &ty,
                                     None => {
-                                        return Err(Error::Query {
-                                            pos: field.pos,
-                                            path: None,
-                                            err: QueryError::FieldNotFound {
-                                                field_name: field
-                                                    .node
-                                                    .name
-                                                    .node
-                                                    .clone()
-                                                    .into_string(),
-                                                object: T::type_name().to_string(),
-                                            },
-                                        })
+                                        return Err(ServerError::new(format!(
+                                            r#"Cannot query field "{}" on type "{}"."#,
+                                            field_name,
+                                            T::type_name()
+                                        ))
+                                        .at(ctx_field.item.pos)
+                                        .path(PathSegment::Field(field_name)));
                                     }
                                 },
                                 schema_env: ctx.schema_env,
@@ -204,11 +205,11 @@ impl<'a> Fields<'a> {
                                 .lock()
                                 .resolve_start(&resolve_info);
 
-                            let res = root
-                                .resolve_field(&ctx_field)
-                                .map_ok(move |value| (field_name, value))
-                                .await
-                                .log_error(&ctx_field.query_env.extensions)?;
+                            let res = match root.resolve_field(&ctx_field).await {
+                                Ok(value) => Ok((field_name, value.unwrap())),
+                                Err(e) => Err(e.path(PathSegment::Field(field_name))),
+                            }
+                            .log_error(&ctx_field.query_env.extensions)?;
 
                             ctx_field
                                 .query_env
@@ -228,13 +229,11 @@ impl<'a> Fields<'a> {
                             let fragment = match fragment {
                                 Some(fragment) => fragment,
                                 None => {
-                                    return Err(Error::Query {
-                                        pos: spread.pos,
-                                        path: None,
-                                        err: QueryError::UnknownFragment {
-                                            name: spread.node.fragment_name.to_string(),
-                                        },
-                                    })
+                                    return Err(ServerError::new(format!(
+                                        r#"Unknown fragment "{}"."#,
+                                        spread.node.fragment_name.node
+                                    ))
+                                    .at(spread.pos));
                                 }
                             };
                             (

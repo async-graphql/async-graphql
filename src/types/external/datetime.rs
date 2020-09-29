@@ -9,7 +9,7 @@ impl ScalarType for DateTime<FixedOffset> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
             Value::String(s) => Ok(s.parse::<DateTime<FixedOffset>>()?),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -26,7 +26,7 @@ impl ScalarType for DateTime<Local> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
             Value::String(s) => Ok(s.parse::<DateTime<Local>>()?),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -43,7 +43,7 @@ impl ScalarType for DateTime<Utc> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
             Value::String(s) => Ok(s.parse::<DateTime<Utc>>()?),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

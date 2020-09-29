@@ -65,16 +65,15 @@ pub async fn test_input_validator_string_min_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -83,16 +82,15 @@ pub async fn test_input_validator_string_min_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);
@@ -177,16 +175,15 @@ pub async fn test_input_validator_string_max_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -195,16 +192,15 @@ pub async fn test_input_validator_string_max_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);
@@ -316,16 +312,15 @@ pub async fn test_input_validator_string_email() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             // Testing ObjectValidator
@@ -335,16 +330,15 @@ pub async fn test_input_validator_string_email() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);
@@ -466,16 +460,15 @@ pub async fn test_input_validator_string_mac() {
                 .await
                 .into_result()
                 .expect_err(&should_fail_msg[..]),
-            Error::Rule {
-                errors: vec!(RuleError {
-                    locations: vec!(Pos {
-                        line: 1,
-                        column: 17
-                    }),
-                    message: field_error_msg.clone()
-                })
-                .into()
-            }
+            vec![ServerError {
+                message: field_error_msg.clone(),
+                locations: vec!(Pos {
+                    line: 1,
+                    column: 17
+                }),
+                path: Vec::new(),
+                extensions: None,
+            }]
         );
 
         // Testing ObjectValidator
@@ -485,16 +478,15 @@ pub async fn test_input_validator_string_mac() {
                 .await
                 .into_result()
                 .expect_err(&should_fail_msg[..]),
-            Error::Rule {
-                errors: vec!(RuleError {
-                    locations: vec!(Pos {
-                        line: 1,
-                        column: 14
-                    }),
-                    message: object_error_msg.clone()
-                })
-                .into()
-            }
+            vec![ServerError {
+                message: object_error_msg.clone(),
+                locations: vec!(Pos {
+                    line: 1,
+                    column: 14
+                }),
+                path: Vec::new(),
+                extensions: None,
+            }]
         );
 
         assert_eq!(
@@ -503,16 +495,15 @@ pub async fn test_input_validator_string_mac() {
                 .await
                 .into_result()
                 .expect_err(&should_fail_msg[..]),
-            Error::Rule {
-                errors: vec!(RuleError {
-                    locations: vec!(Pos {
-                        line: 1,
-                        column: 17
-                    }),
-                    message: field_error_msg
-                })
-                .into()
-            }
+            vec![ServerError {
+                message: field_error_msg,
+                locations: vec!(Pos {
+                    line: 1,
+                    column: 17
+                }),
+                path: Vec::new(),
+                extensions: None,
+            }]
         );
 
         // Testing ObjectValidator
@@ -522,16 +513,15 @@ pub async fn test_input_validator_string_mac() {
                 .await
                 .into_result()
                 .expect_err(&should_fail_msg[..]),
-            Error::Rule {
-                errors: vec!(RuleError {
-                    locations: vec!(Pos {
-                        line: 1,
-                        column: 14
-                    }),
-                    message: object_error_msg
-                })
-                .into()
-            }
+            vec![ServerError {
+                message: object_error_msg,
+                locations: vec!(Pos {
+                    line: 1,
+                    column: 14
+                }),
+                path: Vec::new(),
+                extensions: None,
+            }]
         );
     }
 
@@ -580,16 +570,15 @@ pub async fn test_input_validator_string_mac() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             // Testing ObjectValidator
@@ -599,16 +588,15 @@ pub async fn test_input_validator_string_mac() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             assert_eq!(
@@ -641,16 +629,15 @@ pub async fn test_input_validator_string_mac() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             // Testing ObjectValidator
@@ -660,16 +647,15 @@ pub async fn test_input_validator_string_mac() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         }
     }
@@ -721,16 +707,15 @@ pub async fn test_input_validator_int_range() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -739,16 +724,15 @@ pub async fn test_input_validator_int_range() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {}", case);
@@ -828,16 +812,15 @@ pub async fn test_input_validator_int_less_than() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -846,16 +829,15 @@ pub async fn test_input_validator_int_less_than() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {}", case);
@@ -937,16 +919,15 @@ pub async fn test_input_validator_int_greater_than() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -955,16 +936,15 @@ pub async fn test_input_validator_int_greater_than() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {}", case);
@@ -1039,16 +1019,15 @@ pub async fn test_input_validator_int_nonzero() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1057,16 +1036,15 @@ pub async fn test_input_validator_int_nonzero() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {}", case);
@@ -1142,16 +1120,15 @@ pub async fn test_input_validator_int_equal() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1160,16 +1137,15 @@ pub async fn test_input_validator_int_equal() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {}", case);
@@ -1260,16 +1236,15 @@ pub async fn test_input_validator_list_max_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1278,16 +1253,15 @@ pub async fn test_input_validator_list_max_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {:?}", case);
@@ -1378,16 +1352,15 @@ pub async fn test_input_validator_list_min_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1396,16 +1369,15 @@ pub async fn test_input_validator_list_min_length() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {:?}", case);
@@ -1504,16 +1476,15 @@ pub async fn test_input_validator_operator_or() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1522,16 +1493,15 @@ pub async fn test_input_validator_operator_or() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {:?}", case);
@@ -1623,16 +1593,15 @@ pub async fn test_input_validator_operator_and() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 17
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1641,16 +1610,15 @@ pub async fn test_input_validator_operator_and() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 14
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test case = {:?}", case);
@@ -1748,16 +1716,15 @@ pub async fn test_input_validator_variable() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 37
-                        }),
-                        message: field_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 37
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
 
             assert_eq!(
@@ -1766,16 +1733,15 @@ pub async fn test_input_validator_variable() {
                     .await
                     .into_result()
                     .expect_err(&should_fail_msg[..]),
-                Error::Rule {
-                    errors: vec!(RuleError {
-                        locations: vec!(Pos {
-                            line: 1,
-                            column: 34
-                        }),
-                        message: object_error_msg
-                    })
-                    .into()
-                }
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 34
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
             );
         } else {
             let error_msg = format!("Schema returned error with test_string = {}", case);

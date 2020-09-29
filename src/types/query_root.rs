@@ -2,8 +2,8 @@ use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
-    Result, SimpleObject, Type,
+    registry, Any, Context, ContextSelectionSet, OutputValueType, Positioned, ServerError,
+    ServerResult, SimpleObject, Type,
 };
 
 use indexmap::map::IndexMap;
@@ -81,20 +81,10 @@ impl<T: Type> Type for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
-                return Err(Error::Query {
-                    pos: ctx.item.pos,
-                    path: ctx
-                        .path_node
-                        .as_ref()
-                        .and_then(|path| serde_json::to_value(path).ok()),
-                    err: QueryError::FieldNotFound {
-                        field_name: ctx.item.node.name.to_string(),
-                        object: Self::type_name().to_string(),
-                    },
-                });
+                return Ok(None);
             }
 
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
@@ -105,7 +95,8 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 &ctx_obj,
                 ctx.item,
             )
-            .await;
+            .await
+            .map(Some);
         } else if ctx.item.node.name.node == "__type" {
             let type_name: String = ctx.param_value("name", None)?;
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
@@ -118,14 +109,20 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 &ctx_obj,
                 ctx.item,
             )
-            .await;
+            .await
+            .map(Some);
         } else if ctx.item.node.name.node == "_entities" {
             let representations: Vec<Any> = ctx.param_value("representations", None)?;
             let mut res = Vec::new();
             for item in representations {
-                res.push(self.inner.find_entity(ctx, &item.0).await?);
+                res.push(
+                    self.inner
+                        .find_entity(ctx, &item.0)
+                        .await?
+                        .ok_or_else(|| ServerError::new("Entity not found.").at(ctx.item.pos))?,
+                );
             }
-            return Ok(res.into());
+            return Ok(Some(res.into()));
         } else if ctx.item.node.name.node == "_service" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
@@ -135,7 +132,8 @@ impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
                 &ctx_obj,
                 ctx.item,
             )
-            .await;
+            .await
+            .map(Some);
         }
 
         self.inner.resolve_field(ctx).await
@@ -148,7 +146,7 @@ impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_object(ctx, self).await
     }
 }

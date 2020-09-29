@@ -210,7 +210,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         methods.push(quote! {
             #[inline]
-            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::FieldResult<#ty> {
+            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
                 match self {
                     #(#calls,)*
                 }
@@ -237,14 +237,14 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
 
         let resolve_obj = quote! {
             self.#method_name(#(#use_params),*).await.
-                map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?
+                map_err(|err| err.into_server_error().at(ctx.item.pos))?
         };
 
         resolvers.push(quote! {
             if ctx.item.node.name.node == #name {
                 #(#get_params)*
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.item).await;
+                return #crate_name::OutputValueType::resolve(&#resolve_obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });
     }
@@ -304,15 +304,12 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<Option<#crate_name::serde_json::Value>> {
                 #(#resolvers)*
-                Err(#crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.item.node.name.to_string(),
-                    object: #gql_typename.to_string(),
-                }.into_error(ctx.item.pos))
+                Ok(None)
             }
 
-            fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::Result<()> {
+            fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::ServerResult<()> {
                 match self {
                     #(#collect_all_fields),*
                 }
@@ -322,7 +319,7 @@ pub fn generate(interface_args: &args::Interface, input: &DeriveInput) -> Result
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::serde_json::Value> {
                 #crate_name::resolver_utils::resolve_object(ctx, self).await
             }
         }

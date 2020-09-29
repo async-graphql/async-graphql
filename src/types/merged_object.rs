@@ -2,26 +2,14 @@ use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::{resolve_object, ObjectType};
 use crate::{
-    CacheControl, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
-    Result, SimpleObject, Subscription, SubscriptionType, Type,
+    CacheControl, Context, ContextSelectionSet, OutputValueType, Positioned, ServerResult,
+    SimpleObject, Subscription, Type,
 };
-use futures::{future::Either, stream, Stream, StreamExt};
 use indexmap::IndexMap;
 use std::borrow::Cow;
-use std::pin::Pin;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
-
-impl<A, B> Default for MergedObject<A, B>
-where
-    A: Default,
-    B: Default,
-{
-    fn default() -> Self {
-        Self(A::default(), B::default())
-    }
-}
 
 impl<A: Type, B: Type> Type for MergedObject<A, B> {
     fn type_name() -> Cow<'static, str> {
@@ -73,13 +61,10 @@ where
     A: ObjectType + Send + Sync,
     B: ObjectType + Send + Sync,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         match self.0.resolve_field(ctx).await {
-            Ok(value) => Ok(value),
-            Err(Error::Query {
-                err: QueryError::FieldNotFound { .. },
-                ..
-            }) => self.1.resolve_field(ctx).await,
+            Ok(Some(value)) => Ok(Some(value)),
+            Ok(None) => self.1.resolve_field(ctx).await,
             Err(err) => Err(err),
         }
     }
@@ -95,29 +80,8 @@ where
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_object(ctx, self).await
-    }
-}
-
-impl<A, B> SubscriptionType for MergedObject<A, B>
-where
-    A: SubscriptionType + Send + Sync,
-    B: SubscriptionType + Send + Sync,
-{
-    fn create_field_stream<'a>(
-        &'a self,
-        ctx: &'a Context<'a>,
-    ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>> {
-        let left_stream = self.0.create_field_stream(ctx);
-        let mut right_stream = Some(self.1.create_field_stream(ctx));
-        Box::pin(left_stream.flat_map(move |res| match res {
-            Err(Error::Query {
-                err: QueryError::FieldNotFound { .. },
-                ..
-            }) if right_stream.is_some() => Either::Right(right_stream.take().unwrap()),
-            other => Either::Left(stream::once(async { other })),
-        }))
     }
 }
 

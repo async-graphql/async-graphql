@@ -1,5 +1,5 @@
 use crate::extensions::{Extension, ResolveInfo};
-use crate::{Error, Variables};
+use crate::{ServerError, Variables};
 use async_graphql_parser::types::ExecutableDocument;
 use std::collections::BTreeMap;
 use tracing::{span, Level, Span};
@@ -117,8 +117,8 @@ impl Extension for Tracing {
         }
     }
 
-    fn error(&mut self, err: &Error) {
-        tracing::error!(target: "async_graphql::graphql", error = %err.to_string());
+    fn error(&mut self, err: &ServerError) {
+        tracing::error!(target: "async_graphql::graphql", error = %err.message);
 
         for span in self.fields.values() {
             span.with_subscriber(|(id, d)| d.exit(id));

@@ -18,7 +18,7 @@ impl Query {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> FieldResult<Connection<usize, i32, EmptyFields, EmptyFields>> {
+    ) -> Result<Connection<usize, i32, EmptyFields, EmptyFields>> {
         query(after, before, first, last, |after, before, first, last| {
             let mut start = after.map(|after| after + 1).unwrap_or(0);
             let mut end = before.unwrap_or(10000);

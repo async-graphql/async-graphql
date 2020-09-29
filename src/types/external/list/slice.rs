@@ -1,6 +1,6 @@
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
-use crate::{registry, ContextSelectionSet, OutputValueType, Positioned, Result, Type};
+use crate::{registry, ContextSelectionSet, OutputValueType, Positioned, ServerResult, Type};
 use std::borrow::Cow;
 
 impl<'a, T: Type + 'a> Type for &'a [T] {
@@ -24,7 +24,7 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_list(ctx, field, self.iter()).await
     }
 }

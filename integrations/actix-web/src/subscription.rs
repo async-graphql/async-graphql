@@ -5,7 +5,7 @@ use actix::{
 use actix_http::ws;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::WebSocket;
-use async_graphql::{resolver_utils::ObjectType, Data, FieldResult, Schema, SubscriptionType};
+use async_graphql::{resolver_utils::ObjectType, Data, Result, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::SinkExt;
 use std::time::{Duration, Instant};
@@ -18,7 +18,7 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Option<Schema<Query, Mutation, Subscription>>,
     last_heartbeat: Instant,
     messages: Option<mpsc::UnboundedSender<Vec<u8>>>,
-    initializer: Option<Box<dyn FnOnce(serde_json::Value) -> FieldResult<Data> + Send + Sync>>,
+    initializer: Option<Box<dyn FnOnce(serde_json::Value) -> Result<Data> + Send + Sync>>,
     continuation: Vec<u8>,
 }
 
@@ -42,7 +42,7 @@ where
     /// Set a context data initialization function.
     pub fn initializer<F>(self, f: F) -> Self
     where
-        F: FnOnce(serde_json::Value) -> FieldResult<Data> + Send + Sync + 'static,
+        F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + 'static,
     {
         Self {
             initializer: Some(Box::new(f)),

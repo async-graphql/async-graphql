@@ -85,7 +85,7 @@ impl ScalarType for ID {
         match value {
             Value::Number(n) if n.is_i64() => Ok(ID(n.to_string())),
             Value::String(s) => Ok(ID(s)),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

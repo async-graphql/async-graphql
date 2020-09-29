@@ -1,11 +1,12 @@
-use crate::base::Type;
 use crate::extensions::Extensions;
 use crate::parser::types::{
     Directive, Field, FragmentDefinition, Name, OperationDefinition, SelectionSet,
     Value as InputValue,
 };
 use crate::schema::SchemaEnv;
-use crate::{FieldResult, InputValueType, Lookahead, Pos, Positioned, QueryError, Result, Value};
+use crate::{
+    Error, InputValueType, Lookahead, Pos, Positioned, Result, ServerError, ServerResult, Value,
+};
 use fnv::FnvHashMap;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::{Deserialize, Serialize};
@@ -122,7 +123,6 @@ pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
 pub enum QueryPathSegment<'a> {
     /// Index
     Index(usize),
-
     /// Field name
     Name(&'a str),
 }
@@ -138,13 +138,7 @@ pub struct QueryPathNode<'a> {
 }
 
 impl<'a> serde::Serialize for QueryPathNode<'a> {
-    fn serialize<S>(
-        &self,
-        serializer: S,
-    ) -> std::result::Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(None)?;
         self.for_each(|segment| match segment {
             QueryPathSegment::Index(idx) => {
@@ -356,10 +350,14 @@ impl<'a, T> ContextBase<'a, T> {
     ///
     /// # Errors
     ///
-    /// Returns a `FieldError` if the specified type data does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
-        self.data_opt::<D>()
-            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    /// Returns a `Error` if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> Result<&D> {
+        self.data_opt::<D>().ok_or_else(|| {
+            Error::new(format!(
+                "Data `{}` does not exist.",
+                std::any::type_name::<D>()
+            ))
+        })
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
@@ -382,7 +380,7 @@ impl<'a, T> ContextBase<'a, T> {
             .and_then(|d| d.downcast_ref::<D>())
     }
 
-    fn var_value(&self, name: &str, pos: Pos) -> Result<Value> {
+    fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Value> {
         self.query_env
             .operation
             .node
@@ -397,15 +395,10 @@ impl<'a, T> ContextBase<'a, T> {
                     .or_else(|| def.node.default_value())
             })
             .cloned()
-            .ok_or_else(|| {
-                QueryError::VarNotDefined {
-                    var_name: name.to_owned(),
-                }
-                .into_error(pos)
-            })
+            .ok_or_else(|| ServerError::new(format!("Variable {} is not defined.", name)).at(pos))
     }
 
-    fn resolve_input_value(&self, value: Positioned<InputValue>) -> Result<Value> {
+    fn resolve_input_value(&self, value: Positioned<InputValue>) -> ServerResult<Value> {
         let pos = value.pos;
         value
             .node
@@ -420,7 +413,7 @@ impl<'a, T> ContextBase<'a, T> {
     }
 
     #[doc(hidden)]
-    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> Result<bool> {
+    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> ServerResult<bool> {
         for directive in directives {
             let include = match &*directive.node.name.node {
                 "skip" => false,
@@ -431,14 +424,7 @@ impl<'a, T> ContextBase<'a, T> {
             let condition_input = directive
                 .node
                 .get_argument("if")
-                .ok_or_else(|| {
-                    QueryError::RequiredDirectiveArgs {
-                        directive: if include { "@skip" } else { "@include" },
-                        arg_name: "if",
-                        arg_type: "Boolean!",
-                    }
-                    .into_error(directive.pos)
-                })?
+                .ok_or_else(|| ServerError::new(format!(r#"Directive @{} requires argument `if` of type `Boolean!` but it was not provided."#, if include { "include" } else { "skip" })).at(directive.pos))?
                 .clone();
 
             let pos = condition_input.pos;
@@ -446,7 +432,7 @@ impl<'a, T> ContextBase<'a, T> {
 
             if include
                 != <bool as InputValueType>::parse(Some(condition_input))
-                    .map_err(|e| e.into_error(pos, bool::qualified_type_name()))?
+                    .map_err(|e| e.into_server_error().at(pos))?
             {
                 return Ok(true);
             }
@@ -479,7 +465,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         &self,
         name: &str,
         default: Option<fn() -> T>,
-    ) -> Result<T> {
+    ) -> ServerResult<T> {
         let value = self.item.node.get_argument(name).cloned();
         if value.is_none() {
             if let Some(default) = default {
@@ -490,7 +476,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
             None => (Pos::default(), None),
         };
-        InputValueType::parse(value).map_err(|e| e.into_error(pos, T::qualified_type_name()))
+        InputValueType::parse(value).map_err(|e| e.into_server_error().at(pos))
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.

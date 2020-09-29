@@ -1,6 +1,6 @@
 //! Field guards
 
-use crate::{Context, FieldResult};
+use crate::{Context, Result};
 use serde::export::PhantomData;
 
 /// Field guard
@@ -11,7 +11,7 @@ use serde::export::PhantomData;
 #[async_trait::async_trait]
 pub trait Guard {
     /// Check whether the guard will allow access to the field.
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()>;
+    async fn check(&self, ctx: &Context<'_>) -> Result<()>;
 }
 
 /// An extension trait for `Guard`.
@@ -29,7 +29,7 @@ pub struct And<A: Guard, B: Guard>(A, B);
 
 #[async_trait::async_trait]
 impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for And<A, B> {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         self.0.check(ctx).await?;
         self.1.check(ctx).await
     }
@@ -43,7 +43,7 @@ impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for And<A, B> {
 #[async_trait::async_trait]
 pub trait PostGuard<T: Send + Sync> {
     /// Check whether to allow the result of the field through.
-    async fn check(&self, ctx: &Context<'_>, result: &T) -> FieldResult<()>;
+    async fn check(&self, ctx: &Context<'_>, result: &T) -> Result<()>;
 }
 
 /// An extension trait for `PostGuard<T>`
@@ -63,7 +63,7 @@ pub struct PostAnd<T: Send + Sync, A: PostGuard<T>, B: PostGuard<T>>(A, B, Phant
 impl<T: Send + Sync, A: PostGuard<T> + Send + Sync, B: PostGuard<T> + Send + Sync> PostGuard<T>
     for PostAnd<T, A, B>
 {
-    async fn check(&self, ctx: &Context<'_>, result: &T) -> FieldResult<()> {
+    async fn check(&self, ctx: &Context<'_>, result: &T) -> Result<()> {
         self.0.check(ctx, result).await?;
         self.1.check(ctx, result).await
     }
