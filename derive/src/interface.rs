@@ -311,7 +311,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics {
+        impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#crate_name::serde_json::Value> {
                 #(#resolvers)*
                 Err(#crate_name::QueryError::FieldNotFound {
@@ -331,11 +331,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Result<#crate_name::serde_json::Value> {
-                #crate_name::resolver_utils::resolve_object(ctx, self).await
+                #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #generics #crate_name::type_mark::TypeMarkInterface for #ident #generics {}
+        impl #generics #crate_name::InterfaceType for #ident #generics {}
     };
     Ok(expanded.into())
 }

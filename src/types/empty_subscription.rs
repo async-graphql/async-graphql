@@ -1,4 +1,3 @@
-use crate::type_mark::TypeMarkSubscription;
 use crate::{registry, Context, Error, Pos, QueryError, Result, SubscriptionType, Type};
 use futures::{stream, Stream};
 use std::borrow::Cow;
@@ -48,5 +47,3 @@ impl SubscriptionType for EmptySubscription {
         }))
     }
 }
-
-impl TypeMarkSubscription for EmptySubscription {}

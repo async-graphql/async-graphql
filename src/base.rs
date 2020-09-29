@@ -1,7 +1,8 @@
 use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
-    registry, ContextSelectionSet, FieldResult, InputValueResult, Positioned, Result, Value,
+    registry, ContainerType, ContextSelectionSet, FieldResult, InputValueResult, Positioned,
+    Result, Value,
 };
 use std::borrow::Cow;
 
@@ -99,3 +100,18 @@ impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
         }
     }
 }
+
+/// A GraphQL object.
+pub trait ObjectType: ContainerType {}
+
+#[async_trait::async_trait]
+impl<T: ObjectType + Send + Sync> ObjectType for &T {}
+
+/// A GraphQL interface.
+pub trait InterfaceType: ContainerType {}
+
+/// A GraphQL interface.
+pub trait UnionType: ContainerType {}
+
+/// A GraphQL input object.
+pub trait InputObjectType: InputValueType {}

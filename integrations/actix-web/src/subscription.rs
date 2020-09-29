@@ -5,7 +5,7 @@ use actix::{
 use actix_http::ws;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::WebSocket;
-use async_graphql::{resolver_utils::ObjectType, Data, FieldResult, Schema, SubscriptionType};
+use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType};
 use futures::channel::mpsc;
 use futures::SinkExt;
 use std::time::{Duration, Instant};

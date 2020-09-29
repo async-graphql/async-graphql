@@ -1,12 +1,11 @@
 use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
-use crate::resolver_utils::{resolve_object, ObjectType};
+use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
-    Result, SimpleObject, Type,
+    registry, Any, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Positioned,
+    QueryError, Result, SimpleObject, Type,
 };
 
-use crate::type_mark::TypeMarkObject;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -81,7 +80,7 @@ impl<T: Type> Type for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {
+impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
@@ -150,8 +149,8 @@ impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        resolve_object(ctx, self).await
+        resolve_container(ctx, self).await
     }
 }
 
-impl<T: ObjectType + Send + Sync> TypeMarkObject for QueryRoot<T> {}
+impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {}

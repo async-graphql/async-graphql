@@ -64,7 +64,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::type_mark::TypeMarkInputObject);
+                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 #ty::create_type_info(registry);
                 if let Some(#crate_name::registry::MetaType::InputObject{ input_fields, .. }) =
                     registry.types.remove(&*<#ty as #crate_name::Type>::type_name()) {
@@ -176,7 +176,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             }
         }
 
-        impl #crate_name::type_mark::TypeMarkInputObject for #ident {}
+        impl #crate_name::InputObjectType for #ident {}
     };
     Ok(expanded.into())
 }

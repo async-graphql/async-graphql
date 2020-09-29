@@ -1,9 +1,10 @@
 use crate::connection::EmptyFields;
 use crate::parser::types::Field;
-use crate::resolver_utils::{resolve_object, ObjectType};
-use crate::type_mark::TypeMarkObject;
+use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::CursorType;
-use crate::{registry, Context, ContextSelectionSet, OutputValueType, Positioned, Result, Type};
+use crate::{
+    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result, Type,
+};
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -105,7 +106,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<C, T, E> ObjectType for Edge<C, T, E>
+impl<C, T, E> ContainerType for Edge<C, T, E>
 where
     C: CursorType + Send + Sync,
     T: OutputValueType + Send + Sync,
@@ -135,8 +136,14 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        resolve_object(ctx, self).await
+        resolve_container(ctx, self).await
     }
 }
 
-impl<C, T, E> TypeMarkObject for Edge<C, T, E> {}
+impl<C, T, E> ObjectType for Edge<C, T, E>
+where
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    E: ObjectType + Sync + Send,
+{
+}

@@ -156,8 +156,6 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         }
 
         #remote_conversion
-
-        impl #crate_name::type_mark::TypeMarkEnum for #ident {}
     };
     Ok(expanded.into())
 }

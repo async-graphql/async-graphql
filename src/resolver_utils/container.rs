@@ -6,12 +6,12 @@ use futures::TryFutureExt;
 use std::future::Future;
 use std::pin::Pin;
 
-/// A GraphQL object.
+/// A GraphQL container.
 ///
 /// This helper trait allows the type to call `resolve_object` on itself in its
 /// `OutputValueType::resolve` implementation.
 #[async_trait::async_trait]
-pub trait ObjectType: OutputValueType {
+pub trait ContainerType: OutputValueType {
     /// This function returns true of type `EmptyMutation` only.
     #[doc(hidden)]
     fn is_empty() -> bool {
@@ -21,7 +21,7 @@ pub trait ObjectType: OutputValueType {
     /// Resolves a field value and outputs it as a json value `serde_json::Value`.
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value>;
 
-    /// Collect all the fields of the object that are queried in the selection set.
+    /// Collect all the fields of the container that are queried in the selection set.
     ///
     /// Objects do not have to override this, but interfaces and unions must call it on their
     /// internal type.
@@ -45,7 +45,7 @@ pub trait ObjectType: OutputValueType {
 }
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> ObjectType for &T {
+impl<T: ContainerType + Send + Sync> ContainerType for &T {
     async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
         T::resolve_field(*self, ctx).await
     }
@@ -53,8 +53,8 @@ impl<T: ObjectType + Send + Sync> ObjectType for &T {
 
 // TODO: reduce code duplication between the two below functions?
 
-/// Resolve an object by executing each of the fields concurrently.
-pub async fn resolve_object<'a, T: ObjectType + Send + Sync>(
+/// Resolve an container by executing each of the fields concurrently.
+pub async fn resolve_container<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> Result<serde_json::Value> {
@@ -78,8 +78,8 @@ pub async fn resolve_object<'a, T: ObjectType + Send + Sync>(
     Ok(map.into())
 }
 
-/// Resolve an object by executing each of the fields serially.
-pub async fn resolve_object_serial<'a, T: ObjectType + Send + Sync>(
+/// Resolve an container by executing each of the fields serially.
+pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> Result<serde_json::Value> {
@@ -112,7 +112,7 @@ pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 
 impl<'a> Fields<'a> {
     /// Add another set of fields to this set of fields using the given object.
-    pub fn add_set<T: ObjectType + Send + Sync>(
+    pub fn add_set<T: ContainerType + Send + Sync>(
         &mut self,
         ctx: &ContextSelectionSet<'a>,
         root: &'a T,

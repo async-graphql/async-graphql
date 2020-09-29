@@ -1,11 +1,11 @@
 use crate::connection::edge::Edge;
 use crate::connection::page_info::PageInfo;
 use crate::parser::types::Field;
-use crate::resolver_utils::{resolve_object, ObjectType};
-use crate::type_mark::TypeMarkObject;
+use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, OutputValueType, Positioned, Result, Type,
+    registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType, Positioned,
+    Result, Type,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
@@ -189,7 +189,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<C, T, EC, EE> ObjectType for Connection<C, T, EC, EE>
+impl<C, T, EC, EE> ContainerType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
     T: OutputValueType + Send + Sync,
@@ -228,8 +228,15 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        resolve_object(ctx, self).await
+        resolve_container(ctx, self).await
     }
 }
 
-impl<C, T, EC, EE> TypeMarkObject for Connection<C, T, EC, EE> {}
+impl<C, T, EC, EE> ObjectType for Connection<C, T, EC, EE>
+where
+    C: CursorType + Send + Sync,
+    T: OutputValueType + Send + Sync,
+    EC: ObjectType + Sync + Send,
+    EE: ObjectType + Sync + Send,
+{
+}

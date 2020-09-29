@@ -403,8 +403,6 @@ pub fn generate(
                 ::std::boxed::Box::pin(#crate_name::futures::stream::once(async { Err(error) }))
             }
         }
-
-        impl #crate_name::type_mark::TypeMarkSubscription for #self_ty #where_clause {}
     };
     Ok(expanded.into())
 }

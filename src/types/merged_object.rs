@@ -1,10 +1,9 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
-use crate::resolver_utils::{resolve_object, ObjectType};
-use crate::type_mark::{TypeMarkObject, TypeMarkSubscription};
+use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
-    CacheControl, Context, ContextSelectionSet, Error, OutputValueType, Positioned, QueryError,
-    Result, SimpleObject, Subscription, SubscriptionType, Type,
+    CacheControl, Context, ContextSelectionSet, Error, ObjectType, OutputValueType, Positioned,
+    QueryError, Result, SimpleObject, Subscription, SubscriptionType, Type,
 };
 use futures::{future::Either, stream, Stream, StreamExt};
 use indexmap::IndexMap;
@@ -69,7 +68,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
 }
 
 #[async_trait::async_trait]
-impl<A, B> ObjectType for MergedObject<A, B>
+impl<A, B> ContainerType for MergedObject<A, B>
 where
     A: ObjectType + Send + Sync,
     B: ObjectType + Send + Sync,
@@ -97,11 +96,16 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> Result<serde_json::Value> {
-        resolve_object(ctx, self).await
+        resolve_container(ctx, self).await
     }
 }
 
-impl<A, B> TypeMarkObject for MergedObject<A, B> {}
+impl<A, B> ObjectType for MergedObject<A, B>
+where
+    A: ObjectType + Send + Sync,
+    B: ObjectType + Send + Sync,
+{
+}
 
 impl<A, B> SubscriptionType for MergedObject<A, B>
 where
@@ -123,8 +127,6 @@ where
         }))
     }
 }
-
-impl<A, B> TypeMarkSubscription for MergedObject<A, B> {}
 
 #[doc(hidden)]
 #[derive(SimpleObject, Default)]
