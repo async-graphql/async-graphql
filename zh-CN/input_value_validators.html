@@ -173,7 +173,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[arg(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
+    async fn input(#[graphql(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
     }
 }
 <span class="boring">}

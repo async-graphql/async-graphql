@@ -190,7 +190,7 @@ impl Query {
     }
 
     #[entity]
-    async fn find_user_by_id_with_username(&amp;self, #[arg(key)] id: ID, username: String) -&gt; User {
+    async fn find_user_by_id_with_username(&amp;self, #[graphql(key)] id: ID, username: String) -&gt; User {
         User { ... }
     }
 

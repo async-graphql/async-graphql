@@ -161,7 +161,7 @@
                     <main>
                         <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
 <p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see <a href="define_complex_object.html">Object</a>.</p>
-<p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
+<p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[graphql(skip)]</code></p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -172,10 +172,10 @@ struct MyObject {
     /// Value a
     a: i32,
     
-    #[field(desc = &quot;Value b&quot;)]
+    /// Value b
     b: i32,
 
-    #[field(skip)]
+    #[graphql(skip)]
     c: i32,
 }
 <span class="boring">}

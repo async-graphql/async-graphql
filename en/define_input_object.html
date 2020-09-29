@@ -164,8 +164,7 @@
 <p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.
 The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
 <code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
-<p><code>InputObject</code> doesn't need a <code>#[field]</code> for each field, every field is an <code>InputValue</code>.
-You can add optional <code>#[field]</code> attributes to add descriptions or rename the field.</p>
+<p>You can add optional <code>#[graphql]</code> attributes to add descriptions or rename the field.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -174,8 +173,6 @@ You can add optional <code>#[field]</code> attributes to add descriptions or ren
 #[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
-
-    #[field(desc = &quot;...&quot;)]
     longitude: f64
 }
 

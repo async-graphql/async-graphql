@@ -184,7 +184,7 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
-        #[arg(desc = &quot;Id of object&quot;)] id: i64
+        #[graphql(desc = &quot;Id of object&quot;)] id: i64
     ) -&gt; FieldResult&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)

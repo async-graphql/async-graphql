@@ -172,11 +172,11 @@
 </span><span class="boring">fn main() {
 </span>#[Object(cache_control(max_age = 60))]
 impl Query {
-    #[field(cache_control(max_age = 30))]
+    #[graphql(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {
     }
 
-    #[field(cache_control(private))]
+    #[graphql(cache_control(private))]
     async fn value2(&amp;self) -&gt; i32 {
     }
 

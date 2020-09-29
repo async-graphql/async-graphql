@@ -177,13 +177,13 @@ fn my_default() -&gt; i32 {
 #[Object]
 impl Query {
     // The default value of the value parameter is 0, it will call i32::default()
-    fn test1(&amp;self, #[arg(default)] value: i32) {}
+    fn test1(&amp;self, #[graphql(default)] value: i32) {}
     
     // The default value of the value parameter is 10
-    fn test2(&amp;self, #[arg(default = 10)] value: i32) {}
+    fn test2(&amp;self, #[graphql(default = 10)] value: i32) {}
 
     // The default value of the value parameter uses the return result of the my_default function, the value is 30.
-    fn test3(&amp;self, #[arg(default_with = &quot;my_default()&quot;)] value: i32) {}
+    fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) {}
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -212,13 +212,13 @@ enum MyInterface {
 
 <span class="boring">derive(InputObject)
 </span>struct MyInputObject {
-    #[field(default)]
+    #[graphql(default)]
     value1: i32,
     
-    #[field(default = 10)]
+    #[graphql(default = 10)]
     value2: i32,
 
-    #[field(default = &quot;my_default()&quot;)]
+    #[graphql(default = &quot;my_default()&quot;)]
     value3: i32,
 }
 <span class="boring">}

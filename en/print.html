@@ -191,7 +191,7 @@ async-graphql-warp = &quot;1.18.0&quot; # If you need to integrate into warp
 async-graphql-tide = &quot;1.18.0&quot; # If you need to integrate into tide
 </code></pre>
 <h2><a class="header" href="#write-a-schema" id="write-a-schema">Write a Schema</a></h2>
-<p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object, but you need to mark it with <code>#[field]</code> so that the procedure macro provided by <code>Async-graphql</code> can correctly recognize it.</p>
+<p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object.</p>
 <p><code>Async-graphql</code> implements the mapping of common data types to GraphQL types, such as <code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, etc. Also, you can <a href="custom_scalars.html">extend these base types</a>, which are called scalars in the GraphQL.</p>
 <p>Here is a simple example where we provide just one query that returns the sum of <code>a</code> and <code>b</code>.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -203,7 +203,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[field(desc = &quot;Returns the sum of a and b&quot;)]
+    /// Returns the sum of a and b
     async fn add(&amp;self, a: i32, b: i32) -&gt; i32 {
         a + b
     }
@@ -232,7 +232,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <p><code>Async-graphql</code> implements conversions from GraphQL Objects to Rust structs, and it's easy to use.</p>
 <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
 <p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see <a href="define_complex_object.html">Object</a>.</p>
-<p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[field(skip)]</code></p>
+<p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[graphql(skip)]</code></p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -243,10 +243,10 @@ struct MyObject {
     /// Value a
     a: i32,
     
-    #[field(desc = &quot;Value b&quot;)]
+    /// Value b
     b: i32,
 
-    #[field(skip)]
+    #[graphql(skip)]
     c: i32,
 }
 <span class="boring">}
@@ -276,7 +276,7 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
-        #[arg(desc = &quot;Id of object&quot;)] id: i64
+        #[graphql(desc = &quot;Id of object&quot;)] id: i64
     ) -&gt; FieldResult&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
@@ -325,7 +325,6 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[field]
     async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
@@ -439,7 +438,7 @@ pub enum Episode {
     Empire,
 
     /// Released in 1983.
-    #[item(name=&quot;AAA&quot;)]
+    #[graphql(name=&quot;AAA&quot;)]
     Jedi,
 }
 <span class="boring">}
@@ -518,7 +517,7 @@ impl Circle {
         Circle { radius: self.radius * s }.into()
     }
 
-    #[field(name = &quot;short_description&quot;)]
+    #[graphql(name = &quot;short_description&quot;)]
     async fn short_description(&amp;self) -&gt; String {
         &quot;Circle&quot;.to_string()
     }
@@ -538,7 +537,7 @@ impl Square {
         Square { width: self.width * s }.into()
     }
 
-    #[field(name = &quot;short_description&quot;)]
+    #[graphql(name = &quot;short_description&quot;)]
     async fn short_description(&amp;self) -&gt; String {
         &quot;Square&quot;.to_string()
     }
@@ -607,8 +606,7 @@ enum Shape {
 <p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.
 The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
 <code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
-<p><code>InputObject</code> doesn't need a <code>#[field]</code> for each field, every field is an <code>InputValue</code>.
-You can add optional <code>#[field]</code> attributes to add descriptions or rename the field.</p>
+<p>You can add optional <code>#[graphql]</code> attributes to add descriptions or rename the field.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -617,8 +615,6 @@ You can add optional <code>#[field]</code> attributes to add descriptions or ren
 #[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
-
-    #[field(desc = &quot;...&quot;)]
     longitude: f64
 }
 
@@ -651,13 +647,13 @@ fn my_default() -&gt; i32 {
 #[Object]
 impl Query {
     // The default value of the value parameter is 0, it will call i32::default()
-    fn test1(&amp;self, #[arg(default)] value: i32) {}
+    fn test1(&amp;self, #[graphql(default)] value: i32) {}
     
     // The default value of the value parameter is 10
-    fn test2(&amp;self, #[arg(default = 10)] value: i32) {}
+    fn test2(&amp;self, #[graphql(default = 10)] value: i32) {}
 
     // The default value of the value parameter uses the return result of the my_default function, the value is 30.
-    fn test3(&amp;self, #[arg(default_with = &quot;my_default()&quot;)] value: i32) {}
+    fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) {}
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -686,13 +682,13 @@ enum MyInterface {
 
 <span class="boring">derive(InputObject)
 </span>struct MyInputObject {
-    #[field(default)]
+    #[graphql(default)]
     value1: i32,
     
-    #[field(default = 10)]
+    #[graphql(default = 10)]
     value2: i32,
 
-    #[field(default = &quot;my_default()&quot;)]
+    #[graphql(default = &quot;my_default()&quot;)]
     value3: i32,
 }
 <span class="boring">}
@@ -753,7 +749,7 @@ struct Subscription;
 
 #[Subscription]
 impl Subscription {
-    async fn integers(&amp;self, #[arg(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
+    async fn integers(&amp;self, #[graphql(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
         let mut value = 0;
         tokio::time::interval(Duration::from_secs(1)).map(move |_| {
             value += step;
@@ -778,7 +774,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[arg(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
+    async fn input(#[graphql(validator(or(Email, MAC(colon = &quot;false&quot;))))] a: String) {
     }
 }
 <span class="boring">}
@@ -846,11 +842,11 @@ impl InputValueValidator for MustBeZero {
 </span><span class="boring">fn main() {
 </span>#[Object(cache_control(max_age = 60))]
 impl Query {
-    #[field(cache_control(max_age = 30))]
+    #[graphql(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {
     }
 
-    #[field(cache_control(private))]
+    #[graphql(cache_control(private))]
     async fn value2(&amp;self) -&gt; i32 {
     }
 
@@ -882,7 +878,6 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[field]
     async fn numbers(&amp;self,
         after: Option&lt;String&gt;,
         before: Option&lt;String&gt;,
@@ -1248,7 +1243,7 @@ impl Query {
     }
 
     #[entity]
-    async fn find_user_by_id_with_username(&amp;self, #[arg(key)] id: ID, username: String) -&gt; User {
+    async fn find_user_by_id_with_username(&amp;self, #[graphql(key)] id: ID, username: String) -&gt; User {
         User { ... }
     }
 
