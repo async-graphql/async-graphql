@@ -1,4 +1,3 @@
-use crate::extensions::{BoxExtension, Extension};
 use crate::parser::types::UploadValue;
 use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
@@ -14,6 +13,7 @@ use std::fs::File;
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     /// The query source of the request.
+    #[serde(default)]
     pub query: String,
 
     /// The operation name of the request.
@@ -29,10 +29,6 @@ pub struct Request {
     /// **This data is only valid for this request**
     #[serde(skip)]
     pub data: Data,
-
-    /// Extensions for this request.
-    #[serde(skip)]
-    pub extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
 }
 
 fn deserialize_variables<'de, D: Deserializer<'de>>(
@@ -49,7 +45,6 @@ impl Request {
             operation_name: None,
             variables: Variables::default(),
             data: Data::default(),
-            extensions: Vec::default(),
         }
     }
 
@@ -94,16 +89,6 @@ impl Request {
             content_type,
             content,
         });
-    }
-
-    /// Add an extension
-    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
-        mut self,
-        extension_factory: F,
-    ) -> Self {
-        self.extensions
-            .push(Box::new(move || Box::new(extension_factory())));
-        self
     }
 }
 

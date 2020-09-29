@@ -300,8 +300,12 @@ pub fn generate(
                                 resolve_id,
                                 &inc_resolve_id,
                             );
+                            let ctx_extension = #crate_name::extensions::ExtensionContext {
+                                schema_data: &schema_env.data,
+                                query_data: &query_env.ctx_data,
+                            };
 
-                            #crate_name::extensions::Extension::execution_start(&mut *query_env.extensions.lock());
+                            #crate_name::extensions::Extension::execution_start(&mut *query_env.extensions.lock(), &ctx_extension);
 
                             #[allow(bare_trait_objects)]
                             let ri = #crate_name::extensions::ResolveInfo {
@@ -309,11 +313,9 @@ pub fn generate(
                                 path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                 parent_type: #gql_typename,
                                 return_type: &<<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
-                                schema_env: &schema_env,
-                                query_env: &query_env,
                             };
 
-                            #crate_name::extensions::Extension::resolve_start(&mut *query_env.extensions.lock(), &ri);
+                            #crate_name::extensions::Extension::resolve_start(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
 
                             let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
                                 .await
@@ -323,8 +325,8 @@ pub fn generate(
                                     })
                                 });
 
-                            #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ri);
-                            #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock());
+                            #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
+                            #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock(), &ctx_extension);
                             res
                         }
                     }

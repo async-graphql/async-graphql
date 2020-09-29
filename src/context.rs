@@ -271,20 +271,8 @@ impl Deref for QueryEnv {
 
 impl QueryEnv {
     #[doc(hidden)]
-    pub fn new(
-        extensions: spin::Mutex<Extensions>,
-        variables: Variables,
-        operation: Positioned<OperationDefinition>,
-        fragments: HashMap<Name, Positioned<FragmentDefinition>>,
-        ctx_data: Arc<Data>,
-    ) -> QueryEnv {
-        QueryEnv(Arc::new(QueryEnvInner {
-            extensions,
-            variables,
-            operation,
-            fragments,
-            ctx_data,
-        }))
+    pub fn new(inner: QueryEnvInner) -> QueryEnv {
+        QueryEnv(Arc::new(inner))
     }
 
     #[doc(hidden)]
