@@ -110,6 +110,12 @@ impl Extension for LoggerExtension {
                     error!(target: "async-graphql", "[ValidationError] pos: [{}], query: \"{}\", variables: {}, {}", locations, self.query, self.variables, error.message)
                 }
             }
+            Error::Other(err) => error!(
+                target: "async-graphql", "[OtherError] query: \"{}\", variables: {}, {}",
+                self.query,
+                self.variables,
+                err
+            ),
         }
     }
 }

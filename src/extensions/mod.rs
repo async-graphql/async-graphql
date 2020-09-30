@@ -1,5 +1,7 @@
 //! Extensions for schema
 
+#[cfg(feature = "apollo_persisted_queries")]
+pub mod apollo_persisted_queries;
 #[cfg(feature = "apollo_tracing")]
 mod apollo_tracing;
 #[cfg(feature = "log")]
@@ -8,7 +10,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Data, FieldResult, Result, Variables};
+use crate::{Data, FieldResult, Request, Result, Variables};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -84,11 +86,21 @@ pub struct ResolveInfo<'a> {
 }
 
 /// Represents a GraphQL extension
+#[async_trait::async_trait]
 #[allow(unused_variables)]
 pub trait Extension: Sync + Send + 'static {
     /// If this extension needs to output data to query results, you need to specify a name.
     fn name(&self) -> Option<&'static str> {
         None
+    }
+
+    /// Called at the prepare request
+    async fn prepare_request(
+        &mut self,
+        ctx: &ExtensionContext<'_>,
+        request: Request,
+    ) -> Result<Request> {
+        Ok(request)
     }
 
     /// Called at the begin of the parse.
@@ -143,7 +155,20 @@ impl<T> ErrorLogger for Result<T> {
     }
 }
 
+#[async_trait::async_trait]
 impl Extension for Extensions {
+    async fn prepare_request(
+        &mut self,
+        ctx: &ExtensionContext<'_>,
+        request: Request,
+    ) -> Result<Request> {
+        let mut request = request;
+        for e in self.0.iter_mut() {
+            request = e.prepare_request(ctx, request).await?;
+        }
+        Ok(request)
+    }
+
     fn parse_start(
         &mut self,
         ctx: &ExtensionContext<'_>,

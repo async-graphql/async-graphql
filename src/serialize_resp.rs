@@ -80,6 +80,13 @@ impl Serialize for Error {
                 }
                 seq.end()
             }
+            Error::Other(err) => {
+                let mut seq = serializer.serialize_seq(Some(1))?;
+                seq.serialize_element(&serde_json::json! ({
+                    "message": err,
+                }))?;
+                seq.end()
+            }
         }
     }
 }

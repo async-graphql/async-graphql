@@ -2,6 +2,7 @@ use crate::parser::types::UploadValue;
 use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
 use std::any::Any;
+use std::collections::HashMap;
 use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
 
@@ -29,6 +30,10 @@ pub struct Request {
     /// **This data is only valid for this request**
     #[serde(skip)]
     pub data: Data,
+
+    /// The extensions config of the request.
+    #[serde(default)]
+    pub extensions: HashMap<String, serde_json::Value>,
 }
 
 fn deserialize_variables<'de, D: Deserializer<'de>>(
@@ -45,6 +50,7 @@ impl Request {
             operation_name: None,
             variables: Variables::default(),
             data: Data::default(),
+            extensions: Default::default(),
         }
     }
 

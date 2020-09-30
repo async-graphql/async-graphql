@@ -430,6 +430,10 @@ pub enum Error {
         /// List of errors.
         errors: RuleErrors,
     },
+
+    /// Other errors
+    #[error("Other error: {0}")]
+    Other(String),
 }
 
 /// A collection of RuleError.
