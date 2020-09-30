@@ -8,7 +8,7 @@ use std::pin::Pin;
 
 /// A GraphQL container.
 ///
-/// This helper trait allows the type to call `resolve_object` on itself in its
+/// This helper trait allows the type to call `resolve_container` on itself in its
 /// `OutputValueType::resolve` implementation.
 #[async_trait::async_trait]
 pub trait ContainerType: OutputValueType {
@@ -107,11 +107,11 @@ pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
 type BoxFieldFuture<'a> =
     Pin<Box<dyn Future<Output = Result<(String, serde_json::Value)>> + 'a + Send>>;
 
-/// A set of fields on an object that are being selected.
+/// A set of fields on an container that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 
 impl<'a> Fields<'a> {
-    /// Add another set of fields to this set of fields using the given object.
+    /// Add another set of fields to this set of fields using the given container.
     pub fn add_set<T: ContainerType + Send + Sync>(
         &mut self,
         ctx: &ContextSelectionSet<'a>,

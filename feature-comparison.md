@@ -27,3 +27,4 @@ Comparing Features of Other Rust GraphQL Implementations
 | Opentracing     | 👍         | ⛔️               |
 | Apollo Federation | 👍         | ⛔️               |
 | Apollo Tracing | 👍         | ⛔️               |
+| Apollo Persisted Queries | 👍         | ⛔️               |
