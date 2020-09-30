@@ -6,6 +6,7 @@ use crate::{
     ServerResult, SimpleObject, Type,
 };
 
+use crate::type_mark::TypeMarkObject;
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
 
@@ -150,3 +151,5 @@ impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
         resolve_object(ctx, self).await
     }
 }
+
+impl<T: ObjectType + Send + Sync> TypeMarkObject for QueryRoot<T> {}

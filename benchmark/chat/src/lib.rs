@@ -99,7 +99,7 @@ impl Chat {
         User
     }
 
-    #[field(name = "created_at")]
+    #[graphql(name = "created_at")]
     pub async fn created_at(&self) -> &String {
         &CHAT.created_at
     }
@@ -151,14 +151,14 @@ impl User {
         Some(UserProfile)
     }
 
-    #[field(name = "is_operator")]
+    #[graphql(name = "is_operator")]
     pub async fn is_operator(&self) -> bool {
         USER.is_operator
     }
     pub async fn phone(&self) -> String {
         USER.phone.to_string()
     }
-    #[field(name = "join_date")]
+    #[graphql(name = "join_date")]
     pub async fn join_date(&self) -> &String {
         &USER.join_date
     }
@@ -174,15 +174,15 @@ impl UserProfile {
     pub async fn email(&self) -> &String {
         &PROFILE.email
     }
-    #[field(name = "first_name")]
+    #[graphql(name = "first_name")]
     pub async fn first_name(&self) -> &String {
         &PROFILE.first_name
     }
-    #[field(name = "last_name")]
+    #[graphql(name = "last_name")]
     pub async fn last_name(&self) -> &String {
         &PROFILE.last_name
     }
-    #[field(name = "job_title")]
+    #[graphql(name = "job_title")]
     pub async fn job_title(&self) -> &Option<String> {
         &PROFILE.job_title
     }

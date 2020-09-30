@@ -28,7 +28,7 @@ impl Circle {
         Circle { radius: self.radius * s }.into()
     }
 
-    #[field(name = "short_description")]
+    #[graphql(name = "short_description")]
     async fn short_description(&self) -> String {
         "Circle".to_string()
     }
@@ -48,7 +48,7 @@ impl Square {
         Square { width: self.width * s }.into()
     }
 
-    #[field(name = "short_description")]
+    #[graphql(name = "short_description")]
     async fn short_description(&self) -> String {
         "Square".to_string()
     }

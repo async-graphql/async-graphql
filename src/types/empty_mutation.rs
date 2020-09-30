@@ -1,5 +1,6 @@
 use crate::parser::types::Field;
 use crate::resolver_utils::ObjectType;
+use crate::type_mark::TypeMarkObject;
 use crate::{
     registry, Context, ContextSelectionSet, OutputValueType, Positioned, ServerError, ServerResult,
     Type,
@@ -63,3 +64,5 @@ impl OutputValueType for EmptyMutation {
         Err(ServerError::new("Schema is not configured for mutations.").at(field.pos))
     }
 }
+
+impl TypeMarkObject for EmptyMutation {}

@@ -257,7 +257,6 @@ pub struct Registry {
     pub directives: HashMap<String, MetaDirective>,
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
-    pub is_empty_query: bool,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
 }

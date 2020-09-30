@@ -12,7 +12,6 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[field]
     async fn numbers(&self,
         after: Option<String>,
         before: Option<String>,

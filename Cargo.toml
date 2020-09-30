@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.0.0-alpha.18"
+version = "2.0.0-alpha.21"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -23,8 +23,8 @@ string_number = ["num-traits"]
 nightly = []
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "2.0.0-alpha.18" }
-async-graphql-parser = { path = "parser", version = "2.0.0-alpha.18" }
+async-graphql-derive = { path = "derive", version = "2.0.0-alpha.21" }
+async-graphql-parser = { path = "parser", version = "2.0.0-alpha.21" }
 
 async-stream = "0.3"
 async-trait = "0.1.30"
@@ -39,6 +39,7 @@ serde = { version = "1.0.104", features = ["derive"] }
 serde_json = "1.0.48"
 spin = "0.5.2"
 thiserror = "1.0.11"
+static_assertions = "1.1.0"
 
 # Feature optional dependencies
 uuid = { version = "0.8.1", optional = true, features = ["v4", "serde"] }

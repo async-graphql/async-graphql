@@ -1,4 +1,4 @@
-use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
+use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ResolveInfo};
 use crate::parser::types::Field;
 use crate::{ContextSelectionSet, OutputValueType, PathSegment, Positioned, ServerResult, Type};
 
@@ -17,27 +17,29 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
                 resolve_id: ctx_idx.resolve_id,
                 path_node: ctx_idx.path_node.as_ref().unwrap(),
                 parent_type: &Vec::<T>::type_name(),
-                return_type: &T::type_name(),
-                schema_env: ctx.schema_env,
-                query_env: ctx.query_env,
+                return_type: &T::qualified_type_name(),
+            };
+            let ctx_extension = ExtensionContext {
+                schema_data: &ctx.schema_env.data,
+                query_data: &ctx.query_env.ctx_data,
             };
 
             ctx_idx
                 .query_env
                 .extensions
                 .lock()
-                .resolve_start(&resolve_info);
+                .resolve_start(&ctx_extension, &resolve_info);
 
             let res = OutputValueType::resolve(&item, &ctx_idx, field)
                 .await
                 .map_err(|e| e.path(PathSegment::Index(idx)))
-                .log_error(&ctx_idx.query_env.extensions)?;
+                .log_error(&ctx_extension, &ctx_idx.query_env.extensions)?;
 
             ctx_idx
                 .query_env
                 .extensions
                 .lock()
-                .resolve_end(&resolve_info);
+                .resolve_end(&ctx_extension, &resolve_info);
 
             ServerResult::Ok(res)
         });

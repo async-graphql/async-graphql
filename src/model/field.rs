@@ -29,7 +29,7 @@ impl<'a> __Field<'a> {
             .collect_vec()
     }
 
-    #[field(name = "type")]
+    #[graphql(name = "type")]
     async fn ty(&self) -> __Type<'a> {
         __Type::new(self.registry, &self.field.ty)
     }

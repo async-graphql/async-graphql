@@ -55,7 +55,10 @@ impl Dog {
         unimplemented!()
     }
 
-    async fn is_housetrained(&self, #[arg(default = true)] at_other_homes: bool) -> Option<bool> {
+    async fn is_housetrained(
+        &self,
+        #[graphql(default = true)] at_other_homes: bool,
+    ) -> Option<bool> {
         unimplemented!()
     }
 
@@ -266,8 +269,8 @@ impl ComplicatedArgs {
 
     async fn multiple_opts(
         &self,
-        #[arg(default)] opt1: i32,
-        #[arg(default)] opt2: i32,
+        #[graphql(default)] opt1: i32,
+        #[graphql(default)] opt2: i32,
     ) -> Option<String> {
         unimplemented!()
     }
@@ -276,8 +279,8 @@ impl ComplicatedArgs {
         &self,
         req1: i32,
         req2: i32,
-        #[arg(default)] opt1: i32,
-        #[arg(default)] opt2: i32,
+        #[graphql(default)] opt1: i32,
+        #[graphql(default)] opt2: i32,
     ) -> Option<String> {
         unimplemented!()
     }
@@ -336,7 +339,7 @@ pub struct MutationRoot;
 
 #[Object(internal)]
 impl MutationRoot {
-    async fn test_input(&self, #[arg(default)] input: TestInput) -> i32 {
+    async fn test_input(&self, #[graphql(default)] input: TestInput) -> i32 {
         unimplemented!()
     }
 }

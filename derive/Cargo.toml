@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-derive"
-version = "2.0.0-alpha.18"
+version = "2.0.0-alpha.21"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "Macros for async-graphql"
@@ -16,10 +16,12 @@ categories = ["network-programming", "asynchronous"]
 proc-macro = true
 
 [dependencies]
-async-graphql-parser = { path = "../parser", version = "2.0.0-alpha.18" }
+async-graphql-parser = { path = "../parser", version = "2.0.0-alpha.21" }
 proc-macro2 = "1.0.6"
 syn = { version = "1.0.20", features = ["full", "extra-traits"] }
 quote = "1.0.3"
 Inflector = "0.11.4"
 proc-macro-crate = "0.1.4"
 itertools = "0.9.0"
+darling = "0.10"
+thiserror = "1.0"

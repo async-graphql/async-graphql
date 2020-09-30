@@ -26,7 +26,7 @@ impl MyObject {
     async fn value_from_db(
         &self,
         ctx: &Context<'_>,
-        #[arg(desc = "Id of object")] id: i64
+        #[graphql(desc = "Id of object")] id: i64
     ) -> Result<String> {
         let conn = ctx.data::<DbPool>()?.take();
         Ok(conn.query_something(id)?.name)

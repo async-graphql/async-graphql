@@ -1,6 +1,7 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::{resolve_object, ObjectType};
+use crate::type_mark::{TypeMarkObject, TypeMarkSubscription};
 use crate::{
     CacheControl, Context, ContextSelectionSet, OutputValueType, Positioned, ServerResult,
     SimpleObject, Subscription, Type,
@@ -84,6 +85,8 @@ where
         resolve_object(ctx, self).await
     }
 }
+
+impl<A, B> TypeMarkObject for MergedObject<A, B> {}
 
 #[doc(hidden)]
 #[derive(SimpleObject, Default)]

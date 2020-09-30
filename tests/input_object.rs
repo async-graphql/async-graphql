@@ -4,19 +4,19 @@ use async_graphql::*;
 pub async fn test_input_object_default_value() {
     #[derive(InputObject)]
     struct MyInput {
-        #[field(default = 999)]
+        #[graphql(default = 999)]
         a: i32,
 
-        #[field(default_with = "vec![1, 2, 3]")]
+        #[graphql(default_with = "vec![1, 2, 3]")]
         b: Vec<i32>,
 
-        #[field(default = "abc")]
+        #[graphql(default = "abc")]
         c: String,
 
-        #[field(default = 999)]
+        #[graphql(default = 999)]
         d: i32,
 
-        #[field(default = 999)]
+        #[graphql(default = 999)]
         e: i32,
     }
 
@@ -112,15 +112,15 @@ pub async fn test_inputobject_flatten_recursive() {
 
     #[derive(InputObject, Debug, Eq, PartialEq)]
     struct B {
-        #[field(default = 70)]
+        #[graphql(default = 70)]
         b: i32,
-        #[field(flatten)]
+        #[graphql(flatten)]
         a_obj: A,
     }
 
     #[derive(InputObject, Debug, Eq, PartialEq)]
     struct MyInputObject {
-        #[field(flatten)]
+        #[graphql(flatten)]
         b_obj: B,
         c: i32,
     }
@@ -171,7 +171,7 @@ pub async fn test_inputobject_flatten_recursive() {
 
         async fn test_with_default(
             &self,
-            #[arg(default_with = r#"MyInputObject {
+            #[graphql(default_with = r#"MyInputObject {
             b_obj: B {
                 b: 2,
                 a_obj: A { a: 1 }
@@ -253,13 +253,13 @@ pub async fn test_inputobject_flatten_multiple() {
 
     #[derive(InputObject, Debug, Eq, PartialEq)]
     struct ABC {
-        #[field(flatten)]
+        #[graphql(flatten)]
         a: A,
 
-        #[field(flatten)]
+        #[graphql(flatten)]
         b: B,
 
-        #[field(flatten)]
+        #[graphql(flatten)]
         c: C,
     }
 

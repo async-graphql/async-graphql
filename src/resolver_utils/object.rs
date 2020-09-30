@@ -1,4 +1,4 @@
-use crate::extensions::{ErrorLogger, Extension, ResolveInfo};
+use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ResolveInfo};
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{
@@ -171,6 +171,10 @@ impl<'a> Fields<'a> {
                                 .node
                                 .clone()
                                 .into_string();
+                            let ctx_extension = ExtensionContext {
+                                schema_data: &ctx.schema_env.data,
+                                query_data: &ctx.query_env.ctx_data,
+                            };
 
                             let resolve_info = ResolveInfo {
                                 resolve_id: ctx_field.resolve_id,
@@ -195,27 +199,25 @@ impl<'a> Fields<'a> {
                                         .path(PathSegment::Field(field_name)));
                                     }
                                 },
-                                schema_env: ctx.schema_env,
-                                query_env: ctx.query_env,
                             };
 
                             ctx_field
                                 .query_env
                                 .extensions
                                 .lock()
-                                .resolve_start(&resolve_info);
+                                .resolve_start(&ctx_extension, &resolve_info);
 
                             let res = match root.resolve_field(&ctx_field).await {
                                 Ok(value) => Ok((field_name, value.unwrap())),
                                 Err(e) => Err(e.path(PathSegment::Field(field_name))),
                             }
-                            .log_error(&ctx_field.query_env.extensions)?;
+                            .log_error(&ctx_extension, &ctx_field.query_env.extensions)?;
 
                             ctx_field
                                 .query_env
                                 .extensions
                                 .lock()
-                                .resolve_end(&resolve_info);
+                                .resolve_end(&ctx_extension, &resolve_info);
                             Ok(res)
                         }
                     }));

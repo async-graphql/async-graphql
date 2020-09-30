@@ -17,7 +17,7 @@ fn quickstart() -> Result<()> {
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
-                #[field(desc = "Returns the sum of a and b")]
+                /// Returns the sum of a and b
                 async fn add(&self, a: i32, b: i32) -> i32 {
                     a + b
                 }
@@ -90,7 +90,7 @@ fn hello() -> Result<()> {
             struct QueryRoot;
             #[Object]
             impl QueryRoot {
-                #[field(desc = "Returns hello")]
+                /// Returns hello
                 async fn hello<'a>(&self, ctx: &'a Context<'_>) -> String {
                     let name = ctx.data_opt::<Hello>().map(|hello| hello.0.as_str());
                     format!("Hello, {}!", name.unwrap_or("world"))

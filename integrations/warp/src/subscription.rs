@@ -23,7 +23,6 @@ use warp::{Filter, Rejection, Reply};
 ///
 /// #[Subscription]
 /// impl SubscriptionRoot {
-///     #[field]
 ///     async fn tick(&self) -> impl Stream<Item = String> {
 ///         tokio::time::interval(Duration::from_secs(1)).map(|n| format!("{}", n.elapsed().as_secs_f32()))
 ///     }

@@ -24,7 +24,7 @@ impl PostGuard<i32> for RoleGuard {
 
 #[derive(SimpleObject)]
 struct MyObj {
-    #[field(owned, post_guard(UserGuard(username = r#""test""#, value = "88")))]
+    #[graphql(owned, post_guard(UserGuard(username = r#""test""#, value = "88")))]
     value: i32,
 }
 
@@ -65,7 +65,7 @@ pub async fn test_post_guard() {
 
     #[Object]
     impl Query {
-        #[field(post_guard(UserGuard(username = r#""test""#, value = "99")))]
+        #[graphql(post_guard(UserGuard(username = r#""test""#, value = "99")))]
         async fn value(&self) -> i32 {
             99
         }
@@ -137,7 +137,7 @@ pub async fn test_post_guard() {
 pub async fn test_multiple_post_guards() {
     #[derive(SimpleObject)]
     struct Query {
-        #[field(post_guard(
+        #[graphql(post_guard(
             RoleGuard(role = "Role::Admin"),
             UserGuard(username = r#""test""#, value = "10")
         ))]
@@ -239,7 +239,7 @@ pub async fn test_post_guard_forward_arguments() {
 
     #[Object]
     impl QueryRoot {
-        #[field(post_guard(UserGuard(id = "@_id")))]
+        #[graphql(post_guard(UserGuard(id = "@_id")))]
         async fn user(&self, _id: ID) -> ID {
             "haha".into()
         }
@@ -293,7 +293,7 @@ pub async fn test_post_guard_generic() {
 
     #[Object]
     impl QueryRoot {
-        #[field(post_guard(UserGuard(id = r#""abc""#)))]
+        #[graphql(post_guard(UserGuard(id = r#""abc""#)))]
         async fn user(&self) -> ID {
             "haha".into()
         }

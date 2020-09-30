@@ -18,7 +18,6 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[field]
     async fn parse_with_extensions(&self, input: String) -> Result<i32> {
         Ok("234a"
             .parse()

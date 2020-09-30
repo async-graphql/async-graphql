@@ -115,7 +115,8 @@ impl Registry {
                 description,
                 ..
             } => {
-                if name == &self.query_type && self.is_empty_query {
+                if name == &self.query_type && federation && fields.len() <= 4 {
+                    // Is empty query root, only __schema, __type, _service, _entities fields
                     return;
                 }
 

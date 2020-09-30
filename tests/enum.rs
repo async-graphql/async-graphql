@@ -70,3 +70,25 @@ pub async fn test_enum_derive_and_item_attributes() {
         TestStruct { value: Test::Real }
     );
 }
+
+#[async_std::test]
+pub async fn test_remote_enum() {
+    #[derive(Enum, Copy, Clone, Eq, PartialEq)]
+    #[graphql(remote = "remote::RemoteEnum")]
+    enum LocalEnum {
+        A,
+        B,
+        C,
+    }
+
+    mod remote {
+        pub enum RemoteEnum {
+            A,
+            B,
+            C,
+        }
+    }
+
+    let _: remote::RemoteEnum = LocalEnum::A.into();
+    let _: LocalEnum = remote::RemoteEnum::A.into();
+}

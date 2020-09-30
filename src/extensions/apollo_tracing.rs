@@ -1,4 +1,4 @@
-use crate::extensions::{Extension, ResolveInfo};
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::Variables;
 use chrono::{DateTime, Utc};
 use serde::ser::SerializeMap;
@@ -52,38 +52,45 @@ impl Serialize for ResolveStat {
 /// It's already supported by `Apollo Engine`, and we're excited to see what other kinds of
 /// integrations people can build on top of this format.
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "apollo_tracing")))]
-pub struct ApolloTracing {
+pub struct ApolloTracing;
+
+impl ExtensionFactory for ApolloTracing {
+    fn create(&self) -> Box<dyn Extension> {
+        Box::new(ApolloTracingExtension {
+            start_time: Utc::now(),
+            end_time: Utc::now(),
+            pending_resolves: Default::default(),
+            resolves: Default::default(),
+        })
+    }
+}
+
+struct ApolloTracingExtension {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     pending_resolves: BTreeMap<usize, PendingResolve>,
     resolves: Vec<ResolveStat>,
 }
 
-impl Default for ApolloTracing {
-    fn default() -> Self {
-        Self {
-            start_time: Utc::now(),
-            end_time: Utc::now(),
-            pending_resolves: Default::default(),
-            resolves: Default::default(),
-        }
-    }
-}
-
-impl Extension for ApolloTracing {
+impl Extension for ApolloTracingExtension {
     fn name(&self) -> Option<&'static str> {
         Some("tracing")
     }
 
-    fn parse_start(&mut self, _query_source: &str, _variables: &Variables) {
+    fn parse_start(
+        &mut self,
+        _ctx: &ExtensionContext<'_>,
+        _query_source: &str,
+        _variables: &Variables,
+    ) {
         self.start_time = Utc::now();
     }
 
-    fn execution_end(&mut self) {
+    fn execution_end(&mut self, _ctx: &ExtensionContext<'_>) {
         self.end_time = Utc::now();
     }
 
-    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
+    fn resolve_start(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
         self.pending_resolves.insert(
             info.resolve_id.current,
             PendingResolve {
@@ -96,7 +103,7 @@ impl Extension for ApolloTracing {
         );
     }
 
-    fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
+    fn resolve_end(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
         if let Some(pending_resolve) = self.pending_resolves.remove(&info.resolve_id.current) {
             let start_offset = (pending_resolve.start_time - self.start_time)
                 .num_nanoseconds()
@@ -109,7 +116,7 @@ impl Extension for ApolloTracing {
         }
     }
 
-    fn result(&mut self) -> Option<serde_json::Value> {
+    fn result(&mut self, _ctx: &ExtensionContext<'_>) -> Option<serde_json::Value> {
         self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
         Some(serde_json::json!({

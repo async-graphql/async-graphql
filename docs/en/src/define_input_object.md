@@ -5,8 +5,7 @@ You can use an `Object` as an argument, and GraphQL calls it an `InputObject`.
 The definition of `InputObject` is similar to [SimpleObject](define_simple_object.md), but
 `SimpleObject` can only be used as output and `InputObject` can only be used as input.
 
-`InputObject` doesn't need a `#[field]` for each field, every field is an `InputValue`.
-You can add optional `#[field]` attributes to add descriptions or rename the field.
+You can add optional `#[graphql]` attributes to add descriptions or rename the field.
 
 ```rust
 use async_graphql::*;
@@ -14,8 +13,6 @@ use async_graphql::*;
 #[derive(InputObject)]
 struct Coordinate {
     latitude: f64,
-
-    #[field(desc = "...")]
     longitude: f64
 }
 

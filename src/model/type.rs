@@ -92,7 +92,7 @@ impl<'a> __Type<'a> {
 
     async fn fields(
         &self,
-        #[arg(default = false)] include_deprecated: bool,
+        #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
         if let TypeDetail::Named(ty) = &self.detail {
             ty.fields().map(|fields| {
@@ -155,7 +155,7 @@ impl<'a> __Type<'a> {
 
     async fn enum_values(
         &self,
-        #[arg(default = false)] include_deprecated: bool,
+        #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
         if let TypeDetail::Named(registry::MetaType::Enum { enum_values, .. }) = &self.detail {
             Some(

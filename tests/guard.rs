@@ -44,7 +44,7 @@ impl Guard for UserGuard {
 pub async fn test_guard() {
     #[derive(SimpleObject)]
     struct MyObj {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
+        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
         value: i32,
     }
 
@@ -52,7 +52,7 @@ pub async fn test_guard() {
 
     #[Object]
     impl Query {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
+        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
         async fn value(&self) -> i32 {
             1
         }
@@ -66,7 +66,7 @@ pub async fn test_guard() {
 
     #[Subscription]
     impl Subscription {
-        #[field(guard(RoleGuard(role = "Role::Admin")))]
+        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
         async fn values(&self) -> impl Stream<Item = i32> {
             futures::stream::iter(vec![1, 2, 3])
         }
@@ -166,7 +166,7 @@ pub async fn test_guard() {
 pub async fn test_multiple_guards() {
     #[derive(SimpleObject)]
     struct Query {
-        #[field(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
+        #[graphql(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
         value: i32,
     }
 
@@ -264,7 +264,7 @@ pub async fn test_guard_forward_arguments() {
 
     #[Object]
     impl QueryRoot {
-        #[field(guard(UserGuard(id = "@id")))]
+        #[graphql(guard(UserGuard(id = "@id")))]
         async fn user(&self, id: ID) -> ID {
             id
         }

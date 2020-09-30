@@ -1,28 +1,32 @@
 use crate::args;
-use crate::utils::{get_crate_name, get_rustdoc};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use darling::ast::Data;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{Data, DeriveInput, Error, LitInt, Result};
+use syn::{Error, LitInt};
 
-pub fn generate(object_args: &args::Object, input: &DeriveInput) -> Result<TokenStream> {
+pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
-    let ident = &input.ident;
+    let ident = &object_args.ident;
     let gql_typename = object_args
         .name
         .clone()
         .unwrap_or_else(|| ident.to_string());
 
-    let desc = object_args
-        .desc
-        .clone()
-        .or_else(|| get_rustdoc(&input.attrs).ok().flatten())
+    let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});
 
-    let s = match &input.data {
+    let s = match &object_args.data {
         Data::Struct(e) => e,
-        _ => return Err(Error::new_spanned(input, "It should be a struct")),
+        _ => {
+            return Err(Error::new_spanned(
+                &ident,
+                "MergedSubscription can only be applied to an struct.",
+            )
+            .into())
+        }
     };
 
     let types: Vec<_> = s.fields.iter().map(|field| &field.ty).collect();

@@ -1,4 +1,3 @@
-use crate::extensions::{BoxExtension, Extension};
 use crate::parser::types::UploadValue;
 use crate::{Data, ParseRequestError, Value, Variables};
 use serde::{Deserialize, Deserializer};
@@ -14,6 +13,7 @@ use std::fs::File;
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     /// The query source of the request.
+    #[serde(default)]
     pub query: String,
 
     /// The operation name of the request.
@@ -21,7 +21,7 @@ pub struct Request {
     pub operation_name: Option<String>,
 
     /// The variables of the request.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_variables")]
     pub variables: Variables,
 
     /// The data of the request that can be accessed through `Context::data`.
@@ -29,10 +29,12 @@ pub struct Request {
     /// **This data is only valid for this request**
     #[serde(skip)]
     pub data: Data,
+}
 
-    /// Extensions for this request.
-    #[serde(skip)]
-    pub extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+fn deserialize_variables<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Variables, D::Error> {
+    Ok(Option::<Variables>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 impl Request {
@@ -43,7 +45,6 @@ impl Request {
             operation_name: None,
             variables: Variables::default(),
             data: Data::default(),
-            extensions: Vec::default(),
         }
     }
 
@@ -88,16 +89,6 @@ impl Request {
             content_type,
             content,
         });
-    }
-
-    /// Add an extension
-    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
-        mut self,
-        extension_factory: F,
-    ) -> Self {
-        self.extensions
-            .push(Box::new(move || Box::new(extension_factory())));
-        self
     }
 }
 
@@ -222,6 +213,17 @@ mod tests {
         );
         assert!(request.operation_name.is_none());
         assert_eq!(request.query, "{ a b c }");
+    }
+
+    #[test]
+    fn test_deserialize_request_with_null_variables() {
+        let request: Request = serde_json::from_value(json! ({
+            "query": "{ a b c }",
+            "variables": null
+        }))
+        .unwrap();
+        assert!(request.operation_name.is_none());
+        assert!(request.variables.0.is_empty());
     }
 
     #[test]

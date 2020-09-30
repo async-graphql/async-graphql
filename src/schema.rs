@@ -1,24 +1,21 @@
-use crate::context::{Data, ResolveId};
-use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
+use crate::context::{Data, QueryEnvInner, ResolveId};
+use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
-use crate::parser::types::{
-    DocumentOperations, FragmentDefinition, Name, OperationDefinition, OperationType,
-};
+use crate::parser::types::{DocumentOperations, OperationType};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_object, resolve_object_serial, ObjectType};
 use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, Positioned, QueryEnv, Request,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, Pos, Positioned, QueryEnv, Request,
     Response, ServerError, SubscriptionType, Type, Variables, ID,
 };
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
-use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
@@ -33,7 +30,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     data: Data,
     complexity: Option<usize>,
     depth: Option<usize>,
-    extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+    extensions: Vec<Box<dyn ExtensionFactory>>,
     enable_federation: bool,
 }
 
@@ -67,12 +64,21 @@ impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
     }
 
     /// Add an extension to the schema.
-    pub fn extension<F: Fn() -> E + Send + Sync + 'static, E: Extension>(
-        mut self,
-        extension_factory: F,
-    ) -> Self {
-        self.extensions
-            .push(Box::new(move || Box::new(extension_factory())));
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use async_graphql::*;
+    ///
+    /// #[derive(SimpleObject)]
+    /// struct Query;
+    ///
+    /// let schema = Schema::build(Query, EmptyMutation,EmptySubscription)
+    ///     .extension(extensions::Logger)
+    ///     .finish();
+    /// ```
+    pub fn extension(mut self, extension: impl ExtensionFactory) -> Self {
+        self.extensions.push(Box::new(extension));
         self
     }
 
@@ -143,7 +149,7 @@ pub struct SchemaInner<Query, Mutation, Subscription> {
     pub(crate) subscription: Subscription,
     pub(crate) complexity: Option<usize>,
     pub(crate) depth: Option<usize>,
-    pub(crate) extensions: Vec<Box<dyn Fn() -> BoxExtension + Send + Sync>>,
+    pub(crate) extensions: Vec<Box<dyn ExtensionFactory>>,
     pub(crate) env: SchemaEnv,
 }
 
@@ -219,7 +225,6 @@ where
             types: Default::default(),
             directives: Default::default(),
             implements: Default::default(),
-            is_empty_query: Query::is_empty(),
             query_type: Query::type_name().to_string(),
             mutation_type: if Mutation::is_empty() {
                 None
@@ -314,40 +319,33 @@ where
         Self::create_registry().export_sdl(false)
     }
 
-    // TODO: Remove the allow
-    #[allow(clippy::type_complexity)]
     fn prepare_request(
         &self,
-        request: &Request,
-    ) -> Result<
-        (
-            Positioned<OperationDefinition>,
-            HashMap<Name, Positioned<FragmentDefinition>>,
-            CacheControl,
-            spin::Mutex<Extensions>,
-        ),
-        Vec<ServerError>,
-    > {
+        request: Request,
+    ) -> Result<(QueryEnvInner, CacheControl), Vec<ServerError>> {
         // create extension instances
         let extensions = spin::Mutex::new(Extensions(
             self.0
                 .extensions
                 .iter()
-                .chain(request.extensions.iter())
-                .map(|factory| factory())
+                .map(|factory| factory.create())
                 .collect_vec(),
         ));
+        let ctx_extension = ExtensionContext {
+            schema_data: &self.env.data,
+            query_data: &request.data,
+        };
 
         extensions
             .lock()
-            .parse_start(&request.query, &request.variables);
+            .parse_start(&ctx_extension, &request.query, &request.variables);
         let document = parse_query(&request.query)
             .map_err(Into::<ServerError>::into)
-            .log_error(&extensions)?;
-        extensions.lock().parse_end(&document);
+            .log_error(&ctx_extension, &extensions)?;
+        extensions.lock().parse_end(&ctx_extension, &document);
 
         // check rules
-        extensions.lock().validation_start();
+        extensions.lock().validation_start(&ctx_extension);
         let CheckResult {
             cache_control,
             complexity,
@@ -358,20 +356,21 @@ where
             Some(&request.variables),
             self.validation_mode,
         )
-        .log_error(&extensions)?;
-        extensions.lock().validation_end();
+        .log_error(&ctx_extension, &extensions)?;
+        extensions.lock().validation_end(&ctx_extension);
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if complexity > limit_complexity {
-                return Err(vec![ServerError::new("Query is too complex.")]).log_error(&extensions);
+                return Err(vec![ServerError::new("Query is too complex.")])
+                    .log_error(&ctx_extension, &extensions);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if depth > limit_depth {
                 return Err(vec![ServerError::new("Query is nested too deep.")])
-                    .log_error(&extensions);
+                    .log_error(&ctx_extension, &extensions);
             }
         }
 
@@ -399,31 +398,24 @@ where
         let operation = match operation {
             Ok(operation) => operation,
             Err(e) => {
-                extensions.lock().error(&e);
+                extensions.lock().error(&ctx_extension, &e);
                 return Err(vec![e]);
             }
         };
 
-        Ok((operation, document.fragments, cache_control, extensions))
+        let env = QueryEnvInner {
+            extensions,
+            variables: request.variables,
+            operation,
+            fragments: document.fragments,
+            ctx_data: Arc::new(request.data),
+        };
+        Ok((env, cache_control))
     }
 
-    async fn execute_once(
-        &self,
-        operation: Positioned<OperationDefinition>,
-        fragments: HashMap<Name, Positioned<FragmentDefinition>>,
-        extensions: spin::Mutex<Extensions>,
-        variables: Variables,
-        ctx_data: Data,
-    ) -> Response {
+    async fn execute_once(&self, env: QueryEnv) -> Response {
         // execute
         let inc_resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(
-            extensions,
-            variables,
-            operation,
-            fragments,
-            Arc::new(ctx_data),
-        );
         let ctx = ContextBase {
             path_node: None,
             resolve_id: ResolveId::root(),
@@ -432,8 +424,12 @@ where
             schema_env: &self.env,
             query_env: &env,
         };
+        let ctx_extension = ExtensionContext {
+            schema_data: &self.env.data,
+            query_data: &env.ctx_data,
+        };
 
-        env.extensions.lock().execution_start();
+        env.extensions.lock().execution_start(&ctx_extension);
 
         let data = match &env.operation.node.ty {
             OperationType::Query => resolve_object(&ctx, &self.query).await,
@@ -445,8 +441,8 @@ where
             }
         };
 
-        env.extensions.lock().execution_end();
-        let extensions = env.extensions.lock().result();
+        env.extensions.lock().execution_end(&ctx_extension);
+        let extensions = env.extensions.lock().result(&ctx_extension);
 
         match data {
             Ok(data) => Response::new(data),
@@ -458,15 +454,9 @@ where
     /// Execute an GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
-        match self.prepare_request(&request) {
-            Ok((operation, fragments, cache_control, extensions)) => self
-                .execute_once(
-                    operation,
-                    fragments,
-                    extensions,
-                    request.variables,
-                    request.data,
-                )
+        match self.prepare_request(request) {
+            Ok((env, cache_control)) => self
+                .execute_once(QueryEnv::new(env))
                 .await
                 .cache_control(cache_control),
             Err(errors) => Response::from_errors(errors),
@@ -495,50 +485,52 @@ where
 
         async_stream::stream! {
             let request = request.into();
-            let (operation, fragments, cache_control, extensions) = match schema.prepare_request(&request) {
+            let (mut env, cache_control) = match schema.prepare_request(request) {
                 Ok(res) => res,
                 Err(errors) => {
                     yield Response::from_errors(errors);
                     return;
                 }
             };
+            env.ctx_data = ctx_data;
+            let env = QueryEnv::new(env);
 
-            if operation.node.ty != OperationType::Subscription {
+            if env.operation.node.ty != OperationType::Subscription {
                 yield schema
-                    .execute_once(operation, fragments, extensions, request.variables, request.data)
+                    .execute_once(env)
                     .await
                     .cache_control(cache_control);
                 return;
             }
 
             let resolve_id = AtomicUsize::default();
-            let env = QueryEnv::new(
-                extensions,
-                request.variables,
-                operation,
-                fragments,
-                ctx_data,
-            );
-
             let ctx = env.create_context(
                 &schema.env,
                 None,
                 &env.operation.node.selection_set,
+                ResolveId::root(),
                 &resolve_id,
             );
+            let ctx_extension = ExtensionContext {
+                schema_data: &schema.env.data,
+                query_data: &env.ctx_data,
+            };
 
-            // TODO: Invoke extensions
+            env.extensions.lock().execution_start(&ctx_extension);
 
             let mut streams = Vec::new();
             if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                env.extensions.lock().execution_end(&ctx_extension);
                 yield Response::from_errors(vec![e]);
                 return;
             }
 
+            env.extensions.lock().execution_end(&ctx_extension);
+
             let mut stream = stream::select_all(streams);
             while let Some(data) = stream.next().await {
                 let is_err = data.is_err();
-                let extensions = env.extensions.lock().result();
+                let extensions = env.extensions.lock().result(&ctx_extension);
                 yield match data {
                     Ok((name, value)) => Response::new(
                         serde_json::json!({

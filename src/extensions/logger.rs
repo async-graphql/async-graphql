@@ -1,4 +1,4 @@
-use crate::extensions::{Extension, ResolveInfo};
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::parser::types::{ExecutableDocument, OperationType, Selection};
 use crate::{PathSegment, ServerError, Variables};
 use log::{error, info, trace};
@@ -6,29 +6,36 @@ use std::fmt::{self, Display, Formatter};
 
 /// Logger extension
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "log")))]
-pub struct Logger {
+pub struct Logger;
+
+impl ExtensionFactory for Logger {
+    fn create(&self) -> Box<dyn Extension> {
+        Box::new(LoggerExtension {
+            enabled: true,
+            query: String::new(),
+            variables: Default::default(),
+        })
+    }
+}
+
+struct LoggerExtension {
     enabled: bool,
     query: String,
     variables: Variables,
 }
 
-impl Default for Logger {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            query: String::new(),
-            variables: Default::default(),
-        }
-    }
-}
-
-impl Extension for Logger {
-    fn parse_start(&mut self, query_source: &str, variables: &Variables) {
+impl Extension for LoggerExtension {
+    fn parse_start(
+        &mut self,
+        _ctx: &ExtensionContext<'_>,
+        query_source: &str,
+        variables: &Variables,
+    ) {
         self.query = query_source.replace(char::is_whitespace, "");
         self.variables = variables.clone();
     }
 
-    fn parse_end(&mut self, document: &ExecutableDocument) {
+    fn parse_end(&mut self, _ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
         let is_schema = document
             .operations
             .iter()
@@ -43,21 +50,21 @@ impl Extension for Logger {
         info!(target: "async-graphql", "[Query] query: \"{}\", variables: {}", &self.query, self.variables);
     }
 
-    fn resolve_start(&mut self, info: &ResolveInfo<'_>) {
+    fn resolve_start(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
         trace!(target: "async-graphql", "[ResolveStart] path: \"{}\"", info.path_node);
     }
 
-    fn resolve_end(&mut self, info: &ResolveInfo<'_>) {
+    fn resolve_end(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
         if !self.enabled {
             return;
         }
         trace!(target: "async-graphql", "[ResolveEnd] path: \"{}\"", info.path_node);
     }
 
-    fn error(&mut self, err: &ServerError) {
+    fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &ServerError) {
         struct DisplayError<'a> {
             log: &'a Logger,
             e: &'a ServerError,

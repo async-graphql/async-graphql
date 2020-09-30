@@ -6,15 +6,15 @@ pub async fn test_default_value_arg() {
 
     #[Object]
     impl Query {
-        async fn value1(&self, #[arg(default = 100)] input: i32) -> i32 {
+        async fn value1(&self, #[graphql(default = 100)] input: i32) -> i32 {
             input
         }
 
-        async fn value2(&self, #[arg(default)] input: i32) -> i32 {
+        async fn value2(&self, #[graphql(default)] input: i32) -> i32 {
             input
         }
 
-        async fn value3(&self, #[arg(default_with = "1 + 2 + 3")] input: i32) -> i32 {
+        async fn value3(&self, #[graphql(default_with = "1 + 2 + 3")] input: i32) -> i32 {
             input
         }
     }
@@ -46,13 +46,13 @@ pub async fn test_default_value_arg() {
 pub async fn test_default_value_inputobject() {
     #[derive(InputObject)]
     struct MyInput {
-        #[field(default = 100)]
+        #[graphql(default = 100)]
         value1: i32,
 
-        #[field(default)]
+        #[graphql(default)]
         value2: i32,
 
-        #[field(default_with = "1 + 2 + 3")]
+        #[graphql(default_with = "1 + 2 + 3")]
         value3: i32,
     }
 
