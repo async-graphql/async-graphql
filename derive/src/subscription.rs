@@ -200,7 +200,7 @@ pub fn generate(
                 };
                 let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                 get_params.push(quote! {
-                    let #param_getter_name = || -> #crate_name::Result<#ty> { ctx.param_value(#name, #default) };
+                    let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
                     let #ident: #ty = ctx.param_value(#name, #default)?;
                 });
             }
@@ -222,7 +222,7 @@ pub fn generate(
                 });
                 method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                 method.sig.output =
-                    syn::parse2::<ReturnType>(quote! { -> #crate_name::FieldResult<#inner_ty> })
+                    syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                         .expect("invalid result type");
             }
 
@@ -249,7 +249,7 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref())
+                        err.into_server_error().at(ctx.item.pos)
                     })?
             };
 
@@ -258,7 +258,7 @@ pub fn generate(
                 None => None,
             };
             let guard = guard.map(|guard| quote! {
-                #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
             });
             if field.post_guard.is_some() {
                 return Err(Error::new_spanned(
@@ -321,11 +321,12 @@ pub fn generate(
 
                             #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
                             #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock(), &ctx_extension);
-                            (field_name.to_string(), res)
+
+                            res
                         }
                     }
                 });
-                #crate_name::Result::Ok(#crate_name::futures::StreamExt::scan(
+                #crate_name::ServerResult::Ok(#crate_name::futures::StreamExt::scan(
                     stream,
                     false,
                     |errored, item| {

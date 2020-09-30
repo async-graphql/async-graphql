@@ -100,19 +100,19 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             Some(meta) => generate_guards(&crate_name, &meta)?,
             None => None,
         };
-        let guard = guard.map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
+        let guard = guard.map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
 
         let post_guard = match &field.post_guard {
             Some(meta) => generate_post_guards(&crate_name, &meta)?,
             None => None,
         };
-        let post_guard = post_guard.map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?; });
+        let post_guard = post_guard.map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
 
         getters.push(if !field.owned {
             quote! {
                  #[inline]
                  #[allow(missing_docs)]
-                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<&#ty> {
+                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<&#ty> {
                      Ok(&self.#ident)
                  }
             }
@@ -120,7 +120,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             quote! {
                 #[inline]
                 #[allow(missing_docs)]
-                #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::FieldResult<#ty> {
+                #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
                     Ok(self.#ident.clone())
                 }
             }
@@ -129,10 +129,10 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         resolvers.push(quote! {
             if ctx.item.node.name.node == #field_name {
                 #guard
-                let res = self.#ident(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                let res = self.#ident(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                 #post_guard
-                return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await;
+                return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });
     }

@@ -66,7 +66,7 @@ impl Extension for LoggerExtension {
 
     fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &ServerError) {
         struct DisplayError<'a> {
-            log: &'a Logger,
+            log: &'a LoggerExtension,
             e: &'a ServerError,
         };
         impl<'a> Display for DisplayError<'a> {

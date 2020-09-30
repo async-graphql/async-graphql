@@ -8,7 +8,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Data, QueryEnv, Result, SchemaEnv, ServerError, ServerResult, Variables};
+use crate::{Data, Result, ServerError, ServerResult, Variables};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -147,11 +147,11 @@ impl<T> ErrorLogger for ServerResult<T> {
     }
 }
 impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
-    fn log_error(self, extensions: &spin::Mutex<Extensions>) -> Self {
+    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self {
         if let Err(errors) = &self {
             let mut extensions = extensions.lock();
             for error in errors {
-                extensions.error(error);
+                extensions.error(ctx, error);
             }
         }
         self

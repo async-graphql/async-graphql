@@ -9,8 +9,8 @@ use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, Pos, Positioned, QueryEnv, Request,
-    Response, ServerError, SubscriptionType, Type, Variables, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, QueryEnv, Request, Response,
+    ServerError, SubscriptionType, Type, ID,
 };
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
