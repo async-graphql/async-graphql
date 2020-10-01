@@ -3,12 +3,10 @@ use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::resolve_container;
 use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
-    Positioned, ServerResult, SimpleObject, Subscription, SubscriptionType, Type,
+    Positioned, ServerResult, SimpleObject, Type,
 };
-use futures::Stream;
 use indexmap::IndexMap;
 use std::borrow::Cow;
-use std::pin::Pin;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
@@ -94,30 +92,7 @@ where
 {
 }
 
-impl<A, B> SubscriptionType for MergedObject<A, B>
-where
-    A: SubscriptionType + Send + Sync,
-    B: SubscriptionType + Send + Sync,
-{
-    fn create_field_stream<'a>(
-        &'a self,
-        ctx: &'a Context<'a>,
-    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>> {
-        match self.0.create_field_stream(ctx) {
-            Some(stream) => Some(stream),
-            None => self.1.create_field_stream(ctx),
-        }
-    }
-}
-
 #[doc(hidden)]
 #[derive(SimpleObject, Default)]
 #[graphql(internal)]
 pub struct MergedObjectTail;
-
-#[doc(hidden)]
-#[derive(Default)]
-pub struct MergedObjectSubscriptionTail;
-
-#[Subscription(internal)]
-impl MergedObjectSubscriptionTail {}

@@ -22,7 +22,7 @@ pub use empty_subscription::EmptySubscription;
 pub use id::ID;
 pub use json::{Json, OutputJson};
 pub use maybe_undefined::MaybeUndefined;
-pub use merged_object::{MergedObject, MergedObjectSubscriptionTail, MergedObjectTail};
+pub use merged_object::{MergedObject, MergedObjectTail};
 #[cfg(feature = "string_number")]
 pub use string_number::StringNumber;
 pub use upload::Upload;
