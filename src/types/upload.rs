@@ -95,7 +95,7 @@ impl InputValueType for Upload {
         if let Value::Upload(upload) = value {
             Ok(Upload(upload))
         } else {
-            Err(InputValueError::ExpectedType(value))
+            Err(InputValueError::expected_type(value))
         }
     }
 

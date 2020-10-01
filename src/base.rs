@@ -1,8 +1,8 @@
 use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
-    registry, ContainerType, ContextSelectionSet, FieldResult, InputValueResult, Positioned,
-    Result, Value,
+    registry, ContainerType, ContextSelectionSet, InputValueResult, Positioned, Result,
+    ServerResult, Value,
 };
 use std::borrow::Cow;
 
@@ -46,7 +46,7 @@ pub trait OutputValueType: Type {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value>;
+    ) -> ServerResult<serde_json::Value>;
 }
 
 impl<T: Type + Send + Sync> Type for &T {
@@ -66,12 +66,12 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         T::resolve(*self, ctx, field).await
     }
 }
 
-impl<T: Type> Type for FieldResult<T> {
+impl<T: Type> Type for Result<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -86,17 +86,15 @@ impl<T: Type> Type for FieldResult<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Sync> OutputValueType for FieldResult<T> {
+impl<T: OutputValueType + Sync> OutputValueType for Result<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> crate::Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         match self {
-            Ok(value) => Ok(OutputValueType::resolve(value, ctx, field).await?),
-            Err(err) => Err(err
-                .clone()
-                .into_error_with_path(field.pos, ctx.path_node.as_ref())),
+            Ok(value) => Ok(value.resolve(ctx, field).await?),
+            Err(err) => Err(err.clone().into_server_error().at(field.pos)),
         }
     }
 }

@@ -4,8 +4,8 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
-    registry, Context, ContextSelectionSet, FieldResult, ObjectType, OutputValueType, Positioned,
-    Result, Type,
+    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result,
+    ServerResult, Type,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
@@ -89,9 +89,9 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
     }
 
     /// Append edges with `IntoIterator<Item = Edge<C, T, EE>>`
-    pub fn try_append<I>(&mut self, iter: I) -> FieldResult<()>
+    pub fn try_append<I>(&mut self, iter: I) -> Result<()>
     where
-        I: IntoIterator<Item = FieldResult<Edge<C, T, EE>>>,
+        I: IntoIterator<Item = Result<Edge<C, T, EE>>>,
     {
         for edge in iter {
             self.edges.push(edge?);
@@ -99,7 +99,7 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
         Ok(())
     }
 
-    /// Append edges with `Stream<Item = FieldResult<Edge<C, T, EE>>>`
+    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>>>`
     pub async fn append_stream<S>(&mut self, stream: S)
     where
         S: Stream<Item = Edge<C, T, EE>> + Unpin,
@@ -107,10 +107,10 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
         self.edges.extend(stream.collect::<Vec<_>>().await);
     }
 
-    /// Append edges with `Stream<Item = FieldResult<Edge<C, T, EE>>>`
-    pub async fn try_append_stream<S>(&mut self, stream: S) -> FieldResult<()>
+    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>>>`
+    pub async fn try_append_stream<S>(&mut self, stream: S) -> Result<()>
     where
-        S: Stream<Item = FieldResult<Edge<C, T, EE>>> + Unpin,
+        S: Stream<Item = Result<Edge<C, T, EE>>> + Unpin,
     {
         self.edges.extend(stream.try_collect::<Vec<_>>().await?);
         Ok(())
@@ -196,7 +196,7 @@ where
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         if ctx.item.node.name.node == "pageInfo" {
             let page_info = PageInfo {
                 has_previous_page: self.has_previous_page,
@@ -205,10 +205,14 @@ where
                 end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
             };
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item)
+                .await
+                .map(Some);
         } else if ctx.item.node.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item)
+                .await
+                .map(Some);
         }
 
         self.additional_fields.resolve_field(ctx).await
@@ -227,7 +231,7 @@ where
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_container(ctx, self).await
     }
 }

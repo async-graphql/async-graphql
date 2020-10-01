@@ -1,20 +1,23 @@
-use crate::{CacheControl, Error, Result};
+use crate::{CacheControl, Result, ServerError};
 use serde::Serialize;
 
 /// Query response
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Response {
     /// Data of query result
     pub data: serde_json::Value,
 
     /// Extensions result
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extensions: Option<serde_json::Value>,
 
     /// Cache control value
+    #[serde(skip)]
     pub cache_control: CacheControl,
 
-    /// Error
-    pub error: Option<Error>,
+    /// Errors
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<ServerError>,
 }
 
 impl Response {
@@ -27,21 +30,12 @@ impl Response {
         }
     }
 
-    /// Create a response from the error.
+    /// Create a response from some errors.
     #[must_use]
-    pub fn from_error(error: impl Into<Error>) -> Self {
+    pub fn from_errors(errors: Vec<ServerError>) -> Self {
         Self {
-            error: Some(error.into()),
+            errors,
             ..Default::default()
-        }
-    }
-
-    /// Create a response from the result of the data and an error.
-    #[must_use]
-    pub fn from_result(result: Result<serde_json::Value>) -> Self {
-        match result {
-            Ok(data) => Self::new(data),
-            Err(e) => Self::from_error(e),
         }
     }
 
@@ -63,30 +57,24 @@ impl Response {
     /// Returns `true` if the response is ok.
     #[inline]
     pub fn is_ok(&self) -> bool {
-        self.error.is_none()
+        self.errors.is_empty()
     }
 
     /// Returns `true` if the response is error.
     #[inline]
     pub fn is_err(&self) -> bool {
-        self.error.is_some()
+        !self.is_ok()
     }
 
-    /// Extract the error from the response. Only if the `error` field is `None` will this return
+    /// Extract the error from the response. Only if the `error` field is empty will this return
     /// `Ok`.
     #[inline]
-    pub fn into_result(self) -> Result<Self> {
+    pub fn into_result(self) -> Result<Self, Vec<ServerError>> {
         if self.is_err() {
-            Err(self.error.unwrap())
+            Err(self.errors)
         } else {
             Ok(self)
         }
-    }
-}
-
-impl From<Error> for Response {
-    fn from(err: Error) -> Self {
-        Self::from_error(err)
     }
 }
 

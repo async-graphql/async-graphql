@@ -18,10 +18,10 @@ where
         match value {
             Value::String(s) => {
                 let n = T::from_str_radix(&s, 10)
-                    .map_err(|err| InputValueError::Custom(err.to_string()))?;
+                    .map_err(|err| InputValueError::custom(err.to_string()))?;
                 Ok(StringNumber(n))
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

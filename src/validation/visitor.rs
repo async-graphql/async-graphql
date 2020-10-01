@@ -1,24 +1,24 @@
-use crate::error::RuleError;
 use crate::parser::types::{
     Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment, Name,
     OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, Value,
     VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
-use crate::{Pos, Positioned, Variables};
+use crate::{Pos, Positioned, ServerError, Variables};
 use std::collections::HashMap;
+use std::fmt::{self, Display, Formatter};
 
-pub struct VisitorContext<'a> {
-    pub registry: &'a registry::Registry,
-    pub variables: Option<&'a Variables>,
-    pub errors: Vec<RuleError>,
+pub(crate) struct VisitorContext<'a> {
+    pub(crate) registry: &'a registry::Registry,
+    pub(crate) variables: Option<&'a Variables>,
+    pub(crate) errors: Vec<RuleError>,
     type_stack: Vec<Option<&'a registry::MetaType>>,
     input_type: Vec<Option<MetaTypeName<'a>>>,
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
 }
 
 impl<'a> VisitorContext<'a> {
-    pub fn new(
+    pub(crate) fn new(
         registry: &'a registry::Registry,
         doc: &'a ExecutableDocument,
         variables: Option<&'a Variables>,
@@ -33,18 +33,18 @@ impl<'a> VisitorContext<'a> {
         }
     }
 
-    pub fn report_error<T: Into<String>>(&mut self, locations: Vec<Pos>, msg: T) {
+    pub(crate) fn report_error<T: Into<String>>(&mut self, locations: Vec<Pos>, msg: T) {
         self.errors.push(RuleError {
             locations,
             message: msg.into(),
         })
     }
 
-    pub fn append_errors(&mut self, errors: Vec<RuleError>) {
+    pub(crate) fn append_errors(&mut self, errors: Vec<RuleError>) {
         self.errors.extend(errors);
     }
 
-    pub fn with_type<F: FnMut(&mut VisitorContext<'a>)>(
+    pub(crate) fn with_type<F: FnMut(&mut VisitorContext<'a>)>(
         &mut self,
         ty: Option<&'a registry::MetaType>,
         mut f: F,
@@ -54,7 +54,7 @@ impl<'a> VisitorContext<'a> {
         self.type_stack.pop();
     }
 
-    pub fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
+    pub(crate) fn with_input_type<F: FnMut(&mut VisitorContext<'a>)>(
         &mut self,
         ty: Option<MetaTypeName<'a>>,
         mut f: F,
@@ -64,7 +64,7 @@ impl<'a> VisitorContext<'a> {
         self.input_type.pop();
     }
 
-    pub fn parent_type(&self) -> Option<&'a registry::MetaType> {
+    pub(crate) fn parent_type(&self) -> Option<&'a registry::MetaType> {
         if self.type_stack.len() >= 2 {
             self.type_stack
                 .get(self.type_stack.len() - 2)
@@ -75,20 +75,20 @@ impl<'a> VisitorContext<'a> {
         }
     }
 
-    pub fn current_type(&self) -> Option<&'a registry::MetaType> {
+    pub(crate) fn current_type(&self) -> Option<&'a registry::MetaType> {
         self.type_stack.last().copied().flatten()
     }
 
-    pub fn is_known_fragment(&self, name: &str) -> bool {
+    pub(crate) fn is_known_fragment(&self, name: &str) -> bool {
         self.fragments.contains_key(name)
     }
 
-    pub fn fragment(&self, name: &str) -> Option<&'a Positioned<FragmentDefinition>> {
+    pub(crate) fn fragment(&self, name: &str) -> Option<&'a Positioned<FragmentDefinition>> {
         self.fragments.get(name)
     }
 }
 
-pub trait Visitor<'a> {
+pub(crate) trait Visitor<'a> {
     fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
     fn exit_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
 
@@ -236,18 +236,18 @@ pub trait Visitor<'a> {
     }
 }
 
-pub struct VisitorNil;
+pub(crate) struct VisitorNil;
 
 impl VisitorNil {
-    pub fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
+    pub(crate) fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
         VisitorCons(visitor, self)
     }
 }
 
-pub struct VisitorCons<A, B>(A, B);
+pub(crate) struct VisitorCons<A, B>(A, B);
 
 impl<A, B> VisitorCons<A, B> {
-    pub fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
+    pub(crate) fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
         VisitorCons(visitor, self)
     }
 }
@@ -456,7 +456,7 @@ where
     }
 }
 
-pub fn visit<'a, V: Visitor<'a>>(
+pub(crate) fn visit<'a, V: Visitor<'a>>(
     v: &mut V,
     ctx: &mut VisitorContext<'a>,
     doc: &'a ExecutableDocument,
@@ -711,4 +711,42 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(
     visit_directives(v, ctx, &inline_fragment.node.directives);
     visit_selection_set(v, ctx, &inline_fragment.node.selection_set);
     v.exit_inline_fragment(ctx, inline_fragment);
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct RuleError {
+    pub(crate) locations: Vec<Pos>,
+    pub(crate) message: String,
+}
+
+impl Display for RuleError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for (idx, loc) in self.locations.iter().enumerate() {
+            if idx == 0 {
+                write!(f, "[")?;
+            } else {
+                write!(f, ", ")?;
+            }
+
+            write!(f, "{}:{}", loc.line, loc.column)?;
+
+            if idx == self.locations.len() - 1 {
+                write!(f, "] ")?;
+            }
+        }
+
+        write!(f, "{}", self.message)?;
+        Ok(())
+    }
+}
+
+impl From<RuleError> for ServerError {
+    fn from(e: RuleError) -> Self {
+        Self {
+            message: e.message,
+            locations: e.locations,
+            path: Vec::new(),
+            extensions: None,
+        }
+    }
 }

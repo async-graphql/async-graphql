@@ -1,4 +1,4 @@
-use crate::{registry, InputValueResult, InputValueType, Type, Value};
+use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
 
@@ -129,7 +129,9 @@ impl<T: InputValueType> InputValueType for MaybeUndefined<T> {
         match value {
             None => Ok(MaybeUndefined::Undefined),
             Some(Value::Null) => Ok(MaybeUndefined::Null),
-            Some(value) => Ok(MaybeUndefined::Value(T::parse(Some(value))?)),
+            Some(value) => Ok(MaybeUndefined::Value(
+                T::parse(Some(value)).map_err(InputValueError::propogate)?,
+            )),
         }
     }
 

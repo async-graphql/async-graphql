@@ -10,7 +10,7 @@ pub enum OutputType<'a> {
 impl<'a> OutputType<'a> {
     pub fn parse(input: &'a Type) -> Result<Self> {
         let ty = if let Type::Path(p) = input {
-            if p.path.segments.last().unwrap().ident == "FieldResult" {
+            if p.path.segments.last().unwrap().ident == "Result" {
                 if let PathArguments::AngleBracketed(args) =
                     &p.path.segments.last().unwrap().arguments
                 {

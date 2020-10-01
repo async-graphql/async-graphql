@@ -200,7 +200,7 @@ pub fn generate(
                 };
                 let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                 get_params.push(quote! {
-                    let #param_getter_name = || -> #crate_name::Result<#ty> { ctx.param_value(#name, #default) };
+                    let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
                     let #ident: #ty = ctx.param_value(#name, #default)?;
                 });
             }
@@ -222,7 +222,7 @@ pub fn generate(
                 });
                 method.block = syn::parse2::<Block>(new_block).expect("invalid block");
                 method.sig.output =
-                    syn::parse2::<ReturnType>(quote! { -> #crate_name::FieldResult<#inner_ty> })
+                    syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                         .expect("invalid result type");
             }
 
@@ -249,7 +249,7 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref())
+                        err.into_server_error().at(ctx.item.pos)
                     })?
             };
 
@@ -258,7 +258,7 @@ pub fn generate(
                 None => None,
             };
             let guard = guard.map(|guard| quote! {
-                #guard.check(ctx).await.map_err(|err| err.into_error_with_path(ctx.item.pos, ctx.path_node.as_ref()))?;
+                #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
             });
             if field.post_guard.is_some() {
                 return Err(Error::new_spanned(
@@ -317,21 +317,16 @@ pub fn generate(
 
                             #crate_name::extensions::Extension::resolve_start(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
 
-                            let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field)
-                                .await
-                                .map(|value| {
-                                    #crate_name::serde_json::json!({
-                                        field_name.as_str(): value
-                                    })
-                                });
+                            let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await;
 
                             #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
                             #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock(), &ctx_extension);
+
                             res
                         }
                     }
                 });
-                #crate_name::Result::Ok(#crate_name::futures::StreamExt::scan(
+                #crate_name::ServerResult::Ok(#crate_name::futures::StreamExt::scan(
                     stream,
                     false,
                     |errored, item| {
@@ -349,11 +344,11 @@ pub fn generate(
             create_stream.push(quote! {
                 #(#cfg_attrs)*
                 if ctx.item.node.name.node == #field_name {
-                    return ::std::boxed::Box::pin(
+                    return ::std::option::Option::Some(::std::boxed::Box::pin(
                         #crate_name::futures::TryStreamExt::try_flatten(
                             #crate_name::futures::stream::once((move || async move { #stream_fn })())
                         )
-                    );
+                    ));
                 }
             });
 
@@ -393,14 +388,9 @@ pub fn generate(
             fn create_field_stream<'a>(
                 &'a self,
                 ctx: &'a #crate_name::Context<'a>,
-            ) -> ::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send + 'a>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::serde_json::Value>> + Send + 'a>>> {
                 #(#create_stream)*
-                let error = #crate_name::QueryError::FieldNotFound {
-                    field_name: ctx.item.node.name.to_string(),
-                    object: #gql_typename.to_string(),
-                }
-                    .into_error(ctx.item.pos);
-                ::std::boxed::Box::pin(#crate_name::futures::stream::once(async { Err(error) }))
+                None
             }
         }
     };

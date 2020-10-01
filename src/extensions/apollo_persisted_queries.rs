@@ -1,7 +1,7 @@
 //! Apollo persisted queries extension.
 
-use crate::extensions::{Error, Extension, ExtensionContext, ExtensionFactory};
-use crate::{Request, Result};
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
+use crate::{Request, ServerError, ServerResult};
 use futures::lock::Mutex;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -78,13 +78,13 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
         &mut self,
         _ctx: &ExtensionContext<'_>,
         mut request: Request,
-    ) -> Result<Request> {
+    ) -> ServerResult<Request> {
         if let Some(value) = request.extensions.remove("persistedQuery") {
             let persisted_query: PersistedQuery = serde_json::from_value(value).map_err(|_| {
-                Error::Other("Invalid \"PersistedQuery\" extension configuration.".to_string())
+                ServerError::new("Invalid \"PersistedQuery\" extension configuration.")
             })?;
             if persisted_query.version != 1 {
-                return Err(Error::Other (
+                return Err(ServerError::new(
                     format!("Only the \"PersistedQuery\" extension of version \"1\" is supported, and the current version is \"{}\".", persisted_query.version),
                     ));
             }
@@ -93,7 +93,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
                 if let Some(query) = self.storage.get(persisted_query.sha256_hash).await {
                     Ok(Request { query, ..request })
                 } else {
-                    Err(Error::Other("PersistedQueryNotFound".to_string()))
+                    Err(ServerError::new("PersistedQueryNotFound".to_string()))
                 }
             } else {
                 self.storage
@@ -170,7 +170,7 @@ mod tests {
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap_err(),
-            Error::Other("PersistedQueryNotFound".to_string())
+            vec![ServerError::new("PersistedQueryNotFound")]
         );
     }
 }

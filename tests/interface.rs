@@ -244,13 +244,13 @@ pub async fn test_interface_field_result() {
 
     #[Object]
     impl MyObj {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> Result<i32> {
             Ok(10)
         }
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value", type = "FieldResult<i32>"))]
+    #[graphql(field(name = "value", type = "Result<i32>"))]
     enum Node {
         MyObj(MyObj),
     }

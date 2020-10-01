@@ -3,7 +3,8 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::CursorType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result, Type,
+    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerResult,
+    Type,
 };
 use indexmap::map::IndexMap;
 use std::borrow::Cow;
@@ -112,12 +113,14 @@ where
     T: OutputValueType + Send + Sync,
     E: ObjectType + Sync + Send,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> Result<serde_json::Value> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
         if ctx.item.node.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item).await;
+            return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item)
+                .await
+                .map(Some);
         } else if ctx.item.node.name.node == "cursor" {
-            return Ok(self.cursor.encode_cursor().into());
+            return Ok(Some(self.cursor.encode_cursor().into()));
         }
 
         self.additional_fields.resolve_field(ctx).await
@@ -135,7 +138,7 @@ where
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         resolve_container(ctx, self).await
     }
 }

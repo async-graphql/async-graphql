@@ -1,6 +1,6 @@
 //! WebSocket transport for subscription
 
-use crate::{Data, FieldResult, ObjectType, Request, Response, Schema, SubscriptionType};
+use crate::{Data, Error, ObjectType, Request, Response, Result, Schema, SubscriptionType};
 use futures::Stream;
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
@@ -24,7 +24,7 @@ pin_project! {
 }
 
 impl<S, Query, Mutation, Subscription>
-    WebSocket<S, fn(serde_json::Value) -> FieldResult<Data>, Query, Mutation, Subscription>
+    WebSocket<S, fn(serde_json::Value) -> Result<Data>, Query, Mutation, Subscription>
 {
     /// Create a new websocket.
     #[must_use]
@@ -65,7 +65,7 @@ impl<S, F, Query, Mutation, Subscription> Stream for WebSocket<S, F, Query, Muta
 where
     S: Stream,
     S::Item: AsRef<[u8]>,
-    F: FnOnce(serde_json::Value) -> FieldResult<Data>,
+    F: FnOnce(serde_json::Value) -> Result<Data>,
     Query: ObjectType + Send + Sync + 'static,
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
@@ -87,10 +87,7 @@ where
                     Err(e) => {
                         return Poll::Ready(Some(
                             serde_json::to_string(&ServerMessage::ConnectionError {
-                                payload: ConnectionError {
-                                    message: e.to_string(),
-                                    extensions: None,
-                                },
+                                payload: Error::new(e.to_string()),
                             })
                             .unwrap(),
                         ))
@@ -106,12 +103,7 @@ where
                                     Err(e) => {
                                         return Poll::Ready(Some(
                                             serde_json::to_string(
-                                                &ServerMessage::ConnectionError {
-                                                    payload: ConnectionError {
-                                                        message: e.0,
-                                                        extensions: e.1,
-                                                    },
-                                                },
+                                                &ServerMessage::ConnectionError { payload: e },
                                             )
                                             .unwrap(),
                                         ))
@@ -186,7 +178,7 @@ enum ClientMessage<'a> {
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ServerMessage<'a> {
-    ConnectionError { payload: ConnectionError },
+    ConnectionError { payload: Error },
     ConnectionAck,
     Data { id: &'a str, payload: Box<Response> },
     // Not used by this library, as it's not necessary to send
@@ -198,10 +190,4 @@ enum ServerMessage<'a> {
     // Not used by this library
     // #[serde(rename = "ka")]
     // KeepAlive
-}
-
-#[derive(Serialize)]
-struct ConnectionError {
-    message: String,
-    extensions: Option<serde_json::Value>,
 }

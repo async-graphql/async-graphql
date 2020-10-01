@@ -10,7 +10,7 @@ mod visitors;
 
 use crate::parser::types::ExecutableDocument;
 use crate::registry::Registry;
-use crate::{CacheControl, Error, Result, Variables};
+use crate::{CacheControl, ServerError, Variables};
 use visitor::{visit, VisitorContext, VisitorNil};
 
 pub struct CheckResult {
@@ -34,7 +34,7 @@ pub fn check_rules(
     doc: &ExecutableDocument,
     variables: Option<&Variables>,
     mode: ValidationMode,
-) -> Result<CheckResult> {
+) -> Result<CheckResult, Vec<ServerError>> {
     let mut ctx = VisitorContext::new(registry, doc, variables);
     let mut cache_control = CacheControl::default();
     let mut complexity = 0;
@@ -89,10 +89,9 @@ pub fn check_rules(
     }
 
     if !ctx.errors.is_empty() {
-        return Err(Error::Rule {
-            errors: ctx.errors.into(),
-        });
+        return Err(ctx.errors.into_iter().map(Into::into).collect());
     }
+
     Ok(CheckResult {
         cache_control,
         complexity,

@@ -14,7 +14,7 @@ struct RoleGuard {
 
 #[async_trait::async_trait]
 impl Guard for RoleGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Role>() == Some(&self.role) {
             Ok(())
         } else {
@@ -31,7 +31,7 @@ struct UserGuard {
 
 #[async_trait::async_trait]
 impl Guard for UserGuard {
-    async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Username>().map(|name| &name.0).as_deref() == Some(&self.username) {
             Ok(())
         } else {
@@ -92,14 +92,15 @@ pub async fn test_guard() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 9 },
-            path: Some(serde_json::json!(["obj", "value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_owned(),
+            locations: vec![Pos { line: 1, column: 9 }],
+            path: vec![
+                PathSegment::Field("obj".to_owned()),
+                PathSegment::Field("value".to_owned())
+            ],
+            extensions: None,
+        }]
     );
 
     let query = "{ value }";
@@ -120,14 +121,12 @@ pub async fn test_guard() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 3 },
-            path: Some(serde_json::json!(["value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
     );
 
     assert_eq!(
@@ -150,19 +149,16 @@ pub async fn test_guard() {
             .next()
             .await
             .unwrap()
-            .error
-            .unwrap(),
-        Error::Query {
-            pos: Pos {
+            .errors,
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos {
                 line: 1,
                 column: 16
-            },
-            path: Some(serde_json::json!(["values"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+            }],
+            path: vec![PathSegment::Field("values".to_owned())],
+            extensions: None,
+        }]
     );
 }
 
@@ -200,14 +196,12 @@ pub async fn test_multiple_guards() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 3 },
-            path: Some(serde_json::json!(["value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
     );
 
     let query = "{ value }";
@@ -221,14 +215,12 @@ pub async fn test_multiple_guards() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 3 },
-            path: Some(serde_json::json!(["value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
     );
 
     let query = "{ value }";
@@ -242,14 +234,12 @@ pub async fn test_multiple_guards() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 3 },
-            path: Some(serde_json::json!(["value"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
     );
 }
 
@@ -261,7 +251,7 @@ pub async fn test_guard_forward_arguments() {
 
     #[async_trait::async_trait]
     impl Guard for UserGuard {
-        async fn check(&self, ctx: &Context<'_>) -> FieldResult<()> {
+        async fn check(&self, ctx: &Context<'_>) -> Result<()> {
             if ctx.data_opt::<ID>() != Some(&self.id) {
                 Err("Forbidden".into())
             } else {
@@ -298,13 +288,11 @@ pub async fn test_guard_forward_arguments() {
             .await
             .into_result()
             .unwrap_err(),
-        Error::Query {
-            pos: Pos { line: 1, column: 3 },
-            path: Some(serde_json::json!(["user"])),
-            err: QueryError::FieldError {
-                err: "Forbidden".to_string(),
-                extended_error: None,
-            },
-        }
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("user".to_owned())],
+            extensions: None,
+        }]
     );
 }

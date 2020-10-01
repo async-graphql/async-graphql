@@ -160,8 +160,10 @@ impl Request {
             .await
             .into_result()
             .map(Response)
-            .map_err(|e| {
-                error!("{}", e);
+            .map_err(|es| {
+                for e in es {
+                    error!("{}", e);
+                }
                 Status::BadRequest
             })
     }

@@ -1,7 +1,7 @@
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Positioned,
-    Result, Scalar, ScalarType, Type, Value,
+    Scalar, ScalarType, ServerResult, Type, Value,
 };
 use std::borrow::Cow;
 
@@ -11,7 +11,7 @@ impl ScalarType for String {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(s),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -43,7 +43,7 @@ impl<'a> OutputValueType for &'a str {
         &self,
         _: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         Ok((*self).into())
     }
 }

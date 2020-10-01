@@ -84,14 +84,13 @@ pub async fn test_field_features() {
     let query = "{ valueAbc }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Rule {
-            errors: vec![RuleError {
-                locations: vec![Pos { line: 1, column: 3 }],
-                message: r#"Unknown field "valueAbc" on type "QueryRoot". Did you mean "value"?"#
-                    .to_string(),
-            }]
-            .into(),
-        }
+        vec![ServerError {
+            message: r#"Unknown field "valueAbc" on type "QueryRoot". Did you mean "value"?"#
+                .to_owned(),
+            locations: vec![Pos { column: 3, line: 1 }],
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 
     let query = "{ obj { value } }";
@@ -113,14 +112,13 @@ pub async fn test_field_features() {
     let query = "{ obj { valueAbc } }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Rule {
-            errors: vec![RuleError {
-                locations: vec![Pos { line: 1, column: 9 }],
-                message: r#"Unknown field "valueAbc" on type "MyObj". Did you mean "value"?"#
-                    .to_string(),
-            }]
-            .into(),
-        }
+        vec![ServerError {
+            message: r#"Unknown field "valueAbc" on type "MyObj". Did you mean "value"?"#
+                .to_owned(),
+            locations: vec![Pos { column: 9, line: 1 }],
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 
     let mut stream = schema.execute_stream("subscription { values }").boxed();
@@ -149,19 +147,15 @@ pub async fn test_field_features() {
             .next()
             .await
             .unwrap()
-            .error
-            .unwrap(),
-        Error::Rule {
-            errors: vec![RuleError {
-                locations: vec![Pos {
-                    line: 1,
-                    column: 16
-                }],
-                message:
-                    r#"Unknown field "valuesAbc" on type "SubscriptionRoot". Did you mean "values", "valuesBson"?"#
-                        .to_string(),
-            }]
-            .into(),
-        }
+            .errors,
+        vec![ServerError {
+            message: r#"Unknown field "valuesAbc" on type "SubscriptionRoot". Did you mean "values", "valuesBson"?"#.to_owned(),
+            locations: vec![Pos {
+                column: 16,
+                line: 1
+            }],
+            path: Vec::new(),
+            extensions: None,
+        }]
     );
 }
