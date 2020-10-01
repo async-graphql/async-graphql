@@ -1,8 +1,8 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
-    ContextSelectionSet, InputValueResult, OutputValueType, Positioned, Result, Scalar, ScalarType,
-    Type, Value,
+    ContextSelectionSet, InputValueResult, OutputValueType, Positioned, Scalar, ScalarType,
+    ServerResult, Type, Value,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -95,7 +95,7 @@ impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
         &self,
         _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> Result<serde_json::Value> {
+    ) -> ServerResult<serde_json::Value> {
         Ok(serde_json::to_value(&self.0).unwrap_or_else(|_| serde_json::Value::Null))
     }
 }

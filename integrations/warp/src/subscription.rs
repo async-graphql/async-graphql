@@ -1,4 +1,4 @@
-use async_graphql::{Data, FieldResult, ObjectType, Schema, SubscriptionType};
+use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures::{future, StreamExt};
 use warp::filters::ws;
 use warp::{Filter, Rejection, Reply};
@@ -44,9 +44,7 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    graphql_subscription_with_data::<_, _, _, fn(serde_json::Value) -> FieldResult<Data>>(
-        schema, None,
-    )
+    graphql_subscription_with_data::<_, _, _, fn(serde_json::Value) -> Result<Data>>(schema, None)
 }
 
 /// GraphQL subscription filter
@@ -60,7 +58,7 @@ where
     Query: ObjectType + Sync + Send + 'static,
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
-    F: FnOnce(serde_json::Value) -> FieldResult<Data> + Send + Sync + Clone + 'static,
+    F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
 {
     warp::any()
         .and(warp::ws())

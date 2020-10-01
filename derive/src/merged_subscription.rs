@@ -29,29 +29,19 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
         }
     };
 
-    let mut types = Vec::new();
-    for field in &s.fields {
-        types.push(&field.ty);
-    }
+    let types: Vec<_> = s.fields.iter().map(|field| &field.ty).collect();
 
-    let create_merged_obj = {
-        let mut obj = quote! { #crate_name::MergedObjectSubscriptionTail };
-        for i in 0..types.len() {
-            let n = LitInt::new(&format!("{}", i), Span::call_site());
-            obj = quote! { #crate_name::MergedObject(&self.#n, #obj) };
-        }
-        quote! {
-            #obj
-        }
-    };
+    let create_field_stream: proc_macro2::TokenStream = (0..types.len())
+        .map(|i| {
+            let n = LitInt::new(&i.to_string(), Span::call_site());
+            quote!(.or_else(|| #crate_name::SubscriptionType::create_field_stream(&self.#n, ctx)))
+        })
+        .collect();
 
-    let merged_type = {
-        let mut obj = quote! { #crate_name::MergedObjectTail };
-        for ty in &types {
-            obj = quote! { #crate_name::MergedObject::<#ty, #obj> };
-        }
-        obj
-    };
+    let merged_type = types.iter().fold(
+        quote!(#crate_name::MergedObjectTail),
+        |obj, ty| quote!(#crate_name::MergedObject::<#ty, #obj>),
+    );
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
@@ -60,11 +50,11 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #merged_type::create_type_info(registry);
 
-                    let mut fields = Default::default();
+                    let mut fields = ::std::default::Default::default();
 
                     if let Some(#crate_name::registry::MetaType::Object {
                         fields: obj_fields,
@@ -77,7 +67,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         name: #gql_typename.to_string(),
                         description: #desc,
                         fields,
-                        cache_control: Default::default(),
+                        cache_control: ::std::default::Default::default(),
                         extends: false,
                         keys: None,
                     }
@@ -90,14 +80,8 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
             fn create_field_stream<'a>(
                 &'a self,
                 ctx: &'a #crate_name::Context<'a>
-            ) -> ::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::Result<#crate_name::serde_json::Value>> + Send + 'a>> {
-                ::std::boxed::Box::pin(#crate_name::async_stream::stream! {
-                    let obj = #create_merged_obj;
-                    let mut stream = obj.create_field_stream(ctx);
-                    while let Some(item) = #crate_name::futures::stream::StreamExt::next(&mut stream).await {
-                        yield item;
-                    }
-                })
+            ) -> Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::serde_json::Value>> + ::std::marker::Send + 'a>>> {
+                None #create_field_stream
             }
         }
     };

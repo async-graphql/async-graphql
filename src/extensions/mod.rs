@@ -10,7 +10,7 @@ mod logger;
 mod tracing;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Data, FieldResult, Request, Result, Variables};
+use crate::{Data, Request, Result, ServerError, ServerResult, Variables};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -44,10 +44,14 @@ impl<'a> ExtensionContext<'a> {
     ///
     /// # Errors
     ///
-    /// Returns a `FieldError` if the specified type data does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> FieldResult<&D> {
-        self.data_opt::<D>()
-            .ok_or_else(|| format!("Data `{}` does not exist.", std::any::type_name::<D>()).into())
+    /// Returns a `Error` if the specified type data does not exist.
+    pub fn data<D: Any + Send + Sync>(&self) -> Result<&D> {
+        self.data_opt::<D>().ok_or_else(|| {
+            Error::new(format!(
+                "Data `{}` does not exist.",
+                std::any::type_name::<D>()
+            ))
+        })
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
@@ -99,7 +103,7 @@ pub trait Extension: Sync + Send + 'static {
         &mut self,
         ctx: &ExtensionContext<'_>,
         request: Request,
-    ) -> Result<Request> {
+    ) -> ServerResult<Request> {
         Ok(request)
     }
 
@@ -134,7 +138,7 @@ pub trait Extension: Sync + Send + 'static {
     fn resolve_end(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {}
 
     /// Called when an error occurs.
-    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &Error) {}
+    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &ServerError) {}
 
     /// Get the results
     fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<serde_json::Value> {
@@ -146,10 +150,21 @@ pub(crate) trait ErrorLogger {
     fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self;
 }
 
-impl<T> ErrorLogger for Result<T> {
+impl<T> ErrorLogger for ServerResult<T> {
     fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self {
         if let Err(err) = &self {
             extensions.lock().error(ctx, err);
+        }
+        self
+    }
+}
+impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
+    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self {
+        if let Err(errors) = &self {
+            let mut extensions = extensions.lock();
+            for error in errors {
+                extensions.error(ctx, error);
+            }
         }
         self
     }
@@ -161,7 +176,7 @@ impl Extension for Extensions {
         &mut self,
         ctx: &ExtensionContext<'_>,
         request: Request,
-    ) -> Result<Request> {
+    ) -> ServerResult<Request> {
         let mut request = request;
         for e in self.0.iter_mut() {
             request = e.prepare_request(ctx, request).await?;
@@ -210,7 +225,7 @@ impl Extension for Extensions {
             .for_each(|e| e.resolve_end(ctx, resolve_id));
     }
 
-    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &Error) {
+    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &ServerError) {
         self.0.iter_mut().for_each(|e| e.error(ctx, err));
     }
 

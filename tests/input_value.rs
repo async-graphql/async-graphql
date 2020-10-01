@@ -15,15 +15,15 @@ pub async fn test_input_value_custom_error() {
     let query = r#"{ parseInt(n:289) }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
-        Error::Query {
-            pos: Pos {
+        vec![ServerError {
+            message: "Failed to parse \"Int\": Only integers from -128 to 127 are accepted."
+                .to_owned(),
+            locations: vec![Pos {
                 line: 1,
-                column: 14
-            },
-            path: None,
-            err: QueryError::ParseInputValue {
-                reason: "Only integers from -128 to 127 are accepted.".to_string()
-            },
-        }
+                column: 14,
+            }],
+            path: vec![PathSegment::Field("parseInt".to_owned())],
+            extensions: None,
+        }],
     );
 }

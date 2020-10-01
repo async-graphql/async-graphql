@@ -6,7 +6,7 @@ impl ScalarType for bool {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::Boolean(n) => Ok(n),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

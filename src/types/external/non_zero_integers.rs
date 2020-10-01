@@ -21,7 +21,7 @@ impl ScalarType for NonZeroI8 {
                 }
                 Ok(NonZeroI8::new(n as i8).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -55,7 +55,7 @@ impl ScalarType for NonZeroI16 {
                 }
                 Ok(NonZeroI16::new(n as i16).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -89,7 +89,7 @@ impl ScalarType for NonZeroI32 {
                 }
                 Ok(NonZeroI32::new(n as i32).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -123,7 +123,7 @@ impl ScalarType for NonZeroI64 {
                 }
                 Ok(NonZeroI64::new(n as i64).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -157,7 +157,7 @@ impl ScalarType for NonZeroU8 {
                 }
                 Ok(NonZeroU8::new(n as u8).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -191,7 +191,7 @@ impl ScalarType for NonZeroU16 {
                 }
                 Ok(NonZeroU16::new(n as u16).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -225,7 +225,7 @@ impl ScalarType for NonZeroU32 {
                 }
                 Ok(NonZeroU32::new(n as u32).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -259,7 +259,7 @@ impl ScalarType for NonZeroU64 {
                 }
                 Ok(NonZeroU64::new(n as u64).unwrap())
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

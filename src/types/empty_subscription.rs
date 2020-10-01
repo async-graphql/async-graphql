@@ -1,4 +1,4 @@
-use crate::{registry, Context, Error, Pos, QueryError, Result, SubscriptionType, Type};
+use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type};
 use futures::{stream, Stream};
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -33,17 +33,13 @@ impl SubscriptionType for EmptySubscription {
 
     fn create_field_stream<'a>(
         &'a self,
-        _ctx: &'a Context<'a>,
-    ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>>
+        ctx: &'a Context<'a>,
+    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>>
     where
         Self: Send + Sync + 'static + Sized,
     {
-        Box::pin(stream::once(async {
-            Err(Error::Query {
-                pos: Pos::default(),
-                path: None,
-                err: QueryError::NotConfiguredSubscriptions,
-            })
-        }))
+        Some(Box::pin(stream::once(async move {
+            Err(ServerError::new("Schema is not configured for mutations.").at(ctx.item.pos))
+        })))
     }
 }

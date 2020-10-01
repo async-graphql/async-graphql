@@ -73,7 +73,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
 
             get_fields.push(quote! {
-                let #ident: #ty = #crate_name::InputValueType::parse(Some(#crate_name::Value::Object(obj.clone())))?;
+                let #ident: #ty = #crate_name::InputValueType::parse(
+                    Some(#crate_name::Value::Object(obj.clone()))
+                ).map_err(#crate_name::InputValueError::propogate)?;
             });
 
             fields.push(ident);
@@ -108,14 +110,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             get_fields.push(quote! {
                 let #ident: #ty = {
                     match obj.get(#name) {
-                        Some(value) => #crate_name::InputValueType::parse(Some(value.clone()))?,
+                        Some(value) => #crate_name::InputValueType::parse(Some(value.clone()))
+                            .map_err(#crate_name::InputValueError::propogate)?,
                         None => #default,
                     }
                 };
             });
         } else {
             get_fields.push(quote! {
-                let #ident:#ty = #crate_name::InputValueType::parse(obj.get(#name).cloned())?;
+                let #ident: #ty = #crate_name::InputValueType::parse(obj.get(#name).cloned())
+                    .map_err(#crate_name::InputValueError::propogate)?;
             });
         }
 
@@ -165,7 +169,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     #(#get_fields)*
                     Ok(Self { #(#fields),* })
                 } else {
-                    Err(#crate_name::InputValueError::ExpectedType(value.unwrap_or_default()))
+                    Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                 }
             }
 

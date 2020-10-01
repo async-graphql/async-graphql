@@ -14,7 +14,7 @@ impl Query {
     async fn borrow_from_context_data<'ctx>(
         &self,
         ctx: &'ctx Context<'_>
-    ) -> FieldResult<&'ctx String> {
+    ) -> Result<&'ctx String> {
         ctx.data::<String>()
     }
 }

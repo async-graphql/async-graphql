@@ -1,5 +1,5 @@
 use crate::parser::types::Name;
-use crate::{InputValueError, InputValueResult, Type, Value};
+use crate::{InputValueError, InputValueResult, InputValueType, Type, Value};
 
 /// A variant of an enum.
 pub struct EnumItem<T> {
@@ -18,11 +18,11 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
 /// Parse a value as an enum value.
 ///
 /// This can be used to implement `InputValueType::parse`.
-pub fn parse_enum<T: EnumType>(value: Value) -> InputValueResult<T> {
+pub fn parse_enum<T: EnumType + InputValueType>(value: Value) -> InputValueResult<T> {
     let value = match &value {
         Value::Enum(s) => s,
         Value::String(s) => s.as_str(),
-        _ => return Err(InputValueError::ExpectedType(value)),
+        _ => return Err(InputValueError::expected_type(value)),
     };
 
     T::items()
@@ -30,9 +30,8 @@ pub fn parse_enum<T: EnumType>(value: Value) -> InputValueResult<T> {
         .find(|item| item.name == value)
         .map(|item| item.value)
         .ok_or_else(|| {
-            InputValueError::Custom(format!(
-                r#"Enumeration type "{}" does not contain the value "{}""#,
-                T::type_name(),
+            InputValueError::custom(format_args!(
+                r#"Enumeration type does not contain value "{}"."#,
                 value,
             ))
         })

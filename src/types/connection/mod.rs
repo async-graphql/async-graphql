@@ -5,7 +5,7 @@ mod cursor;
 mod edge;
 mod page_info;
 
-use crate::{FieldResult, SimpleObject};
+use crate::{Result, SimpleObject};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
@@ -42,7 +42,7 @@ pub struct EmptyFields;
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> FieldResult<Connection<usize, i32, EmptyFields, Diff>> {
+///     ) -> Result<Connection<usize, i32, EmptyFields, Diff>> {
 ///         query(after, before, first, last, |after, before, first, last| async move {
 ///             let mut start = after.map(|after| after + 1).unwrap_or(0);
 ///             let mut end = before.unwrap_or(10000);
@@ -95,12 +95,12 @@ pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R>(
     first: Option<i32>,
     last: Option<i32>,
     f: F,
-) -> FieldResult<Connection<Cursor, Node, ConnectionFields, EdgeFields>>
+) -> Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>>
 where
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
-    R: Future<Output = FieldResult<Connection<Cursor, Node, ConnectionFields, EdgeFields>>>,
+    R: Future<Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>>>,
 {
     if first.is_some() && last.is_some() {
         return Err("The \"first\" and \"last\" parameters cannot exist at the same time".into());

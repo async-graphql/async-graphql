@@ -1,9 +1,8 @@
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::parser::types::{ExecutableDocument, OperationType, Selection};
-use crate::{Error, Variables};
-use itertools::Itertools;
+use crate::{PathSegment, ServerError, Variables};
 use log::{error, info, trace};
-use std::borrow::Cow;
+use std::fmt::{self, Display, Formatter};
 
 /// Logger extension
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "log")))]
@@ -65,57 +64,52 @@ impl Extension for LoggerExtension {
         trace!(target: "async-graphql", "[ResolveEnd] path: \"{}\"", info.path_node);
     }
 
-    fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &Error) {
-        match err {
-            Error::Parse(err) => {
-                error!(
-                    target: "async-graphql", "[ParseError] {}query: \"{}\", variables: {}, {}",
-                    if let Some(pos) = err.positions().next() {
-                        // TODO: Make this more efficient
-                        format!("pos: [{}:{}], ", pos.line, pos.column)
-                    } else {
-                        String::new()
-                    },
-                    self.query,
-                    self.variables,
-                    err
-                )
-            }
-            Error::Query { pos, path, err } => {
-                if let Some(path) = path {
-                    let path = if let serde_json::Value::Array(values) = path {
-                        values
-                            .iter()
-                            .filter_map(|value| match value {
-                                serde_json::Value::String(s) => Some(Cow::Borrowed(s.as_str())),
-                                serde_json::Value::Number(n) => Some(Cow::Owned(n.to_string())),
-                                _ => None,
-                            })
-                            .join(".")
-                    } else {
-                        String::new()
-                    };
-                    error!(target: "async-graphql", "[QueryError] path: \"{}\", pos: [{}:{}], query: \"{}\", variables: {}, {}", path, pos.line, pos.column, self.query, self.variables, err)
-                } else {
-                    error!(target: "async-graphql", "[QueryError] pos: [{}:{}], query: \"{}\", variables: {}, {}", pos.line, pos.column, self.query, self.variables, err)
+    fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &ServerError) {
+        struct DisplayError<'a> {
+            log: &'a LoggerExtension,
+            e: &'a ServerError,
+        };
+        impl<'a> Display for DisplayError<'a> {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                write!(f, "[Error] ")?;
+
+                if !self.e.path.is_empty() {
+                    write!(f, "path: ")?;
+                    for (i, segment) in self.e.path.iter().enumerate() {
+                        if i != 0 {
+                            write!(f, ".")?;
+                        }
+
+                        match segment {
+                            PathSegment::Field(field) => write!(f, "{}", field),
+                            PathSegment::Index(i) => write!(f, "{}", i),
+                        }?;
+                    }
+                    write!(f, ", ")?;
                 }
-            }
-            Error::Rule { errors } => {
-                for error in errors.iter() {
-                    let locations = error
-                        .locations
-                        .iter()
-                        .map(|pos| format!("{}:{}", pos.line, pos.column))
-                        .join(", ");
-                    error!(target: "async-graphql", "[ValidationError] pos: [{}], query: \"{}\", variables: {}, {}", locations, self.query, self.variables, error.message)
+                if !self.e.locations.is_empty() {
+                    write!(f, "pos: [")?;
+                    for (i, location) in self.e.locations.iter().enumerate() {
+                        if i != 0 {
+                            write!(f, ", ")?;
+                        }
+                        write!(f, "{}:{}", location.line, location.column)?;
+                    }
+                    write!(f, "], ")?;
                 }
+                write!(f, r#"query: "{}", "#, self.log.query)?;
+                write!(f, "variables: {}", self.log.variables)?;
+                write!(f, "{}", self.e.message)
             }
-            Error::Other(err) => error!(
-                target: "async-graphql", "[OtherError] query: \"{}\", variables: {}, {}",
-                self.query,
-                self.variables,
-                err
-            ),
         }
+
+        error!(
+            target: "async-graphql",
+            "{}",
+            DisplayError {
+                log: self,
+                e: err,
+            }
+        );
     }
 }

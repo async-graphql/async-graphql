@@ -124,7 +124,6 @@ mod model;
 mod request;
 mod response;
 mod schema;
-mod serialize_resp;
 mod subscription;
 mod validation;
 
@@ -163,25 +162,21 @@ pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, ResolveId, Variables,
 };
 pub use error::{
-    Error, ErrorExtensions, FieldError, FieldResult, InputValueError, InputValueResult,
-    ParseRequestError, QueryError, ResultExt, RuleError,
+    Error, ExtendError, InputValueError, InputValueResult, ParseRequestError, PathSegment, Result,
+    ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
 pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
+pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
 
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
-#[doc(no_inline)]
-pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use types::*;
-
-/// Result type
-pub type Result<T> = std::result::Result<T, Error>;
 
 /// Define a GraphQL object with methods
 ///
@@ -235,7 +230,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// - GraphQL objects.
 /// - GraphQL enums.
 /// - References to any of the above types, such as `&i32` or `&Option<String>`.
-/// - `FieldResult<T, E>`, such as `FieldResult<i32, E>`
+/// - `Result<T, E>`, such as `Result<i32, E>`
 ///
 /// # Context
 ///
@@ -270,7 +265,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 ///     }
 ///
 ///     /// value with error
-///     async fn value_with_error(&self) -> FieldResult<i32> {
+///     async fn value_with_error(&self) -> Result<i32> {
 ///         Ok(self.value)
 ///     }
 ///
@@ -512,7 +507,7 @@ pub use async_graphql_derive::InputObject;
 /// # Fields
 ///
 /// The type, name, and parameter fields of the interface must exactly match the type of the
-/// implementation interface, but FieldResult can be omitted.
+/// implementation interface, but Result can be omitted.
 ///
 /// ```rust
 /// use async_graphql::*;
@@ -524,7 +519,7 @@ pub use async_graphql_derive::InputObject;
 /// #[Object]
 /// impl TypeA {
 ///     /// Returns data borrowed from the context
-///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> FieldResult<&'a str> {
+///     async fn value_a<'a>(&self, ctx: &'a Context<'_>) -> Result<&'a str> {
 ///         Ok(ctx.data::<String>()?.as_str())
 ///     }
 ///

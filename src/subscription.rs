@@ -1,5 +1,5 @@
 use crate::parser::types::{Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, Result, Type};
+use crate::{Context, ContextSelectionSet, PathSegment, ServerError, ServerResult, Type};
 use futures::{Stream, StreamExt};
 use std::pin::Pin;
 
@@ -15,14 +15,17 @@ pub trait SubscriptionType: Type {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'a>,
-    ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>>;
+    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>>;
 }
+
+type BoxFieldStream<'a> =
+    Pin<Box<dyn Stream<Item = ServerResult<(String, serde_json::Value)>> + 'a + Send>>;
 
 pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync + 'static>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-    streams: &mut Vec<Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>>>,
-) -> Result<()> {
+    streams: &mut Vec<BoxFieldStream<'a>>,
+) -> ServerResult<()> {
     for selection in &ctx.item.node.items {
         if ctx.is_skip(selection.node.directives())? {
             continue;
@@ -32,9 +35,27 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync
                 let ctx = ctx.clone();
                 async_stream::stream! {
                     let ctx = ctx.with_field(field);
-                    let mut stream = root.create_field_stream(&ctx);
-                    while let Some(item) = stream.next().await {
-                        yield item;
+                    let field_name = ctx
+                        .item
+                        .node
+                        .response_key()
+                        .node
+                        .as_str();
+
+
+                    let stream = root.create_field_stream(&ctx);
+                    if let Some(mut stream) = stream {
+                        while let Some(item) = stream.next().await {
+                            yield match item {
+                                Ok(value) => Ok((field_name.to_owned(), value)),
+                                Err(e) => Err(e.path(PathSegment::Field(field_name.to_owned()))),
+                            };
+                        }
+                    } else {
+                        yield Err(ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()))
+                            .at(ctx.item.pos)
+                            .path(PathSegment::Field(field_name.to_owned())));
+                        return;
                     }
                 }
             })),
@@ -82,7 +103,7 @@ impl<T: SubscriptionType + Send + Sync> SubscriptionType for &T {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'a>,
-    ) -> Pin<Box<dyn Stream<Item = Result<serde_json::Value>> + Send + 'a>> {
+    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>> {
         T::create_field_stream(*self, ctx)
     }
 }

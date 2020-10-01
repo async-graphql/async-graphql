@@ -9,7 +9,7 @@ impl ScalarType for f32 {
                 .as_f64()
                 .ok_or_else(|| InputValueError::from("Invalid number"))?
                 as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -34,7 +34,7 @@ impl ScalarType for f64 {
                 .as_f64()
                 .ok_or_else(|| InputValueError::from("Invalid number"))?
                 as Self),
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

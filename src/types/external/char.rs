@@ -10,15 +10,13 @@ impl ScalarType for char {
                 let mut chars = s.chars();
                 match chars.next() {
                     Some(ch) if chars.next() == None => Ok(ch),
-                    Some(_) => Err(InputValueError::Custom(
-                        "There can only be one unicode character in the string.".into(),
+                    Some(_) => Err(InputValueError::custom(
+                        "There can only be one unicode character in the string.",
                     )),
-                    None => Err(InputValueError::Custom(
-                        "A unicode character is required.".into(),
-                    )),
+                    None => Err(InputValueError::custom("A unicode character is required.")),
                 }
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

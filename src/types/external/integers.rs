@@ -18,7 +18,7 @@ impl ScalarType for i8 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -52,7 +52,7 @@ impl ScalarType for i16 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -86,7 +86,7 @@ impl ScalarType for i32 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -120,7 +120,7 @@ impl ScalarType for i64 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -154,7 +154,7 @@ impl ScalarType for u8 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -188,7 +188,7 @@ impl ScalarType for u16 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -222,7 +222,7 @@ impl ScalarType for u32 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 
@@ -256,7 +256,7 @@ impl ScalarType for u64 {
                 }
                 Ok(n as Self)
             }
-            _ => Err(InputValueError::ExpectedType(value)),
+            _ => Err(InputValueError::expected_type(value)),
         }
     }
 

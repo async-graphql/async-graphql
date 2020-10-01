@@ -84,7 +84,7 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     #[Subscription]
     impl SubscriptionRoot {
-        async fn values(&self, ctx: &Context<'_>) -> FieldResult<impl Stream<Item = i32>> {
+        async fn values(&self, ctx: &Context<'_>) -> Result<impl Stream<Item = i32>> {
             if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
@@ -170,7 +170,7 @@ pub async fn test_subscription_ws_transport_error() {
 
     #[Object]
     impl Event {
-        async fn value(&self) -> FieldResult<i32> {
+        async fn value(&self) -> Result<i32> {
             if self.value < 5 {
                 Ok(self.value)
             } else {
@@ -240,6 +240,7 @@ pub async fn test_subscription_ws_transport_error() {
             "type": "data",
             "id": "1",
             "payload": {
+                "data": null,
                 "errors": [{
                     "message": "TestError",
                     "locations": [{"line": 1, "column": 25}],
