@@ -1,7 +1,6 @@
 //! WebSocket transport for subscription
 
-use crate::resolver_utils::ObjectType;
-use crate::{Data, Error, Request, Response, Result, Schema, SubscriptionType};
+use crate::{Data, Error, ObjectType, Request, Response, Result, Schema, SubscriptionType};
 use futures::Stream;
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};

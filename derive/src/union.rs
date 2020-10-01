@@ -67,7 +67,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkObject);
+                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::ObjectType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #generics ::std::convert::From<#p> for #ident #generics {
@@ -78,7 +78,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 });
             } else {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::type_mark::TypeMarkEnum);
+                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::UnionType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #generics ::std::convert::From<#p> for #ident #generics {
@@ -158,7 +158,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::resolver_utils::ObjectType for #ident #generics {
+
+        impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::serde_json::Value>> {
                 Ok(None)
             }
@@ -174,11 +175,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::serde_json::Value> {
-                #crate_name::resolver_utils::resolve_object(ctx, self).await
+                #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #generics #crate_name::type_mark::TypeMarkEnum for #ident #generics {}
+        impl #generics #crate_name::UnionType for #ident #generics {}
     };
     Ok(expanded.into())
 }

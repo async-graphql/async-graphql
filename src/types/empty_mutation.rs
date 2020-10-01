@@ -1,9 +1,8 @@
 use crate::parser::types::Field;
-use crate::resolver_utils::ObjectType;
-use crate::type_mark::TypeMarkObject;
+use crate::resolver_utils::ContainerType;
 use crate::{
-    registry, Context, ContextSelectionSet, OutputValueType, Positioned, ServerError, ServerResult,
-    Type,
+    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerError,
+    ServerResult, Type,
 };
 use std::borrow::Cow;
 
@@ -44,7 +43,7 @@ impl Type for EmptyMutation {
 }
 
 #[async_trait::async_trait]
-impl ObjectType for EmptyMutation {
+impl ContainerType for EmptyMutation {
     fn is_empty() -> bool {
         true
     }
@@ -65,4 +64,4 @@ impl OutputValueType for EmptyMutation {
     }
 }
 
-impl TypeMarkObject for EmptyMutation {}
+impl ObjectType for EmptyMutation {}

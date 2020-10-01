@@ -1,13 +1,14 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
-use crate::resolver_utils::{resolve_object, ObjectType};
-use crate::type_mark::TypeMarkObject;
+use crate::resolver_utils::resolve_container;
 use crate::{
-    CacheControl, Context, ContextSelectionSet, OutputValueType, Positioned, ServerResult,
-    SimpleObject, Subscription, Type,
+    CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
+    Positioned, ServerResult, SimpleObject, Subscription, SubscriptionType, Type,
 };
+use futures::Stream;
 use indexmap::IndexMap;
 use std::borrow::Cow;
+use std::pin::Pin;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
@@ -57,7 +58,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
 }
 
 #[async_trait::async_trait]
-impl<A, B> ObjectType for MergedObject<A, B>
+impl<A, B> ContainerType for MergedObject<A, B>
 where
     A: ObjectType + Send + Sync,
     B: ObjectType + Send + Sync,
@@ -82,11 +83,32 @@ where
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<serde_json::Value> {
-        resolve_object(ctx, self).await
+        resolve_container(ctx, self).await
     }
 }
 
-impl<A, B> TypeMarkObject for MergedObject<A, B> {}
+impl<A, B> ObjectType for MergedObject<A, B>
+where
+    A: ObjectType + Send + Sync,
+    B: ObjectType + Send + Sync,
+{
+}
+
+impl<A, B> SubscriptionType for MergedObject<A, B>
+where
+    A: SubscriptionType + Send + Sync,
+    B: SubscriptionType + Send + Sync,
+{
+    fn create_field_stream<'a>(
+        &'a self,
+        ctx: &'a Context<'a>,
+    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>> {
+        match self.0.create_field_stream(ctx) {
+            Some(stream) => Some(stream),
+            None => self.1.create_field_stream(ctx),
+        }
+    }
+}
 
 #[doc(hidden)]
 #[derive(SimpleObject, Default)]

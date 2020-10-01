@@ -9,7 +9,7 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::MultipartOptions;
-use async_graphql::{resolver_utils::ObjectType, ParseRequestError, Schema, SubscriptionType};
+use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
 use async_trait::async_trait;
 use tide::{
     http::{

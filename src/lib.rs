@@ -134,8 +134,6 @@ pub mod validators;
 
 #[doc(hidden)]
 pub mod registry;
-#[doc(hidden)]
-pub mod type_mark;
 
 #[doc(hidden)]
 pub use async_stream;
@@ -155,7 +153,9 @@ pub use static_assertions;
 pub use subscription::SubscriptionType;
 
 pub use async_graphql_parser as parser;
-pub use base::{InputValueType, OutputValueType, Type};
+pub use base::{
+    InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type, UnionType,
+};
 pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, ResolveId, Variables,
 };
@@ -174,7 +174,7 @@ pub use validation::ValidationMode;
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
 #[doc(no_inline)]
-pub use resolver_utils::{EnumType, ObjectType, ScalarType};
+pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use types::*;
 
 /// Define a GraphQL object with methods

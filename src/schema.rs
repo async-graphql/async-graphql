@@ -4,13 +4,13 @@ use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::parser::types::{DocumentOperations, OperationType};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::resolver_utils::{resolve_object, resolve_object_serial, ObjectType};
+use crate::resolver_utils::{resolve_container, resolve_container_serial, ContainerType};
 use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, QueryEnv, Request, Response,
-    ServerError, SubscriptionType, Type, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
+    Response, ServerError, SubscriptionType, Type, ID,
 };
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
@@ -34,7 +34,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     enable_federation: bool,
 }
 
-impl<Query: ObjectType, Mutation: ObjectType, Subscription: SubscriptionType>
+impl<Query: ContainerType, Mutation: ContainerType, Subscription: SubscriptionType>
     SchemaBuilder<Query, Mutation, Subscription>
 {
     /// Manually register a type in the schema.
@@ -432,8 +432,8 @@ where
         env.extensions.lock().execution_start(&ctx_extension);
 
         let data = match &env.operation.node.ty {
-            OperationType::Query => resolve_object(&ctx, &self.query).await,
-            OperationType::Mutation => resolve_object_serial(&ctx, &self.mutation).await,
+            OperationType::Query => resolve_container(&ctx, &self.query).await,
+            OperationType::Mutation => resolve_container_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
                 return Response::from_errors(vec![ServerError::new(
                     "Subscriptions are not supported on this transport.",

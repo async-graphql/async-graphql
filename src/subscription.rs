@@ -3,7 +3,7 @@ use crate::{Context, ContextSelectionSet, PathSegment, ServerError, ServerResult
 use futures::{Stream, StreamExt};
 use std::pin::Pin;
 
-/// Represents a GraphQL subscription object
+/// A GraphQL subscription object
 pub trait SubscriptionType: Type {
     /// This function returns true of type `EmptySubscription` only.
     #[doc(hidden)]

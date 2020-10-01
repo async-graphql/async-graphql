@@ -1,4 +1,4 @@
-use async_graphql::{resolver_utils::ObjectType, Data, Result, Schema, SubscriptionType};
+use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures::{future, StreamExt};
 use warp::filters::ws;
 use warp::{Filter, Rejection, Reply};

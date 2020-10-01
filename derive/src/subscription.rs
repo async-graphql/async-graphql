@@ -393,8 +393,6 @@ pub fn generate(
                 None
             }
         }
-
-        impl #crate_name::type_mark::TypeMarkSubscription for #self_ty #where_clause {}
     };
     Ok(expanded.into())
 }
