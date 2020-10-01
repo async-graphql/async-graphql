@@ -204,6 +204,55 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#展平嵌套联合" id="展平嵌套联合">展平嵌套联合</a></h2>
+<p>GraphQL的有个限制是<code>Union</code>类型内不能包含其它联合类型。 所有成员必须为<code>Object</code>。 
+位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+
+    // 除非我们使用`flatten`属性，否则将无法编译
+    #[graphql(flatten)]
+    B(B),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct A {
+    // ...
+}
+
+#[derive(async_graphql::Union)]
+pub enum B {
+    C(C),
+    D(D),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct C {
+    // ...
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct D {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>上面的示例将顶级<code>Union</code>转换为以下等效形式：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+    C(C),
+    D(D),
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

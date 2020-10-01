@@ -160,14 +160,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
-<p>Resolver函数可以返回一个FieldResult类型，以下是FieldResult的定义：</p>
+<p>Resolver函数可以返回一个Result类型，以下是Result的定义：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+</span>type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<p>任何错误都能够被转换为<code>FieldError</code>，并且你还能扩展标准的错误信息。</p>
+<p>任何错误都能够被转换为<code>Error</code>，并且你还能扩展标准的错误信息。</p>
 <p>下面是一个例子，解析一个输入的字符串到整数，当解析失败时返回错误，并且附加额外的错误信息。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -178,7 +178,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
             .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)

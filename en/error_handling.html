@@ -160,14 +160,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#error-handling" id="error-handling">Error handling</a></h1>
-<p>Resolve can return a <code>FieldResult</code>, which has the following definition:</p>
+<p>Resolve can return a <code>Result</code>, which has the following definition:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+</span>type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>FieldError</code> and you can extend the error message.</p>
+<p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>Error</code> and you can extend the error message.</p>
 <p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
 See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -179,7 +179,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
             .map_err(|err: ParseIntError| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)

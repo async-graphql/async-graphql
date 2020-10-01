@@ -171,7 +171,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
+    async fn user(&amp;self, username: String) -&gt; Result&lt;Option&lt;User&gt;&gt; {
         // 在数据库中查找用户
     }
 }

@@ -240,7 +240,7 @@ struct MyObject {
 <h1><a class="header" href="#对象object" id="对象object">对象(Object)</a></h1>
 <p>和简单对象不同，对象必须为所有的字段定义Resolver函数，Resolver函数定义在impl块中。</p>
 <p><strong>一个Resolver函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>
-<p>Resolver函数用于计算字段的值，你可以执行一个数据库查询，并返回查询结果。<strong>函数的返回值是字段的类型</strong>，你也可以返回一个<code>async_graphql::FieldResult</code>类型，这样能够返回一个错误，这个错误信息将输出到查询结果中。</p>
+<p>Resolver函数用于计算字段的值，你可以执行一个数据库查询，并返回查询结果。<strong>函数的返回值是字段的类型</strong>，你也可以返回一个<code>async_graphql::Result</code>类型，这样能够返回一个错误，这个错误信息将输出到查询结果中。</p>
 <p>在查询数据库时，你可能需要一个数据库连接池对象，这个对象是个全局的，你可以在创建Schema的时候，用<code>SchemaBuilder::data</code>函数设置<code>Schema</code>数据, 用<code>Context::data</code>函数设置<code>Context</code>数据。下面的<code>value_from_db</code>字段展示了如何从<code>Context</code>中获取一个数据库连接。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -261,7 +261,7 @@ impl MyObject {
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
         #[graphql(desc = &quot;Id of object&quot;)] id: i64
-    ) -&gt; FieldResult&lt;String&gt; {
+    ) -&gt; Result&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
     }
@@ -283,21 +283,21 @@ impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
         ctx: &amp;'ctx Context&lt;'_&gt;
-    ) -&gt; FieldResult&lt;&amp;'ctx String&gt; {
+    ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
-<p>Resolver函数可以返回一个FieldResult类型，以下是FieldResult的定义：</p>
+<p>Resolver函数可以返回一个Result类型，以下是Result的定义：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>type FieldResult&lt;T&gt; = std::result::Result&lt;T, FieldError&gt;;
+</span>type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
 <span class="boring">}
 </span></code></pre></pre>
-<p>任何错误都能够被转换为<code>FieldError</code>，并且你还能扩展标准的错误信息。</p>
+<p>任何错误都能够被转换为<code>Error</code>，并且你还能扩展标准的错误信息。</p>
 <p>下面是一个例子，解析一个输入的字符串到整数，当解析失败时返回错误，并且附加额外的错误信息。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -308,7 +308,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn parse_with_extensions(&amp;self, input: String) -&gt; FieldResult&lt;i32&gt; {
+    async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
             .map_err(|err| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
@@ -576,6 +576,55 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#展平嵌套联合" id="展平嵌套联合">展平嵌套联合</a></h2>
+<p>GraphQL的有个限制是<code>Union</code>类型内不能包含其它联合类型。 所有成员必须为<code>Object</code>。 
+位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+
+    // 除非我们使用`flatten`属性，否则将无法编译
+    #[graphql(flatten)]
+    B(B),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct A {
+    // ...
+}
+
+#[derive(async_graphql::Union)]
+pub enum B {
+    C(C),
+    D(D),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct C {
+    // ...
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct D {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>上面的示例将顶级<code>Union</code>转换为以下等效形式：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+    C(C),
+    D(D),
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>
 <p>你可以定义一个对象作为参数类型，GraphQL称之为<code>Input Object</code>，输入对象的定义方式和<a href="define_simple_object.html">简单对象</a>很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。</p>
 <p>你也通过可选的<code>#[graphql]</code>属性来给字段添加描述，重命名。</p>
@@ -679,7 +728,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn user(&amp;self, username: String) -&gt; FieldResult&lt;Option&lt;User&gt;&gt; {
+    async fn user(&amp;self, username: String) -&gt; Result&lt;Option&lt;User&gt;&gt; {
         // 在数据库中查找用户
     }
 }
@@ -709,7 +758,7 @@ impl Mutation {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#订阅" id="订阅">订阅</a></h1>
-<p>订阅根对象和其它根对象定义稍有不同，它的Resolver函数总是返回一个 <a href="https://docs.rs/futures-core/%7E0.3/futures_core/stream/trait.Stream.html">Stream</a> 或者<code>FieldResult&lt;Stream&gt;</code>，而字段参数通常作为数据的筛选条件。</p>
+<p>订阅根对象和其它根对象定义稍有不同，它的Resolver函数总是返回一个 <a href="https://docs.rs/futures-core/%7E0.3/futures_core/stream/trait.Stream.html">Stream</a> 或者<code>Result&lt;Stream&gt;</code>，而字段参数通常作为数据的筛选条件。</p>
 <p>下面的例子订阅一个整数流，它每秒产生一个整数，参数<code>step</code>指定了整数的步长，默认为1。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -853,7 +902,7 @@ impl Query {
         before: Option&lt;String&gt;,
         first: Option&lt;i32&gt;,
         last: Option&lt;i32&gt;,
-    ) -&gt; FieldResult&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
+    ) -&gt; Result&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
         query(after, before, first, last, |after, before, first, last| {
             let mut start = after.map(|after| after + 1).unwrap_or(0);
             let mut end = before.unwrap_or(10000);
@@ -887,16 +936,16 @@ impl Query {
 <h2><a class="header" href="#示例" id="示例">示例</a></h2>
 <p>我建议您查看此 <a href="https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs">错误扩展示例</a> 作为快速入门。</p>
 <h2><a class="header" href="#一般概念" id="一般概念">一般概念</a></h2>
-<p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>FieldError</code>类型，默认情况下会提供
-由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>FieldError</code>实际上提供了一个额外的
+<p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
+由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的
 字段<code>Option&lt;serde_json::Value&gt;</code>，如果它是一个<code>serde_json::Map</code>，则可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, FieldError&gt; {
+</span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
     let my_extension = json!({ &quot;details&quot;: &quot;CAN_NOT_FETCH&quot; });
-    Err(FieldError(&quot;MyMessage&quot;, Some(my_extension)))
+    Err(Error(&quot;MyMessage&quot;, Some(my_extension)))
  }
 <span class="boring">}
 </span></code></pre></pre>
@@ -915,15 +964,15 @@ impl Query {
 }
 </code></pre>
 <h2><a class="header" href="#errorextensions" id="errorextensions">ErrorExtensions</a></h2>
-<p>手动构造新的<code>FieldError</code>很麻烦。这就是为什么<code>Async-graphql</code>提供
-两个方便特性，可将您的错误转换为适当的<code>FieldError</code>扩展。</p>
+<p>手动构造新的<code>Error</code>很麻烦。这就是为什么<code>Async-graphql</code>提供
+两个方便特性，可将您的错误转换为适当的<code>Error</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
-这将把任何错误转换为具有给定扩展信息的<code>FieldError</code>。</p>
+这将把任何错误转换为具有给定扩展信息的<code>Error</code>。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use std::num::ParseIntError;
-async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
          .map_err(|err: ParseIntError| err.extend_with(|_err| json!({&quot;code&quot;: 404})))?)
@@ -952,7 +1001,7 @@ pub enum MyError {
 
 impl ErrorExtensions for MyError {
     // lets define our base extensions
-    fn extend(&amp;self) -&gt; FieldError {
+    fn extend(&amp;self) -&gt; Error {
         let extensions = match self {
             MyError::NotFound =&gt; json!({&quot;code&quot;: &quot;NOT_FOUND&quot;}),
             MyError::ServerError(reason) =&gt; json!({ &quot;reason&quot;: reason }),
@@ -961,7 +1010,7 @@ impl ErrorExtensions for MyError {
             }
         };
 
-        FieldError(format!(&quot;{}&quot;, self), Some(extensions))
+        Error(format!(&quot;{}&quot;, self), Some(extensions))
     }
 }
 <span class="boring">}
@@ -970,7 +1019,7 @@ impl ErrorExtensions for MyError {
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn parse_with_extensions_result(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+</span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
     Err(MyError::NotFound.extend_with(|_| json!({ &quot;on_the_fly&quot;: &quot;some_more_info&quot; })))
@@ -997,7 +1046,7 @@ impl ErrorExtensions for MyError {
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
-async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
          .extend_err(|_| json!({&quot;code&quot;: 404}))?)
@@ -1011,7 +1060,7 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
-async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
     match &quot;234a&quot;.parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
@@ -1042,14 +1091,14 @@ async fn parse_with_extensions(&amp;self) -&gt; FieldResult&lt;i32&gt; {
 <p>Rust的稳定版本还未提供特化功能，这就是为什么<code>ErrorExtensions</code>为<code>&amp;E where E: std::fmt::Display</code>实现，代替<code>E：std::fmt::Display</code>通过提供一些特化功能。</p>
 <p><a href="https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md">Autoref-based stable specialization</a>.</p>
 <p>缺点是下面的代码<strong>不能</strong>编译：</p>
-<pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+<pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
     &quot;234a&quot;.parse().extend_err(|_| json!({&quot;code&quot;: 404}))
 }
 </code></pre>
 <p>但这可以通过编译：</p>
-<pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; FieldResult&lt;i32&gt; {
+<pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
     &quot;234a&quot;
       .parse()

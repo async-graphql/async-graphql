@@ -177,7 +177,7 @@ impl Query {
         before: Option&lt;String&gt;,
         first: Option&lt;i32&gt;,
         last: Option&lt;i32&gt;,
-    ) -&gt; FieldResult&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
+    ) -&gt; Result&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
         query(after, before, first, last, |after, before, first, last| {
             let mut start = after.map(|after| after + 1).unwrap_or(0);
             let mut end = before.unwrap_or(10000);

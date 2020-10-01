@@ -162,7 +162,7 @@
                         <h1><a class="header" href="#object" id="object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
-<p>The resolvers is used to get the value of the field. For example, you can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::FieldResult</code> to return an error if it occurs. The error message will then be sent to query result.</p>
+<p>The resolvers is used to get the value of the field. For example, you can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::Result</code> to return an error if it occurs. The error message will then be sent to query result.</p>
 <p>You may need access to global data in your query, for example a database connection pool.
 When creating your <code>Schema</code>, you can use <code>SchemaBuilder::data</code> to configure the global data, and <code>Context::data</code> to configure <code>Context</code> data.
 The following <code>value_from_db</code> function shows how to retrieve a database connection from <code>Context</code>.</p>
@@ -185,7 +185,7 @@ impl MyObject {
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
         #[graphql(desc = &quot;Id of object&quot;)] id: i64
-    ) -&gt; FieldResult&lt;String&gt; {
+    ) -&gt; Result&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
     }

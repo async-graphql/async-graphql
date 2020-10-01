@@ -174,7 +174,7 @@ impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
         ctx: &amp;'ctx Context&lt;'_&gt;
-    ) -&gt; FieldResult&lt;&amp;'ctx String&gt; {
+    ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
     }
 }
