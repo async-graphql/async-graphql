@@ -50,7 +50,7 @@ enum Shape {
 A restriction in GraphQL is the inability to create a union type out of
 other union types. All members must be `Object`. To support nested
 unions, we can "flatten" members that are unions, bringing their members up
-into the parent union. This is done by applying `#[item(flatten)]` on each
+into the parent union. This is done by applying `#[graphql(flatten)]` on each
 member we want to flatten.
 
 ```rust
@@ -59,7 +59,7 @@ pub enum TopLevelUnion {
     A(A),
 
     // Will fail to compile unless we flatten the union member
-    #[item(flatten)]
+    #[graphql(flatten)]
     B(B),
 }
 
