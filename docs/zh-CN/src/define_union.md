@@ -43,3 +43,50 @@ enum Shape {
     Square(Square),
 }
 ```
+
+## 展平嵌套联合
+
+GraphQL的有个限制是`Union`类型内不能包含其它联合类型。 所有成员必须为`Object`。 
+位置支持嵌套`Union`，我们可以用`#graphql(flatten)`，是它们合并到上级`Union`类型。
+```rust
+#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+
+    // 除非我们使用`flatten`属性，否则将无法编译
+    #[graphql(flatten)]
+    B(B),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct A {
+    // ...
+}
+
+#[derive(async_graphql::Union)]
+pub enum B {
+    C(C),
+    D(D),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct C {
+    // ...
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct D {
+    // ...
+}
+```
+
+上面的示例将顶级`Union`转换为以下等效形式：
+
+```rust
+#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+    C(C),
+    D(D),
+}
+```
