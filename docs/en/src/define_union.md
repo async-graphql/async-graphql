@@ -44,3 +44,54 @@ enum Shape {
     Square(Square),
 }
 ```
+
+## Flattening nested unions
+
+A restriction in GraphQL is the inability to create a union type out of
+other union types. All members must be concrete types. To support nested
+unions, we can "flatten" members that are unions, bringing their members up
+into the parent union. This is done by applying `#[item(flatten)]` on each
+member we want to flatten.
+
+```rust
+#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+
+    // Will fail to compile unless we flatten the union member
+    #[item(flatten)]
+    B(B),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct A {
+    // ...
+}
+
+#[derive(async_graphql::Union)]
+pub enum B {
+    C(C),
+    D(D),
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct C {
+    // ...
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub struct D {
+    // ...
+}
+```
+
+The above example transforms the top-level union into this equivalent:
+
+```rust
+#[derive(async_graphql::Union)]
+pub enum TopLevelUnion {
+    A(A),
+    C(C),
+    D(D),
+}
+```
