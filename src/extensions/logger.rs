@@ -101,12 +101,6 @@ impl Extension for LoggerExtension {
                 write!(f, "variables: {}", self.log.variables)?;
                 write!(f, "{}", self.e.message)
             }
-            Error::Other(err) => error!(
-                target: "async-graphql", "[OtherError] query: \"{}\", variables: {}, {}",
-                self.query,
-                self.variables,
-                err
-            ),
         }
 
         error!(
