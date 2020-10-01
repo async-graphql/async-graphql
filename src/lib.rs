@@ -48,12 +48,14 @@
 //! * Error Extensions
 //! * Apollo Federation
 //! * Batch Queries
+//! * Apollo Persisted Queries
 //!
 //! # Crate features
 //!
 //! This crate offers the following features, all of which are activated by default:
 //!
 //! - `apollo_tracing`: Enable the [Apollo tracing extension](extensions/struct.ApolloTracing.html).
+//! - `apollo_persisted_queries`: Enable the [Apollo persisted queries extension](extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).
 //! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
 //! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
 //! - `multipart`: Support [sending files over HTTP multipart](http/fn.receive_body.html).

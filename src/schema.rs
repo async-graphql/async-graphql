@@ -319,7 +319,7 @@ where
         Self::create_registry().export_sdl(false)
     }
 
-    fn prepare_request(
+    async fn prepare_request(
         &self,
         request: Request,
     ) -> Result<(QueryEnvInner, CacheControl), Vec<ServerError>> {
@@ -331,6 +331,18 @@ where
                 .map(|factory| factory.create())
                 .collect_vec(),
         ));
+
+        let request = extensions
+            .lock()
+            .prepare_request(
+                &ExtensionContext {
+                    schema_data: &self.env.data,
+                    query_data: &Default::default(),
+                },
+                request,
+            )
+            .await?;
+
         let ctx_extension = ExtensionContext {
             schema_data: &self.env.data,
             query_data: &request.data,
@@ -454,7 +466,7 @@ where
     /// Execute an GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
-        match self.prepare_request(request) {
+        match self.prepare_request(request).await {
             Ok((env, cache_control)) => self
                 .execute_once(QueryEnv::new(env))
                 .await
@@ -485,7 +497,7 @@ where
 
         async_stream::stream! {
             let request = request.into();
-            let (mut env, cache_control) = match schema.prepare_request(request) {
+            let (mut env, cache_control) = match schema.prepare_request(request).await {
                 Ok(res) => res,
                 Err(errors) => {
                     yield Response::from_errors(errors);
