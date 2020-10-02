@@ -1,6 +1,6 @@
 [package]
 name = "graphql-benchmark"
-version = "2.0.0-alpha.22"
+version = "2.0.0-alpha.23"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 
