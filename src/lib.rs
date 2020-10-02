@@ -162,8 +162,8 @@ pub use context::{
     Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, ResolveId, Variables,
 };
 pub use error::{
-    Error, ExtendError, InputValueError, InputValueResult, ParseRequestError, PathSegment, Result,
-    ServerError, ServerResult,
+    Error, ErrorExtensions, InputValueError, InputValueResult, ParseRequestError, PathSegment,
+    Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
 pub use parser::types::{ConstValue as Value, Number};

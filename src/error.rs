@@ -189,6 +189,7 @@ impl<T: Display> From<T> for Error {
 /// An alias for `Result<T, Error>`.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
+/*
 /// Extend errors with additional information.
 ///
 /// This trait is implemented for `Error` and `Result<T>`.
@@ -235,7 +236,7 @@ impl<T> ExtendError for Result<T> {
     fn extend_with(self, f: impl FnOnce(&Error) -> serde_json::Value) -> Self {
         self.map_err(|e| e.extend_with(f))
     }
-}
+}*/
 
 /// An error parsing the request.
 #[derive(Debug, Error)]
@@ -292,6 +293,88 @@ impl From<multer::Error> for ParseRequestError {
                 ParseRequestError::PayloadTooLarge
             }
             _ => ParseRequestError::InvalidMultipart(err),
+        }
+    }
+}
+
+/// An error which can be extended into a `FieldError`.
+pub trait ErrorExtensions: Sized {
+    /// Convert the error to a `Error`.
+    fn extend(&self) -> Error;
+
+    /// Add extensions to the error, using a callback to make the extensions.
+    fn extend_with<C>(self, cb: C) -> Error
+    where
+        C: FnOnce(&Self) -> serde_json::Value,
+    {
+        let message = self.extend().message;
+        match cb(&self) {
+            serde_json::Value::Object(cb_res) => {
+                let extensions = match self.extend().extensions {
+                    Some(mut extensions) => {
+                        extensions.extend(cb_res);
+                        extensions
+                    }
+                    None => cb_res.into_iter().collect(),
+                };
+                Error {
+                    message,
+                    extensions: Some(extensions),
+                }
+            }
+            _ => panic!("Extend must be called with a map"),
+        }
+    }
+}
+
+impl ErrorExtensions for Error {
+    fn extend(&self) -> Error {
+        self.clone()
+    }
+}
+
+// implementing for &E instead of E gives the user the possibility to implement for E which does
+// not conflict with this implementation acting as a fallback.
+impl<E: std::fmt::Display> ErrorExtensions for &E {
+    fn extend(&self) -> Error {
+        Error {
+            message: format!("{}", self),
+            extensions: None,
+        }
+    }
+}
+
+/// Extend a `Result`'s error value with [`ErrorExtensions`](trait.ErrorExtensions.html).
+pub trait ResultExt<T, E>: Sized {
+    /// Extend the error value of the result with the callback.
+    fn extend_err<C>(self, cb: C) -> Result<T>
+    where
+        C: FnOnce(&E) -> serde_json::Value;
+
+    /// Extend the result to a `Result`.
+    fn extend(self) -> Result<T>;
+}
+
+// This is implemented on E and not &E which means it cannot be used on foreign types.
+// (see example).
+impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
+where
+    E: ErrorExtensions + Send + Sync + 'static,
+{
+    fn extend_err<C>(self, cb: C) -> Result<T>
+    where
+        C: FnOnce(&E) -> serde_json::Value,
+    {
+        match self {
+            Err(err) => Err(err.extend_with(|e| cb(e))),
+            Ok(value) => Ok(value),
+        }
+    }
+
+    fn extend(self) -> Result<T> {
+        match self {
+            Err(err) => Err(err.extend()),
+            Ok(value) => Ok(value),
         }
     }
 }

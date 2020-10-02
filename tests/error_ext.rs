@@ -7,23 +7,23 @@ pub async fn test_error_extensions() {
     #[Object]
     impl Query {
         async fn extend_err(&self) -> Result<i32> {
-            Err(Error::new("my error").extend_with(|err| {
+            Err("my error".extend_with(|err| {
                 serde_json::json!({
-                    "msg": err.message,
-                    "code": 100
+                    "msg":err,
+                    "code":100,
                 })
             }))
         }
 
         async fn extend_result(&self) -> Result<i32> {
             Err(Error::from("my error"))
-                .extend_with(|_| {
+                .extend_err(|_| {
                     serde_json::json!({
                         "msg": "my error",
                         "code": 100
                     })
                 })
-                .extend_with(|_| {
+                .extend_err(|_| {
                     serde_json::json!({
                         "code2": 20
                     })
