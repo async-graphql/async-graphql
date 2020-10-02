@@ -20,7 +20,7 @@ Resolver函数类似这样：
 ```rust
 async fn parse_with_extensions(&self) -> Result<i32, Error> {
     let my_extension = json!({ "details": "CAN_NOT_FETCH" });
-    Err(Error("MyMessage", Some(my_extension)))
+    Err(Error::new("MyMessage").extend_with(|_| my_extension))
  }
 ```
 
@@ -83,15 +83,14 @@ pub enum MyError {
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&self) -> Error {
-        let extensions = match self {
-            MyError::NotFound => json!({"code": "NOT_FOUND"}),
-            MyError::ServerError(reason) => json!({ "reason": reason }),
-            MyError::ErrorWithoutExtensions => {
-                json!("This will be ignored since it does not represent an object.")
-            }
-        };
-
-        Error(format!("{}", self), Some(extensions))
+        Error::new(format!("{}", self)).extend_with(|err| 
+            match self {
+              MyError::NotFound => json!({"code": "NOT_FOUND"}),
+              MyError::ServerError(reason) => json!({ "reason": reason }),
+              MyError::ErrorWithoutExtensions => {
+                  json!("This will be ignored since it does not represent an object.")
+              }
+          })
     }
 }
 ```

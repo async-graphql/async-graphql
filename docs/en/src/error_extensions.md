@@ -16,9 +16,9 @@ field `Option<serde_json::Value>` which - if given some valid `serde_json::Map` 
 A resolver looks like this:
 
 ```rust
-async fn parse_with_extensions(&self) -> Result<i32, Error> {
+async fn parse_with_extensions(&self) -> Result<i32> {
     let my_extension = json!({ "details": "CAN_NOT_FETCH" });
-    Err(Error("MyMessage", Some(my_extension)))
+    Err(Error::new("MyMessage").extend_with(|| my_extension))
  }
 ```
 
@@ -79,15 +79,14 @@ pub enum MyError {
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&self) -> Error {
-        let extensions = match self {
-            MyError::NotFound => json!({"code": "NOT_FOUND"}),
-            MyError::ServerError(reason) => json!({ "reason": reason }),
-            MyError::ErrorWithoutExtensions => {
-                json!("This will be ignored since it does not represent an object.")
-            }
-        };
-
-        Error(format!("{}", self), Some(extensions))
+        Error::new(format!("{}", self)).extend_with(|err| 
+            match self {
+              MyError::NotFound => json!({"code": "NOT_FOUND"}),
+              MyError::ServerError(reason) => json!({ "reason": reason }),
+              MyError::ErrorWithoutExtensions => {
+                  json!("This will be ignored since it does not represent an object.")
+              }
+          })
     }
 }
 ```
