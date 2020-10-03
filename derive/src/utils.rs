@@ -156,6 +156,24 @@ pub fn generate_guards(
                             }
                             Ok(Some(quote! { #crate_name::guard::GuardExt::and(#first_rule, #second_rule) }))
                         }
+                        "or" => {
+                            if args.nested.len() != 2 {
+                                return Err(Error::new_spanned(args, "or operator support only 2 operands.").into());
+                            }
+                            let first_rule: Option<TokenStream>;
+                            let second_rule: Option<TokenStream>;
+                            if let NestedMeta::Meta(rule) = &args.nested[0] {
+                                first_rule = generate_guards(crate_name, rule)?;
+                            } else {
+                                return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
+                            }
+                            if let NestedMeta::Meta(rule) = &args.nested[1] {
+                                second_rule = generate_guards(crate_name, rule)?;
+                            } else {
+                                return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
+                            }
+                            Ok(Some(quote! { #crate_name::guard::GuardExt::or(#first_rule, #second_rule) }))
+                        }
                         _ => {
                             let ty = &args.path;
                             let mut params = Vec::new();

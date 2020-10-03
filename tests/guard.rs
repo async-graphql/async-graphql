@@ -41,7 +41,49 @@ impl Guard for UserGuard {
 }
 
 #[async_std::test]
-pub async fn test_multiple_guards() {
+pub async fn test_guard_simple_rule() {
+
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[async_std::test]
+pub async fn test_guard_and_operator() {
 
     #[derive(SimpleObject)]
     struct Query {
@@ -49,13 +91,7 @@ pub async fn test_multiple_guards() {
         value: i32,
     }
 
-    #[derive(SimpleObject)]
-    struct Mutation {
-        value_m: i32,
-    }
-
-
-    let schema = Schema::new(Query { value: 10 }, Mutation {valueM: 11}, EmptySubscription);
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
 
     let query = "{ value }";
     assert_eq!(
@@ -108,4 +144,92 @@ pub async fn test_multiple_guards() {
         }]
     );
 
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[async_std::test]
+pub async fn test_guard_or_operator() {
+
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard(or(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#))))]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
 }
