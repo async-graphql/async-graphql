@@ -42,19 +42,20 @@ impl Guard for UserGuard {
 
 #[async_std::test]
 pub async fn test_multiple_guards() {
+
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
+        #[graphql(guard(and(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#))))]
         value: i32,
     }
 
     #[derive(SimpleObject)]
     struct Mutation {
-        value: i32,
+        value_m: i32,
     }
 
 
-    let schema = Schema::new(Query { value: 10 }, Mutation {value: 11}, EmptySubscription);
+    let schema = Schema::new(Query { value: 10 }, Mutation {valueM: 11}, EmptySubscription);
 
     let query = "{ value }";
     assert_eq!(
@@ -76,6 +77,25 @@ pub async fn test_multiple_guards() {
                 Request::new(query)
                     .data(Role::Guest)
                     .data(Username("test".to_string()))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
             )
             .await
             .into_result()

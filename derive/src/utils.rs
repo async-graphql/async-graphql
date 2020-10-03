@@ -129,34 +129,36 @@ pub fn generate_guards(
                 Some(ident) => {
                     match ident.to_string().as_str() {
                         "guard" => {
-                            println!("ident guard found {:#?}\n", ident);
-                            if args.nested.len() > 1 {
+                            if args.nested.len() != 1 {
                                 return Err(Error::new_spanned(args, "Chained rules isn't possible anymore, please use operators.").into());
                             }
-                            // why moved ? Want to use it in error
-                            match &args.nested[0] {
-                                NestedMeta::Meta(rule) => {
-                                    println! ("rule sended = {:#?}\n", rule);
-                                    return generate_guards(crate_name, rule);
-                                }
-                                _ => {
-                                    return Err(Error::new_spanned(args, "Invalid guard (to be improve)").into());
-                                }
+                            if let NestedMeta::Meta(rule) = &args.nested[0] {
+                                return generate_guards(crate_name, rule);
+                            } else {
+                                    return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
                             }
                         }
                         "and" => {
-                            println!("ident and found {:#?}\n", ident);
-                            return Err(Error::new_spanned(args, "WIP").into());
+                            if args.nested.len() != 2 {
+                                return Err(Error::new_spanned(args, "and operator support only 2 operands.").into());
+                            }
+                            let first_rule: Option<TokenStream>;
+                            let second_rule: Option<TokenStream>;
+                            if let NestedMeta::Meta(rule) = &args.nested[0] {
+                                first_rule = generate_guards(crate_name, rule)?;
+                            } else {
+                                return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
+                            }
+                            if let NestedMeta::Meta(rule) = &args.nested[1] {
+                                second_rule = generate_guards(crate_name, rule)?;
+                            } else {
+                                return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
+                            }
+                            Ok(Some(quote! { #crate_name::guard::GuardExt::and(#first_rule, #second_rule) }))
                         }
                         _ => {
-                            let mut guards = None;
-                            //args == "guard"
-                            println!("items = {:#?}\n", &args.nested);
                             let ty = &args.path;
-                            //ty = the rule
-                            println!("ty = {:#?}\n", ty);
                             let mut params = Vec::new();
-                            //rules params
                             for attr in &args.nested {
                                 if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
                                     let name = &nv.path;
@@ -182,26 +184,16 @@ pub fn generate_guards(
                                     );
                                 }
                             }
-                            let guard = quote! { #ty { #(#params),* } };
-                            if guards.is_none() {
-                                guards = Some(guard);
-                            } else {
-                                guards =
-                                    Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
-                            }
-                            println!("end of function");
-                            Ok(guards)
-                    //return Err(Error::new_spanned(ident, "Invalid guard (to be improve 2)").into());
+                            Ok(Some(quote! { #ty { #(#params),* } }))
                         }
                     }
                 },
                 None => {
-                    println!("failed for the moment");
-                    return Err(Error::new_spanned(args, "WIP").into());
+                    Err(Error::new_spanned(args, "Invalid guards").into())
                 }
             }
         }
-        _ => Err(Error::new_spanned(args, "Invalid guards (old)").into()),
+        _ => Err(Error::new_spanned(args, "Invalid guards").into()),
     }
 }
 
