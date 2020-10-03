@@ -121,52 +121,87 @@ pub fn generate_guards(
     crate_name: &TokenStream,
     args: &Meta,
 ) -> GeneratorResult<Option<TokenStream>> {
+    println!("{:#?}\n", args);
     match args {
         Meta::List(args) => {
-            let mut guards = None;
-            for item in &args.nested {
-                if let NestedMeta::Meta(Meta::List(ls)) = item {
-                    let ty = &ls.path;
-                    let mut params = Vec::new();
-                    for attr in &ls.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
-                            let name = &nv.path;
-                            if let Lit::Str(value) = &nv.lit {
-                                let value_str = value.value();
-                                if value_str.starts_with('@') {
-                                    let getter_name = get_param_getter_ident(&value_str[1..]);
-                                    params.push(quote! { #name: #getter_name()? });
-                                } else {
-                                    let expr = syn::parse_str::<Expr>(&value_str)?;
-                                    params.push(quote! { #name: (#expr).into() });
-                                }
-                            } else {
-                                return Err(Error::new_spanned(
-                                    &nv.lit,
-                                    "Value must be string literal",
-                                )
-                                .into());
+            println!("args = {:#?}\n", args.path);
+            match args.path.get_ident() {
+                Some(ident) => {
+                    match ident.to_string().as_str() {
+                        "guard" => {
+                            println!("ident guard found {:#?}\n", ident);
+                            if args.nested.len() > 1 {
+                                return Err(Error::new_spanned(args, "Chained rules isn't possible anymore, please use operators.").into());
                             }
-                        } else {
-                            return Err(
-                                Error::new_spanned(attr, "Invalid property for guard").into()
-                            );
+                            // why moved ? Want to use it in error
+                            match &args.nested[0] {
+                                NestedMeta::Meta(rule) => {
+                                    println! ("rule sended = {:#?}\n", rule);
+                                    return generate_guards(crate_name, rule);
+                                }
+                                _ => {
+                                    return Err(Error::new_spanned(args, "Invalid guard (to be improve)").into());
+                                }
+                            }
+                        }
+                        "and" => {
+                            println!("ident and found {:#?}\n", ident);
+                            return Err(Error::new_spanned(args, "WIP").into());
+                        }
+                        _ => {
+                            let mut guards = None;
+                            //args == "guard"
+                            println!("items = {:#?}\n", &args.nested);
+                            let ty = &args.path;
+                            //ty = the rule
+                            println!("ty = {:#?}\n", ty);
+                            let mut params = Vec::new();
+                            //rules params
+                            for attr in &args.nested {
+                                if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
+                                    let name = &nv.path;
+                                    if let Lit::Str(value) = &nv.lit {
+                                        let value_str = value.value();
+                                        if value_str.starts_with('@') {
+                                            let getter_name = get_param_getter_ident(&value_str[1..]);
+                                            params.push(quote! { #name: #getter_name()? });
+                                        } else {
+                                            let expr = syn::parse_str::<Expr>(&value_str)?;
+                                            params.push(quote! { #name: (#expr).into() });
+                                        }
+                                    } else {
+                                        return Err(Error::new_spanned(
+                                            &nv.lit,
+                                            "Value must be string literal",
+                                            )
+                                        .into());
+                                    }
+                                } else {
+                                    return Err(
+                                        Error::new_spanned(attr, "Invalid property for guard").into()
+                                    );
+                                }
+                            }
+                            let guard = quote! { #ty { #(#params),* } };
+                            if guards.is_none() {
+                                guards = Some(guard);
+                            } else {
+                                guards =
+                                    Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
+                            }
+                            println!("end of function");
+                            Ok(guards)
+                    //return Err(Error::new_spanned(ident, "Invalid guard (to be improve 2)").into());
                         }
                     }
-                    let guard = quote! { #ty { #(#params),* } };
-                    if guards.is_none() {
-                        guards = Some(guard);
-                    } else {
-                        guards =
-                            Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
-                    }
-                } else {
-                    return Err(Error::new_spanned(item, "Invalid guard").into());
+                },
+                None => {
+                    println!("failed for the moment");
+                    return Err(Error::new_spanned(args, "WIP").into());
                 }
             }
-            Ok(guards)
         }
-        _ => Err(Error::new_spanned(args, "Invalid guards").into()),
+        _ => Err(Error::new_spanned(args, "Invalid guards (old)").into()),
     }
 }
 
