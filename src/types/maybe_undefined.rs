@@ -130,7 +130,7 @@ impl<T: InputValueType> InputValueType for MaybeUndefined<T> {
             None => Ok(MaybeUndefined::Undefined),
             Some(Value::Null) => Ok(MaybeUndefined::Null),
             Some(value) => Ok(MaybeUndefined::Value(
-                T::parse(Some(value)).map_err(InputValueError::propogate)?,
+                T::parse(Some(value)).map_err(InputValueError::propagate)?,
             )),
         }
     }

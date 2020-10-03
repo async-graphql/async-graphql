@@ -75,7 +75,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             get_fields.push(quote! {
                 let #ident: #ty = #crate_name::InputValueType::parse(
                     Some(#crate_name::Value::Object(obj.clone()))
-                ).map_err(#crate_name::InputValueError::propogate)?;
+                ).map_err(#crate_name::InputValueError::propagate)?;
             });
 
             fields.push(ident);
@@ -111,7 +111,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = {
                     match obj.get(#name) {
                         Some(value) => #crate_name::InputValueType::parse(Some(value.clone()))
-                            .map_err(#crate_name::InputValueError::propogate)?,
+                            .map_err(#crate_name::InputValueError::propagate)?,
                         None => #default,
                     }
                 };
@@ -119,7 +119,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         } else {
             get_fields.push(quote! {
                 let #ident: #ty = #crate_name::InputValueType::parse(obj.get(#name).cloned())
-                    .map_err(#crate_name::InputValueError::propogate)?;
+                    .map_err(#crate_name::InputValueError::propagate)?;
             });
         }
 

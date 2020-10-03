@@ -25,7 +25,7 @@ impl<T: InputValueType> InputValueType for Option<T> {
         match value.unwrap_or_default() {
             Value::Null => Ok(None),
             value => Ok(Some(
-                T::parse(Some(value)).map_err(InputValueError::propogate)?,
+                T::parse(Some(value)).map_err(InputValueError::propagate)?,
             )),
         }
     }

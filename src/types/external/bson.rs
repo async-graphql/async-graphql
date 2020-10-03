@@ -24,7 +24,7 @@ impl ScalarType for ObjectId {
 impl ScalarType for UtcDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         <DateTime<Utc>>::parse(value)
-            .map_err(InputValueError::propogate)
+            .map_err(InputValueError::propagate)
             .map(UtcDateTime::from)
     }
 
