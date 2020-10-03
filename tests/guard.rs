@@ -42,7 +42,6 @@ impl Guard for UserGuard {
 
 #[async_std::test]
 pub async fn test_guard_simple_rule() {
-
     #[derive(SimpleObject)]
     struct Query {
         #[graphql(guard(RoleGuard(role = "Role::Admin")))]
@@ -54,10 +53,7 @@ pub async fn test_guard_simple_rule() {
     let query = "{ value }";
     assert_eq!(
         schema
-            .execute(
-                Request::new(query)
-                    .data(Role::Admin)
-            )
+            .execute(Request::new(query).data(Role::Admin))
             .await
             .data,
         serde_json::json!({"value": 10})
@@ -66,10 +62,7 @@ pub async fn test_guard_simple_rule() {
     let query = "{ value }";
     assert_eq!(
         schema
-            .execute(
-                Request::new(query)
-                    .data(Role::Guest)
-            )
+            .execute(Request::new(query).data(Role::Guest))
             .await
             .into_result()
             .unwrap_err(),
@@ -84,10 +77,12 @@ pub async fn test_guard_simple_rule() {
 
 #[async_std::test]
 pub async fn test_guard_and_operator() {
-
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(and(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#))))]
+        #[graphql(guard(and(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#)
+        )))]
         value: i32,
     }
 
@@ -166,7 +161,6 @@ pub async fn test_guard_and_operator() {
 
 #[async_std::test]
 pub async fn test_guard_or_operator() {
-
     #[derive(SimpleObject)]
     struct Query {
         #[graphql(guard(or(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#))))]
