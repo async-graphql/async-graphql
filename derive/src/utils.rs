@@ -136,9 +136,9 @@ pub fn generate_guards(
                             .into());
                         }
                         if let NestedMeta::Meta(rule) = &args.nested[0] {
-                            return generate_guards(crate_name, rule);
+                            generate_guards(crate_name, rule)
                         } else {
-                            return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
+                            Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into())
                         }
                     }
                     "and" => {
