@@ -69,8 +69,6 @@ pub struct SimpleObjectField {
     pub requires: Option<String>,
     #[darling(default)]
     pub guard: Option<Meta>,
-    #[darling(default)]
-    pub post_guard: Option<Meta>,
 }
 
 #[derive(FromDeriveInput)]
@@ -123,7 +121,6 @@ pub struct ObjectField {
     pub provides: Option<String>,
     pub requires: Option<String>,
     pub guard: Option<Meta>,
-    pub post_guard: Option<Meta>,
 }
 
 #[derive(FromDeriveInput)]
@@ -302,7 +299,6 @@ pub struct SubscriptionField {
     pub name: Option<String>,
     pub deprecation: Option<String>,
     pub guard: Option<Meta>,
-    pub post_guard: Option<Meta>,
 }
 
 #[derive(FromMeta, Default)]

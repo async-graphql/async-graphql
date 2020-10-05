@@ -291,7 +291,11 @@ pub async fn test_guard_or_operator() {
 pub async fn test_guard_chain_operator() {
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(chain(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#), AgeGuard(age = r#"21"#))))]
+        #[graphql(guard(chain(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#),
+            AgeGuard(age = r#"21"#)
+        )))]
         value: i32,
     }
 
@@ -396,7 +400,11 @@ pub async fn test_guard_chain_operator() {
 pub async fn test_guard_race_operator() {
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(race(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#), AgeGuard(age = r#"21"#))))]
+        #[graphql(guard(race(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#),
+            AgeGuard(age = r#"21"#)
+        )))]
         value: i32,
     }
 

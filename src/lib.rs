@@ -205,7 +205,6 @@ pub use types::*;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Field argument parameters
 ///
@@ -321,7 +320,6 @@ pub use async_graphql_derive::Object;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Examples
 ///
@@ -678,7 +676,6 @@ pub use async_graphql_derive::Union;
 /// | name        | Field name                | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | post_guard    | Field of post guard       | [`PostGuard`](guard/trait.PostGuard.html) | Y        |
 ///
 /// # Field argument parameters
 ///

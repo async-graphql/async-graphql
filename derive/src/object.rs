@@ -1,8 +1,8 @@
 use crate::args;
 use crate::output_type::OutputType;
 use crate::utils::{
-    generate_default, generate_guards, generate_post_guards, generate_validator, get_cfg_attrs,
-    get_crate_name, get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
+    generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
+    get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
     GeneratorResult,
 };
 use inflector::Inflector;
@@ -428,18 +428,6 @@ pub fn generate(
                     }
                 });
 
-                let post_guard = match &method_args.post_guard {
-                    Some(meta_list) => generate_post_guards(&crate_name, meta_list)?,
-                    None => None,
-                };
-
-                let post_guard = post_guard.map(|guard| {
-                    quote! {
-                        #guard.check(ctx, &res).await
-                            .map_err(|err| err.into_server_error().at(ctx.item.pos))?;
-                    }
-                });
-
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
                     if ctx.item.node.name.node == #field_name {
@@ -447,7 +435,6 @@ pub fn generate(
                         #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         let res = #resolve_obj;
-                        #post_guard
                         return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                     }
                 });
