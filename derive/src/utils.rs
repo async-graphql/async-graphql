@@ -121,10 +121,8 @@ pub fn generate_guards(
     crate_name: &TokenStream,
     args: &Meta,
 ) -> GeneratorResult<Option<TokenStream>> {
-    println!("{:#?}\n", args);
     match args {
         Meta::List(args) => {
-            println!("args = {:#?}\n", args.path);
             match args.path.get_ident() {
                 Some(ident) => match ident.to_string().as_str() {
                     "guard" => {
@@ -188,6 +186,50 @@ pub fn generate_guards(
                         Ok(Some(
                             quote! { #crate_name::guard::GuardExt::or(#first_rule, #second_rule) },
                         ))
+                    }
+                    "chain" => {
+                        if args.nested.len() < 2 {
+                            return Err(Error::new_spanned(
+                                args,
+                                "chain operator need at least 1 operand.",
+                            )
+                            .into());
+                        }
+                        let mut guards: Option<TokenStream> = None;
+                        for arg in &args.nested {
+                            if let NestedMeta::Meta(rule) = &arg {
+                                let guard = generate_guards(crate_name, rule)?;
+                                if guards.is_none() {
+                                    guards = guard;
+                                } else {
+                                    guards =
+                                        Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
+                                }
+                            }
+                        }
+                        Ok(guards)
+                    }
+                    "race" => {
+                        if args.nested.len() < 2 {
+                            return Err(Error::new_spanned(
+                                args,
+                                "race operator need at least 1 operand.",
+                            )
+                            .into());
+                        }
+                        let mut guards: Option<TokenStream> = None;
+                        for arg in &args.nested {
+                            if let NestedMeta::Meta(rule) = &arg {
+                                let guard = generate_guards(crate_name, rule)?;
+                                if guards.is_none() {
+                                    guards = guard;
+                                } else {
+                                    guards =
+                                        Some(quote! { #crate_name::guard::GuardExt::or(#guard, #guards) });
+                                }
+                            }
+                        }
+                        Ok(guards)
                     }
                     _ => {
                         let ty = &args.path;

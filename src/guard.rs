@@ -35,8 +35,8 @@ pub struct And<A: Guard, B: Guard>(A, B);
 #[async_trait::async_trait]
 impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for And<A, B> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        let second_result = self.1.check(ctx).await;
-        self.0.check(ctx).await.and(second_result)
+        self.0.check(ctx).await?;
+        self.1.check(ctx).await
     }
 }
 
