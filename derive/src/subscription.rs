@@ -260,13 +260,6 @@ pub fn generate(
             let guard = guard.map(|guard| quote! {
                 #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
             });
-            if field.post_guard.is_some() {
-                return Err(Error::new_spanned(
-                    method,
-                    "The subscription field does not support post guard",
-                )
-                .into());
-            }
 
             let stream_fn = quote! {
                 #(#get_params)*

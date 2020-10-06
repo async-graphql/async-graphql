@@ -1,7 +1,5 @@
 use crate::args;
-use crate::utils::{
-    generate_guards, generate_post_guards, get_crate_name, get_rustdoc, GeneratorResult,
-};
+use crate::utils::{generate_guards, get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::Data;
 use inflector::Inflector;
 use proc_macro::TokenStream;
@@ -102,12 +100,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
         let guard = guard.map(|guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
 
-        let post_guard = match &field.post_guard {
-            Some(meta) => generate_post_guards(&crate_name, &meta)?,
-            None => None,
-        };
-        let post_guard = post_guard.map(|guard| quote! { #guard.check(ctx, &res).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?; });
-
         getters.push(if !field.owned {
             quote! {
                  #[inline]
@@ -131,7 +123,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #guard
                 let res = self.#ident(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                #post_guard
                 return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });

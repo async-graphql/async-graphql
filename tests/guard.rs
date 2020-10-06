@@ -40,26 +40,29 @@ impl Guard for UserGuard {
     }
 }
 
+struct Age(i32);
+
+struct AgeGuard {
+    age: i32,
+}
+
+#[async_trait::async_trait]
+impl Guard for AgeGuard {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
+        if ctx.data_opt::<Age>().map(|name| &name.0) == Some(&self.age) {
+            Ok(())
+        } else {
+            Err("Forbidden".into())
+        }
+    }
+}
+
 #[async_std::test]
-pub async fn test_guard() {
+pub async fn test_guard_simple_rule() {
     #[derive(SimpleObject)]
-    struct MyObj {
+    struct Query {
         #[graphql(guard(RoleGuard(role = "Role::Admin")))]
         value: i32,
-    }
-
-    struct Query;
-
-    #[Object]
-    impl Query {
-        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
-        async fn value(&self) -> i32 {
-            1
-        }
-
-        async fn obj(&self) -> MyObj {
-            MyObj { value: 99 }
-        }
     }
 
     struct Subscription;
@@ -72,36 +75,7 @@ pub async fn test_guard() {
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, Subscription);
-
-    let query = "{ obj { value } }";
-    assert_eq!(
-        schema
-            .execute(Request::new(query).data(Role::Admin))
-            .await
-            .data,
-        serde_json::json!({
-            "obj": {"value": 99}
-        })
-    );
-
-    let query = "{ obj { value } }";
-    assert_eq!(
-        schema
-            .execute(Request::new(query).data(Role::Guest))
-            .await
-            .into_result()
-            .unwrap_err(),
-        vec![ServerError {
-            message: "Forbidden".to_owned(),
-            locations: vec![Pos { line: 1, column: 9 }],
-            path: vec![
-                PathSegment::Field("obj".to_owned()),
-                PathSegment::Field("value".to_owned())
-            ],
-            extensions: None,
-        }]
-    );
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, Subscription);
 
     let query = "{ value }";
     assert_eq!(
@@ -109,9 +83,7 @@ pub async fn test_guard() {
             .execute(Request::new(query).data(Role::Admin))
             .await
             .data,
-        serde_json::json!({
-            "value": 1,
-        })
+        serde_json::json!({"value": 10})
     );
 
     let query = "{ value }";
@@ -163,10 +135,13 @@ pub async fn test_guard() {
 }
 
 #[async_std::test]
-pub async fn test_multiple_guards() {
+pub async fn test_guard_and_operator() {
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#)))]
+        #[graphql(guard(and(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#)
+        )))]
         value: i32,
     }
 
@@ -244,54 +219,269 @@ pub async fn test_multiple_guards() {
 }
 
 #[async_std::test]
-pub async fn test_guard_forward_arguments() {
-    struct UserGuard {
-        id: ID,
+pub async fn test_guard_or_operator() {
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard(or(RoleGuard(role = "Role::Admin"), UserGuard(username = r#""test""#))))]
+        value: i32,
     }
 
-    #[async_trait::async_trait]
-    impl Guard for UserGuard {
-        async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-            if ctx.data_opt::<ID>() != Some(&self.id) {
-                Err("Forbidden".into())
-            } else {
-                Ok(())
-            }
-        }
-    }
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
 
-    struct QueryRoot;
-
-    #[Object]
-    impl QueryRoot {
-        #[graphql(guard(UserGuard(id = "@id")))]
-        async fn user(&self, id: ID) -> ID {
-            id
-        }
-    }
-
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-
-    let query = r#"{ user(id: "abc") }"#;
+    let query = "{ value }";
     assert_eq!(
         schema
-            .execute(Request::new(query).data(ID::from("abc")))
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+            )
             .await
             .data,
-        serde_json::json!({"user": "abc"})
+        serde_json::json!({"value": 10})
     );
 
-    let query = r#"{ user(id: "abc") }"#;
+    let query = "{ value }";
     assert_eq!(
         schema
-            .execute(Request::new(query).data(ID::from("aaa")))
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+            )
             .await
             .into_result()
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
             locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("user".to_owned())],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[async_std::test]
+pub async fn test_guard_chain_operator() {
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard(chain(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#),
+            AgeGuard(age = r#"21"#)
+        )))]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+                    .data(Age(21))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+                    .data(Age(21))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+                    .data(Age(21))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+                    .data(Age(22))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+                    .data(Age(22))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[async_std::test]
+pub async fn test_guard_race_operator() {
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard(race(
+            RoleGuard(role = "Role::Admin"),
+            UserGuard(username = r#""test""#),
+            AgeGuard(age = r#"21"#)
+        )))]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test".to_string()))
+                    .data(Age(21))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test".to_string()))
+                    .data(Age(22))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Admin)
+                    .data(Username("test1".to_string()))
+                    .data(Age(22))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+                    .data(Age(21))
+            )
+            .await
+            .data,
+        serde_json::json!({"value": 10})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(
+                Request::new(query)
+                    .data(Role::Guest)
+                    .data(Username("test1".to_string()))
+                    .data(Age(22))
+            )
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
         }]
     );

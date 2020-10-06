@@ -17,6 +17,7 @@
     - [Query and Mutation](query_and_mutation.md)
     - [Subscription](subscription.md)
 - [Utilities](utilities.md)
+    - [Field guard](field_guard.md)
     - [Input value validators](input_value_validators.md)
     - [Cache control](cache_control.md)
     - [Cursor connections](cursor_connections.md)
