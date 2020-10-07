@@ -1,8 +1,7 @@
-# Field Guard
+# 字段守卫(Field Guard)
 
-You can define `guard` to field of an `Object`. This permit to add checks before run the code logic of the field.
-`Guard` are made of rules that you need to define before. A rule is a structure which implement the trait `Guard`.
-
+您可以在给`Object`的字段定义`守卫`。 这允许在运行字段的代码逻辑之前添加检查。
+义`守卫`由你预先定义的规则组成。 规则是一种实现`Guard`特质的结构。
 ```rust
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
@@ -26,16 +25,16 @@ impl Guard for RoleGuard {
 }
 ```
 
-Once you have defined your rule you can use it in the `guard` field attribute.
-This attribute support 4 operators to create complex rules :
+一旦定义了规则，就可以在`guard`字段属性中使用它。
+此属性支持4个运算符创建复杂的规则：
 
-- `and` : perform a `and` operation between two rules. (If one rule return an error the `and` operator will return the error. If both rules return a error it's the first one that will be returned).
+-`and`：在两个规则之间执行`与`运算。 （如果一个规则返回错误，则`and`运算符将返回错误。如果两个规则均返回错误，则将是第一个返回的错误）。
 
-- `or` : perform a `or` operation between two rules. (If both rules return an error the error returned is the first one)
+-`or`：在两个规则之间执行`或`运算。 （如果两个规则都返回错误，则返回的错误是第一个）
 
-- `chain` : take a set of rules and run them until one return an error or return `Ok` if all rules pass.
+-`chain`：采用一组规则并运行它们，直到返回错误或如果所有规则都通过则返回`Ok`。
 
-- `race` : take a set of rules and run them until one return `Ok` if they all fail it return the last error.
+-`race`：采用一组规则并运行它们，直到其中一个返回`Ok`。
 
 ```rust
 #[derive(SimpleObject)]
