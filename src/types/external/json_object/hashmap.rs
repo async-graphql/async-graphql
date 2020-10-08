@@ -16,7 +16,7 @@ where
                 .into_iter()
                 .map(|(name, value)| Ok((name.into_string(), T::parse(Some(value))?)))
                 .collect::<Result<_, _>>()
-                .map_err(InputValueError::propogate),
+                .map_err(InputValueError::propagate),
             _ => Err(InputValueError::expected_type(value)),
         }
     }

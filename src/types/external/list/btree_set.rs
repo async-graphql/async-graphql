@@ -29,11 +29,11 @@ impl<T: InputValueType + Ord> InputValueType for BTreeSet<T> {
                 .into_iter()
                 .map(|value| InputValueType::parse(Some(value)))
                 .collect::<Result<_, _>>()
-                .map_err(InputValueError::propogate),
+                .map_err(InputValueError::propagate),
             value => Ok({
                 let mut result = Self::default();
                 result.insert(
-                    InputValueType::parse(Some(value)).map_err(InputValueError::propogate)?,
+                    InputValueType::parse(Some(value)).map_err(InputValueError::propagate)?,
                 );
                 result
             }),

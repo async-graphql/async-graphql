@@ -122,8 +122,8 @@ impl<T: InputValueType> InputValueError<T> {
         Self::new(format!(r#"Failed to parse "{}": {}"#, T::type_name(), msg))
     }
 
-    /// Propogate the error message to a different type.
-    pub fn propogate<U: InputValueType>(self) -> InputValueError<U> {
+    /// Propagate the error message to a different type.
+    pub fn propagate<U: InputValueType>(self) -> InputValueError<U> {
         InputValueError::new(format!(
             r#"{} (occurred while parsing "{}")"#,
             self.message,
