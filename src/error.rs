@@ -147,7 +147,7 @@ impl<T: InputValueType, E: Display> From<E> for InputValueError<T> {
 pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 
 /// An error with a message and optional extensions.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Error {
     /// The error message.
     pub message: String,
