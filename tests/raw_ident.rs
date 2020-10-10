@@ -68,8 +68,8 @@ pub async fn test_input_value_custom_error() {
         .boxed();
     for i in 0..10 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "type": i }))),
-            stream.next().await
+            serde_json::json!({ "type": i }),
+            stream.next().await.unwrap().unwrap()
         );
     }
     assert!(stream.next().await.is_none());

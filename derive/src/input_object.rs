@@ -125,7 +125,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         put_fields.push(quote! {
             map.insert(
-                #crate_name::parser::types::Name::new_unchecked(#name.to_owned()),
+                #crate_name::parser::types::Name::new(#name),
                 #crate_name::InputValueType::to_value(&self.#ident)
             );
         });

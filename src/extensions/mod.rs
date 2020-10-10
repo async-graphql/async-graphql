@@ -18,10 +18,10 @@ pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
-use crate::parser::types::ExecutableDocument;
-use crate::Error;
-use serde_json::Value;
+use crate::parser::types::{ExecutableDocument, Name};
+use crate::{Error, Value};
 use std::any::{Any, TypeId};
+use std::collections::BTreeMap;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 
@@ -141,7 +141,7 @@ pub trait Extension: Sync + Send + 'static {
     fn error(&mut self, ctx: &ExtensionContext<'_>, err: &ServerError) {}
 
     /// Get the results
-    fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<serde_json::Value> {
+    fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<Value> {
         None
     }
 }
@@ -236,16 +236,16 @@ impl Extension for Extensions {
                 .iter_mut()
                 .filter_map(|e| {
                     if let Some(name) = e.name() {
-                        e.result(ctx).map(|res| (name.to_string(), res))
+                        e.result(ctx).map(|res| (Name::new(name), res))
                     } else {
                         None
                     }
                 })
-                .collect::<serde_json::Map<_, _>>();
+                .collect::<BTreeMap<_, _>>();
             if value.is_empty() {
                 None
             } else {
-                Some(value.into())
+                Some(Value::Object(value))
             }
         } else {
             None

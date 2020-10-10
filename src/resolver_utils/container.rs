@@ -1,9 +1,10 @@
 use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ResolveInfo};
-use crate::parser::types::Selection;
+use crate::parser::types::{Name, Selection};
 use crate::registry::MetaType;
 use crate::{
     Context, ContextSelectionSet, OutputValueType, PathSegment, ServerError, ServerResult, Value,
 };
+use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
@@ -19,10 +20,10 @@ pub trait ContainerType: OutputValueType {
         false
     }
 
-    /// Resolves a field value and outputs it as a json value `serde_json::Value`.
+    /// Resolves a field value and outputs it as a json value `async_graphql::Value`.
     ///
     /// If the field was not found returns None.
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>>;
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>>;
 
     /// Collect all the fields of the container that are queried in the selection set.
     ///
@@ -42,18 +43,14 @@ pub trait ContainerType: OutputValueType {
     /// Find the GraphQL entity with the given name from the parameter.
     ///
     /// Objects should override this in case they are the query root.
-    async fn find_entity(
-        &self,
-        _: &Context<'_>,
-        _params: &Value,
-    ) -> ServerResult<Option<serde_json::Value>> {
+    async fn find_entity(&self, _: &Context<'_>, _params: &Value) -> ServerResult<Option<Value>> {
         Ok(None)
     }
 }
 
 #[async_trait::async_trait]
 impl<T: ContainerType + Send + Sync> ContainerType for &T {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(*self, ctx).await
     }
 }
@@ -64,55 +61,54 @@ impl<T: ContainerType + Send + Sync> ContainerType for &T {
 pub async fn resolve_container<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> ServerResult<serde_json::Value> {
+) -> ServerResult<Value> {
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
     let futures = fields.0;
 
     let res = futures::future::try_join_all(futures).await?;
-    let mut map = serde_json::Map::new();
+    let mut map = BTreeMap::new();
     for (name, value) in res {
-        if let serde_json::Value::Object(b) = value {
-            if let Some(serde_json::Value::Object(a)) = map.get_mut(&name) {
+        if let Value::Object(b) = value {
+            if let Some(Value::Object(a)) = map.get_mut(&name) {
                 a.extend(b);
             } else {
-                map.insert(name, b.into());
+                map.insert(name, Value::Object(b));
             }
         } else {
             map.insert(name, value);
         }
     }
-    Ok(map.into())
+    Ok(Value::Object(map))
 }
 
 /// Resolve an container by executing each of the fields serially.
 pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> ServerResult<serde_json::Value> {
+) -> ServerResult<Value> {
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
     let futures = fields.0;
 
-    let mut map = serde_json::Map::new();
+    let mut map = BTreeMap::new();
     for field in futures {
         let (name, value) = field.await?;
 
-        if let serde_json::Value::Object(b) = value {
-            if let Some(serde_json::Value::Object(a)) = map.get_mut(&name) {
+        if let Value::Object(b) = value {
+            if let Some(Value::Object(a)) = map.get_mut(&name) {
                 a.extend(b);
             } else {
-                map.insert(name, b.into());
+                map.insert(name, Value::Object(b));
             }
         } else {
             map.insert(name, value);
         }
     }
-    Ok(map.into())
+    Ok(Value::Object(map))
 }
 
-type BoxFieldFuture<'a> =
-    Pin<Box<dyn Future<Output = ServerResult<(String, serde_json::Value)>> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
 
 /// A set of fields on an container that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
@@ -134,17 +130,11 @@ impl<'a> Fields<'a> {
                     if field.node.name.node == "__typename" {
                         // Get the typename
                         let ctx_field = ctx.with_field(field);
-                        let field_name = ctx_field
-                            .item
-                            .node
-                            .response_key()
-                            .node
-                            .clone()
-                            .into_string();
+                        let field_name = ctx_field.item.node.response_key().node.clone();
                         let typename = root.introspection_type_name().into_owned();
 
                         self.0.push(Box::pin(async move {
-                            Ok((field_name, serde_json::Value::String(typename)))
+                            Ok((field_name, Value::String(typename)))
                         }));
                         continue;
                     }
@@ -164,13 +154,7 @@ impl<'a> Fields<'a> {
                         let ctx = ctx.clone();
                         async move {
                             let ctx_field = ctx.with_field(field);
-                            let field_name = ctx_field
-                                .item
-                                .node
-                                .response_key()
-                                .node
-                                .clone()
-                                .into_string();
+                            let field_name = ctx_field.item.node.response_key().node.clone();
                             let ctx_extension = ExtensionContext {
                                 schema_data: &ctx.schema_env.data,
                                 query_data: &ctx.query_env.ctx_data,
@@ -196,7 +180,7 @@ impl<'a> Fields<'a> {
                                             T::type_name()
                                         ))
                                         .at(ctx_field.item.pos)
-                                        .path(PathSegment::Field(field_name)));
+                                        .path(PathSegment::Field(field_name.to_string())));
                                     }
                                 },
                             };
@@ -209,7 +193,7 @@ impl<'a> Fields<'a> {
 
                             let res = match root.resolve_field(&ctx_field).await {
                                 Ok(value) => Ok((field_name, value.unwrap())),
-                                Err(e) => Err(e.path(PathSegment::Field(field_name))),
+                                Err(e) => Err(e.path(PathSegment::Field(field_name.to_string()))),
                             }
                             .log_error(&ctx_extension, &ctx_field.query_env.extensions)?;
 

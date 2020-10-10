@@ -171,7 +171,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
 
         impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::serde_json::Value>> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
                 Ok(None)
             }
@@ -181,7 +181,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
 
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::serde_json::Value> {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }

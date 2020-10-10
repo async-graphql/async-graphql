@@ -1,9 +1,10 @@
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::Variables;
+use crate::{Value, Variables};
 use chrono::{DateTime, Utc};
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::collections::BTreeMap;
+use std::convert::TryInto;
 use std::ops::Deref;
 
 struct PendingResolve {
@@ -116,10 +117,11 @@ impl Extension for ApolloTracingExtension {
         }
     }
 
-    fn result(&mut self, _ctx: &ExtensionContext<'_>) -> Option<serde_json::Value> {
+    fn result(&mut self, _ctx: &ExtensionContext<'_>) -> Option<Value> {
         self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
-        Some(serde_json::json!({
+
+        serde_json::json!({
             "version": 1,
             "startTime": self.start_time.to_rfc3339(),
             "endTime": self.end_time.to_rfc3339(),
@@ -127,6 +129,8 @@ impl Extension for ApolloTracingExtension {
             "execution": {
                 "resolvers": self.resolves
             }
-        }))
+        })
+        .try_into()
+        .ok()
     }
 }

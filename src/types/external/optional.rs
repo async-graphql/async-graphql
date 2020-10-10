@@ -44,11 +44,11 @@ impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         if let Some(inner) = self {
             OutputValueType::resolve(inner, ctx, field).await
         } else {
-            Ok(serde_json::Value::Null)
+            Ok(Value::Null)
         }
     }
 }

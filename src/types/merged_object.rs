@@ -3,7 +3,7 @@ use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::resolve_container;
 use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
-    Positioned, ServerResult, SimpleObject, Type,
+    Positioned, ServerResult, SimpleObject, Type, Value,
 };
 use indexmap::IndexMap;
 use std::borrow::Cow;
@@ -61,7 +61,7 @@ where
     A: ObjectType + Send + Sync,
     B: ObjectType + Send + Sync,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         match self.0.resolve_field(ctx).await {
             Ok(Some(value)) => Ok(Some(value)),
             Ok(None) => self.1.resolve_field(ctx).await,
@@ -80,7 +80,7 @@ where
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         resolve_container(ctx, self).await
     }
 }

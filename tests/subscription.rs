@@ -36,8 +36,8 @@ pub async fn test_subscription() {
             .boxed();
         for i in 10..20 {
             assert_eq!(
-                Some(serde_json::json!({ "values": i })),
-                stream.next().await
+                serde_json::json!({ "values": i }),
+                stream.next().await.unwrap()
             );
         }
         assert!(stream.next().await.is_none());
@@ -50,8 +50,8 @@ pub async fn test_subscription() {
             .boxed();
         for i in 10..20 {
             assert_eq!(
-                Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
-                stream.next().await
+                serde_json::json!({ "events": {"a": i, "b": i * 10} }),
+                stream.next().await.unwrap()
             );
         }
         assert!(stream.next().await.is_none());
@@ -96,12 +96,12 @@ pub async fn test_subscription_with_ctx_data() {
             .map(|resp| resp.data)
             .boxed();
         assert_eq!(
-            Some(serde_json::json!({ "values": 100 })),
-            stream.next().await
+            serde_json::json!({ "values": 100 }),
+            stream.next().await.unwrap()
         );
         assert_eq!(
-            Some(serde_json::json!({ "objects": { "value": 100 } })),
-            stream.next().await
+            serde_json::json!({ "objects": { "value": 100 } }),
+            stream.next().await.unwrap()
         );
         assert!(stream.next().await.is_none());
     }
@@ -138,8 +138,8 @@ pub async fn test_subscription_with_token() {
             .map(|resp| resp.into_result().unwrap().data)
             .boxed();
         assert_eq!(
-            Some(serde_json::json!({ "values": 100 })),
-            stream.next().await
+            serde_json::json!({ "values": 100 }),
+            stream.next().await.unwrap()
         );
         assert!(stream.next().await.is_none());
     }
@@ -197,8 +197,8 @@ pub async fn test_subscription_inline_fragment() {
         .boxed();
     for i in 10..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
-            stream.next().await
+            serde_json::json!({ "events": {"a": i, "b": i * 10} }),
+            stream.next().await.unwrap()
         );
     }
     assert!(stream.next().await.is_none());
@@ -252,8 +252,8 @@ pub async fn test_subscription_fragment() {
         .boxed();
     for i in 10i32..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
-            stream.next().await
+            serde_json::json!({ "events": {"a": i, "b": i * 10} }),
+            stream.next().await.unwrap()
         );
     }
     assert!(stream.next().await.is_none());
@@ -308,8 +308,8 @@ pub async fn test_subscription_fragment2() {
         .boxed();
     for i in 10..20 {
         assert_eq!(
-            Some(serde_json::json!({ "events": {"a": i, "b": i * 10} })),
-            stream.next().await
+            serde_json::json!({ "events": {"a": i, "b": i * 10} }),
+            stream.next().await.unwrap()
         );
     }
     assert!(stream.next().await.is_none());
@@ -354,8 +354,8 @@ pub async fn test_subscription_error() {
         .boxed();
     for i in 0i32..5 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "events": { "value": i } }))),
-            stream.next().await
+            serde_json::json!({ "events": { "value": i } }),
+            stream.next().await.unwrap().unwrap()
         );
     }
     assert_eq!(
@@ -405,8 +405,8 @@ pub async fn test_subscription_fieldresult() {
         .boxed();
     for i in 0i32..5 {
         assert_eq!(
-            Some(Ok(serde_json::json!({ "values": i }))),
-            stream.next().await
+            serde_json::json!({ "values": i }),
+            stream.next().await.unwrap().unwrap()
         );
     }
     assert_eq!(

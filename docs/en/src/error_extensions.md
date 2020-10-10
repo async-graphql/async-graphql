@@ -10,16 +10,14 @@ I would recommend on checking out this [async-graphql example](https://github.co
 
 ## General Concept
 In `async-graphql` all user-facing errors are cast to the `Error` type which by default provides
-the error message exposed by `std::fmt::Display`. However `Error` also provides an additional
-field `Option<serde_json::Value>` which - if given some valid `serde_json::Map` - will be exposed as the extensions key to any error.
+the error message exposed by `std::fmt::Display`. However, `Error` actually provides an additional information that can extend the error.
 
 A resolver looks like this:
 
 ```rust
-async fn parse_with_extensions(&self) -> Result<i32> {
-    let my_extension = json!({ "details": "CAN_NOT_FETCH" });
-    Err(Error::new("MyMessage").extend_with(|| my_extension))
- }
+async fn parse_with_extensions(&self) -> Result<i32, Error> {
+    Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
+}
 ```
 
 may then return a response like this:
@@ -53,8 +51,8 @@ use std::num::ParseIntError;
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
-         .map_err(|err: ParseIntError| err.extend_with(|_err| json!({"code": 404})))?)
- }
+         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
+}
 ```
 
 ### Implementing ErrorExtensions for custom errors.
@@ -62,7 +60,8 @@ If you find yourself attaching extensions to your errors all over the place you 
 implementing the trait on your custom error type directly.
 
 ```rust
-use thiserror::Error;
+#[macro_use]
+extern crate thiserror;
 
 #[derive(Debug, Error)]
 pub enum MyError {
@@ -79,13 +78,11 @@ pub enum MyError {
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&self) -> Error {
-        Error::new(format!("{}", self)).extend_with(|err| 
+        Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
-              MyError::NotFound => json!({"code": "NOT_FOUND"}),
-              MyError::ServerError(reason) => json!({ "reason": reason }),
-              MyError::ErrorWithoutExtensions => {
-                  json!("This will be ignored since it does not represent an object.")
-              }
+              MyError::NotFound => e.set("code", "NOT_FOUND"),
+              MyError::ServerError(reason) => e.set("reason", reason),
+              MyError::ErrorWithoutExtensions => {}
           })
     }
 }
@@ -98,7 +95,7 @@ Or further extend your error through `extend_with`.
 async fn parse_with_extensions_result(&self) -> Result<i32> {
     // Err(MyError::NotFound.extend())
     // OR
-    Err(MyError::NotFound.extend_with(|_| json!({ "on_the_fly": "some_more_info" })))
+    Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
 ```
 
@@ -126,9 +123,8 @@ use async_graphql::*;
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
-         .extend_err(|_| json!({"code": 404}))?)
- }
-
+         .extend_err(|_, e| e.set("code", 404))?)
+}
 ```
 ### Chained extensions
 Since `ErrorExtensions` and `ResultExt` are implemented for any type `&E where E: std::fmt::Display`
@@ -141,10 +137,10 @@ async fn parse_with_extensions(&self) -> Result<i32> {
     match "234a".parse() {
         Ok(n) => Ok(n),
         Err(e) => Err(e
-            .extend_with(|_| json!({"code": 404}))
-            .extend_with(|_| json!({"details": "some more info.."}))
+            .extend_with(|_, e| e.set("code", 404))
+            .extend_with(|_, e| e.set("details", "some more info.."))
             // keys may also overwrite previous keys...
-            .extend_with(|_| json!({"code": 500}))),
+            .extend_with(|_, e| e.set("code", 500))),
     }
 }
 ```
@@ -177,7 +173,7 @@ The disadvantage is that the below code does **NOT** compile:
 async fn parse_with_extensions_result(&self) -> Result<i32> {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
-    "234a".parse().extend_err(|_| json!({"code": 404}))
+    "234a".parse().extend_err(|_, e| e.set("code", 404))
 }
 ```
 
@@ -188,7 +184,7 @@ async fn parse_with_extensions_result(&self) -> Result<i32> {
     // does work because ErrorExtensions is implemented for &ParseIntError
     "234a"
       .parse()
-      .map_err(|ref e: ParseIntError| e.extend_with(|_| json!({"code": 404})))
+      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }
 ```
 

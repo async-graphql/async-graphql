@@ -41,12 +41,12 @@ pub trait InputValueType: Type + Sized {
 /// Represents a GraphQL output value
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
-    /// Resolve an output value to `serde_json::Value`.
+    /// Resolve an output value to `async_graphql::Value`.
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value>;
+    ) -> ServerResult<Value>;
 }
 
 impl<T: Type + Send + Sync> Type for &T {
@@ -66,7 +66,7 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         T::resolve(*self, ctx, field).await
     }
 }
@@ -91,7 +91,7 @@ impl<T: OutputValueType + Sync> OutputValueType for Result<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         match self {
             Ok(value) => Ok(value.resolve(ctx, field).await?),
             Err(err) => Err(err.clone().into_server_error().at(field.pos)),

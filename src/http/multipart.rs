@@ -1,4 +1,4 @@
-use crate::{BatchRequest, ParseRequestError};
+use crate::{BatchRequest, ParseRequestError, UploadValue};
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
@@ -101,15 +101,16 @@ pub(super) async fn receive_batch_multipart(
 
     for (name, filename, content_type, file) in files {
         if let Some(var_paths) = map.remove(&name) {
+            let upload = UploadValue {
+                filename,
+                content_type,
+                content: file,
+            };
+
             for var_path in var_paths {
                 match &mut request {
                     BatchRequest::Single(request) => {
-                        request.set_upload(
-                            &var_path,
-                            filename.clone(),
-                            content_type.clone(),
-                            file.try_clone().unwrap(),
-                        );
+                        request.set_upload(&var_path, upload.try_clone()?);
                     }
                     BatchRequest::Batch(requests) => {
                         let mut s = var_path.splitn(2, '.');
@@ -118,12 +119,7 @@ pub(super) async fn receive_batch_multipart(
 
                         if let (Some(idx), Some(path)) = (idx, path) {
                             if let Some(request) = requests.get_mut(idx) {
-                                request.set_upload(
-                                    path,
-                                    filename.clone(),
-                                    content_type.clone(),
-                                    file.try_clone().unwrap(),
-                                );
+                                request.set_upload(path, upload.try_clone()?);
                             }
                         }
                     }

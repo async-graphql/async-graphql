@@ -86,11 +86,11 @@ pub async fn test_list_type() {
     );
     let mut res = schema.execute(&query).await.data;
 
-    if let serde_json::Value::Object(obj) = &mut res {
+    if let Value::Object(obj) = &mut res {
         if let Some(value_hash_set) = obj.get_mut("valueHashSet") {
-            if let serde_json::Value::Array(array) = value_hash_set {
+            if let Value::List(array) = value_hash_set {
                 array.sort_by(|a, b| {
-                    if let (serde_json::Value::Number(a), serde_json::Value::Number(b)) = (a, b) {
+                    if let (Value::Number(a), Value::Number(b)) = (a, b) {
                         if let (Some(a), Some(b)) = (a.as_i64(), b.as_i64()) {
                             return a.cmp(&b);
                         }

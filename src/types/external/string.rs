@@ -43,7 +43,7 @@ impl<'a> OutputValueType for &'a str {
         &self,
         _: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
-        Ok((*self).into())
+    ) -> ServerResult<Value> {
+        Ok(Value::String((*self).to_string()))
     }
 }

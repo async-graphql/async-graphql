@@ -10,12 +10,13 @@ use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
-    Response, ServerError, SubscriptionType, Type, ID,
+    Response, ServerError, SubscriptionType, Type, Value, ID,
 };
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 use itertools::Itertools;
 use std::any::Any;
+use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
@@ -420,6 +421,7 @@ where
             variables: request.variables,
             operation,
             fragments: document.fragments,
+            uploads: request.uploads,
             ctx_data: Arc::new(request.data),
         };
         Ok((env, cache_control))
@@ -544,11 +546,11 @@ where
                 let is_err = data.is_err();
                 let extensions = env.extensions.lock().result(&ctx_extension);
                 yield match data {
-                    Ok((name, value)) => Response::new(
-                        serde_json::json!({
-                            name: value,
-                        })
-                    ),
+                    Ok((name, value)) => {
+                        let mut map = BTreeMap::new();
+                        map.insert(name, value);
+                        Response::new(Value::Object(map))
+                    },
                     Err(e) => Response::from_errors(vec![e]),
                 }.extensions(extensions);
                 if is_err {

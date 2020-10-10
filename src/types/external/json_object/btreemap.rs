@@ -14,7 +14,7 @@ where
         match value {
             Value::Object(map) => map
                 .into_iter()
-                .map(|(name, value)| Ok((name.into_string(), T::parse(Some(value))?)))
+                .map(|(name, value)| Ok((name.to_string(), T::parse(Some(value))?)))
                 .collect::<Result<_, _>>()
                 .map_err(InputValueError::propagate),
             _ => Err(InputValueError::expected_type(value)),
@@ -24,9 +24,7 @@ where
     fn to_value(&self) -> Value {
         let mut map = BTreeMap::new();
         for (name, value) in self {
-            if let Ok(name) = Name::new(name.clone()) {
-                map.insert(name, value.to_value());
-            }
+            map.insert(Name::new(name), value.to_value());
         }
         Value::Object(map)
     }

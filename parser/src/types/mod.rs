@@ -7,19 +7,20 @@
 //! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/June2018/).
 
 use crate::pos::Positioned;
-use serde::de::{Deserializer, Error as _, Unexpected};
+use serde::de::Deserializer;
 use serde::ser::{Error as _, Serializer};
 use serde::{Deserialize, Serialize};
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::collections::{hash_map, BTreeMap, HashMap};
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter, Write};
-use std::fs::File;
 use std::ops::Deref;
 
 pub use executable::*;
 pub use serde_json::Number;
 pub use service::*;
+use std::iter::FromIterator;
+use std::sync::Arc;
 
 mod executable;
 mod service;
@@ -72,7 +73,7 @@ impl Type {
             base: if let Some(ty) = ty.strip_prefix('[') {
                 BaseType::List(Box::new(Self::new(ty.strip_suffix(']')?)?))
             } else {
-                BaseType::Named(Name::new(ty.to_owned()).ok()?)
+                BaseType::Named(Name::new(ty))
             },
             nullable,
         })
@@ -132,9 +133,127 @@ pub enum ConstValue {
     List(Vec<ConstValue>),
     /// An object. This is a map of keys to values.
     Object(BTreeMap<Name, ConstValue>),
-    /// An uploaded file.
-    #[serde(serialize_with = "fail_serialize_upload", skip_deserializing)]
-    Upload(UploadValue),
+}
+
+impl From<()> for ConstValue {
+    fn from((): ()) -> Self {
+        ConstValue::Null
+    }
+}
+
+macro_rules! from_integer {
+    ($($ty:ident),*) => {
+        $(
+            impl From<$ty> for ConstValue {
+                fn from(n: $ty) -> Self {
+                    ConstValue::Number(n.into())
+                }
+            }
+        )*
+    };
+}
+
+from_integer!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
+
+impl From<f32> for ConstValue {
+    fn from(f: f32) -> Self {
+        From::from(f as f64)
+    }
+}
+
+impl From<f64> for ConstValue {
+    fn from(f: f64) -> Self {
+        Number::from_f64(f).map_or(ConstValue::Null, ConstValue::Number)
+    }
+}
+
+impl From<bool> for ConstValue {
+    fn from(value: bool) -> Self {
+        ConstValue::Boolean(value)
+    }
+}
+
+impl From<String> for ConstValue {
+    fn from(value: String) -> Self {
+        ConstValue::String(value)
+    }
+}
+
+impl<'a> From<&'a str> for ConstValue {
+    fn from(value: &'a str) -> Self {
+        ConstValue::String(value.into())
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for ConstValue {
+    fn from(f: Cow<'a, str>) -> Self {
+        ConstValue::String(f.into_owned())
+    }
+}
+
+impl<T: Into<ConstValue>> FromIterator<T> for ConstValue {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        ConstValue::List(iter.into_iter().map(Into::into).collect())
+    }
+}
+
+impl<'a, T: Clone + Into<ConstValue>> From<&'a [T]> for ConstValue {
+    fn from(f: &'a [T]) -> Self {
+        ConstValue::List(f.iter().cloned().map(Into::into).collect())
+    }
+}
+
+impl<T: Into<ConstValue>> From<Vec<T>> for ConstValue {
+    fn from(f: Vec<T>) -> Self {
+        ConstValue::List(f.into_iter().map(Into::into).collect())
+    }
+}
+
+impl From<BTreeMap<Name, ConstValue>> for ConstValue {
+    fn from(f: BTreeMap<Name, ConstValue>) -> Self {
+        ConstValue::Object(f)
+    }
+}
+
+impl PartialEq<serde_json::Value> for ConstValue {
+    fn eq(&self, other: &serde_json::Value) -> bool {
+        match (self, other) {
+            (ConstValue::Null, serde_json::Value::Null) => true,
+            (ConstValue::Number(a), serde_json::Value::Number(b)) => a == b,
+            (ConstValue::String(a), serde_json::Value::String(b)) => a == b,
+            (ConstValue::Boolean(a), serde_json::Value::Bool(b)) => a == b,
+            (ConstValue::Enum(a), serde_json::Value::String(b)) => a == b,
+            (ConstValue::List(a), serde_json::Value::Array(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                a.iter().zip(b.iter()).all(|(a, b)| a == b)
+            }
+            (ConstValue::Object(a), serde_json::Value::Object(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                for (a_key, a_value) in a.iter() {
+                    if let Some(b_value) = b.get(a_key.as_str()) {
+                        if b_value != a_value {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+
+                true
+            }
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<ConstValue> for serde_json::Value {
+    fn eq(&self, other: &ConstValue) -> bool {
+        other == self
+    }
 }
 
 impl ConstValue {
@@ -155,7 +274,6 @@ impl ConstValue {
                     .map(|(key, value)| (key, value.into_value()))
                     .collect(),
             ),
-            Self::Upload(upload) => Value::Upload(upload),
         }
     }
 
@@ -191,7 +309,7 @@ impl Display for ConstValue {
             Self::String(val) => write_quoted(val, f),
             Self::Boolean(true) => f.write_str("true"),
             Self::Boolean(false) => f.write_str("false"),
-            Self::Null | Self::Upload(_) => f.write_str("null"),
+            Self::Null => f.write_str("null"),
             Self::Enum(name) => f.write_str(name),
             Self::List(items) => write_list(items, f),
             Self::Object(map) => write_object(map, f),
@@ -205,6 +323,7 @@ impl TryFrom<serde_json::Value> for ConstValue {
         Self::deserialize(value)
     }
 }
+
 impl TryFrom<ConstValue> for serde_json::Value {
     type Error = serde_json::Error;
     fn try_from(value: ConstValue) -> Result<Self, Self::Error> {
@@ -241,9 +360,6 @@ pub enum Value {
     List(Vec<Value>),
     /// An object. This is a map of keys to values.
     Object(BTreeMap<Name, Value>),
-    /// An uploaded file.
-    #[serde(serialize_with = "fail_serialize_upload", skip_deserializing)]
-    Upload(UploadValue),
 }
 
 impl Value {
@@ -277,7 +393,6 @@ impl Value {
                     .map(|(key, value)| Ok((key, value.into_const_with_mut(f)?)))
                     .collect::<Result<_, _>>()?,
             ),
-            Self::Upload(upload) => ConstValue::Upload(upload),
         })
     }
 
@@ -322,7 +437,7 @@ impl Display for Value {
             Self::String(val) => write_quoted(val, f),
             Self::Boolean(true) => f.write_str("true"),
             Self::Boolean(false) => f.write_str("false"),
-            Self::Null | Self::Upload(_) => f.write_str("null"),
+            Self::Null => f.write_str("null"),
             Self::Enum(name) => f.write_str(name),
             Self::List(items) => write_list(items, f),
             Self::Object(map) => write_object(map, f),
@@ -351,9 +466,6 @@ impl TryFrom<Value> for serde_json::Value {
 
 fn fail_serialize_variable<S: Serializer>(_: &str, _: S) -> Result<S::Ok, S::Error> {
     Err(S::Error::custom("cannot serialize variable"))
-}
-fn fail_serialize_upload<S: Serializer>(_: &UploadValue, _: S) -> Result<S::Ok, S::Error> {
-    Err(S::Error::custom("cannot serialize uploaded file"))
 }
 
 fn write_quoted(s: &str, f: &mut Formatter<'_>) -> fmt::Result {
@@ -389,51 +501,6 @@ fn write_object<K: Display, V: Display>(
     }
     f.write_char('}')
 }
-
-/// A file upload value.
-pub struct UploadValue {
-    /// The name of the file.
-    pub filename: String,
-    /// The content type of the file.
-    pub content_type: Option<String>,
-    /// The file data.
-    pub content: File,
-}
-
-impl UploadValue {
-    /// Attempt to clone the upload value. This type's `Clone` implementation simply calls this and
-    /// panics on failure.
-    ///
-    /// # Errors
-    ///
-    /// Fails if cloning the inner `File` fails.
-    pub fn try_clone(&self) -> std::io::Result<Self> {
-        Ok(Self {
-            filename: self.filename.clone(),
-            content_type: self.content_type.clone(),
-            content: self.content.try_clone()?,
-        })
-    }
-}
-
-impl Clone for UploadValue {
-    fn clone(&self) -> Self {
-        self.try_clone().unwrap()
-    }
-}
-
-impl fmt::Debug for UploadValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Upload({})", self.filename)
-    }
-}
-
-impl PartialEq for UploadValue {
-    fn eq(&self, other: &Self) -> bool {
-        self.filename == other.filename
-    }
-}
-impl Eq for UploadValue {}
 
 /// A const GraphQL directive, such as `@deprecated(reason: "Use the other field)`. This differs
 /// from [`Directive`](struct.Directive.html) in that it uses [`ConstValue`](enum.ConstValue.html)
@@ -509,60 +576,28 @@ impl Directive {
     }
 }
 
-/// A GraphQL name. This is a newtype wrapper around a string with the addition guarantee that it
-/// is a valid GraphQL name (follows the regex `[_A-Za-z][_0-9A-Za-z]*`).
+/// A GraphQL name.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Name).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
-#[serde(transparent)]
-pub struct Name(String);
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Name(Arc<str>);
+
+impl Serialize for Name {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.0)
+    }
+}
 
 impl Name {
-    /// Check whether the name is valid (follows the regex `[_A-Za-z][_0-9A-Za-z]*`).
-    #[must_use]
-    pub fn is_valid(name: &str) -> bool {
-        let mut bytes = name.bytes();
-        bytes
-            .next()
-            .map_or(false, |c| c.is_ascii_alphabetic() || c == b'_')
-            && bytes.all(|c| c.is_ascii_alphanumeric() || c == b'_')
-    }
-
-    /// Create a new name without checking whether it is valid or not. This will always check in
-    /// debug mode.
-    ///
-    /// This function is not `unsafe` because an invalid name does not cause UB, but care should be
-    /// taken to make sure it is a valid name.
-    #[must_use]
-    pub fn new_unchecked(name: String) -> Self {
-        debug_assert!(Self::is_valid(&name));
-        Self(name)
-    }
-
-    /// Create a new name, checking whether it is valid. Returns ownership of the string if it
-    /// fails.
-    ///
-    /// # Errors
-    ///
-    /// Fails if the name is not a valid name.
-    pub fn new(name: String) -> Result<Self, String> {
-        if Self::is_valid(&name) {
-            Ok(Self(name))
-        } else {
-            Err(name)
-        }
+    /// Create a new name.
+    pub fn new(name: &str) -> Self {
+        Self(name.into())
     }
 
     /// Get the name as a string.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
-    /// Convert the name to a `String`.
-    #[must_use]
-    pub fn into_string(self) -> String {
-        self.0
     }
 }
 
@@ -575,12 +610,6 @@ impl AsRef<str> for Name {
 impl Borrow<str> for Name {
     fn borrow(&self) -> &str {
         &self.0
-    }
-}
-
-impl From<Name> for String {
-    fn from(name: Name) -> Self {
-        name.0
     }
 }
 
@@ -600,17 +629,17 @@ impl Display for Name {
 
 impl PartialEq<String> for Name {
     fn eq(&self, other: &String) -> bool {
-        self.0 == *other
+        self.as_str() == other
     }
 }
 impl PartialEq<str> for Name {
     fn eq(&self, other: &str) -> bool {
-        self.0 == other
+        self.as_str() == other
     }
 }
 impl PartialEq<Name> for String {
     fn eq(&self, other: &Name) -> bool {
-        other == self
+        self == other.as_str()
     }
 }
 impl PartialEq<Name> for str {
@@ -631,18 +660,8 @@ impl<'a> PartialEq<Name> for &'a str {
 
 impl<'de> Deserialize<'de> for Name {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Self::new(String::deserialize(deserializer)?)
-            .map_err(|s| D::Error::invalid_value(Unexpected::Str(&s), &"a GraphQL name"))
+        Ok(Self(
+            String::deserialize(deserializer)?.into_boxed_str().into(),
+        ))
     }
-}
-
-#[cfg(test)]
-#[test]
-fn test_valid_names() {
-    assert!(Name::is_valid("valid_name"));
-    assert!(Name::is_valid("numbers123_456_789abc"));
-    assert!(Name::is_valid("MiXeD_CaSe"));
-    assert!(Name::is_valid("_"));
-    assert!(!Name::is_valid("invalid name"));
-    assert!(!Name::is_valid("123and_text"));
 }

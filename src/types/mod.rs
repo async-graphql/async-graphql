@@ -25,6 +25,6 @@ pub use maybe_undefined::MaybeUndefined;
 pub use merged_object::{MergedObject, MergedObjectTail};
 #[cfg(feature = "string_number")]
 pub use string_number::StringNumber;
-pub use upload::Upload;
+pub use upload::{Upload, UploadValue};
 
 pub(crate) use query_root::QueryRoot;

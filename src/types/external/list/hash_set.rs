@@ -53,7 +53,7 @@ impl<T: OutputValueType + Send + Sync + Hash + Eq> OutputValueType for HashSet<T
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         resolve_list(ctx, field, self).await
     }
 }

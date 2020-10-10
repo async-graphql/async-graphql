@@ -1,13 +1,15 @@
 use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ResolveInfo};
 use crate::parser::types::Field;
-use crate::{ContextSelectionSet, OutputValueType, PathSegment, Positioned, ServerResult, Type};
+use crate::{
+    ContextSelectionSet, OutputValueType, PathSegment, Positioned, ServerResult, Type, Value,
+};
 
 /// Resolve an list by executing each of the items concurrently.
 pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
     ctx: &ContextSelectionSet<'a>,
     field: &Positioned<Field>,
     iter: impl IntoIterator<Item = T>,
-) -> ServerResult<serde_json::Value> {
+) -> ServerResult<Value> {
     let mut futures = Vec::new();
 
     for (idx, item) in iter.into_iter().enumerate() {
@@ -45,5 +47,5 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
         });
     }
 
-    Ok(futures::future::try_join_all(futures).await?.into())
+    Ok(Value::List(futures::future::try_join_all(futures).await?))
 }

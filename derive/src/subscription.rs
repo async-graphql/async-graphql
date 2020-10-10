@@ -381,7 +381,7 @@ pub fn generate(
             fn create_field_stream<'a>(
                 &'a self,
                 ctx: &'a #crate_name::Context<'a>,
-            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::serde_json::Value>> + Send + 'a>>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + 'a>>> {
                 #(#create_stream)*
                 None
             }

@@ -51,7 +51,7 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for LinkedList<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         resolve_list(ctx, field, self).await
     }
 }

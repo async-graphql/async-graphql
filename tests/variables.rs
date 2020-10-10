@@ -1,4 +1,5 @@
 use async_graphql::*;
+use std::collections::HashMap;
 
 #[async_std::test]
 pub async fn test_variables() {
@@ -268,6 +269,37 @@ pub async fn test_variables_enum() {
             "a": 1,
             "b": 2,
             "c": 3,
+        })
+    );
+}
+
+#[async_std::test]
+pub async fn test_variables_json() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn value(&self, value: Json<HashMap<String, i32>>) -> i32 {
+            *value.get("a-b").unwrap()
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let query = Request::new(
+        r#"
+            query QueryWithVariables($value: JSON) {
+                value(value: $value)
+            }
+        "#,
+    )
+    .variables(Variables::from_json(serde_json::json!({
+        "value": { "a-b": 123 },
+    })));
+
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        serde_json::json!({
+            "value": 123,
         })
     );
 }

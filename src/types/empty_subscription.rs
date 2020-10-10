@@ -1,4 +1,4 @@
-use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type};
+use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type, Value};
 use futures::{stream, Stream};
 use std::borrow::Cow;
 use std::pin::Pin;
@@ -34,7 +34,7 @@ impl SubscriptionType for EmptySubscription {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'a>,
-    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<serde_json::Value>> + Send + 'a>>>
+    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>>
     where
         Self: Send + Sync + 'static + Sized,
     {

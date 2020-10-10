@@ -196,10 +196,10 @@ pub async fn test_merged_subscription() {
             .boxed();
         for i in 0i32..10 {
             assert_eq!(
-                Some(serde_json::json!({
+                serde_json::json!({
                     "events1": i,
-                })),
-                stream.next().await
+                }),
+                stream.next().await.unwrap()
             );
         }
         assert!(stream.next().await.is_none());
@@ -212,10 +212,10 @@ pub async fn test_merged_subscription() {
             .boxed();
         for i in 10i32..20 {
             assert_eq!(
-                Some(serde_json::json!({
+                serde_json::json!({
                     "events2": i,
-                })),
-                stream.next().await
+                }),
+                stream.next().await.unwrap()
             );
         }
         assert!(stream.next().await.is_none());

@@ -1,8 +1,21 @@
 use crate::{parser, InputValueType, Pos, Value};
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;
 use thiserror::Error;
+
+/// Extensions to the error.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
+#[serde(transparent)]
+pub struct ErrorExtensionValues(BTreeMap<String, Value>);
+
+impl ErrorExtensionValues {
+    /// Set an extension value.
+    pub fn set(&mut self, name: impl AsRef<str>, value: impl Into<Value>) {
+        self.0.insert(name.as_ref().to_string(), value.into());
+    }
+}
 
 /// An error in a GraphQL server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -16,8 +29,15 @@ pub struct ServerError {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub path: Vec<PathSegment>,
     /// Extensions to the error.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extensions: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(skip_serializing_if = "error_extensions_is_empty")]
+    pub extensions: Option<ErrorExtensionValues>,
+}
+
+fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
+    match values {
+        Some(values) => values.0.is_empty(),
+        None => true,
+    }
 }
 
 impl ServerError {
@@ -152,8 +172,8 @@ pub struct Error {
     /// The error message.
     pub message: String,
     /// Extensions to the error.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extensions: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(skip_serializing_if = "error_extensions_is_empty")]
+    pub extensions: Option<ErrorExtensionValues>,
 }
 
 impl Error {
@@ -188,55 +208,6 @@ impl<T: Display> From<T> for Error {
 
 /// An alias for `Result<T, Error>`.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-/*
-/// Extend errors with additional information.
-///
-/// This trait is implemented for `Error` and `Result<T>`.
-pub trait ExtendError {
-    /// Extend the error with the extensions.
-    ///
-    /// The value must be a map otherwise this function will panic. It takes a value for the
-    /// ergonomics of being able to use serde_json's `json!` macro.
-    ///
-    /// If the error already contains extensions they are appended on.
-    fn extend(self, extensions: serde_json::Value) -> Self;
-
-    /// Extend the error with a callback to make the extensions.
-    fn extend_with(self, f: impl FnOnce(&Error) -> serde_json::Value) -> Self;
-}
-
-impl ExtendError for Error {
-    fn extend(self, extensions: serde_json::Value) -> Self {
-        let mut extensions = match extensions {
-            serde_json::Value::Object(map) => map,
-            _ => panic!("Extend must be called with a map"),
-        };
-        Self {
-            extensions: Some(match self.extensions {
-                Some(mut existing) => {
-                    existing.append(&mut extensions);
-                    existing
-                }
-                None => extensions,
-            }),
-            ..self
-        }
-    }
-    fn extend_with(self, f: impl FnOnce(&Error) -> serde_json::Value) -> Self {
-        let ext = f(&self);
-        self.extend(ext)
-    }
-}
-
-impl<T> ExtendError for Result<T> {
-    fn extend(self, extensions: serde_json::Value) -> Self {
-        self.map_err(|e| e.extend(extensions))
-    }
-    fn extend_with(self, f: impl FnOnce(&Error) -> serde_json::Value) -> Self {
-        self.map_err(|e| e.extend_with(f))
-    }
-}*/
 
 /// An error parsing the request.
 #[derive(Debug, Error)]
@@ -305,24 +276,14 @@ pub trait ErrorExtensions: Sized {
     /// Add extensions to the error, using a callback to make the extensions.
     fn extend_with<C>(self, cb: C) -> Error
     where
-        C: FnOnce(&Self) -> serde_json::Value,
+        C: FnOnce(&Self, &mut ErrorExtensionValues),
     {
         let message = self.extend().message;
-        match cb(&self) {
-            serde_json::Value::Object(cb_res) => {
-                let extensions = match self.extend().extensions {
-                    Some(mut extensions) => {
-                        extensions.extend(cb_res);
-                        extensions
-                    }
-                    None => cb_res.into_iter().collect(),
-                };
-                Error {
-                    message,
-                    extensions: Some(extensions),
-                }
-            }
-            _ => panic!("Extend must be called with a map"),
+        let mut extensions = self.extend().extensions.unwrap_or_default();
+        cb(&self, &mut extensions);
+        Error {
+            message,
+            extensions: Some(extensions),
         }
     }
 }
@@ -349,7 +310,7 @@ pub trait ResultExt<T, E>: Sized {
     /// Extend the error value of the result with the callback.
     fn extend_err<C>(self, cb: C) -> Result<T>
     where
-        C: FnOnce(&E) -> serde_json::Value;
+        C: FnOnce(&E, &mut ErrorExtensionValues);
 
     /// Extend the result to a `Result`.
     fn extend(self) -> Result<T>;
@@ -363,10 +324,10 @@ where
 {
     fn extend_err<C>(self, cb: C) -> Result<T>
     where
-        C: FnOnce(&E) -> serde_json::Value,
+        C: FnOnce(&E, &mut ErrorExtensionValues),
     {
         match self {
-            Err(err) => Err(err.extend_with(|e| cb(e))),
+            Err(err) => Err(err.extend_with(|e, ee| cb(e, ee))),
             Ok(value) => Ok(value),
         }
     }

@@ -3,7 +3,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
     registry, Any, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
-    ServerError, ServerResult, SimpleObject, Type,
+    ServerError, ServerResult, SimpleObject, Type, Value,
 };
 
 use indexmap::map::IndexMap;
@@ -81,7 +81,7 @@ impl<T: Type> Type for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
                 return Ok(None);
@@ -122,7 +122,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
                         .ok_or_else(|| ServerError::new("Entity not found.").at(ctx.item.pos))?,
                 );
             }
-            return Ok(Some(res.into()));
+            return Ok(Some(Value::List(res)));
         } else if ctx.item.node.name.node == "_service" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
             return OutputValueType::resolve(
@@ -146,7 +146,7 @@ impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         resolve_container(ctx, self).await
     }
 }

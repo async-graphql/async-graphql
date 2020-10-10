@@ -7,6 +7,7 @@ use crate::{
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::convert::TryInto;
 use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
@@ -95,8 +96,11 @@ impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
         &self,
         _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
-        Ok(serde_json::to_value(&self.0).unwrap_or_else(|_| serde_json::Value::Null))
+    ) -> ServerResult<Value> {
+        Ok(serde_json::to_value(&self.0)
+            .ok()
+            .and_then(|json| json.try_into().ok())
+            .unwrap_or_else(|| Value::Null))
     }
 }
 

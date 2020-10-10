@@ -5,7 +5,7 @@ use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result,
-    ServerResult, Type,
+    ServerResult, Type, Value,
 };
 use futures::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
@@ -196,7 +196,7 @@ where
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<serde_json::Value>> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "pageInfo" {
             let page_info = PageInfo {
                 has_previous_page: self.has_previous_page,
@@ -231,7 +231,7 @@ where
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
-    ) -> ServerResult<serde_json::Value> {
+    ) -> ServerResult<Value> {
         resolve_container(ctx, self).await
     }
 }

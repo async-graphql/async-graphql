@@ -5,7 +5,8 @@ use crate::parser::types::{
 };
 use crate::schema::SchemaEnv;
 use crate::{
-    Error, InputValueType, Lookahead, Pos, Positioned, Result, ServerError, ServerResult, Value,
+    Error, InputValueType, Lookahead, Pos, Positioned, Result, ServerError, ServerResult,
+    UploadValue, Value,
 };
 use fnv::FnvHashMap;
 use serde::ser::{SerializeSeq, Serializer};
@@ -248,6 +249,7 @@ pub struct QueryEnvInner {
     pub variables: Variables,
     pub operation: Positioned<OperationDefinition>,
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
+    pub uploads: Vec<UploadValue>,
     pub ctx_data: Arc<Data>,
 }
 

@@ -309,8 +309,5 @@ fn parse_arguments(
 
 fn parse_name(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Name>> {
     debug_assert_eq!(pair.as_rule(), Rule::name);
-    Ok(Positioned::new(
-        Name::new_unchecked(pair.as_str().to_owned()),
-        pc.step(&pair),
-    ))
+    Ok(Positioned::new(Name::new(pair.as_str()), pc.step(&pair)))
 }

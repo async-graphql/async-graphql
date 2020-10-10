@@ -188,17 +188,24 @@ fn upload() -> Result<()> {
             struct MutationRoot;
             #[Object]
             impl MutationRoot {
-                async fn single_upload(&self, file: Upload) -> FileInfo {
-                    println!("single_upload: filename={}", file.filename());
-                    println!("single_upload: content_type={:?}", file.content_type());
+                async fn single_upload(&self, ctx: &Context<'_>, file: Upload) -> FileInfo {
+                    let upload_value = file.value(ctx).unwrap();
+                    println!("single_upload: filename={}", upload_value.filename);
+                    println!(
+                        "single_upload: content_type={:?}",
+                        upload_value.content_type
+                    );
 
                     let file_info = FileInfo {
-                        filename: file.filename().into(),
-                        mime_type: file.content_type().map(ToString::to_string),
+                        filename: upload_value.filename.clone(),
+                        mime_type: upload_value.content_type.clone(),
                     };
 
                     let mut content = String::new();
-                    file.into_read().read_to_string(&mut content).unwrap();
+                    upload_value
+                        .into_read()
+                        .read_to_string(&mut content)
+                        .unwrap();
                     assert_eq!(content, "test".to_owned());
 
                     file_info

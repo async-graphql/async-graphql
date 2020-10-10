@@ -126,18 +126,19 @@ pub async fn test_field_features() {
         stream
             .next()
             .await
-            .map(|resp| resp.into_result().unwrap().data),
-        Some(serde_json::json!({
+            .map(|resp| resp.into_result().unwrap().data)
+            .unwrap(),
+        serde_json::json!({
             "values": 10
-        }))
+        })
     );
 
     let mut stream = schema.execute_stream("subscription { valuesBson }").boxed();
     assert_eq!(
-        stream.next().await.map(|resp| resp.data),
-        Some(serde_json::json!({
+        stream.next().await.map(|resp| resp.data).unwrap(),
+        serde_json::json!({
             "valuesBson": 10
-        }))
+        })
     );
 
     assert_eq!(

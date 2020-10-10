@@ -42,5 +42,5 @@ pub fn parse_enum<T: EnumType + InputValueType>(value: Value) -> InputValueResul
 /// This can be used to implement `InputValueType::to_value` or `OutputValueType::resolve`.
 pub fn enum_value<T: EnumType>(value: T) -> Value {
     let item = T::items().iter().find(|item| item.value == value).unwrap();
-    Value::Enum(Name::new_unchecked(item.name.to_owned()))
+    Value::Enum(Name::new(item.name))
 }

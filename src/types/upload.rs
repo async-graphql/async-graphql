@@ -1,7 +1,53 @@
-use crate::parser::types::UploadValue;
-use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use crate::{registry, Context, InputValueError, InputValueResult, InputValueType, Type, Value};
+use futures::AsyncRead;
 use std::borrow::Cow;
+use std::fs::File;
 use std::io::Read;
+
+/// A file upload value.
+pub struct UploadValue {
+    /// The name of the file.
+    pub filename: String,
+    /// The content type of the file.
+    pub content_type: Option<String>,
+    /// The file data.
+    pub content: File,
+}
+
+impl UploadValue {
+    /// Attempt to clone the upload value. This type's `Clone` implementation simply calls this and
+    /// panics on failure.
+    ///
+    /// # Errors
+    ///
+    /// Fails if cloning the inner `File` fails.
+    pub fn try_clone(&self) -> std::io::Result<Self> {
+        Ok(Self {
+            filename: self.filename.clone(),
+            content_type: self.content_type.clone(),
+            content: self.content.try_clone()?,
+        })
+    }
+
+    /// Convert to a `Read`.
+    ///
+    /// **Note**: this is a *synchronous/blocking* reader.
+    pub fn into_read(self) -> impl Read + Sync + Send + 'static {
+        self.content
+    }
+
+    #[cfg(feature = "unblock")]
+    #[cfg_attr(feature = "nightly", doc(cfg(feature = "unblock")))]
+    /// Convert to a `AsyncRead`.
+    pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
+        blocking::Unblock::new(self.content)
+    }
+
+    /// Returns the size of the file, in bytes.
+    pub fn size(&self) -> std::io::Result<u64> {
+        self.content.metadata().map(|meta| meta.len())
+    }
+}
 
 /// Uploaded file
 ///
@@ -23,8 +69,8 @@ use std::io::Read;
 ///
 /// #[Object]
 /// impl MutationRoot {
-///     async fn upload(&self, file: Upload) -> bool {
-///         println!("upload: filename={}", file.filename());
+///     async fn upload(&self, ctx: &Context<'_>, file: Upload) -> bool {
+///         println!("upload: filename={}", file.value(ctx).unwrap().filename);
 ///         true
 ///     }
 /// }
@@ -42,36 +88,12 @@ use std::io::Read;
 /// --form 'map={ "0": ["variables.file"] }' \
 /// --form '0=@myFile.txt'
 /// ```
-pub struct Upload(UploadValue);
+pub struct Upload(usize);
 
 impl Upload {
-    /// Filename
-    pub fn filename(&self) -> &str {
-        self.0.filename.as_str()
-    }
-
-    /// Content type, such as `application/json`, `image/jpg` ...
-    pub fn content_type(&self) -> Option<&str> {
-        self.0.content_type.as_deref()
-    }
-
-    /// Returns the size of the file, in bytes.
-    pub fn size(&self) -> std::io::Result<u64> {
-        self.0.content.metadata().map(|meta| meta.len())
-    }
-
-    /// Convert to a `Read`.
-    ///
-    /// **Note**: this is a *synchronous/blocking* reader.
-    pub fn into_read(self) -> impl Read + Sync + Send + 'static {
-        self.0.content
-    }
-
-    #[cfg(feature = "unblock")]
-    #[cfg_attr(feature = "nightly", doc(cfg(feature = "unblock")))]
-    /// Convert to a `AsyncRead`.
-    pub fn into_async_read(self) -> impl futures::AsyncRead + Sync + Send + 'static {
-        blocking::Unblock::new(self.0.content)
+    /// Get the upload value.
+    pub fn value(&self, ctx: &Context<'_>) -> std::io::Result<UploadValue> {
+        ctx.query_env.uploads[self.0].try_clone()
     }
 }
 
@@ -84,19 +106,21 @@ impl Type for Upload {
         registry.create_type::<Self, _>(|_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
-            is_valid: |value| matches!(value, Value::Upload(_)),
+            is_valid: |value| matches!(value, Value::String(_)),
         })
     }
 }
 
 impl InputValueType for Upload {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
+        const PREFIX: &str = "#__graphql_file__:";
         let value = value.unwrap_or_default();
-        if let Value::Upload(upload) = value {
-            Ok(Upload(upload))
-        } else {
-            Err(InputValueError::expected_type(value))
+        if let Value::String(s) = &value {
+            if s.starts_with(PREFIX) {
+                return Ok(Upload(s[PREFIX.len()..].parse::<usize>().unwrap()));
+            }
         }
+        Err(InputValueError::expected_type(value))
     }
 
     fn to_value(&self) -> Value {

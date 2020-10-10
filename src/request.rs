@@ -1,10 +1,8 @@
-use crate::parser::types::UploadValue;
-use crate::{Data, ParseRequestError, Value, Variables};
+use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
 use serde::{Deserialize, Deserializer};
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Formatter};
-use std::fs::File;
 
 /// GraphQL request.
 ///
@@ -24,6 +22,10 @@ pub struct Request {
     /// The variables of the request.
     #[serde(default, deserialize_with = "deserialize_variables")]
     pub variables: Variables,
+
+    /// Uploads
+    #[serde(skip)]
+    pub uploads: Vec<UploadValue>,
 
     /// The data of the request that can be accessed through `Context::data`.
     ///
@@ -49,6 +51,7 @@ impl Request {
             query: query.into(),
             operation_name: None,
             variables: Variables::default(),
+            uploads: Vec::default(),
             data: Data::default(),
             extensions: Default::default(),
         }
@@ -79,22 +82,13 @@ impl Request {
     /// `variables.files.2.content` is equivalent to the Rust code
     /// `request.variables["files"][2]["content"]`. If no variable exists at the path this function
     /// won't do anything.
-    pub fn set_upload(
-        &mut self,
-        var_path: &str,
-        filename: String,
-        content_type: Option<String>,
-        content: File,
-    ) {
+    pub fn set_upload(&mut self, var_path: &str, upload: UploadValue) {
         let variable = match self.variables.variable_path(var_path) {
             Some(variable) => variable,
             None => return,
         };
-        *variable = Value::Upload(UploadValue {
-            filename,
-            content_type,
-            content,
-        });
+        self.uploads.push(upload);
+        *variable = Value::String(format!("#__graphql_file__:{}", self.uploads.len() - 1));
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Number, Scalar, ScalarType, Value};
 
 /// The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
 #[Scalar(internal, name = "Float")]
@@ -21,7 +21,7 @@ impl ScalarType for f32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from_f64(*self as f64).unwrap())
+        Value::Number(Number::from_f64(*self as f64).unwrap())
     }
 }
 

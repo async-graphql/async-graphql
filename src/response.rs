@@ -1,15 +1,15 @@
-use crate::{CacheControl, Result, ServerError};
+use crate::{CacheControl, Result, ServerError, Value};
 use serde::Serialize;
 
 /// Query response
 #[derive(Debug, Default, Serialize)]
 pub struct Response {
     /// Data of query result
-    pub data: serde_json::Value,
+    pub data: Value,
 
     /// Extensions result
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extensions: Option<serde_json::Value>,
+    pub extensions: Option<Value>,
 
     /// Cache control value
     #[serde(skip)]
@@ -23,7 +23,7 @@ pub struct Response {
 impl Response {
     /// Create a new successful response with the data.
     #[must_use]
-    pub fn new(data: impl Into<serde_json::Value>) -> Self {
+    pub fn new(data: impl Into<Value>) -> Self {
         Self {
             data: data.into(),
             ..Default::default()
@@ -41,7 +41,7 @@ impl Response {
 
     /// Set the extensions result of the response.
     #[must_use]
-    pub fn extensions(self, extensions: Option<serde_json::Value>) -> Self {
+    pub fn extensions(self, extensions: Option<Value>) -> Self {
         Self { extensions, ..self }
     }
 
@@ -127,15 +127,15 @@ mod tests {
 
     #[test]
     fn test_batch_response_single() {
-        let resp = BatchResponse::Single(Response::new(serde_json::Value::Bool(true)));
+        let resp = BatchResponse::Single(Response::new(Value::Boolean(true)));
         assert_eq!(serde_json::to_string(&resp).unwrap(), r#"{"data":true}"#);
     }
 
     #[test]
     fn test_batch_response_batch() {
         let resp = BatchResponse::Batch(vec![
-            Response::new(serde_json::Value::Bool(true)),
-            Response::new(serde_json::Value::String("1".to_string())),
+            Response::new(Value::Boolean(true)),
+            Response::new(Value::String("1".to_string())),
         ]);
         assert_eq!(
             serde_json::to_string(&resp).unwrap(),
