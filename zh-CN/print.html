@@ -937,16 +937,14 @@ impl Query {
 <p>我建议您查看此 <a href="https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs">错误扩展示例</a> 作为快速入门。</p>
 <h2><a class="header" href="#一般概念" id="一般概念">一般概念</a></h2>
 <p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
-由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的
-字段<code>Option&lt;serde_json::Value&gt;</code>，如果它是一个<code>serde_json::Map</code>，则可以扩展错误的信息。</p>
+由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
-    let my_extension = json!({ &quot;details&quot;: &quot;CAN_NOT_FETCH&quot; });
-    Err(Error(&quot;MyMessage&quot;, Some(my_extension)))
- }
+    Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
+}
 <span class="boring">}
 </span></code></pre></pre>
 <p>然后可以返回如下响应：</p>
@@ -975,8 +973,8 @@ impl Query {
 async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
-         .map_err(|err: ParseIntError| err.extend_with(|_err| json!({&quot;code&quot;: 404})))?)
- }
+         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h3><a class="header" href="#为自定义错误实现errorextensions" id="为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
@@ -1002,15 +1000,12 @@ pub enum MyError {
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&amp;self) -&gt; Error {
-        let extensions = match self {
-            MyError::NotFound =&gt; json!({&quot;code&quot;: &quot;NOT_FOUND&quot;}),
-            MyError::ServerError(reason) =&gt; json!({ &quot;reason&quot;: reason }),
-            MyError::ErrorWithoutExtensions =&gt; {
-                json!(&quot;This will be ignored since it does not represent an object.&quot;)
-            }
-        };
-
-        Error(format!(&quot;{}&quot;, self), Some(extensions))
+        Error::new(format!(&quot;{}&quot;, self)).extend_with(|err, e| 
+            match self {
+              MyError::NotFound =&gt; e.set(&quot;code&quot;, &quot;NOT_FOUND&quot;),
+              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason),
+              MyError::ErrorWithoutExtensions =&gt; {}
+          })
     }
 }
 <span class="boring">}
@@ -1022,7 +1017,7 @@ impl ErrorExtensions for MyError {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
-    Err(MyError::NotFound.extend_with(|_| json!({ &quot;on_the_fly&quot;: &quot;some_more_info&quot; })))
+    Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
 }
 <span class="boring">}
 </span></code></pre></pre>
@@ -1049,9 +1044,8 @@ impl ErrorExtensions for MyError {
 async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
-         .extend_err(|_| json!({&quot;code&quot;: 404}))?)
- }
-
+         .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
+}
 <span class="boring">}
 </span></code></pre></pre>
 <h3><a class="header" href="#链式调用" id="链式调用">链式调用</a></h3>
@@ -1064,10 +1058,10 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
     match &quot;234a&quot;.parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
-            .extend_with(|_| json!({&quot;code&quot;: 404}))
-            .extend_with(|_| json!({&quot;details&quot;: &quot;some more info..&quot;}))
+            .extend_with(|_, e| e.set(&quot;code&quot;, 404))
+            .extend_with(|_, e| e.set(&quot;details&quot;, &quot;some more info..&quot;))
             // keys may also overwrite previous keys...
-            .extend_with(|_| json!({&quot;code&quot;: 500}))),
+            .extend_with(|_, e| e.set(&quot;code&quot;, 500))),
     }
 }
 <span class="boring">}
@@ -1094,7 +1088,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
-    &quot;234a&quot;.parse().extend_err(|_| json!({&quot;code&quot;: 404}))
+    &quot;234a&quot;.parse().extend_err(|_, e| e.set(&quot;code&quot;, 404))
 }
 </code></pre>
 <p>但这可以通过编译：</p>
@@ -1102,7 +1096,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
     &quot;234a&quot;
       .parse()
-      .map_err(|ref e: ParseIntError| e.extend_with(|_| json!({&quot;code&quot;: 404})))
+      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
 }
 </code></pre>
 <h1><a class="header" href="#apollo-tracing支持" id="apollo-tracing支持">Apollo Tracing支持</a></h1>
@@ -1209,7 +1203,7 @@ impl ScalarType for StringNumber {
             Ok(value.parse().map(StringNumber)?)
         } else {
             // 类型不匹配
-            Err(InputValueError::ExpectedType(value))
+            Err(InputValueError::expected_type(value))
         }
     }
 

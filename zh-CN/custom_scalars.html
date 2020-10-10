@@ -179,7 +179,7 @@ impl ScalarType for StringNumber {
             Ok(value.parse().map(StringNumber)?)
         } else {
             // 类型不匹配
-            Err(InputValueError::ExpectedType(value))
+            Err(InputValueError::expected_type(value))
         }
     }
 
