@@ -1,6 +1,6 @@
-use crate::parser::types::{Name, OperationDefinition, VariableDefinition};
+use crate::parser::types::{OperationDefinition, VariableDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{Name, Positioned};
 use std::collections::HashSet;
 
 #[derive(Default)]

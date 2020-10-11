@@ -1,11 +1,11 @@
 use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition, Value,
-    VariableDefinition,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
 };
 use crate::registry::MetaTypeName;
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned};
+use crate::{Name, Pos, Positioned};
+use async_graphql_value::Value;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]

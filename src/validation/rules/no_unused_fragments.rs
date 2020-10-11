@@ -1,9 +1,9 @@
 use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, Name, OperationDefinition,
+    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
 };
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned};
+use crate::{Name, Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]

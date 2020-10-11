@@ -1,6 +1,6 @@
-use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread, Name};
+use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread};
 use crate::validation::visitor::{RuleError, Visitor, VisitorContext};
-use crate::{Pos, Positioned};
+use crate::{Name, Pos, Positioned};
 use std::collections::{HashMap, HashSet};
 
 struct CycleDetector<'a> {

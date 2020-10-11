@@ -1,5 +1,4 @@
-use crate::parser::types::Name;
-use crate::{InputValueError, InputValueResult, InputValueType, Type, Value};
+use crate::{InputValueError, InputValueResult, InputValueType, Name, Type, Value};
 
 /// A variant of an enum.
 pub struct EnumItem<T> {

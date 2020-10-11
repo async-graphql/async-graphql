@@ -1,9 +1,7 @@
-use crate::parser::types::{
-    FragmentDefinition, InlineFragment, Name, TypeCondition, VariableDefinition,
-};
+use crate::parser::types::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition};
 use crate::registry::MetaTypeName;
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Pos, Positioned};
+use crate::{Name, Pos, Positioned};
 
 #[derive(Default)]
 pub struct KnownTypeNames;

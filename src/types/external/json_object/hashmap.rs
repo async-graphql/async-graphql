@@ -1,6 +1,6 @@
-use crate::parser::types::Name;
 use crate::{
-    InputValueError, InputValueResult, InputValueType, OutputValueType, Scalar, ScalarType, Value,
+    InputValueError, InputValueResult, InputValueType, Name, OutputValueType, Scalar, ScalarType,
+    Value,
 };
 use std::collections::{BTreeMap, HashMap};
 

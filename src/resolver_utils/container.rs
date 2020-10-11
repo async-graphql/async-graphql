@@ -1,8 +1,9 @@
 use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ResolveInfo};
-use crate::parser::types::{Name, Selection};
+use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{
-    Context, ContextSelectionSet, OutputValueType, PathSegment, ServerError, ServerResult, Value,
+    Context, ContextSelectionSet, Name, OutputValueType, PathSegment, ServerError, ServerResult,
+    Value,
 };
 use std::collections::BTreeMap;
 use std::future::Future;

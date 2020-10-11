@@ -1,6 +1,7 @@
 //! Executable document-related GraphQL types.
 
 use super::*;
+use async_graphql_value::{ConstValue, Name, Value};
 
 /// An executable GraphQL file or request string.
 ///

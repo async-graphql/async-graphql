@@ -1,6 +1,7 @@
-use crate::parser::types::{Directive, Field, Name, Value};
+use crate::parser::types::{Directive, Field};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{Name, Positioned};
+use async_graphql_value::Value;
 use std::collections::HashSet;
 
 #[derive(Default)]

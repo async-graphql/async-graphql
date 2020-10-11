@@ -1,5 +1,7 @@
-use crate::parser::types::{Name, Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, PathSegment, ServerError, ServerResult, Type, Value};
+use crate::parser::types::{Selection, TypeCondition};
+use crate::{
+    Context, ContextSelectionSet, Name, PathSegment, ServerError, ServerResult, Type, Value,
+};
 use futures::{Stream, StreamExt};
 use std::pin::Pin;
 

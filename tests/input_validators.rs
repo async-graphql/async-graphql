@@ -3,7 +3,6 @@ use async_graphql::validators::{
     ListMinLength, StringMaxLength, StringMinLength, MAC,
 };
 use async_graphql::*;
-use async_graphql_parser::types::Name;
 
 #[async_std::test]
 pub async fn test_input_validator_string_min_length() {

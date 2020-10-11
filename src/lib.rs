@@ -155,6 +155,9 @@ pub use static_assertions;
 pub use subscription::SubscriptionType;
 
 pub use async_graphql_parser as parser;
+pub use async_graphql_value::{
+    from_value, to_value, ConstValue as Value, DeserializerError, Name, Number, SerializerError,
+};
 pub use base::{
     InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type, UnionType,
 };
@@ -166,7 +169,6 @@ pub use error::{
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
-pub use parser::types::{ConstValue as Value, Number};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};

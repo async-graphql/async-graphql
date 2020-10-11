@@ -1,6 +1,6 @@
-use crate::parser::types::{Name, OperationDefinition, OperationType};
+use crate::parser::types::{OperationDefinition, OperationType};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{Name, Positioned};
 
 #[derive(Default)]
 pub struct UploadFile;

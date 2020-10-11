@@ -1,6 +1,6 @@
 use crate::context::QueryPathNode;
-use crate::parser::types::{ConstValue, Value};
 use crate::{registry, QueryPathSegment};
+use async_graphql_value::{ConstValue, Value};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

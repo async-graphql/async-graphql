@@ -1,13 +1,13 @@
 use crate::extensions::Extensions;
 use crate::parser::types::{
-    Directive, Field, FragmentDefinition, Name, OperationDefinition, SelectionSet,
-    Value as InputValue,
+    Directive, Field, FragmentDefinition, OperationDefinition, SelectionSet,
 };
 use crate::schema::SchemaEnv;
 use crate::{
     Error, InputValueType, Lookahead, Pos, Positioned, Result, ServerError, ServerResult,
     UploadValue, Value,
 };
+use async_graphql_value::{Name, Value as InputValue};
 use fnv::FnvHashMap;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::{Deserialize, Serialize};

@@ -15,6 +15,9 @@ jobs:
       max-parallel: 1
       matrix:
         package:
+          - name: async-graphql-value
+            registryName: async-graphql-value
+            path: value
           - name: async-graphql-parser
             registryName: async-graphql-parser
             path: parser

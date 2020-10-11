@@ -1,6 +1,6 @@
-use crate::parser::types::{FragmentDefinition, InlineFragment, Name};
+use crate::parser::types::{FragmentDefinition, InlineFragment};
 use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{Name, Positioned};
 
 #[derive(Default)]
 pub struct FragmentsOnCompositeTypes;

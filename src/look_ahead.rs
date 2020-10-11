@@ -1,5 +1,5 @@
-use crate::parser::types::{Field, FragmentDefinition, Name, Selection, SelectionSet};
-use crate::Positioned;
+use crate::parser::types::{Field, FragmentDefinition, Selection, SelectionSet};
+use crate::{Name, Positioned};
 use std::collections::HashMap;
 
 /// A selection performed by a query.

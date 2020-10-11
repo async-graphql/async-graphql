@@ -5,7 +5,8 @@
 //! it into Rust types.
 #![forbid(unsafe_code)]
 
-use crate::types::{Name, OperationType};
+use crate::types::OperationType;
+use async_graphql_value::Name;
 use pest::error::LineColLocation;
 use pest::RuleType;
 use serde::{Serialize, Serializer};

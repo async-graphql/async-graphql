@@ -18,8 +18,8 @@ pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
-use crate::parser::types::{ExecutableDocument, Name};
-use crate::{Error, Value};
+use crate::parser::types::ExecutableDocument;
+use crate::{Error, Name, Value};
 use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 
