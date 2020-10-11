@@ -425,9 +425,23 @@ impl<'de> serde::Deserializer<'de> for MapKeyDeserializer {
         NameDeserializer::new(self.key).deserialize_any(visitor)
     }
 
+    fn deserialize_enum<V>(
+        self,
+        name: &'static str,
+        variants: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, DeserializerError>
+    where
+        V: Visitor<'de>,
+    {
+        self.key
+            .into_deserializer()
+            .deserialize_enum(name, variants, visitor)
+    }
+
     forward_to_deserialize_any! {
         bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 char str string
-        bytes byte_buf unit unit_struct seq tuple option newtype_struct enum
+        bytes byte_buf unit unit_struct seq tuple option newtype_struct
         tuple_struct map struct identifier ignored_any
     }
 }
@@ -469,6 +483,7 @@ mod tests {
     use super::*;
     use crate::Number;
     use serde::Deserialize;
+    use std::collections::HashMap;
 
     #[test]
     fn test_deserializer() {
@@ -502,7 +517,7 @@ mod tests {
         let n: NewType = from_value(ConstValue::Number(100i32.into())).unwrap();
         assert_eq!(n.0, 100);
 
-        #[derive(Deserialize, Debug, Eq, PartialEq)]
+        #[derive(Deserialize, Debug, Eq, PartialEq, Hash, Copy, Clone)]
         enum Enum {
             A,
             B,
@@ -512,6 +527,13 @@ mod tests {
 
         let n: Enum = from_value(ConstValue::Enum(Name::new("B"))).unwrap();
         assert_eq!(n, Enum::B);
+
+        let mut obj = BTreeMap::<Name, ConstValue>::new();
+        obj.insert(Name::new("A"), ConstValue::Number(10.into()));
+        obj.insert(Name::new("B"), ConstValue::Number(20.into()));
+        let n: HashMap<Enum, i32> = from_value(ConstValue::Object(obj)).unwrap();
+        assert_eq!(10, n[&Enum::A]);
+        assert_eq!(20, n[&Enum::B]);
 
         #[derive(Deserialize, Debug, Eq, PartialEq)]
         struct Struct {
