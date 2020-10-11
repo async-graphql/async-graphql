@@ -484,9 +484,9 @@ impl serde::Serializer for MapKeySerializer {
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        Err(key_must_be_a_string())
+        Ok(Name::new(variant))
     }
 
     fn serialize_newtype_struct<T: ?Sized>(
