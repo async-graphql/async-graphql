@@ -59,8 +59,8 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                     if let Some(#crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         ..
-                    }) = registry.types.remove(&*#merged_type::type_name()) {
-                        fields = obj_fields;
+                    }) = registry.types.get(&*#merged_type::type_name()) {
+                        fields = obj_fields.clone();
                     }
 
                     #crate_name::registry::MetaType::Object {

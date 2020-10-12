@@ -26,9 +26,9 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
                 fields: a_fields,
                 cache_control: a_cc,
                 ..
-            }) = registry.types.remove(&*A::type_name())
+            }) = registry.types.get(&*A::type_name())
             {
-                fields.extend(a_fields);
+                fields.extend(a_fields.clone());
                 cc = cc.merge(&a_cc);
             }
 
@@ -37,9 +37,9 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
                 fields: b_fields,
                 cache_control: b_cc,
                 ..
-            }) = registry.types.remove(&*B::type_name())
+            }) = registry.types.get(&*B::type_name())
             {
-                fields.extend(b_fields);
+                fields.extend(b_fields.clone());
                 cc = cc.merge(&b_cc);
             }
 

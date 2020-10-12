@@ -100,8 +100,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             } else {
                 possible_types.push(quote! {
                     if let Some(#crate_name::registry::MetaType::Union { possible_types: possible_types2, .. }) =
-                        registry.types.remove(&*<#p as #crate_name::Type>::type_name()) {
-                        possible_types.extend(possible_types2);
+                        registry.types.get(&*<#p as #crate_name::Type>::type_name()) {
+                        possible_types.extend(possible_types2.clone());
                     }
                 });
             }

@@ -67,8 +67,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 #ty::create_type_info(registry);
                 if let Some(#crate_name::registry::MetaType::InputObject{ input_fields, .. }) =
-                    registry.types.remove(&*<#ty as #crate_name::Type>::type_name()) {
-                    fields.extend(input_fields);
+                    registry.types.get(&*<#ty as #crate_name::Type>::type_name()) {
+                    fields.extend(input_fields.clone());
                 }
             });
 

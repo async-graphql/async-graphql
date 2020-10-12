@@ -70,9 +70,9 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         fields: obj_fields,
                         cache_control: obj_cache_control,
                         ..
-                    }) = registry.types.remove(&*#merged_type::type_name()) {
-                        fields = obj_fields;
-                        cache_control = obj_cache_control;
+                    }) = registry.types.get(&*#merged_type::type_name()) {
+                        fields = obj_fields.clone();
+                        cache_control = *obj_cache_control;
                     }
 
                     #crate_name::registry::MetaType::Object {

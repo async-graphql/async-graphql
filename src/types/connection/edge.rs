@@ -52,9 +52,9 @@ where
         registry.create_type::<Self, _>(|registry| {
             E::create_type_info(registry);
             let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.remove(E::type_name().as_ref())
+                registry.types.get(E::type_name().as_ref())
             {
-                fields
+                fields.clone()
             } else {
                 unreachable!()
             };
