@@ -30,3 +30,23 @@ impl ScalarType for StringNumber {
 }
 
 ```
+
+## 使用`scalar!`宏定义标量
+
+如果你的类型实现了`serde :: Serialize`和`serde :: Deserialize`，那么可以使用此宏更简单地定义标量。
+
+```rust
+#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap<String, i32>,     
+}
+
+scalar!(MyValue);
+
+// 重命名为`MV`.
+// scalar!(MyValue, "MV");
+
+// 重命名为`MV`并且添加描述.
+// scalar!(MyValue, "MV", "This is my value");
+```

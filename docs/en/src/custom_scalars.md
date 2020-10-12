@@ -28,3 +28,23 @@ impl ScalarType for StringNumber {
     }
 }
 ```
+
+## Use `scalar!` macro to define scalar
+
+If your type implemented `serde::Serialize` and `serde::Deserialize`, then you can use this macro to define a scalar more simply.
+
+```rust
+#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap<String, i32>,     
+}
+
+scalar!(MyValue);
+
+// Rename to `MV`.
+// scalar!(MyValue, "MV");
+
+// Rename to `MV` and add description.
+// scalar!(MyValue, "MV", "This is my value");
+```
