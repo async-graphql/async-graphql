@@ -255,7 +255,7 @@ pub struct ContextBase<'a, T> {
 
 #[doc(hidden)]
 pub struct QueryEnvInner {
-    pub extensions: spin::Mutex<Extensions>,
+    pub extensions: Extensions,
     pub variables: Variables,
     pub operation: Positioned<OperationDefinition>,
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,

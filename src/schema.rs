@@ -1,5 +1,5 @@
 use crate::context::{Data, QueryEnvInner, ResolveId};
-use crate::extensions::{ErrorLogger, Extension, ExtensionContext, ExtensionFactory, Extensions};
+use crate::extensions::{ErrorLogger, ExtensionContext, ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::parser::types::{DocumentOperations, OperationType};
@@ -325,16 +325,15 @@ where
         request: Request,
     ) -> Result<(QueryEnvInner, CacheControl), Vec<ServerError>> {
         // create extension instances
-        let extensions = spin::Mutex::new(Extensions(
-            self.0
-                .extensions
-                .iter()
-                .map(|factory| factory.create())
-                .collect_vec(),
-        ));
+        let extensions: Extensions = self
+            .0
+            .extensions
+            .iter()
+            .map(|factory| factory.create())
+            .collect_vec()
+            .into();
 
         let request = extensions
-            .lock()
             .prepare_request(
                 &ExtensionContext {
                     schema_data: &self.env.data,
@@ -349,16 +348,14 @@ where
             query_data: &request.data,
         };
 
-        extensions
-            .lock()
-            .parse_start(&ctx_extension, &request.query, &request.variables);
+        extensions.parse_start(&ctx_extension, &request.query, &request.variables);
         let document = parse_query(&request.query)
             .map_err(Into::<ServerError>::into)
             .log_error(&ctx_extension, &extensions)?;
-        extensions.lock().parse_end(&ctx_extension, &document);
+        extensions.parse_end(&ctx_extension, &document);
 
         // check rules
-        extensions.lock().validation_start(&ctx_extension);
+        extensions.validation_start(&ctx_extension);
         let CheckResult {
             cache_control,
             complexity,
@@ -370,7 +367,7 @@ where
             self.validation_mode,
         )
         .log_error(&ctx_extension, &extensions)?;
-        extensions.lock().validation_end(&ctx_extension);
+        extensions.validation_end(&ctx_extension);
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
@@ -411,7 +408,7 @@ where
         let operation = match operation {
             Ok(operation) => operation,
             Err(e) => {
-                extensions.lock().error(&ctx_extension, &e);
+                extensions.error(&ctx_extension, &e);
                 return Err(vec![e]);
             }
         };
@@ -443,7 +440,7 @@ where
             query_data: &env.ctx_data,
         };
 
-        env.extensions.lock().execution_start(&ctx_extension);
+        env.extensions.execution_start(&ctx_extension);
 
         let data = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
@@ -455,8 +452,8 @@ where
             }
         };
 
-        env.extensions.lock().execution_end(&ctx_extension);
-        let extensions = env.extensions.lock().result(&ctx_extension);
+        env.extensions.execution_end(&ctx_extension);
+        let extensions = env.extensions.result(&ctx_extension);
 
         match data {
             Ok(data) => Response::new(data),
@@ -530,21 +527,21 @@ where
                 query_data: &env.ctx_data,
             };
 
-            env.extensions.lock().execution_start(&ctx_extension);
+            env.extensions.execution_start(&ctx_extension);
 
             let mut streams = Vec::new();
             if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
-                env.extensions.lock().execution_end(&ctx_extension);
+                env.extensions.execution_end(&ctx_extension);
                 yield Response::from_errors(vec![e]);
                 return;
             }
 
-            env.extensions.lock().execution_end(&ctx_extension);
+            env.extensions.execution_end(&ctx_extension);
 
             let mut stream = stream::select_all(streams);
             while let Some(data) = stream.next().await {
                 let is_err = data.is_err();
-                let extensions = env.extensions.lock().result(&ctx_extension);
+                let extensions = env.extensions.result(&ctx_extension);
                 yield match data {
                     Ok((name, value)) => {
                         let mut map = BTreeMap::new();

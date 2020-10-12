@@ -25,9 +25,6 @@ use std::collections::BTreeMap;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 
-#[doc(hidden)]
-pub struct Extensions(pub(crate) Vec<BoxExtension>);
-
 /// Context for extension
 pub struct ExtensionContext<'a> {
     #[doc(hidden)]
@@ -147,21 +144,21 @@ pub trait Extension: Sync + Send + 'static {
 }
 
 pub(crate) trait ErrorLogger {
-    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self;
+    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &Extensions) -> Self;
 }
 
 impl<T> ErrorLogger for ServerResult<T> {
-    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self {
+    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &Extensions) -> Self {
         if let Err(err) = &self {
-            extensions.lock().error(ctx, err);
+            extensions.error(ctx, err);
         }
         self
     }
 }
+
 impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
-    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &spin::Mutex<Extensions>) -> Self {
+    fn log_error(self, ctx: &ExtensionContext<'_>, extensions: &Extensions) -> Self {
         if let Err(errors) = &self {
-            let mut extensions = extensions.lock();
             for error in errors {
                 extensions.error(ctx, error);
             }
@@ -170,69 +167,114 @@ impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
     }
 }
 
-#[async_trait::async_trait]
-impl Extension for Extensions {
-    async fn prepare_request(
-        &mut self,
+/// Extension factory
+///
+/// Used to create an extension instance.
+pub trait ExtensionFactory: Send + Sync + 'static {
+    /// Create an extended instance.
+    fn create(&self) -> Box<dyn Extension>;
+}
+
+#[doc(hidden)]
+pub struct Extensions(Option<spin::Mutex<Vec<BoxExtension>>>);
+
+impl From<Vec<BoxExtension>> for Extensions {
+    fn from(extensions: Vec<BoxExtension>) -> Self {
+        Self(if extensions.is_empty() {
+            None
+        } else {
+            Some(spin::Mutex::new(extensions))
+        })
+    }
+}
+
+#[doc(hidden)]
+impl Extensions {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
+    }
+
+    pub async fn prepare_request(
+        &self,
         ctx: &ExtensionContext<'_>,
         request: Request,
     ) -> ServerResult<Request> {
         let mut request = request;
-        for e in self.0.iter_mut() {
-            request = e.prepare_request(ctx, request).await?;
+        if let Some(e) = &self.0 {
+            for e in e.lock().iter_mut() {
+                request = e.prepare_request(ctx, request).await?;
+            }
         }
         Ok(request)
     }
 
-    fn parse_start(
-        &mut self,
+    pub fn parse_start(
+        &self,
         ctx: &ExtensionContext<'_>,
         query_source: &str,
         variables: &Variables,
     ) {
-        self.0
-            .iter_mut()
-            .for_each(|e| e.parse_start(ctx, query_source, variables));
+        if let Some(e) = &self.0 {
+            e.lock()
+                .iter_mut()
+                .for_each(|e| e.parse_start(ctx, query_source, variables));
+        }
     }
 
-    fn parse_end(&mut self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
-        self.0.iter_mut().for_each(|e| e.parse_end(ctx, document));
+    pub fn parse_end(&self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.parse_end(ctx, document));
+        }
     }
 
-    fn validation_start(&mut self, ctx: &ExtensionContext<'_>) {
-        self.0.iter_mut().for_each(|e| e.validation_start(ctx));
+    pub fn validation_start(&self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.validation_start(ctx));
+        }
     }
 
-    fn validation_end(&mut self, ctx: &ExtensionContext<'_>) {
-        self.0.iter_mut().for_each(|e| e.validation_end(ctx));
+    pub fn validation_end(&self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.validation_end(ctx));
+        }
     }
 
-    fn execution_start(&mut self, ctx: &ExtensionContext<'_>) {
-        self.0.iter_mut().for_each(|e| e.execution_start(ctx));
+    pub fn execution_start(&self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.execution_start(ctx));
+        }
     }
 
-    fn execution_end(&mut self, ctx: &ExtensionContext<'_>) {
-        self.0.iter_mut().for_each(|e| e.execution_end(ctx));
+    pub fn execution_end(&self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.execution_end(ctx));
+        }
     }
 
-    fn resolve_start(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-        self.0.iter_mut().for_each(|e| e.resolve_start(ctx, info));
+    pub fn resolve_start(&self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.resolve_start(ctx, info));
+        }
     }
 
-    fn resolve_end(&mut self, ctx: &ExtensionContext<'_>, resolve_id: &ResolveInfo<'_>) {
-        self.0
-            .iter_mut()
-            .for_each(|e| e.resolve_end(ctx, resolve_id));
+    pub fn resolve_end(&self, ctx: &ExtensionContext<'_>, resolve_id: &ResolveInfo<'_>) {
+        if let Some(e) = &self.0 {
+            e.lock()
+                .iter_mut()
+                .for_each(|e| e.resolve_end(ctx, resolve_id));
+        }
     }
 
-    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &ServerError) {
-        self.0.iter_mut().for_each(|e| e.error(ctx, err));
+    pub fn error(&self, ctx: &ExtensionContext<'_>, err: &ServerError) {
+        if let Some(e) = &self.0 {
+            e.lock().iter_mut().for_each(|e| e.error(ctx, err));
+        }
     }
 
-    fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<Value> {
-        if !self.0.is_empty() {
-            let value = self
-                .0
+    pub fn result(&self, ctx: &ExtensionContext<'_>) -> Option<Value> {
+        if let Some(e) = &self.0 {
+            let value = e
+                .lock()
                 .iter_mut()
                 .filter_map(|e| {
                     if let Some(name) = e.name() {
@@ -251,12 +293,4 @@ impl Extension for Extensions {
             None
         }
     }
-}
-
-/// Extension factory
-///
-/// Used to create an extension instance.
-pub trait ExtensionFactory: Send + Sync + 'static {
-    /// Create an extended instance.
-    fn create(&self) -> Box<dyn Extension>;
 }

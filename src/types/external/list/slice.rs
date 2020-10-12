@@ -27,6 +27,6 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for &[T] {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(ctx, field, self.iter()).await
+        resolve_list(ctx, field, self.iter(), Some(self.len())).await
     }
 }

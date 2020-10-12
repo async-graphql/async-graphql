@@ -52,6 +52,6 @@ impl<T: OutputValueType + Send + Sync> OutputValueType for LinkedList<T> {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(ctx, field, self).await
+        resolve_list(ctx, field, self, Some(self.len())).await
     }
 }

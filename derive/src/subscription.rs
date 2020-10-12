@@ -298,7 +298,7 @@ pub fn generate(
                                 query_data: &query_env.ctx_data,
                             };
 
-                            #crate_name::extensions::Extension::execution_start(&mut *query_env.extensions.lock(), &ctx_extension);
+                            query_env.extensions.execution_start(&ctx_extension);
 
                             #[allow(bare_trait_objects)]
                             let ri = #crate_name::extensions::ResolveInfo {
@@ -308,12 +308,12 @@ pub fn generate(
                                 return_type: &<<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                             };
 
-                            #crate_name::extensions::Extension::resolve_start(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
+                            query_env.extensions.resolve_start(&ctx_extension, &ri);
 
                             let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await;
 
-                            #crate_name::extensions::Extension::resolve_end(&mut *query_env.extensions.lock(), &ctx_extension, &ri);
-                            #crate_name::extensions::Extension::execution_end(&mut *query_env.extensions.lock(), &ctx_extension);
+                            query_env.extensions.resolve_end(&ctx_extension, &ri);
+                            query_env.extensions.execution_end(&ctx_extension);
 
                             res
                         }
