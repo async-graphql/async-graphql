@@ -1,4 +1,5 @@
 mod de;
+mod macros;
 mod ser;
 
 use serde::ser::Error;
@@ -29,8 +30,8 @@ impl Serialize for Name {
 
 impl Name {
     /// Create a new name.
-    pub fn new(name: &str) -> Self {
-        Self(name.into())
+    pub fn new(name: impl AsRef<str>) -> Self {
+        Self(name.as_ref().into())
     }
 
     /// Get the name as a string.
