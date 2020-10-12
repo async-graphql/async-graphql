@@ -45,7 +45,7 @@ pub async fn test_merged_object() {
     let query = "{ obj { a b c } }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "obj": {
                 "a": 10,
                 "b": 20,
@@ -73,7 +73,7 @@ pub async fn test_merged_object_macro() {
     let query = "{ obj { a b c } }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "obj": {
                 "a": 10,
                 "b": 20,
@@ -101,7 +101,7 @@ pub async fn test_merged_object_derive() {
     let query = "{ obj { a b c } }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "obj": {
                 "a": 10,
                 "b": 20,
@@ -150,7 +150,7 @@ pub async fn test_merged_object_default() {
     let query = "{ a b }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "a": 10,
             "b": 20,
         })
@@ -196,7 +196,7 @@ pub async fn test_merged_subscription() {
             .boxed();
         for i in 0i32..10 {
             assert_eq!(
-                serde_json::json!({
+                value!({
                     "events1": i,
                 }),
                 stream.next().await.unwrap()
@@ -212,7 +212,7 @@ pub async fn test_merged_subscription() {
             .boxed();
         for i in 10i32..20 {
             assert_eq!(
-                serde_json::json!({
+                value!({
                     "events2": i,
                 }),
                 stream.next().await.unwrap()

@@ -68,7 +68,7 @@ pub async fn test_field_features() {
     let query = "{ value }";
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "value": 10,
         })
     );
@@ -76,7 +76,7 @@ pub async fn test_field_features() {
     let query = "{ valueBson }";
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "valueBson": 10,
         })
     );
@@ -96,7 +96,7 @@ pub async fn test_field_features() {
     let query = "{ obj { value } }";
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "obj": { "value": 10 }
         })
     );
@@ -104,7 +104,7 @@ pub async fn test_field_features() {
     let query = "{ obj { valueBson } }";
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "obj": { "valueBson": 10 }
         })
     );
@@ -128,7 +128,7 @@ pub async fn test_field_features() {
             .await
             .map(|resp| resp.into_result().unwrap().data)
             .unwrap(),
-        serde_json::json!({
+        value!({
             "values": 10
         })
     );
@@ -136,7 +136,7 @@ pub async fn test_field_features() {
     let mut stream = schema.execute_stream("subscription { valuesBson }").boxed();
     assert_eq!(
         stream.next().await.map(|resp| resp.data).unwrap(),
-        serde_json::json!({
+        value!({
             "valuesBson": 10
         })
     );

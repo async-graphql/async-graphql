@@ -67,7 +67,7 @@ mod test {
                 .into_result()
                 .unwrap()
                 .data,
-            serde_json::json!({
+            value!({
                 "value1": "100",
                 "value2": "-100",
                 "value3": "0",

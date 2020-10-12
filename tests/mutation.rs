@@ -66,7 +66,7 @@ pub async fn test_mutation_fragment() {
         .await;
     assert_eq!(
         resp.data,
-        serde_json::json!({
+        value!({
             "actionInUnnamedFragment": true,
             "actionInNamedFragment": true,
         })

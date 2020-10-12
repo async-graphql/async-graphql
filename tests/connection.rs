@@ -66,7 +66,7 @@ pub async fn test_connection_additional_fields() {
             .execute("{ numbers(first: 2) { totalCount edges { node diff } } }")
             .await
             .data,
-        serde_json::json!({
+        value!({
             "numbers": {
                 "totalCount": 10000,
                 "edges": [
@@ -82,7 +82,7 @@ pub async fn test_connection_additional_fields() {
             .execute("{ numbers(last: 2) { edges { node diff } } }")
             .await
             .data,
-        serde_json::json!({
+        value!({
             "numbers": {
                 "edges": [
                     {"node": 9998, "diff": 2},

@@ -285,7 +285,7 @@ pub use types::*;
 ///         valueWithArg1: valueWithArg
 ///         valueWithArg2: valueWithArg(a: 99)
 ///     }"#).await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({
+///     assert_eq!(res, value!({
 ///         "value": 10,
 ///         "valueRef": 10,
 ///         "valueWithError": 10,
@@ -337,7 +337,7 @@ pub use async_graphql_derive::Object;
 /// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({
+///     assert_eq!(res, value!({
 ///         "value": 10,
 ///     }));
 /// });
@@ -394,7 +394,7 @@ pub use async_graphql_derive::SimpleObject;
 /// async_std::task::block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value1 value2 }").await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({ "value1": "A", "value2": "b" }));
+///     assert_eq!(res, value!({ "value1": "A", "value2": "b" }));
 /// });
 /// ```
 pub use async_graphql_derive::Enum;
@@ -449,7 +449,7 @@ pub use async_graphql_derive::Enum;
 ///         value1: value(input:{a:9, b:3})
 ///         value2: value(input:{a:9})
 ///     }"#).await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({ "value1": 27, "value2": 90 }));
+///     assert_eq!(res, value!({ "value1": 27, "value2": 90 }));
 /// });
 /// ```
 pub use async_graphql_derive::InputObject;
@@ -574,7 +574,7 @@ pub use async_graphql_derive::InputObject;
 ///             value_d
 ///         }
 ///     }"#).await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({
+///     assert_eq!(res, value!({
 ///         "typeA": {
 ///             "valueA": "hello",
 ///             "valueB": 10,
@@ -647,7 +647,7 @@ pub use async_graphql_derive::Interface;
 ///             }
 ///         }
 ///     }"#).await.into_result().unwrap().data;
-///     assert_eq!(res, serde_json::json!({
+///     assert_eq!(res, value!({
 ///         "allData": [
 ///             { "valueA": 10 },
 ///             { "valueB": 20 },

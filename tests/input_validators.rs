@@ -100,7 +100,7 @@ pub async fn test_input_validator_string_min_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with StringMinLength",
                 case
             );
@@ -112,7 +112,7 @@ pub async fn test_input_validator_string_min_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with StringMinLength",
                 case
             );
@@ -210,7 +210,7 @@ pub async fn test_input_validator_string_max_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with StringMaxLength",
                 case
             );
@@ -222,7 +222,7 @@ pub async fn test_input_validator_string_max_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with StringMaxLength",
                 case
             );
@@ -350,7 +350,7 @@ pub async fn test_input_validator_string_email() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with Email",
                 case
             );
@@ -362,7 +362,7 @@ pub async fn test_input_validator_string_email() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with Email",
                 case
             );
@@ -546,7 +546,7 @@ pub async fn test_input_validator_string_mac() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with MAC",
                 mac
             );
@@ -558,7 +558,7 @@ pub async fn test_input_validator_string_mac() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with MAC",
                 mac
             );
@@ -605,7 +605,7 @@ pub async fn test_input_validator_string_mac() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with MAC",
                 mac
             );
@@ -617,7 +617,7 @@ pub async fn test_input_validator_string_mac() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with MAC",
                 mac
             );
@@ -742,7 +742,7 @@ pub async fn test_input_validator_int_range() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with IntRange",
                 case
             );
@@ -754,7 +754,7 @@ pub async fn test_input_validator_int_range() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with IntRange",
                 case
             );
@@ -847,7 +847,7 @@ pub async fn test_input_validator_int_less_than() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with IntLessThan",
                 case
             );
@@ -859,7 +859,7 @@ pub async fn test_input_validator_int_less_than() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with IntLessThan",
                 case
             );
@@ -954,7 +954,7 @@ pub async fn test_input_validator_int_greater_than() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with IntGreaterThan",
                 case
             );
@@ -966,7 +966,7 @@ pub async fn test_input_validator_int_greater_than() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with IntGreaterThan",
                 case
             );
@@ -1054,7 +1054,7 @@ pub async fn test_input_validator_int_nonzero() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with IntNonZero",
                 case
             );
@@ -1066,7 +1066,7 @@ pub async fn test_input_validator_int_nonzero() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with IntNonZero",
                 case
             );
@@ -1158,7 +1158,7 @@ pub async fn test_input_validator_int_equal() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with IntEqual",
                 case
             );
@@ -1170,7 +1170,7 @@ pub async fn test_input_validator_int_equal() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with IntEqual",
                 case
             );
@@ -1274,7 +1274,7 @@ pub async fn test_input_validator_list_max_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {:?} with ListMaxLength",
                 case
             );
@@ -1286,7 +1286,7 @@ pub async fn test_input_validator_list_max_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {:?} with ListMaxLength",
                 case
             );
@@ -1390,7 +1390,7 @@ pub async fn test_input_validator_list_min_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {:?} with ListMinLength",
                 case
             );
@@ -1402,7 +1402,7 @@ pub async fn test_input_validator_list_min_length() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {:?} with ListMinLength",
                 case
             );
@@ -1514,7 +1514,7 @@ pub async fn test_input_validator_operator_or() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {:?} with OR operator",
                 case
             );
@@ -1526,7 +1526,7 @@ pub async fn test_input_validator_operator_or() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {:?} with OR operator",
                 case
             );
@@ -1631,7 +1631,7 @@ pub async fn test_input_validator_operator_and() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {:?} with AND operator",
                 case
             );
@@ -1643,7 +1643,7 @@ pub async fn test_input_validator_operator_and() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {:?} with AND operator",
                 case
             );
@@ -1753,7 +1753,7 @@ pub async fn test_input_validator_variable() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"fieldParameter": true}),
+                value!({"fieldParameter": true}),
                 "Failed to validate {} with StringMinLength",
                 case
             );
@@ -1765,7 +1765,7 @@ pub async fn test_input_validator_variable() {
                     .into_result()
                     .expect(&error_msg[..])
                     .data,
-                serde_json::json!({"inputObject": true}),
+                value!({"inputObject": true}),
                 "Failed to validate {} with StringMinLength",
                 case
             );

@@ -186,6 +186,16 @@ impl<'a> QueryPathNode<'a> {
         }
     }
 
+    /// Get the path represented by `Vec<String>`.
+    pub fn to_string_vec(&self) -> Vec<String> {
+        let mut res = Vec::new();
+        self.for_each(|s| match s {
+            QueryPathSegment::Index(idx) => res.push(format!("{}", idx)),
+            QueryPathSegment::Name(name) => res.push(name.to_string()),
+        });
+        res
+    }
+
     pub(crate) fn for_each<F: FnMut(&QueryPathSegment<'a>)>(&self, mut f: F) {
         self.for_each_ref(&mut f);
     }

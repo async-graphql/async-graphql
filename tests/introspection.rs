@@ -195,7 +195,7 @@ impl Subscription {
 //    }
 //    "#;
 
-//     let res_json = serde_json::json!({
+//     let res_json = value!({
 //         "__schema": {
 //         }
 //     });
@@ -225,7 +225,7 @@ impl Subscription {
 //    }
 //    "#;
 //
-//     let res_json = serde_json::json!({
+//     let res_json = value!({
 //         "__type": {
 //             "name": "SimpleObject",
 //             "description": "Is SimpleObject",
@@ -299,7 +299,7 @@ pub async fn test_introspection_deprecation() {
     // SimpleObject with deprecated inclusive
     let mut query = get_object_query("SimpleObject", "true");
 
-    let mut res_json = serde_json::json!({
+    let mut res_json = value!({
         "__type": {
             "fields": [
               {
@@ -363,7 +363,7 @@ pub async fn test_introspection_deprecation() {
     // SimpleObject with deprecated fields exclusive
     query = get_object_query("SimpleObject", "false");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "fields": [
               {
@@ -422,7 +422,7 @@ pub async fn test_introspection_deprecation() {
     // Object with only one deprecated field inclusive
     query = get_object_query("Square", "true");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "fields": [
                 {
@@ -441,7 +441,7 @@ pub async fn test_introspection_deprecation() {
     // Object with only one deprecated field exclusive
     query = get_object_query("Square", "false");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "fields": []
         }
@@ -471,7 +471,7 @@ pub async fn test_introspection_deprecation() {
     // Enum with deprecated value inclusive
     query = get_enum_query("TestEnum", "true");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "enumValues": [
               {
@@ -495,7 +495,7 @@ pub async fn test_introspection_deprecation() {
     // Enum with deprecated value exclusive
     query = get_enum_query("TestEnum", "false");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "enumValues": [
               {
@@ -531,7 +531,7 @@ pub async fn test_introspection_type_kind() {
     // Test simple object
     let mut query = get_type_kind_query("SimpleObject");
 
-    let mut res_json = serde_json::json!({
+    let mut res_json = value!({
         "__type": {
             "name": "SimpleObject",
             "kind": "OBJECT"
@@ -545,7 +545,7 @@ pub async fn test_introspection_type_kind() {
     // Test object
     query = get_type_kind_query("Square");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "name": "Square",
             "kind": "OBJECT"
@@ -559,7 +559,7 @@ pub async fn test_introspection_type_kind() {
     // Test enum
     query = get_type_kind_query("TestEnum");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "name": "TestEnum",
             "kind": "ENUM"
@@ -573,7 +573,7 @@ pub async fn test_introspection_type_kind() {
     // Test union
     query = get_type_kind_query("TestUnion");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "name": "TestUnion",
             "kind": "UNION"
@@ -587,7 +587,7 @@ pub async fn test_introspection_type_kind() {
     // Test scalar
     query = get_type_kind_query("ID");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "name": "ID",
             "kind": "SCALAR"
@@ -615,7 +615,7 @@ pub async fn test_introspection_type_kind() {
     // Test list
     query = get_field_kind_query("SimpleList");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "fields": [
                 {
@@ -640,7 +640,7 @@ pub async fn test_introspection_type_kind() {
     // Test NON_NULL
     query = get_field_kind_query("SimpleOption");
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "fields": [
               {
@@ -685,7 +685,7 @@ pub async fn test_introspection_scalar() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "kind": "SCALAR",
             "name": "TestScalar",
@@ -713,7 +713,7 @@ pub async fn test_introspection_union() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "kind": "UNION",
             "name": "TestUnion",
@@ -751,7 +751,7 @@ pub async fn test_introspection_interface() {
    }
    "#;
 
-    let mut res_json = serde_json::json!({
+    let mut res_json = value!({
         "__type": {
             "kind": "INTERFACE",
             "name": "TestInterface",
@@ -789,7 +789,7 @@ pub async fn test_introspection_interface() {
    }
    "#;
 
-    res_json = serde_json::json!({
+    res_json = value!({
         "__type": {
             "kind": "OBJECT",
             "name": "Circle",
@@ -832,7 +832,7 @@ pub async fn test_introspection_enum() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "kind": "ENUM",
             "name": "TestEnum",
@@ -876,7 +876,7 @@ pub async fn test_introspection_input_object() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "kind": "INPUT_OBJECT",
             "name": "SimpleInput",
@@ -914,7 +914,7 @@ pub async fn test_introspection_mutation() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "name": "Mutation",
             "kind": "OBJECT",
@@ -962,7 +962,7 @@ pub async fn test_introspection_subscription() {
    }
    "#;
 
-    let res_json = serde_json::json!({
+    let res_json = value!({
         "__type": {
             "name": "Subscription",
             "kind": "OBJECT",
@@ -1017,7 +1017,7 @@ pub async fn test_introspection_subscription() {
 //    }
 //    "#;
 //
-//     let res_json = serde_json::json!({
+//     let res_json = value!({
 //         "__type": {
 //             "kind": "OBJECT",
 //             "name": "SimpleObject",

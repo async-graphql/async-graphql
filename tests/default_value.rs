@@ -23,7 +23,7 @@ pub async fn test_default_value_arg() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "value1": 100,
             "value2": 0,
             "value3": 6,
@@ -34,7 +34,7 @@ pub async fn test_default_value_arg() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "value1": 1,
             "value2": 2,
             "value3": 3,
@@ -80,7 +80,7 @@ pub async fn test_default_value_inputobject() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "value": {
                 "value1": 100,
                 "value2": 0,
@@ -93,7 +93,7 @@ pub async fn test_default_value_inputobject() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "value": {
                 "value1": 1,
                 "value2": 2,

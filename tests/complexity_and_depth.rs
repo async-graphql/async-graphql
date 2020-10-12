@@ -52,7 +52,7 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "a": 1,
             "b": 1,
         })
@@ -78,7 +78,7 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "obj": { "a": 1 }
         })
     );
@@ -121,7 +121,7 @@ pub async fn test_complexity_and_depth() {
         .finish();
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "obj": {
                 "a": 1,
                 "b": 2,

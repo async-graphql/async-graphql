@@ -80,7 +80,7 @@ pub async fn test_federation() {
         }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "_entities": [
                 {"__typename": "Product", "upc": "B00005N5PF"},
             ]

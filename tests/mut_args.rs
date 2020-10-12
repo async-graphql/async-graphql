@@ -16,7 +16,7 @@ pub async fn test_mut_args() {
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     assert_eq!(
         schema.execute("{ test(a: 10, b: \"abc\") }").await.data,
-        serde_json::json!({
+        value!({
             "test": "11abca"
         })
     );

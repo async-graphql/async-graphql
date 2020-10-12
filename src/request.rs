@@ -35,7 +35,7 @@ pub struct Request {
 
     /// The extensions config of the request.
     #[serde(default)]
-    pub extensions: HashMap<String, serde_json::Value>,
+    pub extensions: HashMap<String, Value>,
 }
 
 fn deserialize_variables<'de, D: Deserializer<'de>>(

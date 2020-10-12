@@ -45,7 +45,7 @@ pub async fn test_maybe_undefined_type() {
     "#;
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "v1": 99,
             "v2": 1,
             "v3": 2,

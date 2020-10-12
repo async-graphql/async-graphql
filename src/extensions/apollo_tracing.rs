@@ -1,14 +1,13 @@
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::{Value, Variables};
+use crate::{value, Value, Variables};
 use chrono::{DateTime, Utc};
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::collections::BTreeMap;
-use std::convert::TryInto;
 use std::ops::Deref;
 
 struct PendingResolve {
-    path: serde_json::Value,
+    path: Vec<String>,
     field_name: String,
     parent_type: String,
     return_type: String,
@@ -95,7 +94,7 @@ impl Extension for ApolloTracingExtension {
         self.pending_resolves.insert(
             info.resolve_id.current,
             PendingResolve {
-                path: serde_json::to_value(info.path_node).unwrap(),
+                path: info.path_node.to_string_vec(),
                 field_name: info.path_node.field_name().to_string(),
                 parent_type: info.parent_type.to_string(),
                 return_type: info.return_type.to_string(),
@@ -121,7 +120,7 @@ impl Extension for ApolloTracingExtension {
         self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
 
-        serde_json::json!({
+        Some(value!({
             "version": 1,
             "startTime": self.start_time.to_rfc3339(),
             "endTime": self.end_time.to_rfc3339(),
@@ -129,8 +128,6 @@ impl Extension for ApolloTracingExtension {
             "execution": {
                 "resolvers": self.resolves
             }
-        })
-        .try_into()
-        .ok()
+        }))
     }
 }

@@ -1,13 +1,12 @@
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
-    ContextSelectionSet, InputValueResult, OutputValueType, Positioned, Scalar, ScalarType,
-    ServerResult, Type, Value,
+    from_value, to_value, ContextSelectionSet, InputValueResult, OutputValueType, Positioned,
+    Scalar, ScalarType, ServerResult, Type, Value,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::convert::TryInto;
 use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
@@ -41,14 +40,11 @@ impl<T: DeserializeOwned + Serialize> From<T> for Json<T> {
 #[Scalar(internal, name = "JSON")]
 impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     fn parse(value: Value) -> InputValueResult<Self> {
-        Ok(serde_json::from_value(value.into_json()?)?)
+        Ok(from_value(value)?)
     }
 
     fn to_value(&self) -> Value {
-        serde_json::to_value(&self.0)
-            .ok()
-            .and_then(|json| Value::from_json(json).ok())
-            .unwrap_or_else(|| Value::Null)
+        to_value(&self.0).unwrap_or_else(|_| Value::Null)
     }
 }
 
@@ -97,10 +93,7 @@ impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
         _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        Ok(serde_json::to_value(&self.0)
-            .ok()
-            .and_then(|json| json.try_into().ok())
-            .unwrap_or_else(|| Value::Null))
+        Ok(to_value(&self.0).ok().unwrap_or_else(|| Value::Null))
     }
 }
 
@@ -132,7 +125,7 @@ mod test {
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
         assert_eq!(
             schema.execute(query).await.into_result().unwrap().data,
-            serde_json::json!({
+            value!({
              "obj": {
                  "a": 1,
                  "b": 2,
@@ -174,7 +167,7 @@ mod test {
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
         assert_eq!(
             schema.execute(query).await.into_result().unwrap().data,
-            serde_json::json!({
+            value!({
              "obj": {
                  "a": 1,
                  "b": 2,

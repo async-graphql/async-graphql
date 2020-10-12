@@ -23,7 +23,7 @@ pub async fn test_subscription_ws_transport() {
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "connection_init",
         }))
         .unwrap(),
@@ -39,7 +39,7 @@ pub async fn test_subscription_ws_transport() {
     );
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "start",
             "id": "1",
             "payload": {
@@ -111,7 +111,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     );
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "connection_init",
             "payload": { "token": "123456" }
         }))
@@ -121,14 +121,14 @@ pub async fn test_subscription_ws_transport_with_token() {
     .unwrap();
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "connection_ack",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "start",
             "id": "1",
             "payload": {
@@ -142,7 +142,7 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     for i in 0..10 {
         assert_eq!(
-            Some(serde_json::json!({
+            Some(value!({
                 "type": "data",
                 "id": "1",
                 "payload": { "data": { "values": i } },
@@ -152,7 +152,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "complete",
             "id": "1",
         })),
@@ -196,7 +196,7 @@ pub async fn test_subscription_ws_transport_error() {
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "connection_init"
         }))
         .unwrap(),
@@ -205,14 +205,14 @@ pub async fn test_subscription_ws_transport_error() {
     .unwrap();
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "connection_ack",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "start",
             "id": "1",
             "payload": {
@@ -226,7 +226,7 @@ pub async fn test_subscription_ws_transport_error() {
 
     for i in 0i32..5 {
         assert_eq!(
-            Some(serde_json::json!({
+            Some(value!({
                 "type": "data",
                 "id": "1",
                 "payload": { "data": { "events": { "value": i } } },
@@ -236,7 +236,7 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "data",
             "id": "1",
             "payload": {
@@ -268,7 +268,7 @@ pub async fn test_query_over_websocket() {
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "connection_init",
         }))
         .unwrap(),
@@ -277,14 +277,14 @@ pub async fn test_query_over_websocket() {
     .unwrap();
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
         "type": "connection_ack",
         })),
         serde_json::from_str(&stream.next().await.unwrap()).unwrap()
     );
 
     tx.send(
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string(&value!({
             "type": "start",
             "id": "1",
             "payload": {
@@ -297,7 +297,7 @@ pub async fn test_query_over_websocket() {
     .unwrap();
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "data",
             "id": "1",
             "payload": { "data": { "value": 999 } },
@@ -306,7 +306,7 @@ pub async fn test_query_over_websocket() {
     );
 
     assert_eq!(
-        Some(serde_json::json!({
+        Some(value!({
             "type": "complete",
             "id": "1",
         })),

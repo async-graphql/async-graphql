@@ -103,7 +103,7 @@ pub async fn test_list_type() {
 
     assert_eq!(
         res,
-        serde_json::json!({
+        value!({
             "valueVec": vec![1, 2, 3, 4, 5],
             "valueSlice": vec![1, 2, 3, 4, 5],
             "valueLinkedList": vec![1, 2, 3, 4, 5],

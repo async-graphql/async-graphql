@@ -1,7 +1,7 @@
 //! Apollo persisted queries extension.
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
-use crate::{Request, ServerError, ServerResult};
+use crate::{from_value, Request, ServerError, ServerResult};
 use futures::lock::Mutex;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -80,7 +80,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
         mut request: Request,
     ) -> ServerResult<Request> {
         if let Some(value) = request.extensions.remove("persistedQuery") {
-            let persisted_query: PersistedQuery = serde_json::from_value(value).map_err(|_| {
+            let persisted_query: PersistedQuery = from_value(value).map_err(|_| {
                 ServerError::new("Invalid \"PersistedQuery\" extension configuration.")
             })?;
             if persisted_query.version != 1 {
@@ -130,7 +130,7 @@ mod tests {
         let mut request = Request::new("{ value }");
         request.extensions.insert(
             "persistedQuery".to_string(),
-            serde_json::json!({
+            value!({
                 "version": 1,
                 "sha256Hash": "abc",
             }),
@@ -138,7 +138,7 @@ mod tests {
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap().data,
-            serde_json::json!({
+            value!({
                 "value": 100
             })
         );
@@ -146,7 +146,7 @@ mod tests {
         let mut request = Request::new("");
         request.extensions.insert(
             "persistedQuery".to_string(),
-            serde_json::json!({
+            value!({
                 "version": 1,
                 "sha256Hash": "abc",
             }),
@@ -154,7 +154,7 @@ mod tests {
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap().data,
-            serde_json::json!({
+            value!({
                 "value": 100
             })
         );
@@ -162,7 +162,7 @@ mod tests {
         let mut request = Request::new("");
         request.extensions.insert(
             "persistedQuery".to_string(),
-            serde_json::json!({
+            value!({
                 "version": 1,
                 "sha256Hash": "def",
             }),

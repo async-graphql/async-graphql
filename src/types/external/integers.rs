@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Number, Scalar, ScalarType, Value};
 
 /// The `Int` scalar type represents non-fractional whole numeric values.
 #[Scalar(internal, name = "Int")]
@@ -30,7 +30,7 @@ impl ScalarType for i8 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as i64))
+        Value::Number(Number::from(*self as i64))
     }
 }
 
@@ -64,7 +64,7 @@ impl ScalarType for i16 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as i64))
+        Value::Number(Number::from(*self as i64))
     }
 }
 
@@ -98,7 +98,7 @@ impl ScalarType for i32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as i64))
+        Value::Number(Number::from(*self as i64))
     }
 }
 
@@ -132,7 +132,7 @@ impl ScalarType for i64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as i64))
+        Value::Number(Number::from(*self as i64))
     }
 }
 
@@ -166,7 +166,7 @@ impl ScalarType for u8 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as u64))
+        Value::Number(Number::from(*self as u64))
     }
 }
 
@@ -200,7 +200,7 @@ impl ScalarType for u16 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as u64))
+        Value::Number(Number::from(*self as u64))
     }
 }
 
@@ -234,7 +234,7 @@ impl ScalarType for u32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as u64))
+        Value::Number(Number::from(*self as u64))
     }
 }
 
@@ -268,6 +268,6 @@ impl ScalarType for u64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(*self as u64))
+        Value::Number(Number::from(*self as u64))
     }
 }

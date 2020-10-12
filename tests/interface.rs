@@ -37,7 +37,7 @@ pub async fn test_interface_simple_object() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "node": {
                 "id": 33,
             }
@@ -82,7 +82,7 @@ pub async fn test_interface_simple_object2() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "node": {
                 "id": 33,
             }
@@ -148,7 +148,7 @@ pub async fn test_multiple_interfaces() {
         }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "myObj": {
                 "valueA": 1,
                 "valueB": 2,
@@ -226,7 +226,7 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
          }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "myObj": [{
                 "valueA": 1,
                 "valueB": 2,
@@ -274,7 +274,7 @@ pub async fn test_interface_field_result() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "node": {
                 "value": 10,
             }
@@ -324,7 +324,7 @@ pub async fn test_interface_field_method() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "test": {
                 "created_at": 1,
             }

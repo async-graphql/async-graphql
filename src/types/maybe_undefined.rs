@@ -37,7 +37,7 @@ use std::borrow::Cow;
 ///         }"#;
 ///     assert_eq!(
 ///         schema.execute(query).await.into_result().unwrap().data,
-///         serde_json::json!({
+///         value!({
 ///             "v1": 99,
 ///             "v2": 1,
 ///             "v3": 2,
@@ -183,16 +183,16 @@ mod tests {
     #[test]
     fn test_maybe_undefined_serde() {
         assert_eq!(
-            serde_json::to_string(&MaybeUndefined::Value(100i32)).unwrap(),
-            "100"
+            to_value(&MaybeUndefined::Value(100i32)).unwrap(),
+            value!(100)
         );
 
         assert_eq!(
-            serde_json::from_str::<MaybeUndefined<i32>>("100").unwrap(),
+            from_value::<MaybeUndefined<i32>>(value!(100)).unwrap(),
             MaybeUndefined::Value(100)
         );
         assert_eq!(
-            serde_json::from_str::<MaybeUndefined<i32>>("null").unwrap(),
+            from_value::<MaybeUndefined<i32>>(value!(null)).unwrap(),
             MaybeUndefined::Null
         );
 
@@ -202,45 +202,45 @@ mod tests {
         }
 
         assert_eq!(
-            serde_json::to_string(&A {
+            to_value(&A {
                 a: MaybeUndefined::Value(100i32)
             })
             .unwrap(),
-            r#"{"a":100}"#
+            value!({"a": 100})
         );
 
         assert_eq!(
-            serde_json::to_string(&A {
+            to_value(&A {
                 a: MaybeUndefined::Null,
             })
             .unwrap(),
-            r#"{"a":null}"#
+            value!({ "a": null })
         );
 
         assert_eq!(
-            serde_json::to_string(&A {
+            to_value(&A {
                 a: MaybeUndefined::Undefined,
             })
             .unwrap(),
-            r#"{"a":null}"#
+            value!({ "a": null })
         );
 
         assert_eq!(
-            serde_json::from_str::<A>(r#"{"a":100}"#).unwrap(),
+            from_value::<A>(value!({"a": 100})).unwrap(),
             A {
                 a: MaybeUndefined::Value(100i32)
             }
         );
 
         assert_eq!(
-            serde_json::from_str::<A>(r#"{"a":null}"#).unwrap(),
+            from_value::<A>(value!({ "a": null })).unwrap(),
             A {
                 a: MaybeUndefined::Null
             }
         );
 
         assert_eq!(
-            serde_json::from_str::<A>(r#"{}"#).unwrap(),
+            from_value::<A>(value!({})).unwrap(),
             A {
                 a: MaybeUndefined::Null
             }

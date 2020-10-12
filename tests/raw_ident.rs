@@ -54,7 +54,7 @@ pub async fn test_input_value_custom_error() {
         }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "type": 99,
             "obj": { "i32": 88 },
             "enumValue": "TYPE",
@@ -67,10 +67,7 @@ pub async fn test_input_value_custom_error() {
         .map_ok(|resp| resp.data)
         .boxed();
     for i in 0..10 {
-        assert_eq!(
-            serde_json::json!({ "type": i }),
-            stream.next().await.unwrap().unwrap()
-        );
+        assert_eq!(value!({ "type": i }), stream.next().await.unwrap().unwrap());
     }
     assert!(stream.next().await.is_none());
 }

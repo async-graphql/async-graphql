@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Number, Scalar, ScalarType, Value};
 use std::num::{
     NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8,
 };
@@ -33,7 +33,7 @@ impl ScalarType for NonZeroI8 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as i64))
+        Value::Number(Number::from(self.get() as i64))
     }
 }
 
@@ -67,7 +67,7 @@ impl ScalarType for NonZeroI16 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as i64))
+        Value::Number(Number::from(self.get() as i64))
     }
 }
 
@@ -101,7 +101,7 @@ impl ScalarType for NonZeroI32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as i64))
+        Value::Number(Number::from(self.get() as i64))
     }
 }
 
@@ -135,7 +135,7 @@ impl ScalarType for NonZeroI64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as i64))
+        Value::Number(Number::from(self.get() as i64))
     }
 }
 
@@ -169,7 +169,7 @@ impl ScalarType for NonZeroU8 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as u64))
+        Value::Number(Number::from(self.get() as u64))
     }
 }
 
@@ -203,7 +203,7 @@ impl ScalarType for NonZeroU16 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as u64))
+        Value::Number(Number::from(self.get() as u64))
     }
 }
 
@@ -237,7 +237,7 @@ impl ScalarType for NonZeroU32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as u64))
+        Value::Number(Number::from(self.get() as u64))
     }
 }
 
@@ -271,6 +271,6 @@ impl ScalarType for NonZeroU64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from(self.get() as u64))
+        Value::Number(Number::from(self.get() as u64))
     }
 }

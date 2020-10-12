@@ -41,7 +41,7 @@ pub async fn test_generic_object() {
     .to_owned();
     assert_eq!(
         schema.execute(&query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "objI32": {"value": 100},
             "objBool": {"value": true},
         })

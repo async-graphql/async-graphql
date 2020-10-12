@@ -75,7 +75,7 @@ pub async fn test_input_object_default_value() {
     .to_owned();
     assert_eq!(
         schema.execute(&query).await.data,
-        serde_json::json!({
+        value!({
             "a": {
                 "a": 999,
                 "b": [1, 2, 3],
@@ -126,14 +126,11 @@ pub async fn test_inputobject_flatten_recursive() {
     }
 
     assert_eq!(
-        MyInputObject::parse(Some(
-            Value::from_json(serde_json::json!({
-               "a": 10,
-               "b": 20,
-               "c": 30,
-            }))
-            .unwrap()
-        ))
+        MyInputObject::parse(Some(value!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })))
         .unwrap(),
         MyInputObject {
             b_obj: B {
@@ -153,12 +150,11 @@ pub async fn test_inputobject_flatten_recursive() {
             c: 30,
         }
         .to_value(),
-        Value::from_json(serde_json::json!({
+        value!({
            "a": 10,
            "b": 20,
            "c": 30,
-        }))
-        .unwrap()
+        })
     );
 
     struct Query;
@@ -196,7 +192,7 @@ pub async fn test_inputobject_flatten_recursive() {
             .into_result()
             .unwrap()
             .data,
-        serde_json::json!({
+        value!({
             "test": 60,
         })
     );
@@ -212,7 +208,7 @@ pub async fn test_inputobject_flatten_recursive() {
             .into_result()
             .unwrap()
             .data,
-        serde_json::json!({
+        value!({
             "test": 110,
         })
     );
@@ -228,7 +224,7 @@ pub async fn test_inputobject_flatten_recursive() {
             .into_result()
             .unwrap()
             .data,
-        serde_json::json!({
+        value!({
             "testWithDefault": 6,
         })
     );
@@ -264,14 +260,11 @@ pub async fn test_inputobject_flatten_multiple() {
     }
 
     assert_eq!(
-        ABC::parse(Some(
-            Value::from_json(serde_json::json!({
-               "a": 10,
-               "b": 20,
-               "c": 30,
-            }))
-            .unwrap()
-        ))
+        ABC::parse(Some(value!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })))
         .unwrap(),
         ABC {
             a: A { a: 10 },
@@ -287,11 +280,10 @@ pub async fn test_inputobject_flatten_multiple() {
             c: C { c: 30 }
         }
         .to_value(),
-        Value::from_json(serde_json::json!({
+        value!({
            "a": 10,
            "b": 20,
            "c": 30,
-        }))
-        .unwrap()
+        })
     );
 }

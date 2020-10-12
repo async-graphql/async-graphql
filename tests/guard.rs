@@ -83,7 +83,7 @@ pub async fn test_guard_simple_rule() {
             .execute(Request::new(query).data(Role::Admin))
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -108,9 +108,9 @@ pub async fn test_guard_simple_rule() {
             .collect::<Vec<_>>()
             .await,
         vec![
-            serde_json::json! ({"values": 1}),
-            serde_json::json! ({"values": 2}),
-            serde_json::json! ({"values": 3})
+            value! ({"values": 1}),
+            value! ({"values": 2}),
+            value! ({"values": 3})
         ]
     );
 
@@ -157,7 +157,7 @@ pub async fn test_guard_and_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -238,7 +238,7 @@ pub async fn test_guard_or_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -251,7 +251,7 @@ pub async fn test_guard_or_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -264,7 +264,7 @@ pub async fn test_guard_or_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -312,7 +312,7 @@ pub async fn test_guard_chain_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -421,7 +421,7 @@ pub async fn test_guard_race_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -435,7 +435,7 @@ pub async fn test_guard_race_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -449,7 +449,7 @@ pub async fn test_guard_race_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";
@@ -463,7 +463,7 @@ pub async fn test_guard_race_operator() {
             )
             .await
             .data,
-        serde_json::json!({"value": 10})
+        value!({"value": 10})
     );
 
     let query = "{ value }";

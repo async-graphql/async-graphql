@@ -112,7 +112,7 @@ impl<'de> Deserialize<'de> for Name {
 /// serialize `Upload` will fail, and `Enum` and `Upload` cannot be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ConstValue {
     /// `null`.
@@ -130,6 +130,43 @@ pub enum ConstValue {
     List(Vec<ConstValue>),
     /// An object. This is a map of keys to values.
     Object(BTreeMap<Name, ConstValue>),
+}
+
+impl PartialEq for ConstValue {
+    fn eq(&self, other: &ConstValue) -> bool {
+        match (self, other) {
+            (ConstValue::Null, ConstValue::Null) => true,
+            (ConstValue::Number(a), ConstValue::Number(b)) => a == b,
+            (ConstValue::Boolean(a), ConstValue::Boolean(b)) => a == b,
+            (ConstValue::String(a), ConstValue::String(b)) => a == b,
+            (ConstValue::Enum(a), ConstValue::String(b)) => a == b,
+            (ConstValue::String(a), ConstValue::Enum(b)) => a == b,
+            (ConstValue::Enum(a), ConstValue::Enum(b)) => a == b,
+            (ConstValue::List(a), ConstValue::List(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                a.iter().zip(b.iter()).all(|(a, b)| a == b)
+            }
+            (ConstValue::Object(a), ConstValue::Object(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+                for (a_key, a_value) in a.iter() {
+                    if let Some(b_value) = b.get(a_key.as_str()) {
+                        if b_value != a_value {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 impl From<()> for ConstValue {
@@ -209,47 +246,6 @@ impl<T: Into<ConstValue>> From<Vec<T>> for ConstValue {
 impl From<BTreeMap<Name, ConstValue>> for ConstValue {
     fn from(f: BTreeMap<Name, ConstValue>) -> Self {
         ConstValue::Object(f)
-    }
-}
-
-impl PartialEq<serde_json::Value> for ConstValue {
-    fn eq(&self, other: &serde_json::Value) -> bool {
-        match (self, other) {
-            (ConstValue::Null, serde_json::Value::Null) => true,
-            (ConstValue::Number(a), serde_json::Value::Number(b)) => a == b,
-            (ConstValue::String(a), serde_json::Value::String(b)) => a == b,
-            (ConstValue::Boolean(a), serde_json::Value::Bool(b)) => a == b,
-            (ConstValue::Enum(a), serde_json::Value::String(b)) => a == b,
-            (ConstValue::List(a), serde_json::Value::Array(b)) => {
-                if a.len() != b.len() {
-                    return false;
-                }
-                a.iter().zip(b.iter()).all(|(a, b)| a == b)
-            }
-            (ConstValue::Object(a), serde_json::Value::Object(b)) => {
-                if a.len() != b.len() {
-                    return false;
-                }
-                for (a_key, a_value) in a.iter() {
-                    if let Some(b_value) = b.get(a_key.as_str()) {
-                        if b_value != a_value {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                }
-
-                true
-            }
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<ConstValue> for serde_json::Value {
-    fn eq(&self, other: &ConstValue) -> bool {
-        other == self
     }
 }
 

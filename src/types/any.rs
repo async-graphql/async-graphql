@@ -1,5 +1,4 @@
 use crate::{InputValueResult, Scalar, ScalarType, Value};
-use serde::de::DeserializeOwned;
 
 /// Any scalar (For [Apollo Federation](https://www.apollographql.com/docs/apollo-server/federation/introduction))
 ///
@@ -20,13 +19,6 @@ impl ScalarType for Any {
 
     fn to_value(&self) -> Value {
         self.0.clone()
-    }
-}
-
-impl Any {
-    /// Parse this `Any` value to T by `serde_json`.
-    pub fn parse_value<T: DeserializeOwned>(&self) -> serde_json::Result<T> {
-        serde_json::from_value(self.to_value().into_json()?)
     }
 }
 

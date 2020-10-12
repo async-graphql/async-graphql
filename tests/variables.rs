@@ -25,14 +25,14 @@ pub async fn test_variables() {
             }
         "#,
     )
-    .variables(Variables::from_json(serde_json::json!({
+    .variables(Variables::from_value(value!({
         "intVal": 10,
          "intListVal": [1, 2, 3, 4, 5],
     })));
 
     assert_eq!(
         schema.execute(query).await.data,
-        serde_json::json!({
+        value!({
             "intVal": 10,
             "intListVal": [1, 2, 3, 4, 5],
         })
@@ -62,7 +62,7 @@ pub async fn test_variable_default_value() {
             )
             .await
             .data,
-        serde_json::json!({
+        value!({
             "intVal": 10,
         })
     );
@@ -93,7 +93,7 @@ pub async fn test_variable_no_value() {
         .unwrap();
     assert_eq!(
         resp.data,
-        serde_json::json!({
+        value!({
             "intVal": 10,
         })
     );
@@ -118,13 +118,13 @@ pub async fn test_variable_null() {
             }
         "#,
     )
-    .variables(Variables::from_json(serde_json::json!({
+    .variables(Variables::from_value(value!({
         "intVal": null,
     })));
     let resp = schema.execute(query).await;
     assert_eq!(
         resp.data,
-        serde_json::json!({
+        value!({
             "intVal": 10,
         })
     );
@@ -168,15 +168,13 @@ pub async fn test_variable_in_input_object() {
             test(input: {value: $value })
         }"#;
         let resp = schema
-            .execute(
-                Request::new(query).variables(Variables::from_json(serde_json::json!({
-                    "value": 10,
-                }))),
-            )
+            .execute(Request::new(query).variables(Variables::from_value(value!({
+                "value": 10,
+            }))))
             .await;
         assert_eq!(
             resp.data,
-            serde_json::json!({
+            value!({
                 "test": 10,
             })
         );
@@ -189,15 +187,13 @@ pub async fn test_variable_in_input_object() {
             test2(input: [{value: $value }, {value: $value }])
         }"#;
         let resp = schema
-            .execute(
-                Request::new(query).variables(Variables::from_json(serde_json::json!({
-                    "value": 3,
-                }))),
-            )
+            .execute(Request::new(query).variables(Variables::from_value(value!({
+                "value": 3,
+            }))))
             .await;
         assert_eq!(
             resp.data,
-            serde_json::json!({
+            value!({
                 "test2": 6,
             })
         );
@@ -210,15 +206,13 @@ pub async fn test_variable_in_input_object() {
             test(input: {value: $value })
         }"#;
         let resp = schema
-            .execute(
-                Request::new(query).variables(Variables::from_json(serde_json::json!({
-                    "value": 10,
-                }))),
-            )
+            .execute(Request::new(query).variables(Variables::from_value(value!({
+                "value": 10,
+            }))))
             .await;
         assert_eq!(
             resp.data,
-            serde_json::json!({
+            value!({
                 "test": 10,
             })
         );
@@ -257,7 +251,7 @@ pub async fn test_variables_enum() {
             }
         "#,
     )
-    .variables(Variables::from_json(serde_json::json!({
+    .variables(Variables::from_value(value!({
         "value1": "A",
         "value2": "B",
         "value3": "C",
@@ -265,7 +259,7 @@ pub async fn test_variables_enum() {
 
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "a": 1,
             "b": 2,
             "c": 3,
@@ -292,13 +286,13 @@ pub async fn test_variables_json() {
             }
         "#,
     )
-    .variables(Variables::from_json(serde_json::json!({
+    .variables(Variables::from_value(value!({
         "value": { "a-b": 123 },
     })));
 
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
-        serde_json::json!({
+        value!({
             "value": 123,
         })
     );
