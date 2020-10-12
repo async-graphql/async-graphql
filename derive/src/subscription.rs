@@ -11,7 +11,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
 use syn::{
-    Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeImplTrait, TypeReference,
+    Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeImplTrait, TypeParamBound,
+    TypeReference,
 };
 
 pub fn generate(
@@ -207,7 +208,13 @@ pub fn generate(
 
             let res_ty = ty.value_type();
             let stream_ty = if let Type::ImplTrait(TypeImplTrait { bounds, .. }) = &res_ty {
-                quote! { #bounds }
+                let mut r = None;
+                for b in bounds {
+                    if let TypeParamBound::Trait(b) = b {
+                        r = Some(quote! { #b });
+                    }
+                }
+                quote! { #r }
             } else {
                 quote! { #res_ty }
             };
