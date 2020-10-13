@@ -4,10 +4,10 @@
 
 ```toml
 [dependencies]
-async-graphql = "1.18.0"
-async-graphql-actix-web = "1.18.0" # 如果你需要集成到Actix-web
-async-graphql-warp = "1.18.0" # 如果你需要集成到Warp
-async-graphql-tide = "1.18.0" # 如果你需要集成到Tide
+async-graphql = "2.0"
+async-graphql-actix-web = "2.0" # 如果你需要集成到Actix-web
+async-graphql-warp = "2.0" # 如果你需要集成到Warp
+async-graphql-tide = "2.0" # 如果你需要集成到Tide
 ```
 
 ## 写一个Schema
