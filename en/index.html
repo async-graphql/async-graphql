@@ -164,11 +164,6 @@
 <p>You can define a Schema in Rust and procedural macros will automatically generate code for a GraphQL query. This library does not extend Rust's syntax, which means that Rustfmt can be used normally. I value this highly and it is one of the reasons why I developed <code>Async-graphql</code>.</p>
 <h2><a class="header" href="#why-do-this" id="why-do-this">Why do this?</a></h2>
 <p>I like GraphQL and Rust. I've been using <code>Juniper</code>, which solves the problem of implementing a GraphQL server with Rust. But Juniper had several problems, the most important of which is that it didn't support async/await at the time. So I decided to make this library for myself.</p>
-<h2><a class="header" href="#stability-unstable--experimental" id="stability-unstable--experimental">Stability: Unstable &amp; Experimental</a></h2>
-<p><strong>This project doesn't currently follow <a href="https://semver.org/">Semantic Versioning (SemVer)</a>, and there can be breaking changes on any version numbers. We will begin following SemVer once the project reaches <code>v2.0.0</code></strong></p>
-<p>Even though this project is above <code>v1.0.0</code>, we are rapidly changing and improving the API. This has caused versioning problems that aren't easily resolved because the project became popular very quickly (it was only started in March 2020).</p>
-<p>We currently plan to start following SemVer once we reach the <code>v2.0.0</code> release, which will happen once the API starts to stabilize. Unfortunately, we don't currently have the timeline for this.</p>
-<p>In accordance with Rust's policy on pre-<code>1.0.0</code> crates, we will try to keep breaking changes limited to minor version changes, but if things don't seem to be compiling after an upgrade, it is likely you'll need to dive into compiler errors to update some syntax that changed. Feel free to open an <a href="https://github.com/async-graphql/async-graphql/issues">issue</a> if something seems weird!</p>
 <h2><a class="header" href="#examples" id="examples">Examples</a></h2>
 <p>If you are just getting started, we recommend checking out our examples at:
 <a href="https://github.com/async-graphql/examples">https://github.com/async-graphql/examples</a></p>
