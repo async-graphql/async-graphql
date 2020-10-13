@@ -7,14 +7,13 @@ use serde::forward_to_deserialize_any;
 use std::collections::BTreeMap;
 use std::{fmt, vec};
 
+/// This type represents errors that can occur when deserializing.
 #[derive(Debug)]
-pub enum DeserializerError {
-    Custom(String),
-}
+pub struct DeserializerError(String);
 
 impl de::Error for DeserializerError {
     fn custom<T: fmt::Display>(msg: T) -> Self {
-        DeserializerError::Custom(msg.to_string())
+        DeserializerError(msg.to_string())
     }
 }
 
@@ -26,15 +25,15 @@ impl std::error::Error for DeserializerError {
 
 impl fmt::Display for DeserializerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            DeserializerError::Custom(ref msg) => write!(f, "{}", msg),
+        match self {
+            DeserializerError(msg) => write!(f, "{}", msg),
         }
     }
 }
 
 impl From<de::value::Error> for DeserializerError {
     fn from(e: de::value::Error) -> DeserializerError {
-        DeserializerError::Custom(e.to_string())
+        DeserializerError(e.to_string())
     }
 }
 
@@ -102,7 +101,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
             ConstValue::Null => visitor.visit_unit(),
             ConstValue::Number(v) => v
                 .deserialize_any(visitor)
-                .map_err(|err| DeserializerError::Custom(err.to_string())),
+                .map_err(|err| DeserializerError(err.to_string())),
             ConstValue::String(v) => visitor.visit_str(&v),
             ConstValue::Boolean(v) => visitor.visit_bool(v),
             ConstValue::Enum(v) => visitor.visit_str(v.as_str()),

@@ -46,6 +46,6 @@ impl ScalarType for f64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(serde_json::Number::from_f64(*self as f64).unwrap())
+        Value::Number(Number::from_f64(*self as f64).unwrap())
     }
 }

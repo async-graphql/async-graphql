@@ -66,7 +66,7 @@ pub async fn test_enum_derive_and_item_attributes() {
     }
 
     assert_eq!(
-        serde_json::from_str::<TestStruct>(r#"{ "value" : "Other" }"#).unwrap(),
+        from_value::<TestStruct>(value!({"value": "Other"})).unwrap(),
         TestStruct { value: Test::Real }
     );
 }

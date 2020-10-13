@@ -6,7 +6,7 @@ use crate::{
 };
 use std::borrow::Cow;
 
-/// Represents a GraphQL type
+/// Represents a GraphQL type.
 ///
 /// All GraphQL types implement this trait, such as `Scalar`, `Object`, `Union` ...
 pub trait Type {
@@ -29,7 +29,7 @@ pub trait Type {
     fn create_type_info(registry: &mut registry::Registry) -> String;
 }
 
-/// Represents a GraphQL input value
+/// Represents a GraphQL input value.
 pub trait InputValueType: Type + Sized {
     /// Parse from `Value`. None represents undefined.
     fn parse(value: Option<Value>) -> InputValueResult<Self>;
@@ -38,7 +38,7 @@ pub trait InputValueType: Type + Sized {
     fn to_value(&self) -> Value;
 }
 
-/// Represents a GraphQL output value
+/// Represents a GraphQL output value.
 #[async_trait::async_trait]
 pub trait OutputValueType: Type {
     /// Resolve an output value to `async_graphql::Value`.

@@ -5,15 +5,14 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
 
+/// This type represents errors that can occur when serializing.
 #[derive(Debug)]
-pub enum SerializerError {
-    Custom(String),
-}
+pub struct SerializerError(String);
 
 impl fmt::Display for SerializerError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SerializerError::Custom(ref s) => fmt.write_str(s),
+            SerializerError(ref s) => fmt.write_str(s),
         }
     }
 }
@@ -26,7 +25,7 @@ impl Error for SerializerError {
 
 impl ser::Error for SerializerError {
     fn custom<T: fmt::Display>(msg: T) -> SerializerError {
-        SerializerError::Custom(msg.to_string())
+        SerializerError(msg.to_string())
     }
 }
 
@@ -96,9 +95,7 @@ impl ser::Serializer for Serializer {
     }
 
     fn serialize_char(self, _v: char) -> Result<Self::Ok, Self::Error> {
-        Err(SerializerError::Custom(
-            "char is not supported.".to_string(),
-        ))
+        Err(SerializerError("char is not supported.".to_string()))
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -106,9 +103,7 @@ impl ser::Serializer for Serializer {
     }
 
     fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Err(SerializerError::Custom(
-            "bytes is not supported.".to_string(),
-        ))
+        Err(SerializerError("bytes is not supported.".to_string()))
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
@@ -389,7 +384,7 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
 }
 
 fn key_must_be_a_string() -> SerializerError {
-    SerializerError::Custom("Key must be a string".to_string())
+    SerializerError("Key must be a string".to_string())
 }
 
 struct MapKeySerializer;

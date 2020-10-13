@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
-/// A GraphQL container.
+/// Represents a GraphQL container object.
 ///
 /// This helper trait allows the type to call `resolve_container` on itself in its
 /// `OutputValueType::resolve` implementation.

@@ -166,12 +166,11 @@ impl From<Vec<Request>> for BatchRequest {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use serde_json::json;
+    use crate::*;
 
     #[test]
     fn test_request() {
-        let request: Request = serde_json::from_value(json! ({
+        let request: Request = from_value(value! ({
             "query": "{ a b c }"
         }))
         .unwrap();
@@ -182,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_request_with_operation_name() {
-        let request: Request = serde_json::from_value(json! ({
+        let request: Request = from_value(value! ({
             "query": "{ a b c }",
             "operationName": "a"
         }))
@@ -194,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_request_with_variables() {
-        let request: Request = serde_json::from_value(json! ({
+        let request: Request = from_value(value! ({
             "query": "{ a b c }",
             "variables": {
                 "v1": 100,
@@ -204,8 +203,8 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(
-            request.variables.into_value().into_json().unwrap(),
-            json!({
+            request.variables.into_value(),
+            value!({
                 "v1": 100,
                 "v2": [1, 2, 3],
                 "v3": "str",
@@ -217,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_request_with_null_variables() {
-        let request: Request = serde_json::from_value(json! ({
+        let request: Request = from_value(value! ({
             "query": "{ a b c }",
             "variables": null
         }))
@@ -228,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_batch_request_single() {
-        let request: BatchRequest = serde_json::from_value(json! ({
+        let request: BatchRequest = from_value(value! ({
             "query": "{ a b c }"
         }))
         .unwrap();
@@ -244,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_batch_request_batch() {
-        let request: BatchRequest = serde_json::from_value(json!([
+        let request: BatchRequest = from_value(value!([
             {
                 "query": "{ a b c }"
             },

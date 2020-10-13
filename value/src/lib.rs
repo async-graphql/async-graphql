@@ -1,3 +1,8 @@
+//! Value for GraphQL. Used in the [`async-graphql`](https://crates.io/crates/async-graphql) crate.
+
+#![warn(missing_docs)]
+#![forbid(unsafe_code)]
+
 mod de;
 mod macros;
 mod ser;

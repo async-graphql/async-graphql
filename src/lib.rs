@@ -148,8 +148,6 @@ pub use futures;
 #[doc(hidden)]
 pub use indexmap;
 #[doc(hidden)]
-pub use serde_json;
-#[doc(hidden)]
 pub use static_assertions;
 #[doc(hidden)]
 pub use subscription::SubscriptionType;
@@ -176,6 +174,12 @@ pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
+
+/// An alias of [async_graphql::Error](struct.Error.html).
+pub type FieldError = Error;
+
+/// An alias of [async_graphql::Result](type.Result.html).
+pub type FieldResult<T> = Result<T>;
 
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
