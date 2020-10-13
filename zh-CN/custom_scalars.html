@@ -190,6 +190,26 @@ impl ScalarType for StringNumber {
 
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#使用scalar宏定义标量" id="使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
+<p>如果你的类型实现了<code>serde :: Serialize</code>和<code>serde :: Deserialize</code>，那么可以使用此宏更简单地定义标量。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap&lt;String, i32&gt;,     
+}
+
+scalar!(MyValue);
+
+// 重命名为`MV`.
+// scalar!(MyValue, &quot;MV&quot;);
+
+// 重命名为`MV`并且添加描述.
+// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

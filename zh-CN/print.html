@@ -1214,6 +1214,26 @@ impl ScalarType for StringNumber {
 
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#使用scalar宏定义标量" id="使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
+<p>如果你的类型实现了<code>serde :: Serialize</code>和<code>serde :: Deserialize</code>，那么可以使用此宏更简单地定义标量。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap&lt;String, i32&gt;,     
+}
+
+scalar!(MyValue);
+
+// 重命名为`MV`.
+// scalar!(MyValue, &quot;MV&quot;);
+
+// 重命名为`MV`并且添加描述.
+// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#自定义扩展" id="自定义扩展">自定义扩展</a></h1>
 <p>一个GraphQL扩展对象能够接收一个查询执行各个阶段的事件，你可以收集想要的数据，这些数据能够在查询结果中返回。</p>
 <p>只需要实现<code>async_graphql::Extension</code>就能够定义一个扩展对象，然后在创建<code>Schema</code>的时候调用<code>Schema::extension</code>应用扩展。</p>

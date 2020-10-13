@@ -1333,6 +1333,26 @@ impl ScalarType for StringNumber {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#use-scalar-macro-to-define-scalar" id="use-scalar-macro-to-define-scalar">Use <code>scalar!</code> macro to define scalar</a></h2>
+<p>If your type implemented <code>serde::Serialize</code> and <code>serde::Deserialize</code>, then you can use this macro to define a scalar more simply.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap&lt;String, i32&gt;,     
+}
+
+scalar!(MyValue);
+
+// Rename to `MV`.
+// scalar!(MyValue, &quot;MV&quot;);
+
+// Rename to `MV` and add description.
+// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#custom-extensions" id="custom-extensions">Custom extensions</a></h1>
 <p>A GraphQL extension object can receive events in various stages of a query's execution, and you can collect various kinds of data to be returned in the query results.</p>
 <p>You can use <code>async_graphql::Extension</code> to define an extension object, and your application must call <code>Schema::extension</code> when your <code>Schema</code> is created.</p>

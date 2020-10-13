@@ -188,6 +188,26 @@ impl ScalarType for StringNumber {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#use-scalar-macro-to-define-scalar" id="use-scalar-macro-to-define-scalar">Use <code>scalar!</code> macro to define scalar</a></h2>
+<p>If your type implemented <code>serde::Serialize</code> and <code>serde::Deserialize</code>, then you can use this macro to define a scalar more simply.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Serialize, Deserialize)]
+struct MyValue {
+    a: i32,
+    b: HashMap&lt;String, i32&gt;,     
+}
+
+scalar!(MyValue);
+
+// Rename to `MV`.
+// scalar!(MyValue, &quot;MV&quot;);
+
+// Rename to `MV` and add description.
+// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
