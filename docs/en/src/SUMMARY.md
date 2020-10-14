@@ -29,5 +29,4 @@
 - [Advanced topics](advanced_topics.md)
     - [Custom scalars](custom_scalars.md)
     - [Custom extensions](custom_extensions.md)
-    - [Custom subscription transport](custom_subscription_transport.md)
     - [Apollo Federation](apollo_federation.md)

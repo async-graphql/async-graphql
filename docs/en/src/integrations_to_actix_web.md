@@ -35,4 +35,4 @@ async fn index_ws(
 
 ## More examples
 
-https://github.com/async-graphql/examples/tree/master/actix-web
+[https://github.com/async-graphql/examples/tree/master/actix-web](https://github.com/async-graphql/examples/tree/master/actix-web)
