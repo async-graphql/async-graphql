@@ -100,6 +100,10 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
         } else if ctx.item.node.name.node == "__type" {
             let type_name: String = ctx.param_value("name", None)?;
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+            println!(
+                "{:?}",
+                ctx.schema_env.registry.types.keys().collect::<Vec<_>>()
+            );
             return OutputValueType::resolve(
                 &ctx.schema_env
                     .registry

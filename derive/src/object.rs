@@ -1,11 +1,10 @@
-use crate::args;
+use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
     get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
     GeneratorResult,
 };
-use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
@@ -33,7 +32,7 @@ pub fn generate(
     let gql_typename = object_args
         .name
         .clone()
-        .unwrap_or_else(|| self_name.clone());
+        .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
 
     let desc = get_rustdoc(&item_impl.attrs)?
         .map(|s| quote! { Some(#s) })
@@ -141,9 +140,11 @@ pub fn generate(
 
                 for (ident, ty, args::Argument { name, key, .. }) in &args {
                     let is_key = all_key || *key;
-                    let name = name
-                        .clone()
-                        .unwrap_or_else(|| ident.ident.unraw().to_string().to_camel_case());
+                    let name = name.clone().unwrap_or_else(|| {
+                        object_args
+                            .rename_args
+                            .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
+                    });
 
                     if is_key {
                         if !keys_str.is_empty() {
@@ -211,10 +212,11 @@ pub fn generate(
                     return Err(Error::new_spanned(&method, "Must be asynchronous").into());
                 }
 
-                let field_name = method_args
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| method.sig.ident.unraw().to_string().to_camel_case());
+                let field_name = method_args.name.clone().unwrap_or_else(|| {
+                    object_args
+                        .rename_fields
+                        .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
+                });
                 let field_desc = get_rustdoc(&method.attrs)?
                     .map(|s| quote! { Some(#s) })
                     .unwrap_or_else(|| quote! {None});
@@ -326,9 +328,11 @@ pub fn generate(
                     },
                 ) in args
                 {
-                    let name = name
-                        .clone()
-                        .unwrap_or_else(|| ident.ident.unraw().to_string().to_camel_case());
+                    let name = name.clone().unwrap_or_else(|| {
+                        object_args
+                            .rename_args
+                            .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
+                    });
                     let desc = desc
                         .as_ref()
                         .map(|s| quote! {Some(#s)})
@@ -368,7 +372,9 @@ pub fn generate(
                     };
                     let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                     get_params.push(quote! {
+                        #[allow(non_snake_case)]
                         let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
+                        #[allow(non_snake_case)]
                         let #ident: #ty = #param_getter_name()?;
                     });
                 }

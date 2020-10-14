@@ -1,6 +1,7 @@
 use darling::ast::{Data, Fields};
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
+use inflector::Inflector;
 use syn::{Attribute, Generics, Ident, Lit, LitStr, Meta, Type, Visibility};
 
 #[derive(FromMeta)]
@@ -84,6 +85,10 @@ pub struct SimpleObject {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub rename_fields: Option<RenameRule>,
+    #[darling(default)]
+    pub rename_args: Option<RenameRule>,
+    #[darling(default)]
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
@@ -105,6 +110,8 @@ pub struct Argument {
 pub struct Object {
     pub internal: bool,
     pub name: Option<String>,
+    pub rename_fields: Option<RenameRule>,
+    pub rename_args: Option<RenameRule>,
     pub cache_control: CacheControl,
     pub extends: bool,
 }
@@ -135,6 +142,8 @@ pub struct Enum {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub rename_items: Option<RenameRule>,
     #[darling(default)]
     pub remote: Option<String>,
 }
@@ -208,6 +217,8 @@ pub struct InputObject {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub rename_fields: Option<RenameRule>,
 }
 
 #[derive(FromMeta)]
@@ -262,6 +273,10 @@ pub struct Interface {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub rename_fields: Option<RenameRule>,
+    #[darling(default)]
+    pub rename_args: Option<RenameRule>,
     #[darling(default, multiple, rename = "field")]
     pub fields: Vec<InterfaceField>,
     #[darling(default)]
@@ -280,6 +295,8 @@ pub struct Scalar {
 pub struct Subscription {
     pub internal: bool,
     pub name: Option<String>,
+    pub rename_fields: Option<RenameRule>,
+    pub rename_args: Option<RenameRule>,
 }
 
 #[derive(FromMeta, Default)]
@@ -299,12 +316,6 @@ pub struct SubscriptionField {
     pub name: Option<String>,
     pub deprecation: Option<String>,
     pub guard: Option<Meta>,
-}
-
-#[derive(FromMeta, Default)]
-#[darling(default, allow_unknown_fields)]
-pub struct SubscriptionFieldWrapper {
-    pub graphql: SubscriptionField,
 }
 
 #[derive(FromField)]
@@ -349,4 +360,77 @@ pub struct MergedSubscription {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum RenameRule {
+    Lower,
+    Upper,
+    Pascal,
+    Camel,
+    Snake,
+    ScreamingSnake,
+}
+
+impl RenameRule {
+    fn rename(&self, name: impl AsRef<str>) -> String {
+        match self {
+            Self::Lower => name.as_ref().to_lowercase(),
+            Self::Upper => name.as_ref().to_uppercase(),
+            Self::Pascal => name.as_ref().to_pascal_case(),
+            Self::Camel => name.as_ref().to_camel_case(),
+            Self::Snake => name.as_ref().to_snake_case(),
+            Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
+        }
+    }
+}
+
+impl FromMeta for RenameRule {
+    fn from_string(value: &str) -> darling::Result<Self> {
+        match value {
+            "lowercase" => Ok(Self::Lower),
+            "UPPERCASE" => Ok(Self::Upper),
+            "PascalCase" => Ok(Self::Pascal),
+            "camelCase" => Ok(Self::Camel),
+            "snake_case" => Ok(Self::Snake),
+            "SCREAMING_SNAKE_CASE" => Ok(Self::ScreamingSnake),
+            _ => Err(darling::Error::custom(format!(
+                "Unknown rename rule: \"{}\"",
+                value
+            ))),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum RenameTarget {
+    Type,
+    EnumItem,
+    Field,
+    Argument,
+}
+
+impl RenameTarget {
+    fn rule(&self) -> RenameRule {
+        match self {
+            RenameTarget::Type => RenameRule::Pascal,
+            RenameTarget::EnumItem => RenameRule::ScreamingSnake,
+            RenameTarget::Field => RenameRule::Camel,
+            RenameTarget::Argument => RenameRule::Camel,
+        }
+    }
+
+    pub fn rename(&self, name: impl AsRef<str>) -> String {
+        self.rule().rename(name)
+    }
+}
+
+pub trait RenameRuleExt {
+    fn rename(&self, name: impl AsRef<str>, target: RenameTarget) -> String;
+}
+
+impl RenameRuleExt for Option<RenameRule> {
+    fn rename(&self, name: impl AsRef<str>, target: RenameTarget) -> String {
+        self.unwrap_or(target.rule()).rename(name)
+    }
 }

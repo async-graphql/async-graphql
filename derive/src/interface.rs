@@ -1,9 +1,7 @@
-use crate::args;
-use crate::args::{InterfaceField, InterfaceFieldArgument};
+use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{generate_default, get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::{Data, Style};
-use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
@@ -29,7 +27,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let gql_typename = interface_args
         .name
         .clone()
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&interface_args.attrs)?
         .map(|s| quote! { Some(#s) })
@@ -124,7 +122,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             (name.to_string(), Ident::new(method, Span::call_site()))
         } else {
             let method_name = Ident::new(&name, Span::call_site());
-            (name.to_camel_case(), method_name)
+            (
+                interface_args
+                    .rename_fields
+                    .rename(name, RenameTarget::Field),
+                method_name,
+            )
         };
         let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
             Ok(ty) => ty,
@@ -156,7 +159,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         } in args
         {
             let ident = Ident::new(name, Span::call_site());
-            let name = name.to_camel_case();
+            let name = interface_args
+                .rename_args
+                .rename(name, RenameTarget::Argument);
             let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
                 Ok(ty) => ty,
                 Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),

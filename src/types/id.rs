@@ -79,7 +79,7 @@ impl PartialEq<&str> for ID {
     }
 }
 
-#[Scalar(internal)]
+#[Scalar(internal, name = "ID")]
 impl ScalarType for ID {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

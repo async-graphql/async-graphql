@@ -1,4 +1,4 @@
-use crate::args;
+use crate::args::{self, RenameTarget};
 use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::Data;
 use proc_macro::TokenStream;
@@ -13,7 +13,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let gql_typename = object_args
         .name
         .clone()
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { Some(#s) })

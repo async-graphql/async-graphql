@@ -1,7 +1,6 @@
-use crate::args;
+use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::Data;
-use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
@@ -15,7 +14,10 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         _ => return Err(Error::new_spanned(ident, "Enum can only be applied to an enum.").into()),
     };
 
-    let gql_typename = enum_args.name.clone().unwrap_or_else(|| ident.to_string());
+    let gql_typename = enum_args
+        .name
+        .clone()
+        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { Some(#s) })
@@ -38,11 +40,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         }
 
         let item_ident = &variant.ident;
-        let gql_item_name = variant
-            .name
-            .clone()
-            .take()
-            .unwrap_or_else(|| variant.ident.unraw().to_string().to_screaming_snake_case());
+        let gql_item_name = variant.name.clone().unwrap_or_else(|| {
+            enum_args
+                .rename_items
+                .rename(variant.ident.unraw().to_string(), RenameTarget::EnumItem)
+        });
         let item_deprecation = variant
             .deprecation
             .as_ref()

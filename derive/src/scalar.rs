@@ -1,4 +1,4 @@
-use crate::args;
+use crate::args::{self, RenameTarget};
 use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use proc_macro::TokenStream;
 use quote::quote;
@@ -20,7 +20,7 @@ pub fn generate(
     let gql_typename = scalar_args
         .name
         .clone()
-        .unwrap_or_else(|| self_name.clone());
+        .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
     let desc = get_rustdoc(&item_impl.attrs)?
         .map(|s| quote! { Some(#s) })
         .unwrap_or_else(|| quote! {None});

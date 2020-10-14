@@ -1,9 +1,8 @@
-use crate::args;
+use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::utils::{
     generate_default, generate_validator, get_crate_name, get_rustdoc, GeneratorResult,
 };
 use darling::ast::Data;
-use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
@@ -40,7 +39,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let gql_typename = object_args
         .name
         .clone()
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { Some(#s) })
@@ -55,10 +54,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     for field in &s.fields {
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
-        let name = field
-            .name
-            .clone()
-            .unwrap_or_else(|| ident.unraw().to_string().to_camel_case());
+        let name = field.name.clone().unwrap_or_else(|| {
+            object_args
+                .rename_fields
+                .rename(ident.unraw().to_string(), RenameTarget::Field)
+        });
 
         if field.flatten {
             flatten_fields.push((ident, ty));
@@ -108,6 +108,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         if let Some(default) = default {
             get_fields.push(quote! {
+                #[allow(non_snake_case)]
                 let #ident: #ty = {
                     match obj.get(#name) {
                         Some(value) => #crate_name::InputValueType::parse(Some(value.clone()))
@@ -118,6 +119,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
         } else {
             get_fields.push(quote! {
+                #[allow(non_snake_case)]
                 let #ident: #ty = #crate_name::InputValueType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
             });

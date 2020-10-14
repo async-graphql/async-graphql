@@ -1,7 +1,6 @@
-use crate::args;
+use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::utils::{generate_guards, get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::Data;
-use inflector::Inflector;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
@@ -16,7 +15,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let gql_typename = object_args
         .name
         .clone()
-        .unwrap_or_else(|| ident.to_string());
+        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { Some(#s) })
@@ -45,10 +44,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
         };
 
-        let field_name = field
-            .name
-            .clone()
-            .unwrap_or_else(|| ident.unraw().to_string().to_camel_case());
+        let field_name = field.name.clone().unwrap_or_else(|| {
+            object_args
+                .rename_fields
+                .rename(ident.unraw().to_string(), RenameTarget::Field)
+        });
         let field_desc = get_rustdoc(&field.attrs)?
             .map(|s| quote! {Some(#s)})
             .unwrap_or_else(|| quote! {None});

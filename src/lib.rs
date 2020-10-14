@@ -196,6 +196,8 @@ pub use types::*;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
@@ -311,6 +313,7 @@ pub use async_graphql_derive::Object;
 /// | Attribute     | description               | Type     | Optional |
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
@@ -354,10 +357,11 @@ pub use async_graphql_derive::SimpleObject;
 ///
 /// # Macro parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Enum name                 | string   | Y        |
-/// | remote      | Derive a remote enum      | string   | Y        |
+/// | Attribute    | description               | Type     | Optional |
+/// |--------------|---------------------------|----------|----------|
+/// | name         | Enum name                 | string   | Y        |
+/// | rename_items | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | remote       | Derive a remote enum      | string   | Y        |
 ///
 /// # Item parameters
 ///
@@ -409,9 +413,10 @@ pub use async_graphql_derive::Enum;
 ///
 /// # Macro parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Object name               | string   | Y        |
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 ///
 /// # Field parameters
 ///
@@ -464,10 +469,12 @@ pub use async_graphql_derive::InputObject;
 ///
 /// # Macro parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Object name               | string   | Y        |
-/// | field      | Fields of this Interface  | [InterfaceField] | N |
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | field         | Fields of this Interface  | [InterfaceField] | N |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 ///
 /// # Field parameters
@@ -480,9 +487,9 @@ pub use async_graphql_derive::InputObject;
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | arg         | Field arguments           | [InterfaceFieldArgument]          | Y        |
-/// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
-/// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
-/// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
+/// | external    | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
+/// | provides    | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
+/// | requires    | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 ///
 /// # Field argument parameters
 ///
@@ -672,9 +679,11 @@ pub use async_graphql_derive::Union;
 ///
 /// # Macro parameters
 ///
-/// | Attribute   | description               | Type     | Optional |
-/// |-------------|---------------------------|----------|----------|
-/// | name        | Object name               | string   | Y        |
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 ///
 /// # Field parameters
 ///
@@ -682,7 +691,7 @@ pub use async_graphql_derive::Union;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
-/// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | guard       | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 ///
 /// # Field argument parameters
 ///
