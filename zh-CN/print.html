@@ -1217,6 +1217,8 @@ let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#更多例子" id="更多例子">更多例子</a></h2>
+<p>https://github.com/async-graphql/examples/tree/master/warp</p>
 <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
 <p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>Request</code>，它其实是<code>async_graphql::Request</code>的包装，你可以调用<code>Request::into_inner</code>把它转换成一个<code>async_graphql::Request</code>。</p>
 <p><code>WSSubscription</code>是一个支持Web Socket订阅的Actor。</p>
@@ -1247,6 +1249,8 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#更多例子-1" id="更多例子-1">更多例子</a></h2>
+<p>https://github.com/async-graphql/examples/tree/master/actix-web</p>
 <h1><a class="header" href="#高级主题" id="高级主题">高级主题</a></h1>
 <h1><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h1>
 <p><code>Async-graphql</code>已经内置了绝大部分常用的标量类型，同时你也能自定义标量。</p>
