@@ -49,6 +49,8 @@ let schema = Schema::new(
 );
 ```
 
+> ⚠️ **MergedObject cannot be used in Interface。**
+
 # Merging Subscriptions
 
 Along with `MergedObject`, you can derive `MergedSubscription` or use `#[MergedSubscription]` to merge separate `#[Subscription]` blocks.

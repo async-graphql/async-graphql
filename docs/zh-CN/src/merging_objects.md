@@ -49,6 +49,8 @@ let schema = Schema::new(
 );
 ```
 
+> ⚠️ **合并的对象无法在Interface中使用。**
+
 # 合并订阅
 
 和`MergedObject`一样，你可以派生`MergedSubscription`来合并单独的`＃[Subscription]`块。

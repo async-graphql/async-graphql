@@ -2,9 +2,11 @@ use crate::args::{self, RenameTarget};
 use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use std::collections::HashSet;
-use syn::{Error, Type};
+use syn::visit_mut::VisitMut;
+use syn::{visit_mut, Error, Lifetime, Type};
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
@@ -68,9 +70,20 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             enum_names.push(enum_name);
 
+            struct RemoveLifetime;
+            impl VisitMut for RemoveLifetime {
+                fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
+                    i.ident = Ident::new("_", Span::call_site());
+                    visit_mut::visit_lifetime_mut(self, i);
+                }
+            }
+
+            let mut assert_ty = p.clone();
+            RemoveLifetime.visit_type_path_mut(&mut assert_ty);
+
             if !variant.flatten {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::ObjectType);
+                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #generics ::std::convert::From<#p> for #ident #generics {
@@ -81,7 +94,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 });
             } else {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#p: #crate_name::UnionType);
+                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::UnionType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #generics ::std::convert::From<#p> for #ident #generics {
@@ -167,7 +180,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 Ok(None)
             }
 
-            fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::ServerResult<()> {
+            fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
                 match self {
                     #(#collect_all_fields),*
                 }

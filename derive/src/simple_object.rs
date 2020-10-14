@@ -141,7 +141,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #ident #where_clause {
+        impl #generics #ident #generics #where_clause {
             #(#getters)*
         }
 

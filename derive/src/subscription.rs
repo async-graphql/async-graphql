@@ -388,10 +388,10 @@ pub fn generate(
         #[allow(clippy::all, clippy::pedantic)]
         #[allow(unused_braces, unused_variables)]
         impl #crate_name::SubscriptionType for #self_ty #where_clause {
-            fn create_field_stream<'a>(
-                &'a self,
-                ctx: &'a #crate_name::Context<'a>,
-            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + 'a>>> {
+            fn create_field_stream<'__life>(
+                &'__life self,
+                ctx: &'__life #crate_name::Context<'__life>,
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + '__life>>> {
                 #(#create_stream)*
                 None
             }

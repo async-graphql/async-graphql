@@ -6,7 +6,8 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use std::collections::HashSet;
-use syn::{Error, Type};
+use syn::visit_mut::VisitMut;
+use syn::{visit_mut, Error, Lifetime, Type};
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
@@ -71,7 +72,20 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 );
             }
 
+            struct RemoveLifetime;
+            impl VisitMut for RemoveLifetime {
+                fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
+                    i.ident = Ident::new("_", Span::call_site());
+                    visit_mut::visit_lifetime_mut(self, i);
+                }
+            }
+
+            let mut assert_ty = p.clone();
+            RemoveLifetime.visit_type_path_mut(&mut assert_ty);
+
             type_into_impls.push(quote! {
+                #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
+
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #generics ::std::convert::From<#p> for #ident #generics {
                     fn from(obj: #p) -> Self {
@@ -322,7 +336,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 Ok(None)
             }
 
-            fn collect_all_fields<'a>(&'a self, ctx: &#crate_name::ContextSelectionSet<'a>, fields: &mut #crate_name::resolver_utils::Fields<'a>) -> #crate_name::ServerResult<()> {
+            fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
                 match self {
                     #(#collect_all_fields),*
                 }

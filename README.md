@@ -56,9 +56,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 
 ## Examples
 
-If you are just getting started, we recommend checking out our examples at: https://github.com/async-graphql/examples
-
-To see how you would create a Relay-compliant server using async-graphql, warp, diesel & postgresql, you can also check out a real-world example at: https://github.com/phated/twentyfive-stars
+https://github.com/async-graphql/examples
 
 ## Benchmark
 
