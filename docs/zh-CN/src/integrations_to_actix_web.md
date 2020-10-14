@@ -29,3 +29,8 @@ async fn index_ws(
     ws::start_with_protocols(WSSubscription::new(&schema), &["graphql-ws"], &req, payload)
 }
 ```
+
+## 更多例子
+
+https://github.com/async-graphql/examples/tree/master/actix-web
+
