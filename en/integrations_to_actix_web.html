@@ -172,7 +172,7 @@ convert it into a <code>async_graphql::Request</code>.</p>
 </span>async fn index(
     // Schema now accessible here
     schema: web::Data&lt;Schema&gt;,
-    request: Request,
+    request: async_graphql_actix_web::Request,
 ) -&gt; web::Json&lt;Response&gt; {
     web::Json(Response(schema.execute(request.into_inner()).await)
 }

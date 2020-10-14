@@ -169,7 +169,7 @@
 </span><span class="boring">fn main() {
 </span>async fn index(
     schema: web::Data&lt;Schema&gt;,
-    request: Request,
+    request: async_graphql_actix_web::Request,
 ) -&gt; web::Json&lt;Response&gt; {
     web::Json(Response(schema.execute(request.into_inner()).await)
 }

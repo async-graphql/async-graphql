@@ -1203,7 +1203,7 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
     let resp = schema.execute(request).await;
 
     // 返回结果
-    Ok::&lt;_, Infallible&gt;(warp::reply::json(resp).into_response())
+    Ok::&lt;_, Infallible&gt;(async_graphql_warp::Response::from(resp))
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
@@ -1227,7 +1227,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">fn main() {
 </span>async fn index(
     schema: web::Data&lt;Schema&gt;,
-    request: Request,
+    request: async_graphql_actix_web::Request,
 ) -&gt; web::Json&lt;Response&gt; {
     web::Json(Response(schema.execute(request.into_inner()).await)
 }
