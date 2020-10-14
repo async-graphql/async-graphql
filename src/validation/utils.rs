@@ -60,6 +60,7 @@ pub fn is_valid_input_value(
                     },
                 )
             }),
+            ConstValue::Null => return None,
             _ => is_valid_input_value(registry, type_name, value, path_node),
         },
         registry::MetaTypeName::Named(type_name) => {

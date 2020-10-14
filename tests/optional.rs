@@ -34,6 +34,10 @@ pub async fn test_optional_type() {
             input
         }
 
+        async fn test_arg2(&self, input: Option<Vec<i32>>) -> Option<Vec<i32>> {
+            input
+        }
+
         async fn test_input<'a>(&self, input: MyInput) -> Option<i32> {
             input.value
         }
@@ -54,12 +58,15 @@ pub async fn test_optional_type() {
             value2Ref
             testArg1: testArg(input: 10)
             testArg2: testArg
+            testArg3: testArg(input: null)
+            testArg21: testArg2(input: null)
+            testArg22: testArg2(input: [1, 2, 3])
             testInput1: testInput(input: {value: 10})
             testInput2: testInput(input: {})
             }"#
     .to_owned();
     assert_eq!(
-        schema.execute(&query).await.data,
+        schema.execute(&query).await.into_result().unwrap().data,
         value!({
             "value1": 10,
             "value1Ref": 10,
@@ -67,6 +74,9 @@ pub async fn test_optional_type() {
             "value2Ref": null,
             "testArg1": 10,
             "testArg2": null,
+            "testArg3": null,
+            "testArg21": null,
+            "testArg22": [1, 2, 3],
             "testInput1": 10,
             "testInput2": null,
         })
