@@ -17,7 +17,7 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
     let resp = schema.execute(request).await;
 
     // 返回结果
-    Ok::<_, Infallible>(warp::reply::json(resp).into_response())
+    Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 ```

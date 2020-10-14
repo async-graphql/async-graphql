@@ -11,7 +11,7 @@
 ```rust
 async fn index(
     schema: web::Data<Schema>,
-    request: Request,
+    request: async_graphql_actix_web::Request,
 ) -> web::Json<Response> {
     web::Json(Response(schema.execute(request.into_inner()).await)
 }

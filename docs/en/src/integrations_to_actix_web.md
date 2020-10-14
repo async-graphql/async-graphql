@@ -14,7 +14,7 @@ When you define your `actix_web::App` you need to pass in the Schema as data.
 async fn index(
     // Schema now accessible here
     schema: web::Data<Schema>,
-    request: Request,
+    request: async_graphql_actix_web::Request,
 ) -> web::Json<Response> {
     web::Json(Response(schema.execute(request.into_inner()).await)
 }
