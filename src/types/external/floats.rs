@@ -14,10 +14,7 @@ impl ScalarType for f32 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(_) => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(_))
     }
 
     fn to_value(&self) -> Value {
@@ -39,10 +36,7 @@ impl ScalarType for f64 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(_) => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(_))
     }
 
     fn to_value(&self) -> Value {

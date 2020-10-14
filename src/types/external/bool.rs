@@ -11,10 +11,7 @@ impl ScalarType for bool {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Boolean(_) => true,
-            _ => false,
-        }
+        matches!(value, Value::Boolean(_))
     }
 
     fn to_value(&self) -> Value {

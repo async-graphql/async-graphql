@@ -11,7 +11,7 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
     iter: impl IntoIterator<Item = T>,
     len: Option<usize>,
 ) -> ServerResult<Value> {
-    let mut futures = len.map(|size| Vec::with_capacity(size)).unwrap_or_default();
+    let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
 
     for (idx, item) in iter.into_iter().enumerate() {
         let ctx_idx = ctx.with_index(idx);

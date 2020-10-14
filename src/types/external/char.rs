@@ -21,10 +21,7 @@ impl ScalarType for char {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::String(_) => true,
-            _ => false,
-        }
+        matches!(value, Value::String(_))
     }
 
     fn to_value(&self) -> Value {

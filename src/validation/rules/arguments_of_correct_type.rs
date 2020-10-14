@@ -41,7 +41,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
     ) {
         if let Some(arg) = self
             .current_args
-            .and_then(|args| args.get(name.node.as_str()).map(|input| input))
+            .and_then(|args| args.get(name.node.as_str()))
         {
             let value = value
                 .node

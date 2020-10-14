@@ -63,31 +63,19 @@ impl<T> MaybeUndefined<T> {
     /// Returns true if the MaybeUndefined<T> is undefined.
     #[inline]
     pub fn is_undefined(&self) -> bool {
-        if let MaybeUndefined::Undefined = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, MaybeUndefined::Undefined)
     }
 
     /// Returns true if the MaybeUndefined<T> is null.
     #[inline]
     pub fn is_null(&self) -> bool {
-        if let MaybeUndefined::Null = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, MaybeUndefined::Null)
     }
 
     /// Returns true if the MaybeUndefined<T> is value.
     #[inline]
     pub fn is_value(&self) -> bool {
-        if let MaybeUndefined::Value(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, MaybeUndefined::Value(_))
     }
 
     /// Borrow the value, returns `None` if the value is `undefined` or `null`, otherwise returns `Some(T)`.

@@ -23,10 +23,7 @@ impl ScalarType for i8 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_i64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -57,10 +54,7 @@ impl ScalarType for i16 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_i64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64()  )
     }
 
     fn to_value(&self) -> Value {
@@ -91,10 +85,7 @@ impl ScalarType for i32 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_i64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -125,10 +116,7 @@ impl ScalarType for i64 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_i64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -159,10 +147,7 @@ impl ScalarType for u8 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_u64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -193,10 +178,7 @@ impl ScalarType for u16 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_u64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -227,10 +209,7 @@ impl ScalarType for u32 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_u64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
@@ -261,10 +240,7 @@ impl ScalarType for u64 {
     }
 
     fn is_valid(value: &Value) -> bool {
-        match value {
-            Value::Number(n) if n.is_u64() => true,
-            _ => false,
-        }
+        matches!(value, Value::Number(n) if n.is_i64())
     }
 
     fn to_value(&self) -> Value {
