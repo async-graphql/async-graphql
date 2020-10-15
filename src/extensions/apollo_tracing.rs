@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::ops::Deref;
 
+use chrono::{DateTime, Utc};
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
-use chrono::{DateTime, Utc};
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::{value, Value, Variables};

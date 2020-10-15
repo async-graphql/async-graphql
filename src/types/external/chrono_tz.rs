@@ -1,6 +1,6 @@
 use chrono_tz::Tz;
 
-use crate::{InputValueError, InputValueResult, Result, ScalarType, Value, Scalar};
+use crate::{InputValueError, InputValueResult, Result, Scalar, ScalarType, Value};
 
 #[Scalar(internal, name = "TimeZone")]
 impl ScalarType for Tz {

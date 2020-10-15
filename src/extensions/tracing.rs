@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use tracing::{span, Level, Span};
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::{ServerError, Variables};
 use crate::parser::types::ExecutableDocument;
+use crate::{ServerError, Variables};
 
 /// Tracing extension
 ///

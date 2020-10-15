@@ -9,8 +9,8 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use fnv::FnvHashMap;
-use serde::ser::{SerializeSeq, Serializer};
 use serde::de::{Deserialize, Deserializer};
+use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 
 use crate::extensions::Extensions;
@@ -41,7 +41,9 @@ impl Display for Variables {
 
 impl<'de> Deserialize<'de> for Variables {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Ok(Self(<Option<BTreeMap<Name, Value>>>::deserialize(deserializer)?.unwrap_or_default()))
+        Ok(Self(
+            <Option<BTreeMap<Name, Value>>>::deserialize(deserializer)?.unwrap_or_default(),
+        ))
     }
 }
 
@@ -173,12 +175,8 @@ impl<'a> Display for QueryPathNode<'a> {
             first = false;
 
             match segment {
-                QueryPathSegment::Index(idx) => {
-                    write!(f, "{}", *idx)
-                }
-                QueryPathSegment::Name(name) => {
-                    write!(f, "{}", name)
-                }
+                QueryPathSegment::Index(idx) => write!(f, "{}", *idx),
+                QueryPathSegment::Name(name) => write!(f, "{}", name),
             }
         })
     }

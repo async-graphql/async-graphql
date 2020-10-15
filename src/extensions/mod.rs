@@ -13,8 +13,8 @@ use std::any::{Any, TypeId};
 use std::collections::BTreeMap;
 
 use crate::context::{QueryPathNode, ResolveId};
-use crate::{Data, Request, Result, ServerError, ServerResult, Variables};
 use crate::parser::types::ExecutableDocument;
+use crate::{Data, Request, Result, ServerError, ServerResult, Variables};
 use crate::{Error, Name, Value};
 
 #[cfg(feature = "apollo_tracing")]

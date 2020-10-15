@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
 use num_traits::Num;
+use serde::{Deserialize, Serialize};
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
