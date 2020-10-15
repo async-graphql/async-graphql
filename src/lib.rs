@@ -113,7 +113,6 @@
 #![cfg_attr(feature = "nightly", feature(doc_cfg))]
 
 mod base;
-mod context;
 mod error;
 mod look_ahead;
 mod model;
@@ -124,6 +123,7 @@ mod subscription;
 mod validation;
 
 pub mod extensions;
+pub mod context;
 pub mod guard;
 pub mod http;
 pub mod resolver_utils;
@@ -156,9 +156,6 @@ pub use async_graphql_value::{
 pub use base::{
     InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type, UnionType,
 };
-pub use context::{
-    Context, ContextBase, Data, QueryEnv, QueryPathNode, QueryPathSegment, ResolveId, Variables,
-};
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
@@ -166,20 +163,24 @@ pub use error::{
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
+#[doc(no_inline)]
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
 
-/// An alias of [async_graphql::Error](struct.Error.html).
-pub type FieldError = Error;
-
-/// An alias of [async_graphql::Result](type.Result.html).
-pub type FieldResult<T> = Result<T>;
-
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
+pub use context::*;
 pub use types::*;
+
+/// An alias of [async_graphql::Error](struct.Error.html). Present for backward compatibility
+/// reasons.
+pub type FieldError = Error;
+
+/// An alias of [async_graphql::Result](type.Result.html). Present for backward compatibility
+/// reasons.
+pub type FieldResult<T> = Result<T>;
 
 /// Define a GraphQL object with methods
 ///

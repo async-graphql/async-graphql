@@ -1,10 +1,11 @@
+use std::borrow::Cow;
+
 use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
     registry, ContainerType, ContextSelectionSet, InputValueResult, Positioned, Result,
     ServerResult, Value,
 };
-use std::borrow::Cow;
 
 /// Represents a GraphQL type.
 ///

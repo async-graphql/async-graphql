@@ -1,3 +1,17 @@
+//! Query context.
+
+use std::any::{Any, TypeId};
+use std::collections::{BTreeMap, HashMap};
+use std::convert::TryFrom;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::ops::Deref;
+use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
+
+use fnv::FnvHashMap;
+use serde::ser::{SerializeSeq, Serializer};
+use serde::{Deserialize, Serialize};
+
 use crate::extensions::Extensions;
 use crate::parser::types::{
     Directive, Field, FragmentDefinition, OperationDefinition, SelectionSet,
@@ -8,16 +22,6 @@ use crate::{
     UploadValue, Value,
 };
 use async_graphql_value::{Name, Value as InputValue};
-use fnv::FnvHashMap;
-use serde::ser::{SerializeSeq, Serializer};
-use serde::{Deserialize, Serialize};
-use std::any::{Any, TypeId};
-use std::collections::{BTreeMap, HashMap};
-use std::convert::TryFrom;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::ops::Deref;
-use std::sync::atomic::AtomicUsize;
-use std::sync::Arc;
 
 /// Variables of a query.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -119,22 +123,27 @@ pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Positioned<SelectionSet>>
 /// Context object for resolve field
 pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
 
-/// The query path segment
-#[derive(Clone)]
+/// A segment in the path to the current query.
+///
+/// This is a borrowed form of [`PathSegment`](enum.PathSegment.html) used during execution instead
+/// of passed back when errors occur.
+#[derive(Debug, Clone, Copy)]
 pub enum QueryPathSegment<'a> {
-    /// Index
+    /// We are currently resolving an element in a list.
     Index(usize),
-    /// Field name
+    /// We are currently resolving a field in an object.
     Name(&'a str),
 }
 
-/// The query path node
-#[derive(Clone)]
+/// A path to the current query.
+///
+/// The path is stored as a kind of reverse linked list.
+#[derive(Debug, Clone, Copy)]
 pub struct QueryPathNode<'a> {
-    /// Parent node
+    /// The parent node to this, if there is one.
     pub parent: Option<&'a QueryPathNode<'a>>,
 
-    /// Current path segment
+    /// The current path segment being resolved.
     pub segment: QueryPathSegment<'a>,
 }
 
@@ -176,24 +185,29 @@ impl<'a> Display for QueryPathNode<'a> {
 
 impl<'a> QueryPathNode<'a> {
     /// Get the current field name.
+    ///
+    /// This traverses all the parents of the node until it finds one that is a field name.
     pub fn field_name(&self) -> &str {
-        let mut p = self;
-        loop {
-            if let QueryPathSegment::Name(name) = &p.segment {
-                return name;
-            }
-            p = p.parent.unwrap();
-        }
+        self.parents().find_map(|node| match node.segment {
+            QueryPathSegment::Name(name) => Some(name),
+            QueryPathSegment::Index(_) => None,
+        }).unwrap()
     }
 
-    /// Get the path represented by `Vec<String>`.
+    /// Get the path represented by `Vec<String>`; numbers will be stringified.
+    #[must_use]
     pub fn to_string_vec(&self) -> Vec<String> {
         let mut res = Vec::new();
-        self.for_each(|s| match s {
-            QueryPathSegment::Index(idx) => res.push(format!("{}", idx)),
-            QueryPathSegment::Name(name) => res.push(name.to_string()),
-        });
+        self.for_each(|s| res.push(match s {
+            QueryPathSegment::Name(name) => name.to_string(),
+            QueryPathSegment::Index(idx) => idx.to_string(),
+        }));
         res
+    }
+
+    /// Iterate over the parents of the node.
+    pub fn parents(&self) -> Parents<'_> {
+        Parents(self)
     }
 
     pub(crate) fn for_each<F: FnMut(&QueryPathSegment<'a>)>(&self, mut f: F) {
@@ -208,13 +222,39 @@ impl<'a> QueryPathNode<'a> {
     }
 }
 
-/// Represents the unique id of the resolve
-#[derive(Copy, Clone, Debug)]
+/// An iterator over the parents of a [`QueryPathNode`](struct.QueryPathNode.html).
+#[derive(Debug, Clone)]
+pub struct Parents<'a>(&'a QueryPathNode<'a>);
+
+impl<'a> Parents<'a> {
+    /// Get the current query path node, which the next call to `next` will get the parents of.
+    #[must_use]
+    pub fn current(&self) -> &'a QueryPathNode<'a> {
+        self.0
+    }
+}
+
+impl<'a> Iterator for Parents<'a> {
+    type Item = &'a QueryPathNode<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let parent = self.0.parent;
+        if let Some(parent) = parent {
+            self.0 = parent;
+        }
+        parent
+    }
+}
+
+impl<'a> std::iter::FusedIterator for Parents<'a> {}
+
+/// The unique id of the current resolusion.
+#[derive(Debug, Clone, Copy)]
 pub struct ResolveId {
-    /// Parent id
+    /// The unique ID of the parent resolution.
     pub parent: Option<usize>,
 
-    /// Current id
+    /// The current unique id.
     pub current: usize,
 }
 
@@ -238,7 +278,9 @@ impl Display for ResolveId {
     }
 }
 
-/// Query context
+/// Query context.
+///
+/// **This type is not stable and should not be used directly.**
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
     #[allow(missing_docs)]
@@ -338,7 +380,7 @@ impl<'a, T> ContextBase<'a, T> {
         selection_set: &'a Positioned<SelectionSet>,
     ) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
         ContextBase {
-            path_node: self.path_node.clone(),
+            path_node: self.path_node,
             item: selection_set,
             resolve_id: self.resolve_id,
             inc_resolve_id: &self.inc_resolve_id,
