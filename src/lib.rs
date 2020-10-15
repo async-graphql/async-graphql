@@ -122,8 +122,8 @@ mod schema;
 mod subscription;
 mod validation;
 
-pub mod extensions;
 pub mod context;
+pub mod extensions;
 pub mod guard;
 pub mod http;
 pub mod resolver_utils;
@@ -169,9 +169,9 @@ pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::ValidationMode;
 
+pub use context::*;
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
-pub use context::*;
 pub use types::*;
 
 /// An alias of [async_graphql::Error](struct.Error.html). Present for backward compatibility

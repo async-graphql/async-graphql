@@ -188,20 +188,24 @@ impl<'a> QueryPathNode<'a> {
     ///
     /// This traverses all the parents of the node until it finds one that is a field name.
     pub fn field_name(&self) -> &str {
-        self.parents().find_map(|node| match node.segment {
-            QueryPathSegment::Name(name) => Some(name),
-            QueryPathSegment::Index(_) => None,
-        }).unwrap()
+        self.parents()
+            .find_map(|node| match node.segment {
+                QueryPathSegment::Name(name) => Some(name),
+                QueryPathSegment::Index(_) => None,
+            })
+            .unwrap()
     }
 
     /// Get the path represented by `Vec<String>`; numbers will be stringified.
     #[must_use]
     pub fn to_string_vec(&self) -> Vec<String> {
         let mut res = Vec::new();
-        self.for_each(|s| res.push(match s {
-            QueryPathSegment::Name(name) => name.to_string(),
-            QueryPathSegment::Index(idx) => idx.to_string(),
-        }));
+        self.for_each(|s| {
+            res.push(match s {
+                QueryPathSegment::Name(name) => name.to_string(),
+                QueryPathSegment::Index(idx) => idx.to_string(),
+            })
+        });
         res
     }
 
