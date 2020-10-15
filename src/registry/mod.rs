@@ -451,4 +451,48 @@ impl Registry {
             );
         }
     }
+
+    pub fn names(&self) -> Vec<String> {
+        let mut names = HashSet::new();
+
+        for d in self.directives.values() {
+            names.insert(d.name.to_string());
+            names.extend(d.args.values().map(|arg| arg.name.to_string()));
+        }
+
+        for ty in self.types.values() {
+            match ty {
+                MetaType::Scalar { name, .. } | MetaType::Union { name, .. } => {
+                    names.insert(name.clone());
+                }
+                MetaType::Object { name, fields, .. }
+                | MetaType::Interface { name, fields, .. } => {
+                    names.insert(name.clone());
+                    names.extend(
+                        fields
+                            .values()
+                            .map(|field| {
+                                std::iter::once(field.name.clone())
+                                    .chain(field.args.values().map(|arg| arg.name.to_string()))
+                            })
+                            .flatten(),
+                    );
+                }
+                MetaType::Enum {
+                    name, enum_values, ..
+                } => {
+                    names.insert(name.clone());
+                    names.extend(enum_values.values().map(|value| value.name.to_string()));
+                }
+                MetaType::InputObject {
+                    name, input_fields, ..
+                } => {
+                    names.insert(name.clone());
+                    names.extend(input_fields.values().map(|field| field.name.to_string()));
+                }
+            }
+        }
+
+        names.into_iter().collect()
+    }
 }

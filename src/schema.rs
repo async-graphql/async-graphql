@@ -14,7 +14,7 @@ use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::parser::types::{DocumentOperations, OperationType};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::resolver_utils::{resolve_container, resolve_container_serial, ContainerType};
+use crate::resolver_utils::{resolve_container, resolve_container_serial};
 use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, CheckResult, ValidationMode};
@@ -37,9 +37,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     enable_federation: bool,
 }
 
-impl<Query: ContainerType, Mutation: ContainerType, Subscription: SubscriptionType>
-    SchemaBuilder<Query, Mutation, Subscription>
-{
+impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription> {
     /// Manually register a type in the schema.
     ///
     /// You can use this function to register schema types that are not directly referenced.
@@ -320,6 +318,15 @@ where
     /// Returns SDL(Schema Definition Language) of this schema.
     pub fn sdl() -> String {
         Self::create_registry().export_sdl(false)
+    }
+
+    /// Get all names in this schema
+    ///
+    /// Maybe you want to serialize a custom binary protocol. In order to minimize message size, a dictionary
+    /// is usually used to compress type names, field names, directive names, and parameter names. This function gets all the names
+    /// so you can create this dictionary.
+    pub fn names(&self) -> Vec<String> {
+        self.0.env.registry.names()
     }
 
     async fn prepare_request(
