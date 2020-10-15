@@ -1,299 +1,183 @@
-//! Async-graphql integration with Rocket
+//! Async-graphql integration with Rocket.
+//!
+//! Note: This integrates with the unreleased version 0.5 of Rocket, and so breaking changes in
+//! both this library and Rocket are to be expected.
+//!
+//! **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
 
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-use async_graphql::http::MultipartOptions;
-use async_graphql::{ObjectType, Schema, SubscriptionType, Variables};
-use log::{error, info};
-use rocket::{
-    data::{self, FromData},
-    data::{Data, ToByteUnit},
-    fairing::{AdHoc, Fairing},
-    http::{ContentType, Header, Status},
-    request::{self, FromQuery, Outcome},
-    response::{self, Responder, ResponseBuilder},
-    Request as RocketRequest, Response as RocketResponse, State,
-};
-use std::{io::Cursor, sync::Arc};
-use tokio_util::compat::Tokio02AsyncReadCompatExt;
-use yansi::Paint;
+use std::io::Cursor;
 
-/// Contains the fairing functions, to attach GraphQL with the desired `async_graphql::Schema`, and optionally
-/// `async_graphql::MultipartOptions`, to Rocket.
+use async_graphql::http::MultipartOptions;
+use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
+use rocket::{
+    data::{self, Data, FromData, ToByteUnit},
+    http::{ContentType, Header, Status},
+    request::{self, FromQuery},
+    response::{self, Responder},
+};
+use serde::de::Deserialize;
+use tokio_util::compat::Tokio02AsyncReadCompatExt;
+
+use query_deserializer::QueryDeserializer;
+
+mod query_deserializer;
+
+pub use rocket;
+
+/// A batch request which can be extracted from a request's body.
 ///
 /// # Examples
-/// **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
 ///
-/// ```rust,no_run
-///
-/// use async_graphql::{EmptyMutation, EmptySubscription, Schema, Object};
-/// use async_graphql_rocket::{Request, GraphQL, Response};
-/// use rocket::{response::content, routes, State, http::Status};
-///
-/// type ExampleSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
-/// struct QueryRoot;
-///
-/// #[Object]
-/// impl QueryRoot {
-///     /// Returns the sum of a and b
-///     async fn add(&self, a: i32, b: i32) -> i32 {
-///          a + b
-///     }
-/// }
-///
-/// #[rocket::post("/?<query..>")]
-/// async fn graphql_query(schema: State<'_, ExampleSchema>, query: Request) -> Result<Response, Status> {
-///     query.execute(&schema)
-///         .await
-/// }
-///
-/// #[rocket::post("/", data = "<request>", format = "application/json")]
-/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: Request) -> Result<Response, Status> {
-///     request.execute(&schema)
-///         .await
-/// }
-///
-/// #[rocket::launch]
-/// fn rocket() -> rocket::Rocket {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     rocket::ignite()
-///         .attach(GraphQL::fairing(schema))
-///         .mount("/", routes![graphql_query, graphql_request])
+/// ```ignore
+/// #[rocket::post("/graphql", data = "<request>", format = "application/json")]
+/// async fn graphql_request(schema: State<'_, ExampleSchema>, request: BatchRequest) -> Response {
+///     request.execute(&schema).await
 /// }
 /// ```
-pub struct GraphQL;
+#[derive(Debug)]
+pub struct BatchRequest(pub async_graphql::BatchRequest);
 
-impl GraphQL {
-    /// Fairing with default `async_graphql::MultipartOptions`. You just need to pass in your `async_graphql::Schema` and then can
-    /// attach the `Fairing` to Rocket.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run,ignore
-    ///     rocket::ignite()
-    ///         .attach(GraphQL::fairing(schema))
-    ///         .mount("/", routes![graphql_query, graphql_request])
-    /// ```
-    pub fn fairing<Q, M, S>(schema: Schema<Q, M, S>) -> impl Fairing
+impl BatchRequest {
+    /// Shortcut method to execute the request on the schema.
+    pub async fn execute<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Response
     where
-        Q: ObjectType + Send + Sync + 'static,
-        M: ObjectType + Send + Sync + 'static,
-        S: SubscriptionType + Send + Sync + 'static,
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        GraphQL::attach(schema, Default::default())
-    }
-
-    /// Fairing to which you need to pass `async_graphql::MultipartOptions` and your `async_graphql::Schema`. Then you can
-    /// attach the `Fairing` to Rocket.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run,ignore
-    ///     let opts: MultipartOptions = Default::default();
-    ///     rocket::ignite()
-    ///         .attach(GraphQL::fairing_with_opts(schema, opts))
-    ///         .mount("/", routes![graphql_query, graphql_request])
-    /// ```
-    pub fn fairing_with_opts<Q, M, S>(
-        schema: Schema<Q, M, S>,
-        opts: MultipartOptions,
-    ) -> impl Fairing
-    where
-        Q: ObjectType + Send + Sync + 'static,
-        M: ObjectType + Send + Sync + 'static,
-        S: SubscriptionType + Send + Sync + 'static,
-    {
-        GraphQL::attach(schema, opts)
-    }
-
-    fn attach<Q, M, S>(schema: Schema<Q, M, S>, opts: MultipartOptions) -> impl Fairing
-    where
-        Q: ObjectType + Send + Sync + 'static,
-        M: ObjectType + Send + Sync + 'static,
-        S: SubscriptionType + Send + Sync + 'static,
-    {
-        AdHoc::on_attach("GraphQL", move |rocket| async move {
-            let emoji = if cfg!(windows) { "" } else { "📄 " };
-            info!(
-                "{}{}",
-                Paint::masked(emoji),
-                Paint::magenta(format!("GraphQL {}:", Paint::blue(""))).wrap()
-            );
-
-            Ok(rocket.manage(schema).manage(Arc::new(opts)))
-        })
+        Response(schema.execute_batch(self.0).await)
     }
 }
 
-/// Implements `FromQuery` and `FromData`, so that it can be used as parameter in a
-/// Rocket route.
+#[rocket::async_trait]
+impl FromData for BatchRequest {
+    type Error = ParseRequestError;
+
+    async fn from_data(req: &rocket::Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
+        let opts: MultipartOptions = req.managed_state().copied().unwrap_or_default();
+
+        let request = async_graphql::http::receive_batch_body(
+            req.headers().get_one("Content-Type"),
+            data.open(
+                req.limits()
+                    .get("graphql")
+                    .unwrap_or_else(|| 128.kibibytes()),
+            )
+            .compat(),
+            opts,
+        )
+        .await;
+
+        match request {
+            Ok(request) => data::Outcome::Success(Self(request)),
+            Err(e) => data::Outcome::Failure((
+                match e {
+                    ParseRequestError::PayloadTooLarge => Status::PayloadTooLarge,
+                    _ => Status::BadRequest,
+                },
+                e,
+            )),
+        }
+    }
+}
+
+/// A GraphQL request which can be extracted from a query string or the request's body.
 ///
 /// # Examples
 ///
-/// ```rust,no_run,ignore
-/// #[rocket::post("/?<query..>")]
+/// ```ignore
+/// #[rocket::post("/graphql?<query..>")]
 /// async fn graphql_query(schema: State<'_, ExampleSchema>, query: Request) -> Result<Response, Status> {
-///     query.execute(&schema)
-///         .await
+///     query.execute(&schema).await
 /// }
 ///
-/// #[rocket::post("/", data = "<request>", format = "application/json")]
+/// #[rocket::post("/graphql", data = "<request>", format = "application/json")]
 /// async fn graphql_request(schema: State<'_, ExampleSchema>, request: Request) -> Result<Response, Status> {
-///     request.execute(&schema)
-///         .await
+///     request.execute(&schema).await
 /// }
 /// ```
+#[derive(Debug)]
 pub struct Request(pub async_graphql::Request);
 
 impl Request {
-    /// Mimics `async_graphql::Schema.execute()`.
-    /// Executes the query, always return a complete result.
-    pub async fn execute<Q, M, S>(self, schema: &Schema<Q, M, S>) -> Result<Response, Status>
+    /// Shortcut method to execute the request on the schema.
+    pub async fn execute<Query, Mutation, Subscription>(
+        self,
+        schema: &Schema<Query, Mutation, Subscription>,
+    ) -> Response
     where
-        Q: ObjectType + Send + Sync + 'static,
-        M: ObjectType + Send + Sync + 'static,
-        S: SubscriptionType + Send + Sync + 'static,
+        Query: ObjectType + Send + Sync + 'static,
+        Mutation: ObjectType + Send + Sync + 'static,
+        Subscription: SubscriptionType + Send + Sync + 'static,
     {
-        schema
-            .execute(self.0)
-            .await
-            .into_result()
-            .map(Response)
-            .map_err(|es| {
-                for e in es {
-                    error!("{}", e);
-                }
-                Status::BadRequest
-            })
+        Response(schema.execute(self.0).await.into())
     }
 }
 
 impl<'q> FromQuery<'q> for Request {
-    type Error = String;
+    type Error = serde::de::value::Error;
 
-    fn from_query(query_items: request::Query) -> Result<Self, Self::Error> {
-        let mut query = None;
-        let mut operation_name = None;
-        let mut variables = None;
-
-        for query_item in query_items {
-            let (key, value) = query_item.key_value();
-            match key.as_str() {
-                "query" => {
-                    if query.is_some() {
-                        return Err(r#"Multiple parameters named "query" found. Only one parameter by that name is allowed."#.to_string());
-                    } else {
-                        query = value.url_decode().map_err(|e| e.to_string())?.into();
-                    }
-                }
-                "operation_name" => {
-                    if operation_name.is_some() {
-                        return Err(r#"Multiple parameters named "operation_name" found. Only one parameter by that name is allowed."#.to_string());
-                    } else {
-                        operation_name = value.url_decode().map_err(|e| e.to_string())?.into();
-                    }
-                }
-                "variables" => {
-                    if variables.is_some() {
-                        return Err(r#"Multiple parameters named "variables" found. Only one parameter by that name is allowed."#.to_string());
-                    } else {
-                        let decoded = value.url_decode().map_err(|e| e.to_string())?;
-                        let json_value = serde_json::from_str::<serde_json::Value>(&decoded)
-                            .map_err(|e| e.to_string())?;
-                        variables = Variables::from_json(json_value).into();
-                    }
-                }
-                _ => {
-                    return Err(format!(
-                        r#"Extra parameter named "{}" found. Extra parameters are not allowed."#,
-                        key
-                    ));
-                }
-            }
-        }
-
-        if let Some(query_source) = query {
-            let mut request = async_graphql::Request::new(query_source);
-
-            if let Some(variables) = variables {
-                request = request.variables(variables);
-            }
-
-            if let Some(operation_name) = operation_name {
-                request = request.operation_name(operation_name);
-            }
-
-            Ok(Request(request))
-        } else {
-            Err(r#"Parameter "query" missing from request."#.to_string())
-        }
+    fn from_query(query: request::Query<'_>) -> Result<Self, Self::Error> {
+        Ok(Self(async_graphql::Request::deserialize(
+            QueryDeserializer(query),
+        )?))
     }
 }
 
 #[rocket::async_trait]
 impl FromData for Request {
-    type Error = String;
+    type Error = ParseRequestError;
 
-    async fn from_data(req: &RocketRequest<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
-        let opts = match req.guard::<State<'_, Arc<MultipartOptions>>>().await {
-            Outcome::Success(opts) => opts,
-            Outcome::Failure(_) => {
-                return data::Outcome::Failure((
-                    Status::InternalServerError,
-                    "Missing MultipartOptions in State".to_string(),
-                ))
-            }
-            Outcome::Forward(()) => unreachable!(),
-        };
-
-        let limit = req.limits().get("graphql");
-        let stream = data.open(limit.unwrap_or_else(|| 128.kibibytes()));
-        let request = async_graphql::http::receive_body(
-            req.headers().get_one("Content-Type"),
-            stream.compat(),
-            MultipartOptions::clone(&opts),
-        )
-        .await;
-
-        match request {
-            Ok(request) => data::Outcome::Success(Request(request)),
-            Err(e) => data::Outcome::Failure((Status::BadRequest, format!("{}", e))),
-        }
+    async fn from_data(req: &rocket::Request<'_>, data: Data) -> data::Outcome<Self, Self::Error> {
+        BatchRequest::from_data(req, data)
+            .await
+            .and_then(|request| match request.0.into_single() {
+                Ok(single) => data::Outcome::Success(Self(single)),
+                Err(e) => data::Outcome::Failure((Status::BadRequest, e)),
+            })
     }
 }
 
-/// Wrapper around `async-graphql::Response` for implementing the trait
-/// `rocket::response::responder::Responder`, so that `Response` can directly be returned
-/// from a Rocket Route function.
-pub struct Response(pub async_graphql::Response);
+/// Wrapper around `async-graphql::Response` that is a Rocket responder so it can be returned from
+/// a routing function in Rocket.
+///
+/// It contains a `BatchResponse` but since a response is a type of batch response it works for
+/// both.
+#[derive(Debug)]
+pub struct Response(pub async_graphql::BatchResponse);
+
+impl From<async_graphql::BatchResponse> for Response {
+    fn from(batch: async_graphql::BatchResponse) -> Self {
+        Self(batch)
+    }
+}
+impl From<async_graphql::Response> for Response {
+    fn from(res: async_graphql::Response) -> Self {
+        Self(res.into())
+    }
+}
 
 impl<'r> Responder<'r, 'static> for Response {
-    fn respond_to(self, _: &'r RocketRequest<'_>) -> response::Result<'static> {
+    fn respond_to(self, _: &'r rocket::Request<'_>) -> response::Result<'static> {
         let body = serde_json::to_string(&self.0).unwrap();
 
-        RocketResponse::build()
-            .header(ContentType::new("application", "json"))
-            .status(Status::Ok)
-            .sized_body(body.len(), Cursor::new(body))
-            .cache_control(&self.0)
-            .ok()
-    }
-}
+        let mut response = rocket::Response::new();
 
-/// Extension trait, to allow the use of `cache_control` with for example `async_graphql::Request`.
-pub trait CacheControl {
-    /// Add the `async-graphql::Response` cache control value as header to the Rocket response.
-    fn cache_control(&mut self, resp: &async_graphql::Response) -> &mut Self;
-}
-
-impl<'r> CacheControl for ResponseBuilder<'r> {
-    fn cache_control(&mut self, resp: &async_graphql::Response) -> &mut ResponseBuilder<'r> {
-        if resp.is_ok() {
-            if let Some(value) = resp.cache_control.value() {
-                self.header(Header::new("cache-control", value));
+        if self.0.is_ok() {
+            if let Some(cache_control) = self.0.cache_control().value() {
+                response.set_header(Header::new("cache-control", cache_control));
             }
         }
-        self
+
+        response.set_header(ContentType::new("application", "json"));
+        response.set_sized_body(body.len(), Cursor::new(body));
+
+        Ok(response)
     }
 }
