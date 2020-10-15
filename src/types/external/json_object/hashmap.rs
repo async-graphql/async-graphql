@@ -1,8 +1,9 @@
+use std::collections::{BTreeMap, HashMap};
+
 use crate::{
     InputValueError, InputValueResult, InputValueType, Name, OutputValueType, Scalar, ScalarType,
     Value,
 };
-use std::collections::{BTreeMap, HashMap};
 
 /// A scalar that can represent any JSON Object value.
 #[Scalar(internal, name = "JSONObject")]

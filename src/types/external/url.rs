@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use url::Url;
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[Scalar(internal)]
 impl ScalarType for Url {

@@ -1,5 +1,6 @@
-use itertools::Itertools;
 use std::collections::HashMap;
+
+use itertools::Itertools;
 
 fn levenshtein_distance(s1: &str, s2: &str) -> usize {
     let mut column = (0..=s1.len()).collect_vec();

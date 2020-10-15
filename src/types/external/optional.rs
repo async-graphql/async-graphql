@@ -1,9 +1,10 @@
+use std::borrow::Cow;
+
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
     OutputValueType, Positioned, ServerResult, Type, Value,
 };
-use std::borrow::Cow;
 
 impl<T: Type> Type for Option<T> {
     fn type_name() -> Cow<'static, str> {

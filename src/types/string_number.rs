@@ -1,7 +1,9 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
-use num_traits::Num;
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+use serde::{Deserialize, Serialize};
+use num_traits::Num;
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// A numeric value represented by a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]

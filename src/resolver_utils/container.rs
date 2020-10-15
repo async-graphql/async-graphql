@@ -1,3 +1,7 @@
+use std::collections::BTreeMap;
+use std::future::Future;
+use std::pin::Pin;
+
 use crate::extensions::{ErrorLogger, ExtensionContext, ResolveInfo};
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
@@ -5,9 +9,6 @@ use crate::{
     Context, ContextSelectionSet, Name, OutputValueType, PathSegment, ServerError, ServerResult,
     Value,
 };
-use std::collections::BTreeMap;
-use std::future::Future;
-use std::pin::Pin;
 
 /// Represents a GraphQL container object.
 ///

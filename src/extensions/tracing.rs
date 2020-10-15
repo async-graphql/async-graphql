@@ -1,8 +1,10 @@
+use std::collections::BTreeMap;
+
+use tracing::{span, Level, Span};
+
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::{ServerError, Variables};
-use async_graphql_parser::types::ExecutableDocument;
-use std::collections::BTreeMap;
-use tracing::{span, Level, Span};
+use crate::parser::types::ExecutableDocument;
 
 /// Tracing extension
 ///

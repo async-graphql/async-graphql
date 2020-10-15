@@ -1,9 +1,11 @@
-use crate::{parser, InputValueType, Pos, Value};
-use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;
+
+use serde::Serialize;
 use thiserror::Error;
+
+use crate::{parser, InputValueType, Pos, Value};
 
 /// Extensions to the error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
@@ -34,10 +36,7 @@ pub struct ServerError {
 }
 
 fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
-    match values {
-        Some(values) => values.0.is_empty(),
-        None => true,
-    }
+    values.as_ref().map_or(false, |values| values.0.is_empty())
 }
 
 impl ServerError {
@@ -94,6 +93,9 @@ impl From<parser::Error> for ServerError {
 }
 
 /// A segment of path to a resolver.
+///
+/// This is like [`QueryPathSegment`](enum.QueryPathSegment.html), but owned and used as a part of
+/// errors instead of during execution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum PathSegment {
@@ -268,7 +270,7 @@ impl From<multer::Error> for ParseRequestError {
     }
 }
 
-/// An error which can be extended into a `FieldError`.
+/// An error which can be extended into a `Error`.
 pub trait ErrorExtensions: Sized {
     /// Convert the error to a `Error`.
     fn extend(&self) -> Error;
@@ -299,7 +301,7 @@ impl ErrorExtensions for Error {
 impl<E: std::fmt::Display> ErrorExtensions for &E {
     fn extend(&self) -> Error {
         Error {
-            message: format!("{}", self),
+            message: self.to_string(),
             extensions: None,
         }
     }

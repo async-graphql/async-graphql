@@ -1,5 +1,6 @@
-use crate::{CacheControl, Result, ServerError, Value};
 use serde::Serialize;
+
+use crate::{CacheControl, Result, ServerError, Value};
 
 /// Query response
 #[derive(Debug, Default, Serialize)]

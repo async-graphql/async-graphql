@@ -1,13 +1,14 @@
+use std::borrow::Cow;
+use std::cmp::Eq;
+use std::collections::HashSet;
+use std::hash::Hash;
+
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
     OutputValueType, Positioned, Result, ServerResult, Type, Value,
 };
-use std::borrow::Cow;
-use std::cmp::Eq;
-use std::collections::HashSet;
-use std::hash::Hash;
 
 impl<T: Type> Type for HashSet<T> {
     fn type_name() -> Cow<'static, str> {

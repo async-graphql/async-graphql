@@ -1,8 +1,10 @@
-use crate::{registry, Context, InputValueError, InputValueResult, InputValueType, Type, Value};
-use futures::AsyncRead;
 use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
+
+use futures::AsyncRead;
+
+use crate::{registry, Context, InputValueError, InputValueResult, InputValueType, Type, Value};
 
 /// A file upload value.
 pub struct UploadValue {

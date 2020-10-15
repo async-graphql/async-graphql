@@ -1,10 +1,12 @@
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::{value, Value, Variables};
-use chrono::{DateTime, Utc};
-use serde::ser::SerializeMap;
-use serde::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::ops::Deref;
+
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
+use chrono::{DateTime, Utc};
+
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
+use crate::{value, Value, Variables};
 
 struct PendingResolve {
     path: Vec<String>,
@@ -29,7 +31,7 @@ impl Deref for ResolveStat {
 }
 
 impl Serialize for ResolveStat {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("path", &self.path)?;
         map.serialize_entry("fieldName", &self.field_name)?;

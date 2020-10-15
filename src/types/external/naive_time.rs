@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[Scalar(internal)]
 impl ScalarType for NaiveDate {

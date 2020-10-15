@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use crate::parser::types::{ExecutableDocument, FragmentSpread, InlineFragment, TypeCondition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::Positioned;
-use std::collections::HashMap;
 
 #[derive(Default)]
 pub struct PossibleFragmentSpreads<'a> {

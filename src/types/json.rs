@@ -1,13 +1,15 @@
+use std::borrow::Cow;
+use std::ops::{Deref, DerefMut};
+
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
     from_value, to_value, ContextSelectionSet, InputValueResult, OutputValueType, Positioned,
     Scalar, ScalarType, ServerResult, Type, Value,
 };
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::ops::{Deref, DerefMut};
 
 /// A scalar that can represent any JSON value.
 ///

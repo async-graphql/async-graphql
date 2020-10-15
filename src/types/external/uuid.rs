@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use uuid::Uuid;
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[Scalar(internal, name = "UUID")]
 impl ScalarType for Uuid {

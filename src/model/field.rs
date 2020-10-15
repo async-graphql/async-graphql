@@ -1,6 +1,5 @@
 use crate::model::{__InputValue, __Type};
 use crate::{registry, Object};
-use itertools::Itertools;
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
@@ -26,7 +25,7 @@ impl<'a> __Field<'a> {
                 registry: self.registry,
                 input_value,
             })
-            .collect_vec()
+            .collect()
     }
 
     #[graphql(name = "type")]

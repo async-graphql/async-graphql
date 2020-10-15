@@ -1,3 +1,5 @@
+use indexmap::map::IndexMap;
+
 use crate::context::QueryPathNode;
 use crate::parser::types::{Directive, Field};
 use crate::registry::MetaInputValue;
@@ -5,7 +7,6 @@ use crate::validation::utils::is_valid_input_value;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Name, Positioned, QueryPathSegment};
 use async_graphql_value::Value;
-use indexmap::map::IndexMap;
 
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {

@@ -1,8 +1,9 @@
+use std::collections::HashSet;
+
 use crate::parser::types::{Directive, Field};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Name, Positioned};
 use async_graphql_value::Value;
-use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UniqueArgumentNames<'a> {

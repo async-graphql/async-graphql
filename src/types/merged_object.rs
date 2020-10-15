@@ -1,3 +1,7 @@
+use std::borrow::Cow;
+
+use indexmap::IndexMap;
+
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::resolve_container;
@@ -5,8 +9,6 @@ use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
     Positioned, ServerResult, SimpleObject, Type, Value,
 };
-use indexmap::IndexMap;
-use std::borrow::Cow;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);

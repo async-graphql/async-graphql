@@ -2,10 +2,11 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
+use once_cell::sync::Lazy;
+
 use crate::parser::types::ExecutableDocument;
 use crate::validation::visitor::{visit, RuleError, Visitor, VisitorContext};
 use crate::*;
-use once_cell::sync::Lazy;
 
 #[derive(InputObject)]
 #[graphql(internal)]

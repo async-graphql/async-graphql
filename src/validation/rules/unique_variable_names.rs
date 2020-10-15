@@ -1,7 +1,8 @@
+use std::collections::HashSet;
+
 use crate::parser::types::{OperationDefinition, VariableDefinition};
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Name, Positioned};
-use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UniqueVariableNames<'a> {

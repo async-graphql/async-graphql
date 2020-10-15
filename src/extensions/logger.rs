@@ -1,8 +1,10 @@
+use std::fmt::{self, Display, Formatter};
+
+use log::{error, info, trace};
+
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::parser::types::{ExecutableDocument, OperationType, Selection};
 use crate::{PathSegment, ServerError, Variables};
-use log::{error, info, trace};
-use std::fmt::{self, Display, Formatter};
 
 /// Logger extension
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "log")))]

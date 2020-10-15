@@ -1,9 +1,10 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use bson::oid::ObjectId;
 #[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
 #[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[Scalar(internal)]
 impl ScalarType for ObjectId {

@@ -1,3 +1,7 @@
+use std::borrow::Cow;
+
+use indexmap::map::IndexMap;
+
 use crate::connection::EmptyFields;
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
@@ -6,8 +10,6 @@ use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerResult,
     Type, Value,
 };
-use indexmap::map::IndexMap;
-use std::borrow::Cow;
 
 /// The edge type output by the data source
 pub struct Edge<C, T, E> {

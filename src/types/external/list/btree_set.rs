@@ -1,11 +1,12 @@
+use std::borrow::Cow;
+use std::collections::BTreeSet;
+
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
     OutputValueType, Positioned, ServerResult, Type, Value,
 };
-use std::borrow::Cow;
-use std::collections::BTreeSet;
 
 impl<T: Type> Type for BTreeSet<T> {
     fn type_name() -> Cow<'static, str> {

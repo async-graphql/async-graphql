@@ -5,13 +5,14 @@ mod cursor;
 mod edge;
 mod page_info;
 
+use std::fmt::Display;
+use std::future::Future;
+
 use crate::{Result, SimpleObject};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
-use futures::Future;
 pub use page_info::PageInfo;
-use std::fmt::Display;
 
 /// Empty additional fields
 #[derive(SimpleObject)]

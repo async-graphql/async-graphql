@@ -1,10 +1,12 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
-#[cfg(feature = "bson")]
-use bson::oid::{self, ObjectId};
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
+
+#[cfg(feature = "bson")]
+use bson::oid::{self, ObjectId};
+use serde::{Deserialize, Serialize};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// ID scalar
 ///
@@ -45,7 +47,7 @@ macro_rules! try_from_integers {
            impl TryFrom<ID> for $ty {
                 type Error = ParseIntError;
 
-                fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+                fn try_from(id: ID) -> Result<Self, Self::Error> {
                     id.0.parse()
                 }
             }
@@ -59,7 +61,7 @@ try_from_integers!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, isize, usiz
 impl TryFrom<ID> for uuid::Uuid {
     type Error = uuid::Error;
 
-    fn try_from(id: ID) -> std::result::Result<Self, Self::Error> {
+    fn try_from(id: ID) -> Result<Self, Self::Error> {
         uuid::Uuid::parse_str(&id.0)
     }
 }

@@ -1,7 +1,8 @@
-use crate::validators::InputValueValidator;
-use crate::Value;
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+use crate::validators::InputValueValidator;
+use crate::Value;
 
 /// String minimum length validator
 pub struct StringMinLength {

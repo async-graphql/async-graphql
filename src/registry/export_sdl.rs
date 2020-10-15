@@ -1,6 +1,8 @@
-use crate::registry::{MetaField, MetaInputValue, MetaType, Registry};
-use itertools::Itertools;
 use std::fmt::Write;
+
+use itertools::Itertools;
+
+use crate::registry::{MetaField, MetaInputValue, MetaType, Registry};
 
 impl Registry {
     pub fn export_sdl(&self, federation: bool) -> String {

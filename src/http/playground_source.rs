@@ -1,5 +1,6 @@
-use serde::Serialize;
 use std::collections::HashMap;
+
+use serde::Serialize;
 
 /// Generate the page for GraphQL Playground
 ///

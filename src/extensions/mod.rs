@@ -9,8 +9,13 @@ mod logger;
 #[cfg(feature = "tracing")]
 mod tracing;
 
+use std::any::{Any, TypeId};
+use std::collections::BTreeMap;
+
 use crate::context::{QueryPathNode, ResolveId};
 use crate::{Data, Request, Result, ServerError, ServerResult, Variables};
+use crate::parser::types::ExecutableDocument;
+use crate::{Error, Name, Value};
 
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
@@ -18,10 +23,6 @@ pub use self::apollo_tracing::ApolloTracing;
 pub use self::logger::Logger;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
-use crate::parser::types::ExecutableDocument;
-use crate::{Error, Name, Value};
-use std::any::{Any, TypeId};
-use std::collections::BTreeMap;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 

@@ -1,10 +1,11 @@
+use indexmap::map::IndexMap;
+
 use crate::parser::types::{Directive, Field};
 use crate::registry::MetaInputValue;
 use crate::validation::suggestion::make_suggestion;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Name, Positioned};
 use async_graphql_value::Value;
-use indexmap::map::IndexMap;
 
 enum ArgsType<'a> {
     Directive(&'a str),

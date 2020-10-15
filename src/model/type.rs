@@ -1,6 +1,5 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
 use crate::{registry, Object};
-use itertools::Itertools;
 
 enum TypeDetail<'a> {
     Named(&'a registry::MetaType),
@@ -106,7 +105,7 @@ impl<'a> __Type<'a> {
                         registry: self.registry,
                         field,
                     })
-                    .collect_vec()
+                    .collect()
             })
         } else {
             None

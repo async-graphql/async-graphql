@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::fmt::{self, Display, Formatter};
+
 use crate::parser::types::{
     Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition,
@@ -5,8 +8,6 @@ use crate::parser::types::{
 use crate::registry::{self, MetaType, MetaTypeName};
 use crate::{Name, Pos, Positioned, ServerError, Variables};
 use async_graphql_value::Value;
-use std::collections::HashMap;
-use std::fmt::{self, Display, Formatter};
 
 pub(crate) struct VisitorContext<'a> {
     pub(crate) registry: &'a registry::Registry,

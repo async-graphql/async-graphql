@@ -1,6 +1,8 @@
-use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///
@@ -132,7 +134,7 @@ impl<T: InputValueType> InputValueType for MaybeUndefined<T> {
 }
 
 impl<T: Serialize> Serialize for MaybeUndefined<T> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             MaybeUndefined::Value(value) => value.serialize(serializer),
             _ => serializer.serialize_none(),

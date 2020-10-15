@@ -1,13 +1,15 @@
 mod cache_control;
 mod export_sdl;
 
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+
+use indexmap::map::IndexMap;
+use indexmap::set::IndexSet;
+
 use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
 use crate::validators::InputValueValidator;
 use crate::{model, Any, Type, Value};
-use indexmap::map::IndexMap;
-use indexmap::set::IndexSet;
-use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 pub use cache_control::CacheControl;
 

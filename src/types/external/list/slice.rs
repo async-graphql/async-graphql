@@ -1,9 +1,10 @@
+use std::borrow::Cow;
+
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, OutputValueType, Positioned, ServerResult, Type, Value,
 };
-use std::borrow::Cow;
 
 impl<'a, T: Type + 'a> Type for &'a [T] {
     fn type_name() -> Cow<'static, str> {

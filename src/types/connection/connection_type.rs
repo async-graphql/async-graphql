@@ -1,3 +1,8 @@
+use std::borrow::Cow;
+
+use futures::{Stream, StreamExt, TryStreamExt};
+use indexmap::map::IndexMap;
+
 use crate::connection::edge::Edge;
 use crate::connection::page_info::PageInfo;
 use crate::parser::types::Field;
@@ -7,9 +12,6 @@ use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result,
     ServerResult, Type, Value,
 };
-use futures::{Stream, StreamExt, TryStreamExt};
-use indexmap::map::IndexMap;
-use std::borrow::Cow;
 
 /// Connection type
 ///

@@ -1,10 +1,11 @@
+use std::borrow::Cow;
+
 use crate::parser::types::Field;
 use crate::resolver_utils::ContainerType;
 use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerError,
     ServerResult, Type, Value,
 };
-use std::borrow::Cow;
 
 /// Empty mutation
 ///

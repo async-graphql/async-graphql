@@ -1,3 +1,7 @@
+use std::borrow::Cow;
+
+use indexmap::map::IndexMap;
+
 use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
@@ -5,9 +9,6 @@ use crate::{
     registry, Any, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
     ServerError, ServerResult, SimpleObject, Type, Value,
 };
-
-use indexmap::map::IndexMap;
-use std::borrow::Cow;
 
 /// Federation service
 #[derive(SimpleObject)]

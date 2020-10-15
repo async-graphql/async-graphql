@@ -1,3 +1,13 @@
+use std::any::Any;
+use std::collections::BTreeMap;
+use std::ops::Deref;
+use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
+
+use futures::stream::{self, Stream, StreamExt};
+use indexmap::map::IndexMap;
+use itertools::Itertools;
+
 use crate::context::{Data, QueryEnvInner, ResolveId};
 use crate::extensions::{ErrorLogger, ExtensionContext, ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
@@ -12,14 +22,6 @@ use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
     Response, ServerError, SubscriptionType, Type, Value, ID,
 };
-use futures::stream::{self, Stream, StreamExt};
-use indexmap::map::IndexMap;
-use itertools::Itertools;
-use std::any::Any;
-use std::collections::BTreeMap;
-use std::ops::Deref;
-use std::sync::atomic::AtomicUsize;
-use std::sync::Arc;
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {

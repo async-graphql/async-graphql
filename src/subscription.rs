@@ -1,9 +1,11 @@
+use std::pin::Pin;
+
+use futures::{Stream, StreamExt};
+
 use crate::parser::types::{Selection, TypeCondition};
 use crate::{
     Context, ContextSelectionSet, Name, PathSegment, ServerError, ServerResult, Type, Value,
 };
-use futures::{Stream, StreamExt};
-use std::pin::Pin;
 
 /// A GraphQL subscription object
 pub trait SubscriptionType: Type {

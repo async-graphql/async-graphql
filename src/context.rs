@@ -10,7 +10,8 @@ use std::sync::Arc;
 
 use fnv::FnvHashMap;
 use serde::ser::{SerializeSeq, Serializer};
-use serde::{Deserialize, Serialize};
+use serde::de::{Deserialize, Deserializer};
+use serde::Serialize;
 
 use crate::extensions::Extensions;
 use crate::parser::types::{
@@ -24,7 +25,7 @@ use crate::{
 use async_graphql_value::{Name, Value as InputValue};
 
 /// Variables of a query.
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(transparent)]
 pub struct Variables(pub BTreeMap<Name, Value>);
 
@@ -35,6 +36,12 @@ impl Display for Variables {
             write!(f, "{}{}: {}", if i == 0 { "" } else { ", " }, name, value)?;
         }
         f.write_str("}")
+    }
+}
+
+impl<'de> Deserialize<'de> for Variables {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(Self(<Option<BTreeMap<Name, Value>>>::deserialize(deserializer)?.unwrap_or_default()))
     }
 }
 
@@ -127,7 +134,8 @@ pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
 ///
 /// This is a borrowed form of [`PathSegment`](enum.PathSegment.html) used during execution instead
 /// of passed back when errors occur.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(untagged)]
 pub enum QueryPathSegment<'a> {
     /// We are currently resolving an element in a list.
     Index(usize),
@@ -150,14 +158,7 @@ pub struct QueryPathNode<'a> {
 impl<'a> serde::Serialize for QueryPathNode<'a> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(None)?;
-        self.for_each(|segment| match segment {
-            QueryPathSegment::Index(idx) => {
-                seq.serialize_element(&idx).ok();
-            }
-            QueryPathSegment::Name(name) => {
-                seq.serialize_element(name).ok();
-            }
-        });
+        self.try_for_each(|segment| seq.serialize_element(segment))?;
         seq.end()
     }
 }
@@ -165,21 +166,21 @@ impl<'a> serde::Serialize for QueryPathNode<'a> {
 impl<'a> Display for QueryPathNode<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut first = true;
-        self.for_each(|segment| {
+        self.try_for_each(|segment| {
             if !first {
-                write!(f, ".").ok();
-            }
-            match segment {
-                QueryPathSegment::Index(idx) => {
-                    write!(f, "{}", *idx).ok();
-                }
-                QueryPathSegment::Name(name) => {
-                    write!(f, "{}", name).ok();
-                }
+                write!(f, ".")?;
             }
             first = false;
-        });
-        Ok(())
+
+            match segment {
+                QueryPathSegment::Index(idx) => {
+                    write!(f, "{}", *idx)
+                }
+                QueryPathSegment::Name(name) => {
+                    write!(f, "{}", name)
+                }
+            }
+        })
     }
 }
 
@@ -204,7 +205,7 @@ impl<'a> QueryPathNode<'a> {
             res.push(match s {
                 QueryPathSegment::Name(name) => name.to_string(),
                 QueryPathSegment::Index(idx) => idx.to_string(),
-            })
+            });
         });
         res
     }
@@ -215,14 +216,27 @@ impl<'a> QueryPathNode<'a> {
     }
 
     pub(crate) fn for_each<F: FnMut(&QueryPathSegment<'a>)>(&self, mut f: F) {
-        self.for_each_ref(&mut f);
+        let _ = self.try_for_each::<std::convert::Infallible, _>(|segment| {
+            f(segment);
+            Ok(())
+        });
     }
 
-    fn for_each_ref<F: FnMut(&QueryPathSegment<'a>)>(&self, f: &mut F) {
+    pub(crate) fn try_for_each<E, F: FnMut(&QueryPathSegment<'a>) -> Result<(), E>>(
+        &self,
+        mut f: F,
+    ) -> Result<(), E> {
+        self.try_for_each_ref(&mut f)
+    }
+
+    fn try_for_each_ref<E, F: FnMut(&QueryPathSegment<'a>) -> Result<(), E>>(
+        &self,
+        f: &mut F,
+    ) -> Result<(), E> {
         if let Some(parent) = &self.parent {
-            parent.for_each_ref(f);
+            parent.try_for_each_ref(f)?;
         }
-        f(&self.segment);
+        f(&self.segment)
     }
 }
 
@@ -252,7 +266,7 @@ impl<'a> Iterator for Parents<'a> {
 
 impl<'a> std::iter::FusedIterator for Parents<'a> {}
 
-/// The unique id of the current resolusion.
+/// The unique id of the current resolution.
 #[derive(Debug, Clone, Copy)]
 pub struct ResolveId {
     /// The unique ID of the parent resolution.

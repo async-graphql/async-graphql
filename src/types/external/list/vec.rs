@@ -1,10 +1,11 @@
+use std::borrow::Cow;
+
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
     OutputValueType, Positioned, Result, ServerResult, Type, Value,
 };
-use std::borrow::Cow;
 
 impl<T: Type> Type for Vec<T> {
     fn type_name() -> Cow<'static, str> {

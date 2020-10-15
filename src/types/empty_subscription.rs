@@ -1,7 +1,9 @@
-use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type, Value};
-use futures::{stream, Stream};
 use std::borrow::Cow;
 use std::pin::Pin;
+
+use futures::{stream, Stream};
+
+use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type, Value};
 
 /// Empty subscription
 ///

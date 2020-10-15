@@ -1,7 +1,8 @@
-use crate::ID;
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::num::ParseIntError;
+
+use crate::ID;
 
 /// Cursor type
 ///

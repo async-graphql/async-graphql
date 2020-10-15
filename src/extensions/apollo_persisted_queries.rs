@@ -1,10 +1,12 @@
 //! Apollo persisted queries extension.
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
-use crate::{from_value, Request, ServerError, ServerResult};
+use std::sync::Arc;
+
 use futures::lock::Mutex;
 use serde::Deserialize;
-use std::sync::Arc;
+
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
+use crate::{from_value, Request, ServerError, ServerResult};
 
 #[derive(Deserialize)]
 struct PersistedQuery {

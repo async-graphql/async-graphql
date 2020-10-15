@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use chrono::{DateTime, FixedOffset, Local, Utc};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// Implement the DateTime<FixedOffset> scalar
 ///

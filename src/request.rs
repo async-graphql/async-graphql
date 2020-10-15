@@ -1,8 +1,10 @@
-use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
-use serde::{Deserialize, Deserializer};
 use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Formatter};
+
+use serde::{Deserialize, Deserializer};
+
+use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
 
 /// GraphQL request.
 ///
@@ -20,10 +22,10 @@ pub struct Request {
     pub operation_name: Option<String>,
 
     /// The variables of the request.
-    #[serde(default, deserialize_with = "deserialize_variables")]
+    #[serde(default)]
     pub variables: Variables,
 
-    /// Uploads
+    /// Uploads sent with the request.
     #[serde(skip)]
     pub uploads: Vec<UploadValue>,
 
@@ -36,12 +38,6 @@ pub struct Request {
     /// The extensions config of the request.
     #[serde(default)]
     pub extensions: HashMap<String, Value>,
-}
-
-fn deserialize_variables<'de, D: Deserializer<'de>>(
-    deserializer: D,
-) -> std::result::Result<Variables, D::Error> {
-    Ok(Option::<Variables>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 impl Request {
@@ -104,6 +100,7 @@ impl Debug for Request {
             .field("query", &self.query)
             .field("operation_name", &self.operation_name)
             .field("variables", &self.variables)
+            .field("extensions", &self.extensions)
             .finish()
     }
 }
@@ -137,16 +134,16 @@ impl BatchRequest {
     }
 }
 
-fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> std::result::Result<Vec<T>, D::Error>
+fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
 {
     use serde::de::Error as _;
 
-    let v = Vec::<T>::deserialize(deserializer)?;
+    let v = <Vec<T>>::deserialize(deserializer)?;
     if v.is_empty() {
-        Err(D::Error::invalid_length(0, &"a positive integer"))
+        Err(D::Error::invalid_length(0, &"a non-empty sequence"))
     } else {
         Ok(v)
     }
