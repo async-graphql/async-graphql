@@ -1,4 +1,9 @@
-# Proposal of template : 
+---
+name: 'Bug Report'
+about: 'Report a new bug'
+title: '<Title>'
+labels: bug
+---
 
 ## Expected Behavior
 
