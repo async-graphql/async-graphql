@@ -1,5 +1,5 @@
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures::{future, StreamExt};
+use futures_util::{future, StreamExt};
 use warp::filters::ws;
 use warp::{Filter, Rejection, Reply};
 
@@ -60,31 +60,28 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
     F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
 {
-    warp::any()
-        .and(warp::ws())
-        .and(warp::any().map(move || schema.clone()))
-        .and(warp::any().map(move || initializer.clone()))
-        .map(
-            |ws: ws::Ws, schema: Schema<Query, Mutation, Subscription>, initializer: Option<F>| {
-                ws.on_upgrade(move |websocket| {
-                    let (ws_sender, ws_receiver) = websocket.split();
+    warp::ws().map(move |ws: ws::Ws| {
+        let schema = schema.clone();
+        let initializer = initializer.clone();
 
-                    async move {
-                        let _ = async_graphql::http::WebSocket::with_data(
-                            schema,
-                            ws_receiver
-                                .take_while(|msg| future::ready(msg.is_ok()))
-                                .map(Result::unwrap)
-                                .map(ws::Message::into_bytes),
-                            initializer,
-                        )
-                        .map(ws::Message::text)
-                        .map(Ok)
-                        .forward(ws_sender)
-                        .await;
-                    }
-                })
-            },
-        )
-        .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
+        let reply = ws.on_upgrade(move |websocket| {
+            let (ws_sender, ws_receiver) = websocket.split();
+
+            async move {
+                let _ = async_graphql::http::WebSocket::with_data(
+                    schema,
+                    ws_receiver
+                        .take_while(|msg| future::ready(msg.is_ok()))
+                        .map(Result::unwrap)
+                        .map(ws::Message::into_bytes),
+                    initializer,
+                )
+                .map(ws::Message::text)
+                .map(Ok)
+                .forward(ws_sender)
+                .await;
+            }
+        });
+        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+    })
 }
