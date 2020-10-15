@@ -28,8 +28,6 @@ use query_deserializer::QueryDeserializer;
 
 mod query_deserializer;
 
-pub use rocket;
-
 /// A batch request which can be extracted from a request's body.
 ///
 /// # Examples

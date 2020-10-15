@@ -20,5 +20,5 @@ tide = { version = "0.13.0", default-features = false, features = ["h1-server"] 
 [dev-dependencies]
 # Surf lacks multipart support
 reqwest = { version = "0.10.8", default-features = false, features = ["json"] }
-tokio = { version = "0.2.22", default-features = false, features = ["rt-threaded", "macros"] }
+tokio = { version = "0.3.0", default-features = false, features = ["macros"] }
 serde_json = "1.0.59"

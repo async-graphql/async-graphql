@@ -5,8 +5,8 @@ authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 
 [dependencies]
-async-std = { version = "1.5.0", features = ["attributes"] }
-futures = "0.3.4"
+async-std = { version = "1.6.5", features = ["attributes"] }
+futures = "0.3.6"
 serde_json = "*"
 async-graphql-parser = { path = "../parser" }
 async-graphql = { path = ".." }
