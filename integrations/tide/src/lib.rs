@@ -1,5 +1,8 @@
 //! Async-graphql integration with Tide
 //!
+//! Tide [does not support websockets](https://github.com/http-rs/tide/issues/67), so you can't use
+//! subscriptions with it.
+//!
 //! # Examples
 //! *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
 
@@ -10,7 +13,7 @@
 
 use async_graphql::http::MultipartOptions;
 use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
-use async_trait::async_trait;
+use tide::utils::async_trait;
 use tide::{
     http::{
         headers::{self, HeaderValue},

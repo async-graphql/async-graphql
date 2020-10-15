@@ -74,7 +74,7 @@ impl FromRequest for BatchRequest {
 
         if req.method() == Method::GET {
             let res = serde_urlencoded::from_str(req.query_string());
-            Box::pin(async move { Ok(Self(res?)) })
+            Box::pin(async move { Ok(Self(async_graphql::BatchRequest::Single(res?))) })
         } else {
             let content_type = req
                 .headers()
