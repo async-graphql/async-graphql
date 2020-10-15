@@ -38,7 +38,7 @@ where
 {
     warp::any()
         .and(warp::get().and(warp::query()).map(BatchRequest::Single))
-        .or(warp::any()
+        .or(warp::post()
             .and(warp::header::optional::<String>("content-type"))
             .and(warp::body::stream())
             .and_then(move |content_type, body| async move {

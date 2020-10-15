@@ -128,7 +128,7 @@ pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
 ) -> tide::Result<async_graphql::BatchRequest> {
     if request.method() == Method::Get {
         request.query::<async_graphql::Request>().map(Into::into)
-    } else {
+    } else if request.method() == Method::Post {
         let body = request.take_body();
         let content_type = request
             .header(headers::CONTENT_TYPE)
@@ -146,6 +146,11 @@ pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
                     e,
                 )
             })
+    } else {
+        Err(tide::Error::from_str(
+            StatusCode::MethodNotAllowed,
+            "GraphQL only supports GET and POST requests",
+        ))
     }
 }
 

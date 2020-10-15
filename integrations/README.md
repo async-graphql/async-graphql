@@ -13,11 +13,12 @@ they must all internally use the below functions.
 - Conversion from HTTP library's request to `async_graphql::BatchRequest`:
 	1. If the request is a `GET` request:
 		1. Return the request's query parameters deserialized as an `async_graphql::Request`.
-	1. Otherwise:
+	1. If the request is a `POST` request:
 		1. Get the request's `Content-Type` header.
 		1. Call `async_graphql::http::receive_batch_body` on the request's body.
 		1. Convert `ParseRequestError::PayloadTooLarge` to a 413 Payload Too Large response.
 		1. Convert all other errors to a 400 Bad Request response.
+	1. Otherwise return a 405 Method Not Allowed.
 - Conversion from HTTP library's request to `async_graphql::Request`:
 	1. Call the above function to convert the request to an `async_graphql::BatchRequest`.
 	1. Call `BatchRequest::into_single` on the result.

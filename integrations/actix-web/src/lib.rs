@@ -75,7 +75,7 @@ impl FromRequest for BatchRequest {
         if req.method() == Method::GET {
             let res = serde_urlencoded::from_str(req.query_string());
             Box::pin(async move { Ok(Self(async_graphql::BatchRequest::Single(res?))) })
-        } else {
+        } else if req.method() == Method::POST {
             let content_type = req
                 .headers()
                 .get(http::header::CONTENT_TYPE)
@@ -127,6 +127,12 @@ impl FromRequest for BatchRequest {
                         }
                         _ => actix_web::error::ErrorBadRequest(err),
                     })?,
+                ))
+            })
+        } else {
+            Box::pin(async move {
+                Err(actix_web::error::ErrorMethodNotAllowed(
+                    "GraphQL only supports GET and POST requests",
                 ))
             })
         }
