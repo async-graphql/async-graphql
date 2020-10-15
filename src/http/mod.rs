@@ -46,16 +46,12 @@ pub async fn receive_batch_body(
 }
 
 /// Receive a GraphQL request from a body as JSON.
-pub async fn receive_json(
-    body: impl AsyncRead + Send + 'static,
-) -> Result<Request, ParseRequestError> {
+pub async fn receive_json(body: impl AsyncRead) -> Result<Request, ParseRequestError> {
     receive_batch_json(body).await?.into_single()
 }
 
 /// Receive a GraphQL batch request from a body as JSON.
-pub async fn receive_batch_json(
-    body: impl AsyncRead + Send + 'static,
-) -> Result<BatchRequest, ParseRequestError> {
+pub async fn receive_batch_json(body: impl AsyncRead) -> Result<BatchRequest, ParseRequestError> {
     let mut data = Vec::new();
     futures::pin_mut!(body);
     body.read_to_end(&mut data)

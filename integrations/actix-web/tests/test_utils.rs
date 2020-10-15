@@ -4,7 +4,7 @@ use async_graphql::{
     Context, EmptyMutation, EmptySubscription, Object, ObjectType, Schema, SubscriptionType,
 };
 use async_graphql_actix_web::{Request, Response};
-use futures::lock::Mutex;
+use async_mutex::Mutex;
 
 pub async fn gql_playgound() -> HttpResponse {
     HttpResponse::Ok()
@@ -42,7 +42,7 @@ pub(crate) struct CountQueryRoot;
 #[Object]
 impl CountQueryRoot {
     async fn count<'a>(&self, ctx: &'a Context<'_>) -> i32 {
-        ctx.data_unchecked::<Count>().lock().await.clone()
+        *ctx.data_unchecked::<Count>().lock().await
     }
 }
 
@@ -53,13 +53,13 @@ impl CountMutation {
     async fn add_count<'a>(&self, ctx: &'a Context<'_>, count: i32) -> i32 {
         let mut guard_count = ctx.data_unchecked::<Count>().lock().await;
         *guard_count += count;
-        guard_count.clone()
+        *guard_count
     }
 
     async fn subtract_count<'a>(&self, ctx: &'a Context<'_>, count: i32) -> i32 {
         let mut guard_count = ctx.data_unchecked::<Count>().lock().await;
         *guard_count -= count;
-        guard_count.clone()
+        *guard_count
     }
 }
 

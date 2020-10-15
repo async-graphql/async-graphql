@@ -5,17 +5,19 @@ mod subscription;
 
 pub use subscription::WSSubscription;
 
+use std::future::Future;
+use std::io::{self, ErrorKind};
+use std::pin::Pin;
+
+use actix_web::client::PayloadError;
 use actix_web::dev::{Payload, PayloadStream};
-use actix_web::http::StatusCode;
-use actix_web::{http, web, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
+use actix_web::http::{Method, StatusCode};
+use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
+use futures_util::future::{self, FutureExt, Ready};
+use futures_util::{StreamExt, TryStreamExt};
+
 use async_graphql::http::MultipartOptions;
 use async_graphql::ParseRequestError;
-use futures::channel::mpsc;
-use futures::future::{self, FutureExt, Ready};
-use futures::io::ErrorKind;
-use futures::{Future, SinkExt, StreamExt, TryFutureExt, TryStreamExt};
-use std::io;
-use std::pin::Pin;
 
 /// Extractor for GraphQL request.
 ///
@@ -30,23 +32,21 @@ impl Request {
     }
 }
 
-type RequestMapper =
+type BatchToRequestMapper =
     fn(<<BatchRequest as FromRequest>::Future as Future>::Output) -> Result<Request>;
 
 impl FromRequest for Request {
     type Error = Error;
-    type Future = future::Map<<BatchRequest as FromRequest>::Future, RequestMapper>;
+    type Future = future::Map<<BatchRequest as FromRequest>::Future, BatchToRequestMapper>;
     type Config = MultipartOptions;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         BatchRequest::from_request(req, payload).map(|res| {
-            res.and_then(|batch| {
-                batch
-                    .0
+            Ok(Self(
+                res?.0
                     .into_single()
-                    .map_err(actix_web::error::ErrorBadRequest)
-            })
-            .map(Self)
+                    .map_err(actix_web::error::ErrorBadRequest)?,
+            ))
         })
     }
 }
@@ -72,41 +72,64 @@ impl FromRequest for BatchRequest {
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
 
-        let content_type = req
-            .headers()
-            .get(http::header::CONTENT_TYPE)
-            .and_then(|value| value.to_str().ok())
-            .map(|value| value.to_string());
+        if req.method() == Method::GET {
+            let res = serde_urlencoded::from_str(req.query_string());
+            Box::pin(async move { Ok(Self(res?)) })
+        } else {
+            let content_type = req
+                .headers()
+                .get(http::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .map(|value| value.to_string());
 
-        let (mut tx, rx) = mpsc::channel(16);
+            let (tx, rx) = async_channel::bounded(16);
 
-        // Because Payload is !Send, so forward it to mpsc::Sender
-        let mut payload = web::Payload(payload.take());
-        actix_rt::spawn(async move {
-            while let Some(item) = payload.next().await {
-                if tx.send(item).await.is_err() {
-                    return;
-                }
-            }
-        });
-
-        Box::pin(async move {
-            Ok(BatchRequest(
-                async_graphql::http::receive_batch_body(
-                    content_type,
-                    rx.map_err(|err| io::Error::new(ErrorKind::Other, err))
-                        .into_async_read(),
-                    config,
-                )
-                .map_err(|err| match err {
-                    ParseRequestError::PayloadTooLarge => {
-                        actix_web::error::ErrorPayloadTooLarge(err)
+            // Payload is !Send so we create indirection with a channel
+            let mut payload = payload.take();
+            actix::spawn(async move {
+                while let Some(item) = payload.next().await {
+                    if tx.send(item).await.is_err() {
+                        return;
                     }
-                    _ => actix_web::error::ErrorBadRequest(err),
-                })
-                .await?,
-            ))
-        })
+                }
+            });
+
+            Box::pin(async move {
+                Ok(BatchRequest(
+                    async_graphql::http::receive_batch_body(
+                        content_type,
+                        rx.map_err(|e| match e {
+                            PayloadError::Incomplete(Some(e)) | PayloadError::Io(e) => e,
+                            PayloadError::Incomplete(None) => {
+                                io::Error::from(ErrorKind::UnexpectedEof)
+                            }
+                            PayloadError::EncodingCorrupted => io::Error::new(
+                                ErrorKind::InvalidData,
+                                "cannot decode content-encoding",
+                            ),
+                            PayloadError::Overflow => io::Error::new(
+                                ErrorKind::InvalidData,
+                                "a payload reached size limit",
+                            ),
+                            PayloadError::UnknownLength => {
+                                io::Error::new(ErrorKind::Other, "a payload length is unknown")
+                            }
+                            PayloadError::Http2Payload(e) if e.is_io() => e.into_io().unwrap(),
+                            PayloadError::Http2Payload(e) => io::Error::new(ErrorKind::Other, e),
+                        })
+                        .into_async_read(),
+                        config,
+                    )
+                    .await
+                    .map_err(|err| match err {
+                        ParseRequestError::PayloadTooLarge => {
+                            actix_web::error::ErrorPayloadTooLarge(err)
+                        }
+                        _ => actix_web::error::ErrorBadRequest(err),
+                    })?,
+                ))
+            })
+        }
     }
 }
 
@@ -140,6 +163,6 @@ impl Responder for Response {
                 res.header("cache-control", cache_control);
             }
         }
-        futures::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
+        futures_util::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
     }
 }

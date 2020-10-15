@@ -6,8 +6,6 @@ use actix_http::ws;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::WebSocket;
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures::channel::mpsc;
-use futures::SinkExt;
 use std::time::{Duration, Instant};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -17,7 +15,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Option<Schema<Query, Mutation, Subscription>>,
     last_heartbeat: Instant,
-    messages: Option<mpsc::UnboundedSender<Vec<u8>>>,
+    messages: Option<async_channel::Sender<Vec<u8>>>,
     initializer: Option<Box<dyn FnOnce(serde_json::Value) -> Result<Data> + Send + Sync>>,
     continuation: Vec<u8>,
 }
@@ -71,7 +69,7 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.send_heartbeats(ctx);
 
-        let (tx, rx) = mpsc::unbounded();
+        let (tx, rx) = async_channel::unbounded();
 
         WebSocket::with_data(self.schema.take().unwrap(), rx, self.initializer.take())
             .into_actor(self)
@@ -135,7 +133,7 @@ where
         };
 
         if let Some(message) = message {
-            let mut sender = self.messages.as_ref().unwrap().clone();
+            let sender = self.messages.as_ref().unwrap().clone();
 
             async move { sender.send(message).await }
                 .into_actor(self)
