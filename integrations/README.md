@@ -5,8 +5,7 @@ This directory provides various integrations for `async-graphql` to various crat
 ## Requirements for an HTTP integration
 
 This is a list of criteria for HTTP integrations with `async-graphql` in order to make sure all
-integrations are implemented consistently. Currently not all integrations follow this criteria, but
-we are working on it.
+integrations are implemented consistently.
 
 Integrations may provide additional functionality to better integrate with the specific library, but
 they must all internally use the below functions.
@@ -37,3 +36,10 @@ they must all internally use the below functions.
 	1. Stream all websocket messages that send data (bytes/text/continuations) to the
 	   `async_graphql::http::WebSocket`.
 	1. Convert all responses to websocket text responses.
+
+## Integration Status
+
+- Actix-web: Complete integration.
+- Rocket: Missing websocket support.
+- Tide: Missing websocket support (blocked on [support in Tide itself](https://github.com/http-rs/tide/issues/67)).
+- Warp: Complete integration.

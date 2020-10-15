@@ -3,6 +3,9 @@
 //! Note: This integrates with the unreleased version 0.5 of Rocket, and so breaking changes in
 //! both this library and Rocket are to be expected.
 //!
+//! To configure options for sending and receiving multipart requests, add your instance of
+//! `MultipartOptions` to the state managed by Rocket (`.manage(your_multipart_options)`).
+//!
 //! **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
 
 #![warn(missing_docs)]
