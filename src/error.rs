@@ -36,7 +36,7 @@ pub struct ServerError {
 }
 
 fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
-    values.as_ref().map_or(false, |values| values.0.is_empty())
+    values.as_ref().map_or(true, |values| values.0.is_empty())
 }
 
 impl ServerError {
