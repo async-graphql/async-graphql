@@ -333,7 +333,7 @@ where
         request: Request,
     ) -> Result<(QueryEnvInner, CacheControl), Vec<ServerError>> {
         // create extension instances
-        let extensions: Extensions = self
+        let mut extensions: Extensions = self
             .0
             .extensions
             .iter()

@@ -196,13 +196,13 @@ impl Extensions {
     }
 
     pub async fn prepare_request(
-        &self,
+        &mut self,
         ctx: &ExtensionContext<'_>,
         request: Request,
     ) -> ServerResult<Request> {
         let mut request = request;
-        if let Some(e) = &self.0 {
-            for e in e.lock().iter_mut() {
+        if let Some(e) = &mut self.0 {
+            for e in e.get_mut().iter_mut() {
                 request = e.prepare_request(ctx, request).await?;
             }
         }
@@ -210,33 +210,35 @@ impl Extensions {
     }
 
     pub fn parse_start(
-        &self,
+        &mut self,
         ctx: &ExtensionContext<'_>,
         query_source: &str,
         variables: &Variables,
     ) {
-        if let Some(e) = &self.0 {
-            e.lock()
+        if let Some(e) = &mut self.0 {
+            e.get_mut()
                 .iter_mut()
                 .for_each(|e| e.parse_start(ctx, query_source, variables));
         }
     }
 
-    pub fn parse_end(&self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
-        if let Some(e) = &self.0 {
-            e.lock().iter_mut().for_each(|e| e.parse_end(ctx, document));
+    pub fn parse_end(&mut self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
+        if let Some(e) = &mut self.0 {
+            e.get_mut()
+                .iter_mut()
+                .for_each(|e| e.parse_end(ctx, document));
         }
     }
 
-    pub fn validation_start(&self, ctx: &ExtensionContext<'_>) {
-        if let Some(e) = &self.0 {
-            e.lock().iter_mut().for_each(|e| e.validation_start(ctx));
+    pub fn validation_start(&mut self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &mut self.0 {
+            e.get_mut().iter_mut().for_each(|e| e.validation_start(ctx));
         }
     }
 
-    pub fn validation_end(&self, ctx: &ExtensionContext<'_>) {
-        if let Some(e) = &self.0 {
-            e.lock().iter_mut().for_each(|e| e.validation_end(ctx));
+    pub fn validation_end(&mut self, ctx: &ExtensionContext<'_>) {
+        if let Some(e) = &mut self.0 {
+            e.get_mut().iter_mut().for_each(|e| e.validation_end(ctx));
         }
     }
 
