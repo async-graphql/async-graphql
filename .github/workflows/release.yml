@@ -39,9 +39,6 @@ jobs:
 #          - name: async-graphql-rocket
 #            registryName: async-graphql-rocket
 #            path: async-graphql-rocket
-#          - name: async-graphql-lambda
-#            registryName: async-graphql-lambda
-#            path: async-graphql-lambda
     steps:
       - uses: actions-rs/toolchain@v1
         with:
