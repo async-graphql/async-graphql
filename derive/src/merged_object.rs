@@ -17,8 +17,8 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
         Data::Struct(e) => e,
@@ -56,18 +56,18 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #merged_type::create_type_info(registry);
 
-                    let mut fields = Default::default();
-                    let mut cache_control = Default::default();
+                    let mut fields = ::std::default::Default::default();
+                    let mut cache_control = ::std::default::Default::default();
 
-                    if let Some(#crate_name::registry::MetaType::Object {
+                    if let ::std::option::Option::Some(#crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         cache_control: obj_cache_control,
                         ..
@@ -82,7 +82,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         fields,
                         cache_control,
                         extends: #extends,
-                        keys: None,
+                        keys: ::std::option::Option::None,
                     }
                 })
             }

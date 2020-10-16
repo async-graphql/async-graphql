@@ -118,8 +118,8 @@ impl InputValueType for Upload {
         const PREFIX: &str = "#__graphql_file__:";
         let value = value.unwrap_or_default();
         if let Value::String(s) = &value {
-            if s.starts_with(PREFIX) {
-                return Ok(Upload(s[PREFIX.len()..].parse::<usize>().unwrap()));
+            if let Some(filename) = s.strip_prefix(PREFIX) {
+                return Ok(Upload(filename.parse::<usize>().unwrap()));
             }
         }
         Err(InputValueError::expected_type(value))

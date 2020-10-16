@@ -43,8 +43,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut get_fields = Vec::new();
     let mut put_fields = Vec::new();
@@ -75,7 +75,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
             get_fields.push(quote! {
                 let #ident: #ty = #crate_name::InputValueType::parse(
-                    Some(#crate_name::Value::Object(obj.clone()))
+                    ::std::option::Option::Some(#crate_name::Value::Object(obj.clone()))
                 ).map_err(#crate_name::InputValueError::propagate)?;
             });
 
@@ -92,29 +92,31 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         let validator = match &field.validator {
             Some(meta) => {
                 let stream = generate_validator(&crate_name, meta)?;
-                quote!(Some(#stream))
+                quote!(::std::option::Option::Some(#stream))
             }
-            None => quote!(None),
+            None => quote!(::std::option::Option::None),
         };
         let desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! { Some(#s) })
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
         let default = generate_default(&field.default, &field.default_with)?;
         let schema_default = default
             .as_ref()
             .map(|value| {
-                quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
             })
-            .unwrap_or_else(|| quote! {None});
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
 
         if let Some(default) = default {
             get_fields.push(quote! {
                 #[allow(non_snake_case)]
                 let #ident: #ty = {
                     match obj.get(#name) {
-                        Some(value) => #crate_name::InputValueType::parse(Some(value.clone()))
-                            .map_err(#crate_name::InputValueError::propagate)?,
-                        None => #default,
+                        ::std::option::Option::Some(value) => {
+                            #crate_name::InputValueType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
+                                .map_err(#crate_name::InputValueError::propagate)?
+                        },
+                        ::std::option::Option::None => #default,
                     }
                 };
             });
@@ -148,11 +150,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
                     name: #gql_typename.to_string(),
                     description: #desc,
@@ -167,12 +169,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
-                if let Some(#crate_name::Value::Object(obj)) = value {
+            fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+                if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                     #(#get_fields)*
-                    Ok(Self { #(#fields),* })
+                    ::std::result::Result::Ok(Self { #(#fields),* })
                 } else {
-                    Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
+                    ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                 }
             }
 

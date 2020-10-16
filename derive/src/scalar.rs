@@ -23,8 +23,8 @@ pub fn generate(
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
     let desc = get_rustdoc(&item_impl.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
     let self_ty = &item_impl.self_ty;
     let generic = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
@@ -34,11 +34,11 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generic #crate_name::Type for #self_ty #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
                     name: #gql_typename.to_string(),
                     description: #desc,
@@ -49,7 +49,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generic #crate_name::InputValueType for #self_ty #where_clause {
-            fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value.unwrap_or_default())
             }
 
@@ -66,7 +66,7 @@ pub fn generate(
                 _: &#crate_name::ContextSelectionSet<'_>,
                 _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
             ) -> #crate_name::ServerResult<#crate_name::Value> {
-                Ok(#crate_name::ScalarType::to_value(self))
+                ::std::result::Result::Ok(#crate_name::ScalarType::to_value(self))
             }
         }
     };

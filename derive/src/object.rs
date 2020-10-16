@@ -36,8 +36,8 @@ pub fn generate(
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
 
     let desc = get_rustdoc(&item_impl.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote!(::std::option::Option::Some(#s)))
+        .unwrap_or_else(|| quote!(::std::option::Option::None));
 
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
@@ -154,11 +154,11 @@ pub fn generate(
                         keys_str.push_str(&name);
 
                         key_pat.push(quote! {
-                            Some(#ident)
+                            ::std::option::Option::Some(#ident)
                         });
                         key_getter.push(quote! {
                             params.get(#name).and_then(|value| {
-                                let value: Option<#ty> = #crate_name::InputValueType::parse(Some(value.clone())).ok();
+                                let value: ::std::option::Option<#ty> = #crate_name::InputValueType::parse(::std::option::Option::Some(value.clone())).ok();
                                 value
                             })
                         });
@@ -185,7 +185,7 @@ pub fn generate(
                     let new_block = quote!({
                         {
                             let value:#inner_ty = async move #block.await;
-                            Ok(value)
+                            ::std::result::Result::Ok(value)
                         }
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
@@ -219,21 +219,21 @@ pub fn generate(
                         .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
                 });
                 let field_desc = get_rustdoc(&method.attrs)?
-                    .map(|s| quote! { Some(#s) })
-                    .unwrap_or_else(|| quote! {None});
+                    .map(|s| quote! { ::std::option::Option::Some(#s) })
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let field_deprecation = method_args
                     .deprecation
                     .as_ref()
-                    .map(|s| quote! {Some(#s)})
-                    .unwrap_or_else(|| quote! {None});
+                    .map(|s| quote! { ::std::option::Option::Some(#s) })
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let external = method_args.external;
                 let requires = match &method_args.requires {
-                    Some(requires) => quote! { Some(#requires) },
-                    None => quote! { None },
+                    Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+                    None => quote! { ::std::option::Option::None },
                 };
                 let provides = match &method_args.provides {
-                    Some(provides) => quote! { Some(#provides) },
-                    None => quote! { None },
+                    Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+                    None => quote! { ::std::option::Option::None },
                 };
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
@@ -336,22 +336,22 @@ pub fn generate(
                     });
                     let desc = desc
                         .as_ref()
-                        .map(|s| quote! {Some(#s)})
-                        .unwrap_or_else(|| quote! {None});
+                        .map(|s| quote! {::std::option::Option::Some(#s)})
+                        .unwrap_or_else(|| quote! {::std::option::Option::None});
                     let default = generate_default(&default, &default_with)?;
                     let schema_default = default
                         .as_ref()
                         .map(|value| {
-                            quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                            quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
                         })
-                        .unwrap_or_else(|| quote! {None});
+                        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
                     let validator = match &validator {
                         Some(meta) => {
                             let stream = generate_validator(&crate_name, meta)?;
-                            quote!(Some(#stream))
+                            quote!(::std::option::Option::Some(#stream))
                         }
-                        None => quote!(None),
+                        None => quote!(::std::option::Option::None),
                     };
 
                     schema_args.push(quote! {
@@ -368,8 +368,10 @@ pub fn generate(
                     use_params.push(quote! { #param_ident });
 
                     let default = match default {
-                        Some(default) => quote! { Some(|| -> #ty { #default }) },
-                        None => quote! { None },
+                        Some(default) => {
+                            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+                        }
+                        None => quote! { ::std::option::Option::None },
                     };
                     let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                     get_params.push(quote! {
@@ -407,7 +409,7 @@ pub fn generate(
                     let new_block = quote!({
                         {
                             let value:#inner_ty = async move #block.await;
-                            Ok(value)
+                            ::std::result::Result::Ok(value)
                         }
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
@@ -470,11 +472,11 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #self_ty #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: #gql_typename.to_string(),
                     description: #desc,
@@ -485,7 +487,7 @@ pub fn generate(
                     },
                     cache_control: #cache_control,
                     extends: #extends,
-                    keys: None,
+                    keys: ::std::option::Option::None,
                 });
                 #(#create_entity_types)*
                 #(#add_keys)*
@@ -499,24 +501,24 @@ pub fn generate(
         impl#generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
-                Ok(None)
+                ::std::result::Result::Ok(::std::option::Option::None)
             }
 
             async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 let params = match params {
                     #crate_name::Value::Object(params) => params,
-                    _ => return Ok(None),
+                    _ => return ::std::result::Result::Ok(::std::option::Option::None),
                 };
-                let typename = if let Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
                     typename
                 } else {
-                    return Err(
+                    return ::std::result::Result::Err(
                         #crate_name::ServerError::new(r#""__typename" must be an existing string."#)
                             .at(ctx.item.pos)
                     );
                 };
                 #(#find_entities_iter)*
-                Ok(None)
+                ::std::result::Result::Ok(::std::option::Option::None)
             }
         }
 

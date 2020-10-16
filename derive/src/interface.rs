@@ -32,8 +32,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&interface_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
@@ -154,12 +154,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let mut get_params = Vec::new();
         let mut schema_args = Vec::new();
         let requires = match &requires {
-            Some(requires) => quote! { Some(#requires) },
-            None => quote! { None },
+            Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+            None => quote! { ::std::option::Option::None },
         };
         let provides = match &provides {
-            Some(provides) => quote! { Some(#provides) },
-            None => quote! { None },
+            Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+            None => quote! { ::std::option::Option::None },
         };
 
         decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
@@ -186,8 +186,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
             let default = generate_default(&default, &default_with)?;
             let get_default = match &default {
-                Some(default) => quote! { Some(|| -> #ty { #default }) },
-                None => quote! { None },
+                Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
+                None => quote! { ::std::option::Option::None },
             };
             get_params.push(quote! {
                 let #ident: #ty = ctx.param_value(#name, #get_default)?;
@@ -195,21 +195,21 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
             let desc = desc
                 .as_ref()
-                .map(|s| quote! {Some(#s)})
-                .unwrap_or_else(|| quote! {None});
+                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
             let schema_default = default
                 .as_ref()
                 .map(|value| {
-                    quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                    quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
                 })
-                .unwrap_or_else(|| quote! {None});
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
             schema_args.push(quote! {
                 args.insert(#name, #crate_name::registry::MetaInputValue {
                     name: #name,
                     description: #desc,
                     ty: <#ty as #crate_name::Type>::create_type_info(registry),
                     default_value: #schema_default,
-                    validator: None,
+                    validator: ::std::option::Option::None,
                 });
             });
         }
@@ -222,12 +222,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         let desc = desc
             .as_ref()
-            .map(|s| quote! {Some(#s)})
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
         let deprecation = deprecation
             .as_ref()
-            .map(|s| quote! {Some(#s)})
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
 
         let oty = OutputType::parse(&ty)?;
         let ty = match oty {
@@ -238,7 +238,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         methods.push(quote! {
             #[inline]
-            async fn #method_name <'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
+            async fn #method_name<'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
                 match self {
                     #(#calls,)*
                 }
@@ -256,7 +256,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 },
                 ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
                 deprecation: #deprecation,
-                cache_control: Default::default(),
+                cache_control: ::std::default::Default::default(),
                 external: #external,
                 provides: #provides,
                 requires: #requires,
@@ -264,8 +264,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         });
 
         let resolve_obj = quote! {
-            self.#method_name(#(#use_params),*).await.
-                map_err(|err| err.into_server_error().at(ctx.item.pos))?
+            self.#method_name(#(#use_params),*)
+                .await
+                .map_err(|err| err.into_server_error().at(ctx.item.pos))?
         };
 
         resolvers.push(quote! {
@@ -278,7 +279,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     }
 
     let introspection_type_name = if get_introspection_typename.is_empty() {
-        quote! { unreachable!() }
+        quote! { ::std::unreachable!() }
     } else {
         quote! {
             match self {
@@ -297,15 +298,15 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #ident #generics {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, str> {
+            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #introspection_type_name
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
@@ -323,7 +324,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                             possible_types
                         },
                         extends: #extends,
-                        keys: None,
+                        keys: ::std::option::Option::None,
                     }
                 })
             }
@@ -332,9 +333,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<Option<#crate_name::Value>> {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
-                Ok(None)
+                ::std::result::Result::Ok(::std::option::Option::None)
             }
 
             fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {

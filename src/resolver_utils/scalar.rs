@@ -93,15 +93,19 @@ pub trait ScalarType: Sized + Send {
 #[macro_export]
 macro_rules! scalar {
     ($ty:ty, $name:expr, $desc:literal) => {
-        scalar_internal!($ty, stringify!($ty), Some($desc));
+        $crate::scalar_internal!(
+            $ty,
+            ::std::stringify!($ty),
+            ::std::option::Option::Some($desc)
+        );
     };
 
     ($ty:ty, $name:expr) => {
-        scalar_internal!($ty, stringify!($ty), None);
+        $crate::scalar_internal!($ty, ::std::stringify!($ty), ::std::option::Option::None);
     };
 
     ($ty:ty) => {
-        scalar_internal!($ty, stringify!($ty), None);
+        $crate::scalar_internal!($ty, ::std::stringify!($ty), ::std::option::Option::None);
     };
 }
 
@@ -110,11 +114,13 @@ macro_rules! scalar {
 macro_rules! scalar_internal {
     ($ty:ty, $name:expr, $desc:expr) => {
         impl $crate::Type for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
             }
 
-            fn create_type_info(registry: &mut $crate::registry::Registry) -> String {
+            fn create_type_info(
+                registry: &mut $crate::registry::Registry,
+            ) -> ::std::string::String {
                 registry.create_type::<$ty, _>(|_| $crate::registry::MetaType::Scalar {
                     name: $name.into(),
                     description: $desc,
@@ -125,7 +131,7 @@ macro_rules! scalar_internal {
 
         impl $crate::ScalarType for $ty {
             fn parse(value: $crate::Value) -> $crate::InputValueResult<Self> {
-                Ok($crate::from_value(value)?)
+                ::std::result::Result::Ok($crate::from_value(value)?)
             }
 
             fn to_value(&self) -> $crate::Value {
@@ -134,7 +140,9 @@ macro_rules! scalar_internal {
         }
 
         impl $crate::InputValueType for $ty {
-            fn parse(value: Option<$crate::Value>) -> $crate::InputValueResult<Self> {
+            fn parse(
+                value: ::std::option::Option<$crate::Value>,
+            ) -> $crate::InputValueResult<Self> {
                 <$ty as $crate::ScalarType>::parse(value.unwrap_or_default())
             }
 
@@ -150,7 +158,7 @@ macro_rules! scalar_internal {
                 _: &$crate::ContextSelectionSet<'_>,
                 _field: &$crate::Positioned<$crate::parser::types::Field>,
             ) -> $crate::ServerResult<$crate::Value> {
-                Ok($crate::ScalarType::to_value(self))
+                ::std::result::Result::Ok($crate::ScalarType::to_value(self))
             }
         }
     };

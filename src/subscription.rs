@@ -57,7 +57,6 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync
                         yield Err(ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()))
                             .at(ctx.item.pos)
                             .path(PathSegment::Field(field_name.to_string())));
-                        return;
                     }
                 }
             })),

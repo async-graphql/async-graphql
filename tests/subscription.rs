@@ -382,9 +382,9 @@ pub async fn test_subscription_fieldresult() {
         async fn values(&self) -> impl Stream<Item = Result<i32>> {
             futures_util::stream::iter(0..5)
                 .map(Result::Ok)
-                .chain(futures_util::stream::once(
-                    async move { Err("StreamErr".into()) },
-                ))
+                .chain(futures_util::stream::once(async move {
+                    Err("StreamErr".into())
+                }))
         }
     }
 

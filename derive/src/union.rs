@@ -28,8 +28,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&union_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
@@ -146,17 +146,17 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #ident #generics {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, str> {
+            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 match self {
                     #(#get_introspection_typename),*
                 }
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
@@ -178,7 +178,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
         impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                Ok(None)
+                ::std::result::Result::Ok(::std::option::Option::None)
             }
 
             fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {

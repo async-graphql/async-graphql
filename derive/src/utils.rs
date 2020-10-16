@@ -241,8 +241,8 @@ pub fn generate_guards(
                             let name = &nv.path;
                             if let Lit::Str(value) = &nv.lit {
                                 let value_str = value.value();
-                                if value_str.starts_with('@') {
-                                    let getter_name = get_param_getter_ident(&value_str[1..]);
+                                if let Some(value_str) = value_str.strip_prefix('@') {
+                                    let getter_name = get_param_getter_ident(value_str);
                                     params.push(quote! { #name: #getter_name()? });
                                 } else {
                                     let expr = syn::parse_str::<Expr>(&value_str)?;
@@ -298,15 +298,15 @@ fn generate_default_value(lit: &Lit) -> GeneratorResult<TokenStream> {
     match lit {
         Lit::Str(value) =>{
             let value = value.value();
-            Ok(quote!({ #value.to_string() }))
+            Ok(quote!({ ::std::borrow::ToOwned::to_owned(#value) }))
         }
         Lit::Int(value) => {
             let value = value.base10_parse::<i32>()?;
-            Ok(quote!({ #value as i32 }))
+            Ok(quote!({ #value as ::std::primitive::i32 }))
         }
         Lit::Float(value) => {
             let value = value.base10_parse::<f64>()?;
-            Ok(quote!({ #value as f64 }))
+            Ok(quote!({ #value as ::std::primitive::f64 }))
         }
         Lit::Bool(value) => {
             let value = value.value;
@@ -332,7 +332,9 @@ pub fn generate_default(
     default_with: &Option<LitStr>,
 ) -> GeneratorResult<Option<TokenStream>> {
     match (default, default_with) {
-        (Some(args::DefaultValue::Default), _) => Ok(Some(quote! { Default::default() })),
+        (Some(args::DefaultValue::Default), _) => {
+            Ok(Some(quote! { ::std::default::Default::default() }))
+        }
         (Some(args::DefaultValue::Value(lit)), _) => Ok(Some(generate_default_value(lit)?)),
         (None, Some(lit)) => Ok(Some(generate_default_with(lit)?)),
         (None, None) => Ok(None),

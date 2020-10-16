@@ -46,7 +46,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     }
 
     fn to_value(&self) -> Value {
-        to_value(&self.0).unwrap_or_else(|_| Value::Null)
+        to_value(&self.0).unwrap_or_default()
     }
 }
 
@@ -95,7 +95,7 @@ impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
         _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        Ok(to_value(&self.0).ok().unwrap_or_else(|| Value::Null))
+        Ok(to_value(&self.0).ok().unwrap_or_default())
     }
 }
 

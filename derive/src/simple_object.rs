@@ -19,8 +19,8 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
         Data::Struct(e) => e,
@@ -51,21 +51,21 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
         let field_desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! {Some(#s)})
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
         let field_deprecation = field
             .deprecation
             .as_ref()
-            .map(|s| quote! {Some(#s)})
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
         let external = field.external;
         let requires = match &field.requires {
-            Some(requires) => quote! { Some(#requires) },
-            None => quote! { None },
+            Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+            None => quote! { ::std::option::Option::None },
         };
         let provides = match &field.provides {
-            Some(provides) => quote! { Some(#provides) },
-            None => quote! { None },
+            Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+            None => quote! { ::std::option::Option::None },
         };
         let vis = &field.vis;
         let ty = &field.ty;
@@ -85,7 +85,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
                 name: #field_name.to_string(),
                 description: #field_desc,
-                args: Default::default(),
+                args: ::std::default::Default::default(),
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
                 deprecation: #field_deprecation,
                 cache_control: #cache_control,
@@ -106,7 +106,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                  #[inline]
                  #[allow(missing_docs)]
                  #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<&#ty> {
-                     Ok(&self.#ident)
+                     ::std::result::Result::Ok(&self.#ident)
                  }
             }
         } else {
@@ -114,7 +114,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[inline]
                 #[allow(missing_docs)]
                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
-                    Ok(self.#ident.clone())
+                    ::std::result::Result::Ok(self.#ident.clone())
                 }
             }
         });
@@ -148,11 +148,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #ident #generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: #gql_typename.to_string(),
                     description: #desc,
@@ -163,7 +163,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     },
                     cache_control: #cache_control,
                     extends: #extends,
-                    keys: None,
+                    keys: ::std::option::Option::None,
                 })
             }
         }
@@ -174,7 +174,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
-                Ok(None)
+                ::std::result::Result::Ok(::std::option::Option::None)
             }
         }
 

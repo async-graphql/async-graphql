@@ -21,8 +21,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&enum_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut enum_items = Vec::new();
     let mut items = Vec::new();
@@ -49,11 +49,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         let item_deprecation = variant
             .deprecation
             .as_ref()
-            .map(|s| quote! { Some(#s) })
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
         let item_desc = get_rustdoc(&variant.attrs)?
-            .map(|s| quote! { Some(#s) })
-            .unwrap_or_else(|| quote! {None});
+            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
 
         enum_items.push(item_ident);
         items.push(quote! {
@@ -121,11 +121,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #crate_name::registry::MetaType::Enum {
                         name: #gql_typename.to_string(),
@@ -142,7 +142,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputValueType for #ident {
-            fn parse(value: Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+            fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 #crate_name::resolver_utils::parse_enum(value.unwrap_or_default())
             }
 
@@ -154,7 +154,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputValueType for #ident {
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                Ok(#crate_name::resolver_utils::enum_value(*self))
+                ::std::result::Result::Ok(#crate_name::resolver_utils::enum_value(*self))
             }
         }
 

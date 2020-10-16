@@ -39,8 +39,8 @@ pub fn generate(
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
 
     let desc = get_rustdoc(&item_impl.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut create_stream = Vec::new();
     let mut schema_fields = Vec::new();
@@ -60,13 +60,13 @@ pub fn generate(
                     .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
             });
             let field_desc = get_rustdoc(&method.attrs)?
-                .map(|s| quote! {Some(#s)})
-                .unwrap_or_else(|| quote! {None});
+                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
             let field_deprecation = field
                 .deprecation
                 .as_ref()
-                .map(|s| quote! {Some(#s)})
-                .unwrap_or_else(|| quote! {None});
+                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
             let cfg_attrs = get_cfg_attrs(&method.attrs);
 
             if method.sig.asyncness.is_none() {
@@ -166,24 +166,24 @@ pub fn generate(
                 });
                 let desc = desc
                     .as_ref()
-                    .map(|s| quote! {Some(#s)})
-                    .unwrap_or_else(|| quote! {None});
+                    .map(|s| quote! {::std::option::Option::Some(#s)})
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let default = generate_default(&default, &default_with)?;
 
                 let validator = match &validator {
                     Some(meta) => {
                         let stream = generate_validator(&crate_name, meta)?;
-                        quote!(Some(#stream))
+                        quote!(::std::option::Option::Some(#stream))
                     }
-                    None => quote!(None),
+                    None => quote!(::std::option::Option::None),
                 };
 
                 let schema_default = default
                     .as_ref()
                     .map(|value| {
-                        quote! {Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                        quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
                     })
-                    .unwrap_or_else(|| quote! {None});
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
 
                 schema_args.push(quote! {
                     args.insert(#name, #crate_name::registry::MetaInputValue {
@@ -198,8 +198,8 @@ pub fn generate(
                 use_params.push(quote! { #ident });
 
                 let default = match default {
-                    Some(default) => quote! { Some(|| -> #ty { #default }) },
-                    None => quote! { None },
+                    Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
+                    None => quote! { ::std::option::Option::None },
                 };
                 let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                 get_params.push(quote! {
@@ -228,7 +228,7 @@ pub fn generate(
                 let new_block = quote!({
                     {
                         let value = (move || { async move #block })().await;
-                        Ok(value)
+                        ::std::result::Result::Ok(value)
                     }
                 });
                 method.block = syn::parse2::<Block>(new_block).expect("invalid block");
@@ -249,10 +249,10 @@ pub fn generate(
                     },
                     ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
                     deprecation: #field_deprecation,
-                    cache_control: Default::default(),
+                    cache_control: ::std::default::Default::default(),
                     external: false,
-                    requires: None,
-                    provides: None,
+                    requires: ::std::option::Option::None,
+                    provides: ::std::option::Option::None,
                 });
             });
 
@@ -290,14 +290,14 @@ pub fn generate(
                         let field_name = field_name.clone();
                         async move {
                             let resolve_id = #crate_name::ResolveId {
-                                parent: Some(0),
+                                parent: ::std::option::Option::Some(0),
                                 current: 1,
                             };
                             let inc_resolve_id = ::std::sync::atomic::AtomicUsize::new(1);
                             let ctx_selection_set = query_env.create_context(
                                 &schema_env,
-                                Some(#crate_name::QueryPathNode {
-                                    parent: None,
+                                ::std::option::Option::Some(#crate_name::QueryPathNode {
+                                    parent: ::std::option::Option::None,
                                     segment: #crate_name::QueryPathSegment::Name(&field_name),
                                 }),
                                 &field.node.selection_set,
@@ -335,12 +335,12 @@ pub fn generate(
                     false,
                     |errored, item| {
                         if *errored {
-                            return #crate_name::futures_util::future::ready(None);
+                            return #crate_name::futures_util::future::ready(::std::option::Option::None);
                         }
                         if item.is_err() {
                             *errored = true;
                         }
-                        #crate_name::futures_util::future::ready(Some(item))
+                        #crate_name::futures_util::future::ready(::std::option::Option::Some(item))
                     },
                 ))
             };
@@ -365,12 +365,12 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generics #crate_name::Type for #self_ty #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             #[allow(bare_trait_objects)]
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: #gql_typename.to_string(),
                     description: #desc,
@@ -381,7 +381,7 @@ pub fn generate(
                     },
                     cache_control: ::std::default::Default::default(),
                     extends: false,
-                    keys: None,
+                    keys: ::std::option::Option::None,
                 })
             }
         }
@@ -392,9 +392,9 @@ pub fn generate(
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'__life>,
-            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + '__life>>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + ::std::marker::Send + '__life>>> {
                 #(#create_stream)*
-                None
+                ::std::option::Option::None
             }
         }
     };

@@ -16,8 +16,8 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { Some(#s) })
-        .unwrap_or_else(|| quote! {None});
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
         Data::Struct(e) => e,
@@ -47,7 +47,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, str> {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
@@ -57,7 +57,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
 
                     let mut fields = ::std::default::Default::default();
 
-                    if let Some(#crate_name::registry::MetaType::Object {
+                    if let ::std::option::Option::Some(#crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         ..
                     }) = registry.types.get(&*#merged_type::type_name()) {
@@ -70,7 +70,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         fields,
                         cache_control: ::std::default::Default::default(),
                         extends: false,
-                        keys: None,
+                        keys: ::std::option::Option::None,
                     }
                 })
             }
@@ -81,8 +81,8 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'__life>
-            ) -> Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + ::std::marker::Send + '__life>>> {
-                None #create_field_stream
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + ::std::marker::Send + '__life>>> {
+                ::std::option::Option::None #create_field_stream
             }
         }
     };

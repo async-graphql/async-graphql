@@ -28,9 +28,7 @@ pub async fn test_field_features() {
         }
 
         #[cfg(feature = "abc")]
-        async fn values_abc(
-            &self,
-        ) -> Pin<Box<dyn Stream<Item = i32> + Send + 'static>> {
+        async fn values_abc(&self) -> Pin<Box<dyn Stream<Item = i32> + Send + 'static>> {
             Box::pin(futures_util::stream::once(async move { 10 }))
         }
     }
