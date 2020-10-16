@@ -56,7 +56,14 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 
 ## Examples
 
-https://github.com/async-graphql/examples
+All examples are in the [sub-repository](https://github.com/async-graphql/examples), located in the examples directory.
+
+**Run an example:**
+
+```shell
+git submodule update # update the examples repo
+cd examples && cargo run --bin [name]
+```
 
 ## Benchmark
 
