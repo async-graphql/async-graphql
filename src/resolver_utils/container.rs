@@ -57,31 +57,12 @@ impl<T: ContainerType + Send + Sync> ContainerType for &T {
     }
 }
 
-// TODO: reduce code duplication between the two below functions?
-
 /// Resolve an container by executing each of the fields concurrently.
 pub async fn resolve_container<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> ServerResult<Value> {
-    let mut fields = Fields(Vec::new());
-    fields.add_set(ctx, root)?;
-    let futures = fields.0;
-
-    let res = futures::future::try_join_all(futures).await?;
-    let mut map = BTreeMap::new();
-    for (name, value) in res {
-        if let Value::Object(b) = value {
-            if let Some(Value::Object(a)) = map.get_mut(&name) {
-                a.extend(b);
-            } else {
-                map.insert(name, Value::Object(b));
-            }
-        } else {
-            map.insert(name, value);
-        }
-    }
-    Ok(Value::Object(map))
+    resolve_container_inner(ctx, root, true).await
 }
 
 /// Resolve an container by executing each of the fields serially.
@@ -89,14 +70,29 @@ pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> ServerResult<Value> {
+    resolve_container_inner(ctx, root, false).await
+}
+
+async fn resolve_container_inner<'a, T: ContainerType + Send + Sync>(
+    ctx: &ContextSelectionSet<'a>,
+    root: &'a T,
+    parallel: bool,
+) -> ServerResult<Value> {
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
-    let futures = fields.0;
+
+    let res = if parallel {
+        futures::future::try_join_all(fields.0).await?
+    } else {
+        let mut results = Vec::with_capacity(fields.0.len());
+        for field in fields.0 {
+            results.push(field.await?);
+        }
+        results
+    };
 
     let mut map = BTreeMap::new();
-    for field in futures {
-        let (name, value) = field.await?;
-
+    for (name, value) in res {
         if let Value::Object(b) = value {
             if let Some(Value::Object(a)) = map.get_mut(&name) {
                 a.extend(b);
