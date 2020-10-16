@@ -1,10 +1,11 @@
-use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::{Error, LitInt};
+
+use crate::args::{self, RenameTarget};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 
 pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);

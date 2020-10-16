@@ -7,8 +7,6 @@ mod de;
 mod macros;
 mod ser;
 
-use serde::ser::Error;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::{Borrow, Cow};
 use std::collections::BTreeMap;
 use std::convert::{TryFrom, TryInto};
@@ -16,6 +14,9 @@ use std::fmt::{self, Display, Formatter, Write};
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
+
+use serde::ser::Error;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub use de::{from_value, DeserializerError};
 pub use ser::{to_value, SerializerError};

@@ -1,11 +1,13 @@
+use std::collections::BTreeMap;
+use std::{fmt, vec};
+
 use crate::{ConstValue, Name};
+
 use serde::de::{
     self, Deserialize, DeserializeOwned, DeserializeSeed, EnumAccess, Error as DeError,
     IntoDeserializer, MapAccess, SeqAccess, Unexpected, VariantAccess, Visitor,
 };
 use serde::forward_to_deserialize_any;
-use std::collections::BTreeMap;
-use std::{fmt, vec};
 
 /// This type represents errors that can occur when deserializing.
 #[derive(Debug)]

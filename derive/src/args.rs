@@ -362,13 +362,19 @@ pub struct MergedSubscription {
     pub name: Option<String>,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, FromMeta)]
 pub enum RenameRule {
+    #[darling(rename = "lowercase")]
     Lower,
+    #[darling(rename = "UPPERCASE")]
     Upper,
+    #[darling(rename = "PascalCase")]
     Pascal,
+    #[darling(rename = "camelCase")]
     Camel,
+    #[darling(rename = "snake_case")]
     Snake,
+    #[darling(rename = "SCREAMING_SNAKE_CASE")]
     ScreamingSnake,
 }
 
@@ -381,23 +387,6 @@ impl RenameRule {
             Self::Camel => name.as_ref().to_camel_case(),
             Self::Snake => name.as_ref().to_snake_case(),
             Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
-        }
-    }
-}
-
-impl FromMeta for RenameRule {
-    fn from_string(value: &str) -> darling::Result<Self> {
-        match value {
-            "lowercase" => Ok(Self::Lower),
-            "UPPERCASE" => Ok(Self::Upper),
-            "PascalCase" => Ok(Self::Pascal),
-            "camelCase" => Ok(Self::Camel),
-            "snake_case" => Ok(Self::Snake),
-            "SCREAMING_SNAKE_CASE" => Ok(Self::ScreamingSnake),
-            _ => Err(darling::Error::custom(format!(
-                "Unknown rename rule: \"{}\"",
-                value
-            ))),
         }
     }
 }

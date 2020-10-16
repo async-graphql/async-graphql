@@ -1,9 +1,11 @@
-use crate::{ConstValue, Name, Number};
-use serde::ser::{self, Impossible};
-use serde::Serialize;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
+
+use serde::ser::{self, Impossible};
+use serde::Serialize;
+
+use crate::{ConstValue, Name, Number};
 
 /// This type represents errors that can occur when serializing.
 #[derive(Debug)]

@@ -39,7 +39,7 @@ jobs:
       - name: Check examples with clippy
         run: cargo clippy --all
         working-directory: ./examples
-      - name: Build
+      - name: Build examples
         run: cargo build --all --verbose
         working-directory: ./examples
 

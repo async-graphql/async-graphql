@@ -1,3 +1,8 @@
+use proc_macro::TokenStream;
+use quote::quote;
+use syn::ext::IdentExt;
+use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
+
 use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
@@ -5,10 +10,6 @@ use crate::utils::{
     get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
     GeneratorResult,
 };
-use proc_macro::TokenStream;
-use quote::quote;
-use syn::ext::IdentExt;
-use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
 
 pub fn generate(
     object_args: &args::Object,

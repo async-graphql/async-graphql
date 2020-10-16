@@ -1,6 +1,3 @@
-use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
-use crate::output_type::OutputType;
-use crate::utils::{generate_default, get_crate_name, get_rustdoc, GeneratorResult};
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
@@ -8,6 +5,10 @@ use quote::quote;
 use std::collections::HashSet;
 use syn::visit_mut::VisitMut;
 use syn::{visit_mut, Error, Lifetime, Type};
+
+use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
+use crate::output_type::OutputType;
+use crate::utils::{generate_default, get_crate_name, get_rustdoc, GeneratorResult};
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);

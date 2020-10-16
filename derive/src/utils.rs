@@ -1,10 +1,11 @@
-use crate::args;
 use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::crate_name;
 use quote::quote;
 use syn::{Attribute, Error, Expr, Ident, Lit, LitStr, Meta, NestedMeta};
 use thiserror::Error;
+
+use crate::args;
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {

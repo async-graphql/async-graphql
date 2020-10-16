@@ -1,12 +1,13 @@
-use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{
-    generate_default, generate_validator, get_crate_name, get_rustdoc, GeneratorResult,
-};
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
 use syn::Error;
+
+use crate::args::{self, RenameRuleExt, RenameTarget};
+use crate::utils::{
+    generate_default, generate_validator, get_crate_name, get_rustdoc, GeneratorResult,
+};
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);

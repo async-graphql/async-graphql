@@ -1,8 +1,9 @@
-use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Error, ItemImpl, Type};
+
+use crate::args::{self, RenameTarget};
+use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 
 pub fn generate(
     scalar_args: &args::Scalar,

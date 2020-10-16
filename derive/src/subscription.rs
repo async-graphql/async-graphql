@@ -1,16 +1,17 @@
-use crate::args::{self, RenameRuleExt, RenameTarget, SubscriptionField};
-use crate::output_type::OutputType;
-use crate::utils::{
-    generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
-    get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
-    GeneratorResult,
-};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
 use syn::{
     Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeImplTrait, TypeParamBound,
     TypeReference,
+};
+
+use crate::args::{self, RenameRuleExt, RenameTarget, SubscriptionField};
+use crate::output_type::OutputType;
+use crate::utils::{
+    generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
+    get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
+    GeneratorResult,
 };
 
 pub fn generate(
