@@ -1,7 +1,5 @@
 use std::fmt::Write;
 
-use itertools::Itertools;
-
 use crate::registry::{MetaField, MetaInputValue, MetaType, Registry};
 
 impl Registry {
@@ -59,18 +57,14 @@ impl Registry {
                 .ok();
             }
             if !field.args.is_empty() {
-                write!(
-                    sdl,
-                    "\t{}({}): {}",
-                    field.name,
-                    field
-                        .args
-                        .values()
-                        .map(|arg| export_input_value(arg))
-                        .join(", "),
-                    field.ty
-                )
-                .ok();
+                write!(sdl, "\t{}(", field.name).ok();
+                for (i, arg) in field.args.values().enumerate() {
+                    if i != 0 {
+                        sdl.push_str(", ");
+                    }
+                    sdl.push_str(&export_input_value(arg));
+                }
+                write!(sdl, "): {}", field.ty).ok();
             } else {
                 write!(sdl, "\t{}: {}", field.name, field.ty).ok();
             }
@@ -137,7 +131,10 @@ impl Registry {
                 write!(sdl, "type {} ", name).ok();
                 if let Some(implements) = self.implements.get(name) {
                     if !implements.is_empty() {
-                        write!(sdl, "implements {} ", implements.iter().join(" & ")).ok();
+                        write!(sdl, "implements ").ok();
+                        for interface in implements {
+                            write!(sdl, "& {} ", interface).ok();
+                        }
                     }
                 }
 
@@ -223,13 +220,11 @@ impl Registry {
                 if description.is_some() && !federation {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
-                writeln!(
-                    sdl,
-                    "union {} = {}",
-                    name,
-                    possible_types.iter().join(" | ")
-                )
-                .ok();
+                write!(sdl, "union {} =", name).ok();
+                for ty in possible_types {
+                    write!(sdl, " | {}", ty).ok();
+                }
+                writeln!(sdl).ok();
             }
         }
     }

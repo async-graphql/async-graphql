@@ -6,7 +6,6 @@ use std::sync::Arc;
 
 use futures::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
-use itertools::Itertools;
 
 use crate::context::{Data, QueryEnvInner, ResolveId};
 use crate::extensions::{ErrorLogger, ExtensionContext, ExtensionFactory, Extensions};
@@ -339,7 +338,7 @@ where
             .extensions
             .iter()
             .map(|factory| factory.create())
-            .collect_vec()
+            .collect::<Vec<_>>()
             .into();
 
         let request = extensions

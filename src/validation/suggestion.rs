@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-
-use itertools::Itertools;
+use std::fmt::Write;
 
 fn levenshtein_distance(s1: &str, s2: &str) -> usize {
-    let mut column = (0..=s1.len()).collect_vec();
+    let mut column: Vec<_> = (0..=s1.len()).collect();
     for (x, rx) in s2.bytes().enumerate() {
         column[0] = x + 1;
         let mut lastdiag = x;
@@ -40,12 +39,20 @@ where
     }
     selected.sort_by(|a, b| distances[a].cmp(&distances[b]));
 
-    Some(format!(
-        "{} {}?",
-        prefix,
-        selected
-            .into_iter()
-            .map(|s| format!("\"{}\"", s))
-            .join(", ")
-    ))
+    let mut suggestion = String::with_capacity(
+        prefix.len() + selected.iter().map(|s| s.len() + 5).sum::<usize>()
+    );
+    suggestion.push_str(prefix);
+    suggestion.push(' ');
+
+    for (i, s) in selected.iter().enumerate() {
+        if i != 0 {
+            suggestion.push_str(" , ");
+        }
+        write!(suggestion, "\"{}\"", s).unwrap();
+    }
+
+    suggestion.push('?');
+
+    Some(suggestion)
 }
