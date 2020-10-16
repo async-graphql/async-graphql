@@ -1,6 +1,6 @@
 use async_graphql::guard::Guard;
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
@@ -71,7 +71,7 @@ pub async fn test_guard_simple_rule() {
     impl Subscription {
         #[graphql(guard(RoleGuard(role = "Role::Admin")))]
         async fn values(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(vec![1, 2, 3])
+            futures_util::stream::iter(vec![1, 2, 3])
         }
     }
 

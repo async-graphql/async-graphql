@@ -247,7 +247,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
+                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: Default::default(),
                     external: false,
@@ -281,7 +281,7 @@ pub fn generate(
                 let pos = ctx.item.pos;
                 let schema_env = ctx.schema_env.clone();
                 let query_env = ctx.query_env.clone();
-                let stream = #crate_name::futures::StreamExt::then(#create_field_stream, {
+                let stream = #crate_name::futures_util::stream::StreamExt::then(#create_field_stream, {
                     let field_name = field_name.clone();
                     move |msg| {
                         let schema_env = schema_env.clone();
@@ -316,7 +316,7 @@ pub fn generate(
                                 resolve_id,
                                 path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                 parent_type: #gql_typename,
-                                return_type: &<<#stream_ty as #crate_name::futures::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                             };
 
                             query_env.extensions.resolve_start(&ctx_extension, &ri);
@@ -330,17 +330,17 @@ pub fn generate(
                         }
                     }
                 });
-                #crate_name::ServerResult::Ok(#crate_name::futures::StreamExt::scan(
+                #crate_name::ServerResult::Ok(#crate_name::futures_util::stream::StreamExt::scan(
                     stream,
                     false,
                     |errored, item| {
                         if *errored {
-                            return #crate_name::futures::future::ready(None);
+                            return #crate_name::futures_util::future::ready(None);
                         }
                         if item.is_err() {
                             *errored = true;
                         }
-                        #crate_name::futures::future::ready(Some(item))
+                        #crate_name::futures_util::future::ready(Some(item))
                     },
                 ))
             };
@@ -349,8 +349,8 @@ pub fn generate(
                 #(#cfg_attrs)*
                 if ctx.item.node.name.node == #field_name {
                     return ::std::option::Option::Some(::std::boxed::Box::pin(
-                        #crate_name::futures::TryStreamExt::try_flatten(
-                            #crate_name::futures::stream::once((move || async move { #stream_fn })())
+                        #crate_name::futures_util::stream::TryStreamExt::try_flatten(
+                            #crate_name::futures_util::stream::once((move || async move { #stream_fn })())
                         )
                     ));
                 }
@@ -392,7 +392,7 @@ pub fn generate(
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'__life>,
-            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + '__life>>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + Send + '__life>>> {
                 #(#create_stream)*
                 None
             }

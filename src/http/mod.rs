@@ -6,8 +6,7 @@ mod multipart;
 mod playground_source;
 mod websocket;
 
-use futures::io::AsyncRead;
-use futures::AsyncReadExt;
+use futures_util::io::{AsyncRead, AsyncReadExt};
 
 use crate::{BatchRequest, ParseRequestError, Request};
 
@@ -59,7 +58,7 @@ pub async fn receive_json(body: impl AsyncRead) -> Result<Request, ParseRequestE
 /// Receive a GraphQL batch request from a body as JSON.
 pub async fn receive_batch_json(body: impl AsyncRead) -> Result<BatchRequest, ParseRequestError> {
     let mut data = Vec::new();
-    futures::pin_mut!(body);
+    futures_util::pin_mut!(body);
     body.read_to_end(&mut data)
         .await
         .map_err(ParseRequestError::Io)?;

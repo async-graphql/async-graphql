@@ -5,7 +5,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use futures::Stream;
+use futures_util::stream::Stream;
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 

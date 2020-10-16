@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 
 #[async_std::test]
 pub async fn test_subscription() {
@@ -19,11 +19,11 @@ pub async fn test_subscription() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self, start: i32, end: i32) -> impl Stream<Item = i32> {
-            futures::stream::iter(start..end)
+            futures_util::stream::iter(start..end)
         }
 
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
-            futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
+            futures_util::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
@@ -77,11 +77,11 @@ pub async fn test_subscription_with_ctx_data() {
     impl SubscriptionRoot {
         async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
             let value = *ctx.data_unchecked::<i32>();
-            futures::stream::once(async move { value })
+            futures_util::stream::once(async move { value })
         }
 
         async fn objects(&self) -> impl Stream<Item = MyObject> {
-            futures::stream::once(async move { MyObject })
+            futures_util::stream::once(async move { MyObject })
         }
     }
 
@@ -118,7 +118,7 @@ pub async fn test_subscription_with_token() {
             if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
-            Ok(futures::stream::once(async move { 100 }))
+            Ok(futures_util::stream::once(async move { 100 }))
         }
     }
 
@@ -166,7 +166,7 @@ pub async fn test_subscription_inline_fragment() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
-            futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
+            futures_util::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
@@ -219,7 +219,7 @@ pub async fn test_subscription_fragment() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
-            futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
+            futures_util::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
@@ -274,7 +274,7 @@ pub async fn test_subscription_fragment2() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self, start: i32, end: i32) -> impl Stream<Item = Event> {
-            futures::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
+            futures_util::stream::iter((start..end).map(|n| Event { a: n, b: n * 10 }))
         }
     }
 
@@ -333,7 +333,7 @@ pub async fn test_subscription_error() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
-            futures::stream::iter((0..10).map(|n| Event { value: n }))
+            futures_util::stream::iter((0..10).map(|n| Event { value: n }))
         }
     }
 
@@ -380,9 +380,9 @@ pub async fn test_subscription_fieldresult() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = Result<i32>> {
-            futures::stream::iter(0..5)
+            futures_util::stream::iter(0..5)
                 .map(Result::Ok)
-                .chain(futures::stream::once(
+                .chain(futures_util::stream::once(
                     async move { Err("StreamErr".into()) },
                 ))
         }

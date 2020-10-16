@@ -82,7 +82,7 @@ async fn resolve_container_inner<'a, T: ContainerType + Send + Sync>(
     fields.add_set(ctx, root)?;
 
     let res = if parallel {
-        futures::future::try_join_all(fields.0).await?
+        futures_util::future::try_join_all(fields.0).await?
     } else {
         let mut results = Vec::with_capacity(fields.0.len());
         for field in fields.0 {

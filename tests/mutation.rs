@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::lock::Mutex;
+use async_std::sync::Mutex;
 use std::sync::Arc;
 use std::time::Duration;
 

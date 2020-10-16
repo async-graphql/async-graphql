@@ -46,7 +46,7 @@ where
 
     for (i, s) in selected.iter().enumerate() {
         if i != 0 {
-            suggestion.push_str(" , ");
+            suggestion.push_str(", ");
         }
         write!(suggestion, "\"{}\"", s).unwrap();
     }

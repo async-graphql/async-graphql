@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 #[async_std::test]
 pub async fn test_field_features() {
@@ -19,19 +19,19 @@ pub async fn test_field_features() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = i32> {
-            futures::stream::once(async move { 10 })
+            futures_util::stream::once(async move { 10 })
         }
 
         #[cfg(feature = "bson")]
         async fn values_bson(&self) -> impl Stream<Item = i32> {
-            futures::stream::once(async move { 10 })
+            futures_util::stream::once(async move { 10 })
         }
 
         #[cfg(feature = "abc")]
         async fn values_abc(
             &self,
-        ) -> Pin<Box<dyn async_graphql::futures::Stream<Item = i32> + Send + 'static>> {
-            Box::pin(futures::stream::once(async move { 10 }))
+        ) -> Pin<Box<dyn Stream<Item = i32> + Send + 'static>> {
+            Box::pin(futures_util::stream::once(async move { 10 }))
         }
     }
 

@@ -1,6 +1,5 @@
 use async_graphql::*;
-use futures::channel::mpsc;
-use futures::{SinkExt, Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 #[async_std::test]
 pub async fn test_subscription_ws_transport() {
@@ -14,12 +13,12 @@ pub async fn test_subscription_ws_transport() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn values(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(0..10)
+            futures_util::stream::iter(0..10)
         }
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut tx, rx) = mpsc::unbounded();
+    let (tx, rx) = async_channel::unbounded();
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(
@@ -88,12 +87,12 @@ pub async fn test_subscription_ws_transport_with_token() {
             if ctx.data_unchecked::<Token>().0 != "123456" {
                 return Err("forbidden".into());
             }
-            Ok(futures::stream::iter(0..10))
+            Ok(futures_util::stream::iter(0..10))
         }
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut tx, rx) = mpsc::unbounded();
+    let (tx, rx) = async_channel::unbounded();
     let mut stream = http::WebSocket::with_data(
         schema,
         rx,
@@ -187,12 +186,12 @@ pub async fn test_subscription_ws_transport_error() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn events(&self) -> impl Stream<Item = Event> {
-            futures::stream::iter((0..10).map(|n| Event { value: n }))
+            futures_util::stream::iter((0..10).map(|n| Event { value: n }))
         }
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (mut tx, rx) = mpsc::unbounded();
+    let (tx, rx) = async_channel::unbounded();
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(
@@ -264,7 +263,7 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let (mut tx, rx) = mpsc::unbounded();
+    let (tx, rx) = async_channel::unbounded();
     let mut stream = http::WebSocket::new(schema, rx);
 
     tx.send(

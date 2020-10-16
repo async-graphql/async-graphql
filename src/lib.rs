@@ -147,7 +147,7 @@ pub use async_trait;
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 #[doc(hidden)]
-pub use futures;
+pub use futures_util;
 #[doc(hidden)]
 pub use indexmap;
 #[doc(hidden)]
@@ -712,7 +712,7 @@ pub use async_graphql_derive::Union;
 ///
 /// ```rust
 /// use async_graphql::*;
-/// use futures::{Stream, StreamExt};
+/// use futures_util::stream::{Stream, StreamExt};
 ///
 /// struct SubscriptionRoot;
 ///
@@ -720,7 +720,7 @@ pub use async_graphql_derive::Union;
 /// impl SubscriptionRoot {
 ///     async fn value(&self, condition: i32) -> impl Stream<Item = i32> {
 ///         // Returns the number from 0 to `condition`.
-///         futures::stream::iter(0..condition)
+///         futures_util::stream::iter(0..condition)
 ///     }
 /// }
 /// ```
@@ -789,7 +789,7 @@ pub use async_graphql_derive::MergedObject;
 ///
 /// ```rust
 /// use async_graphql::*;
-/// use futures::Stream;
+/// use futures_util::stream::Stream;
 ///
 /// #[derive(Default)]
 /// struct Subscription1;
@@ -797,7 +797,7 @@ pub use async_graphql_derive::MergedObject;
 /// #[Subscription]
 /// impl Subscription1 {
 ///     async fn events1(&self) -> impl Stream<Item = i32> {
-///         futures::stream::iter(0..10)
+///         futures_util::stream::iter(0..10)
 ///     }
 /// }
 ///
@@ -807,7 +807,7 @@ pub use async_graphql_derive::MergedObject;
 /// #[Subscription]
 /// impl Subscription2 {
 ///     async fn events2(&self) -> impl Stream<Item = i32> {
-///         futures::stream::iter(10..20)
+///         futures_util::stream::iter(10..20)
 ///    }
 /// }
 ///

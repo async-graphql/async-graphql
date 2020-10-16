@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 
 #[async_std::test]
 pub async fn test_input_value_custom_error() {
@@ -41,7 +41,7 @@ pub async fn test_input_value_custom_error() {
     #[Subscription]
     impl SubscriptionRoot {
         async fn r#type(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(0..10)
+            futures_util::stream::iter(0..10)
         }
     }
 

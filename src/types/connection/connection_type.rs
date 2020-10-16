@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use futures::{Stream, StreamExt, TryStreamExt};
+use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
 
 use crate::connection::edge::Edge;

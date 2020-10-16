@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use futures::lock::Mutex;
+use async_mutex::Mutex;
 use serde::Deserialize;
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};

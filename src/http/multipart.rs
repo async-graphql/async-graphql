@@ -4,8 +4,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use bytes::Bytes;
-use futures::io::AsyncRead;
-use futures::stream::Stream;
+use futures_util::io::AsyncRead;
+use futures_util::stream::Stream;
 use multer::{Constraints, Multipart, SizeLimit};
 use pin_project_lite::pin_project;
 
@@ -161,7 +161,7 @@ impl<T: AsyncRead> Stream for ReaderStream<T> {
         let this = self.project();
 
         Poll::Ready(
-            match futures::ready!(this.reader.poll_read(cx, this.buf)?) {
+            match futures_util::ready!(this.reader.poll_read(cx, this.buf)?) {
                 0 => None,
                 size => Some(Ok(Bytes::copy_from_slice(&this.buf[..size]))),
             },

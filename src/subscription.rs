@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 use crate::parser::types::{Selection, TypeCondition};
 use crate::{

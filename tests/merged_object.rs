@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 #[derive(SimpleObject)]
 struct Object1 {
@@ -165,7 +165,7 @@ pub async fn test_merged_subscription() {
     #[Subscription]
     impl Subscription1 {
         async fn events1(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(0..10)
+            futures_util::stream::iter(0..10)
         }
     }
 
@@ -175,7 +175,7 @@ pub async fn test_merged_subscription() {
     #[Subscription]
     impl Subscription2 {
         async fn events2(&self) -> impl Stream<Item = i32> {
-            futures::stream::iter(10..20)
+            futures_util::stream::iter(10..20)
         }
     }
 

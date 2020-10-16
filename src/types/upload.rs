@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 
-use futures::AsyncRead;
+use futures_util::io::AsyncRead;
 
 use crate::{registry, Context, InputValueError, InputValueResult, InputValueType, Type, Value};
 

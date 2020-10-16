@@ -1,5 +1,5 @@
 use async_graphql::*;
-use futures::{Stream, StreamExt};
+use futures_util::stream::{Stream, StreamExt};
 
 #[async_std::test]
 pub async fn test_enum() {
@@ -114,7 +114,7 @@ pub async fn test_subscription() {
     #[allow(non_snake_case)]
     impl Subscription {
         async fn create_object(&self, ObjectId: i32) -> impl Stream<Item = i32> {
-            futures::stream::once(async move { ObjectId })
+            futures_util::stream::once(async move { ObjectId })
         }
     }
 

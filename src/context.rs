@@ -299,7 +299,7 @@ impl Display for ResolveId {
 /// **This type is not stable and should not be used directly.**
 #[derive(Clone)]
 pub struct ContextBase<'a, T> {
-    #[allow(missing_docs)]
+    /// The current path node being resolved.
     pub path_node: Option<QueryPathNode<'a>>,
     pub(crate) resolve_id: ResolveId,
     pub(crate) inc_resolve_id: &'a AtomicUsize,

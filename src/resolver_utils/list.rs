@@ -54,5 +54,5 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
         });
     }
 
-    Ok(Value::List(futures::future::try_join_all(futures).await?))
+    Ok(Value::List(futures_util::future::try_join_all(futures).await?))
 }

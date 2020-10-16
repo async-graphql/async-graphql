@@ -4,7 +4,7 @@ use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
-use futures::stream::{self, Stream, StreamExt};
+use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
 use crate::context::{Data, QueryEnvInner, ResolveId};
@@ -487,7 +487,7 @@ where
         match batch_request {
             BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
             BatchRequest::Batch(requests) => BatchResponse::Batch(
-                futures::stream::iter(requests.into_iter())
+                futures_util::stream::iter(requests.into_iter())
                     .then(|request| self.execute(request))
                     .collect()
                     .await,

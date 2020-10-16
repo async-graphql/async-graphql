@@ -11,7 +11,7 @@ use warp::{Filter, Rejection, Reply};
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
 /// use warp::Filter;
-/// use futures::{Stream, StreamExt};
+/// use futures_util::stream::{Stream, StreamExt};
 /// use std::time::Duration;
 ///
 /// struct QueryRoot;
