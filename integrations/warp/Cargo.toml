@@ -4,6 +4,7 @@ version = "2.0.3"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "async-graphql for warp"
+publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
 homepage = "https://github.com/async-graphql/async-graphql"
@@ -19,4 +20,4 @@ futures-util = { version = "0.3.6", default-features = false }
 serde_json = "1.0.59"
 
 [dev-dependencies]
-tokio = { version = "0.3.0", default-features = false, features = ["macros"] }
+tokio = { version = "0.3.0", default-features = false, features = ["macros", "rt-multi-thread", "time", "stream"] }

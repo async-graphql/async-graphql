@@ -9,11 +9,11 @@ use async_graphql::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-#[tokio::test(max_threads = 1)]
+#[async_std::test]
 async fn quickstart() -> Result<()> {
     let listen_addr = test_utils::find_listen_addr();
 
-    tokio::spawn(async move {
+    async_std::task::spawn(async move {
         struct QueryRoot;
         #[Object]
         impl QueryRoot {
@@ -63,11 +63,11 @@ async fn quickstart() -> Result<()> {
     Ok(())
 }
 
-#[tokio::test(max_threads = 1)]
+#[async_std::test]
 async fn hello() -> Result<()> {
     let listen_addr = test_utils::find_listen_addr();
 
-    tokio::spawn(async move {
+    async_std::task::spawn(async move {
         struct Hello(String);
         struct QueryRoot;
         #[Object]
@@ -136,11 +136,11 @@ async fn hello() -> Result<()> {
     Ok(())
 }
 
-#[tokio::test(max_threads = 1)]
+#[async_std::test]
 async fn upload() -> Result<()> {
     let listen_addr = test_utils::find_listen_addr();
 
-    tokio::spawn(async move {
+    async_std::task::spawn(async move {
         struct QueryRoot;
         #[Object]
         impl QueryRoot {}

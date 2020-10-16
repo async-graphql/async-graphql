@@ -28,13 +28,12 @@ use warp::{Filter, Rejection, Reply};
 ///     }
 /// }
 ///
-/// #[tokio::main]
-/// async fn main() {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 ///     let filter = async_graphql_warp::graphql_subscription(schema)
 ///         .or(warp::any().map(|| "Hello, World!"));
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
-/// }
+/// });
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
