@@ -158,7 +158,7 @@ pub fn generate(
                         });
                         key_getter.push(quote! {
                             params.get(#name).and_then(|value| {
-                                let value: ::std::option::Option<#ty> = #crate_name::InputValueType::parse(::std::option::Option::Some(value.clone())).ok();
+                                let value: ::std::option::Option<#ty> = #crate_name::InputValueType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value))).ok();
                                 value
                             })
                         });
@@ -342,7 +342,11 @@ pub fn generate(
                     let schema_default = default
                         .as_ref()
                         .map(|value| {
-                            quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                            quote! {
+                                ::std::option::Option::Some(::std::string::ToString::to_string(
+                                    &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                                ))
+                            }
                         })
                         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
@@ -386,8 +390,8 @@ pub fn generate(
 
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
-                    fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
-                        name: #field_name.to_string(),
+                    fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
+                        name: ::std::borrow::ToOwned::to_owned(#field_name),
                         description: #field_desc,
                         args: {
                             let mut args = #crate_name::indexmap::IndexMap::new();
@@ -478,7 +482,7 @@ pub fn generate(
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                    name: #gql_typename.to_string(),
+                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     fields: {
                         let mut fields = #crate_name::indexmap::IndexMap::new();

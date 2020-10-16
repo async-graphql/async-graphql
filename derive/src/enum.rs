@@ -128,7 +128,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
                     #crate_name::registry::MetaType::Enum {
-                        name: #gql_typename.to_string(),
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         enum_values: {
                             let mut enum_items = #crate_name::indexmap::IndexMap::new();

@@ -112,13 +112,13 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 possible_types.push(quote! {
-                    possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
+                    possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
                 });
             } else {
                 possible_types.push(quote! {
                     if let Some(#crate_name::registry::MetaType::Union { possible_types: possible_types2, .. }) =
                         registry.types.get(&*<#p as #crate_name::Type>::type_name()) {
-                        possible_types.extend(possible_types2.clone());
+                        possible_types.extend(::std::clone::Clone::clone(possible_types2));
                     }
                 });
             }
@@ -161,7 +161,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Union {
-                        name: #gql_typename.to_string(),
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         possible_types: {
                             let mut possible_types = #crate_name::indexmap::IndexSet::new();

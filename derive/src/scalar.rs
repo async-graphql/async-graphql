@@ -40,7 +40,7 @@ pub fn generate(
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
-                    name: #gql_typename.to_string(),
+                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
                 })

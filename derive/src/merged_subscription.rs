@@ -61,11 +61,11 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         fields: obj_fields,
                         ..
                     }) = registry.types.get(&*#merged_type::type_name()) {
-                        fields = obj_fields.clone();
+                        fields = ::std::clone::Clone::clone(obj_fields);
                     }
 
                     #crate_name::registry::MetaType::Object {
-                        name: #gql_typename.to_string(),
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         fields,
                         cache_control: ::std::default::Default::default(),

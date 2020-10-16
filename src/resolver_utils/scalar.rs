@@ -122,7 +122,7 @@ macro_rules! scalar_internal {
                 registry: &mut $crate::registry::Registry,
             ) -> ::std::string::String {
                 registry.create_type::<$ty, _>(|_| $crate::registry::MetaType::Scalar {
-                    name: $name.into(),
+                    name: ::std::borrow::ToOwned::to_owned($name),
                     description: $desc,
                     is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
                 })

@@ -72,12 +72,12 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         cache_control: obj_cache_control,
                         ..
                     }) = registry.types.get(&*#merged_type::type_name()) {
-                        fields = obj_fields.clone();
+                        fields = ::std::clone::Clone::clone(obj_fields);
                         cache_control = *obj_cache_control;
                     }
 
                     #crate_name::registry::MetaType::Object {
-                        name: #gql_typename.to_string(),
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         fields,
                         cache_control,

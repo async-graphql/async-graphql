@@ -102,7 +102,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             });
 
             possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::Type>::type_name().to_string());
+                possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
             });
 
             get_introspection_typename.push(quote! {
@@ -200,7 +200,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             let schema_default = default
                 .as_ref()
                 .map(|value| {
-                    quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                    quote! {
+                        ::std::option::Option::Some(::std::string::ToString::to_string(
+                            &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                        ))
+                    }
                 })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             schema_args.push(quote! {
@@ -246,8 +250,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         });
 
         schema_fields.push(quote! {
-            fields.insert(#name.to_string(), #crate_name::registry::MetaField {
-                name: #name.to_string(),
+            fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {
+                name: ::std::string::ToString::to_string(#name),
                 description: #desc,
                 args: {
                     let mut args = #crate_name::indexmap::IndexMap::new();
@@ -311,7 +315,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Interface {
-                        name: #gql_typename.to_string(),
+                        name: ::std::string::ToString::to_string(#gql_typename),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

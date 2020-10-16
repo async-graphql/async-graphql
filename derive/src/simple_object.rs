@@ -82,8 +82,8 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         schema_fields.push(quote! {
-            fields.insert(#field_name.to_string(), #crate_name::registry::MetaField {
-                name: #field_name.to_string(),
+            fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
+                name: ::std::borrow::ToOwned::to_owned(#field_name),
                 description: #field_desc,
                 args: ::std::default::Default::default(),
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
@@ -114,7 +114,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[inline]
                 #[allow(missing_docs)]
                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
-                    ::std::result::Result::Ok(self.#ident.clone())
+                    ::std::result::Result::Ok(::std::clone::Clone::clone(&self.#ident))
                 }
             }
         });
@@ -154,7 +154,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                    name: #gql_typename.to_string(),
+                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     fields: {
                         let mut fields = #crate_name::indexmap::IndexMap::new();

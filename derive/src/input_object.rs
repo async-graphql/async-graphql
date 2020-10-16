@@ -67,15 +67,15 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             schema_fields.push(quote! {
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 #ty::create_type_info(registry);
-                if let Some(#crate_name::registry::MetaType::InputObject{ input_fields, .. }) =
+                if let Some(#crate_name::registry::MetaType::InputObject { input_fields, .. }) =
                     registry.types.get(&*<#ty as #crate_name::Type>::type_name()) {
-                    fields.extend(input_fields.clone());
+                    fields.extend(::std::clone::Clone::clone(input_fields));
                 }
             });
 
             get_fields.push(quote! {
                 let #ident: #ty = #crate_name::InputValueType::parse(
-                    ::std::option::Option::Some(#crate_name::Value::Object(obj.clone()))
+                    ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
             });
 
@@ -103,9 +103,13 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         let schema_default = default
             .as_ref()
             .map(|value| {
-                quote! {::std::option::Option::Some( <#ty as #crate_name::InputValueType>::to_value(&#value).to_string() )}
+                quote! {
+                    ::std::option::Option::Some(::std::string::ToString::to_string(
+                        &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                    ))
+                }
             })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+            .unwrap_or_else(|| quote!(::std::option::Option::None));
 
         if let Some(default) = default {
             get_fields.push(quote! {
@@ -137,7 +141,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         fields.push(ident);
         schema_fields.push(quote! {
-            fields.insert(#name.to_string(), #crate_name::registry::MetaInputValue {
+            fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: #name,
                 description: #desc,
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
@@ -156,7 +160,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
-                    name: #gql_typename.to_string(),
+                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     input_fields: {
                         let mut fields = #crate_name::indexmap::IndexMap::new();
