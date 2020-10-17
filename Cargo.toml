@@ -86,8 +86,8 @@ members = [
     "parser",
     "derive",
     "integrations/actix-web",
-    "integrations/warp",
-    "integrations/tide",
     "integrations/rocket",
+    "integrations/tide",
+    "integrations/warp",
     "benchmark",
 ]
