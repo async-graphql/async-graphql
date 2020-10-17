@@ -36,7 +36,7 @@ pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(SimpleObject, attributes(field, graphql))]
+#[proc_macro_derive(SimpleObject, attributes(graphql))]
 pub fn derive_simple_object(input: TokenStream) -> TokenStream {
     let object_args =
         match args::SimpleObject::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
@@ -49,7 +49,7 @@ pub fn derive_simple_object(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(Enum, attributes(item, graphql))]
+#[proc_macro_derive(Enum, attributes(graphql))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     let enum_args = match args::Enum::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
         Ok(enum_args) => enum_args,
@@ -61,7 +61,7 @@ pub fn derive_enum(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(InputObject, attributes(field, graphql))]
+#[proc_macro_derive(InputObject, attributes(graphql))]
 pub fn derive_input_object(input: TokenStream) -> TokenStream {
     let object_args =
         match args::InputObject::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
@@ -87,7 +87,7 @@ pub fn derive_interface(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(Union, attributes(graphql, item))]
+#[proc_macro_derive(Union, attributes(graphql))]
 pub fn derive_union(input: TokenStream) -> TokenStream {
     let union_args = match args::Union::from_derive_input(&parse_macro_input!(input as DeriveInput))
     {
@@ -129,7 +129,7 @@ pub fn Scalar(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(MergedObject, attributes(item, graphql))]
+#[proc_macro_derive(MergedObject, attributes(graphql))]
 pub fn derive_merged_object(input: TokenStream) -> TokenStream {
     let object_args =
         match args::MergedObject::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
@@ -142,7 +142,7 @@ pub fn derive_merged_object(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(MergedSubscription, attributes(item, graphql))]
+#[proc_macro_derive(MergedSubscription, attributes(graphql))]
 pub fn derive_merged_subscription(input: TokenStream) -> TokenStream {
     let object_args = match args::MergedSubscription::from_derive_input(&parse_macro_input!(
         input as DeriveInput
