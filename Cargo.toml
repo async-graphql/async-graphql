@@ -4,7 +4,6 @@ version = "2.0.4"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
-publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
 homepage = "https://github.com/async-graphql/async-graphql"

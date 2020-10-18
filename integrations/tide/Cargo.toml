@@ -4,7 +4,6 @@ version = "2.0.4"
 authors = ["vkill <vkill.net@gmail.com>"]
 edition = "2018"
 description = "async-graphql for tide"
-publish = true
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql-tide/"
 homepage = "https://github.com/async-graphql/async-graphql"
