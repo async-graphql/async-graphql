@@ -341,20 +341,14 @@ where
             .collect::<Vec<_>>()
             .into();
 
-        let request = extensions
-            .prepare_request(
-                &ExtensionContext {
-                    schema_data: &self.env.data,
-                    query_data: &Default::default(),
-                },
-                request,
-            )
-            .await?;
-
+        let mut request = request;
+        let data = std::mem::take(&mut request.data);
         let ctx_extension = ExtensionContext {
             schema_data: &self.env.data,
-            query_data: &request.data,
+            query_data: &data,
         };
+
+        let request = extensions.prepare_request(&ctx_extension, request).await?;
 
         extensions.parse_start(&ctx_extension, &request.query, &request.variables);
         let document = parse_query(&request.query)
@@ -427,7 +421,7 @@ where
             operation,
             fragments: document.fragments,
             uploads: request.uploads,
-            ctx_data: Arc::new(request.data),
+            ctx_data: Arc::new(data),
         };
         Ok((env, cache_control))
     }
