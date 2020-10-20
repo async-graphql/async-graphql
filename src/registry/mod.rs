@@ -293,8 +293,22 @@ impl Registry {
         let mut dummy_registry = Registry::default();
         T::create_type_info(&mut dummy_registry);
         if let Some(ty) = dummy_registry.types.remove(&*T::type_name()) {
-            self.types.extend(dummy_registry.types);
-            self.implements.extend(dummy_registry.implements);
+            // Do not overwrite existing types.
+            for (name, ty) in dummy_registry.types {
+                if !self.types.contains_key(&name) {
+                    self.types.insert(name, ty);
+                }
+            }
+
+            // Do not overwrite existing implements.
+            for (name, interfaces) in dummy_registry.implements {
+                if let Some(current_interfaces) = self.implements.get_mut(&name) {
+                    current_interfaces.extend(interfaces);
+                } else {
+                    self.implements.insert(name, interfaces);
+                }
+            }
+
             ty
         } else {
             unreachable!()

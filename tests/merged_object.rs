@@ -290,3 +290,49 @@ pub async fn test_merged_entity() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_issue_316() {
+    #[derive(SimpleObject)]
+    struct Fruit {
+        id: ID,
+        name: String,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[graphql(entity)]
+        async fn get_fruit(&self, id: ID) -> Fruit {
+            Fruit {
+                id,
+                name: "Apple".into(),
+            }
+        }
+    }
+
+    #[derive(Default)]
+    struct Mutation1;
+
+    #[Object]
+    impl Mutation1 {
+        async fn action1(&self) -> Fruit {
+            Fruit {
+                id: ID("hello".into()),
+                name: "Apple".into(),
+            }
+        }
+    }
+
+    #[derive(MergedObject, Default)]
+    struct Mutation(Mutation1);
+
+    // This works
+    let schema = Schema::new(Query, Mutation1, EmptySubscription);
+    assert!(schema.execute("{ _service { sdl }}").await.is_ok());
+
+    // This fails
+    let schema = Schema::new(Query, Mutation::default(), EmptySubscription);
+    assert!(schema.execute("{ _service { sdl }}").await.is_ok());
+}
