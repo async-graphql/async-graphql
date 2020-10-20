@@ -105,8 +105,14 @@ pub async fn test_input_object() {
 
 #[async_std::test]
 pub async fn test_subscription() {
-    #[derive(SimpleObject)]
     struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct Subscription;
 

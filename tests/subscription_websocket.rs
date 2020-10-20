@@ -6,7 +6,11 @@ pub async fn test_subscription_ws_transport() {
     struct QueryRoot;
 
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct SubscriptionRoot;
 
@@ -77,7 +81,11 @@ pub async fn test_subscription_ws_transport_with_token() {
     struct QueryRoot;
 
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct SubscriptionRoot;
 
@@ -161,8 +169,6 @@ pub async fn test_subscription_ws_transport_with_token() {
 
 #[async_std::test]
 pub async fn test_subscription_ws_transport_error() {
-    struct QueryRoot;
-
     struct Event {
         value: i32,
     }
@@ -178,8 +184,14 @@ pub async fn test_subscription_ws_transport_error() {
         }
     }
 
+    struct QueryRoot;
+
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct SubscriptionRoot;
 

@@ -106,19 +106,18 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 });
             }
 
-            registry_types.push(quote! {
-                <#p as #crate_name::Type>::create_type_info(registry);
-            });
-
             if !variant.flatten {
+                registry_types.push(quote! {
+                    <#p as #crate_name::Type>::create_type_info(registry);
+                });
                 possible_types.push(quote! {
                     possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
                 });
             } else {
                 possible_types.push(quote! {
-                    if let Some(#crate_name::registry::MetaType::Union { possible_types: possible_types2, .. }) =
-                        registry.types.get(&*<#p as #crate_name::Type>::type_name()) {
-                        possible_types.extend(::std::clone::Clone::clone(possible_types2));
+                    if let #crate_name::registry::MetaType::Union { possible_types: possible_types2, .. } =
+                        registry.create_dummy_type::<#p>() {
+                        possible_types.extend(possible_types2);
                     }
                 });
             }
@@ -139,6 +138,14 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         } else {
             return Err(Error::new_spanned(ty, "Invalid type").into());
         }
+    }
+
+    if possible_types.is_empty() {
+        return Err(Error::new_spanned(
+            &ident,
+            "A GraphQL Union type must include one or more unique member types.",
+        )
+        .into());
     }
 
     let expanded = quote! {

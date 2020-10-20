@@ -52,11 +52,10 @@ where
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
         registry.create_type::<Self, _>(|registry| {
-            E::create_type_info(registry);
-            let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.get(E::type_name().as_ref())
+            let additional_fields = if let registry::MetaType::Object { fields, .. } =
+                registry.create_dummy_type::<E>()
             {
-                fields.clone()
+                fields
             } else {
                 unreachable!()
             };

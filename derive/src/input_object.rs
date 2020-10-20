@@ -67,9 +67,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             schema_fields.push(quote! {
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 #ty::create_type_info(registry);
-                if let Some(#crate_name::registry::MetaType::InputObject { input_fields, .. }) =
-                    registry.types.get(&*<#ty as #crate_name::Type>::type_name()) {
-                    fields.extend(::std::clone::Clone::clone(input_fields));
+                if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
+                    registry.create_dummy_type::<#ty>() {
+                    fields.extend(input_fields);
                 }
             });
 
@@ -149,6 +149,14 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 validator: #validator,
             });
         })
+    }
+
+    if get_fields.is_empty() {
+        return Err(Error::new_spanned(
+            &ident,
+            "An GraphQL Input Object type must define one or more input fields.",
+        )
+        .into());
     }
 
     let expanded = quote! {

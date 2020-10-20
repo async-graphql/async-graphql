@@ -53,15 +53,13 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
-                    #merged_type::create_type_info(registry);
-
                     let mut fields = ::std::default::Default::default();
 
-                    if let ::std::option::Option::Some(#crate_name::registry::MetaType::Object {
+                    if let #crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         ..
-                    }) = registry.types.get(&*#merged_type::type_name()) {
-                        fields = ::std::clone::Clone::clone(obj_fields);
+                    } = registry.create_dummy_type::<#merged_type>() {
+                        fields = obj_fields;
                     }
 
                     #crate_name::registry::MetaType::Object {

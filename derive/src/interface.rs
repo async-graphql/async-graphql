@@ -121,6 +121,14 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut schema_fields = Vec::new();
     let mut resolvers = Vec::new();
 
+    if interface_args.fields.is_empty() {
+        return Err(Error::new_spanned(
+            &ident,
+            "An GraphQL Interface type must define one or more fields.",
+        )
+        .into());
+    }
+
     for InterfaceField {
         name,
         method,

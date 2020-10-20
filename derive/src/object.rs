@@ -471,6 +471,14 @@ pub fn generate(
     find_entities.sort_by(|(a, _), (b, _)| b.cmp(a));
     let find_entities_iter = find_entities.iter().map(|(_, code)| code);
 
+    if resolvers.is_empty() && create_entity_types.is_empty() {
+        return Err(Error::new_spanned(
+            &self_ty,
+            "An GraphQL Object type must define one or more fields.",
+        )
+        .into());
+    }
+
     let expanded = quote! {
         #item_impl
 

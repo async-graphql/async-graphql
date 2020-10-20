@@ -1,18 +1,22 @@
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 
+struct QueryRoot;
+
+#[Object]
+impl QueryRoot {
+    async fn value(&self) -> i32 {
+        10
+    }
+}
+
 #[async_std::test]
 pub async fn test_subscription() {
-    struct QueryRoot;
-
     #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
-
-    #[Object]
-    impl QueryRoot {}
 
     struct SubscriptionRoot;
 
@@ -60,7 +64,11 @@ pub async fn test_subscription_with_ctx_data() {
     struct QueryRoot;
 
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct MyObject;
 
@@ -106,7 +114,11 @@ pub async fn test_subscription_with_token() {
     struct QueryRoot;
 
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct SubscriptionRoot;
 
@@ -150,16 +162,20 @@ pub async fn test_subscription_with_token() {
 
 #[async_std::test]
 pub async fn test_subscription_inline_fragment() {
-    struct QueryRoot;
-
     #[derive(SimpleObject)]
     struct Event {
         a: i32,
         b: i32,
     }
 
+    struct QueryRoot;
+
     #[Object]
-    impl QueryRoot {}
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct SubscriptionRoot;
 
@@ -197,8 +213,6 @@ pub async fn test_subscription_inline_fragment() {
 
 #[async_std::test]
 pub async fn test_subscription_fragment() {
-    struct QueryRoot;
-
     #[derive(SimpleObject)]
     struct Event {
         a: i32,
@@ -210,9 +224,6 @@ pub async fn test_subscription_fragment() {
     enum MyInterface {
         Event(Event),
     }
-
-    #[Object]
-    impl QueryRoot {}
 
     struct SubscriptionRoot;
 
@@ -252,8 +263,6 @@ pub async fn test_subscription_fragment() {
 
 #[async_std::test]
 pub async fn test_subscription_fragment2() {
-    struct QueryRoot;
-
     #[derive(SimpleObject)]
     struct Event {
         a: i32,
@@ -265,9 +274,6 @@ pub async fn test_subscription_fragment2() {
     enum MyInterface {
         Event(Event),
     }
-
-    #[Object]
-    impl QueryRoot {}
 
     struct SubscriptionRoot;
 
@@ -308,8 +314,6 @@ pub async fn test_subscription_fragment2() {
 
 #[async_std::test]
 pub async fn test_subscription_error() {
-    struct QueryRoot;
-
     struct Event {
         value: i32,
     }
@@ -324,9 +328,6 @@ pub async fn test_subscription_error() {
             }
         }
     }
-
-    #[Object]
-    impl QueryRoot {}
 
     struct SubscriptionRoot;
 
@@ -370,11 +371,6 @@ pub async fn test_subscription_error() {
 
 #[async_std::test]
 pub async fn test_subscription_fieldresult() {
-    struct QueryRoot;
-
-    #[Object]
-    impl QueryRoot {}
-
     struct SubscriptionRoot;
 
     #[Subscription]

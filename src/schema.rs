@@ -70,8 +70,14 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// ```rust
     /// use async_graphql::*;
     ///
-    /// #[derive(SimpleObject)]
     /// struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn value(&self) -> i32 {
+    ///         100
+    ///     }
+    /// }
     ///
     /// let schema = Schema::build(Query, EmptyMutation,EmptySubscription)
     ///     .extension(extensions::Logger)

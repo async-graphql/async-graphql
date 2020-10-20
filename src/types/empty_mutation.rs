@@ -19,7 +19,12 @@ use crate::{
 /// struct QueryRoot;
 ///
 /// #[Object]
-/// impl QueryRoot {}
+/// impl QueryRoot {
+///     async fn value(&self) -> i32 {
+///         // An GraphQL Object type must define one or more fields.
+///         100
+///     }
+/// }
 ///
 /// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 /// ```

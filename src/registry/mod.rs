@@ -254,6 +254,7 @@ pub struct MetaDirective {
     pub args: IndexMap<&'static str, MetaInputValue>,
 }
 
+#[derive(Default)]
 pub struct Registry {
     pub types: IndexMap<String, MetaType>,
     pub directives: HashMap<String, MetaDirective>,
@@ -286,6 +287,18 @@ impl Registry {
             *self.types.get_mut(&*name).unwrap() = ty;
         }
         T::qualified_type_name()
+    }
+
+    pub fn create_dummy_type<T: crate::Type>(&mut self) -> MetaType {
+        let mut dummy_registry = Registry::default();
+        T::create_type_info(&mut dummy_registry);
+        if let Some(ty) = dummy_registry.types.remove(&*T::type_name()) {
+            self.types.extend(dummy_registry.types);
+            self.implements.extend(dummy_registry.implements);
+            ty
+        } else {
+            unreachable!()
+        }
     }
 
     pub fn add_directive(&mut self, directive: MetaDirective) {

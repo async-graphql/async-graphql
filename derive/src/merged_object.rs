@@ -62,18 +62,16 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_type::<Self, _>(|registry| {
-                    #merged_type::create_type_info(registry);
-
                     let mut fields = ::std::default::Default::default();
                     let mut cache_control = ::std::default::Default::default();
 
-                    if let ::std::option::Option::Some(#crate_name::registry::MetaType::Object {
+                    if let #crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         cache_control: obj_cache_control,
                         ..
-                    }) = registry.types.get(&*#merged_type::type_name()) {
-                        fields = ::std::clone::Clone::clone(obj_fields);
-                        cache_control = *obj_cache_control;
+                    } = registry.create_dummy_type::<#merged_type>() {
+                        fields = obj_fields;
+                        cache_control = obj_cache_control;
                     }
 
                     #crate_name::registry::MetaType::Object {
@@ -93,6 +91,10 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         impl #crate_name::resolver_utils::ContainerType for #ident {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #create_merged_obj.resolve_field(ctx).await
+            }
+
+            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) ->  #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+               #create_merged_obj.find_entity(ctx, params).await
             }
         }
 

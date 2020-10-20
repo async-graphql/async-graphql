@@ -327,6 +327,10 @@ pub async fn test_union_flatten() {
         async fn value2(&self) -> MyUnion {
             InnerUnion2::B(MyObj2 { value2: 88 }).into()
         }
+
+        async fn value3(&self) -> InnerUnion1 {
+            InnerUnion1::A(MyObj1 { value1: 77 })
+        }
     }
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
@@ -342,6 +346,11 @@ pub async fn test_union_flatten() {
                 value2
             }
         }
+        value3 {
+            ... on MyObj1 {
+                value1
+            }
+        }
     }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
@@ -351,6 +360,9 @@ pub async fn test_union_flatten() {
             },
             "value2": {
                 "value2": 88,
+            },
+            "value3": {
+                "value1": 77,
             }
         })
     );

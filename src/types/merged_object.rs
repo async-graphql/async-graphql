@@ -9,6 +9,7 @@ use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
     Positioned, ServerResult, SimpleObject, Type, Value,
 };
+use async_graphql_value::ConstValue;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
@@ -23,25 +24,23 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
             let mut fields = IndexMap::new();
             let mut cc = CacheControl::default();
 
-            A::create_type_info(registry);
-            if let Some(MetaType::Object {
+            if let MetaType::Object {
                 fields: a_fields,
                 cache_control: a_cc,
                 ..
-            }) = registry.types.get(&*A::type_name())
+            } = registry.create_dummy_type::<A>()
             {
-                fields.extend(a_fields.clone());
+                fields.extend(a_fields);
                 cc = cc.merge(&a_cc);
             }
 
-            B::create_type_info(registry);
-            if let Some(MetaType::Object {
+            if let MetaType::Object {
                 fields: b_fields,
                 cache_control: b_cc,
                 ..
-            }) = registry.types.get(&*B::type_name())
+            } = registry.create_dummy_type::<B>()
             {
-                fields.extend(b_fields.clone());
+                fields.extend(b_fields);
                 cc = cc.merge(&b_cc);
             }
 
@@ -67,6 +66,18 @@ where
         match self.0.resolve_field(ctx).await {
             Ok(Some(value)) => Ok(Some(value)),
             Ok(None) => self.1.resolve_field(ctx).await,
+            Err(err) => Err(err),
+        }
+    }
+
+    async fn find_entity(
+        &self,
+        ctx: &Context<'_>,
+        params: &ConstValue,
+    ) -> ServerResult<Option<ConstValue>> {
+        match self.0.find_entity(ctx, params).await {
+            Ok(Some(value)) => Ok(Some(value)),
+            Ok(None) => self.1.find_entity(ctx, params).await,
             Err(err) => Err(err),
         }
     }
@@ -96,5 +107,5 @@ where
 
 #[doc(hidden)]
 #[derive(SimpleObject, Default)]
-#[graphql(internal)]
+#[graphql(internal, dummy)]
 pub struct MergedObjectTail;

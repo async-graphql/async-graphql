@@ -7,8 +7,14 @@ use std::time::Duration;
 pub async fn test_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
-    #[derive(SimpleObject)]
     struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct MutationRoot;
 
@@ -38,8 +44,14 @@ pub async fn test_mutation_execution_order() {
 
 #[async_std::test]
 pub async fn test_mutation_fragment() {
-    #[derive(SimpleObject)]
     struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
 
     struct MutationRoot;
 

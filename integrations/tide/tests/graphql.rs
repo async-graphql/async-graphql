@@ -142,8 +142,13 @@ async fn upload() -> Result<()> {
 
     async_std::task::spawn(async move {
         struct QueryRoot;
+
         #[Object]
-        impl QueryRoot {}
+        impl QueryRoot {
+            async fn value(&self) -> i32 {
+                10
+            }
+        }
 
         #[derive(Clone, SimpleObject)]
         pub struct FileInfo {

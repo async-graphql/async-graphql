@@ -129,6 +129,14 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         });
     }
 
+    if !object_args.dummy && resolvers.is_empty() {
+        return Err(Error::new_spanned(
+            &ident,
+            "An GraphQL Object type must define one or more fields.",
+        )
+        .into());
+    }
+
     let cache_control = {
         let public = object_args.cache_control.is_public();
         let max_age = object_args.cache_control.max_age;
@@ -181,7 +189,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
-
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }

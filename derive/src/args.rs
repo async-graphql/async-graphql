@@ -83,6 +83,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub internal: bool,
     #[darling(default)]
+    pub dummy: bool,
+    #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
