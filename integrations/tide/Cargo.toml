@@ -14,7 +14,7 @@ categories = ["network-programming", "asynchronous"]
 [dependencies]
 async-graphql = { path = "../..", version = "=2.0.6" }
 
-tide = { version = "0.13.0", default-features = false, features = ["h1-server"] }
+tide = { version = "0.14.0", default-features = false, features = ["h1-server"] }
 
 [dev-dependencies]
 # Surf lacks multipart support
