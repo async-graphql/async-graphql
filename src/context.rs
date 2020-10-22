@@ -201,7 +201,7 @@ impl<'a> QueryPathNode<'a> {
         let mut res = Vec::new();
         self.for_each(|s| {
             res.push(match s {
-                QueryPathSegment::Name(name) => name.to_string(),
+                QueryPathSegment::Name(name) => (*name).to_string(),
                 QueryPathSegment::Index(idx) => idx.to_string(),
             });
         });
