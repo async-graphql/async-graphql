@@ -3,7 +3,7 @@
 use super::*;
 use async_graphql_value::Name;
 
-/// An GraphQL file or request string defining a GraphQL service.
+/// A GraphQL file or request string defining a GraphQL service.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Document).
 #[derive(Debug, Clone)]

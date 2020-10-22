@@ -132,7 +132,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     if !object_args.dummy && resolvers.is_empty() {
         return Err(Error::new_spanned(
             &ident,
-            "An GraphQL Object type must define one or more fields.",
+            "A GraphQL Object type must define one or more fields.",
         )
         .into());
     }

@@ -114,7 +114,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     if schema_enum_items.is_empty() {
         return Err(Error::new_spanned(
             &ident,
-            "An GraphQL Enum type must define one or more unique enum values.",
+            "A GraphQL Enum type must define one or more unique enum values.",
         )
         .into());
     }

@@ -21,7 +21,7 @@ use crate::{
 /// #[Object]
 /// impl QueryRoot {
 ///     async fn value(&self) -> i32 {
-///         // An GraphQL Object type must define one or more fields.
+///         // A GraphQL Object type must define one or more fields.
 ///         100
 ///     }
 /// }

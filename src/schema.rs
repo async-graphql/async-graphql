@@ -470,7 +470,7 @@ where
         .extensions(extensions)
     }
 
-    /// Execute an GraphQL query.
+    /// Execute a GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
         match self.prepare_request(request).await {
@@ -482,7 +482,7 @@ where
         }
     }
 
-    /// Execute an GraphQL batch query.
+    /// Execute a GraphQL batch query.
     pub async fn execute_batch(&self, batch_request: BatchRequest) -> BatchResponse {
         match batch_request {
             BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
@@ -565,7 +565,7 @@ where
         }
     }
 
-    /// Execute an GraphQL subscription.
+    /// Execute a GraphQL subscription.
     pub fn execute_stream(
         &self,
         request: impl Into<Request>,

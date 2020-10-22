@@ -154,7 +154,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     if get_fields.is_empty() {
         return Err(Error::new_spanned(
             &ident,
-            "An GraphQL Input Object type must define one or more input fields.",
+            "A GraphQL Input Object type must define one or more input fields.",
         )
         .into());
     }

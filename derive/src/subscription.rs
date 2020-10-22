@@ -367,7 +367,7 @@ pub fn generate(
     if create_stream.is_empty() {
         return Err(Error::new_spanned(
             &self_ty,
-            "An GraphQL Object type must define one or more fields.",
+            "A GraphQL Object type must define one or more fields.",
         )
         .into());
     }
