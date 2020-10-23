@@ -162,62 +162,48 @@ impl<'a> Fields<'a> {
                                 query_data: &ctx.query_env.ctx_data,
                             };
 
-                            if ctx_field.query_env.extensions.is_empty() {
-                                match root.resolve_field(&ctx_field).await {
-                                    Ok(value) => Ok((field_name, value.unwrap())),
-                                    Err(e) => {
-                                        Err(e.path(PathSegment::Field(field_name.to_string())))
+                            let resolve_info = ResolveInfo {
+                                resolve_id: ctx_field.resolve_id,
+                                path_node: ctx_field.path_node.as_ref().unwrap(),
+                                parent_type: &T::type_name(),
+                                return_type: match ctx_field
+                                    .schema_env
+                                    .registry
+                                    .types
+                                    .get(T::type_name().as_ref())
+                                    .and_then(|ty| ty.field_by_name(field.node.name.node.as_str()))
+                                    .map(|field| &field.ty)
+                                {
+                                    Some(ty) => &ty,
+                                    None => {
+                                        return Err(ServerError::new(format!(
+                                            r#"Cannot query field "{}" on type "{}"."#,
+                                            field_name,
+                                            T::type_name()
+                                        ))
+                                        .at(ctx_field.item.pos)
+                                        .path(PathSegment::Field(field_name.to_string())));
                                     }
-                                }
-                                .log_error(&ctx_extension, &ctx_field.query_env.extensions)
-                            } else {
-                                let resolve_info = ResolveInfo {
-                                    resolve_id: ctx_field.resolve_id,
-                                    path_node: ctx_field.path_node.as_ref().unwrap(),
-                                    parent_type: &T::type_name(),
-                                    return_type: match ctx_field
-                                        .schema_env
-                                        .registry
-                                        .types
-                                        .get(T::type_name().as_ref())
-                                        .and_then(|ty| {
-                                            ty.field_by_name(field.node.name.node.as_str())
-                                        })
-                                        .map(|field| &field.ty)
-                                    {
-                                        Some(ty) => &ty,
-                                        None => {
-                                            return Err(ServerError::new(format!(
-                                                r#"Cannot query field "{}" on type "{}"."#,
-                                                field_name,
-                                                T::type_name()
-                                            ))
-                                            .at(ctx_field.item.pos)
-                                            .path(PathSegment::Field(field_name.to_string())));
-                                        }
-                                    },
-                                };
+                                },
+                            };
 
-                                ctx_field
-                                    .query_env
-                                    .extensions
-                                    .resolve_start(&ctx_extension, &resolve_info);
+                            ctx_field
+                                .query_env
+                                .extensions
+                                .resolve_start(&ctx_extension, &resolve_info);
 
-                                let res = match root.resolve_field(&ctx_field).await {
-                                    Ok(value) => Ok((field_name, value.unwrap())),
-                                    Err(e) => {
-                                        Err(e.path(PathSegment::Field(field_name.to_string())))
-                                    }
-                                }
-                                .log_error(&ctx_extension, &ctx_field.query_env.extensions)?;
-
-                                ctx_field
-                                    .query_env
-                                    .extensions
-                                    .resolve_end(&ctx_extension, &resolve_info);
-
-                                Ok(res)
+                            let res = match root.resolve_field(&ctx_field).await {
+                                Ok(value) => Ok((field_name, value.unwrap())),
+                                Err(e) => Err(e.path(PathSegment::Field(field_name.to_string()))),
                             }
+                            .log_error(&ctx_extension, &ctx_field.query_env.extensions)?;
+
+                            ctx_field
+                                .query_env
+                                .extensions
+                                .resolve_end(&ctx_extension, &resolve_info);
+
+                            Ok(res)
                         }
                     }));
                 }

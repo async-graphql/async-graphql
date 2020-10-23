@@ -85,7 +85,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
-                return Ok(None);
+                return Err(ServerError::new("Query introspection is disabled.").at(ctx.item.pos));
             }
 
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
