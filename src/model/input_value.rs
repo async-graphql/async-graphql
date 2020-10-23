@@ -14,9 +14,7 @@ impl<'a> __InputValue<'a> {
     }
 
     async fn description(&self) -> Option<String> {
-        self.input_value
-            .description
-            .map(std::string::ToString::to_string)
+        self.input_value.description.map(ToString::to_string)
     }
 
     #[graphql(name = "type")]

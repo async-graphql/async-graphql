@@ -122,10 +122,8 @@ pub fn is_valid_input_value(
                     ..
                 } => match value {
                     ConstValue::Object(values) => {
-                        let mut input_names = values
-                            .keys()
-                            .map(std::convert::AsRef::as_ref)
-                            .collect::<HashSet<_>>();
+                        let mut input_names =
+                            values.keys().map(AsRef::as_ref).collect::<HashSet<_>>();
 
                         for field in input_fields.values() {
                             input_names.remove(field.name);
