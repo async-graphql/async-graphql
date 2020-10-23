@@ -13,7 +13,7 @@ impl<'a> __EnumValue<'a> {
     }
 
     async fn description(&self) -> Option<String> {
-        self.value.description.map(|s| s.to_string())
+        self.value.description.map(ToString::to_string)
     }
 
     async fn is_deprecated(&self) -> bool {
@@ -21,6 +21,6 @@ impl<'a> __EnumValue<'a> {
     }
 
     async fn deprecation_reason(&self) -> Option<String> {
-        self.value.deprecation.map(|s| s.to_string())
+        self.value.deprecation.map(ToString::to_string)
     }
 }

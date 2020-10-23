@@ -14,7 +14,7 @@ impl<'a> __Field<'a> {
     }
 
     async fn description(&self) -> Option<String> {
-        self.field.description.map(|s| s.to_string())
+        self.field.description.map(ToString::to_string)
     }
 
     async fn args(&self) -> Vec<__InputValue<'a>> {
@@ -38,6 +38,6 @@ impl<'a> __Field<'a> {
     }
 
     async fn deprecation_reason(&self) -> Option<String> {
-        self.field.deprecation.map(|s| s.to_string())
+        self.field.deprecation.map(ToString::to_string)
     }
 }

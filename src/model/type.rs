@@ -70,18 +70,22 @@ impl<'a> __Type<'a> {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
                 registry::MetaType::Scalar { description, .. } => {
-                    description.map(|s| s.to_string())
+                    description.map(ToString::to_string)
                 }
                 registry::MetaType::Object { description, .. } => {
-                    description.map(|s| s.to_string())
+                    description.map(ToString::to_string)
                 }
                 registry::MetaType::Interface { description, .. } => {
-                    description.map(|s| s.to_string())
+                    description.map(ToString::to_string)
                 }
-                registry::MetaType::Union { description, .. } => description.map(|s| s.to_string()),
-                registry::MetaType::Enum { description, .. } => description.map(|s| s.to_string()),
+                registry::MetaType::Union { description, .. } => {
+                    description.map(ToString::to_string)
+                }
+                registry::MetaType::Enum { description, .. } => {
+                    description.map(ToString::to_string)
+                }
                 registry::MetaType::InputObject { description, .. } => {
-                    description.map(|s| s.to_string())
+                    description.map(ToString::to_string)
                 }
             },
             TypeDetail::NonNull(_) => None,

@@ -38,7 +38,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
 
         for (name, _) in doc.operations.iter() {
             self.find_reachable_fragments(
-                &Scope::Operation(name.map(|name| name.as_str())),
+                &Scope::Operation(name.map(Name::as_str)),
                 &mut reachable,
             );
         }
@@ -59,7 +59,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
         name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(name.map(|name| name.as_str())));
+        self.current_scope = Some(Scope::Operation(name.map(Name::as_str)));
     }
 
     fn enter_fragment_definition(
