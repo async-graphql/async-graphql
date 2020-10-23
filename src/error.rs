@@ -2,13 +2,13 @@ use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{parser, InputValueType, Pos, Value};
 
 /// Extensions to the error.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct ErrorExtensionValues(BTreeMap<String, Value>);
 
@@ -20,18 +20,18 @@ impl ErrorExtensionValues {
 }
 
 /// An error in a GraphQL server.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServerError {
     /// An explanatory message of the error.
     pub message: String,
     /// Where the error occurred.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub locations: Vec<Pos>,
     /// If the error occurred in a resolver, the path to the error.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub path: Vec<PathSegment>,
     /// Extensions to the error.
-    #[serde(skip_serializing_if = "error_extensions_is_empty")]
+    #[serde(skip_serializing_if = "error_extensions_is_empty", default)]
     pub extensions: Option<ErrorExtensionValues>,
 }
 
@@ -96,7 +96,7 @@ impl From<parser::Error> for ServerError {
 ///
 /// This is like [`QueryPathSegment`](enum.QueryPathSegment.html), but owned and used as a part of
 /// errors instead of during execution.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PathSegment {
     /// A field in an object.

@@ -1,15 +1,16 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};
 
 /// Query response
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Response {
     /// Data of query result
+    #[serde(default)]
     pub data: Value,
 
     /// Extensions result
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub extensions: Option<Value>,
 
     /// Cache control value
@@ -17,7 +18,7 @@ pub struct Response {
     pub cache_control: CacheControl,
 
     /// Errors
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub errors: Vec<ServerError>,
 }
 

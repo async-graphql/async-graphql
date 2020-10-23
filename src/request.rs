@@ -2,7 +2,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Formatter};
 
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
 
@@ -10,7 +10,7 @@ use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
 ///
 /// This can be deserialized from a structure of the query string, the operation name and the
 /// variables. The names are all in `camelCase` (e.g. `operationName`).
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     /// The query source of the request.
