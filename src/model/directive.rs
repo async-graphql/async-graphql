@@ -79,7 +79,9 @@ impl<'a> __Directive<'a> {
     }
 
     async fn description(&self) -> Option<String> {
-        self.directive.description.map(|s| s.to_string())
+        self.directive
+            .description
+            .map(std::string::ToString::to_string)
     }
 
     async fn locations(&self) -> &Vec<__DirectiveLocation> {

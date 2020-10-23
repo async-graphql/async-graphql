@@ -124,7 +124,7 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::needless_pass_by_value)]
-#![allow(clippy::redundant_closure_for_method_calls)]
+#![deny(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::filter_map)]

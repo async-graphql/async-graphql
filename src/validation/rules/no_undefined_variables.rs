@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         name: Option<&'a Name>,
         operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let name = name.map(|name| name.as_str());
+        let name = name.map(async_graphql_value::Name::as_str);
         self.current_scope = Some(Scope::Operation(name));
         self.defined_variables
             .insert(name, (operation_definition.pos, HashSet::new()));

@@ -124,7 +124,7 @@ pub fn is_valid_input_value(
                     ConstValue::Object(values) => {
                         let mut input_names = values
                             .keys()
-                            .map(|name| name.as_ref())
+                            .map(std::convert::AsRef::as_ref)
                             .collect::<HashSet<_>>();
 
                         for field in input_fields.values() {

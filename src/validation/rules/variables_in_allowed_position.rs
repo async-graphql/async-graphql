@@ -76,7 +76,7 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        self.current_scope = Some(Scope::Operation(name.map(|name| name.as_str())));
+        self.current_scope = Some(Scope::Operation(name.map(Name::as_str)));
     }
 
     fn enter_fragment_definition(

@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         name: Option<&'a Name>,
         _operation_definition: &'a Positioned<OperationDefinition>,
     ) {
-        let op_name = name.map(|name| name.as_str());
+        let op_name = name.map(Name::as_str);
         self.current_scope = Some(Scope::Operation(op_name));
         self.defined_variables.insert(op_name, HashSet::new());
     }
