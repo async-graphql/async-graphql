@@ -40,7 +40,7 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                                 .iter()
                                 .map(|fields| fields.keys())
                                 .flatten()
-                                .map(std::string::String::as_str),
+                                .map(String::as_str),
                             &field.node.name.node,
                         )
                         .unwrap_or_default()
