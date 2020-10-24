@@ -85,7 +85,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
             type_into_impls.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
+                #crate_name::static_assertions::assert_impl_any!(#assert_ty: #crate_name::ObjectType, #crate_name::InterfaceType);
 
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #generics ::std::convert::From<#p> for #ident #generics {
@@ -250,7 +250,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         methods.push(quote! {
             #[inline]
-            async fn #method_name<'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
+            pub async fn #method_name<'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
                 match self {
                     #(#calls,)*
                 }

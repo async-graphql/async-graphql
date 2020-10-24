@@ -331,3 +331,69 @@ pub async fn test_interface_field_method() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_interface_implement_other_interface() {
+    #[derive(Interface)]
+    #[graphql(field(name = "id", type = "ID"))]
+    pub enum Entity {
+        Company(Company),
+        Organization(Organization),
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = "id", type = "ID"))]
+    pub enum Node {
+        Entity(Entity),
+    }
+
+    pub struct Company {}
+
+    #[Object]
+    impl Company {
+        pub async fn id(&self) -> ID {
+            "88".into()
+        }
+    }
+
+    pub struct Organization {}
+
+    #[Object]
+    impl Organization {
+        pub async fn id(&self) -> ID {
+            "99".into()
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn company(&self) -> Node {
+            Entity::Company(Company {}).into()
+        }
+
+        async fn organization(&self) -> Node {
+            Entity::Organization(Organization {}).into()
+        }
+    }
+
+    let query = r#"
+        {
+            company { id }
+            organization { id }
+        }
+    "#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "company": {
+                "id": "88",
+            },
+            "organization": {
+                "id": "99",
+            }
+        })
+    );
+}
