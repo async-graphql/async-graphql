@@ -116,6 +116,7 @@ pub struct Object {
     pub rename_args: Option<RenameRule>,
     pub cache_control: CacheControl,
     pub extends: bool,
+    pub use_type_description: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -290,6 +291,7 @@ pub struct Interface {
 pub struct Scalar {
     pub internal: bool,
     pub name: Option<String>,
+    pub use_type_description: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -299,6 +301,7 @@ pub struct Subscription {
     pub name: Option<String>,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
+    pub use_type_description: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -424,4 +427,15 @@ impl RenameRuleExt for Option<RenameRule> {
     fn rename(&self, name: impl AsRef<str>, target: RenameTarget) -> String {
         self.unwrap_or(target.rule()).rename(name)
     }
+}
+
+#[derive(FromDeriveInput)]
+#[darling(forward_attrs(doc))]
+pub struct Description {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+
+    #[darling(default)]
+    pub internal: bool,
 }

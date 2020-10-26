@@ -9,6 +9,7 @@ pub fn generate(
     scalar_args: &args::Scalar,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
+    let crate_name = get_crate_name(scalar_args.internal);
     let self_name = match item_impl.self_ty.as_ref() {
         Type::Path(path) => path
             .path
@@ -22,13 +23,18 @@ pub fn generate(
         .name
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
-    let desc = get_rustdoc(&item_impl.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
-        .unwrap_or_else(|| quote! {::std::option::Option::None});
+
+    let desc = if scalar_args.use_type_description {
+        quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
+    } else {
+        get_rustdoc(&item_impl.attrs)?
+            .map(|s| quote!(::std::option::Option::Some(#s)))
+            .unwrap_or_else(|| quote!(::std::option::Option::None))
+    };
+
     let self_ty = &item_impl.self_ty;
     let generic = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
-    let crate_name = get_crate_name(scalar_args.internal);
     let expanded = quote! {
         #item_impl
 

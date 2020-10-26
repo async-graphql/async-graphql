@@ -38,9 +38,13 @@ pub fn generate(
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
 
-    let desc = get_rustdoc(&item_impl.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
-        .unwrap_or_else(|| quote! {::std::option::Option::None});
+    let desc = if subscription_args.use_type_description {
+        quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
+    } else {
+        get_rustdoc(&item_impl.attrs)?
+            .map(|s| quote!(::std::option::Option::Some(#s)))
+            .unwrap_or_else(|| quote!(::std::option::Option::None))
+    };
 
     let mut create_stream = Vec::new();
     let mut schema_fields = Vec::new();

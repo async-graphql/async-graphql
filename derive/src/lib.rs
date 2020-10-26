@@ -4,6 +4,7 @@
 extern crate proc_macro;
 
 mod args;
+mod description;
 mod r#enum;
 mod input_object;
 mod interface;
@@ -151,6 +152,19 @@ pub fn derive_merged_subscription(input: TokenStream) -> TokenStream {
         Err(err) => return TokenStream::from(err.write_errors()),
     };
     match merged_subscription::generate(&object_args) {
+        Ok(expanded) => expanded,
+        Err(err) => err.write_errors().into(),
+    }
+}
+
+#[proc_macro_derive(Description)]
+pub fn derive_merged_description(input: TokenStream) -> TokenStream {
+    let desc_args =
+        match args::Description::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
+            Ok(object_args) => object_args,
+            Err(err) => return TokenStream::from(err.write_errors()),
+        };
+    match description::generate(&desc_args) {
         Ok(expanded) => expanded,
         Err(err) => err.write_errors().into(),
     }

@@ -195,7 +195,8 @@ pub use async_graphql_value::{
     SerializerError,
 };
 pub use base::{
-    InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type, UnionType,
+    Description, InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type,
+    UnionType,
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
@@ -849,3 +850,5 @@ pub use async_graphql_derive::MergedObject;
 /// struct Subscription(Subscription1, Subscription2);
 /// ```
 pub use async_graphql_derive::MergedSubscription;
+
+pub use async_graphql_derive::Description;

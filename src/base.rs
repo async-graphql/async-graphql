@@ -7,6 +7,11 @@ use crate::{
     ServerResult, Value,
 };
 
+#[doc(hidden)]
+pub trait Description {
+    fn description() -> &'static str;
+}
+
 /// Represents a GraphQL type.
 ///
 /// All GraphQL types implement this trait, such as `Scalar`, `Object`, `Union` ...
