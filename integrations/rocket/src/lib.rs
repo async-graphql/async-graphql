@@ -33,7 +33,7 @@ mod query_deserializer;
 /// # Examples
 ///
 /// ```ignore
-/// #[rocket::post("/graphql", data = "<request>", format = "application/json")]
+/// #[rocket::post("/graphql", data = "<request>", format = "application/json", rank = 1)]
 /// async fn graphql_request(schema: State<'_, ExampleSchema>, request: BatchRequest) -> Response {
 ///     request.execute(&schema).await
 /// }
@@ -93,12 +93,12 @@ impl FromData for BatchRequest {
 /// # Examples
 ///
 /// ```ignore
-/// #[rocket::post("/graphql?<query..>")]
+/// #[rocket::post("/graphql?<query..>", rank = 2)]
 /// async fn graphql_query(schema: State<'_, ExampleSchema>, query: Request) -> Result<Response, Status> {
 ///     query.execute(&schema).await
 /// }
 ///
-/// #[rocket::post("/graphql", data = "<request>", format = "application/json")]
+/// #[rocket::post("/graphql", data = "<request>", format = "application/json", rank = 1)]
 /// async fn graphql_request(schema: State<'_, ExampleSchema>, request: Request) -> Result<Response, Status> {
 ///     request.execute(&schema).await
 /// }

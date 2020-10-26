@@ -81,7 +81,7 @@ cargo bench -- "chat run"
 #measure all with jemalloc
 cargo bench --features jemalloc
 
-#measure only simple run with jemalloc 
+#measure only simple run with jemalloc
 cargo bench --features jemalloc -- "simple run"
 ```
 
@@ -94,6 +94,7 @@ Read more here: https://bheisler.github.io/criterion.rs/book/criterion_rs.html
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
+* Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 
 ## License
 
