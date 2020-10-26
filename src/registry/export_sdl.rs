@@ -131,7 +131,16 @@ impl Registry {
                 write!(sdl, "type {} ", name).ok();
                 if let Some(implements) = self.implements.get(name) {
                     if !implements.is_empty() {
-                        write!(sdl, "implements {} ", implements.iter().map(AsRef::as_ref).collect::<Vec<&str>>().join(" & ")).ok();
+                        write!(
+                            sdl,
+                            "implements {} ",
+                            implements
+                                .iter()
+                                .map(AsRef::as_ref)
+                                .collect::<Vec<&str>>()
+                                .join(" & ")
+                        )
+                        .ok();
                     }
                 }
 
