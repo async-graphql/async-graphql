@@ -106,6 +106,12 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Override the description of the specified type.
+    pub fn override_description<T: Type>(mut self, desc: &'static str) -> Self {
+        self.registry.set_description::<T>(desc);
+        self
+    }
+
     /// Build schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation

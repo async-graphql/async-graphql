@@ -522,4 +522,16 @@ impl Registry {
 
         names.into_iter().collect()
     }
+
+    pub fn set_description<T: Type>(&mut self, desc: &'static str) {
+        match self.types.get_mut(&*T::type_name()) {
+            Some(MetaType::Scalar { description, .. }) => *description = Some(desc),
+            Some(MetaType::Object { description, .. }) => *description = Some(desc),
+            Some(MetaType::Interface { description, .. }) => *description = Some(desc),
+            Some(MetaType::Union { description, .. }) => *description = Some(desc),
+            Some(MetaType::Enum { description, .. }) => *description = Some(desc),
+            Some(MetaType::InputObject { description, .. }) => *description = Some(desc),
+            None => {}
+        }
+    }
 }
