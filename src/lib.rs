@@ -239,6 +239,7 @@ pub type FieldResult<T> = Result<T>;
 /// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
+/// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
 ///
 /// # Field parameters
 ///
@@ -723,6 +724,7 @@ pub use async_graphql_derive::Union;
 /// | name          | Object name               | string   | Y        |
 /// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
 ///
 /// # Field parameters
 ///
@@ -782,6 +784,7 @@ pub use async_graphql_derive::Scalar;
 /// | name          | Object name               | string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
+/// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
 ///
 /// # Examples
 ///
@@ -851,4 +854,44 @@ pub use async_graphql_derive::MergedObject;
 /// ```
 pub use async_graphql_derive::MergedSubscription;
 
+/// Attach a description to `Object`, `Scalar` or `Subscription`.
+///
+/// The three types above use the rustdoc on the implementation block as
+/// the GraphQL type description, but if you want to use the rustdoc on the
+/// type declaration as the GraphQL type description, you can use that derived macro.
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// /// This is MyObj
+/// #[derive(Description, Default)]
+/// struct MyObj;
+///
+/// #[Object(use_type_description)]
+/// impl MyObj {
+///     async fn value(&self) -> i32 {
+///         100
+///     }
+/// }
+///
+/// #[derive(SimpleObject, Default)]
+/// struct Query {
+///     obj: MyObj,
+/// }
+///
+/// async_std::task::block_on(async move {
+///     let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
+///     assert_eq!(
+///         schema
+///             .execute(r#"{ __type(name: "MyObj") { description } }"#)
+///             .await
+///             .data,
+///         value!({
+///             "__type": { "description": "This is MyObj" }
+///         })
+///     );
+/// });
+/// ```
 pub use async_graphql_derive::Description;
