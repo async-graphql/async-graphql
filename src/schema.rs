@@ -327,8 +327,8 @@ where
     }
 
     /// Returns SDL(Schema Definition Language) of this schema.
-    pub fn sdl() -> String {
-        Self::create_registry().export_sdl(false)
+    pub fn sdl(&self) -> String {
+        self.0.env.registry.export_sdl(false)
     }
 
     /// Get all names in this schema
