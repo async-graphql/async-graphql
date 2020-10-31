@@ -228,7 +228,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         for enum_name in &enum_names {
             calls.push(quote! {
-                #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*).await
+                #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*).await.map(::std::convert::Into::into)
             });
         }
 

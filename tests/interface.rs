@@ -397,3 +397,79 @@ pub async fn test_interface_implement_other_interface() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_issue_330() {
+    #[derive(Interface)]
+    #[graphql(field(
+        desc = "The code represented as a number.",
+        name = "number",
+        type = "String"
+    ))]
+    pub enum Code {
+        Barcode(Barcode),
+        Qrcode(Qrcode),
+    }
+
+    pub struct Barcode(String);
+
+    #[Object]
+    impl Barcode {
+        pub async fn number(&self) -> String {
+            format!("barcode:{}", self.0)
+        }
+    }
+
+    pub struct Qrcode(String);
+
+    #[Object]
+    impl Qrcode {
+        pub async fn number(&self) -> String {
+            format!("qrcode:{}", self.0)
+        }
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(desc = "The article number.", name = "number", type = "Code"))]
+    pub enum Article {
+        Book(Book),
+    }
+
+    pub struct Book {
+        code: String,
+    }
+
+    #[Object]
+    impl Book {
+        pub async fn number(&self) -> Barcode {
+            Barcode(self.code.clone())
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn book(&self) -> Article {
+            Book {
+                code: "123456".to_string(),
+            }
+            .into()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ book { number { number } } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "book": {
+                "number": { "number": "barcode:123456" }
+            }
+        })
+    );
+}
