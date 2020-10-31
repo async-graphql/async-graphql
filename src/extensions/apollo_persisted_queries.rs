@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use async_mutex::Mutex;
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
 use crate::{from_value, Request, ServerError, ServerResult};
@@ -98,10 +99,14 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
                     Err(ServerError::new("PersistedQueryNotFound".to_string()))
                 }
             } else {
-                self.storage
-                    .set(persisted_query.sha256_hash, request.query.clone())
-                    .await;
-                Ok(request)
+                let sha256_hash = format!("{:x}", Sha256::digest(request.query.as_bytes()));
+
+                if (persisted_query.sha256_hash != sha256_hash) {
+                    Err(ServerError::new("provided sha does not match query"))
+                } else {
+                    self.storage.set(sha256_hash, request.query.clone()).await;
+                    Ok(request)
+                }
             }
         } else {
             Ok(request)
@@ -134,7 +139,7 @@ mod tests {
             "persistedQuery".to_string(),
             value!({
                 "version": 1,
-                "sha256Hash": "abc",
+                "sha256Hash": "854174ebed716fe24fd6659c30290aecd9bc1d17dc4f47939a1848a1b8ed3c6b",
             }),
         );
 
@@ -150,7 +155,7 @@ mod tests {
             "persistedQuery".to_string(),
             value!({
                 "version": 1,
-                "sha256Hash": "abc",
+                "sha256Hash": "854174ebed716fe24fd6659c30290aecd9bc1d17dc4f47939a1848a1b8ed3c6b",
             }),
         );
 
