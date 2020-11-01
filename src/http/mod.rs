@@ -41,10 +41,6 @@ pub async fn receive_batch_body(
 
     if let Some(Ok(boundary)) = content_type.map(multer::parse_boundary) {
         multipart::receive_batch_multipart(body, boundary, opts).await
-    } else if let Some(content_type) = content_type.filter(|&ct| ct != "application/json") {
-        Err(ParseRequestError::UnknownContentType(
-            content_type.to_owned(),
-        ))
     } else {
         receive_batch_json(body).await
     }

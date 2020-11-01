@@ -233,10 +233,6 @@ pub enum ParseRequestError {
     #[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
     InvalidMultipart(multer::Error),
 
-    /// The content type of the request was unknown.
-    #[error("Unknown content-type \"{0}\"")]
-    UnknownContentType(String),
-
     /// Missing "operators" part for multipart request.
     #[error("Missing \"operators\" part")]
     MissingOperatorsPart,
