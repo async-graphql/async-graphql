@@ -11,6 +11,8 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let crate_name = get_crate_name(object_args.internal);
     let ident = &object_args.ident;
     let extends = object_args.extends;
+    let generics = &object_args.generics;
+    let where_clause = &generics.where_clause;
     let gql_typename = object_args
         .name
         .clone()
@@ -55,7 +57,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::Type for #ident {
+        impl #generics #crate_name::Type for #ident #generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -88,7 +90,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::resolver_utils::ContainerType for #ident {
+        impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #create_merged_obj.resolve_field(ctx).await
             }
@@ -100,13 +102,13 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::OutputValueType for #ident {
+        impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #crate_name::ObjectType for #ident {}
+        impl #generics #crate_name::ObjectType for #ident #generics #where_clause {}
     };
     Ok(expanded.into())
 }

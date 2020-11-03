@@ -336,3 +336,54 @@ pub async fn test_issue_316() {
     let schema = Schema::new(Query, Mutation::default(), EmptySubscription);
     assert!(schema.execute("{ _service { sdl }}").await.is_ok());
 }
+
+#[async_std::test]
+pub async fn test_issue_333() {
+    #[derive(SimpleObject)]
+    struct ObjectA<'a> {
+        field_a: &'a str,
+    }
+
+    #[derive(SimpleObject)]
+    struct ObjectB<'a> {
+        field_b: &'a str,
+    }
+
+    #[derive(MergedObject)]
+    pub struct Object<'a>(ObjectA<'a>, ObjectB<'a>);
+
+    struct Query {
+        a: String,
+        b: String,
+    }
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> Object<'_> {
+            Object(ObjectA { field_a: &self.a }, ObjectB { field_b: &self.b })
+        }
+    }
+
+    let schema = Schema::new(
+        Query {
+            a: "haha".to_string(),
+            b: "hehe".to_string(),
+        },
+        EmptyMutation,
+        EmptySubscription,
+    );
+    assert_eq!(
+        schema
+            .execute("{ obj { fieldA fieldB } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "fieldA": "haha",
+                "fieldB": "hehe",
+            }
+        })
+    )
+}
