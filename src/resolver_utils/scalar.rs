@@ -92,16 +92,12 @@ pub trait ScalarType: Sized + Send {
 /// ```
 #[macro_export]
 macro_rules! scalar {
-    ($ty:ty, $name:expr, $desc:literal) => {
-        $crate::scalar_internal!(
-            $ty,
-            ::std::stringify!($ty),
-            ::std::option::Option::Some($desc)
-        );
+    ($ty:ty, $name:literal, $desc:literal) => {
+        $crate::scalar_internal!($ty, $name, ::std::option::Option::Some($desc));
     };
 
-    ($ty:ty, $name:expr) => {
-        $crate::scalar_internal!($ty, ::std::stringify!($ty), ::std::option::Option::None);
+    ($ty:ty, $name:literal) => {
+        $crate::scalar_internal!($ty, $name, ::std::option::Option::None);
     };
 
     ($ty:ty) => {
