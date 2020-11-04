@@ -33,6 +33,40 @@ pub async fn test_object() {
 }
 
 #[async_std::test]
+pub async fn test_object_with_lifetime() {
+    /// Haha
+    #[derive(Description, Default)]
+    struct MyObj<'a>(&'a str);
+
+    #[Object(use_type_description)]
+    impl<'a> MyObj<'a> {
+        async fn value(&self) -> &str {
+            self.0
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> MyObj<'_> {
+            todo!()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute(r#"{ __type(name: "MyObj") { description } }"#)
+            .await
+            .data,
+        value!({
+            "__type": { "description": "Haha" }
+        })
+    );
+}
+
+#[async_std::test]
 pub async fn test_scalar() {
     /// Haha
     #[derive(Description, Default)]
