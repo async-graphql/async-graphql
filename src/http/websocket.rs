@@ -77,72 +77,65 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
 
-        loop {
-            match Pin::new(&mut this.stream).poll_next(cx) {
-                Poll::Ready(message) => {
-                    let message = match message {
-                        Some(message) => message,
-                        None => return Poll::Ready(None),
-                    };
+        while let Poll::Ready(message) = Pin::new(&mut this.stream).poll_next(cx) {
+            let message = match message {
+                Some(message) => message,
+                None => return Poll::Ready(None),
+            };
 
-                    let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
-                        Ok(message) => message,
-                        Err(e) => {
-                            return Poll::Ready(Some(
-                                serde_json::to_string(&ServerMessage::ConnectionError {
-                                    payload: Error::new(e.to_string()),
-                                })
-                                .unwrap(),
-                            ))
-                        }
-                    };
+            let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
+                Ok(message) => message,
+                Err(e) => {
+                    return Poll::Ready(Some(
+                        serde_json::to_string(&ServerMessage::ConnectionError {
+                            payload: Error::new(e.to_string()),
+                        })
+                        .unwrap(),
+                    ))
+                }
+            };
 
-                    match message {
-                        ClientMessage::ConnectionInit { payload } => {
-                            if let Some(payload) = payload {
-                                if let Some(data_initializer) = this.data_initializer.take() {
-                                    *this.data = Arc::new(match data_initializer(payload) {
-                                        Ok(data) => data,
-                                        Err(e) => {
-                                            return Poll::Ready(Some(
-                                                serde_json::to_string(
-                                                    &ServerMessage::ConnectionError { payload: e },
-                                                )
-                                                .unwrap(),
-                                            ))
-                                        }
-                                    });
+            match message {
+                ClientMessage::ConnectionInit { payload } => {
+                    if let Some(payload) = payload {
+                        if let Some(data_initializer) = this.data_initializer.take() {
+                            *this.data = Arc::new(match data_initializer(payload) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    return Poll::Ready(Some(
+                                        serde_json::to_string(&ServerMessage::ConnectionError {
+                                            payload: e,
+                                        })
+                                        .unwrap(),
+                                    ))
                                 }
-                            }
-                            return Poll::Ready(Some(
-                                serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
-                            ));
+                            });
                         }
-                        ClientMessage::Start {
-                            id,
-                            payload: request,
-                        } => {
-                            this.streams.insert(
-                                id,
-                                Box::pin(
-                                    this.schema.execute_stream_with_ctx_data(
-                                        request,
-                                        Arc::clone(this.data),
-                                    ),
-                                ),
-                            );
-                        }
-                        ClientMessage::Stop { id } => {
-                            if this.streams.remove(id).is_some() {
-                                return Poll::Ready(Some(
-                                    serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
-                                ));
-                            }
-                        }
-                        ClientMessage::ConnectionTerminate => return Poll::Ready(None),
+                    }
+                    return Poll::Ready(Some(
+                        serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
+                    ));
+                }
+                ClientMessage::Start {
+                    id,
+                    payload: request,
+                } => {
+                    this.streams.insert(
+                        id,
+                        Box::pin(
+                            this.schema
+                                .execute_stream_with_ctx_data(request, Arc::clone(this.data)),
+                        ),
+                    );
+                }
+                ClientMessage::Stop { id } => {
+                    if this.streams.remove(id).is_some() {
+                        return Poll::Ready(Some(
+                            serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
+                        ));
                     }
                 }
-                Poll::Pending => break,
+                ClientMessage::ConnectionTerminate => return Poll::Ready(None),
             }
         }
 
