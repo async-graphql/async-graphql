@@ -13,16 +13,31 @@ use crate::{ServerError, Variables};
 /// <https://crates.io/crates/tracing>
 #[derive(Default)]
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
-pub struct Tracing;
+pub struct Tracing {
+    parent: Option<Span>,
+}
+
+impl Tracing {
+    /// Use a span as the parent node of the entire query.
+    pub fn with_parent(parent: Span) -> Self {
+        Self {
+            parent: Some(parent),
+        }
+    }
+}
 
 impl ExtensionFactory for Tracing {
     fn create(&self) -> Box<dyn Extension> {
-        Box::new(TracingExtension::default())
+        Box::new(TracingExtension {
+            parent: self.parent.clone(),
+            ..TracingExtension::default()
+        })
     }
 }
 
 #[derive(Default)]
 struct TracingExtension {
+    parent: Option<Span>,
     root: Option<Span>,
     parse: Option<Span>,
     validation: Option<Span>,
@@ -37,13 +52,22 @@ impl Extension for TracingExtension {
         query_source: &str,
         _variables: &Variables,
     ) {
-        let root_span = span!(
-            target: "async_graphql::graphql",
-            parent: None,
-            Level::INFO,
-            "query",
-            source = %query_source
-        );
+        let root_span = match self.parent.take() {
+            Some(parent) => span!(
+                target: "async_graphql::graphql",
+                parent: &parent,
+                Level::INFO,
+                "query",
+                source = %query_source
+            ),
+            None => span!(
+                target: "async_graphql::graphql",
+                parent: None,
+                Level::INFO,
+                "query",
+                source = %query_source
+            ),
+        };
 
         let parse_span = span!(
             target: "async_graphql::graphql",
