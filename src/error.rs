@@ -146,11 +146,15 @@ impl<T: InputValueType> InputValueError<T> {
 
     /// Propagate the error message to a different type.
     pub fn propagate<U: InputValueType>(self) -> InputValueError<U> {
-        InputValueError::new(format!(
-            r#"{} (occurred while parsing "{}")"#,
-            self.message,
-            U::type_name()
-        ))
+        if T::type_name() != U::type_name() {
+            InputValueError::new(format!(
+                r#"{} (occurred while parsing "{}")"#,
+                self.message,
+                U::type_name()
+            ))
+        } else {
+            InputValueError::new(self.message)
+        }
     }
 
     /// Convert the error into a server error.
