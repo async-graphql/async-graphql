@@ -6,38 +6,68 @@ use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveIn
 use crate::parser::types::ExecutableDocument;
 use crate::{ServerError, Variables};
 
+/// Tracing extension configuration for each request.
+#[derive(Default)]
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
+pub struct TracingConfig {
+    /// Use a span as the parent node of the entire query.
+    parent: Option<Span>,
+}
+
+impl TracingConfig {
+    /// Use a span as the parent node of the entire query.
+    pub fn parent_span(mut self, span: Span) -> Self {
+        self.parent = Some(span);
+        self
+    }
+}
+
 /// Tracing extension
 ///
 /// # References
 ///
 /// <https://crates.io/crates/tracing>
+///
+/// # Examples
+///
+/// ```no_run
+/// use async_graphql::*;
+/// use async_graphql::extensions::{Tracing, TracingConfig};
+/// use tracing::{span, Level};
+///
+/// #[derive(SimpleObject)]
+/// struct Query {
+///     value: i32,
+/// }
+///
+/// let schema = Schema::build(Query { value: 100 }, EmptyMutation, EmptySubscription).
+///     extension(Tracing::default())
+///     .finish();
+///
+/// let root_span = span!(
+///     parent: None,
+///     Level::INFO,
+///     "span root"
+/// );
+///
+/// async_std::task::block_on(async move {
+///     let request = Request::new("{ value }")
+///         .data(TracingConfig::default().parent_span(root_span));
+///     schema.execute(request).await;
+/// });
+/// ```
 #[derive(Default)]
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
-pub struct Tracing {
-    parent: Option<Span>,
-}
-
-impl Tracing {
-    /// Use a span as the parent node of the entire query.
-    pub fn with_parent(parent: Span) -> Self {
-        Self {
-            parent: Some(parent),
-        }
-    }
-}
+pub struct Tracing;
 
 impl ExtensionFactory for Tracing {
     fn create(&self) -> Box<dyn Extension> {
-        Box::new(TracingExtension {
-            parent: self.parent.clone(),
-            ..TracingExtension::default()
-        })
+        Box::new(TracingExtension::default())
     }
 }
 
 #[derive(Default)]
 struct TracingExtension {
-    parent: Option<Span>,
     root: Option<Span>,
     parse: Option<Span>,
     validation: Option<Span>,
@@ -48,14 +78,18 @@ struct TracingExtension {
 impl Extension for TracingExtension {
     fn parse_start(
         &mut self,
-        _ctx: &ExtensionContext<'_>,
+        ctx: &ExtensionContext<'_>,
         query_source: &str,
         _variables: &Variables,
     ) {
-        let root_span = match self.parent.take() {
+        let parent_span = ctx
+            .data_opt::<TracingConfig>()
+            .and_then(|cfg| cfg.parent.as_ref());
+
+        let root_span = match parent_span {
             Some(parent) => span!(
                 target: "async_graphql::graphql",
-                parent: &parent,
+                parent: parent,
                 Level::INFO,
                 "query",
                 source = %query_source
