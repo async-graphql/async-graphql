@@ -117,7 +117,7 @@ pub fn generate(
                                 parse_graphql_attrs::<args::SubscriptionFieldArgument>(&pat.attrs)?
                                     .unwrap_or_default(),
                             ));
-                            pat.attrs.clear();
+                            remove_graphql_attrs(&mut pat.attrs);
                         }
                         (arg, Type::Reference(TypeReference { elem, .. })) => {
                             if let Type::Path(path) = elem.as_ref() {
