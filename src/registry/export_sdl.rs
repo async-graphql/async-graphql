@@ -129,20 +129,7 @@ impl Registry {
                     write!(sdl, "extend ").ok();
                 }
                 write!(sdl, "type {} ", name).ok();
-                if let Some(implements) = self.implements.get(name) {
-                    if !implements.is_empty() {
-                        write!(
-                            sdl,
-                            "implements {} ",
-                            implements
-                                .iter()
-                                .map(AsRef::as_ref)
-                                .collect::<Vec<&str>>()
-                                .join(" & ")
-                        )
-                        .ok();
-                    }
-                }
+                self.write_implements(sdl, name);
 
                 if federation {
                     if let Some(keys) = keys {
@@ -178,6 +165,8 @@ impl Registry {
                         }
                     }
                 }
+                self.write_implements(sdl, name);
+
                 writeln!(sdl, "{{").ok();
                 Self::export_fields(sdl, fields.values(), federation);
                 writeln!(sdl, "}}").ok();
@@ -231,6 +220,23 @@ impl Registry {
                     write!(sdl, " | {}", ty).ok();
                 }
                 writeln!(sdl).ok();
+            }
+        }
+    }
+
+    fn write_implements(&self, sdl: &mut String, name: &str) {
+        if let Some(implements) = self.implements.get(name) {
+            if !implements.is_empty() {
+                write!(
+                    sdl,
+                    "implements {} ",
+                    implements
+                        .iter()
+                        .map(AsRef::as_ref)
+                        .collect::<Vec<&str>>()
+                        .join(" & ")
+                )
+                .ok();
             }
         }
     }
