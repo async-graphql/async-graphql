@@ -159,6 +159,13 @@ impl<'a> Fields<'a> {
                             let field_name = ctx_field.item.node.response_key().node.clone();
 
                             let res = if ctx_field.query_env.extensions.is_empty() {
+                                match root.resolve_field(&ctx_field).await {
+                                    Ok(value) => Ok((field_name, value.unwrap_or_default())),
+                                    Err(e) => {
+                                        Err(e.path(PathSegment::Field(field_name.to_string())))
+                                    }
+                                }?
+                            } else {
                                 let ctx_extension = ExtensionContext {
                                     schema_data: &ctx.schema_env.data,
                                     query_data: &ctx.query_env.ctx_data,
@@ -210,13 +217,6 @@ impl<'a> Fields<'a> {
                                     .resolve_end(&ctx_extension, &resolve_info);
 
                                 res
-                            } else {
-                                match root.resolve_field(&ctx_field).await {
-                                    Ok(value) => Ok((field_name, value.unwrap_or_default())),
-                                    Err(e) => {
-                                        Err(e.path(PathSegment::Field(field_name.to_string())))
-                                    }
-                                }?
                             };
 
                             Ok(res)
