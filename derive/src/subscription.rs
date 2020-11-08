@@ -125,7 +125,7 @@ pub fn generate(
                                 {
                                     return Err(Error::new_spanned(
                                         arg,
-                                        "The Context must be the second argument.",
+                                        "Only types that implement `InputValueType` can be used as input arguments.",
                                     )
                                     .into());
                                 } else {
