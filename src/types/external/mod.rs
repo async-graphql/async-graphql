@@ -2,6 +2,7 @@
 
 mod bool;
 mod char;
+mod cow;
 mod floats;
 mod integers;
 mod json_object;

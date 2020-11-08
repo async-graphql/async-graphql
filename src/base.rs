@@ -55,7 +55,7 @@ pub trait OutputValueType: Type {
     ) -> ServerResult<Value>;
 }
 
-impl<T: Type + Send + Sync> Type for &T {
+impl<T: Type + Send + Sync + ?Sized> Type for &T {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -66,7 +66,7 @@ impl<T: Type + Send + Sync> Type for &T {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync> OutputValueType for &T {
+impl<T: OutputValueType + Send + Sync + ?Sized> OutputValueType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,

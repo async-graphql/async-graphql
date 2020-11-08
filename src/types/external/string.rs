@@ -25,7 +25,7 @@ impl ScalarType for String {
     }
 }
 
-impl<'a> Type for &'a str {
+impl Type for str {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("String")
     }
@@ -36,12 +36,12 @@ impl<'a> Type for &'a str {
 }
 
 #[async_trait::async_trait]
-impl<'a> OutputValueType for &'a str {
+impl OutputValueType for str {
     async fn resolve(
         &self,
         _: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        Ok(Value::String((*self).to_string()))
+        Ok(Value::String(self.to_string()))
     }
 }
