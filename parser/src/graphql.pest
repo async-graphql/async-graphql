@@ -47,8 +47,8 @@ object_type = {
 implements_interfaces = { "implements" ~ "&"? ~ name ~ ("&" ~ name)* }
 
 interface_type = {
-	string? ~ "interface" ~ name ~ const_directives? ~ fields_definition?
-	| extend ~ "interface" ~ name ~ (const_directives? ~ fields_definition | const_directives)
+	string? ~ "interface" ~ name ~ implements_interfaces? ~ const_directives? ~ fields_definition?
+	| extend ~ "interface" ~ name ~ implements_interfaces? ~ (const_directives? ~ fields_definition | const_directives)
 }
 
 fields_definition = { "{" ~ field_definition+ ~ "}" }
