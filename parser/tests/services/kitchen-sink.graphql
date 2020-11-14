@@ -10,6 +10,7 @@ schema {
 
 """
 This is a description
+
 of the `Foo` type.
 """
 type Foo implements Bar & Baz {
