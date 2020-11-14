@@ -149,12 +149,26 @@ fn parse_type_definition(
             )
         }
         Rule::interface_type => {
+            let implements = parse_if_rule(&mut pairs, Rule::implements_interfaces, |pair| {
+                debug_assert_eq!(pair.as_rule(), Rule::implements_interfaces);
+
+                pair.into_inner()
+                    .map(|pair| parse_name(pair, pc))
+                    .collect::<Result<_>>()
+            })?;
+
             let directives = parse_opt_const_directives(&mut pairs, pc)?;
             let fields = parse_if_rule(&mut pairs, Rule::fields_definition, |pair| {
                 parse_fields_definition(pair, pc)
             })?
             .unwrap_or_default();
-            (directives, TypeKind::Interface(InterfaceType { fields }))
+            (
+                directives,
+                TypeKind::Interface(InterfaceType {
+                    implements: implements.unwrap_or_default(),
+                    fields,
+                }),
+            )
         }
         Rule::union_type => {
             let directives = parse_opt_const_directives(&mut pairs, pc)?;

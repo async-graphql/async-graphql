@@ -112,6 +112,8 @@ pub struct FieldDefinition {
 /// [Reference](https://spec.graphql.org/June2018/#InterfaceType).
 #[derive(Debug, Clone)]
 pub struct InterfaceType {
+    /// The interfaces implemented by the interface.
+    pub implements: Vec<Positioned<Name>>,
     /// The fields of the interface type.
     pub fields: Vec<Positioned<FieldDefinition>>,
 }

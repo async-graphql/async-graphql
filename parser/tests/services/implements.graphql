@@ -1,3 +1,7 @@
 type Type1 implements IOne
 
 type Type1 implements IOne & ITwo
+
+interface Type1 implements IOne
+
+interface Type1 implements IOne & ITwo
