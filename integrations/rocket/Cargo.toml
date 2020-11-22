@@ -14,7 +14,7 @@ keywords = ["futures", "async", "graphql", "rocket"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "=2.1.2" }
+async-graphql = { path = "../..", version = "=2.1.3" }
 
 rocket = { git = "https://github.com/SergioBenitez/Rocket/", rev = "0c150c2", default-features = false } # TODO: Change to Cargo crate when Rocket 0.5.0 is released
 serde = "1.0.117"
