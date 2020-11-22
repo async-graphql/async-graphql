@@ -2,7 +2,9 @@ use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::crate_name;
 use quote::quote;
-use syn::{Attribute, Error, Expr, Ident, Lit, LitStr, Meta, NestedMeta};
+use syn::{
+    Attribute, Error, Expr, Ident, Lit, LitStr, Meta, NestedMeta, Type, TypeGroup, TypePath,
+};
 use thiserror::Error;
 
 use crate::args;
@@ -370,5 +372,20 @@ pub fn remove_graphql_attrs(attrs: &mut Vec<Attribute>) {
         .find(|(_, a)| a.path.is_ident("graphql"))
     {
         attrs.remove(idx);
+    }
+}
+
+pub fn get_type_path_and_name(ty: &Type) -> GeneratorResult<(&TypePath, String)> {
+    match ty {
+        Type::Path(path) => Ok((
+            path,
+            path.path
+                .segments
+                .last()
+                .map(|s| s.ident.to_string())
+                .unwrap(),
+        )),
+        Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(&elem),
+        _ => return Err(Error::new_spanned(ty, "Invalid type").into()),
     }
 }

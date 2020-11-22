@@ -10,8 +10,8 @@ use crate::args::{self, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
-    get_param_getter_ident, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
-    GeneratorResult,
+    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
+    remove_graphql_attrs, GeneratorResult,
 };
 
 pub fn generate(
@@ -19,17 +19,7 @@ pub fn generate(
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(subscription_args.internal);
-    let (self_ty, self_name) = match item_impl.self_ty.as_ref() {
-        Type::Path(path) => (
-            path,
-            path.path
-                .segments
-                .last()
-                .map(|s| s.ident.to_string())
-                .unwrap(),
-        ),
-        _ => return Err(Error::new_spanned(&item_impl.self_ty, "Invalid type").into()),
-    };
+    let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;
     let where_clause = &generics.where_clause;
 
