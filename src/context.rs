@@ -187,7 +187,8 @@ impl<'a> QueryPathNode<'a> {
     ///
     /// This traverses all the parents of the node until it finds one that is a field name.
     pub fn field_name(&self) -> &str {
-        self.parents()
+        std::iter::once(self)
+            .chain(self.parents())
             .find_map(|node| match node.segment {
                 QueryPathSegment::Name(name) => Some(name),
                 QueryPathSegment::Index(_) => None,
