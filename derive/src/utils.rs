@@ -386,6 +386,6 @@ pub fn get_type_path_and_name(ty: &Type) -> GeneratorResult<(&TypePath, String)>
                 .unwrap(),
         )),
         Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(&elem),
-        _ => return Err(Error::new_spanned(ty, "Invalid type").into()),
+        _ => Err(Error::new_spanned(ty, "Invalid type").into()),
     }
 }
