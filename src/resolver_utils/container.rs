@@ -77,6 +77,32 @@ pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
     resolve_container_inner(ctx, root, false).await
 }
 
+fn insert_value(target: &mut BTreeMap<Name, Value>, name: Name, value: Value) {
+    if let Some(prev_value) = target.get_mut(&name) {
+        if let Value::Object(target_map) = prev_value {
+            if let Value::Object(obj) = value {
+                for (key, value) in obj.into_iter() {
+                    insert_value(target_map, key, value);
+                }
+            }
+        } else if let Value::List(target_list) = prev_value {
+            if let Value::List(list) = value {
+                for (idx, value) in list.into_iter().enumerate() {
+                    if let Some(Value::Object(target_map)) = target_list.get_mut(idx) {
+                        if let Value::Object(obj) = value {
+                            for (key, value) in obj.into_iter() {
+                                insert_value(target_map, key, value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        target.insert(name, value);
+    }
+}
+
 async fn resolve_container_inner<'a, T: ContainerType + Send + Sync>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
@@ -97,15 +123,7 @@ async fn resolve_container_inner<'a, T: ContainerType + Send + Sync>(
 
     let mut map = BTreeMap::new();
     for (name, value) in res {
-        if let Value::Object(b) = value {
-            if let Some(Value::Object(a)) = map.get_mut(&name) {
-                a.extend(b);
-            } else {
-                map.insert(name, Value::Object(b));
-            }
-        } else {
-            map.insert(name, value);
-        }
+        insert_value(&mut map, name, value);
     }
     Ok(Value::Object(map))
 }
