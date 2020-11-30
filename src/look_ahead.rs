@@ -112,7 +112,7 @@ mod tests {
 
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -121,9 +121,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -132,9 +132,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -145,9 +145,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 3) {
@@ -156,9 +156,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -169,9 +169,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -184,9 +184,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 1) {
@@ -199,9 +199,9 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
 
-        assert!(!schema
+        assert!(schema
             .execute(
                 r#"{
             obj(n: 2) {
@@ -216,6 +216,6 @@ mod tests {
         }"#,
             )
             .await
-            .is_err());
+            .is_ok());
     }
 }
