@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-tide"
-version = "2.1.5"
+version = "2.1.6"
 authors = ["vkill <vkill.net@gmail.com>"]
 edition = "2018"
 description = "async-graphql for tide"
@@ -12,9 +12,9 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "=2.1.5" }
+async-graphql = { path = "../..", version = "=2.1.6" }
 
-tide = { version = "0.14.0", default-features = false, features = ["h1-server"] }
+tide = { version = "0.15.0", default-features = false, features = ["h1-server"] }
 
 [dev-dependencies]
 # Surf lacks multipart support
