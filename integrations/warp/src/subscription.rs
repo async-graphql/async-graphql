@@ -86,6 +86,17 @@ where
                 .await;
             }
         });
-        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+
+        #[cfg(not(feature = "graphql_ws"))]
+        {
+            // confusingly, the old subprotocol name for the susbscription-transport-ws spec was
+            // `graphql-ws`
+            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
+        }
+        #[cfg(feature = "graphql_ws")]
+        {
+            // ...and the new one `graphql-transport-ws`
+            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-transport-ws")
+        }
     })
 }

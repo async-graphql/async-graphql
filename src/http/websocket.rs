@@ -169,7 +169,9 @@ where
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ClientMessage<'a> {
     ConnectionInit { payload: Option<serde_json::Value> },
+    #[cfg_attr(feature = "graphql_ws", serde(rename = "subscribe"))]
     Start { id: String, payload: Request },
+    #[cfg_attr(feature = "graphql_ws", serde(rename = "complete"))]
     Stop { id: &'a str },
     ConnectionTerminate,
 }
@@ -179,6 +181,7 @@ enum ClientMessage<'a> {
 enum ServerMessage<'a> {
     ConnectionError { payload: Error },
     ConnectionAck,
+    #[cfg_attr(feature = "graphql_ws", serde(rename = "next"))]
     Data { id: &'a str, payload: Box<Response> },
     // Not used by this library, as it's not necessary to send
     // Error {
