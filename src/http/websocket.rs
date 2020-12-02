@@ -168,27 +168,41 @@ where
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ClientMessage<'a> {
-    ConnectionInit { payload: Option<serde_json::Value> },
+    ConnectionInit {
+        payload: Option<serde_json::Value>,
+    },
     #[cfg_attr(feature = "graphql_ws", serde(rename = "subscribe"))]
-    Start { id: String, payload: Request },
+    Start {
+        id: String,
+        payload: Request,
+    },
     #[cfg_attr(feature = "graphql_ws", serde(rename = "complete"))]
-    Stop { id: &'a str },
+    Stop {
+        id: &'a str,
+    },
     ConnectionTerminate,
 }
 
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ServerMessage<'a> {
-    ConnectionError { payload: Error },
+    ConnectionError {
+        payload: Error,
+    },
     ConnectionAck,
     #[cfg_attr(feature = "graphql_ws", serde(rename = "next"))]
-    Data { id: &'a str, payload: Box<Response> },
+    Data {
+        id: &'a str,
+        payload: Box<Response>,
+    },
     // Not used by this library, as it's not necessary to send
     // Error {
     //     id: &'a str,
     //     payload: serde_json::Value,
     // },
-    Complete { id: &'a str },
+    Complete {
+        id: &'a str,
+    },
     // Not used by this library
     // #[serde(rename = "ka")]
     // KeepAlive
