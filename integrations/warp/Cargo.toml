@@ -11,10 +11,6 @@ repository = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
-[features]
-# To enable the use of [graphql-ws spec](https://github.com/enisdenjo/graphql-ws)
-graphql_ws = []
-
 [dependencies]
 async-graphql = { path = "../..", version = "=2.1.4" }
 

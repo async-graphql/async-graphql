@@ -22,6 +22,7 @@ pin_project! {
         streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
         #[pin]
         stream: S,
+        protocol: Protocols,
     }
 }
 
@@ -30,13 +31,18 @@ impl<S, Query, Mutation, Subscription>
 {
     /// Create a new websocket.
     #[must_use]
-    pub fn new(schema: Schema<Query, Mutation, Subscription>, stream: S) -> Self {
+    pub fn new(
+        schema: Schema<Query, Mutation, Subscription>,
+        stream: S,
+        protocol: Protocols,
+    ) -> Self {
         Self {
             data_initializer: None,
             data: Arc::default(),
             schema,
             streams: HashMap::new(),
             stream,
+            protocol,
         }
     }
 }
@@ -52,6 +58,7 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
         schema: Schema<Query, Mutation, Subscription>,
         stream: S,
         data_initializer: Option<F>,
+        protocol: Protocols,
     ) -> Self {
         Self {
             data_initializer,
@@ -59,6 +66,7 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
             schema,
             streams: HashMap::new(),
             stream,
+            protocol,
         }
     }
 }
@@ -135,6 +143,9 @@ where
                         ));
                     }
                 }
+                // Note: in the revised `graphql-ws` spec, there is no equivalent to the
+                // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
+                // handled by disconnecting the websocket
                 ClientMessage::ConnectionTerminate => return Poll::Ready(None),
             }
         }
@@ -143,11 +154,7 @@ where
             match Pin::new(stream).poll_next(cx) {
                 Poll::Ready(Some(payload)) => {
                     return Poll::Ready(Some(
-                        serde_json::to_string(&ServerMessage::Data {
-                            id,
-                            payload: Box::new(payload),
-                        })
-                        .unwrap(),
+                        serde_json::to_string(&this.protocol.next_message(id, payload)).unwrap(),
                     ));
                 }
                 Poll::Ready(None) => {
@@ -165,18 +172,68 @@ where
     }
 }
 
+/// Specification of which GraphQL Over WebSockets protocol is being utilized
+#[derive(Copy, Clone)]
+pub enum Protocols {
+    /// [subscriptions-transport-ws protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
+    SubscriptionsTransportWS,
+    /// [graphql-ws protocol](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md).
+    GraphQLWS,
+}
+
+impl Protocols {
+    /// Returns the `Sec-WebSocket-Protocol` header value for the protocol
+    pub fn sec_websocket_protocol(&self) -> &str {
+        match self {
+            Protocols::SubscriptionsTransportWS => "graphql-ws",
+            Protocols::GraphQLWS => "graphql-transport-ws",
+        }
+    }
+
+    #[inline]
+    fn next_message<'s>(&self, id: &'s str, payload: Response) -> ServerMessage<'s> {
+        match self {
+            Protocols::SubscriptionsTransportWS => ServerMessage::Data {
+                id,
+                payload: Box::new(payload),
+            },
+            Protocols::GraphQLWS => ServerMessage::Next {
+                id,
+                payload: Box::new(payload),
+            },
+        }
+    }
+}
+
+impl std::str::FromStr for Protocols {
+    type Err = Error;
+
+    fn from_str(protocol: &str) -> Result<Self, Self::Err> {
+        if protocol.eq_ignore_ascii_case("graphql-ws") {
+            Ok(Protocols::SubscriptionsTransportWS)
+        } else if protocol.eq_ignore_ascii_case("graphql-transport-ws") {
+            Ok(Protocols::GraphQLWS)
+        } else {
+            Err(Error::new(format!(
+                "Unsupported Sec-WebSocket-Protocol: {}",
+                protocol
+            )))
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ClientMessage<'a> {
     ConnectionInit {
         payload: Option<serde_json::Value>,
     },
-    #[cfg_attr(feature = "graphql_ws", serde(rename = "subscribe"))]
+    #[serde(alias = "subscribe")]
     Start {
         id: String,
         payload: Request,
     },
-    #[cfg_attr(feature = "graphql_ws", serde(rename = "complete"))]
+    #[serde(alias = "complete")]
     Stop {
         id: &'a str,
     },
@@ -190,8 +247,13 @@ enum ServerMessage<'a> {
         payload: Error,
     },
     ConnectionAck,
-    #[cfg_attr(feature = "graphql_ws", serde(rename = "next"))]
+    /// subscriptions-transport-ws protocol next payload
     Data {
+        id: &'a str,
+        payload: Box<Response>,
+    },
+    /// graphql-ws protocol next payload
+    Next {
         id: &'a str,
         payload: Box<Response>,
     },

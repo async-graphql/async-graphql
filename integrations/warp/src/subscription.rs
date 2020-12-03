@@ -64,39 +64,48 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
     F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
 {
-    warp::ws().map(move |ws: ws::Ws| {
-        let schema = schema.clone();
-        let initializer = initializer.clone();
+    use async_graphql::http::WebSocketProtocols;
 
-        let reply = ws.on_upgrade(move |websocket| {
-            let (ws_sender, ws_receiver) = websocket.split();
+    warp::ws()
+        .and(warp::header::optional::<WebSocketProtocols>(
+            "sec-websocket-protocol",
+        ))
+        .map(move |ws: ws::Ws, protocol| {
+            let schema = schema.clone();
+            let initializer = initializer.clone();
 
-            async move {
-                let _ = async_graphql::http::WebSocket::with_data(
-                    schema,
-                    ws_receiver
-                        .take_while(|msg| future::ready(msg.is_ok()))
-                        .map(Result::unwrap)
-                        .map(ws::Message::into_bytes),
-                    initializer,
-                )
-                .map(ws::Message::text)
-                .map(Ok)
-                .forward(ws_sender)
-                .await;
-            }
-        });
+            let protocol = match protocol {
+                Some(protocol) => protocol,
+                None => {
+                    // default to the prior standard
+                    WebSocketProtocols::SubscriptionsTransportWS
+                }
+            };
 
-        #[cfg(not(feature = "graphql_ws"))]
-        {
-            // confusingly, the old subprotocol name for the susbscription-transport-ws spec was
-            // `graphql-ws`
-            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-        }
-        #[cfg(feature = "graphql_ws")]
-        {
-            // ...and the new one `graphql-transport-ws`
-            warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-transport-ws")
-        }
-    })
+            let reply = ws.on_upgrade(move |websocket| {
+                let (ws_sender, ws_receiver) = websocket.split();
+
+                async move {
+                    let _ = async_graphql::http::WebSocket::with_data(
+                        schema,
+                        ws_receiver
+                            .take_while(|msg| future::ready(msg.is_ok()))
+                            .map(Result::unwrap)
+                            .map(ws::Message::into_bytes),
+                        initializer,
+                        protocol,
+                    )
+                    .map(ws::Message::text)
+                    .map(Ok)
+                    .forward(ws_sender)
+                    .await;
+                }
+            });
+
+            warp::reply::with_header(
+                reply,
+                "Sec-WebSocket-Protocol",
+                protocol.sec_websocket_protocol(),
+            )
+        })
 }

@@ -34,8 +34,6 @@ unblock = ["blocking"]
 string_number = ["num-traits"]
 # Used for doc(cfg())
 nightly = []
-# To enable the use of [graphql-ws spec](https://github.com/enisdenjo/graphql-ws)
-graphql_ws = []
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "=2.1.4" }
