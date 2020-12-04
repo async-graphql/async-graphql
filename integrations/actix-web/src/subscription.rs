@@ -1,19 +1,26 @@
+use std::str::FromStr;
+use std::time::{Duration, Instant};
+
 use actix::{
     Actor, ActorContext, ActorFuture, ActorStream, AsyncContext, ContextFutureSpawner,
     StreamHandler, WrapFuture, WrapStream,
 };
-use actix_http::ws;
+use actix_http::error::PayloadError;
+use actix_http::{ws, Error};
+use actix_web::web::Bytes;
+use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::http::WebSocket;
+use async_graphql::http::{WebSocket, WebSocketProtocols};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use std::time::{Duration, Instant};
+use futures_util::stream::Stream;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Actor for subscription via websocket
 pub struct WSSubscription<Query, Mutation, Subscription> {
-    schema: Option<Schema<Query, Mutation, Subscription>>,
+    schema: Schema<Query, Mutation, Subscription>,
+    protocol: WebSocketProtocols,
     last_heartbeat: Instant,
     messages: Option<async_channel::Sender<Vec<u8>>>,
     initializer: Option<Box<dyn FnOnce(serde_json::Value) -> Result<Data> + Send + Sync>>,
@@ -26,15 +33,41 @@ where
     Mutation: ObjectType + Send + Sync + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    /// Create an actor for subscription connection via websocket.
-    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
-        Self {
-            schema: Some(schema),
-            last_heartbeat: Instant::now(),
-            messages: None,
-            initializer: None,
-            continuation: Vec::new(),
-        }
+    /// Start an actor for subscription connection via websocket.
+    pub fn start<T>(
+        schema: Schema<Query, Mutation, Subscription>,
+        request: &HttpRequest,
+        stream: T,
+    ) -> Result<HttpResponse, Error>
+    where
+        T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
+    {
+        let protocol = match request
+            .headers()
+            .get("sec-websocket-protocol")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| WebSocketProtocols::from_str(value).ok())
+        {
+            Some(protocol) => protocol,
+            None => {
+                // default to the prior standard
+                WebSocketProtocols::SubscriptionsTransportWS
+            }
+        };
+
+        actix_web_actors::ws::start_with_protocols(
+            Self {
+                schema,
+                protocol,
+                last_heartbeat: Instant::now(),
+                messages: None,
+                initializer: None,
+                continuation: Vec::new(),
+            },
+            &["graphql-transport-ws", "graphql-ws"],
+            request,
+            stream,
+        )
     }
 
     /// Set a context data initialization function.
@@ -71,13 +104,18 @@ where
 
         let (tx, rx) = async_channel::unbounded();
 
-        WebSocket::with_data(self.schema.take().unwrap(), rx, self.initializer.take())
-            .into_actor(self)
-            .map(|response, _act, ctx| {
-                ctx.text(response);
-            })
-            .finish()
-            .spawn(ctx);
+        WebSocket::with_data(
+            self.schema.clone(),
+            rx,
+            self.initializer.take(),
+            self.protocol,
+        )
+        .into_actor(self)
+        .map(|response, _act, ctx| {
+            ctx.text(response);
+        })
+        .finish()
+        .spawn(ctx);
 
         self.messages = Some(tx);
     }
