@@ -42,6 +42,20 @@ where
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
     {
+        Self::start_with_initializer(schema, request, stream, |_| Ok(Default::default()))
+    }
+
+    /// Start an actor for subscription connection via websocket with an initialization function.
+    pub fn start_with_initializer<T, F>(
+        schema: Schema<Query, Mutation, Subscription>,
+        request: &HttpRequest,
+        stream: T,
+        initializer: F,
+    ) -> Result<HttpResponse, Error>
+    where
+        T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
+        F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + 'static,
+    {
         let protocol = match request
             .headers()
             .get("sec-websocket-protocol")
@@ -61,24 +75,13 @@ where
                 protocol,
                 last_heartbeat: Instant::now(),
                 messages: None,
-                initializer: None,
+                initializer: Some(Box::new(initializer)),
                 continuation: Vec::new(),
             },
             &["graphql-transport-ws", "graphql-ws"],
             request,
             stream,
         )
-    }
-
-    /// Set a context data initialization function.
-    pub fn initializer<F>(self, f: F) -> Self
-    where
-        F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + 'static,
-    {
-        Self {
-            initializer: Some(Box::new(f)),
-            ..self
-        }
     }
 
     fn send_heartbeats(&self, ctx: &mut WebsocketContext<Self>) {
