@@ -65,22 +65,21 @@ where
     F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
 {
     use async_graphql::http::WebSocketProtocols;
+    use std::str::FromStr;
 
     warp::ws()
-        .and(warp::header::optional::<WebSocketProtocols>(
-            "sec-websocket-protocol",
-        ))
-        .map(move |ws: ws::Ws, protocol| {
+        .and(warp::header::optional::<String>("sec-websocket-protocol"))
+        .map(move |ws: ws::Ws, protocols: Option<String>| {
             let schema = schema.clone();
             let initializer = initializer.clone();
 
-            let protocol = match protocol {
-                Some(protocol) => protocol,
-                None => {
-                    // default to the prior standard
-                    WebSocketProtocols::SubscriptionsTransportWS
-                }
-            };
+            let protocol = protocols
+                .and_then(|protocols| {
+                    protocols
+                        .split(',')
+                        .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
+                })
+                .unwrap_or(WebSocketProtocols::SubscriptionsTransportWS);
 
             let reply = ws.on_upgrade(move |websocket| {
                 let (ws_sender, ws_receiver) = websocket.split();
