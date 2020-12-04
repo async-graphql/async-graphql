@@ -3,7 +3,6 @@ use std::io::{self, Seek, SeekFrom, Write};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use bytes::Bytes;
 use futures_util::io::AsyncRead;
 use futures_util::stream::Stream;
 use multer::{Constraints, Multipart, SizeLimit};
@@ -155,7 +154,7 @@ impl<T> ReaderStream<T> {
 }
 
 impl<T: AsyncRead> Stream for ReaderStream<T> {
-    type Item = io::Result<Bytes>;
+    type Item = io::Result<Vec<u8>>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let this = self.project();
@@ -163,7 +162,7 @@ impl<T: AsyncRead> Stream for ReaderStream<T> {
         Poll::Ready(
             match futures_util::ready!(this.reader.poll_read(cx, this.buf)?) {
                 0 => None,
-                size => Some(Ok(Bytes::copy_from_slice(&this.buf[..size]))),
+                size => Some(Ok(this.buf[..size].to_vec())),
             },
         )
     }

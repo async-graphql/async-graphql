@@ -8,6 +8,7 @@ use std::ops::Deref;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
+use async_graphql_value::Value as InputValue;
 use fnv::FnvHashMap;
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{SerializeSeq, Serializer};
@@ -15,14 +16,13 @@ use serde::Serialize;
 
 use crate::extensions::Extensions;
 use crate::parser::types::{
-    Directive, Field, FragmentDefinition, OperationDefinition, SelectionSet,
+    Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
 };
 use crate::schema::SchemaEnv;
 use crate::{
-    Error, InputValueType, Lookahead, Pos, Positioned, Result, ServerError, ServerResult,
+    Error, InputValueType, Lookahead, Name, Pos, Positioned, Result, ServerError, ServerResult,
     UploadValue, Value,
 };
-use async_graphql_value::{Name, Value as InputValue};
 
 /// Variables of a query.
 #[derive(Debug, Clone, Default, Serialize)]
@@ -579,5 +579,106 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// ```
     pub fn look_ahead(&self) -> Lookahead {
         Lookahead::new(&self.query_env.fragments, &self.item.node)
+    }
+
+    /// Get the current field.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use async_graphql::*;
+    ///
+    /// #[derive(SimpleObject)]
+    /// struct MyObj {
+    ///     a: i32,
+    ///     b: i32,
+    ///     c: i32,
+    /// }
+    ///
+    /// pub struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn obj(&self, ctx: &Context<'_>) -> MyObj {
+    ///         let fields = ctx.field().selection_set().map(|field| field.name()).collect::<Vec<_>>();
+    ///         assert_eq!(fields, vec!["a", "b", "c"]);
+    ///         MyObj { a: 1, b: 2, c: 3 }
+    ///     }
+    /// }
+    ///
+    /// async_std::task::block_on(async move {
+    ///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    ///     assert!(schema.execute("{ obj { a b c }}").await.is_ok());
+    ///     assert!(schema.execute("{ obj { a ... { b c } }}").await.is_ok());
+    ///     assert!(schema.execute("{ obj { a ... BC }} fragment BC on MyObj { b c }").await.is_ok());
+    /// });
+    ///
+    /// ```
+    pub fn field(&self) -> SelectionField<'a> {
+        SelectionField {
+            fragments: &self.query_env.fragments,
+            field: &self.item.node,
+        }
+    }
+}
+
+/// Selection field.
+pub struct SelectionField<'a> {
+    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
+    field: &'a Field,
+}
+
+impl<'a> SelectionField<'a> {
+    /// Get the name of this field.
+    pub fn name(&self) -> &'a str {
+        self.field.name.node.as_str()
+    }
+
+    /// Get all subfields of the current selection set.
+    pub fn selection_set(&self) -> impl Iterator<Item = SelectionField<'a>> {
+        SelectionFieldsIter {
+            fragments: self.fragments,
+            iter: vec![self.field.selection_set.node.items.iter()],
+        }
+    }
+}
+
+struct SelectionFieldsIter<'a> {
+    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
+    iter: Vec<std::slice::Iter<'a, Positioned<Selection>>>,
+}
+
+impl<'a> Iterator for SelectionFieldsIter<'a> {
+    type Item = SelectionField<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let it = self.iter.last_mut()?;
+            match it.next() {
+                Some(selection) => match &selection.node {
+                    Selection::Field(field) => {
+                        return Some(SelectionField {
+                            fragments: self.fragments,
+                            field: &field.node,
+                        });
+                    }
+                    Selection::FragmentSpread(fragment_spread) => {
+                        if let Some(fragment) =
+                            self.fragments.get(&fragment_spread.node.fragment_name.node)
+                        {
+                            self.iter
+                                .push(fragment.node.selection_set.node.items.iter());
+                        }
+                    }
+                    Selection::InlineFragment(inline_fragment) => {
+                        self.iter
+                            .push(inline_fragment.node.selection_set.node.items.iter());
+                    }
+                },
+                None => {
+                    self.iter.pop();
+                }
+            }
+        }
     }
 }
