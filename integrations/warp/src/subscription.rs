@@ -64,28 +64,47 @@ where
     Subscription: SubscriptionType + Send + Sync + 'static,
     F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
 {
-    warp::ws().map(move |ws: ws::Ws| {
-        let schema = schema.clone();
-        let initializer = initializer.clone();
+    use async_graphql::http::WebSocketProtocols;
+    use std::str::FromStr;
 
-        let reply = ws.on_upgrade(move |websocket| {
-            let (ws_sender, ws_receiver) = websocket.split();
+    warp::ws()
+        .and(warp::header::optional::<String>("sec-websocket-protocol"))
+        .map(move |ws: ws::Ws, protocols: Option<String>| {
+            let schema = schema.clone();
+            let initializer = initializer.clone();
 
-            async move {
-                let _ = async_graphql::http::WebSocket::with_data(
-                    schema,
-                    ws_receiver
-                        .take_while(|msg| future::ready(msg.is_ok()))
-                        .map(Result::unwrap)
-                        .map(ws::Message::into_bytes),
-                    initializer,
-                )
-                .map(ws::Message::text)
-                .map(Ok)
-                .forward(ws_sender)
-                .await;
-            }
-        });
-        warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws")
-    })
+            let protocol = protocols
+                .and_then(|protocols| {
+                    protocols
+                        .split(',')
+                        .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
+                })
+                .unwrap_or(WebSocketProtocols::SubscriptionsTransportWS);
+
+            let reply = ws.on_upgrade(move |websocket| {
+                let (ws_sender, ws_receiver) = websocket.split();
+
+                async move {
+                    let _ = async_graphql::http::WebSocket::with_data(
+                        schema,
+                        ws_receiver
+                            .take_while(|msg| future::ready(msg.is_ok()))
+                            .map(Result::unwrap)
+                            .map(ws::Message::into_bytes),
+                        initializer,
+                        protocol,
+                    )
+                    .map(ws::Message::text)
+                    .map(Ok)
+                    .forward(ws_sender)
+                    .await;
+                }
+            });
+
+            warp::reply::with_header(
+                reply,
+                "Sec-WebSocket-Protocol",
+                protocol.sec_websocket_protocol(),
+            )
+        })
 }
