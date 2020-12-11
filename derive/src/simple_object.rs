@@ -124,7 +124,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #guard
                 let res = self.#ident(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });
     }
@@ -188,7 +188,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputValueType for #ident #generics #where_clause {
+        impl #generics #crate_name::OutputType for #ident #generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }

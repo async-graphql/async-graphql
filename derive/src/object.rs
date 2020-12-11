@@ -95,7 +95,7 @@ pub fn generate(
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "Only types that implement `InputValueType` can be used as input arguments.",
+                                            "Only types that implement `InputType` can be used as input arguments.",
                                         )
                                         .into());
                                     } else {
@@ -152,7 +152,7 @@ pub fn generate(
                         });
                         key_getter.push(quote! {
                             params.get(#name).and_then(|value| {
-                                let value: ::std::option::Option<#ty> = #crate_name::InputValueType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value))).ok();
+                                let value: ::std::option::Option<#ty> = #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value))).ok();
                                 value
                             })
                         });
@@ -161,7 +161,7 @@ pub fn generate(
                     } else {
                         // requires
                         requires_getter.push(quote! {
-                            let #ident: #ty = #crate_name::InputValueType::parse(params.get(#name).cloned()).
+                            let #ident: #ty = #crate_name::InputType::parse(params.get(#name).cloned()).
                                 map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                         });
                         use_keys.push(ident);
@@ -197,7 +197,7 @@ pub fn generate(
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 #(#requires_getter)*
                                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                                return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                                return #crate_name::OutputType::resolve(&#do_find, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                             }
                         }
                     },
@@ -285,7 +285,7 @@ pub fn generate(
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "Only types that implement `InputValueType` can be used as input arguments.",
+                                            "Only types that implement `InputType` can be used as input arguments.",
                                         )
                                         .into());
                                     }
@@ -338,7 +338,7 @@ pub fn generate(
                         .map(|value| {
                             quote! {
                                 ::std::option::Option::Some(::std::string::ToString::to_string(
-                                    &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                                    &<#ty as #crate_name::InputType>::to_value(&#value)
                                 ))
                             }
                         })
@@ -442,7 +442,7 @@ pub fn generate(
                         #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         let res = #resolve_obj;
-                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                        return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                     }
                 });
             }
@@ -530,7 +530,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
+        impl #generics #crate_name::OutputType for #self_ty #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }

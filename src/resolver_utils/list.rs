@@ -1,11 +1,9 @@
 use crate::extensions::{ErrorLogger, ExtensionContext, ResolveInfo};
 use crate::parser::types::Field;
-use crate::{
-    ContextSelectionSet, OutputValueType, PathSegment, Positioned, ServerResult, Type, Value,
-};
+use crate::{ContextSelectionSet, OutputType, PathSegment, Positioned, ServerResult, Type, Value};
 
 /// Resolve an list by executing each of the items concurrently.
-pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
+pub async fn resolve_list<'a, T: OutputType + Send + Sync + 'a>(
     ctx: &ContextSelectionSet<'a>,
     field: &Positioned<Field>,
     iter: impl IntoIterator<Item = T>,
@@ -22,7 +20,7 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
             };
 
             if ctx_idx.query_env.extensions.is_empty() {
-                OutputValueType::resolve(&item, &ctx_idx, field)
+                OutputType::resolve(&item, &ctx_idx, field)
                     .await
                     .map_err(|e| e.path(PathSegment::Index(idx)))
                     .log_error(&ctx_extension, &ctx_idx.query_env.extensions)
@@ -39,7 +37,7 @@ pub async fn resolve_list<'a, T: OutputValueType + Send + Sync + 'a>(
                     .extensions
                     .resolve_start(&ctx_extension, &resolve_info);
 
-                let res = OutputValueType::resolve(&item, &ctx_idx, field)
+                let res = OutputType::resolve(&item, &ctx_idx, field)
                     .await
                     .map_err(|e| e.path(PathSegment::Index(idx)))
                     .log_error(&ctx_extension, &ctx_idx.query_env.extensions)?;

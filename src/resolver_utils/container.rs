@@ -6,16 +6,15 @@ use crate::extensions::{ErrorLogger, ExtensionContext, ResolveInfo};
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{
-    Context, ContextSelectionSet, Name, OutputValueType, PathSegment, ServerError, ServerResult,
-    Value,
+    Context, ContextSelectionSet, Name, OutputType, PathSegment, ServerError, ServerResult, Value,
 };
 
 /// Represents a GraphQL container object.
 ///
 /// This helper trait allows the type to call `resolve_container` on itself in its
-/// `OutputValueType::resolve` implementation.
+/// `OutputType::resolve` implementation.
 #[async_trait::async_trait]
-pub trait ContainerType: OutputValueType {
+pub trait ContainerType: OutputType {
     /// This function returns true of type `EmptyMutation` only.
     #[doc(hidden)]
     fn is_empty() -> bool {

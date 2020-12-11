@@ -115,7 +115,7 @@ pub fn generate(
                                 {
                                     return Err(Error::new_spanned(
                                         arg,
-                                        "Only types that implement `InputValueType` can be used as input arguments.",
+                                        "Only types that implement `InputType` can be used as input arguments.",
                                     )
                                     .into());
                                 } else {
@@ -177,7 +177,7 @@ pub fn generate(
                     .map(|value| {
                         quote! {
                             ::std::option::Option::Some(::std::string::ToString::to_string(
-                                &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                                &<#ty as #crate_name::InputType>::to_value(&#value)
                             ))
                         }
                     })
@@ -319,7 +319,7 @@ pub fn generate(
 
                             query_env.extensions.resolve_start(&ctx_extension, &ri);
 
-                            let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await;
+                            let res = #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await;
 
                             query_env.extensions.resolve_end(&ctx_extension, &ri);
                             query_env.extensions.execution_end(&ctx_extension);

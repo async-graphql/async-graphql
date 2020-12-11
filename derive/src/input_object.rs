@@ -74,7 +74,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
 
             get_fields.push(quote! {
-                let #ident: #ty = #crate_name::InputValueType::parse(
+                let #ident: #ty = #crate_name::InputType::parse(
                     ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
             });
@@ -82,7 +82,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             fields.push(ident);
 
             put_fields.push(quote! {
-                if let #crate_name::Value::Object(values) = #crate_name::InputValueType::to_value(&self.#ident) {
+                if let #crate_name::Value::Object(values) = #crate_name::InputType::to_value(&self.#ident) {
                     map.extend(values);
                 }
             });
@@ -105,7 +105,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .map(|value| {
                 quote! {
                     ::std::option::Option::Some(::std::string::ToString::to_string(
-                        &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                        &<#ty as #crate_name::InputType>::to_value(&#value)
                     ))
                 }
             })
@@ -117,7 +117,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = {
                     match obj.get(#name) {
                         ::std::option::Option::Some(value) => {
-                            #crate_name::InputValueType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
+                            #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
                                 .map_err(#crate_name::InputValueError::propagate)?
                         },
                         ::std::option::Option::None => #default,
@@ -127,7 +127,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         } else {
             get_fields.push(quote! {
                 #[allow(non_snake_case)]
-                let #ident: #ty = #crate_name::InputValueType::parse(obj.get(#name).cloned())
+                let #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
             });
         }
@@ -135,7 +135,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         put_fields.push(quote! {
             map.insert(
                 #crate_name::Name::new(#name),
-                #crate_name::InputValueType::to_value(&self.#ident)
+                #crate_name::InputType::to_value(&self.#ident)
             );
         });
 
@@ -180,7 +180,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::InputValueType for #ident {
+        impl #crate_name::InputType for #ident {
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                     #(#get_fields)*

@@ -20,7 +20,7 @@ use crate::parser::types::{
 };
 use crate::schema::SchemaEnv;
 use crate::{
-    Error, InputValueType, Lookahead, Name, Pos, Positioned, Result, ServerError, ServerResult,
+    Error, InputType, Lookahead, Name, Pos, Positioned, Result, ServerError, ServerResult,
     UploadValue, Value,
 };
 
@@ -493,7 +493,7 @@ impl<'a, T> ContextBase<'a, T> {
             let condition_input = self.resolve_input_value(condition_input)?;
 
             if include
-                != <bool as InputValueType>::parse(Some(condition_input))
+                != <bool as InputType>::parse(Some(condition_input))
                     .map_err(|e| e.into_server_error().at(pos))?
             {
                 return Ok(true);
@@ -523,7 +523,7 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
 
 impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     #[doc(hidden)]
-    pub fn param_value<T: InputValueType>(
+    pub fn param_value<T: InputType>(
         &self,
         name: &str,
         default: Option<fn() -> T>,
@@ -538,7 +538,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
             None => (Pos::default(), None),
         };
-        InputValueType::parse(value).map_err(|e| e.into_server_error().at(pos))
+        InputType::parse(value).map_err(|e| e.into_server_error().at(pos))
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.

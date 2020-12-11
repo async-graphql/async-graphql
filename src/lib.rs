@@ -69,6 +69,7 @@
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
+//! - `string_number`: Enable the [StringNumber](extensions/types.StringNumber.html).
 //!
 //! ## Integrations
 //!
@@ -199,8 +200,7 @@ pub use async_graphql_value::{
     SerializerError,
 };
 pub use base::{
-    Description, InputObjectType, InputValueType, InterfaceType, ObjectType, OutputValueType, Type,
-    UnionType,
+    Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType, Type, UnionType,
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,

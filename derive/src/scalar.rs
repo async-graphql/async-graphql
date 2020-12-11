@@ -46,7 +46,7 @@ pub fn generate(
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generic #crate_name::InputValueType for #self_ty #where_clause {
+        impl #generic #crate_name::InputType for #self_ty #where_clause {
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value.unwrap_or_default())
             }
@@ -58,7 +58,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generic #crate_name::OutputValueType for #self_ty #where_clause {
+        impl #generic #crate_name::OutputType for #self_ty #where_clause {
             async fn resolve(
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,

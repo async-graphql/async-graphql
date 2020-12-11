@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
-    from_value, to_value, ContextSelectionSet, InputValueResult, OutputValueType, Positioned,
-    Scalar, ScalarType, ServerResult, Type, Value,
+    from_value, to_value, ContextSelectionSet, InputValueResult, OutputType, Positioned, Scalar,
+    ScalarType, ServerResult, Type, Value,
 };
 
 /// A scalar that can represent any JSON value.
@@ -50,7 +50,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> ScalarType for Json<T> {
     }
 }
 
-/// A `Json` type that only implements `OutputValueType`.
+/// A `Json` type that only implements `OutputType`.
 #[derive(Serialize, Clone, Debug, Eq, PartialEq, Hash, Default)]
 pub struct OutputJson<T>(pub T);
 
@@ -89,7 +89,7 @@ impl<T> Type for OutputJson<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: Serialize + Send + Sync> OutputValueType for OutputJson<T> {
+impl<T: Serialize + Send + Sync> OutputType for OutputJson<T> {
     async fn resolve(
         &self,
         _ctx: &ContextSelectionSet<'_>,

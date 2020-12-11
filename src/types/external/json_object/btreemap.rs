@@ -1,15 +1,14 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    InputValueError, InputValueResult, InputValueType, Name, OutputValueType, Scalar, ScalarType,
-    Value,
+    InputType, InputValueError, InputValueResult, Name, OutputType, Scalar, ScalarType, Value,
 };
 
 /// A scalar that can represent any JSON Object value.
 #[Scalar(internal, name = "JSONObject")]
 impl<T> ScalarType for BTreeMap<String, T>
 where
-    T: OutputValueType + InputValueType + Send + Sync,
+    T: OutputType + InputType + Send + Sync,
 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {

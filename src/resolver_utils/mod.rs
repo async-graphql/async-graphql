@@ -1,5 +1,5 @@
 //! Utilities for implementing
-//! [`OutputValueType::resolve`](trait.OutputValueType.html#tymethod.resolve).
+//! [`OutputType::resolve`](trait.OutputType.html#tymethod.resolve).
 
 mod container;
 mod r#enum;

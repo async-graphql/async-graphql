@@ -6,8 +6,8 @@ use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::resolver_utils::resolve_container;
 use crate::{
-    CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputValueType,
-    Positioned, ServerResult, SimpleObject, Type, Value,
+    CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputType, Positioned,
+    ServerResult, SimpleObject, Type, Value,
 };
 use async_graphql_value::ConstValue;
 
@@ -84,7 +84,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<A, B> OutputValueType for MergedObject<A, B>
+impl<A, B> OutputType for MergedObject<A, B>
 where
     A: ObjectType + Send + Sync,
     B: ObjectType + Send + Sync,

@@ -6,8 +6,8 @@ use crate::model::{__Schema, __Type};
 use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned,
-    ServerError, ServerResult, SimpleObject, Type, Value,
+    registry, Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
+    ServerResult, SimpleObject, Type, Value,
 };
 
 /// Federation service
@@ -89,7 +89,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
             }
 
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(
+            return OutputType::resolve(
                 &__Schema {
                     registry: &ctx.schema_env.registry,
                 },
@@ -101,7 +101,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
         } else if ctx.item.node.name.node == "__type" {
             let type_name: String = ctx.param_value("name", None)?;
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(
+            return OutputType::resolve(
                 &ctx.schema_env
                     .registry
                     .types
@@ -126,7 +126,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
             return Ok(Some(Value::List(res)));
         } else if ctx.item.node.name.node == "_service" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(
+            return OutputType::resolve(
                 &Service {
                     sdl: Some(ctx.schema_env.registry.export_sdl(true)),
                 },
@@ -142,7 +142,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> OutputValueType for QueryRoot<T> {
+impl<T: ObjectType + Send + Sync> OutputType for QueryRoot<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

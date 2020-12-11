@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{registry, InputValueError, InputValueResult, InputValueType, Type, Value};
+use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value};
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///
@@ -114,7 +114,7 @@ impl<T: Type> Type for MaybeUndefined<T> {
     }
 }
 
-impl<T: InputValueType> InputValueType for MaybeUndefined<T> {
+impl<T: InputType> InputType for MaybeUndefined<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value {
             None => Ok(MaybeUndefined::Undefined),
