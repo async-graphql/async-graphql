@@ -51,6 +51,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
                 cache_control: cc,
                 extends: false,
                 keys: None,
+                visible: None,
             }
         })
     }

@@ -1,5 +1,5 @@
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
-use crate::{registry, Object};
+use crate::{registry, Context, Object};
 
 enum TypeDetail<'a> {
     Named(&'a registry::MetaType),
@@ -95,12 +95,17 @@ impl<'a> __Type<'a> {
 
     async fn fields(
         &self,
+        ctx: &Context<'_>,
         #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<__Field<'a>>> {
         if let TypeDetail::Named(ty) = &self.detail {
             ty.fields().map(|fields| {
                 fields
                     .values()
+                    .filter(|field| match &field.visible {
+                        Some(f) => f(ctx),
+                        None => true,
+                    })
                     .filter(|field| {
                         (include_deprecated || field.deprecation.is_none())
                             && !field.name.starts_with("__")
@@ -158,13 +163,18 @@ impl<'a> __Type<'a> {
 
     async fn enum_values(
         &self,
+        ctx: &Context<'_>,
         #[graphql(default = false)] include_deprecated: bool,
     ) -> Option<Vec<__EnumValue<'a>>> {
         if let TypeDetail::Named(registry::MetaType::Enum { enum_values, .. }) = &self.detail {
             Some(
                 enum_values
                     .values()
-                    .filter(|field| include_deprecated || field.deprecation.is_none())
+                    .filter(|value| match &value.visible {
+                        Some(f) => f(ctx),
+                        None => true,
+                    })
+                    .filter(|value| include_deprecated || value.deprecation.is_none())
                     .map(|value| __EnumValue {
                         registry: self.registry,
                         value,
@@ -176,13 +186,17 @@ impl<'a> __Type<'a> {
         }
     }
 
-    async fn input_fields(&self) -> Option<Vec<__InputValue<'a>>> {
+    async fn input_fields(&self, ctx: &Context<'_>) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Named(registry::MetaType::InputObject { input_fields, .. }) =
             &self.detail
         {
             Some(
                 input_fields
                     .values()
+                    .filter(|input_value| match &input_value.visible {
+                        Some(f) => f(ctx),
+                        None => true,
+                    })
                     .map(|input_value| __InputValue {
                         registry: self.registry,
                         input_value,

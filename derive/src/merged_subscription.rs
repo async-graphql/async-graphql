@@ -5,7 +5,7 @@ use quote::quote;
 use syn::{Error, LitInt};
 
 use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -44,6 +44,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
         |obj, ty| quote!(#crate_name::MergedObject::<#ty, #obj>),
     );
 
+    let visible = visible_fn(&object_args.visible);
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
@@ -69,6 +70,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         cache_control: ::std::default::Default::default(),
                         extends: false,
                         keys: ::std::option::Option::None,
+                        visible: #visible,
                     }
                 })
             }

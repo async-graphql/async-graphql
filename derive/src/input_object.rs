@@ -6,7 +6,7 @@ use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
 use crate::utils::{
-    generate_default, generate_validator, get_crate_name, get_rustdoc, GeneratorResult,
+    generate_default, generate_validator, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
 };
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
@@ -140,6 +140,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         });
 
         fields.push(ident);
+        let visible = visible_fn(&field.visible);
         schema_fields.push(quote! {
             fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: #name,
@@ -147,6 +148,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 ty: <#ty as #crate_name::Type>::create_type_info(registry),
                 default_value: #schema_default,
                 validator: #validator,
+                visible: #visible,
             });
         })
     }
@@ -159,6 +161,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .into());
     }
 
+    let visible = visible_fn(&object_args.visible);
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::Type for #ident {
@@ -174,7 +177,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         let mut fields = #crate_name::indexmap::IndexMap::new();
                         #(#schema_fields)*
                         fields
-                    }
+                    },
+                    visible: #visible,
                 })
             }
         }

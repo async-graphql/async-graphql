@@ -7,7 +7,7 @@ use syn::visit_mut::VisitMut;
 use syn::{visit_mut, Error, Lifetime, Type};
 
 use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
@@ -148,6 +148,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         .into());
     }
 
+    let visible = visible_fn(&union_args.visible);
     let expanded = quote! {
         #(#type_into_impls)*
 
@@ -174,7 +175,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                             let mut possible_types = #crate_name::indexmap::IndexSet::new();
                             #(#possible_types)*
                             possible_types
-                        }
+                        },
+                        visible: #visible,
                     }
                 })
             }

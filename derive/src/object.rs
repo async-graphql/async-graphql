@@ -8,7 +8,7 @@ use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
     get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
-    remove_graphql_attrs, GeneratorResult,
+    remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -319,6 +319,7 @@ pub fn generate(
                         default,
                         default_with,
                         validator,
+                        visible,
                         ..
                     },
                 ) in args
@@ -352,6 +353,7 @@ pub fn generate(
                         None => quote!(::std::option::Option::None),
                     };
 
+                    let visible = visible_fn(&visible);
                     schema_args.push(quote! {
                         args.insert(#name, #crate_name::registry::MetaInputValue {
                             name: #name,
@@ -359,6 +361,7 @@ pub fn generate(
                             ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
                             validator: #validator,
+                            visible: #visible,
                         });
                     });
 
@@ -381,6 +384,7 @@ pub fn generate(
                 }
 
                 let schema_ty = ty.value_type();
+                let visible = visible_fn(&method_args.visible);
 
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
@@ -398,6 +402,7 @@ pub fn generate(
                         external: #external,
                         provides: #provides,
                         requires: #requires,
+                        visible: #visible,
                     });
                 });
 
@@ -473,6 +478,7 @@ pub fn generate(
         .into());
     }
 
+    let visible = visible_fn(&object_args.visible);
     let expanded = quote! {
         #item_impl
 
@@ -494,6 +500,7 @@ pub fn generate(
                     cache_control: #cache_control,
                     extends: #extends,
                     keys: ::std::option::Option::None,
+                    visible: #visible,
                 });
                 #(#create_entity_types)*
                 #(#add_keys)*

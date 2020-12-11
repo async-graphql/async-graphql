@@ -8,7 +8,7 @@ use syn::{visit_mut, Error, Lifetime, Type};
 
 use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
-use crate::utils::{generate_default, get_crate_name, get_rustdoc, GeneratorResult};
+use crate::utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
@@ -139,6 +139,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         external,
         provides,
         requires,
+        visible,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -179,6 +180,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             ty,
             default,
             default_with,
+            visible,
         } in args
         {
             let ident = Ident::new(name, Span::call_site());
@@ -215,6 +217,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     }
                 })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
+            let visible = visible_fn(&visible);
             schema_args.push(quote! {
                 args.insert(#name, #crate_name::registry::MetaInputValue {
                     name: #name,
@@ -222,6 +225,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     ty: <#ty as #crate_name::Type>::create_type_info(registry),
                     default_value: #schema_default,
                     validator: ::std::option::Option::None,
+                    visible: #visible,
                 });
             });
         }
@@ -257,6 +261,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             }
         });
 
+        let visible = visible_fn(&visible);
         schema_fields.push(quote! {
             fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {
                 name: ::std::string::ToString::to_string(#name),
@@ -272,6 +277,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 external: #external,
                 provides: #provides,
                 requires: #requires,
+                visible: #visible,
             });
         });
 
@@ -300,6 +306,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         }
     };
 
+    let visible = visible_fn(&interface_args.visible);
     let expanded = quote! {
         #(#type_into_impls)*
 
@@ -337,6 +344,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         },
                         extends: #extends,
                         keys: ::std::option::Option::None,
+                        visible: #visible,
                     }
                 })
             }

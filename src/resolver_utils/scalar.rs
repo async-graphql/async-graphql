@@ -121,6 +121,7 @@ macro_rules! scalar_internal {
                     name: ::std::borrow::ToOwned::to_owned($name),
                     description: $desc,
                     is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                    visible: ::std::option::Option::None,
                 })
             }
         }

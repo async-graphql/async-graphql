@@ -3,7 +3,9 @@ use quote::quote;
 use syn::ItemImpl;
 
 use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, get_type_path_and_name, GeneratorResult};
+use crate::utils::{
+    get_crate_name, get_rustdoc, get_type_path_and_name, visible_fn, GeneratorResult,
+};
 
 pub fn generate(
     scalar_args: &args::Scalar,
@@ -27,6 +29,7 @@ pub fn generate(
     let self_ty = &item_impl.self_ty;
     let generic = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
+    let visible = visible_fn(&scalar_args.visible);
     let expanded = quote! {
         #item_impl
 
@@ -41,6 +44,7 @@ pub fn generate(
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
+                    visible: #visible,
                 })
             }
         }

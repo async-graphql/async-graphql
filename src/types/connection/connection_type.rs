@@ -159,6 +159,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -176,6 +177,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -185,6 +187,7 @@ where
                 cache_control: Default::default(),
                 extends: false,
                 keys: None,
+                visible: None,
             }
         })
     }

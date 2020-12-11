@@ -84,6 +84,7 @@ impl<T> Type for OutputJson<T> {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |_| true,
+            visible: None,
         })
     }
 }

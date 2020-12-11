@@ -8,6 +8,7 @@ use syn::{
 use thiserror::Error;
 
 use crate::args;
+use crate::args::Visible;
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -387,5 +388,16 @@ pub fn get_type_path_and_name(ty: &Type) -> GeneratorResult<(&TypePath, String)>
         )),
         Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(&elem),
         _ => Err(Error::new_spanned(ty, "Invalid type").into()),
+    }
+}
+
+pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
+    match visible {
+        None | Some(Visible::None) => quote! { ::std::option::Option::None },
+        Some(Visible::HiddenAlways) => quote! { ::std::option::Option::Some(|_| false) },
+        Some(Visible::FnName(name)) => {
+            let ident = Ident::new(name, Span::call_site());
+            quote! { ::std::option::Option::Some(#ident) }
+        }
     }
 }

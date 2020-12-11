@@ -44,6 +44,7 @@ impl Type for EmptyMutation {
             cache_control: Default::default(),
             extends: false,
             keys: None,
+            visible: None,
         })
     }
 }

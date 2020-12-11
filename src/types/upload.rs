@@ -110,6 +110,7 @@ impl Type for Upload {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
+            visible: None,
         })
     }
 }

@@ -45,6 +45,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     external: false,
                     requires: None,
                     provides: None,
+                    visible: None,
                 },
             );
 
@@ -63,6 +64,7 @@ impl<T: Type> Type for QueryRoot<T> {
                                 ty: "String!".to_string(),
                                 default_value: None,
                                 validator: None,
+                                visible: None,
                             },
                         );
                         args
@@ -73,6 +75,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     external: false,
                     requires: None,
                     provides: None,
+                    visible: None,
                 },
             );
         }
@@ -106,6 +109,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
                     .registry
                     .types
                     .get(&type_name)
+                    .filter(|ty| ty.is_visible(ctx))
                     .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
                 &ctx_obj,
                 ctx.item,
