@@ -4,8 +4,8 @@ use std::collections::BTreeSet;
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
-    OutputValueType, Positioned, ServerResult, Type, Value,
+    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    Positioned, ServerResult, Type, Value,
 };
 
 impl<T: Type> Type for BTreeSet<T> {
@@ -23,31 +23,29 @@ impl<T: Type> Type for BTreeSet<T> {
     }
 }
 
-impl<T: InputValueType + Ord> InputValueType for BTreeSet<T> {
+impl<T: InputType + Ord> InputType for BTreeSet<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
             Value::List(values) => values
                 .into_iter()
-                .map(|value| InputValueType::parse(Some(value)))
+                .map(|value| InputType::parse(Some(value)))
                 .collect::<Result<_, _>>()
                 .map_err(InputValueError::propagate),
             value => Ok({
                 let mut result = Self::default();
-                result.insert(
-                    InputValueType::parse(Some(value)).map_err(InputValueError::propagate)?,
-                );
+                result.insert(InputType::parse(Some(value)).map_err(InputValueError::propagate)?);
                 result
             }),
         }
     }
 
     fn to_value(&self) -> Value {
-        Value::List(self.iter().map(InputValueType::to_value).collect())
+        Value::List(self.iter().map(InputType::to_value).collect())
     }
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync + Ord> OutputValueType for BTreeSet<T> {
+impl<T: OutputType + Send + Sync + Ord> OutputType for BTreeSet<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

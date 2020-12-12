@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::parser::types::Field;
 use crate::resolver_utils::ContainerType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerError,
+    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
     ServerResult, Type, Value,
 };
 
@@ -44,6 +44,7 @@ impl Type for EmptyMutation {
             cache_control: Default::default(),
             extends: false,
             keys: None,
+            visible: None,
         })
     }
 }
@@ -60,7 +61,7 @@ impl ContainerType for EmptyMutation {
 }
 
 #[async_trait::async_trait]
-impl OutputValueType for EmptyMutation {
+impl OutputType for EmptyMutation {
     async fn resolve(
         &self,
         _ctx: &ContextSelectionSet<'_>,

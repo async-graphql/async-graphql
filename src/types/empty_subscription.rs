@@ -24,6 +24,7 @@ impl Type for EmptySubscription {
             cache_control: Default::default(),
             extends: false,
             keys: None,
+            visible: None,
         })
     }
 }

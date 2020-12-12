@@ -9,7 +9,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, Result,
+    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, Result,
     ServerResult, Type, Value,
 };
 
@@ -122,7 +122,7 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
 impl<C, T, EC, EE> Type for Connection<C, T, EC, EE>
 where
     C: CursorType,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {
@@ -159,6 +159,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -176,6 +177,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -185,6 +187,7 @@ where
                 cache_control: Default::default(),
                 extends: false,
                 keys: None,
+                visible: None,
             }
         })
     }
@@ -194,7 +197,7 @@ where
 impl<C, T, EC, EE> ContainerType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {
@@ -207,12 +210,12 @@ where
                 end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
             };
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&page_info, &ctx_obj, ctx.item)
+            return OutputType::resolve(&page_info, &ctx_obj, ctx.item)
                 .await
                 .map(Some);
         } else if ctx.item.node.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&self.edges, &ctx_obj, ctx.item)
+            return OutputType::resolve(&self.edges, &ctx_obj, ctx.item)
                 .await
                 .map(Some);
         }
@@ -222,10 +225,10 @@ where
 }
 
 #[async_trait::async_trait]
-impl<C, T, EC, EE> OutputValueType for Connection<C, T, EC, EE>
+impl<C, T, EC, EE> OutputType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {
@@ -241,7 +244,7 @@ where
 impl<C, T, EC, EE> ObjectType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     EC: ObjectType + Sync + Send,
     EE: ObjectType + Sync + Send,
 {

@@ -7,8 +7,8 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::CursorType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputValueType, Positioned, ServerResult,
-    Type, Value,
+    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerResult, Type,
+    Value,
 };
 
 /// The edge type output by the data source
@@ -43,7 +43,7 @@ impl<C: CursorType, T> Edge<C, T, EmptyFields> {
 impl<C, T, E> Type for Edge<C, T, E>
 where
     C: CursorType,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     E: ObjectType + Sync + Send,
 {
     fn type_name() -> Cow<'static, str> {
@@ -78,6 +78,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -93,6 +94,7 @@ where
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
 
@@ -102,6 +104,7 @@ where
                 cache_control: Default::default(),
                 extends: false,
                 keys: None,
+                visible: None,
             }
         })
     }
@@ -111,13 +114,13 @@ where
 impl<C, T, E> ContainerType for Edge<C, T, E>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     E: ObjectType + Sync + Send,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputValueType::resolve(&self.node, &ctx_obj, ctx.item)
+            return OutputType::resolve(&self.node, &ctx_obj, ctx.item)
                 .await
                 .map(Some);
         } else if ctx.item.node.name.node == "cursor" {
@@ -129,10 +132,10 @@ where
 }
 
 #[async_trait::async_trait]
-impl<C, T, E> OutputValueType for Edge<C, T, E>
+impl<C, T, E> OutputType for Edge<C, T, E>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     E: ObjectType + Sync + Send,
 {
     async fn resolve(
@@ -147,7 +150,7 @@ where
 impl<C, T, E> ObjectType for Edge<C, T, E>
 where
     C: CursorType + Send + Sync,
-    T: OutputValueType + Send + Sync,
+    T: OutputType + Send + Sync,
     E: ObjectType + Sync + Send,
 {
 }

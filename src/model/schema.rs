@@ -1,5 +1,5 @@
 use crate::model::{__Directive, __Type};
-use crate::{registry, Object};
+use crate::{registry, Context, Object};
 
 pub struct __Schema<'a> {
     pub registry: &'a registry::Registry,
@@ -9,12 +9,18 @@ pub struct __Schema<'a> {
 #[Object(internal, name = "__Schema")]
 impl<'a> __Schema<'a> {
     /// A list of all types supported by this server.
-    async fn types(&self) -> Vec<__Type<'a>> {
+    async fn types(&self, ctx: &Context<'_>) -> Vec<__Type<'a>> {
         let mut types: Vec<_> = self
             .registry
             .types
             .values()
-            .map(|ty| (ty.name(), __Type::new_simple(self.registry, ty)))
+            .filter_map(|ty| {
+                if ty.is_visible(ctx) {
+                    Some((ty.name(), __Type::new_simple(self.registry, ty)))
+                } else {
+                    None
+                }
+            })
             .collect();
         types.sort_by(|a, b| a.0.cmp(b.0));
         types.into_iter().map(|(_, ty)| ty).collect()

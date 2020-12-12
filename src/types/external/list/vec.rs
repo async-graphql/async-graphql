@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
-    OutputValueType, Positioned, Result, ServerResult, Type, Value,
+    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    Positioned, Result, ServerResult, Type, Value,
 };
 
 impl<T: Type> Type for Vec<T> {
@@ -22,27 +22,27 @@ impl<T: Type> Type for Vec<T> {
     }
 }
 
-impl<T: InputValueType> InputValueType for Vec<T> {
+impl<T: InputType> InputType for Vec<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
             Value::List(values) => values
                 .into_iter()
-                .map(|value| InputValueType::parse(Some(value)))
+                .map(|value| InputType::parse(Some(value)))
                 .collect::<Result<_, _>>()
                 .map_err(InputValueError::propagate),
             value => Ok(vec![
-                InputValueType::parse(Some(value)).map_err(InputValueError::propagate)?
+                InputType::parse(Some(value)).map_err(InputValueError::propagate)?
             ]),
         }
     }
 
     fn to_value(&self) -> Value {
-        Value::List(self.iter().map(InputValueType::to_value).collect())
+        Value::List(self.iter().map(InputType::to_value).collect())
     }
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync> OutputValueType for Vec<T> {
+impl<T: OutputType + Send + Sync> OutputType for Vec<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

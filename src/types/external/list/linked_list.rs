@@ -4,8 +4,8 @@ use std::collections::LinkedList;
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
-    OutputValueType, Positioned, ServerResult, Type, Value,
+    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    Positioned, ServerResult, Type, Value,
 };
 
 impl<T: Type> Type for LinkedList<T> {
@@ -23,31 +23,30 @@ impl<T: Type> Type for LinkedList<T> {
     }
 }
 
-impl<T: InputValueType> InputValueType for LinkedList<T> {
+impl<T: InputType> InputType for LinkedList<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
             Value::List(values) => values
                 .into_iter()
-                .map(|value| InputValueType::parse(Some(value)))
+                .map(|value| InputType::parse(Some(value)))
                 .collect::<Result<_, _>>()
                 .map_err(InputValueError::propagate),
             value => Ok({
                 let mut result = Self::default();
-                result.push_front(
-                    InputValueType::parse(Some(value)).map_err(InputValueError::propagate)?,
-                );
+                result
+                    .push_front(InputType::parse(Some(value)).map_err(InputValueError::propagate)?);
                 result
             }),
         }
     }
 
     fn to_value(&self) -> Value {
-        Value::List(self.iter().map(InputValueType::to_value).collect())
+        Value::List(self.iter().map(InputType::to_value).collect())
     }
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync> OutputValueType for LinkedList<T> {
+impl<T: OutputType + Send + Sync> OutputType for LinkedList<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

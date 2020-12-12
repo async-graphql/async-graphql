@@ -36,7 +36,7 @@ pub trait Type {
 }
 
 /// Represents a GraphQL input value.
-pub trait InputValueType: Type + Sized {
+pub trait InputType: Type + Sized {
     /// Parse from `Value`. None represents undefined.
     fn parse(value: Option<Value>) -> InputValueResult<Self>;
 
@@ -46,7 +46,7 @@ pub trait InputValueType: Type + Sized {
 
 /// Represents a GraphQL output value.
 #[async_trait::async_trait]
-pub trait OutputValueType: Type {
+pub trait OutputType: Type {
     /// Resolve an output value to `async_graphql::Value`.
     async fn resolve(
         &self,
@@ -66,7 +66,7 @@ impl<T: Type + Send + Sync + ?Sized> Type for &T {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Send + Sync + ?Sized> OutputValueType for &T {
+impl<T: OutputType + Send + Sync + ?Sized> OutputType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,
@@ -92,7 +92,7 @@ impl<T: Type> Type for Result<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Sync> OutputValueType for Result<T> {
+impl<T: OutputType + Sync> OutputType for Result<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -118,4 +118,4 @@ pub trait InterfaceType: ContainerType {}
 pub trait UnionType: ContainerType {}
 
 /// A GraphQL input object.
-pub trait InputObjectType: InputValueType {}
+pub trait InputObjectType: InputType {}

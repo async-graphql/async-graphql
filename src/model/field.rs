@@ -1,5 +1,5 @@
 use crate::model::{__InputValue, __Type};
-use crate::{registry, Object};
+use crate::{registry, Context, Object};
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
@@ -17,10 +17,14 @@ impl<'a> __Field<'a> {
         self.field.description.map(ToString::to_string)
     }
 
-    async fn args(&self) -> Vec<__InputValue<'a>> {
+    async fn args(&self, ctx: &Context<'_>) -> Vec<__InputValue<'a>> {
         self.field
             .args
             .values()
+            .filter(|input_value| match &input_value.visible {
+                Some(f) => f(ctx),
+                None => true,
+            })
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 input_value,

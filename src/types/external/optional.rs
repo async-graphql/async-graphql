@@ -2,8 +2,8 @@ use std::borrow::Cow;
 
 use crate::parser::types::Field;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, InputValueType,
-    OutputValueType, Positioned, ServerResult, Type, Value,
+    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    Positioned, ServerResult, Type, Value,
 };
 
 impl<T: Type> Type for Option<T> {
@@ -21,7 +21,7 @@ impl<T: Type> Type for Option<T> {
     }
 }
 
-impl<T: InputValueType> InputValueType for Option<T> {
+impl<T: InputType> InputType for Option<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value.unwrap_or_default() {
             Value::Null => Ok(None),
@@ -40,14 +40,14 @@ impl<T: InputValueType> InputValueType for Option<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputValueType + Sync> OutputValueType for Option<T> {
+impl<T: OutputType + Sync> OutputType for Option<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
         if let Some(inner) = self {
-            OutputValueType::resolve(inner, ctx, field).await
+            OutputType::resolve(inner, ctx, field).await
         } else {
             Ok(Value::Null)
         }

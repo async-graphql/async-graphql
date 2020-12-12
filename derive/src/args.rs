@@ -2,7 +2,7 @@ use darling::ast::{Data, Fields};
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
-use syn::{Attribute, Generics, Ident, Lit, LitStr, Meta, Type, Visibility};
+use syn::{Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, Type, Visibility};
 
 #[derive(FromMeta)]
 #[darling(default)]
@@ -44,6 +44,24 @@ impl FromMeta for DefaultValue {
     }
 }
 
+#[derive(Debug)]
+pub enum Visible {
+    None,
+    HiddenAlways,
+    FnName(String),
+}
+
+impl FromMeta for Visible {
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        match value {
+            Lit::Bool(LitBool { value: true, .. }) => Ok(Visible::None),
+            Lit::Bool(LitBool { value: false, .. }) => Ok(Visible::HiddenAlways),
+            Lit::Str(str) => Ok(Visible::FnName(str.value())),
+            _ => Err(darling::Error::unexpected_lit_type(value)),
+        }
+    }
+}
+
 #[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
@@ -70,6 +88,8 @@ pub struct SimpleObjectField {
     pub requires: Option<String>,
     #[darling(default)]
     pub guard: Option<Meta>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromDeriveInput)]
@@ -94,6 +114,8 @@ pub struct SimpleObject {
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -105,6 +127,7 @@ pub struct Argument {
     pub default_with: Option<LitStr>,
     pub validator: Option<Meta>,
     pub key: bool, // for entity
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -117,6 +140,7 @@ pub struct Object {
     pub cache_control: CacheControl,
     pub extends: bool,
     pub use_type_description: bool,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -131,6 +155,7 @@ pub struct ObjectField {
     pub provides: Option<String>,
     pub requires: Option<String>,
     pub guard: Option<Meta>,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromDeriveInput)]
@@ -149,6 +174,8 @@ pub struct Enum {
     pub rename_items: Option<RenameRule>,
     #[darling(default)]
     pub remote: Option<String>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromVariant)]
@@ -162,6 +189,8 @@ pub struct EnumItem {
     pub name: Option<String>,
     #[darling(default)]
     pub deprecation: Option<String>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromDeriveInput)]
@@ -176,6 +205,8 @@ pub struct Union {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromVariant)]
@@ -206,6 +237,8 @@ pub struct InputObjectField {
     pub validator: Option<Meta>,
     #[darling(default)]
     pub flatten: bool,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromDeriveInput)]
@@ -222,6 +255,8 @@ pub struct InputObject {
     pub name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta)]
@@ -235,6 +270,8 @@ pub struct InterfaceFieldArgument {
     pub default: Option<DefaultValue>,
     #[darling(default)]
     pub default_with: Option<LitStr>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta)]
@@ -256,6 +293,8 @@ pub struct InterfaceField {
     pub provides: Option<String>,
     #[darling(default)]
     pub requires: Option<String>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromVariant)]
@@ -284,6 +323,8 @@ pub struct Interface {
     pub fields: Vec<InterfaceField>,
     #[darling(default)]
     pub extends: bool,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -292,6 +333,7 @@ pub struct Scalar {
     pub internal: bool,
     pub name: Option<String>,
     pub use_type_description: bool,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -312,6 +354,7 @@ pub struct SubscriptionFieldArgument {
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
     pub validator: Option<Meta>,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -321,6 +364,7 @@ pub struct SubscriptionField {
     pub name: Option<String>,
     pub deprecation: Option<String>,
     pub guard: Option<Meta>,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromField)]
@@ -345,6 +389,8 @@ pub struct MergedObject {
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromField)]
@@ -365,6 +411,8 @@ pub struct MergedSubscription {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta)]

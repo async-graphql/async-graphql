@@ -8,7 +8,7 @@ use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
     get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
-    remove_graphql_attrs, GeneratorResult,
+    remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -95,7 +95,7 @@ pub fn generate(
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "Only types that implement `InputValueType` can be used as input arguments.",
+                                            "Only types that implement `InputType` can be used as input arguments.",
                                         )
                                         .into());
                                     } else {
@@ -152,7 +152,7 @@ pub fn generate(
                         });
                         key_getter.push(quote! {
                             params.get(#name).and_then(|value| {
-                                let value: ::std::option::Option<#ty> = #crate_name::InputValueType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value))).ok();
+                                let value: ::std::option::Option<#ty> = #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value))).ok();
                                 value
                             })
                         });
@@ -161,7 +161,7 @@ pub fn generate(
                     } else {
                         // requires
                         requires_getter.push(quote! {
-                            let #ident: #ty = #crate_name::InputValueType::parse(params.get(#name).cloned()).
+                            let #ident: #ty = #crate_name::InputType::parse(params.get(#name).cloned()).
                                 map_err(|err| err.into_server_error().at(ctx.item.pos))?;
                         });
                         use_keys.push(ident);
@@ -197,7 +197,7 @@ pub fn generate(
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 #(#requires_getter)*
                                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                                return #crate_name::OutputValueType::resolve(&#do_find, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                                return #crate_name::OutputType::resolve(&#do_find, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                             }
                         }
                     },
@@ -285,7 +285,7 @@ pub fn generate(
                                     {
                                         return Err(Error::new_spanned(
                                             arg,
-                                            "Only types that implement `InputValueType` can be used as input arguments.",
+                                            "Only types that implement `InputType` can be used as input arguments.",
                                         )
                                         .into());
                                     }
@@ -319,6 +319,7 @@ pub fn generate(
                         default,
                         default_with,
                         validator,
+                        visible,
                         ..
                     },
                 ) in args
@@ -338,7 +339,7 @@ pub fn generate(
                         .map(|value| {
                             quote! {
                                 ::std::option::Option::Some(::std::string::ToString::to_string(
-                                    &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                                    &<#ty as #crate_name::InputType>::to_value(&#value)
                                 ))
                             }
                         })
@@ -352,6 +353,7 @@ pub fn generate(
                         None => quote!(::std::option::Option::None),
                     };
 
+                    let visible = visible_fn(&visible);
                     schema_args.push(quote! {
                         args.insert(#name, #crate_name::registry::MetaInputValue {
                             name: #name,
@@ -359,6 +361,7 @@ pub fn generate(
                             ty: <#ty as #crate_name::Type>::create_type_info(registry),
                             default_value: #schema_default,
                             validator: #validator,
+                            visible: #visible,
                         });
                     });
 
@@ -381,6 +384,7 @@ pub fn generate(
                 }
 
                 let schema_ty = ty.value_type();
+                let visible = visible_fn(&method_args.visible);
 
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
@@ -398,6 +402,7 @@ pub fn generate(
                         external: #external,
                         provides: #provides,
                         requires: #requires,
+                        visible: #visible,
                     });
                 });
 
@@ -442,7 +447,7 @@ pub fn generate(
                         #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         let res = #resolve_obj;
-                        return #crate_name::OutputValueType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                        return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                     }
                 });
             }
@@ -473,6 +478,7 @@ pub fn generate(
         .into());
     }
 
+    let visible = visible_fn(&object_args.visible);
     let expanded = quote! {
         #item_impl
 
@@ -494,6 +500,7 @@ pub fn generate(
                     cache_control: #cache_control,
                     extends: #extends,
                     keys: ::std::option::Option::None,
+                    visible: #visible,
                 });
                 #(#create_entity_types)*
                 #(#add_keys)*
@@ -530,7 +537,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputValueType for #self_ty #where_clause {
+        impl #generics #crate_name::OutputType for #self_ty #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }

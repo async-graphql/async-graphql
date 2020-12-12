@@ -266,6 +266,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     validator: None,
+                    visible: None,
                 });
                 args
             }
@@ -287,6 +288,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     validator: None,
+                    visible: None,
                 });
                 args
             }

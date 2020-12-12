@@ -5,7 +5,7 @@ use syn::ext::IdentExt;
 use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
+use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
@@ -62,11 +62,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 value: #ident::#item_ident,
             }
         });
+
+        let visible = visible_fn(&variant.visible);
         schema_enum_items.push(quote! {
             enum_items.insert(#gql_item_name, #crate_name::registry::MetaEnumValue {
                 name: #gql_item_name,
                 description: #item_desc,
                 deprecation: #item_deprecation,
+                visible: #visible,
             });
         });
     }
@@ -119,6 +122,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .into());
     }
 
+    let visible = visible_fn(&enum_args.visible);
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::resolver_utils::EnumType for #ident {
@@ -143,13 +147,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                             #(#schema_enum_items)*
                             enum_items
                         },
+                        visible: #visible,
                     }
                 })
             }
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::InputValueType for #ident {
+        impl #crate_name::InputType for #ident {
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 #crate_name::resolver_utils::parse_enum(value.unwrap_or_default())
             }
@@ -160,7 +165,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         }
 
         #[#crate_name::async_trait::async_trait]
-        impl #crate_name::OutputValueType for #ident {
+        impl #crate_name::OutputType for #ident {
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 ::std::result::Result::Ok(#crate_name::resolver_utils::enum_value(*self))
             }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::parser::types::Field;
 use crate::{
-    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputValueType, Positioned,
+    registry, ContextSelectionSet, InputValueError, InputValueResult, OutputType, Positioned,
     Scalar, ScalarType, ServerResult, Type, Value,
 };
 
@@ -36,7 +36,7 @@ impl Type for str {
 }
 
 #[async_trait::async_trait]
-impl OutputValueType for str {
+impl OutputType for str {
     async fn resolve(
         &self,
         _: &ContextSelectionSet<'_>,

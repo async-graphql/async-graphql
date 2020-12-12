@@ -121,6 +121,7 @@ macro_rules! scalar_internal {
                     name: ::std::borrow::ToOwned::to_owned($name),
                     description: $desc,
                     is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                    visible: ::std::option::Option::None,
                 })
             }
         }
@@ -135,7 +136,7 @@ macro_rules! scalar_internal {
             }
         }
 
-        impl $crate::InputValueType for $ty {
+        impl $crate::InputType for $ty {
             fn parse(
                 value: ::std::option::Option<$crate::Value>,
             ) -> $crate::InputValueResult<Self> {
@@ -148,7 +149,7 @@ macro_rules! scalar_internal {
         }
 
         #[$crate::async_trait::async_trait]
-        impl $crate::OutputValueType for $ty {
+        impl $crate::OutputType for $ty {
             async fn resolve(
                 &self,
                 _: &$crate::ContextSelectionSet<'_>,

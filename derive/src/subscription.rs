@@ -11,7 +11,7 @@ use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
     get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
-    remove_graphql_attrs, GeneratorResult,
+    remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -115,7 +115,7 @@ pub fn generate(
                                 {
                                     return Err(Error::new_spanned(
                                         arg,
-                                        "Only types that implement `InputValueType` can be used as input arguments.",
+                                        "Only types that implement `InputType` can be used as input arguments.",
                                     )
                                     .into());
                                 } else {
@@ -150,6 +150,7 @@ pub fn generate(
                     default,
                     default_with,
                     validator,
+                    visible: arg_visible,
                 },
             ) in args
             {
@@ -177,12 +178,13 @@ pub fn generate(
                     .map(|value| {
                         quote! {
                             ::std::option::Option::Some(::std::string::ToString::to_string(
-                                &<#ty as #crate_name::InputValueType>::to_value(&#value)
+                                &<#ty as #crate_name::InputType>::to_value(&#value)
                             ))
                         }
                     })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
 
+                let visible = visible_fn(&arg_visible);
                 schema_args.push(quote! {
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
@@ -190,6 +192,7 @@ pub fn generate(
                         ty: <#ty as #crate_name::Type>::create_type_info(registry),
                         default_value: #schema_default,
                         validator: #validator,
+                        visible: #visible,
                     });
                 });
 
@@ -235,6 +238,7 @@ pub fn generate(
                         .expect("invalid result type");
             }
 
+            let visible = visible_fn(&field.visible);
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -251,6 +255,7 @@ pub fn generate(
                     external: false,
                     requires: ::std::option::Option::None,
                     provides: ::std::option::Option::None,
+                    visible: #visible,
                 });
             });
 
@@ -319,7 +324,7 @@ pub fn generate(
 
                             query_env.extensions.resolve_start(&ctx_extension, &ri);
 
-                            let res = #crate_name::OutputValueType::resolve(&msg, &ctx_selection_set, &*field).await;
+                            let res = #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await;
 
                             query_env.extensions.resolve_end(&ctx_extension, &ri);
                             query_env.extensions.execution_end(&ctx_extension);
@@ -388,6 +393,7 @@ pub fn generate(
                     cache_control: ::std::default::Default::default(),
                     extends: false,
                     keys: ::std::option::Option::None,
+                    visible: ::std::option::Option::None,
                 })
             }
         }

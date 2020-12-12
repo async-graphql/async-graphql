@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{parser, InputValueType, Pos, Value};
+use crate::{parser, InputType, Pos, Value};
 
 /// Extensions to the error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -117,7 +117,7 @@ pub struct InputValueError<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T: InputValueType> InputValueError<T> {
+impl<T: InputType> InputValueError<T> {
     fn new(message: String) -> Self {
         Self {
             message,
@@ -145,7 +145,7 @@ impl<T: InputValueType> InputValueError<T> {
     }
 
     /// Propagate the error message to a different type.
-    pub fn propagate<U: InputValueType>(self) -> InputValueError<U> {
+    pub fn propagate<U: InputType>(self) -> InputValueError<U> {
         if T::type_name() != U::type_name() {
             InputValueError::new(format!(
                 r#"{} (occurred while parsing "{}")"#,
@@ -163,7 +163,7 @@ impl<T: InputValueType> InputValueError<T> {
     }
 }
 
-impl<T: InputValueType, E: Display> From<E> for InputValueError<T> {
+impl<T: InputType, E: Display> From<E> for InputValueError<T> {
     fn from(error: E) -> Self {
         Self::custom(error)
     }

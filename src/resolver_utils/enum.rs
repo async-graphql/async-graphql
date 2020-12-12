@@ -1,4 +1,4 @@
-use crate::{InputValueError, InputValueResult, InputValueType, Name, Type, Value};
+use crate::{InputType, InputValueError, InputValueResult, Name, Type, Value};
 
 /// A variant of an enum.
 pub struct EnumItem<T> {
@@ -16,8 +16,8 @@ pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
 
 /// Parse a value as an enum value.
 ///
-/// This can be used to implement `InputValueType::parse`.
-pub fn parse_enum<T: EnumType + InputValueType>(value: Value) -> InputValueResult<T> {
+/// This can be used to implement `InputType::parse`.
+pub fn parse_enum<T: EnumType + InputType>(value: Value) -> InputValueResult<T> {
     let value = match &value {
         Value::Enum(s) => s,
         Value::String(s) => s.as_str(),
@@ -38,7 +38,7 @@ pub fn parse_enum<T: EnumType + InputValueType>(value: Value) -> InputValueResul
 
 /// Convert the enum value into a GraphQL value.
 ///
-/// This can be used to implement `InputValueType::to_value` or `OutputValueType::resolve`.
+/// This can be used to implement `InputType::to_value` or `OutputType::resolve`.
 pub fn enum_value<T: EnumType>(value: T) -> Value {
     let item = T::items().iter().find(|item| item.value == value).unwrap();
     Value::Enum(Name::new(item.name))

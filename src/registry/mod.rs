@@ -9,7 +9,7 @@ use indexmap::set::IndexSet;
 
 use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
 use crate::validators::InputValueValidator;
-use crate::{model, Any, Type, Value};
+use crate::{model, Any, Context, Type, Value};
 
 pub use cache_control::CacheControl;
 
@@ -92,6 +92,7 @@ pub struct MetaInputValue {
     pub ty: String,
     pub default_value: Option<String>,
     pub validator: Option<Arc<dyn InputValueValidator>>,
+    pub visible: Option<MetaVisibleFn>,
 }
 
 #[derive(Clone)]
@@ -105,6 +106,7 @@ pub struct MetaField {
     pub external: bool,
     pub requires: Option<&'static str>,
     pub provides: Option<&'static str>,
+    pub visible: Option<MetaVisibleFn>,
 }
 
 #[derive(Clone)]
@@ -112,13 +114,17 @@ pub struct MetaEnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub deprecation: Option<&'static str>,
+    pub visible: Option<MetaVisibleFn>,
 }
+
+type MetaVisibleFn = fn(&Context<'_>) -> bool;
 
 pub enum MetaType {
     Scalar {
         name: String,
         description: Option<&'static str>,
         is_valid: fn(value: &Value) -> bool,
+        visible: Option<MetaVisibleFn>,
     },
     Object {
         name: String,
@@ -127,6 +133,7 @@ pub enum MetaType {
         cache_control: CacheControl,
         extends: bool,
         keys: Option<Vec<String>>,
+        visible: Option<MetaVisibleFn>,
     },
     Interface {
         name: String,
@@ -135,21 +142,25 @@ pub enum MetaType {
         possible_types: IndexSet<String>,
         extends: bool,
         keys: Option<Vec<String>>,
+        visible: Option<MetaVisibleFn>,
     },
     Union {
         name: String,
         description: Option<&'static str>,
         possible_types: IndexSet<String>,
+        visible: Option<MetaVisibleFn>,
     },
     Enum {
         name: String,
         description: Option<&'static str>,
         enum_values: IndexMap<&'static str, MetaEnumValue>,
+        visible: Option<MetaVisibleFn>,
     },
     InputObject {
         name: String,
         description: Option<&'static str>,
         input_fields: IndexMap<String, MetaInputValue>,
+        visible: Option<MetaVisibleFn>,
     },
 }
 
@@ -163,6 +174,21 @@ impl MetaType {
             MetaType::Object { fields, .. } => Some(&fields),
             MetaType::Interface { fields, .. } => Some(&fields),
             _ => None,
+        }
+    }
+
+    pub fn is_visible(&self, ctx: &Context<'_>) -> bool {
+        let visible = match self {
+            MetaType::Scalar { visible, .. } => visible,
+            MetaType::Object { visible, .. } => visible,
+            MetaType::Interface { visible, .. } => visible,
+            MetaType::Union { visible, .. } => visible,
+            MetaType::Enum { visible, .. } => visible,
+            MetaType::InputObject { visible, .. } => visible,
+        };
+        match visible {
+            Some(f) => f(ctx),
+            None => true,
         }
     }
 
@@ -281,6 +307,7 @@ impl Registry {
                     cache_control: Default::default(),
                     extends: false,
                     keys: None,
+                    visible: None,
                 },
             );
             let ty = f(self);
@@ -394,6 +421,7 @@ impl Registry {
                 name: "_Entity".to_string(),
                 description: None,
                 possible_types,
+                visible: None,
             },
         );
     }
@@ -420,6 +448,7 @@ impl Registry {
                             external: false,
                             requires: None,
                             provides: None,
+                            visible: None,
                         },
                     );
                     fields
@@ -427,6 +456,7 @@ impl Registry {
                 cache_control: Default::default(),
                 extends: false,
                 keys: None,
+                visible: None,
             },
         );
 
@@ -446,6 +476,7 @@ impl Registry {
                     external: false,
                     requires: None,
                     provides: None,
+                    visible: None,
                 },
             );
 
@@ -464,6 +495,7 @@ impl Registry {
                                 ty: "[_Any!]!".to_string(),
                                 default_value: None,
                                 validator: None,
+                                visible: None,
                             },
                         );
                         args
@@ -474,6 +506,7 @@ impl Registry {
                     external: false,
                     requires: None,
                     provides: None,
+                    visible: None,
                 },
             );
         }

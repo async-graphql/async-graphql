@@ -5,7 +5,7 @@ use std::io::Read;
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
 
-use crate::{registry, Context, InputValueError, InputValueResult, InputValueType, Type, Value};
+use crate::{registry, Context, InputType, InputValueError, InputValueResult, Type, Value};
 
 /// A file upload value.
 pub struct UploadValue {
@@ -110,11 +110,12 @@ impl Type for Upload {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
+            visible: None,
         })
     }
 }
 
-impl InputValueType for Upload {
+impl InputType for Upload {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         const PREFIX: &str = "#__graphql_file__:";
         let value = value.unwrap_or_default();
