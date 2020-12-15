@@ -26,7 +26,7 @@ async fn index_ws(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    ws::start_with_protocols(WSSubscription::new(&schema), &["graphql-ws"], &req, payload)
+    WSSubscription::start(Schema::clone(&*schema), &req, payload)
 }
 ```
 

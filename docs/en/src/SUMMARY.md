@@ -23,6 +23,7 @@
     - [Cursor connections](cursor_connections.md)
     - [Error extensions](error_extensions.md)
     - [Apollo Tracing](apollo_tracing.md)
+    - [Hide content in introspection](visibility.md)
 - [Integrations](integrations.md)
     - [Warp](integrations_to_warp.md)
     - [Actix-web](integrations_to_actix_web.md)
