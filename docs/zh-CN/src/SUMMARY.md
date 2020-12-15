@@ -23,6 +23,7 @@
     - [游标连接](cursor_connections.md)
     - [错误扩展](error_extensions.md)
     - [Apollo Tracing支持](apollo_tracing.md)
+    - [在内省中隐藏内容](visibility.md)
 - [集成到WebServer](integrations.md)
     - [Warp](integrations_to_warp.md)
     - [Actix-web](integrations_to_actix_web.md)

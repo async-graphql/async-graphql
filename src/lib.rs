@@ -244,7 +244,7 @@ pub type FieldResult<T> = Result<T>;
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field parameters
@@ -260,7 +260,7 @@ pub type FieldResult<T> = Result<T>;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field argument parameters
@@ -274,8 +274,8 @@ pub type FieldResult<T> = Result<T>;
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 /// | key          | Is entity key                            | bool        | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
-/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Valid field return types
 ///
@@ -366,7 +366,7 @@ pub use async_graphql_derive::Object;
 /// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field parameters
@@ -382,7 +382,7 @@ pub use async_graphql_derive::Object;
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
@@ -416,7 +416,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | name         | Enum name                 | string   | Y        |
 /// | rename_items | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | remote       | Derive a remote enum      | string   | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Item parameters
@@ -425,7 +425,7 @@ pub use async_graphql_derive::SimpleObject;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Item name                 | string   | Y        |
 /// | deprecation | Item deprecation reason   | string   | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
@@ -475,7 +475,7 @@ pub use async_graphql_derive::Enum;
 /// |---------------|---------------------------|----------|----------|
 /// | name          | Object name               | string   | Y        |
 /// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field parameters
@@ -488,7 +488,7 @@ pub use async_graphql_derive::Enum;
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 /// | flatten      | Similar to serde (flatten)               | boolean     | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
@@ -538,7 +538,7 @@ pub use async_graphql_derive::InputObject;
 /// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | field         | Fields of this Interface  | [InterfaceField] | N |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field parameters
@@ -554,7 +554,7 @@ pub use async_graphql_derive::InputObject;
 /// | external    | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides    | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires    | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field argument parameters
@@ -567,7 +567,7 @@ pub use async_graphql_derive::InputObject;
 /// | default      | Use `Default::default` for default value | none        | Y        |
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Define an interface
@@ -674,7 +674,7 @@ pub use async_graphql_derive::Interface;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Object name               | string   | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Item parameters
@@ -763,7 +763,7 @@ pub use async_graphql_derive::Union;
 /// | name        | Field name                | string   | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | guard       | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Field argument parameters
@@ -776,7 +776,7 @@ pub use async_graphql_derive::Union;
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
@@ -819,7 +819,7 @@ pub use async_graphql_derive::Scalar;
 /// | cache_control | Object cache control      | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
-/// | visible       | If `false`, it will not be displayed in introspection. | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
