@@ -58,6 +58,13 @@
 //!
 //! This crate offers the following features, all of which are activated by default:
 //!
+//! **I recommend that you always turn off all features and turn them on only
+//! when needed, which can significantly increase compilation speed.**
+//!
+//! ```toml
+//! async-graphql = { version = "*", default-features = false }
+//! ```
+//!
 //! - `apollo_tracing`: Enable the [Apollo tracing extension](extensions/struct.ApolloTracing.html).
 //! - `apollo_persisted_queries`: Enable the [Apollo persisted queries extension](extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).
 //! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
@@ -69,7 +76,7 @@
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
-//! - `string_number`: Enable the [StringNumber](extensions/types.StringNumber.html).
+//! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 //!
 //! ## Integrations
 //!
@@ -488,8 +495,9 @@ pub use async_graphql_derive::Enum;
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 /// | flatten      | Similar to serde (flatten)               | boolean     | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | skip         | Skip this field, use `Default::default` to get a default value for this field. | bool     | Y        |
+/// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Examples
 ///
