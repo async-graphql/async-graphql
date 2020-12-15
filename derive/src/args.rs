@@ -238,6 +238,8 @@ pub struct InputObjectField {
     #[darling(default)]
     pub flatten: bool,
     #[darling(default)]
+    pub skip: bool,
+    #[darling(default)]
     pub visible: Option<Visible>,
 }
 

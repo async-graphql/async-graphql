@@ -287,3 +287,34 @@ pub async fn test_inputobject_flatten_multiple() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_input_object_skip_field() {
+    #[derive(InputObject)]
+    struct MyInput2 {
+        a: i32,
+        #[graphql(skip)]
+        b: i32,
+    }
+
+    struct Root;
+
+    #[Object]
+    impl Root {
+        async fn a(&self, input: MyInput2) -> i32 {
+            assert_eq!(input.b, i32::default());
+            input.a
+        }
+    }
+
+    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            a(input:{a: 777})
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "a": 777
+        })
+    );
+}

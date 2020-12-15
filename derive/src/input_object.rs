@@ -61,6 +61,14 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
 
+        if field.skip {
+            get_fields.push(quote! {
+                let #ident: #ty = ::std::default::Default::default();
+            });
+            fields.push(ident);
+            continue;
+        }
+
         if field.flatten {
             flatten_fields.push((ident, ty));
 
