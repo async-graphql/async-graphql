@@ -1,6 +1,8 @@
 use async_graphql::http::WebSocketProtocols;
 use async_graphql::*;
+use futures_channel::mpsc;
 use futures_util::stream::{Stream, StreamExt};
+use futures_util::SinkExt;
 
 #[async_std::test]
 pub async fn test_subscription_ws_transport() {
@@ -23,7 +25,7 @@ pub async fn test_subscription_ws_transport() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (tx, rx) = async_channel::unbounded();
+    let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
 
     tx.send(
@@ -101,7 +103,7 @@ pub async fn test_subscription_ws_transport_with_token() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (tx, rx) = async_channel::unbounded();
+    let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::with_data(
         schema,
         rx,
@@ -205,7 +207,7 @@ pub async fn test_subscription_ws_transport_error() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let (tx, rx) = async_channel::unbounded();
+    let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
 
     tx.send(
@@ -277,7 +279,7 @@ pub async fn test_query_over_websocket() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-    let (tx, rx) = async_channel::unbounded();
+    let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
 
     tx.send(
