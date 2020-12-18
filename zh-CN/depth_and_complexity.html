@@ -231,8 +231,8 @@ type Post {
 </span></code></pre></pre>
 <h2><a class="header" href="#自定义字段的复杂度" id="自定义字段的复杂度">自定义字段的复杂度</a></h2>
 <p>针对非列表类型和列表类型的字段，有两种自定义复杂度的方法。
-下面的代码中，<code>value</code>字段的复杂度为<code>5</code>。而<code>values</code>字段的复杂度为<code>count * child_complexity</code>，<code>child_complexity</code>是一个特殊的变量，表示子
-查询的复杂度，<code>count</code>是字段的参数，这个公式用于计算<code>values</code>字段的复杂度。</p>
+下面的代码中，<code>value</code>字段的复杂度为<code>5</code>。而<code>values</code>字段的复杂度为<code>count * child_complexity</code>，<code>child_complexity</code>是一个特殊的变量，表示子查询的复杂度，
+<code>count</code>是字段的参数，这个表达式用于计算<code>values</code>字段的复杂度，并且返回值的类型必须是<code>usize</code>。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -246,7 +246,7 @@ impl Query {
     }
 
     #[graphql(complexity = &quot;count * child_complexity&quot;)]
-    async fn values(&amp;self, count: u32) -&gt; i32 {
+    async fn values(&amp;self, count: usize) -&gt; i32 {
         todo!()
     }
 }

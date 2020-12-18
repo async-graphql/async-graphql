@@ -1305,7 +1305,7 @@ and <code>Query is too complex</code> will be returned.</p>
 <p>There are two ways to customize the complexity for non-list type and list type fields.</p>
 <p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>, 
 <code>child_complexity</code> is a special variable that represents the complexity of the subquery, and <code>count</code> is the parameter of the field,
-used to calculate the complexity of the <code>values</code> field.</p>
+used to calculate the complexity of the <code>values</code> field, and the type of the return value must be <code>usize</code>.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1319,7 +1319,7 @@ impl Query {
     }
 
     #[graphql(complexity = &quot;count * child_complexity&quot;)]
-    async fn values(&amp;self, count: u32) -&gt; i32 {
+    async fn values(&amp;self, count: usize) -&gt; i32 {
         todo!()
     }
 }
