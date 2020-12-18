@@ -1,5 +1,6 @@
 //! Extensions for schema
 
+mod analyzer;
 #[cfg(feature = "apollo_persisted_queries")]
 pub mod apollo_persisted_queries;
 #[cfg(feature = "apollo_tracing")]
@@ -14,9 +15,10 @@ use std::collections::BTreeMap;
 
 use crate::context::{QueryPathNode, ResolveId};
 use crate::parser::types::ExecutableDocument;
-use crate::{Data, Request, Result, ServerError, ServerResult, Variables};
+use crate::{Data, Request, Result, ServerError, ServerResult, ValidationResult, Variables};
 use crate::{Error, Name, Value};
 
+pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
 #[cfg(feature = "log")]
@@ -121,7 +123,7 @@ pub trait Extension: Sync + Send + 'static {
     fn validation_start(&mut self, ctx: &ExtensionContext<'_>) {}
 
     /// Called at the end of the validation.
-    fn validation_end(&mut self, ctx: &ExtensionContext<'_>) {}
+    fn validation_end(&mut self, ctx: &ExtensionContext<'_>, result: &ValidationResult) {}
 
     /// Called at the begin of the execution.
     fn execution_start(&mut self, ctx: &ExtensionContext<'_>) {}
@@ -236,9 +238,11 @@ impl Extensions {
         }
     }
 
-    pub fn validation_end(&mut self, ctx: &ExtensionContext<'_>) {
+    pub fn validation_end(&mut self, ctx: &ExtensionContext<'_>, result: &ValidationResult) {
         if let Some(e) = &mut self.0 {
-            e.get_mut().iter_mut().for_each(|e| e.validation_end(ctx));
+            e.get_mut()
+                .iter_mut()
+                .for_each(|e| e.validation_end(ctx, result));
         }
     }
 

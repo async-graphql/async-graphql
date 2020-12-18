@@ -16,7 +16,7 @@ use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_container, resolve_container_serial};
 use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
-use crate::validation::{check_rules, CheckResult, ValidationMode};
+use crate::validation::{check_rules, ValidationMode};
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
     Response, ServerError, SubscriptionType, Type, Value, ID,
@@ -372,29 +372,25 @@ where
 
         // check rules
         extensions.validation_start(&ctx_extension);
-        let CheckResult {
-            cache_control,
-            complexity,
-            depth,
-        } = check_rules(
+        let validation_result = check_rules(
             &self.env.registry,
             &document,
             Some(&request.variables),
             self.validation_mode,
         )
         .log_error(&ctx_extension, &extensions)?;
-        extensions.validation_end(&ctx_extension);
+        extensions.validation_end(&ctx_extension, &validation_result);
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
-            if complexity > limit_complexity {
+            if validation_result.complexity > limit_complexity {
                 return Err(vec![ServerError::new("Query is too complex.")])
                     .log_error(&ctx_extension, &extensions);
             }
         }
 
         if let Some(limit_depth) = self.depth {
-            if depth > limit_depth {
+            if validation_result.depth > limit_depth {
                 return Err(vec![ServerError::new("Query is nested too deep.")])
                     .log_error(&ctx_extension, &extensions);
             }
@@ -437,7 +433,7 @@ where
             uploads: request.uploads,
             ctx_data: Arc::new(data),
         };
-        Ok((env, cache_control))
+        Ok((env, validation_result.cache_control))
     }
 
     async fn execute_once(&self, env: QueryEnv) -> Response {
