@@ -4,7 +4,7 @@ use tracing::{span, Level, Span};
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
 use crate::parser::types::ExecutableDocument;
-use crate::{ServerError, Variables};
+use crate::{ServerError, ValidationResult, Variables};
 
 /// Tracing extension configuration for each request.
 #[derive(Default)]
@@ -136,7 +136,7 @@ impl Extension for TracingExtension {
         }
     }
 
-    fn validation_end(&mut self, _ctx: &ExtensionContext<'_>) {
+    fn validation_end(&mut self, _ctx: &ExtensionContext<'_>, _result: &ValidationResult) {
         self.validation
             .take()
             .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
