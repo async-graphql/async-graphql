@@ -83,8 +83,8 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 ## 自定义字段的复杂度
 
 针对非列表类型和列表类型的字段，有两种自定义复杂度的方法。
-下面的代码中，`value`字段的复杂度为`5`。而`values`字段的复杂度为`count * child_complexity`，`child_complexity`是一个特殊的变量，表示子
-查询的复杂度，`count`是字段的参数，这个公式用于计算`values`字段的复杂度。
+下面的代码中，`value`字段的复杂度为`5`。而`values`字段的复杂度为`count * child_complexity`，`child_complexity`是一个特殊的变量，表示子查询的复杂度，
+`count`是字段的参数，这个表达式用于计算`values`字段的复杂度，并且返回值的类型必须是`usize`。
 
 ```rust
 struct Query;
@@ -97,7 +97,7 @@ impl Query {
     }
 
     #[graphql(complexity = "count * child_complexity")]
-    async fn values(&self, count: u32) -> i32 {
+    async fn values(&self, count: usize) -> i32 {
         todo!()
     }
 }

@@ -93,7 +93,7 @@ There are two ways to customize the complexity for non-list type and list type f
 
 In the following code, the complexity of the `value` field is `5`. The complexity of the `values` field is `count * child_complexity`, 
 `child_complexity` is a special variable that represents the complexity of the subquery, and `count` is the parameter of the field,
-used to calculate the complexity of the `values` field.
+used to calculate the complexity of the `values` field, and the type of the return value must be `usize`.
 
 ```rust
 struct Query;
@@ -106,7 +106,7 @@ impl Query {
     }
 
     #[graphql(complexity = "count * child_complexity")]
-    async fn values(&self, count: u32) -> i32 {
+    async fn values(&self, count: usize) -> i32 {
         todo!()
     }
 }
