@@ -23,6 +23,7 @@
     - [Cursor connections](cursor_connections.md)
     - [Error extensions](error_extensions.md)
     - [Apollo Tracing](apollo_tracing.md)
+    - [Query complexity and depth](depth_and_complexity.md)
     - [Hide content in introspection](visibility.md)
 - [Integrations](integrations.md)
     - [Warp](integrations_to_warp.md)

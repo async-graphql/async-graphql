@@ -11,7 +11,9 @@ mod visitors;
 use crate::parser::types::ExecutableDocument;
 use crate::registry::Registry;
 use crate::{CacheControl, ServerError, Variables};
-use visitor::{visit, VisitorContext, VisitorNil};
+use visitor::{visit, VisitorNil};
+
+pub use visitor::VisitorContext;
 
 pub struct CheckResult {
     pub cache_control: CacheControl,
@@ -67,9 +69,7 @@ pub fn check_rules(
                 .with(visitors::CacheControlCalculate {
                     cache_control: &mut cache_control,
                 })
-                .with(visitors::ComplexityCalculate {
-                    complexity: &mut complexity,
-                })
+                .with(visitors::ComplexityCalculate::new(&mut complexity))
                 .with(visitors::DepthCalculate::new(&mut depth));
             visit(&mut visitor, &mut ctx, doc);
         }
@@ -80,9 +80,7 @@ pub fn check_rules(
                 .with(visitors::CacheControlCalculate {
                     cache_control: &mut cache_control,
                 })
-                .with(visitors::ComplexityCalculate {
-                    complexity: &mut complexity,
-                })
+                .with(visitors::ComplexityCalculate::new(&mut complexity))
                 .with(visitors::DepthCalculate::new(&mut depth));
             visit(&mut visitor, &mut ctx, doc);
         }
@@ -95,6 +93,6 @@ pub fn check_rules(
     Ok(CheckResult {
         cache_control,
         complexity,
-        depth: depth as usize,
+        depth,
     })
 }

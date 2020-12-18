@@ -95,6 +95,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 provides: #provides,
                 requires: #requires,
                 visible: #visible,
+                compute_complexity: ::std::option::Option::None,
             });
         });
 

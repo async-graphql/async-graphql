@@ -143,6 +143,29 @@ pub struct Object {
     pub visible: Option<Visible>,
 }
 
+pub enum ComplexityType {
+    Const(usize),
+    Fn(String),
+}
+
+impl FromMeta for ComplexityType {
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        match value {
+            Lit::Int(n) => {
+                let n = n.base10_parse::<i32>().unwrap();
+                if n < 0 {
+                    return Err(darling::Error::custom(
+                        "The complexity must be greater than or equal to 0.",
+                    ));
+                }
+                Ok(ComplexityType::Const(n as usize))
+            }
+            Lit::Str(s) => Ok(ComplexityType::Fn(s.value())),
+            _ => Err(darling::Error::unexpected_lit_type(value)),
+        }
+    }
+}
+
 #[derive(FromMeta, Default)]
 #[darling(default)]
 pub struct ObjectField {
@@ -156,6 +179,7 @@ pub struct ObjectField {
     pub requires: Option<String>,
     pub guard: Option<Meta>,
     pub visible: Option<Visible>,
+    pub complexity: Option<ComplexityType>,
 }
 
 #[derive(FromDeriveInput)]

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use async_mutex::Mutex;
+use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 

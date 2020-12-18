@@ -1,15 +1,19 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
+use syn::visit::Visit;
+use syn::{
+    Block, Error, Expr, ExprPath, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference,
+};
 
-use crate::args::{self, RenameRuleExt, RenameTarget};
+use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
     get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
     remove_graphql_attrs, visible_fn, GeneratorResult,
 };
+use std::collections::HashSet;
 
 pub fn generate(
     object_args: &args::Object,
@@ -322,7 +326,7 @@ pub fn generate(
                         visible,
                         ..
                     },
-                ) in args
+                ) in &args
                 {
                     let name = name.clone().unwrap_or_else(|| {
                         object_args
@@ -386,6 +390,62 @@ pub fn generate(
                 let schema_ty = ty.value_type();
                 let visible = visible_fn(&method_args.visible);
 
+                let complexity = if let Some(complexity) = &method_args.complexity {
+                    match complexity {
+                        ComplexityType::Const(n) => {
+                            quote! { ::std::option::Option::Some(#crate_name::registry::ComplexityType::Const(#n)) }
+                        }
+                        ComplexityType::Fn(s) => {
+                            let (variables, expr) = parse_complexity_expr(s)?;
+                            let mut parse_args = Vec::new();
+                            for variable in variables {
+                                if let Some((
+                                    ident,
+                                    ty,
+                                    args::Argument {
+                                        name,
+                                        default,
+                                        default_with,
+                                        ..
+                                    },
+                                )) = args
+                                    .iter()
+                                    .find(|(pat_ident, _, _)| pat_ident.ident == variable)
+                                {
+                                    let default = generate_default(&default, &default_with)?;
+                                    let schema_default = default
+                                        .as_ref()
+                                        .map(|value| {
+                                            quote! {
+                                        ::std::option::Option::Some(::std::string::ToString::to_string(
+                                            &<#ty as #crate_name::InputType>::to_value(&#value)
+                                        ))
+                                    }
+                                        })
+                                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+                                    let name = name.clone().unwrap_or_else(|| {
+                                        object_args.rename_args.rename(
+                                            ident.ident.unraw().to_string(),
+                                            RenameTarget::Argument,
+                                        )
+                                    });
+                                    parse_args.push(quote! {
+                                let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #schema_default)?;
+                            });
+                                }
+                            }
+                            quote! {
+                                Some(#crate_name::registry::ComplexityType::Fn(|__ctx, __variables_definition, __field, child_complexity| {
+                                    #(#parse_args)*
+                                    Ok(#expr)
+                                }))
+                            }
+                        }
+                    }
+                } else {
+                    quote! { ::std::option::Option::None }
+                };
+
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
                     fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -403,6 +463,7 @@ pub fn generate(
                         provides: #provides,
                         requires: #requires,
                         visible: #visible,
+                        compute_complexity: #complexity,
                     });
                 });
 
@@ -546,4 +607,26 @@ pub fn generate(
         impl #generics #crate_name::ObjectType for #self_ty #where_clause {}
     };
     Ok(expanded.into())
+}
+
+#[derive(Default)]
+struct VisitComplexityExpr {
+    variables: HashSet<String>,
+}
+
+impl<'a> Visit<'a> for VisitComplexityExpr {
+    fn visit_expr_path(&mut self, i: &'a ExprPath) {
+        if let Some(ident) = i.path.get_ident() {
+            if ident != "child_complexity" {
+                self.variables.insert(ident.to_string());
+            }
+        }
+    }
+}
+
+fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)> {
+    let expr: Expr = syn::parse_str(s)?;
+    let mut visit = VisitComplexityExpr::default();
+    visit.visit_expr(&expr);
+    Ok((visit.variables, expr))
 }

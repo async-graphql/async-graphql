@@ -232,7 +232,7 @@ where
         }
     }
 
-    fn create_registry() -> Registry {
+    pub(crate) fn create_registry() -> Registry {
         let mut registry = Registry {
             types: Default::default(),
             directives: Default::default(),

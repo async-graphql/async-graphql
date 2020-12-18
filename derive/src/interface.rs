@@ -278,6 +278,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 provides: #provides,
                 requires: #requires,
                 visible: #visible,
+                compute_complexity: ::std::option::Option::None,
             });
         });
 

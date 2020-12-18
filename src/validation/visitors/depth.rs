@@ -1,69 +1,151 @@
-use crate::parser::types::{FragmentSpread, InlineFragment, SelectionSet};
-use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{VisitMode, Visitor, VisitorContext};
 use crate::Positioned;
+use async_graphql_parser::types::Field;
 
 pub struct DepthCalculate<'a> {
-    max_depth: &'a mut i32,
-    current_depth: i32,
+    max_depth: &'a mut usize,
+    current_depth: usize,
 }
 
 impl<'a> DepthCalculate<'a> {
-    pub fn new(max_depth: &'a mut i32) -> Self {
-        *max_depth = -1;
+    pub fn new(max_depth: &'a mut usize) -> Self {
         Self {
             max_depth,
-            current_depth: -1,
+            current_depth: 0,
         }
     }
 }
 
 impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
-    fn enter_selection_set(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _selection_set: &'ctx Positioned<SelectionSet>,
-    ) {
+    fn mode(&self) -> VisitMode {
+        VisitMode::Inline
+    }
+
+    fn enter_field(&mut self, _ctx: &mut VisitorContext<'ctx>, _field: &'ctx Positioned<Field>) {
         self.current_depth += 1;
         *self.max_depth = (*self.max_depth).max(self.current_depth);
     }
 
-    fn exit_selection_set(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _selection_set: &'ctx Positioned<SelectionSet>,
-    ) {
+    fn exit_field(&mut self, _ctx: &mut VisitorContext<'ctx>, _field: &'ctx Positioned<Field>) {
         self.current_depth -= 1;
     }
+}
 
-    fn enter_fragment_spread(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _fragment_spread: &'ctx Positioned<FragmentSpread>,
-    ) {
-        self.current_depth -= 1;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::parse_query;
+    use crate::validation::{visit, VisitorContext};
+    use crate::{EmptyMutation, EmptySubscription, Object, Schema};
+
+    struct Query;
+
+    struct MyObj;
+
+    #[Object(internal)]
+    impl MyObj {
+        async fn a(&self) -> i32 {
+            1
+        }
+
+        async fn b(&self) -> i32 {
+            2
+        }
+
+        async fn c(&self) -> MyObj {
+            MyObj
+        }
     }
 
-    fn exit_fragment_spread(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _fragment_spread: &'ctx Positioned<FragmentSpread>,
-    ) {
-        self.current_depth += 1;
+    #[Object(internal)]
+    impl Query {
+        async fn value(&self) -> i32 {
+            1
+        }
+
+        async fn obj(&self) -> MyObj {
+            MyObj
+        }
     }
 
-    fn enter_inline_fragment(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _inline_fragment: &'ctx Positioned<InlineFragment>,
-    ) {
-        self.current_depth -= 1;
+    fn check_depth(query: &str, expect_depth: usize) {
+        let registry = Schema::<Query, EmptyMutation, EmptySubscription>::create_registry();
+        let doc = parse_query(query).unwrap();
+        let mut ctx = VisitorContext::new(&registry, &doc, None);
+        let mut depth = 0;
+        let mut depth_calculate = DepthCalculate::new(&mut depth);
+        visit(&mut depth_calculate, &mut ctx, &doc);
+        assert_eq!(depth, expect_depth);
     }
 
-    fn exit_inline_fragment(
-        &mut self,
-        _ctx: &mut VisitorContext<'ctx>,
-        _inline_fragment: &'ctx Positioned<InlineFragment>,
-    ) {
-        self.current_depth += 1;
+    #[test]
+    fn depth() {
+        check_depth(
+            r#"{
+            value #1
+        }"#,
+            1,
+        );
+
+        check_depth(
+            r#"
+        {
+            obj { #1
+                a b #2
+            }
+        }"#,
+            2,
+        );
+
+        check_depth(
+            r#"
+        {
+            obj { # 1
+                a b c { # 2
+                    a b c { # 3
+                        a b # 4
+                    }
+                }
+            }
+        }"#,
+            4,
+        );
+
+        check_depth(
+            r#"
+        fragment A on MyObj {
+            a b ... A2 #2
+        }
+        
+        fragment A2 on MyObj {
+            obj {
+                a #3
+            }
+        }
+            
+        query {
+            obj { # 1
+                ... A
+            }
+        }"#,
+            3,
+        );
+
+        check_depth(
+            r#"
+        {
+            obj { # 1
+                ... on MyObj {
+                    a b #2 
+                    ... on MyObj {
+                        obj {
+                            a #3
+                        }
+                    }
+                }
+            }
+        }"#,
+            3,
+        );
     }
 }

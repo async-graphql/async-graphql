@@ -1,6 +1,6 @@
 use crate::parser::types::{Field, SelectionSet};
 use crate::registry::MetaType;
-use crate::validation::visitor::{Visitor, VisitorContext};
+use crate::validation::visitor::{VisitMode, Visitor, VisitorContext};
 use crate::{CacheControl, Positioned};
 
 pub struct CacheControlCalculate<'a> {
@@ -8,6 +8,10 @@ pub struct CacheControlCalculate<'a> {
 }
 
 impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
+    fn mode(&self) -> VisitMode {
+        VisitMode::Inline
+    }
+
     fn enter_selection_set(
         &mut self,
         ctx: &mut VisitorContext<'_>,
