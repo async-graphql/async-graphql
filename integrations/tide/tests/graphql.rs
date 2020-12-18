@@ -47,19 +47,17 @@ async fn quickstart() -> Result<()> {
 
     assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
-    // Note: This test fails due to a bug in tide or reqwest. I will open it again when the bug is fixed.
-    //
-    // let resp = client
-    //     .get(listen_addr)
-    //     .query(&[("query", "{ add(a: 10, b: 20) }")])
-    //     .send()
-    //     .await?;
-    //
-    // assert_eq!(resp.status(), StatusCode::OK);
-    // let string = resp.text().await?;
-    // println!("via get {}", string);
-    //
-    // assert_eq!(string, json!({"data": {"add": 30}}).to_string());
+    let resp = client
+        .get(listen_addr)
+        .query(&[("query", "{ add(a: 10, b: 20) }")])
+        .send()
+        .await?;
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let string = resp.text().await?;
+    println!("via get {}", string);
+
+    assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
     Ok(())
 }

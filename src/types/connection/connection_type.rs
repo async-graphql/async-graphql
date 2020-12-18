@@ -160,6 +160,7 @@ where
                             requires: None,
                             provides: None,
                             visible: None,
+                            compute_complexity: None,
                         },
                     );
 
@@ -178,6 +179,7 @@ where
                             requires: None,
                             provides: None,
                             visible: None,
+                            compute_complexity: None,
                         },
                     );
 

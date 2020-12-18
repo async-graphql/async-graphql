@@ -19,5 +19,5 @@ pub fn client() -> Client {
 }
 
 pub async fn wait_server_ready() {
-    async_std::task::sleep(Duration::from_millis(300)).await;
+    async_std::task::sleep(Duration::from_millis(500)).await;
 }

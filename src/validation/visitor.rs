@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::{self, Display, Formatter};
 
+use async_graphql_value::Value;
+
 use crate::parser::types::{
     Directive, ExecutableDocument, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
-use crate::{Name, Pos, Positioned, ServerError, Variables};
-use async_graphql_value::Value;
+use crate::{InputType, Name, Pos, Positioned, ServerError, ServerResult, Variables};
 
-pub(crate) struct VisitorContext<'a> {
+#[doc(hidden)]
+pub struct VisitorContext<'a> {
     pub(crate) registry: &'a registry::Registry,
     pub(crate) variables: Option<&'a Variables>,
     pub(crate) errors: Vec<RuleError>,
@@ -87,9 +89,68 @@ impl<'a> VisitorContext<'a> {
     pub(crate) fn fragment(&self, name: &str) -> Option<&'a Positioned<FragmentDefinition>> {
         self.fragments.get(name)
     }
+
+    #[doc(hidden)]
+    pub fn param_value<T: InputType>(
+        &self,
+        variable_definitions: &[Positioned<VariableDefinition>],
+        field: &Field,
+        name: &str,
+        default: Option<fn() -> T>,
+    ) -> ServerResult<T> {
+        let value = field.get_argument(name).cloned();
+
+        if value.is_none() {
+            if let Some(default) = default {
+                return Ok(default());
+            }
+        }
+
+        let (pos, value) = match value {
+            Some(value) => {
+                let pos = value.pos;
+                (
+                    pos,
+                    Some(value.node.into_const_with(|name| {
+                        variable_definitions
+                            .iter()
+                            .find(|def| def.node.name.node == name)
+                            .and_then(|def| {
+                                if let Some(variables) = self.variables {
+                                    variables
+                                        .0
+                                        .get(&def.node.name.node)
+                                        .or_else(|| def.node.default_value())
+                                } else {
+                                    None
+                                }
+                            })
+                            .cloned()
+                            .ok_or_else(|| {
+                                ServerError::new(format!("Variable {} is not defined.", name))
+                                    .at(pos)
+                            })
+                    })?),
+                )
+            }
+            None => (Pos::default(), None),
+        };
+
+        T::parse(value).map_err(|e| e.into_server_error().at(pos))
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub(crate) enum VisitMode {
+    Normal,
+    Inline,
 }
 
 pub(crate) trait Visitor<'a> {
+    fn mode(&self) -> VisitMode {
+        VisitMode::Normal
+    }
+
     fn enter_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
     fn exit_document(&mut self, _ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {}
 
@@ -687,10 +748,12 @@ fn visit_fragment_definition<'a, V: Visitor<'a>>(
     name: &'a Name,
     fragment: &'a Positioned<FragmentDefinition>,
 ) {
-    v.enter_fragment_definition(ctx, name, fragment);
-    visit_directives(v, ctx, &fragment.node.directives);
-    visit_selection_set(v, ctx, &fragment.node.selection_set);
-    v.exit_fragment_definition(ctx, name, fragment);
+    if v.mode() == VisitMode::Normal {
+        v.enter_fragment_definition(ctx, name, fragment);
+        visit_directives(v, ctx, &fragment.node.directives);
+        visit_selection_set(v, ctx, &fragment.node.selection_set);
+        v.exit_fragment_definition(ctx, name, fragment);
+    }
 }
 
 fn visit_fragment_spread<'a, V: Visitor<'a>>(
@@ -700,6 +763,14 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(
 ) {
     v.enter_fragment_spread(ctx, fragment_spread);
     visit_directives(v, ctx, &fragment_spread.node.directives);
+    if v.mode() == VisitMode::Inline {
+        if let Some(fragment) = ctx
+            .fragments
+            .get(fragment_spread.node.fragment_name.node.as_str())
+        {
+            visit_selection_set(v, ctx, &fragment.node.selection_set);
+        }
+    }
     v.exit_fragment_spread(ctx, fragment_spread);
 }
 

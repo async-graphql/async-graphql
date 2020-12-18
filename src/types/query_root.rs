@@ -46,6 +46,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     requires: None,
                     provides: None,
                     visible: None,
+                    compute_complexity: None,
                 },
             );
 
@@ -76,6 +77,7 @@ impl<T: Type> Type for QueryRoot<T> {
                     requires: None,
                     provides: None,
                     visible: None,
+                    compute_complexity: None,
                 },
             );
         }

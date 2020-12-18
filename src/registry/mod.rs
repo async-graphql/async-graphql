@@ -7,9 +7,11 @@ use std::sync::Arc;
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
 
-use crate::parser::types::{BaseType as ParsedBaseType, Type as ParsedType};
+use crate::parser::types::{
+    BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition,
+};
 use crate::validators::InputValueValidator;
-use crate::{model, Any, Context, Type, Value};
+use crate::{model, Any, Context, Positioned, ServerResult, Type, Value, VisitorContext};
 
 pub use cache_control::CacheControl;
 
@@ -83,6 +85,14 @@ impl<'a> MetaTypeName<'a> {
             _ => false,
         }
     }
+
+    pub fn is_list(&self) -> bool {
+        match self {
+            MetaTypeName::List(_) => true,
+            MetaTypeName::NonNull(ty) => MetaTypeName::create(ty).is_list(),
+            MetaTypeName::Named(name) => name.ends_with(']'),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -93,6 +103,19 @@ pub struct MetaInputValue {
     pub default_value: Option<String>,
     pub validator: Option<Arc<dyn InputValueValidator>>,
     pub visible: Option<MetaVisibleFn>,
+}
+
+type ComputeComplexityFn = fn(
+    &VisitorContext<'_>,
+    &[Positioned<VariableDefinition>],
+    &Field,
+    usize,
+) -> ServerResult<usize>;
+
+#[derive(Clone)]
+pub enum ComplexityType {
+    Const(usize),
+    Fn(ComputeComplexityFn),
 }
 
 #[derive(Clone)]
@@ -107,6 +130,7 @@ pub struct MetaField {
     pub requires: Option<&'static str>,
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
+    pub compute_complexity: Option<ComplexityType>,
 }
 
 #[derive(Clone)]
@@ -449,6 +473,7 @@ impl Registry {
                             requires: None,
                             provides: None,
                             visible: None,
+                            compute_complexity: None,
                         },
                     );
                     fields
@@ -477,6 +502,7 @@ impl Registry {
                     requires: None,
                     provides: None,
                     visible: None,
+                    compute_complexity: None,
                 },
             );
 
@@ -507,6 +533,7 @@ impl Registry {
                     requires: None,
                     provides: None,
                     visible: None,
+                    compute_complexity: None,
                 },
             );
         }

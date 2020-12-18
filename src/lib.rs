@@ -220,7 +220,7 @@ pub use request::{BatchRequest, Request};
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
-pub use validation::ValidationMode;
+pub use validation::{ValidationMode, VisitorContext};
 
 pub use context::*;
 #[doc(no_inline)]
