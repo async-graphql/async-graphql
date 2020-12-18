@@ -280,9 +280,11 @@ pub type FieldResult<T> = Result<T>;
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
-/// | key          | Is entity key                            | bool        | Y        |
+/// | complexity   | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                 | bool        | Y        |
+/// | complexity   | Custom field complexity.                 | string      | Y        |
 /// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | key          | Is entity key(for Federation)            | bool        | Y        |
 ///
 /// # Valid field return types
 ///
