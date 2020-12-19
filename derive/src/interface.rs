@@ -1,8 +1,9 @@
+use std::collections::HashSet;
+
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use std::collections::HashSet;
 use syn::visit_mut::VisitMut;
 use syn::{visit_mut, Error, Lifetime, Type};
 
