@@ -391,6 +391,7 @@ pub struct SubscriptionField {
     pub deprecation: Option<String>,
     pub guard: Option<Meta>,
     pub visible: Option<Visible>,
+    pub complexity: Option<ComplexityType>,
 }
 
 #[derive(FromField)]

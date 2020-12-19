@@ -38,7 +38,7 @@ mod test {
 
     #[async_std::test]
     async fn test_cow_type() {
-        struct Query11 {
+        struct Query {
             obj: MyObj,
         }
 
@@ -50,7 +50,7 @@ mod test {
         }
 
         #[Object(internal)]
-        impl Query11 {
+        impl Query {
             async fn value1(&self) -> Cow<'_, str> {
                 Cow::Borrowed("abc")
             }
@@ -79,7 +79,7 @@ mod test {
             }
         }"#;
         let schema = Schema::new(
-            Query11 {
+            Query {
                 obj: MyObj { a: 100, b: 200 },
             },
             EmptyMutation,

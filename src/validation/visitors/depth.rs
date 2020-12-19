@@ -45,26 +45,26 @@ mod tests {
     #[Object(internal)]
     impl MyObj {
         async fn a(&self) -> i32 {
-            1
+            todo!()
         }
 
         async fn b(&self) -> i32 {
-            2
+            todo!()
         }
 
         async fn c(&self) -> MyObj {
-            MyObj
+            todo!()
         }
     }
 
     #[Object(internal)]
     impl Query {
         async fn value(&self) -> i32 {
-            1
+            todo!()
         }
 
         async fn obj(&self) -> MyObj {
-            MyObj
+            todo!()
         }
     }
 

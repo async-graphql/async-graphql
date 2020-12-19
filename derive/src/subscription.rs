@@ -6,12 +6,12 @@ use syn::{
     TypeReference,
 };
 
-use crate::args::{self, RenameRuleExt, RenameTarget, SubscriptionField};
+use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
     generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
-    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_graphql_attrs,
-    remove_graphql_attrs, visible_fn, GeneratorResult,
+    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -152,7 +152,7 @@ pub fn generate(
                     validator,
                     visible: arg_visible,
                 },
-            ) in args
+            ) in &args
             {
                 let name = name.clone().unwrap_or_else(|| {
                     subscription_args
@@ -239,6 +239,57 @@ pub fn generate(
             }
 
             let visible = visible_fn(&field.visible);
+            let complexity = if let Some(complexity) = &field.complexity {
+                match complexity {
+                    ComplexityType::Const(n) => {
+                        quote! { ::std::option::Option::Some(#crate_name::registry::ComplexityType::Const(#n)) }
+                    }
+                    ComplexityType::Fn(s) => {
+                        let (variables, expr) = parse_complexity_expr(s)?;
+                        let mut parse_args = Vec::new();
+                        for variable in variables {
+                            if let Some((
+                                ident,
+                                ty,
+                                args::SubscriptionFieldArgument {
+                                    name,
+                                    default,
+                                    default_with,
+                                    ..
+                                },
+                            )) = args
+                                .iter()
+                                .find(|(pat_ident, _, _)| pat_ident.ident == variable)
+                            {
+                                let default = match generate_default(&default, &default_with)? {
+                                    Some(default) => {
+                                        quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+                                    }
+                                    None => quote! { ::std::option::Option::None },
+                                };
+                                let name = name.clone().unwrap_or_else(|| {
+                                    subscription_args.rename_args.rename(
+                                        ident.ident.unraw().to_string(),
+                                        RenameTarget::Argument,
+                                    )
+                                });
+                                parse_args.push(quote! {
+                                        let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
+                                    });
+                            }
+                        }
+                        quote! {
+                            Some(#crate_name::registry::ComplexityType::Fn(|__ctx, __variables_definition, __field, child_complexity| {
+                                #(#parse_args)*
+                                Ok(#expr)
+                            }))
+                        }
+                    }
+                }
+            } else {
+                quote! { ::std::option::Option::None }
+            };
+
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -256,7 +307,7 @@ pub fn generate(
                     requires: ::std::option::Option::None,
                     provides: ::std::option::Option::None,
                     visible: #visible,
-                    compute_complexity: ::std::option::Option::None,
+                    compute_complexity: #complexity,
                 });
             });
 

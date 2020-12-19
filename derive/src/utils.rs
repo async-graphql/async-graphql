@@ -1,9 +1,13 @@
+use std::collections::HashSet;
+
 use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::crate_name;
 use quote::quote;
+use syn::visit::Visit;
 use syn::{
-    Attribute, Error, Expr, Ident, Lit, LitStr, Meta, NestedMeta, Type, TypeGroup, TypePath,
+    Attribute, Error, Expr, ExprPath, Ident, Lit, LitStr, Meta, NestedMeta, Type, TypeGroup,
+    TypePath,
 };
 use thiserror::Error;
 
@@ -400,4 +404,26 @@ pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
             quote! { ::std::option::Option::Some(#ident) }
         }
     }
+}
+
+pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)> {
+    #[derive(Default)]
+    struct VisitComplexityExpr {
+        variables: HashSet<String>,
+    }
+
+    impl<'a> Visit<'a> for VisitComplexityExpr {
+        fn visit_expr_path(&mut self, i: &'a ExprPath) {
+            if let Some(ident) = i.path.get_ident() {
+                if ident != "child_complexity" {
+                    self.variables.insert(ident.to_string());
+                }
+            }
+        }
+    }
+
+    let expr: Expr = syn::parse_str(s)?;
+    let mut visit = VisitComplexityExpr::default();
+    visit.visit_expr(&expr);
+    Ok((visit.variables, expr))
 }
