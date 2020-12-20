@@ -374,7 +374,10 @@ pub fn generate(
                         }
                         None => quote! { ::std::option::Option::None },
                     };
-                    let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
+                    // We're generating a new identifier,
+                    // so remove the 'r#` prefix if present
+                    let param_getter_name =
+                        get_param_getter_ident(&ident.ident.unraw().to_string());
                     get_params.push(quote! {
                         #[allow(non_snake_case)]
                         let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
