@@ -144,13 +144,13 @@ impl<T: Loader> DataLoader<T> {
     pub fn new(loader: T) -> Self {
         Self {
             requests: Default::default(),
-            delay: Duration::from_millis(20),
+            delay: Duration::from_millis(1),
             max_batch_size: 1000,
             loader,
         }
     }
 
-    /// Specify the delay time for loading data, the default is `20ms`.
+    /// Specify the delay time for loading data, the default is `1ms`.
     pub fn delay(self, delay: Duration) -> Self {
         Self { delay, ..self }
     }

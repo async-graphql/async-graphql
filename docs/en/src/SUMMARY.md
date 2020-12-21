@@ -30,5 +30,6 @@
     - [Actix-web](integrations_to_actix_web.md)
 - [Advanced topics](advanced_topics.md)
     - [Custom scalars](custom_scalars.md)
+    - [Optimizing N+1 queries](dataloader.md)
     - [Custom extensions](custom_extensions.md)
     - [Apollo Federation](apollo_federation.md)
