@@ -11,24 +11,26 @@ pub async fn test_input_value_custom_error() {
 
     #[derive(SimpleObject)]
     struct MyObject {
-        r#i32: i32,
+        r#match: i32,
     }
 
     #[derive(InputObject)]
     struct MyInputObject {
-        r#i32: i32,
+        r#match: i32,
     }
 
     struct Query;
 
     #[Object]
     impl Query {
-        async fn r#type(&self, r#i32: i32) -> i32 {
-            r#i32
+        async fn r#type(&self, r#match: i32) -> i32 {
+            r#match
         }
 
         async fn obj(&self, obj: MyInputObject) -> MyObject {
-            MyObject { r#i32: obj.r#i32 }
+            MyObject {
+                r#match: obj.r#match,
+            }
         }
 
         async fn enum_value(&self, value: MyEnum) -> MyEnum {
@@ -48,15 +50,15 @@ pub async fn test_input_value_custom_error() {
     let schema = Schema::new(Query, EmptyMutation, SubscriptionRoot);
     let query = r#"
         {
-            type(i32: 99)
-            obj(obj: { i32: 88} ) { i32 }
+            type(match: 99)
+            obj(obj: { match: 88} ) { match }
             enumValue(value: TYPE)
         }"#;
     assert_eq!(
         schema.execute(query).await.into_result().unwrap().data,
         value!({
             "type": 99,
-            "obj": { "i32": 88 },
+            "obj": { "match": 88 },
             "enumValue": "TYPE",
         })
     );

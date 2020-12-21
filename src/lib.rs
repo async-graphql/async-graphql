@@ -77,6 +77,7 @@
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
 //! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
+//! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 //!
 //! ## Integrations
 //!
@@ -176,6 +177,9 @@ mod subscription;
 mod validation;
 
 pub mod context;
+#[cfg(feature = "dataloader")]
+#[cfg_attr(feature = "nightly", doc(cfg(feature = "dataloader")))]
+pub mod dataloader;
 pub mod extensions;
 pub mod guard;
 pub mod http;
