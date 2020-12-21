@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Cursor connections - Async-graphql Book</title>
+        <title>Optimizing N+1 queries - Async-graphql Book</title>
         
         
 
@@ -95,7 +95,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> Merging Objects / Subscriptions</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> Field guard</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html" class="active"><strong aria-hidden="true">5.4.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.6.</strong> Apollo Tracing</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> Query complexity and depth</a></li><li class="chapter-item expanded "><a href="visibility.html"><strong aria-hidden="true">5.8.</strong> Hide content in introspection</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="dataloader.html"><strong aria-hidden="true">7.2.</strong> Optimizing N+1 queries</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.3.</strong> Custom extensions</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> Merging Objects / Subscriptions</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> Field guard</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.4.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.6.</strong> Apollo Tracing</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> Query complexity and depth</a></li><li class="chapter-item expanded "><a href="visibility.html"><strong aria-hidden="true">5.8.</strong> Hide content in introspection</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">6.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">6.1.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">6.2.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">7.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">7.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="dataloader.html" class="active"><strong aria-hidden="true">7.2.</strong> Optimizing N+1 queries</a></li><li class="chapter-item expanded "><a href="custom_extensions.html"><strong aria-hidden="true">7.3.</strong> Custom extensions</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">7.4.</strong> Apollo Federation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -163,63 +163,118 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#cursor-connections" id="cursor-connections">Cursor connections</a></h1>
-<p>Relay's cursor connection specification is designed to provide a consistent method for query paging. For more details on the specification see the <a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
-<p>Defining a cursor connection in <code>async-graphql</code> is very simple, you just call the <code>connection::query</code> function and query data in the closure.</p>
+                        <h1><a class="header" href="#optimizing-n1-queries" id="optimizing-n1-queries">Optimizing N+1 queries</a></h1>
+<p>Have you noticed some GraphQL queries end can make hundreds of database queries, often with mostly repeated data? Lets take a look why and how to fix it.</p>
+<h2><a class="header" href="#query-resolution" id="query-resolution">Query Resolution</a></h2>
+<p>Imagine if you have a simple query like this:</p>
+<pre><code class="language-graphql">query { todos { users { name } } }
+</code></pre>
+<p>and <code>User</code> resolver is like this:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct User {
+    id: u64,
+}
+
+#[Object]
+impl User {
+    async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
+        let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
+        let (name,): (String,) = sqlx::query_as(&quot;SELECT name FROM user WHERE id = $1&quot;)
+            .bind(self.id)
+            .fetch_one(pool)
+            .await?;
+        Ok(name)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The query executor will call the <code>Todos</code> resolver which does a <code>select * from todo and return N todos</code>. Then for each 
+of the todos, concurrently, call the <code>User</code> resolver, <code>SELECT from USER where id = todo.user_id</code>.</p>
+<p>eg：</p>
+<pre><code class="language-sql">SELECT id, todo, user_id FROM todo
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+SELECT name FROM user WHERE id = $1
+</code></pre>
+<p>After executing <code>SELECT name FROM user WHERE id = $1</code> many times, and most <code>Todo</code> objects belong to the same user, we 
+need to optimize these codes!</p>
+<h2><a class="header" href="#dataloader" id="dataloader">Dataloader</a></h2>
+<p>We need to group queries and exclude duplicate queries. <code>Dataloader</code> can do this.
+<a href="https://github.com/facebook/dataloader">facebook</a> gives a request-scope batch and caching solution.</p>
+<p>The following is an example of using <code>DataLoader</code> to optimize queries::</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use async_graphql::*;
-use async_graphql::connection::*;
+use async_graphql::dataloader::*;
+use itertools::Itertools;
 
-struct Query;
+struct UserNameLoader {
+    pool: sqlx::Pool&lt;Postgres&gt;,
+}
 
-#[Object]
-impl Query {
-    async fn numbers(&amp;self,
-        after: Option&lt;String&gt;,
-        before: Option&lt;String&gt;,
-        first: Option&lt;i32&gt;,
-        last: Option&lt;i32&gt;,
-    ) -&gt; Result&lt;Connection&lt;usize, i32, EmptyFields, EmptyFields&gt;&gt; {
-        query(after, before, first, last, |after, before, first, last| {
-            let mut start = after.map(|after| after + 1).unwrap_or(0);
-            let mut end = before.unwrap_or(10000);
-            if let Some(first) = first {
-                end = (start + first).min(end);
-            }
-            if let Some(last) = last {
-                start = if last &gt; end - start {
-                     end
-                } else {
-                    end - last
-                };
-            }
-            let mut connection = Connection::new(start &gt; 0, end &lt; 10000);
-            connection.append(
-                (start..end).into_iter().map(|n|
-                    Ok(Edge::new_with_additional_fields(n, n as i32, EmptyFields)),
-            ))?;
-            Ok(connection)
-        })
+#[async_trait::async_trait]
+impl Loader for UserNameLoader {
+    type Key = u64;
+    type Value = String;
+    type Error = sqlx::Error;
+    
+    async fn load(&amp;self, keys: HashSet&lt;Self::Key&gt;) -&gt; Result&lt;HashMap&lt;Self::Key, Self::Value&gt;, Self::Error&gt; {
+        let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
+        let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
+        Ok(sqlx::query_as(query)
+            .fetch(&amp;self.pool)
+            .map_ok(|name: String| name)
+            .try_collect().await?)
     }
 }
 
+struct User {
+    id: u64,
+}
+
+#[Object]
+impl User {
+    async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
+        let loader = ctx.data_unchecked::&lt;DataLoader&lt;UserNameLoader&gt;&gt;();
+        let name: Option&lt;String&gt; = loader.load_one(self.id).await?;
+        name.ok_or_else(|| &quot;Not found&quot;.into())
+    }
+}
 <span class="boring">}
 </span></code></pre></pre>
+<p>In the end, only two SQLs are needed to query the results we want!</p>
+<pre><code class="language-sql">SELECT id, todo, user_id FROM todo
+SELECT name FROM user WHERE id IN (1, 2, 3, 4)
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="cache_control.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="custom_scalars.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="error_extensions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="custom_extensions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -231,13 +286,13 @@ impl Query {
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="cache_control.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="custom_scalars.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="error_extensions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="custom_extensions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
