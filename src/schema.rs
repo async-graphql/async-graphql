@@ -51,13 +51,13 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Set the maximum complexity a query can have. By default there is no limit.
+    /// Set the maximum complexity a query can have. By default, there is no limit.
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
         self.complexity = Some(complexity);
         self
     }
 
-    /// Set the maximum depth a query can have. By default there is no limit.
+    /// Set the maximum depth a query can have. By default, there is no limit.
     pub fn limit_depth(mut self, depth: usize) -> Self {
         self.depth = Some(depth);
         self
@@ -336,7 +336,7 @@ where
     /// Get all names in this schema
     ///
     /// Maybe you want to serialize a custom binary protocol. In order to minimize message size, a dictionary
-    /// is usually used to compress type names, field names, directive names, and parameter names. This function gets all the names
+    /// is usually used to compress type names, field names, directive names, and parameter names. This function gets all the names,
     /// so you can create this dictionary.
     pub fn names(&self) -> Vec<String> {
         self.0.env.registry.names()
