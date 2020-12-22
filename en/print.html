@@ -1565,12 +1565,11 @@ struct UserNameLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader for UserNameLoader {
-    type Key = u64;
+impl Loader&lt;u64&gt; for UserNameLoader {
     type Value = String;
     type Error = sqlx::Error;
-    
-    async fn load(&amp;self, keys: HashSet&lt;Self::Key&gt;) -&gt; Result&lt;HashMap&lt;Self::Key, Self::Value&gt;, Self::Error&gt; {
+
+    async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
         let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
         let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
         Ok(sqlx::query_as(query)
@@ -1598,6 +1597,36 @@ impl User {
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 </code></pre>
+<h2><a class="header" href="#implement-multiple-data-types" id="implement-multiple-data-types">Implement multiple data types</a></h2>
+<p>You can implement multiple data types for the same <code>Loader</code>, like this:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct PostgresLoader {
+    pool: sqlx::Pool&lt;Postgres&gt;,
+}
+
+#[async_trait::async_trait]
+impl Loader&lt;UserId&gt; for PostgresLoader {
+    type Value = User;
+    type Error = sqlx::Error;
+
+    async fn load(&amp;self, keys: &amp;[UserId]) -&gt; Result&lt;HashMap&lt;UserId, Self::Value&gt;, Self::Error&gt; {
+        // Load users from database
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader&lt;TodoId&gt; for PostgresLoader {
+    type Value = Todo;
+    type Error = sqlx::Error;
+
+    async fn load(&amp;self, keys: &amp;[TodoId]) -&gt; Result&lt;HashMap&lt;TodoId, Self::Value&gt;, Self::Error&gt; {
+        // Load todos from database
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1><a class="header" href="#custom-extensions" id="custom-extensions">Custom extensions</a></h1>
 <p>A GraphQL extension object can receive events in various stages of a query's execution, and you can collect various kinds of data to be returned in the query results.</p>
 <p>You can use <code>async_graphql::Extension</code> to define an extension object, and your application must call <code>Schema::extension</code> when your <code>Schema</code> is created.</p>
