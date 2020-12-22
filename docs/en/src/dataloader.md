@@ -75,12 +75,11 @@ struct UserNameLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader for UserNameLoader {
-    type Key = u64;
+impl Loader<u64> for UserNameLoader {
     type Value = String;
     type Error = sqlx::Error;
-    
-    async fn load(&self, keys: HashSet<Self::Key>) -> Result<HashMap<Self::Key, Self::Value>, Self::Error> {
+
+    async fn load(&self, keys: &[u64]) -> Result<HashMap<u64, Self::Value>, Self::Error> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let query = format!("SELECT name FROM user WHERE id IN ({})", keys.iter().join(","));
         Ok(sqlx::query_as(query)
@@ -109,4 +108,34 @@ In the end, only two SQLs are needed to query the results we want!
 ```sql
 SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
+```
+
+## Implement multiple data types
+
+You can implement multiple data types for the same `Loader`, like this:
+
+```rust
+struct PostgresLoader {
+    pool: sqlx::Pool<Postgres>,
+}
+
+#[async_trait::async_trait]
+impl Loader<UserId> for PostgresLoader {
+    type Value = User;
+    type Error = sqlx::Error;
+
+    async fn load(&self, keys: &[UserId]) -> Result<HashMap<UserId, Self::Value>, Self::Error> {
+        // Load users from database
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<TodoId> for PostgresLoader {
+    type Value = Todo;
+    type Error = sqlx::Error;
+
+    async fn load(&self, keys: &[TodoId]) -> Result<HashMap<TodoId, Self::Value>, Self::Error> {
+        // Load todos from database
+    }
+}
 ```
