@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.4.1"
+version = "2.4.2"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -33,7 +33,7 @@ apollo_persisted_queries = ["lru", "sha2"]
 multipart = ["multer", "tempfile"]
 unblock = ["blocking"]
 string_number = ["num-traits"]
-dataloader = ["futures-timer", "futures-channel", "lru"]
+dataloader = ["futures-timer", "futures-channel"]
 # Used for doc(cfg())
 nightly = []
 
