@@ -73,12 +73,11 @@ struct UserNameLoader {
 }
 
 #[async_trait::async_trait]
-impl Loader for UserNameLoader {
-    type Key = u64;
+impl Loader<u64> for UserNameLoader {
     type Value = String;
     type Error = sqlx::Error;
     
-    async fn load(&self, keys: HashSet<Self::Key>) -> Result<HashMap<Self::Key, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[u64]) -> Result<HashMap<u64, Self::Value>, Self::Error> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let query = format!("SELECT name FROM user WHERE id IN ({})", keys.iter().join(","));
         Ok(sqlx::query_as(query)
@@ -107,4 +106,34 @@ impl User {
 ```sql
 SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
+```
+
+## 同一个Loader支持多种数据类型
+
+你可以为同一个`Loader`实现多种数据类型，就像下面这样：
+
+```rust
+struct PostgresLoader {
+    pool: sqlx::Pool<Postgres>,
+}
+
+#[async_trait::async_trait]
+impl Loader<UserId> for PostgresLoader {
+    type Value = User;
+    type Error = sqlx::Error;
+
+    async fn load(&self, keys: &[UserId]) -> Result<HashMap<UserId, Self::Value>, Self::Error> {
+        // 从数据库中加载User
+    }
+}
+
+#[async_trait::async_trait]
+impl Loader<TodoId> for PostgresLoader {
+    type Value = Todo;
+    type Error = sqlx::Error;
+
+    async fn load(&self, keys: &[TodoId]) -> Result<HashMap<TodoId, Self::Value>, Self::Error> {
+        // 从数据库中加载Todo
+    }
+}
 ```
