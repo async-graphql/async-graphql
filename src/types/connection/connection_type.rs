@@ -90,10 +90,10 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
         self.edges.extend(iter);
     }
 
-    /// Append edges with `IntoIterator<Item = Edge<C, T, EE>>`
-    pub fn try_append<I>(&mut self, iter: I) -> Result<()>
+    /// Append edges with `IntoIterator<Item = Result<Edge<C, T, EE>, E>>`
+    pub fn try_append<I, E>(&mut self, iter: I) -> Result<(), E>
     where
-        I: IntoIterator<Item = Result<Edge<C, T, EE>>>,
+        I: IntoIterator<Item = Result<Edge<C, T, EE>, E>>,
     {
         for edge in iter {
             self.edges.push(edge?);
@@ -109,10 +109,10 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
         self.edges.extend(stream.collect::<Vec<_>>().await);
     }
 
-    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>>>`
-    pub async fn try_append_stream<S>(&mut self, stream: S) -> Result<()>
+    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>, E>>`
+    pub async fn try_append_stream<S, E>(&mut self, stream: S) -> Result<(), E>
     where
-        S: Stream<Item = Result<Edge<C, T, EE>>> + Unpin,
+        S: Stream<Item = Result<Edge<C, T, EE>, E>> + Unpin,
     {
         self.edges.extend(stream.try_collect::<Vec<_>>().await?);
         Ok(())
