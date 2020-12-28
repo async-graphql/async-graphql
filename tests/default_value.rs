@@ -17,9 +17,13 @@ pub async fn test_default_value_arg() {
         async fn value3(&self, #[graphql(default_with = "1 + 2 + 3")] input: i32) -> i32 {
             input
         }
+
+        async fn value4(&self, #[graphql(default = 100)] input: u32) -> u32 {
+            input
+        }
     }
 
-    let query = "{ value1 value2 value3 }";
+    let query = "{ value1 value2 value3 value4 }";
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
@@ -27,6 +31,7 @@ pub async fn test_default_value_arg() {
             "value1": 100,
             "value2": 0,
             "value3": 6,
+            "value4": 100,
         })
     );
 
