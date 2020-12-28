@@ -38,7 +38,7 @@ dataloader = ["futures-timer", "futures-channel"]
 nightly = []
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "=2.4.0" }
+async-graphql-derive = { path = "derive", version = "=2.4.3" }
 async-graphql-value = { path = "value", version = "=2.0.5" }
 async-graphql-parser = { path = "parser", version = "=2.1.2" }
 
