@@ -4,7 +4,7 @@
 
 ## Request example
 
-When you create your Tide server, you will need to pass the `async_graphql_tide::endpoint` with your schema as the POST request handler. Please note that you need to enable the `attributes` feature in `tide` for this example to work.
+When you create your `tide` server, you will need to pass the `async_graphql_tide::endpoint` with your schema as the POST request handler. Please note that you need to enable the `attributes` feature in `async-std` for this example to work.
 
 ```rust
 use async_graphql::{
