@@ -28,6 +28,7 @@
 - [集成到WebServer](integrations.md)
     - [Warp](integrations_to_warp.md)
     - [Actix-web](integrations_to_actix_web.md)
+    - [Tide](integrations_to_tide.md)  
 - [高级主题](advanced_topics.md)
     - [自定义标量](custom_scalars.md)
     - [优化查询（解决N+1问题）](dataloader.md)
