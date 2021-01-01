@@ -26,6 +26,7 @@
     - [Query complexity and depth](depth_and_complexity.md)
     - [Hide content in introspection](visibility.md)
 - [Integrations](integrations.md)
+    - [Tide](integrations_to_tide.md)
     - [Warp](integrations_to_warp.md)
     - [Actix-web](integrations_to_actix_web.md)
 - [Advanced topics](advanced_topics.md)
