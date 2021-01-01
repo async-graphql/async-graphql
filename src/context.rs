@@ -623,6 +623,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
 }
 
 /// Selection field.
+#[derive(Clone, Copy)]
 pub struct SelectionField<'a> {
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     field: &'a Field,
@@ -640,6 +641,26 @@ impl<'a> SelectionField<'a> {
             fragments: self.fragments,
             iter: vec![self.field.selection_set.node.items.iter()],
         }
+    }
+}
+
+struct DebugSelectionSet<'a>(Vec<SelectionField<'a>>);
+
+impl<'a> Debug for DebugSelectionSet<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.0.clone()).finish()
+    }
+}
+
+impl<'a> Debug for SelectionField<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(self.name())
+            .field("name", &self.name())
+            .field(
+                "selection_set",
+                &DebugSelectionSet(self.selection_set().collect()),
+            )
+            .finish()
     }
 }
 
