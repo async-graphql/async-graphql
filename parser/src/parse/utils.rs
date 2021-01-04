@@ -9,8 +9,8 @@ pub(super) fn next_if_rule<'a>(pairs: &mut Pairs<'a, Rule>, rule: Rule) -> Optio
         None
     }
 }
-pub(super) fn parse_if_rule<'a, T>(
-    pairs: &mut Pairs<'a, Rule>,
+pub(super) fn parse_if_rule<T>(
+    pairs: &mut Pairs<Rule>,
     rule: Rule,
     f: impl FnOnce(Pair<Rule>) -> Result<T>,
 ) -> Result<Option<T>> {
