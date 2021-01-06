@@ -333,6 +333,11 @@ where
         self.0.env.registry.export_sdl(false)
     }
 
+    /// Returns Federation SDL(Schema Definition Language) of this schema.
+    pub fn federation_sdl(&self) -> String {
+        self.0.env.registry.export_sdl(true)
+    }
+
     /// Get all names in this schema
     ///
     /// Maybe you want to serialize a custom binary protocol. In order to minimize message size, a dictionary

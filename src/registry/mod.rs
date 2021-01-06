@@ -228,37 +228,19 @@ impl MetaType {
     }
 
     pub fn is_composite(&self) -> bool {
-        match self {
-            MetaType::Object { .. } => true,
-            MetaType::Interface { .. } => true,
-            MetaType::Union { .. } => true,
-            _ => false,
-        }
+        matches!(self, MetaType::Object { .. } | MetaType::Interface { .. } | MetaType::Union { .. })
     }
 
     pub fn is_abstract(&self) -> bool {
-        match self {
-            MetaType::Interface { .. } => true,
-            MetaType::Union { .. } => true,
-            _ => false,
-        }
+        matches!(self, MetaType::Interface { .. } | MetaType::Union { .. })
     }
 
     pub fn is_leaf(&self) -> bool {
-        match self {
-            MetaType::Enum { .. } => true,
-            MetaType::Scalar { .. } => true,
-            _ => false,
-        }
+        matches!(self, MetaType::Enum { .. } | MetaType::Scalar { .. })
     }
 
     pub fn is_input(&self) -> bool {
-        match self {
-            MetaType::Enum { .. } => true,
-            MetaType::Scalar { .. } => true,
-            MetaType::InputObject { .. } => true,
-            _ => false,
-        }
+        matches!(self, MetaType::Enum { .. } | MetaType::Scalar { .. } | MetaType::InputObject { .. })
     }
 
     pub fn is_possible_type(&self, type_name: &str) -> bool {
@@ -279,7 +261,7 @@ impl MetaType {
     }
 
     pub fn type_overlap(&self, ty: &MetaType) -> bool {
-        if self as *const MetaType == ty as *const MetaType {
+        if std::ptr::eq(self, ty) {
             return true;
         }
 
