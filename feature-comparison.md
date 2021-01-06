@@ -4,9 +4,9 @@ Comparing Features of Other Rust GraphQL Implementations
 
 **Please let me know if there is anything wrong.**
 
-|                | async-graphql | juniper(0.14.2) |
+|                | async-graphql | juniper(0.15.1) |
 |----------------|---------------|-----------------|
-| async/await    | 👍            | ⛔️              |
+| async/await    | 👍            | 👍️              |
 | Rustfmt friendly(No DSL) | 👍          | ⛔️  |
 | Boilerplate    | Less          | Some            |         
 | Type Safety    | 👍            | 👍               |
@@ -23,7 +23,7 @@ Comparing Features of Other Rust GraphQL Implementations
 | Input validators | 👍         | ⛔️               |
 | Field guard | 👍              | ⛔️               |
 | Multipart request(upload file) | 👍 | ⛔️               |
-| Subscription   | 👍            | ⛔️               |
+| Subscription   | 👍            | 👍️               |
 | Opentracing     | 👍         | ⛔️               |
 | Apollo Federation | 👍         | ⛔️               |
 | Apollo Tracing | 👍         | ⛔️               |
