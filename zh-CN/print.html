@@ -1391,7 +1391,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span></code></pre></pre>
 <h2><a class="header" href="#更多例子-1" id="更多例子-1">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/actix-web">https://github.com/async-graphql/examples/tree/master/actix-web</a></p>
-<h1><a class="header" href="#actix-web-1" id="actix-web-1">Actix-web</a></h1>
+<h1><a class="header" href="#tide" id="tide">Tide</a></h1>
 <p><code>async_graphql_tide</code> 提供一个 trait <a href="https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html">tide::Endpoint</a> 的实现。如果您想手动处理请求的话，它还提供了 <code>receive_request</code> 和 <code>respond</code> 函数来将一个 Tide 请求转换为一个 GraphQL 请求，并返回  <code>tide::Response</code>。</p>
 <h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
 <p>当创建你的 <code>tide</code> 服务器时，你需要将 <code>Schema</code> 传递给 <code>async_graphql_tide::endpoint</code> 。请注意，你需要启用 <code>async-std</code> 中的 feature <code>attributes</code> 才能使这个例子正常工作。</p>

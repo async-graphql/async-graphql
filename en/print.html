@@ -1381,7 +1381,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 <li>Rocket <a href="https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket">async-graphql-rocket</a></li>
 </ul>
 <p><strong>Even if the server you are currently using is not in the above list, it is quite simple to implement similar functionality yourself.</strong></p>
-<h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
+<h1><a class="header" href="#tide" id="tide">Tide</a></h1>
 <p><code>async_graphql_tide</code> provides an implementation of <a href="https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html">tide::Endpoint</a> trait. It also provides <code>receive_request</code> and <code>respond</code> functions to convert a Tide request to a GraphQL request and back to Tide response, if you want to  handle the request manually.</p>
 <h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
 <p>When you create your <code>tide</code> server, you will need to pass the <code>async_graphql_tide::endpoint</code> with your schema as the POST request handler. Please note that you need to enable the <code>attributes</code> feature in <code>async-std</code> for this example to work.</p>
@@ -1480,7 +1480,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span></code></pre></pre>
 <h2><a class="header" href="#more-examples-1" id="more-examples-1">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>
-<h1><a class="header" href="#actix-web-1" id="actix-web-1">Actix-web</a></h1>
+<h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
 <p><code>Async-graphql-actix-web</code> provides an implementation of <code>actix_web::FromRequest</code> for <code>Request</code>.
 This is actually an abstraction around <code>async_graphql::Request</code> and you can call <code>Request::into_inner</code> to 
 convert it into a <code>async_graphql::Request</code>.</p>
