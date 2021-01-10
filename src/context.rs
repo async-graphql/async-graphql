@@ -320,6 +320,7 @@ pub struct QueryEnvInner {
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub uploads: Vec<UploadValue>,
     pub ctx_data: Arc<Data>,
+    pub http_headers: spin::Mutex<HashMap<String, String>>,
 }
 
 #[doc(hidden)]
@@ -440,6 +441,14 @@ impl<'a, T> ContextBase<'a, T> {
             .get(&TypeId::of::<D>())
             .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
+    }
+
+    /// Sets an HTTP header to response.
+    pub fn set_http_header(&self, name: impl Into<String>, value: impl Into<String>) {
+        self.query_env
+            .http_headers
+            .lock()
+            .insert(name.into(), value.into());
     }
 
     fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Value> {

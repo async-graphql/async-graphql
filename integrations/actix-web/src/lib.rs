@@ -168,6 +168,9 @@ impl Responder for Response {
             if let Some(cache_control) = self.0.cache_control().value() {
                 res.header("cache-control", cache_control);
             }
+            for (name, value) in self.0.http_headers() {
+                res.header(name, value);
+            }
         }
         futures_util::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
     }

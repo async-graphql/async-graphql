@@ -437,6 +437,7 @@ where
             fragments: document.fragments,
             uploads: request.uploads,
             ctx_data: Arc::new(data),
+            http_headers: Default::default(),
         };
         Ok((env, validation_result.cache_control))
     }

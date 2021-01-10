@@ -5,6 +5,7 @@ use std::io::ErrorKind;
 use async_graphql::http::MultipartOptions;
 use async_graphql::{BatchRequest, ObjectType, Schema, SubscriptionType};
 use futures_util::TryStreamExt;
+use warp::hyper::header::HeaderName;
 use warp::reply::Response as WarpResponse;
 use warp::{Buf, Filter, Rejection, Reply};
 
@@ -77,8 +78,16 @@ impl Reply for BatchResponse {
 
         if self.0.is_ok() {
             if let Some(cache_control) = self.0.cache_control().value() {
-                resp.headers_mut()
-                    .insert("cache-control", cache_control.try_into().unwrap());
+                if let Ok(value) = cache_control.try_into() {
+                    resp.headers_mut().insert("cache-control", value);
+                }
+            }
+            for (name, value) in self.0.http_headers() {
+                if let (Ok(name), Ok(value)) =
+                    (TryInto::<HeaderName>::try_into(name), value.try_into())
+                {
+                    resp.headers_mut().insert(name, value);
+                }
             }
         }
 

@@ -155,15 +155,18 @@ pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
 }
 
 /// Convert a GraphQL response to a Tide response.
-pub fn respond(gql: impl Into<async_graphql::BatchResponse>) -> tide::Result {
-    let gql = gql.into();
+pub fn respond(resp: impl Into<async_graphql::BatchResponse>) -> tide::Result {
+    let resp = resp.into();
 
     let mut response = Response::new(StatusCode::Ok);
-    if gql.is_ok() {
-        if let Some(cache_control) = gql.cache_control().value() {
+    if resp.is_ok() {
+        if let Some(cache_control) = resp.cache_control().value() {
             response.insert_header(headers::CACHE_CONTROL, cache_control);
         }
+        for (name, value) in resp.http_headers() {
+            response.insert_header(name, value);
+        }
     }
-    response.set_body(Body::from_json(&gql)?);
+    response.set_body(Body::from_json(&resp)?);
     Ok(response)
 }
