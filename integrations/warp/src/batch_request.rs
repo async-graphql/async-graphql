@@ -86,7 +86,7 @@ impl Reply for BatchResponse {
                 if let (Ok(name), Ok(value)) =
                     (TryInto::<HeaderName>::try_into(name), value.try_into())
                 {
-                    resp.headers_mut().insert(name, value);
+                    resp.headers_mut().append(name, value);
                 }
             }
         }
