@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use async_graphql_value::ConstValue;
+
 use crate::parser::types::Field;
 use crate::registry::Registry;
 use crate::{
-    registry, ContainerType, ContextSelectionSet, InputValueResult, Positioned, Result,
-    ServerResult, Value,
+    registry, ContainerType, ContextSelectionSet, InputValueError, InputValueResult, Positioned,
+    Result, ServerResult, Value,
 };
 
 #[doc(hidden)]
@@ -78,50 +80,6 @@ impl<T: OutputType + Send + Sync + ?Sized> OutputType for &T {
     }
 }
 
-impl<T: Type + Send + Sync + ?Sized> Type for Box<T> {
-    fn type_name() -> Cow<'static, str> {
-        T::type_name()
-    }
-
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: OutputType + Send + Sync + ?Sized> OutputType for Box<T> {
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        T::resolve(&**self, ctx, field).await
-    }
-}
-
-impl<T: Type + Send + Sync + ?Sized> Type for Arc<T> {
-    fn type_name() -> Cow<'static, str> {
-        T::type_name()
-    }
-
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: OutputType + Send + Sync + ?Sized> OutputType for Arc<T> {
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        T::resolve(&**self, ctx, field).await
-    }
-}
-
 impl<T: Type> Type for Result<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -164,3 +122,69 @@ pub trait UnionType: ContainerType {}
 
 /// A GraphQL input object.
 pub trait InputObjectType: InputType {}
+
+impl<T: Type + Send + Sync + ?Sized> Type for Box<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputType + Send + Sync + ?Sized> OutputType for Box<T> {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        T::resolve(&**self, ctx, field).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: InputType + Send + Sync> InputType for Box<T> {
+    fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
+        T::parse(value).map(Box::new).map_err(InputValueError::map)
+    }
+
+    fn to_value(&self) -> ConstValue {
+        T::to_value(&self)
+    }
+}
+
+impl<T: Type + Send + Sync + ?Sized> Type for Arc<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: OutputType + Send + Sync + ?Sized> OutputType for Arc<T> {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        T::resolve(&**self, ctx, field).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: InputType + Send + Sync> InputType for Arc<T> {
+    fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
+        T::parse(value).map(Arc::new).map_err(InputValueError::map)
+    }
+
+    fn to_value(&self) -> ConstValue {
+        T::to_value(&self)
+    }
+}
