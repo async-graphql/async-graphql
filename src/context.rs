@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use async_graphql_value::Value as InputValue;
 use fnv::FnvHashMap;
+use http::header::{AsHeaderName, HeaderMap, IntoHeaderName};
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
@@ -320,7 +321,7 @@ pub struct QueryEnvInner {
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub uploads: Vec<UploadValue>,
     pub ctx_data: Arc<Data>,
-    pub http_headers: spin::Mutex<HashMap<String, String>>,
+    pub http_headers: spin::Mutex<HeaderMap<String>>,
 }
 
 #[doc(hidden)]
@@ -443,12 +444,124 @@ impl<'a, T> ContextBase<'a, T> {
             .and_then(|d| d.downcast_ref::<D>())
     }
 
-    /// Sets an HTTP header to response.
-    pub fn set_http_header(&self, name: impl Into<String>, value: impl Into<String>) {
+    /// Returns whether the HTTP header `key` is currently set on the response
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_graphql::*;
+    /// use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+    ///
+    /// struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn greet(&self, ctx: &Context<'_>) -> String {
+    ///
+    ///         let header_exists = ctx.http_header_contains("Access-Control-Allow-Origin");
+    ///         assert!(!header_exists);
+    ///
+    ///         ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+    ///
+    ///         let header_exists = ctx.http_header_contains("Access-Control-Allow-Origin");
+    ///         assert!(header_exists);
+    ///
+    ///         String::from("Hello world")
+    ///     }
+    /// }
+    /// ```
+    pub fn http_header_contains(&self, key: impl AsHeaderName) -> bool {
+        self.query_env.http_headers.lock().contains_key(key)
+    }
+
+    /// Sets a HTTP header to response.
+    ///
+    /// If the header was not currently set on the response, then `None` is returned.
+    ///
+    /// If the response already contained this header then the new value is associated with this key
+    /// and __all the previous values are removed__, however only a the first previous
+    /// value is returned.
+    ///
+    /// See [`http::HeaderMap`] for more details on the underlying implementation
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_graphql::*;
+    /// use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+    ///
+    /// struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn greet(&self, ctx: &Context<'_>) -> String {
+    ///
+    ///         // Headers can be inserted using the `http` constants
+    ///         let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+    ///         assert_eq!(was_in_headers, None);
+    ///
+    ///         // They can also be inserted using &str
+    ///         let was_in_headers = ctx.insert_http_header("Custom-Header", "1234");
+    ///         assert_eq!(was_in_headers, None);
+    ///
+    ///         // If multiple headers with the same key are `inserted` then the most recent
+    ///         // one overwrites the previous. If you want multiple headers for the same key, use
+    ///         // `append_http_header` for subsequent headers
+    ///         let was_in_headers = ctx.insert_http_header("Custom-Header", "Hello World");
+    ///         assert_eq!(was_in_headers, Some("1234".to_string()));
+    ///
+    ///         String::from("Hello world")
+    ///     }
+    /// }
+    /// ```
+    pub fn insert_http_header(
+        &self,
+        name: impl IntoHeaderName,
+        value: impl Into<String>,
+    ) -> Option<String> {
         self.query_env
             .http_headers
             .lock()
-            .insert(name.into(), value.into());
+            .insert(name, value.into())
+    }
+
+    /// Sets a HTTP header to response.
+    ///
+    /// If the header was not currently set on the response, then `false` is returned.
+    ///
+    /// If the response did have this header then the new value is appended to the end of the
+    /// list of values currently associated with the key, however the key is not updated
+    /// _(which is important for types that can be `==` without being identical)_.
+    ///
+    /// See [`http::HeaderMap`] for more details on the underlying implementation
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use async_graphql::*;
+    /// use ::http::header::SET_COOKIE;
+    ///
+    /// struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn greet(&self, ctx: &Context<'_>) -> String {
+    ///         // Insert the first instance of the header
+    ///         ctx.insert_http_header(SET_COOKIE, "Chocolate Chip");
+    ///
+    ///         // Subsequent values should be appended
+    ///         let header_already_exists = ctx.append_http_header("Set-Cookie", "Macadamia");
+    ///         assert!(header_already_exists);
+    ///
+    ///         String::from("Hello world")
+    ///     }
+    /// }
+    /// ```
+    pub fn append_http_header(&self, name: impl IntoHeaderName, value: impl Into<String>) -> bool {
+        self.query_env
+            .http_headers
+            .lock()
+            .append(name, value.into())
     }
 
     fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Value> {

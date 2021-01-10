@@ -70,7 +70,7 @@ impl Extension for LoggerExtension {
         struct DisplayError<'a> {
             log: &'a LoggerExtension,
             e: &'a ServerError,
-        };
+        }
         impl<'a> Display for DisplayError<'a> {
             fn fmt(&self, f: &mut Formatter) -> fmt::Result {
                 write!(f, "[Error] ")?;
