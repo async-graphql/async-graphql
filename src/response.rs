@@ -53,6 +53,15 @@ impl Response {
         Self { extensions, ..self }
     }
 
+    /// Set the http headers of the response.
+    #[must_use]
+    pub fn http_headers(self, http_headers: HeaderMap<String>) -> Self {
+        Self {
+            http_headers,
+            ..self
+        }
+    }
+
     /// Set the cache control of the response.
     #[must_use]
     pub fn cache_control(self, cache_control: CacheControl) -> Self {
