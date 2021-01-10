@@ -316,6 +316,8 @@ pub type FieldResult<T> = Result<T>;
 ///
 /// # Examples
 ///
+/// Implements GraphQL Object for struct.
+///
 /// ```rust
 /// use async_graphql::*;
 ///
@@ -360,6 +362,57 @@ pub type FieldResult<T> = Result<T>;
 ///         "valueWithError": 10,
 ///         "valueWithArg1": 1,
 ///         "valueWithArg2": 99
+///     }));
+/// });
+/// ```
+///
+/// # Examples
+///
+/// Implements GraphQL Object for trait object.
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// trait MyTrait: Send + Sync {
+///     fn name(&self) -> &str;
+/// }
+///
+/// #[Object]
+/// impl dyn MyTrait {
+///     #[graphql(name = "name")]
+///     async fn gql_name(&self) -> &str {
+///         self.name()
+///     }
+/// }
+///
+/// struct MyObj(String);
+///
+/// impl MyTrait for MyObj {
+///     fn name(&self) -> &str {
+///         &self.0
+///     }
+/// }
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     async fn objs(&self) -> Vec<Box<dyn MyTrait>> {
+///         vec![
+///             Box::new(MyObj("a".to_string())),
+///             Box::new(MyObj("b".to_string())),
+///         ]
+///     }
+/// }
+///
+/// async_std::task::block_on(async move {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let res = schema.execute("{ objs { name } }").await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "objs": [
+///             { "name": "a" },
+///             { "name": "b" },
+///         ]
 ///     }));
 /// });
 /// ```

@@ -297,7 +297,7 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn create_type<T: crate::Type, F: FnMut(&mut Registry) -> MetaType>(
+    pub fn create_type<T: crate::Type + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
         &mut self,
         mut f: F,
     ) -> String {
