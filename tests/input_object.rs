@@ -318,3 +318,34 @@ pub async fn test_input_object_skip_field() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_box_input_object() {
+    #[derive(InputObject)]
+    struct MyInput {
+        value: i32,
+        input: Option<Box<MyInput>>,
+    }
+
+    struct Root;
+
+    #[Object]
+    impl Root {
+        async fn q(&self, input: MyInput) -> i32 {
+            input.value
+                + input.input.as_ref().unwrap().value
+                + input.input.as_ref().unwrap().input.as_ref().unwrap().value
+        }
+    }
+
+    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            q(input: {value: 100, input: { value: 200, input: { value: 300 } } })
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "q": 600
+        })
+    );
+}

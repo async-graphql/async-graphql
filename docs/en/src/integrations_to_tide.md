@@ -1,4 +1,4 @@
-# Actix-web
+# Tide
 
 `async_graphql_tide` provides an implementation of [tide::Endpoint](https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html) trait. It also provides `receive_request` and `respond` functions to convert a Tide request to a GraphQL request and back to Tide response, if you want to  handle the request manually.
 

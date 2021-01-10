@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};
@@ -20,6 +22,10 @@ pub struct Response {
     /// Errors
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub errors: Vec<ServerError>,
+
+    /// HTTP headers
+    #[serde(skip)]
+    pub http_headers: HashMap<String, String>,
 }
 
 impl Response {
@@ -92,7 +98,7 @@ pub enum BatchResponse {
 }
 
 impl BatchResponse {
-    /// Get cache control value
+    /// Gets cache control value
     pub fn cache_control(&self) -> CacheControl {
         match self {
             BatchResponse::Single(resp) => resp.cache_control,
@@ -108,6 +114,27 @@ impl BatchResponse {
             BatchResponse::Single(resp) => resp.is_ok(),
             BatchResponse::Batch(resp) => resp.iter().all(Response::is_ok),
         }
+    }
+
+    /// Gets HTTP headers
+    pub fn http_headers(&self) -> impl Iterator<Item = (&str, &str)> {
+        let it: Box<dyn Iterator<Item = (&str, &str)>> = match self {
+            BatchResponse::Single(resp) => Box::new(
+                resp.http_headers
+                    .iter()
+                    .map(|item| (item.0.as_str(), item.1.as_str())),
+            ),
+            BatchResponse::Batch(resp) => Box::new(
+                resp.iter()
+                    .map(|r| {
+                        r.http_headers
+                            .iter()
+                            .map(|item| (item.0.as_str(), item.1.as_str()))
+                    })
+                    .flatten(),
+            ),
+        };
+        it
     }
 }
 

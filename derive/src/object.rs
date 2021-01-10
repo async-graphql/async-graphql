@@ -1,7 +1,8 @@
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
+use syn::{Block, Error, FnArg, Ident, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
 
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
@@ -18,12 +19,14 @@ pub fn generate(
     let crate_name = get_crate_name(object_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;
+    let generics_params = &generics.params;
     let where_clause = &item_impl.generics.where_clause;
     let extends = object_args.extends;
     let gql_typename = object_args
         .name
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+    let shadow_type = Ident::new(&format!("__Shadow{}", gql_typename), Span::call_site());
 
     let desc = if object_args.use_type_description {
         quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
@@ -466,8 +469,10 @@ pub fn generate(
                     let block = &method.block;
                     let new_block = quote!({
                         {
-                            let value:#inner_ty = async move #block.await;
-                            ::std::result::Result::Ok(value)
+                            ::std::result::Result::Ok(async move {
+                                let value:#inner_ty = #block;
+                                value
+                            }.await)
                         }
                     });
                     method.block = syn::parse2::<Block>(new_block).expect("invalid block");
@@ -534,11 +539,15 @@ pub fn generate(
     }
 
     let visible = visible_fn(&object_args.visible);
+
     let expanded = quote! {
         #item_impl
 
+        #[allow(non_snake_case)]
+        type #shadow_type<#generics_params> = #self_ty;
+
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #self_ty #where_clause {
+        impl #generics #crate_name::Type for #shadow_type<#generics_params> #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -566,7 +575,7 @@ pub fn generate(
         #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
         #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
         #[#crate_name::async_trait::async_trait]
-        impl#generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
+        impl#generics #crate_name::resolver_utils::ContainerType for #shadow_type<#generics_params> #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
                 ::std::result::Result::Ok(::std::option::Option::None)
@@ -592,13 +601,16 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputType for #self_ty #where_clause {
+        impl #generics #crate_name::OutputType for #shadow_type<#generics_params> #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #generics #crate_name::ObjectType for #self_ty #where_clause {}
+        impl #generics #crate_name::ObjectType for #shadow_type<#generics_params> #where_clause {}
     };
+    if gql_typename == "QueryRoot11" {
+        println!("{}", expanded);
+    }
     Ok(expanded.into())
 }

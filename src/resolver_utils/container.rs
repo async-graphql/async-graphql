@@ -36,7 +36,7 @@ pub trait ContainerType: OutputType {
         fields: &mut Fields<'a>,
     ) -> ServerResult<()>
     where
-        Self: Sized + Send + Sync,
+        Self: Send + Sync,
     {
         fields.add_set(ctx, self)
     }
@@ -61,7 +61,7 @@ impl<T: ContainerType + Send + Sync> ContainerType for &T {
 }
 
 /// Resolve an container by executing each of the fields concurrently.
-pub async fn resolve_container<'a, T: ContainerType + Send + Sync>(
+pub async fn resolve_container<'a, T: ContainerType + Send + Sync + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> ServerResult<Value> {
@@ -69,7 +69,7 @@ pub async fn resolve_container<'a, T: ContainerType + Send + Sync>(
 }
 
 /// Resolve an container by executing each of the fields serially.
-pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync>(
+pub async fn resolve_container_serial<'a, T: ContainerType + Send + Sync + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
 ) -> ServerResult<Value> {
@@ -102,7 +102,7 @@ fn insert_value(target: &mut BTreeMap<Name, Value>, name: Name, value: Value) {
     }
 }
 
-async fn resolve_container_inner<'a, T: ContainerType + Send + Sync>(
+async fn resolve_container_inner<'a, T: ContainerType + Send + Sync + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
     parallel: bool,
@@ -134,7 +134,7 @@ pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 
 impl<'a> Fields<'a> {
     /// Add another set of fields to this set of fields using the given container.
-    pub fn add_set<T: ContainerType + Send + Sync>(
+    pub fn add_set<T: ContainerType + Send + Sync + ?Sized>(
         &mut self,
         ctx: &ContextSelectionSet<'a>,
         root: &'a T,
