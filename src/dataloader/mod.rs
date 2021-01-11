@@ -187,9 +187,6 @@ impl<T> DataLoader<T> {
             let prev_count = typed_requests.keys.len();
             let keys = keys.collect::<HashSet<_>>();
             typed_requests.keys.extend(keys.clone());
-            if typed_requests.keys.len() == prev_count {
-                return Ok(Default::default());
-            }
             let (tx, rx) = oneshot::channel();
             typed_requests.pending.push((keys, tx));
             if typed_requests.keys.len() >= self.max_batch_size {
@@ -226,32 +223,32 @@ mod tests {
     use super::*;
     use std::sync::Arc;
 
+    struct MyLoader;
+
+    #[async_trait::async_trait]
+    impl Loader<i32> for MyLoader {
+        type Value = i32;
+        type Error = ();
+
+        async fn load(&self, keys: &[i32]) -> Result<HashMap<i32, Self::Value>, Self::Error> {
+            assert!(keys.len() <= 10);
+            Ok(keys.iter().copied().map(|k| (k, k)).collect())
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl Loader<i64> for MyLoader {
+        type Value = i64;
+        type Error = ();
+
+        async fn load(&self, keys: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+            assert!(keys.len() <= 10);
+            Ok(keys.iter().copied().map(|k| (k, k)).collect())
+        }
+    }
+
     #[async_std::test]
     async fn test_dataloader() {
-        struct MyLoader;
-
-        #[async_trait::async_trait]
-        impl Loader<i32> for MyLoader {
-            type Value = i32;
-            type Error = ();
-
-            async fn load(&self, keys: &[i32]) -> Result<HashMap<i32, Self::Value>, Self::Error> {
-                assert!(keys.len() <= 10);
-                Ok(keys.iter().copied().map(|k| (k, k)).collect())
-            }
-        }
-
-        #[async_trait::async_trait]
-        impl Loader<i64> for MyLoader {
-            type Value = i64;
-            type Error = ();
-
-            async fn load(&self, keys: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-                assert!(keys.len() <= 10);
-                Ok(keys.iter().copied().map(|k| (k, k)).collect())
-            }
-        }
-
         let loader = Arc::new(DataLoader::new(MyLoader).max_batch_size(10));
         assert_eq!(
             futures_util::future::try_join_all((0..100i32).map({
@@ -277,6 +274,27 @@ mod tests {
             .await
             .unwrap(),
             (0..100).map(Option::Some).collect::<Vec<_>>()
+        );
+    }
+
+    #[async_std::test]
+    async fn test_duplicate_keys() {
+        let loader = Arc::new(DataLoader::new(MyLoader).max_batch_size(10));
+        assert_eq!(
+            futures_util::future::try_join_all([1, 3, 5, 1, 7, 8, 3, 7].iter().copied().map({
+                let loader = loader.clone();
+                move |n| {
+                    let loader = loader.clone();
+                    async move { loader.load_one(n).await }
+                }
+            }))
+            .await
+            .unwrap(),
+            [1, 3, 5, 1, 7, 8, 3, 7]
+                .iter()
+                .copied()
+                .map(Option::Some)
+                .collect::<Vec<_>>()
         );
     }
 }
