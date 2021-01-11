@@ -5,7 +5,6 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use futures_util::stream::{self, Stream, StreamExt};
-use http::header::HeaderMap;
 use indexmap::map::IndexMap;
 
 use crate::context::{Data, QueryEnvInner, ResolveId};
@@ -474,16 +473,12 @@ where
         env.extensions.execution_end(&ctx_extension);
         let extensions = env.extensions.result(&ctx_extension);
 
-        let mut http_headers = HeaderMap::default();
-        let mut current_headers = env.http_headers.lock();
-        std::mem::swap(&mut http_headers, &mut current_headers);
-
         match data {
             Ok(data) => Response::new(data),
             Err(e) => Response::from_errors(vec![e]),
         }
         .extensions(extensions)
-        .http_headers(http_headers)
+        .http_headers(std::mem::take(&mut *env.http_headers.lock()))
     }
 
     /// Execute a GraphQL query.
