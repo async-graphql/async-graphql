@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use http::header::HeaderMap;
 
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +25,7 @@ pub struct Response {
 
     /// HTTP headers
     #[serde(skip)]
-    pub http_headers: HashMap<String, String>,
+    pub http_headers: HeaderMap<String>,
 }
 
 impl Response {
@@ -51,6 +51,15 @@ impl Response {
     #[must_use]
     pub fn extensions(self, extensions: Option<Value>) -> Self {
         Self { extensions, ..self }
+    }
+
+    /// Set the http headers of the response.
+    #[must_use]
+    pub fn http_headers(self, http_headers: HeaderMap<String>) -> Self {
+        Self {
+            http_headers,
+            ..self
+        }
     }
 
     /// Set the cache control of the response.
@@ -116,20 +125,20 @@ impl BatchResponse {
         }
     }
 
-    /// Gets HTTP headers
+    /// Provides an iterator over all of the HTTP headers set on the response
     pub fn http_headers(&self) -> impl Iterator<Item = (&str, &str)> {
         let it: Box<dyn Iterator<Item = (&str, &str)>> = match self {
             BatchResponse::Single(resp) => Box::new(
                 resp.http_headers
                     .iter()
-                    .map(|item| (item.0.as_str(), item.1.as_str())),
+                    .map(|(key, value)| (key.as_str(), value.as_str())),
             ),
             BatchResponse::Batch(resp) => Box::new(
                 resp.iter()
                     .map(|r| {
                         r.http_headers
                             .iter()
-                            .map(|item| (item.0.as_str(), item.1.as_str()))
+                            .map(|(key, value)| (key.as_str(), value.as_str()))
                     })
                     .flatten(),
             ),

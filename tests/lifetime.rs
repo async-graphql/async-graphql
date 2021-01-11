@@ -9,6 +9,7 @@ struct ObjA<'a> {
 struct ObjB<'a>(PhantomData<&'a i32>);
 
 #[Object]
+#[allow(unreachable_code)]
 impl<'a> ObjB<'a> {
     async fn value(&self) -> &'a i32 {
         todo!()

@@ -125,13 +125,6 @@ impl<T: InputType> InputValueError<T> {
         }
     }
 
-    pub(crate) fn map<Q>(self) -> InputValueError<Q> {
-        InputValueError {
-            message: self.message,
-            phantom: PhantomData,
-        }
-    }
-
     /// The expected input type did not match the actual input type.
     #[must_use]
     pub fn expected_type(actual: Value) -> Self {

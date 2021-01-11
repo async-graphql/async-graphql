@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.4.6"
+version = "2.4.7"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -55,6 +55,7 @@ serde_json = "1.0.48"
 spin = "0.7.0"
 thiserror = "1.0.21"
 static_assertions = "1.1.0"
+http = "0.2.3"
 
 # Feature optional dependencies
 bson = { version = "1.0.0", optional = true }

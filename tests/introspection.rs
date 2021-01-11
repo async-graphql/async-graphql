@@ -124,6 +124,7 @@ struct Query;
 
 /// Global query
 #[Object]
+#[allow(unreachable_code)]
 impl Query {
     /// Get a simple object
     async fn simple_object(&self) -> SimpleObject {
@@ -141,6 +142,7 @@ struct Mutation;
 
 /// Global mutation
 #[Object]
+#[allow(unreachable_code)]
 impl Mutation {
     /// simple_mutation description
     /// line2

@@ -478,6 +478,7 @@ where
             Err(e) => Response::from_errors(vec![e]),
         }
         .extensions(extensions)
+        .http_headers(std::mem::take(&mut *env.http_headers.lock()))
     }
 
     /// Execute a GraphQL query.
