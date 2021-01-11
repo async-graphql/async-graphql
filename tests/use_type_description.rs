@@ -48,6 +48,7 @@ pub async fn test_object_with_lifetime() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn obj(&self) -> MyObj<'_> {
             todo!()

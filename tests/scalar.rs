@@ -16,6 +16,7 @@ pub async fn test_scalar_macro() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn value(&self) -> test_mod::MyValue {
             todo!()

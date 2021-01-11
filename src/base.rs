@@ -148,7 +148,9 @@ impl<T: OutputType + Send + Sync + ?Sized> OutputType for Box<T> {
 #[async_trait::async_trait]
 impl<T: InputType + Send + Sync> InputType for Box<T> {
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
-        T::parse(value).map(Box::new).map_err(InputValueError::map)
+        T::parse(value)
+            .map(Box::new)
+            .map_err(InputValueError::propagate)
     }
 
     fn to_value(&self) -> ConstValue {
@@ -181,7 +183,9 @@ impl<T: OutputType + Send + Sync + ?Sized> OutputType for Arc<T> {
 #[async_trait::async_trait]
 impl<T: InputType + Send + Sync> InputType for Arc<T> {
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
-        T::parse(value).map(Arc::new).map_err(InputValueError::map)
+        T::parse(value)
+            .map(Arc::new)
+            .map_err(InputValueError::propagate)
     }
 
     fn to_value(&self) -> ConstValue {

@@ -43,6 +43,7 @@ mod tests {
     struct MyObj;
 
     #[Object(internal)]
+    #[allow(unreachable_code)]
     impl MyObj {
         async fn a(&self) -> i32 {
             todo!()
@@ -58,6 +59,7 @@ mod tests {
     }
 
     #[Object(internal)]
+    #[allow(unreachable_code)]
     impl Query {
         async fn value(&self) -> i32 {
             todo!()

@@ -12,6 +12,7 @@ pub async fn test_type_visible() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn obj(&self) -> MyObj {
             todo!()
@@ -78,6 +79,7 @@ pub async fn test_field_visible() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn obj(&self) -> MyObj {
             todo!()
@@ -157,6 +159,7 @@ pub async fn test_enum_value_visible() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn e(&self) -> MyEnum {
             todo!()
@@ -218,6 +221,7 @@ pub async fn test_visible_fn() {
     struct Query;
 
     #[Object]
+    #[allow(unreachable_code)]
     impl Query {
         async fn obj(&self) -> MyObj {
             todo!()
