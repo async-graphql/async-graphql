@@ -7,7 +7,7 @@ use actix::{
 };
 use actix_http::error::PayloadError;
 use actix_http::{ws, Error};
-use actix_web::web::Bytes;
+use actix_web::web::{Bytes, BytesMut};
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use async_graphql::http::{WebSocket, WebSocketProtocols};
@@ -22,9 +22,9 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
     protocol: WebSocketProtocols,
     last_heartbeat: Instant,
-    messages: Option<async_channel::Sender<Vec<u8>>>,
+    messages: Option<async_channel::Sender<Bytes>>,
     initializer: Option<Box<dyn FnOnce(serde_json::Value) -> Result<Data> + Send + Sync>>,
-    continuation: Vec<u8>,
+    continuation: BytesMut,
 }
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
@@ -79,7 +79,7 @@ where
                 last_heartbeat: Instant::now(),
                 messages: None,
                 initializer: Some(Box::new(initializer)),
-                continuation: Vec::new(),
+                continuation: Default::default(),
             },
             &["graphql-transport-ws", "graphql-ws"],
             request,
@@ -155,7 +155,7 @@ where
             }
             Message::Continuation(item) => match item {
                 ws::Item::FirstText(bytes) | ws::Item::FirstBinary(bytes) => {
-                    self.continuation = bytes.to_vec();
+                    self.continuation = BytesMut::from(&*bytes);
                     None
                 }
                 ws::Item::Continue(bytes) => {
@@ -164,11 +164,11 @@ where
                 }
                 ws::Item::Last(bytes) => {
                     self.continuation.extend_from_slice(&bytes);
-                    Some(std::mem::take(&mut self.continuation))
+                    Some(std::mem::take(&mut self.continuation).freeze())
                 }
             },
             Message::Text(s) => Some(s.into_bytes()),
-            Message::Binary(bytes) => Some(bytes.to_vec()),
+            Message::Binary(bytes) => Some(bytes),
             Message::Close(_) => {
                 ctx.stop();
                 None
