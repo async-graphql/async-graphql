@@ -64,9 +64,9 @@ impl CountMutation {
 }
 
 pub async fn gql_handle_schema<
-    Q: Send + Sync + ObjectType + 'static,
-    M: Send + Sync + ObjectType + 'static,
-    S: Send + Sync + SubscriptionType + 'static,
+    Q: ObjectType + 'static,
+    M: ObjectType + 'static,
+    S: SubscriptionType + 'static,
 >(
     schema: web::Data<Schema<Q, M, S>>,
     req: Request,
@@ -74,7 +74,7 @@ pub async fn gql_handle_schema<
     schema.execute(req.into_inner()).await.into()
 }
 
-pub async fn gql_handle_schema_with_header<T: Send + Sync + ObjectType + 'static>(
+pub async fn gql_handle_schema_with_header<T: ObjectType + 'static>(
     schema: actix_web::web::Data<Schema<T, EmptyMutation, EmptySubscription>>,
     req: HttpRequest,
     gql_request: Request,

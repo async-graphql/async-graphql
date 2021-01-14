@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// A GraphQL subscription object
-pub trait SubscriptionType: Type {
+pub trait SubscriptionType: Type + Send + Sync {
     /// This function returns true of type `EmptySubscription` only.
     #[doc(hidden)]
     fn is_empty() -> bool {
@@ -24,7 +24,7 @@ pub trait SubscriptionType: Type {
 
 type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = ServerResult<(Name, Value)>> + 'a + Send>>;
 
-pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync + 'static>(
+pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
     streams: &mut Vec<BoxFieldStream<'a>>,
@@ -100,7 +100,7 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + Send + Sync
     Ok(())
 }
 
-impl<T: SubscriptionType + Send + Sync> SubscriptionType for &T {
+impl<T: SubscriptionType> SubscriptionType for &T {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'a>,

@@ -50,9 +50,9 @@ pub fn graphql<Query, Mutation, Subscription>(
     Error = Rejection,
 > + Clone
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     graphql_opts(schema, Default::default())
 }
@@ -63,9 +63,9 @@ pub fn graphql_opts<Query, Mutation, Subscription>(
     opts: MultipartOptions,
 ) -> impl Filter<Extract = ((Schema<Query, Mutation, Subscription>, Request),), Error = Rejection> + Clone
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     graphql_batch_opts(schema, opts).and_then(|(schema, batch): (_, BatchRequest)| async move {
         <Result<_, Rejection>>::Ok((

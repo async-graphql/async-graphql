@@ -64,6 +64,28 @@ impl FromMeta for Visible {
     }
 }
 
+pub struct PathList(pub Vec<Path>);
+
+impl FromMeta for PathList {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        let mut res = Vec::new();
+        for item in items {
+            if let NestedMeta::Meta(Meta::Path(p)) = item {
+                res.push(p.clone());
+            } else {
+                return Err(darling::Error::custom("Invalid path list"));
+            }
+        }
+        Ok(PathList(res))
+    }
+}
+
+#[derive(FromMeta)]
+pub struct ConcreteType {
+    pub name: String,
+    pub params: PathList,
+}
+
 #[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
@@ -118,6 +140,8 @@ pub struct SimpleObject {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default, multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
 }
 
 #[derive(FromMeta, Default)]
@@ -269,28 +293,6 @@ pub struct InputObjectField {
     pub visible: Option<Visible>,
 }
 
-pub struct PathList(pub Vec<Path>);
-
-impl FromMeta for PathList {
-    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
-        let mut res = Vec::new();
-        for item in items {
-            if let NestedMeta::Meta(Meta::Path(p)) = item {
-                res.push(p.clone());
-            } else {
-                return Err(darling::Error::custom("Invalid path list"));
-            }
-        }
-        Ok(PathList(res))
-    }
-}
-
-#[derive(FromMeta)]
-pub struct InputObjectConcrete {
-    pub name: String,
-    pub params: PathList,
-}
-
 #[derive(FromDeriveInput)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct InputObject {
@@ -308,7 +310,7 @@ pub struct InputObject {
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
-    pub concretes: Vec<InputObjectConcrete>,
+    pub concretes: Vec<ConcreteType>,
 }
 
 #[derive(FromMeta)]

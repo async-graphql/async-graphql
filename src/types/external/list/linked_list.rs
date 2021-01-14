@@ -46,7 +46,7 @@ impl<T: InputType> InputType for LinkedList<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync> OutputType for LinkedList<T> {
+impl<T: OutputType> OutputType for LinkedList<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

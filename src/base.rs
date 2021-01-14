@@ -39,7 +39,7 @@ pub trait Type {
 }
 
 /// Represents a GraphQL input value.
-pub trait InputType: Type + Sized {
+pub trait InputType: Type + Send + Sync + Sized {
     /// Parse from `Value`. None represents undefined.
     fn parse(value: Option<Value>) -> InputValueResult<Self>;
 
@@ -49,7 +49,7 @@ pub trait InputType: Type + Sized {
 
 /// Represents a GraphQL output value.
 #[async_trait::async_trait]
-pub trait OutputType: Type {
+pub trait OutputType: Type + Send + Sync {
     /// Resolve an output value to `async_graphql::Value`.
     async fn resolve(
         &self,
@@ -58,7 +58,7 @@ pub trait OutputType: Type {
     ) -> ServerResult<Value>;
 }
 
-impl<T: Type + Send + Sync + ?Sized> Type for &T {
+impl<T: Type + ?Sized> Type for &T {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -69,7 +69,7 @@ impl<T: Type + Send + Sync + ?Sized> Type for &T {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync + ?Sized> OutputType for &T {
+impl<T: OutputType + ?Sized> OutputType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,
@@ -112,7 +112,7 @@ impl<T: OutputType + Sync> OutputType for Result<T> {
 pub trait ObjectType: ContainerType {}
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> ObjectType for &T {}
+impl<T: ObjectType> ObjectType for &T {}
 
 /// A GraphQL interface.
 pub trait InterfaceType: ContainerType {}
@@ -123,7 +123,7 @@ pub trait UnionType: ContainerType {}
 /// A GraphQL input object.
 pub trait InputObjectType: InputType {}
 
-impl<T: Type + Send + Sync + ?Sized> Type for Box<T> {
+impl<T: Type + ?Sized> Type for Box<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -134,7 +134,7 @@ impl<T: Type + Send + Sync + ?Sized> Type for Box<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync + ?Sized> OutputType for Box<T> {
+impl<T: OutputType + ?Sized> OutputType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,
@@ -146,7 +146,7 @@ impl<T: OutputType + Send + Sync + ?Sized> OutputType for Box<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: InputType + Send + Sync> InputType for Box<T> {
+impl<T: InputType> InputType for Box<T> {
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
         T::parse(value)
             .map(Box::new)
@@ -158,7 +158,7 @@ impl<T: InputType + Send + Sync> InputType for Box<T> {
     }
 }
 
-impl<T: Type + Send + Sync + ?Sized> Type for Arc<T> {
+impl<T: Type + ?Sized> Type for Arc<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -169,7 +169,7 @@ impl<T: Type + Send + Sync + ?Sized> Type for Arc<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync + ?Sized> OutputType for Arc<T> {
+impl<T: OutputType + ?Sized> OutputType for Arc<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,
@@ -181,7 +181,7 @@ impl<T: OutputType + Send + Sync + ?Sized> OutputType for Arc<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: InputType + Send + Sync> InputType for Arc<T> {
+impl<T: InputType> InputType for Arc<T> {
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
         T::parse(value)
             .map(Arc::new)

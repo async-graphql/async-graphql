@@ -47,9 +47,9 @@ impl BatchRequest {
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> Response
     where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
+        Query: ObjectType + 'static,
+        Mutation: ObjectType + 'static,
+        Subscription: SubscriptionType + 'static,
     {
         Response(schema.execute_batch(self.0).await)
     }
@@ -112,9 +112,9 @@ impl Request {
         schema: &Schema<Query, Mutation, Subscription>,
     ) -> Response
     where
-        Query: ObjectType + Send + Sync + 'static,
-        Mutation: ObjectType + Send + Sync + 'static,
-        Subscription: SubscriptionType + Send + Sync + 'static,
+        Query: ObjectType + 'static,
+        Mutation: ObjectType + 'static,
+        Subscription: SubscriptionType + 'static,
     {
         Response(schema.execute(self.0).await.into())
     }

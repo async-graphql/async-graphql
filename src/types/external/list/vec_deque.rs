@@ -46,7 +46,7 @@ impl<T: InputType> InputType for VecDeque<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync> OutputType for VecDeque<T> {
+impl<T: OutputType> OutputType for VecDeque<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

@@ -47,3 +47,55 @@ pub async fn test_generic_object() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_input_object_generic() {
+    #[derive(InputObject)]
+    #[graphql(
+        concrete(name = "IntEqualityFilter", params(i32)),
+        concrete(name = "StringEqualityFilter", params(String))
+    )]
+    struct EqualityFilter<T: InputType> {
+        equals: Option<T>,
+        not_equals: Option<T>,
+    }
+
+    assert_eq!(EqualityFilter::<i32>::type_name(), "IntEqualityFilter");
+    assert_eq!(
+        EqualityFilter::<String>::type_name(),
+        "StringEqualityFilter"
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn q(&self, input: EqualityFilter<i32>) -> i32 {
+            input.equals.unwrap_or_default() + input.not_equals.unwrap_or_default()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            q(input: { equals: 7, notEquals: 8 } )
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "q": 15
+        })
+    );
+}
+
+#[async_std::test]
+pub async fn test_generic_simple_object() {
+    #[derive(SimpleObject)]
+    #[graphql(
+        concrete(name = "IntEqualityFilter", params(i32)),
+        concrete(name = "StringEqualityFilter", params(String))
+    )]
+    struct MyObj<A: OutputType, B: OutputType> {
+        a: A,
+        b: B,
+    }
+}

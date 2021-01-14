@@ -3,7 +3,7 @@ use crate::parser::types::Field;
 use crate::{ContextSelectionSet, OutputType, PathSegment, Positioned, ServerResult, Type, Value};
 
 /// Resolve an list by executing each of the items concurrently.
-pub async fn resolve_list<'a, T: OutputType + Send + Sync + 'a>(
+pub async fn resolve_list<'a, T: OutputType + 'a>(
     ctx: &ContextSelectionSet<'a>,
     field: &Positioned<Field>,
     iter: impl IntoIterator<Item = T>,
