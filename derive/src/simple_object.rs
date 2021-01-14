@@ -210,9 +210,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             impl #impl_generics #ident #ty_generics #where_clause {
                 #(#getters)*
 
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String where Self: #crate_name::OutputType {
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::OutputType {
                     registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();
@@ -246,7 +246,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry)
+                        Self::__internal_create_type_info(registry, #gql_typename)
                     }
                 }
 
