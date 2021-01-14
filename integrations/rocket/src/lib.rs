@@ -15,6 +15,7 @@ use std::io::Cursor;
 
 use async_graphql::http::MultipartOptions;
 use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
+use query_deserializer::QueryDeserializer;
 use rocket::{
     data::{self, Data, FromData, ToByteUnit},
     http::{ContentType, Header, Status},
@@ -22,9 +23,7 @@ use rocket::{
     response::{self, Responder},
 };
 use serde::de::Deserialize;
-use tokio_util::compat::Tokio02AsyncReadCompatExt;
-
-use query_deserializer::QueryDeserializer;
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 mod query_deserializer;
 
