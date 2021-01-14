@@ -20,8 +20,6 @@ pub fn generate(
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(subscription_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
-    let generics = &item_impl.generics;
-    let where_clause = &generics.where_clause;
 
     let gql_typename = subscription_args
         .name
@@ -427,7 +425,7 @@ pub fn generate(
         #item_impl
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #self_ty #where_clause {
+        impl #crate_name::Type for #self_ty {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -452,7 +450,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[allow(unused_braces, unused_variables)]
-        impl #crate_name::SubscriptionType for #self_ty #where_clause {
+        impl #crate_name::SubscriptionType for #self_ty {
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'__life>,
