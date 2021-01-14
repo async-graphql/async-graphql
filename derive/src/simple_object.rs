@@ -10,8 +10,7 @@ use crate::utils::{generate_guards, get_crate_name, get_rustdoc, visible_fn, Gen
 pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let ident = &object_args.ident;
-    let generics = &object_args.generics;
-    let where_clause = &generics.where_clause;
+    let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
     let gql_typename = object_args
         .name
@@ -156,12 +155,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #ident #generics #where_clause {
+        impl #impl_generics #ident #ty_generics #where_clause {
             #(#getters)*
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #ident #generics #where_clause {
+        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -186,7 +185,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
 
-        impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics #where_clause {
+        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
                 ::std::result::Result::Ok(::std::option::Option::None)
@@ -195,13 +194,13 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputType for #ident #generics #where_clause {
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #generics #crate_name::ObjectType for #ident #generics #where_clause {}
+        impl #impl_generics #crate_name::ObjectType for #ident #ty_generics #where_clause {}
     };
     Ok(expanded.into())
 }
