@@ -47,3 +47,85 @@ pub async fn test_generic_object() {
         })
     );
 }
+
+#[async_std::test]
+pub async fn test_input_object_generic() {
+    #[derive(InputObject)]
+    #[graphql(
+        concrete(name = "IntEqualityFilter", params(i32)),
+        concrete(name = "StringEqualityFilter", params(String))
+    )]
+    struct EqualityFilter<T: InputType> {
+        equals: Option<T>,
+        not_equals: Option<T>,
+    }
+
+    assert_eq!(EqualityFilter::<i32>::type_name(), "IntEqualityFilter");
+    assert_eq!(
+        EqualityFilter::<String>::type_name(),
+        "StringEqualityFilter"
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn q(&self, input: EqualityFilter<i32>) -> i32 {
+            input.equals.unwrap_or_default() + input.not_equals.unwrap_or_default()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            q(input: { equals: 7, notEquals: 8 } )
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "q": 15
+        })
+    );
+}
+
+#[async_std::test]
+pub async fn test_generic_simple_object() {
+    #[derive(SimpleObject)]
+    #[graphql(concrete(name = "MyObjIntString", params(i32, String)))]
+    #[graphql(concrete(name = "MyObji64f32", params(i64, u8)))]
+    struct MyObj<A: OutputType, B: OutputType> {
+        a: A,
+        b: B,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn q1(&self) -> MyObj<i32, String> {
+            MyObj {
+                a: 100,
+                b: "abc".to_string(),
+            }
+        }
+
+        async fn q2(&self) -> MyObj<i64, u8> {
+            MyObj { a: 100, b: 28 }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ q1 { a b } q2 { a b } }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "q1": {
+                "a": 100,
+                "b": "abc",
+            },
+            "q2": {
+                "a": 100,
+                "b": 28,
+            }
+        })
+    );
+}

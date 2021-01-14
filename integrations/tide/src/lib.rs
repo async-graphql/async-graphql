@@ -76,9 +76,9 @@ impl<Query, Mutation, Subscription> Clone for Endpoint<Query, Mutation, Subscrip
 impl<Query, Mutation, Subscription, TideState> tide::Endpoint<TideState>
     for Endpoint<Query, Mutation, Subscription>
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
     TideState: Clone + Send + Sync + 'static,
 {
     async fn call(&self, request: Request<TideState>) -> tide::Result {

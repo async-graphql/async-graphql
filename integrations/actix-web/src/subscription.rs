@@ -29,9 +29,9 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
 
 impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     /// Start an actor for subscription connection via websocket.
     pub fn start<T>(
@@ -99,9 +99,9 @@ where
 
 impl<Query, Mutation, Subscription> Actor for WSSubscription<Query, Mutation, Subscription>
 where
-    Query: ObjectType + Sync + Send + 'static,
-    Mutation: ObjectType + Sync + Send + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     type Context = WebsocketContext<Self>;
 
@@ -130,9 +130,9 @@ where
 impl<Query, Mutation, Subscription> StreamHandler<Result<Message, ProtocolError>>
     for WSSubscription<Query, Mutation, Subscription>
 where
-    Query: ObjectType + Sync + Send + 'static,
-    Mutation: ObjectType + Sync + Send + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     fn handle(&mut self, msg: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {

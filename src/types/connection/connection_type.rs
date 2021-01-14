@@ -122,9 +122,9 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
 impl<C, T, EC, EE> Type for Connection<C, T, EC, EE>
 where
     C: CursorType,
-    T: OutputType + Send + Sync,
-    EC: ObjectType + Sync + Send,
-    EE: ObjectType + Sync + Send,
+    T: OutputType,
+    EC: ObjectType,
+    EE: ObjectType,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("{}Connection", T::type_name()))
@@ -199,9 +199,9 @@ where
 impl<C, T, EC, EE> ContainerType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputType + Send + Sync,
-    EC: ObjectType + Sync + Send,
-    EE: ObjectType + Sync + Send,
+    T: OutputType,
+    EC: ObjectType,
+    EE: ObjectType,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "pageInfo" {
@@ -230,9 +230,9 @@ where
 impl<C, T, EC, EE> OutputType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputType + Send + Sync,
-    EC: ObjectType + Sync + Send,
-    EE: ObjectType + Sync + Send,
+    T: OutputType,
+    EC: ObjectType,
+    EE: ObjectType,
 {
     async fn resolve(
         &self,
@@ -246,8 +246,8 @@ where
 impl<C, T, EC, EE> ObjectType for Connection<C, T, EC, EE>
 where
     C: CursorType + Send + Sync,
-    T: OutputType + Send + Sync,
-    EC: ObjectType + Sync + Send,
-    EE: ObjectType + Sync + Send,
+    T: OutputType,
+    EC: ObjectType,
+    EE: ObjectType,
 {
 }

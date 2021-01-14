@@ -19,7 +19,7 @@ where
 #[async_trait::async_trait]
 impl<'a, T> OutputType for Cow<'a, T>
 where
-    T: OutputType + ToOwned + ?Sized + Send + Sync,
+    T: OutputType + ToOwned + ?Sized,
     <T as ToOwned>::Owned: Send + Sync,
 {
     async fn resolve(

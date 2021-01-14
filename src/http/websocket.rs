@@ -76,9 +76,9 @@ where
     S: Stream,
     S::Item: AsRef<[u8]>,
     F: FnOnce(serde_json::Value) -> Result<Data>,
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     type Item = String;
 

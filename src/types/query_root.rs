@@ -86,7 +86,7 @@ impl<T: Type> Type for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
+impl<T: ObjectType> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "__schema" {
             if self.disable_introspection {
@@ -148,7 +148,7 @@ impl<T: ObjectType + Send + Sync> ContainerType for QueryRoot<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: ObjectType + Send + Sync> OutputType for QueryRoot<T> {
+impl<T: ObjectType> OutputType for QueryRoot<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -158,4 +158,4 @@ impl<T: ObjectType + Send + Sync> OutputType for QueryRoot<T> {
     }
 }
 
-impl<T: ObjectType + Send + Sync> ObjectType for QueryRoot<T> {}
+impl<T: ObjectType> ObjectType for QueryRoot<T> {}
