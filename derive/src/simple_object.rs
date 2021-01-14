@@ -153,54 +153,126 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let visible = visible_fn(&object_args.visible);
 
-    let expanded = quote! {
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #ident #ty_generics #where_clause {
-            #(#getters)*
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+    let expanded = if object_args.concretes.is_empty() {
+        quote! {
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #impl_generics #ident #ty_generics #where_clause {
+                #(#getters)*
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
-                    description: #desc,
-                    fields: {
-                        let mut fields = #crate_name::indexmap::IndexMap::new();
-                        #(#schema_fields)*
-                        fields
-                    },
-                    cache_control: #cache_control,
-                    extends: #extends,
-                    keys: ::std::option::Option::None,
-                    visible: #visible,
-                })
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
+                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                }
+
+                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        cache_control: #cache_control,
+                        extends: #extends,
+                        keys: ::std::option::Option::None,
+                        visible: #visible,
+                    })
+                }
             }
+
+            #[allow(clippy::all, clippy::pedantic)]
+            #[#crate_name::async_trait::async_trait]
+
+            impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
+                async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                    #(#resolvers)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
+            }
+
+            #[allow(clippy::all, clippy::pedantic)]
+            #[#crate_name::async_trait::async_trait]
+            impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+                async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                    #crate_name::resolver_utils::resolve_container(ctx, self).await
+                }
+            }
+
+            impl #impl_generics #crate_name::ObjectType for #ident #ty_generics #where_clause {}
+        }
+    } else {
+        let mut code = Vec::new();
+
+        code.push(quote! {
+            impl #impl_generics #ident #ty_generics #where_clause {
+                #(#getters)*
+
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String where Self: #crate_name::OutputType {
+                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        cache_control: #cache_control,
+                        extends: #extends,
+                        keys: ::std::option::Option::None,
+                        visible: #visible,
+                    })
+                }
+
+                async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
+                    #(#resolvers)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
+            }
+        });
+
+        for concrete in &object_args.concretes {
+            let gql_typename = &concrete.name;
+            let params = &concrete.params.0;
+            let concrete_type = quote! { #ident<#(#params),*> };
+
+            let expanded = quote! {
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #crate_name::Type for #concrete_type {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        ::std::borrow::Cow::Borrowed(#gql_typename)
+                    }
+
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        Self::__internal_create_type_info(registry)
+                    }
+                }
+
+                #[allow(clippy::all, clippy::pedantic)]
+                #[#crate_name::async_trait::async_trait]
+                impl #crate_name::resolver_utils::ContainerType for #concrete_type {
+                    async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        self.__internal_resolve_field(ctx).await
+                    }
+                }
+
+                #[allow(clippy::all, clippy::pedantic)]
+                #[#crate_name::async_trait::async_trait]
+                impl #crate_name::OutputType for #concrete_type {
+                    async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                        #crate_name::resolver_utils::resolve_container(ctx, self).await
+                    }
+                }
+
+                impl #crate_name::ObjectType for #concrete_type {}
+            };
+            code.push(expanded);
         }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-
-        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                #(#resolvers)*
-                ::std::result::Result::Ok(::std::option::Option::None)
-            }
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                #crate_name::resolver_utils::resolve_container(ctx, self).await
-            }
-        }
-
-        impl #impl_generics #crate_name::ObjectType for #ident #ty_generics #where_clause {}
+        quote!(#(#code)*)
     };
+
     Ok(expanded.into())
 }
