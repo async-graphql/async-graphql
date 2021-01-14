@@ -220,9 +220,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         code.push(quote! {
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String where Self: #crate_name::InputType {
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
                     registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         input_fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();
@@ -263,7 +263,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry)
+                        Self::__internal_create_type_info(registry, #gql_typename)
                     }
                 }
 
