@@ -874,6 +874,61 @@ pub use async_graphql_derive::Subscription;
 ///
 pub use async_graphql_derive::Scalar;
 
+/// Define a NewType Scalar
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[derive(NewType)]
+/// struct Weight(f64);
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     async fn value(&self) -> Weight {
+///         Weight(1.234)
+///     }
+/// }
+///
+/// async_std::task::block_on(async move {
+///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
+///
+///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "value": 1.234,
+///     }));
+///
+///     let res = schema.execute(r#"
+///     {
+///         __type(name: "QueryRoot") {
+///             fields {
+///                 name type {
+///                     kind
+///                     ofType { name }
+///                 }
+///             }
+///         }
+///     }"#).await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "__type": {
+///             "fields": [{
+///                 "name": "value",
+///                 "type": {
+///                     "kind": "NON_NULL",
+///                     "ofType": {
+///                         "name": "Float"
+///                     }
+///                 }
+///             }]
+///         }
+///     }));
+/// });
+/// ```
+pub use async_graphql_derive::NewType;
+
 /// Define a merged object with multiple object types.
 ///
 /// *[See also the Book](https://async-graphql.github.io/async-graphql/en/merging_objects.html).*

@@ -542,3 +542,13 @@ pub struct Description {
     #[darling(default)]
     pub internal: bool,
 }
+
+#[derive(FromDeriveInput)]
+pub struct NewType {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub data: Data<Ignored, syn::Type>,
+
+    #[darling(default)]
+    pub internal: bool,
+}
