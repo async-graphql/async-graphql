@@ -7,11 +7,10 @@ use crate::utils::{get_crate_name, get_rustdoc, GeneratorResult};
 pub fn generate(desc_args: &args::Description) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(desc_args.internal);
     let ident = &desc_args.ident;
-    let generics = &desc_args.generics;
-    let where_clause = &generics.where_clause;
+    let (impl_generics, ty_generics, where_clause) = desc_args.generics.split_for_impl();
     let doc = get_rustdoc(&desc_args.attrs)?.unwrap_or_default();
     let expanded = quote! {
-        impl #generics #crate_name::Description for #ident #generics #where_clause {
+        impl #impl_generics #crate_name::Description for #ident #ty_generics #where_clause {
             fn description() -> &'static str {
                 #doc
             }

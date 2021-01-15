@@ -10,6 +10,7 @@ mod input_object;
 mod interface;
 mod merged_object;
 mod merged_subscription;
+mod newtype;
 mod object;
 mod output_type;
 mod scalar;
@@ -161,10 +162,23 @@ pub fn derive_merged_subscription(input: TokenStream) -> TokenStream {
 pub fn derive_merged_description(input: TokenStream) -> TokenStream {
     let desc_args =
         match args::Description::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
-            Ok(object_args) => object_args,
+            Ok(desc_args) => desc_args,
             Err(err) => return TokenStream::from(err.write_errors()),
         };
     match description::generate(&desc_args) {
+        Ok(expanded) => expanded,
+        Err(err) => err.write_errors().into(),
+    }
+}
+
+#[proc_macro_derive(NewType)]
+pub fn derive_newtype(input: TokenStream) -> TokenStream {
+    let newtype_args =
+        match args::NewType::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
+            Ok(newtype_args) => newtype_args,
+            Err(err) => return TokenStream::from(err.write_errors()),
+        };
+    match newtype::generate(&newtype_args) {
         Ok(expanded) => expanded,
         Err(err) => err.write_errors().into(),
     }
