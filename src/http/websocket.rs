@@ -1,11 +1,14 @@
 //! WebSocket transport for subscription
 
 use std::collections::HashMap;
+use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+use futures_util::future::{BoxFuture, Ready};
 use futures_util::stream::Stream;
+use futures_util::FutureExt;
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +20,7 @@ pin_project! {
     /// [Reference](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
     pub struct WebSocket<S, F, Query, Mutation, Subscription> {
         data_initializer: Option<F>,
+        init_fut: Option<BoxFuture<'static, Result<Data>>>,
         data: Arc<Data>,
         schema: Schema<Query, Mutation, Subscription>,
         streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
@@ -27,7 +31,7 @@ pin_project! {
 }
 
 impl<S, Query, Mutation, Subscription>
-    WebSocket<S, fn(serde_json::Value) -> Result<Data>, Query, Mutation, Subscription>
+    WebSocket<S, fn(serde_json::Value) -> Ready<Result<Data>>, Query, Mutation, Subscription>
 {
     /// Create a new websocket.
     #[must_use]
@@ -37,7 +41,8 @@ impl<S, Query, Mutation, Subscription>
         protocol: Protocols,
     ) -> Self {
         Self {
-            data_initializer: None,
+            data_initializer: Some(|_| futures_util::future::ready(Ok(Default::default()))),
+            init_fut: None,
             data: Arc::default(),
             schema,
             streams: HashMap::new(),
@@ -57,11 +62,12 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
     pub fn with_data(
         schema: Schema<Query, Mutation, Subscription>,
         stream: S,
-        data_initializer: Option<F>,
+        data_initializer: F,
         protocol: Protocols,
     ) -> Self {
         Self {
-            data_initializer,
+            data_initializer: Some(data_initializer),
+            init_fut: None,
             data: Arc::default(),
             schema,
             streams: HashMap::new(),
@@ -71,11 +77,13 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
     }
 }
 
-impl<S, F, Query, Mutation, Subscription> Stream for WebSocket<S, F, Query, Mutation, Subscription>
+impl<S, F, R, Query, Mutation, Subscription> Stream
+    for WebSocket<S, F, Query, Mutation, Subscription>
 where
     S: Stream,
     S::Item: AsRef<[u8]>,
-    F: FnOnce(serde_json::Value) -> Result<Data>,
+    F: FnOnce(serde_json::Value) -> R + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
@@ -105,24 +113,11 @@ where
 
             match message {
                 ClientMessage::ConnectionInit { payload } => {
-                    if let Some(payload) = payload {
-                        if let Some(data_initializer) = this.data_initializer.take() {
-                            *this.data = Arc::new(match data_initializer(payload) {
-                                Ok(data) => data,
-                                Err(e) => {
-                                    return Poll::Ready(Some(
-                                        serde_json::to_string(&ServerMessage::ConnectionError {
-                                            payload: e,
-                                        })
-                                        .unwrap(),
-                                    ))
-                                }
-                            });
-                        }
+                    if let Some(data_initializer) = this.data_initializer.take() {
+                        *this.init_fut = Some(Box::pin(async move {
+                            data_initializer(payload.unwrap_or_default()).await
+                        }));
                     }
-                    return Poll::Ready(Some(
-                        serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
-                    ));
                 }
                 ClientMessage::Start {
                     id,
@@ -147,6 +142,24 @@ where
                 // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
                 // handled by disconnecting the websocket
                 ClientMessage::ConnectionTerminate => return Poll::Ready(None),
+            }
+        }
+
+        if let Some(init_fut) = this.init_fut {
+            if let Poll::Ready(res) = init_fut.poll_unpin(cx) {
+                *this.init_fut = None;
+                return match res {
+                    Ok(data) => {
+                        *this.data = Arc::new(data);
+                        Poll::Ready(Some(
+                            serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
+                        ))
+                    }
+                    Err(err) => Poll::Ready(Some(
+                        serde_json::to_string(&ServerMessage::ConnectionError { payload: err })
+                            .unwrap(),
+                    )),
+                };
             }
         }
 
