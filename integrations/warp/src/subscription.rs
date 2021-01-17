@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::{future, StreamExt};
 use warp::filters::ws;
@@ -48,21 +50,22 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    graphql_subscription_with_data::<_, _, _, fn(serde_json::Value) -> Result<Data>>(schema, None)
+    graphql_subscription_with_data(schema, |_| async { Ok(Default::default()) })
 }
 
 /// GraphQL subscription filter
 ///
 /// Specifies that a function converts the init payload to data.
-pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F>(
+pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F, R>(
     schema: Schema<Query, Mutation, Subscription>,
-    initializer: Option<F>,
+    initializer: F,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    Query: ObjectType + Sync + Send + 'static,
-    Mutation: ObjectType + Sync + Send + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
-    F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + Clone + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
 {
     use async_graphql::http::WebSocketProtocols;
     use std::str::FromStr;

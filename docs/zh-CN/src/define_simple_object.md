@@ -19,3 +19,47 @@ struct MyObject {
     c: i32,
 }
 ```
+
+## 泛型
+
+如果你希望其它类型能够重用`SimpleObject`，则可以定义泛型的`SimpleObject`，并指定具体的类型。
+
+在下面的示例中，创建了两种`SimpleObject`类型：
+
+```rust
+#[derive(SimpleObject)]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+pub struct SomeGenericObject<T: OutputType> {
+    field1: Option<T>,
+    field2: String
+}
+```
+
+注意：每个泛型参数必须实现`OutputType`，如上所示。
+
+生成的SDL如下:
+
+```gql
+type SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+type SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+```
+
+在其它`Object`中使用具体的泛型类型：
+
+```rust
+#[derive(SimpleObject)]
+pub struct YetAnotherObject {
+    a: SomeGenericObject<SomeType>,
+    b: SomeGenericObject<SomeOtherType>,
+}
+```
+
+你可以将多个通用类型传递给`params（）`，并用逗号分隔。
