@@ -175,7 +175,7 @@
 struct MyObject {
     /// Value a
     a: i32,
-    
+
     /// Value b
     b: i32,
 
@@ -184,6 +184,46 @@ struct MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#generic-simpleobjects" id="generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
+<p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
+and specify how its concrete types should be implemented.</p>
+<p>In the following example, two <code>SimpleObject</code> types are created:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+pub struct SomeGenericObject&lt;T: OutputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
+<p>The schema generated is:</p>
+<pre><code class="language-gql">type SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+type SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>In your resolver method or field of another object, use as a normal generic type:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+pub struct YetAnotherObject {
+    a: SomeGenericObject&lt;SomeType&gt;,
+    b: SomeGenericObject&lt;SomeOtherType&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 
                     </main>
 

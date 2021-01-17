@@ -240,6 +240,45 @@ struct MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#泛型" id="泛型">泛型</a></h2>
+<p>如果你希望其它类型能够重用<code>SimpleObject</code>，则可以定义泛型的<code>SimpleObject</code>，并指定具体的类型。</p>
+<p>在下面的示例中，创建了两种<code>SimpleObject</code>类型：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+pub struct SomeGenericObject&lt;T: OutputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>注意：每个泛型参数必须实现<code>OutputType</code>，如上所示。</p>
+<p>生成的SDL如下:</p>
+<pre><code class="language-gql">type SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+type SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>在其它<code>Object</code>中使用具体的泛型类型：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+pub struct YetAnotherObject {
+    a: SomeGenericObject&lt;SomeType&gt;,
+    b: SomeGenericObject&lt;SomeOtherType&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>你可以将多个通用类型传递给<code>params（）</code>，并用逗号分隔。</p>
 <h1><a class="header" href="#对象object" id="对象object">对象(Object)</a></h1>
 <p>和简单对象不同，对象必须为所有的字段定义Resolver函数，Resolver函数定义在impl块中。</p>
 <p><strong>一个Resolver函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>
@@ -656,6 +695,45 @@ impl Mutation {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#泛型-1" id="泛型-1">泛型</a></h2>
+<p>如果你希望其它类型能够重用<code>InputObject</code>，则可以定义泛型的<code>InputObject</code>，并指定具体的类型。</p>
+<p>在下面的示例中，创建了两种<code>InputObject</code>类型：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+pub struct SomeGenericInput&lt;T: InputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>注意：每个泛型参数必须实现<code>InputType</code>，如上所示。</p>
+<p>生成的SDL如下:</p>
+<pre><code class="language-gql">input SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+input SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>在其它<code>InputObject</code>中使用具体的泛型类型：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+pub struct YetAnotherInput {
+    a: SomeGenericInput&lt;SomeType&gt;,
+    b: SomeGenericInput&lt;SomeOtherType&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>你可以将多个通用类型传递给<code>params（）</code>，并用逗号分隔。</p>
 <h1><a class="header" href="#默认值" id="默认值">默认值</a></h1>
 <p>你可以为输入值类型定义默认值，下面展示了在不同类型上默认值的定义方法。</p>
 <h2><a class="header" href="#对象字段参数" id="对象字段参数">对象字段参数</a></h2>

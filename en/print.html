@@ -236,7 +236,7 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 struct MyObject {
     /// Value a
     a: i32,
-    
+
     /// Value b
     b: i32,
 
@@ -245,6 +245,46 @@ struct MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#generic-simpleobjects" id="generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
+<p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
+and specify how its concrete types should be implemented.</p>
+<p>In the following example, two <code>SimpleObject</code> types are created:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+pub struct SomeGenericObject&lt;T: OutputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
+<p>The schema generated is:</p>
+<pre><code class="language-gql">type SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+type SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>In your resolver method or field of another object, use as a normal generic type:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+pub struct YetAnotherObject {
+    a: SomeGenericObject&lt;SomeType&gt;,
+    b: SomeGenericObject&lt;SomeOtherType&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h1><a class="header" href="#object" id="object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
@@ -651,9 +691,8 @@ pub enum TopLevelUnion {
 <span class="boring">}
 </span></code></pre></pre>
 <h1><a class="header" href="#inputobject" id="inputobject">InputObject</a></h1>
-<!--Input Object and SimpleObject inconsistant space.-->
-<p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.
-The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
+<p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.</p>
+<p>The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
 <code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
 <p>You can add optional <code>#[graphql]</code> attributes to add descriptions or rename the field.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -678,6 +717,46 @@ impl Mutation {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h2><a class="header" href="#generic-inputobjects" id="generic-inputobjects">Generic <code>InputObject</code>s</a></h2>
+<p>If you want to reuse an <code>InputObject</code> for other types, you can define a generic InputObject
+and specify how its concrete types should be implemented.</p>
+<p>In the following example, two <code>InputObject</code> types are created:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+pub struct SomeGenericInput&lt;T: InputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note: Each generic parameter must implement <code>InputType</code>, as shown above.</p>
+<p>The schema generated is:</p>
+<pre><code class="language-gql">input SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+input SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>In your resolver method or field of another input object, use as a normal generic type:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+pub struct YetAnotherInput {
+    a: SomeGenericInput&lt;SomeType&gt;,
+    b: SomeGenericInput&lt;SomeOtherType&gt;,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h1><a class="header" href="#default-value" id="default-value">Default value</a></h1>
 <p>You can define default values for input value types.
 Below are some examples.</p>
