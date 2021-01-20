@@ -20,3 +20,4 @@ serde_json = "1.0.59"
 
 [dev-dependencies]
 tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread", "time"] }
+async-stream = "0.3.0"

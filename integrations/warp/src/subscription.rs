@@ -31,7 +31,13 @@ use warp::{Filter, Rejection, Reply};
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn tick(&self) -> impl Stream<Item = String> {
-///         tokio::time::interval(Duration::from_secs(1)).map(|n| format!("{}", n.elapsed().as_secs_f32()))
+///         async_stream::stream! {
+///             let mut interval = tokio::time::interval(Duration::from_secs(1));
+///             loop {
+///                 let n = interval.tick().await;
+///                 yield format!("{}", n.elapsed().as_secs_f32());
+///             }
+///         }
 ///     }
 /// }
 ///
