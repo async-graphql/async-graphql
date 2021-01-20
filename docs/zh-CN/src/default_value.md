@@ -17,7 +17,7 @@ fn my_default() -> i32 {
 impl Query {
     // value参数的默认值为0，它会调用i32::default()
     fn test1(&self, #[graphql(default)] value: i32) {}
-    
+
     // value参数的默认值为10
     fn test2(&self, #[graphql(default = 10)] value: i32) {}
 
@@ -35,7 +35,7 @@ use async_graphql::*;
 #[graphql(
     field(name = "test1", arg(name = "value", default)),
     field(name = "test2", arg(name = "value", default = 10)),
-    field(name = "test3", arg(name = "value", default = "my_default()")),
+    field(name = "test3", arg(name = "value", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -51,11 +51,11 @@ use async_graphql::*;
 struct MyInputObject {
     #[graphql(default)]
     value1: i32,
-    
+
     #[graphql(default = 10)]
     value2: i32,
 
-    #[graphql(default = "my_default()")]
+    #[graphql(default_with = "my_default()")]
     value3: i32,
 }
 ```

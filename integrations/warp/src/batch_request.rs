@@ -46,7 +46,10 @@ where
                 async_graphql::http::receive_batch_body(
                     content_type,
                     TryStreamExt::map_err(body, |e| io::Error::new(ErrorKind::Other, e))
-                        .map_ok(|mut buf| Buf::to_bytes(&mut buf))
+                        .map_ok(|mut buf| {
+                            let remaining = Buf::remaining(&buf);
+                            Buf::copy_to_bytes(&mut buf, remaining)
+                        })
                         .into_async_read(),
                     opts,
                 )
