@@ -1,7 +1,7 @@
 //! Field guards
 
 use crate::{Context, FieldResult};
-use serde::export::PhantomData;
+use std::marker::PhantomData;
 
 /// Field guard
 ///

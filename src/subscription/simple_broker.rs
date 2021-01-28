@@ -2,7 +2,7 @@ use futures::channel::mpsc::{self, UnboundedReceiver, UnboundedSender};
 use futures::task::{Context, Poll};
 use futures::{Stream, StreamExt};
 use once_cell::sync::Lazy;
-use serde::export::PhantomData;
+use std::marker::PhantomData;
 use slab::Slab;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
