@@ -14,10 +14,10 @@ categories = ["network-programming", "asynchronous"]
 [dependencies]
 async-graphql = { path = "../..", version = "=2.5.1" }
 
-tide = { version = "0.15.0", default-features = false, features = ["h1-server"] }
+tide = { version = "0.16.0", default-features = false, features = ["h1-server"] }
 
 [dev-dependencies]
 # Surf lacks multipart support
 reqwest = { version = "0.10.8", default-features = false, features = ["json"] }
-async-std = { version = "1.6.5", features = ["attributes", "tokio02"] }
-serde_json = "1.0.59"
+async-std = { version = "1.9.0", features = ["attributes", "tokio02"] }
+serde_json = "1.0.61"
