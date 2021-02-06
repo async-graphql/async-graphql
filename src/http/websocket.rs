@@ -14,6 +14,46 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Data, Error, ObjectType, Request, Response, Result, Schema, SubscriptionType};
 
+/// An enum representing the various forms of a WebSocket message.
+#[derive(Clone, Debug)]
+pub enum WsMessage {
+    /// A text WebSocket message
+    Text(String),
+
+    /// A close message with the close frame.
+    Close(u16, String),
+}
+
+impl WsMessage {
+    /// Returns the contained [`Text`] value, consuming the `self` value.
+    ///
+    /// Because this function may panic, its use is generally discouraged.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the self value not equals [`Text`].
+    pub fn unwrap_text(self) -> String {
+        match self {
+            Self::Text(text) => text,
+            _ => panic!("Not a text message"),
+        }
+    }
+
+    /// Returns the contained [`Close`] value, consuming the `self` value.
+    ///
+    /// Because this function may panic, its use is generally discouraged.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the self value not equals [`Close`].
+    pub fn unwrap_close(self) -> (u16, String) {
+        match self {
+            Self::Close(code, msg) => (code, msg),
+            _ => panic!("Not a close message"),
+        }
+    }
+}
+
 pin_project! {
     /// A GraphQL connection over websocket.
     ///
@@ -40,15 +80,12 @@ impl<S, Query, Mutation, Subscription>
         stream: S,
         protocol: Protocols,
     ) -> Self {
-        Self {
-            data_initializer: Some(|_| futures_util::future::ready(Ok(Default::default()))),
-            init_fut: None,
-            data: Arc::default(),
+        Self::with_data(
             schema,
-            streams: HashMap::new(),
             stream,
+            |_| futures_util::future::ready(Ok(Default::default())),
             protocol,
-        }
+        )
     }
 }
 
@@ -88,60 +125,75 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    type Item = String;
+    type Item = WsMessage;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
 
-        while let Poll::Ready(message) = Pin::new(&mut this.stream).poll_next(cx) {
-            let message = match message {
-                Some(message) => message,
-                None => return Poll::Ready(None),
-            };
+        if this.init_fut.is_none() {
+            while let Poll::Ready(message) = Pin::new(&mut this.stream).poll_next(cx) {
+                let message = match message {
+                    Some(message) => message,
+                    None => return Poll::Ready(None),
+                };
 
-            let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
-                Ok(message) => message,
-                Err(e) => {
-                    return Poll::Ready(Some(
-                        serde_json::to_string(&ServerMessage::ConnectionError {
-                            payload: Error::new(e.to_string()),
-                        })
-                        .unwrap(),
-                    ))
-                }
-            };
+                let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
+                    Ok(message) => message,
+                    Err(err) => return Poll::Ready(Some(WsMessage::Close(1002, err.to_string()))),
+                };
 
-            match message {
-                ClientMessage::ConnectionInit { payload } => {
-                    if let Some(data_initializer) = this.data_initializer.take() {
-                        *this.init_fut = Some(Box::pin(async move {
-                            data_initializer(payload.unwrap_or_default()).await
-                        }));
+                match message {
+                    ClientMessage::ConnectionInit { payload } => {
+                        if let Some(data_initializer) = this.data_initializer.take() {
+                            *this.init_fut = Some(Box::pin(async move {
+                                data_initializer(payload.unwrap_or_default()).await
+                            }));
+                            break;
+                        } else {
+                            match this.protocol {
+                                Protocols::SubscriptionsTransportWS => {
+                                    return Poll::Ready(Some(WsMessage::Text(
+                                        serde_json::to_string(&ServerMessage::ConnectionError {
+                                            payload: Error::new(
+                                                "Too many initialisation requests.",
+                                            ),
+                                        })
+                                        .unwrap(),
+                                    )));
+                                }
+                                Protocols::GraphQLWS => {
+                                    return Poll::Ready(Some(WsMessage::Close(
+                                        4429,
+                                        "Too many initialisation requests.".to_string(),
+                                    )));
+                                }
+                            }
+                        }
                     }
-                }
-                ClientMessage::Start {
-                    id,
-                    payload: request,
-                } => {
-                    this.streams.insert(
+                    ClientMessage::Start {
                         id,
-                        Box::pin(
-                            this.schema
-                                .execute_stream_with_ctx_data(request, Arc::clone(this.data)),
-                        ),
-                    );
-                }
-                ClientMessage::Stop { id } => {
-                    if this.streams.remove(id).is_some() {
-                        return Poll::Ready(Some(
-                            serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
-                        ));
+                        payload: request,
+                    } => {
+                        this.streams.insert(
+                            id,
+                            Box::pin(
+                                this.schema
+                                    .execute_stream_with_ctx_data(request, Arc::clone(this.data)),
+                            ),
+                        );
                     }
+                    ClientMessage::Stop { id } => {
+                        if this.streams.remove(id).is_some() {
+                            return Poll::Ready(Some(WsMessage::Text(
+                                serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
+                            )));
+                        }
+                    }
+                    // Note: in the revised `graphql-ws` spec, there is no equivalent to the
+                    // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
+                    // handled by disconnecting the websocket
+                    ClientMessage::ConnectionTerminate => return Poll::Ready(None),
                 }
-                // Note: in the revised `graphql-ws` spec, there is no equivalent to the
-                // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
-                // handled by disconnecting the websocket
-                ClientMessage::ConnectionTerminate => return Poll::Ready(None),
             }
         }
 
@@ -151,14 +203,21 @@ where
                 return match res {
                     Ok(data) => {
                         *this.data = Arc::new(data);
-                        Poll::Ready(Some(
+                        Poll::Ready(Some(WsMessage::Text(
                             serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
-                        ))
+                        )))
                     }
-                    Err(err) => Poll::Ready(Some(
-                        serde_json::to_string(&ServerMessage::ConnectionError { payload: err })
+                    Err(err) => match this.protocol {
+                        Protocols::SubscriptionsTransportWS => Poll::Ready(Some(WsMessage::Text(
+                            serde_json::to_string(&ServerMessage::ConnectionError {
+                                payload: Error::new(err.message),
+                            })
                             .unwrap(),
-                    )),
+                        ))),
+                        Protocols::GraphQLWS => {
+                            Poll::Ready(Some(WsMessage::Close(1002, err.message)))
+                        }
+                    },
                 };
             }
         }
@@ -166,16 +225,16 @@ where
         for (id, stream) in &mut *this.streams {
             match Pin::new(stream).poll_next(cx) {
                 Poll::Ready(Some(payload)) => {
-                    return Poll::Ready(Some(
+                    return Poll::Ready(Some(WsMessage::Text(
                         serde_json::to_string(&this.protocol.next_message(id, payload)).unwrap(),
-                    ));
+                    )));
                 }
                 Poll::Ready(None) => {
                     let id = id.clone();
                     this.streams.remove(&id);
-                    return Poll::Ready(Some(
+                    return Poll::Ready(Some(WsMessage::Text(
                         serde_json::to_string(&ServerMessage::Complete { id: &id }).unwrap(),
-                    ));
+                    )));
                 }
                 Poll::Pending => {}
             }

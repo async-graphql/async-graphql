@@ -11,6 +11,8 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
+mod subscription;
+
 use async_graphql::http::MultipartOptions;
 use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
 use tide::utils::async_trait;
@@ -21,6 +23,8 @@ use tide::{
     },
     Body, Request, Response, StatusCode,
 };
+
+pub use subscription::Subscription;
 
 /// Create a new GraphQL endpoint with the schema.
 ///
