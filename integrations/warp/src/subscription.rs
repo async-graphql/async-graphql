@@ -1,5 +1,6 @@
 use std::future::Future;
 
+use async_graphql::http::WsMessage;
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::{future, StreamExt};
 use warp::filters::ws;
@@ -103,7 +104,10 @@ where
                         initializer,
                         protocol,
                     )
-                    .map(ws::Message::text)
+                    .map(|msg| match msg {
+                        WsMessage::Text(text) => ws::Message::text(text),
+                        WsMessage::Close(code, status) => ws::Message::close_with(code, status),
+                    })
                     .map(Ok)
                     .forward(ws_sender)
                     .await;

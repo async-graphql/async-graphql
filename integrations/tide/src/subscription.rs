@@ -2,7 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
 
-use async_graphql::http::{WebSocket as AGWebSocket, WebSocketProtocols};
+use async_graphql::http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::{future, StreamExt};
 use tide::{Endpoint, Request, Response};
@@ -83,8 +83,16 @@ where
                     protocol,
                 );
                 while let Some(data) = stream.next().await {
-                    if sink.send_string(data).await.is_err() {
-                        break;
+                    match data {
+                        WsMessage::Text(text) => {
+                            if sink.send_string(text).await.is_err() {
+                                break;
+                            }
+                        }
+                        WsMessage::Close(_code, _msg) => {
+                            // TODO: Send close frame
+                            break;
+                        }
                     }
                 }
 

@@ -38,7 +38,8 @@ pub async fn test_subscription_ws_transport() {
     .unwrap();
 
     assert_eq!(
-        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
         serde_json::json!({
             "type": "connection_ack",
         }),
@@ -59,7 +60,8 @@ pub async fn test_subscription_ws_transport() {
 
     for i in 0..10 {
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+                .unwrap(),
             serde_json::json!({
                 "type": "data",
                 "id": "1",
@@ -69,7 +71,8 @@ pub async fn test_subscription_ws_transport() {
     }
 
     assert_eq!(
-        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
         serde_json::json!({
             "type": "complete",
             "id": "1",
@@ -135,7 +138,7 @@ pub async fn test_subscription_ws_transport_with_token() {
         Some(value!({
             "type": "connection_ack",
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 
     tx.send(
@@ -158,7 +161,7 @@ pub async fn test_subscription_ws_transport_with_token() {
                 "id": "1",
                 "payload": { "data": { "values": i } },
             })),
-            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
         );
     }
 
@@ -167,7 +170,7 @@ pub async fn test_subscription_ws_transport_with_token() {
             "type": "complete",
             "id": "1",
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 }
 
@@ -223,7 +226,7 @@ pub async fn test_subscription_ws_transport_error() {
         Some(value!({
             "type": "connection_ack",
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 
     tx.send(
@@ -246,7 +249,7 @@ pub async fn test_subscription_ws_transport_error() {
                 "id": "1",
                 "payload": { "data": { "events": { "value": i } } },
             })),
-            serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+            serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
         );
     }
 
@@ -263,7 +266,67 @@ pub async fn test_subscription_ws_transport_error() {
                 }],
             },
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+    );
+}
+
+#[async_std::test]
+pub async fn test_subscription_too_many_initialisation_requests_error() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn events(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::once(async move { 10 })
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::SubscriptionsTransportWS);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init"
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(value!({
+            "type": "connection_ack",
+        })),
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init"
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(value!({
+            "type": "connection_error",
+            "payload": {
+                "message": "Too many initialisation requests."
+            },
+        })),
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 }
 
@@ -295,7 +358,7 @@ pub async fn test_query_over_websocket() {
         Some(value!({
         "type": "connection_ack",
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 
     tx.send(
@@ -317,7 +380,7 @@ pub async fn test_query_over_websocket() {
             "id": "1",
             "payload": { "data": { "value": 999 } },
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 
     assert_eq!(
@@ -325,6 +388,6 @@ pub async fn test_query_over_websocket() {
             "type": "complete",
             "id": "1",
         })),
-        serde_json::from_str(&stream.next().await.unwrap()).unwrap()
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 }

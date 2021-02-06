@@ -10,8 +10,8 @@ use actix_http::error::PayloadError;
 use actix_http::{ws, Error};
 use actix_web::web::Bytes;
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols};
+use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::future::Ready;
 use futures_util::stream::Stream;
@@ -134,8 +134,12 @@ where
             self.protocol,
         )
         .into_actor(self)
-        .map(|response, _act, ctx| {
-            ctx.text(response);
+        .map(|response, _act, ctx| match response {
+            WsMessage::Text(text) => ctx.text(text),
+            WsMessage::Close(code, msg) => ctx.close(Some(CloseReason {
+                code: code.into(),
+                description: Some(msg),
+            })),
         })
         .finish()
         .spawn(ctx);

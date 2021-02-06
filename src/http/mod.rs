@@ -14,7 +14,7 @@ pub use graphiql_source::graphiql_source;
 #[cfg(feature = "multipart")]
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
-pub use websocket::{Protocols as WebSocketProtocols, WebSocket};
+pub use websocket::{Protocols as WebSocketProtocols, WebSocket, WsMessage};
 
 #[cfg(feature = "multipart")]
 #[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
