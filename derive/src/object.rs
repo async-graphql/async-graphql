@@ -609,8 +609,5 @@ pub fn generate(
 
         impl #generics #crate_name::ObjectType for #shadow_type<#generics_params> #where_clause {}
     };
-    if gql_typename == "QueryRoot11" {
-        println!("{}", expanded);
-    }
     Ok(expanded.into())
 }

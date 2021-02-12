@@ -11,6 +11,7 @@ use crate::utils::{
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
+    let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
     let s = match &object_args.data {
         Data::Struct(s) => s,
@@ -170,46 +171,118 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     }
 
     let visible = visible_fn(&object_args.visible);
-    let expanded = quote! {
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
-            }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
-                    description: #desc,
-                    input_fields: {
-                        let mut fields = #crate_name::indexmap::IndexMap::new();
-                        #(#schema_fields)*
-                        fields
-                    },
-                    visible: #visible,
-                })
-            }
-        }
+    let expanded = if object_args.concretes.is_empty() {
+        quote! {
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #crate_name::Type for #ident {
+                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::InputType for #ident {
-            fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
-                if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
-                    #(#get_fields)*
-                    ::std::result::Result::Ok(Self { #(#fields),* })
-                } else {
-                    ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
+                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        input_fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        visible: #visible,
+                    })
                 }
             }
 
-            fn to_value(&self) -> #crate_name::Value {
-                let mut map = ::std::collections::BTreeMap::new();
-                #(#put_fields)*
-                #crate_name::Value::Object(map)
-            }
-        }
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #crate_name::InputType for #ident {
+                fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+                    if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
+                        #(#get_fields)*
+                        ::std::result::Result::Ok(Self { #(#fields),* })
+                    } else {
+                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
+                    }
+                }
 
-        impl #crate_name::InputObjectType for #ident {}
+                fn to_value(&self) -> #crate_name::Value {
+                    let mut map = ::std::collections::BTreeMap::new();
+                    #(#put_fields)*
+                    #crate_name::Value::Object(map)
+                }
+            }
+
+            impl #crate_name::InputObjectType for #ident {}
+        }
+    } else {
+        let mut code = Vec::new();
+
+        code.push(quote! {
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #impl_generics #ident #ty_generics #where_clause {
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
+                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                        name: ::std::borrow::ToOwned::to_owned(name),
+                        description: #desc,
+                        input_fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        visible: #visible,
+                    })
+                }
+
+                fn __internal_parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> where Self: #crate_name::InputType {
+                    if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
+                        #(#get_fields)*
+                        ::std::result::Result::Ok(Self { #(#fields),* })
+                    } else {
+                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
+                    }
+                }
+
+                fn __internal_to_value(&self) -> #crate_name::Value where Self: #crate_name::InputType {
+                    let mut map = ::std::collections::BTreeMap::new();
+                    #(#put_fields)*
+                    #crate_name::Value::Object(map)
+                }
+            }
+        });
+
+        for concrete in &object_args.concretes {
+            let gql_typename = &concrete.name;
+            let params = &concrete.params.0;
+            let concrete_type = quote! { #ident<#(#params),*> };
+
+            let expanded = quote! {
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #crate_name::Type for #concrete_type {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        ::std::borrow::Cow::Borrowed(#gql_typename)
+                    }
+
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        Self::__internal_create_type_info(registry, #gql_typename)
+                    }
+                }
+
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #crate_name::InputType for #concrete_type {
+                    fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
+                        Self::__internal_parse(value)
+                    }
+
+                    fn to_value(&self) -> #crate_name::Value {
+                        self.__internal_to_value()
+                    }
+                }
+
+                impl #crate_name::InputObjectType for #concrete_type {}
+            };
+            code.push(expanded);
+        }
+        quote!(#(#code)*)
     };
     Ok(expanded.into())
 }

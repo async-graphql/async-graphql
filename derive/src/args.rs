@@ -2,7 +2,9 @@ use darling::ast::{Data, Fields};
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
-use syn::{Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, Type, Visibility};
+use syn::{
+    Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
+};
 
 #[derive(FromMeta)]
 #[darling(default)]
@@ -62,6 +64,28 @@ impl FromMeta for Visible {
     }
 }
 
+pub struct PathList(pub Vec<Path>);
+
+impl FromMeta for PathList {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        let mut res = Vec::new();
+        for item in items {
+            if let NestedMeta::Meta(Meta::Path(p)) = item {
+                res.push(p.clone());
+            } else {
+                return Err(darling::Error::custom("Invalid path list"));
+            }
+        }
+        Ok(PathList(res))
+    }
+}
+
+#[derive(FromMeta)]
+pub struct ConcreteType {
+    pub name: String,
+    pub params: PathList,
+}
+
 #[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
@@ -116,6 +140,8 @@ pub struct SimpleObject {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default, multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
 }
 
 #[derive(FromMeta, Default)]
@@ -283,6 +309,8 @@ pub struct InputObject {
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default, multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
 }
 
 #[derive(FromMeta)]
@@ -510,6 +538,16 @@ pub struct Description {
     pub ident: Ident,
     pub generics: Generics,
     pub attrs: Vec<Attribute>,
+
+    #[darling(default)]
+    pub internal: bool,
+}
+
+#[derive(FromDeriveInput)]
+pub struct NewType {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub data: Data<Ignored, syn::Type>,
 
     #[darling(default)]
     pub internal: bool,

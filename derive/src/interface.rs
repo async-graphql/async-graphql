@@ -14,7 +14,7 @@ use crate::utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, Ge
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
     let ident = &interface_args.ident;
-    let generics = &interface_args.generics;
+    let (impl_generics, ty_generics, where_clause) = interface_args.generics.split_for_impl();
     let s = match &interface_args.data {
         Data::Enum(s) => s,
         _ => {
@@ -89,7 +89,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 #crate_name::static_assertions::assert_impl_any!(#assert_ty: #crate_name::ObjectType, #crate_name::InterfaceType);
 
                 #[allow(clippy::all, clippy::pedantic)]
-                impl #generics ::std::convert::From<#p> for #ident #generics {
+                impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
                     fn from(obj: #p) -> Self {
                         #ident::#enum_name(obj)
                     }
@@ -313,12 +313,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #(#type_into_impls)*
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #ident #generics {
+        impl #impl_generics #ident #ty_generics #where_clause {
             #(#methods)*
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #ident #generics {
+        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -354,7 +354,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::resolver_utils::ContainerType for #ident #generics {
+        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
                 ::std::result::Result::Ok(::std::option::Option::None)
@@ -369,13 +369,13 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputType for #ident #generics {
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }
 
-        impl #generics #crate_name::InterfaceType for #ident #generics {}
+        impl #impl_generics #crate_name::InterfaceType for #ident #ty_generics #where_clause {}
     };
     Ok(expanded.into())
 }

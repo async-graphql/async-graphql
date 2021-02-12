@@ -42,7 +42,7 @@ impl<T: InputType> InputType for Vec<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Send + Sync> OutputType for Vec<T> {
+impl<T: OutputType> OutputType for Vec<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

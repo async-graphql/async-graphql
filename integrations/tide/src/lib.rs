@@ -11,6 +11,8 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
+mod subscription;
+
 use async_graphql::http::MultipartOptions;
 use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
 use tide::utils::async_trait;
@@ -21,6 +23,8 @@ use tide::{
     },
     Body, Request, Response, StatusCode,
 };
+
+pub use subscription::Subscription;
 
 /// Create a new GraphQL endpoint with the schema.
 ///
@@ -76,9 +80,9 @@ impl<Query, Mutation, Subscription> Clone for Endpoint<Query, Mutation, Subscrip
 impl<Query, Mutation, Subscription, TideState> tide::Endpoint<TideState>
     for Endpoint<Query, Mutation, Subscription>
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
     TideState: Clone + Send + Sync + 'static,
 {
     async fn call(&self, request: Request<TideState>) -> tide::Result {

@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
@@ -9,16 +10,17 @@ use actix_http::error::PayloadError;
 use actix_http::{ws, Error};
 use actix_web::web::{Bytes, BytesMut};
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols};
+use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
+use futures_util::future::Ready;
 use futures_util::stream::Stream;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Actor for subscription via websocket
-pub struct WSSubscription<Query, Mutation, Subscription> {
+pub struct WSSubscription<Query, Mutation, Subscription, F> {
     schema: Schema<Query, Mutation, Subscription>,
     protocol: WebSocketProtocols,
     last_heartbeat: Instant,
@@ -27,11 +29,12 @@ pub struct WSSubscription<Query, Mutation, Subscription> {
     continuation: BytesMut,
 }
 
-impl<Query, Mutation, Subscription> WSSubscription<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription>
+    WSSubscription<Query, Mutation, Subscription, fn(serde_json::Value) -> Ready<Result<Data>>>
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     /// Start an actor for subscription connection via websocket.
     pub fn start<T>(
@@ -42,11 +45,22 @@ where
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
     {
-        Self::start_with_initializer(schema, request, stream, |_| Ok(Default::default()))
+        Self::start_with_initializer(schema, request, stream, |_| {
+            futures_util::future::ready(Ok(Default::default()))
+        })
     }
+}
 
+impl<Query, Mutation, Subscription, F, R> WSSubscription<Query, Mutation, Subscription, F>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
+{
     /// Start an actor for subscription connection via websocket with an initialization function.
-    pub fn start_with_initializer<T, F>(
+    pub fn start_with_initializer<T>(
         schema: Schema<Query, Mutation, Subscription>,
         request: &HttpRequest,
         stream: T,
@@ -54,7 +68,8 @@ where
     ) -> Result<HttpResponse, Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
-        F: FnOnce(serde_json::Value) -> Result<Data> + Send + Sync + 'static,
+        F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
+        R: Future<Output = Result<Data>> + Send + 'static,
     {
         let protocol = match request
             .headers()
@@ -97,11 +112,13 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription> Actor for WSSubscription<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription, F, R> Actor for WSSubscription<Query, Mutation, Subscription, F>
 where
-    Query: ObjectType + Sync + Send + 'static,
-    Mutation: ObjectType + Sync + Send + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
 {
     type Context = WebsocketContext<Self>;
 
@@ -113,12 +130,16 @@ where
         WebSocket::with_data(
             self.schema.clone(),
             rx,
-            self.initializer.take(),
+            self.initializer.take().unwrap(),
             self.protocol,
         )
         .into_actor(self)
-        .map(|response, _act, ctx| {
-            ctx.text(response);
+        .map(|response, _act, ctx| match response {
+            WsMessage::Text(text) => ctx.text(text),
+            WsMessage::Close(code, msg) => ctx.close(Some(CloseReason {
+                code: code.into(),
+                description: Some(msg),
+            })),
         })
         .finish()
         .spawn(ctx);
@@ -127,12 +148,14 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription> StreamHandler<Result<Message, ProtocolError>>
-    for WSSubscription<Query, Mutation, Subscription>
+impl<Query, Mutation, Subscription, F, R> StreamHandler<Result<Message, ProtocolError>>
+    for WSSubscription<Query, Mutation, Subscription, F>
 where
-    Query: ObjectType + Sync + Send + 'static,
-    Mutation: ObjectType + Sync + Send + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
 {
     fn handle(&mut self, msg: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {

@@ -8,7 +8,9 @@
 
 - The `external` property declares that a field comes from another service。
 
-- The `provides` property indicates the fields provided by a service. 
+- The `provides` directive is used to annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. 
+
+- The `requires` directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.
 
 ## Entity lookup function
 

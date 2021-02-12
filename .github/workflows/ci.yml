@@ -44,12 +44,12 @@ jobs:
         working-directory: ./examples
 
       # build on nightly
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          components: clippy, rustfmt
-      - name: Build on nightly without features
-        run: cargo build --no-default-features
-      - name: Build on nightly
-        run: cargo build --all --verbose
+#      - uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: nightly
+#          override: true
+#          components: clippy, rustfmt
+#      - name: Build on nightly without features
+#        run: cargo build --no-default-features
+#      - name: Build on nightly
+#        run: cargo build --all --verbose

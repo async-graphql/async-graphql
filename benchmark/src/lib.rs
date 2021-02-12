@@ -11,9 +11,9 @@ pub fn run<Query, Mutation, Subscription>(
     q: &str,
 ) -> Response
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     task::block_on(async { s.execute(q).await.into_result().unwrap() })
 }

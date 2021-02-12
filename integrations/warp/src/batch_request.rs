@@ -19,9 +19,9 @@ pub fn graphql_batch<Query, Mutation, Subscription>(
 ) -> impl Filter<Extract = ((Schema<Query, Mutation, Subscription>, BatchRequest),), Error = Rejection>
        + Clone
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     graphql_batch_opts(schema, Default::default())
 }
@@ -33,9 +33,9 @@ pub fn graphql_batch_opts<Query, Mutation, Subscription>(
 ) -> impl Filter<Extract = ((Schema<Query, Mutation, Subscription>, BatchRequest),), Error = Rejection>
        + Clone
 where
-    Query: ObjectType + Send + Sync + 'static,
-    Mutation: ObjectType + Send + Sync + 'static,
-    Subscription: SubscriptionType + Send + Sync + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
     warp::any()
         .and(warp::get().and(warp::query()).map(BatchRequest::Single))
@@ -46,7 +46,10 @@ where
                 async_graphql::http::receive_batch_body(
                     content_type,
                     TryStreamExt::map_err(body, |e| io::Error::new(ErrorKind::Other, e))
-                        .map_ok(|mut buf| Buf::to_bytes(&mut buf))
+                        .map_ok(|mut buf| {
+                            let remaining = Buf::remaining(&buf);
+                            Buf::copy_to_bytes(&mut buf, remaining)
+                        })
                         .into_async_read(),
                     opts,
                 )

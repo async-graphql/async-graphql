@@ -8,7 +8,7 @@ use crate::{
 #[Scalar(internal, name = "JSONObject")]
 impl<T> ScalarType for BTreeMap<String, T>
 where
-    T: OutputType + InputType + Send + Sync,
+    T: OutputType + InputType,
 {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
