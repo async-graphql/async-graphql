@@ -25,16 +25,16 @@ pub struct WSSubscription<Query, Mutation, Subscription, F> {
     protocol: WebSocketProtocols,
     last_heartbeat: Instant,
     messages: Option<async_channel::Sender<Bytes>>,
-    initializer: Option<Box<dyn FnOnce(serde_json::Value) -> Result<Data> + Send + Sync>>,
+    initializer: Option<F>,
     continuation: BytesMut,
 }
 
 impl<Query, Mutation, Subscription>
     WSSubscription<Query, Mutation, Subscription, fn(serde_json::Value) -> Ready<Result<Data>>>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    Query: ObjectType + Send + Sync + 'static,
+    Mutation: ObjectType + Send + Sync + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
 {
     /// Start an actor for subscription connection via websocket.
     pub fn start<T>(
@@ -93,7 +93,7 @@ where
                 protocol,
                 last_heartbeat: Instant::now(),
                 messages: None,
-                initializer: Some(Box::new(initializer)),
+                initializer: Some(initializer),
                 continuation: Default::default(),
             },
             &["graphql-transport-ws", "graphql-ws"],
@@ -114,9 +114,9 @@ where
 
 impl<Query, Mutation, Subscription, F, R> Actor for WSSubscription<Query, Mutation, Subscription, F>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    Query: ObjectType + Sync + Send + 'static,
+    Mutation: ObjectType + Sync + Send + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
     F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
 {
@@ -151,9 +151,9 @@ where
 impl<Query, Mutation, Subscription, F, R> StreamHandler<Result<Message, ProtocolError>>
     for WSSubscription<Query, Mutation, Subscription, F>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    Query: ObjectType + Sync + Send + 'static,
+    Mutation: ObjectType + Sync + Send + 'static,
+    Subscription: SubscriptionType + Send + Sync + 'static,
     F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
 {

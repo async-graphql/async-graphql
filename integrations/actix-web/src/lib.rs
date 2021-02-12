@@ -11,9 +11,10 @@ use std::pin::Pin;
 
 use actix_web::client::PayloadError;
 use actix_web::dev::{Payload, PayloadStream};
+use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::http::{Method, StatusCode};
 use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
-use futures_util::future::{self, FutureExt, Ready};
+use futures_util::future::{self, FutureExt};
 use futures_util::{StreamExt, TryStreamExt};
 
 use async_graphql::http::MultipartOptions;
@@ -158,20 +159,25 @@ impl From<async_graphql::BatchResponse> for Response {
 }
 
 impl Responder for Response {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse>>;
-
-    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
+    fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
         if self.0.is_ok() {
-            if let Some(cache_control) = self.0.cache_control().value() {
-                res.header("cache-control", cache_control);
+            let cache_control = self.0.cache_control();
+            let mut directives = vec![];
+            if cache_control.max_age > 0 {
+                directives.push(CacheDirective::MaxAge(cache_control.max_age as u32))
+            }
+            if !cache_control.public {
+                directives.push(CacheDirective::Private)
+            }
+            if !directives.is_empty() {
+                res.append_header(CacheControl(directives));
             }
             for (name, value) in self.0.http_headers() {
-                res.header(name, value);
+                res.append_header((name, value));
             }
         }
-        futures_util::future::ok(res.body(serde_json::to_string(&self.0).unwrap()))
+        res.body(serde_json::to_string(&self.0).unwrap())
     }
 }

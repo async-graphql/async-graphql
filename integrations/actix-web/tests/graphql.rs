@@ -87,7 +87,7 @@ async fn test_hello_header() {
 
     let mut response = srv
         .post("/")
-        .header("Name", "Foo")
+        .append_header(("Name", "Foo"))
         .send_body(r#"{"query":"{ hello }"}"#)
         .await
         .unwrap();
