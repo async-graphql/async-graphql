@@ -51,37 +51,33 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
     fn exit_field(&mut self, ctx: &mut VisitorContext<'ctx>, field: &'ctx Positioned<Field>) {
         let children_complex = self.complexity_stack.pop().unwrap();
 
-        if let Some(ty) = ctx.parent_type() {
-            if let MetaType::Object { fields, .. } = ty {
-                if let Some(meta_field) = fields.get(MetaTypeName::concrete_typename(
-                    field.node.name.node.as_str(),
-                )) {
-                    if let Some(compute_complexity) = &meta_field.compute_complexity {
-                        match compute_complexity {
-                            ComplexityType::Const(n) => {
-                                *self.complexity_stack.last_mut().unwrap() += n;
-                            }
-                            ComplexityType::Fn(f) => {
-                                if MetaTypeName::create(&meta_field.ty).is_list() {
-                                    match f(
-                                        ctx,
-                                        self.variable_definition.unwrap(),
-                                        &field.node,
-                                        children_complex,
-                                    ) {
-                                        Ok(n) => {
-                                            *self.complexity_stack.last_mut().unwrap() += n;
-                                        }
-                                        Err(err) => {
-                                            ctx.report_error(vec![field.pos], err.to_string())
-                                        }
+        if let Some(MetaType::Object { fields, .. }) = ctx.parent_type() {
+            if let Some(meta_field) = fields.get(MetaTypeName::concrete_typename(
+                field.node.name.node.as_str(),
+            )) {
+                if let Some(compute_complexity) = &meta_field.compute_complexity {
+                    match compute_complexity {
+                        ComplexityType::Const(n) => {
+                            *self.complexity_stack.last_mut().unwrap() += n;
+                        }
+                        ComplexityType::Fn(f) => {
+                            if MetaTypeName::create(&meta_field.ty).is_list() {
+                                match f(
+                                    ctx,
+                                    self.variable_definition.unwrap(),
+                                    &field.node,
+                                    children_complex,
+                                ) {
+                                    Ok(n) => {
+                                        *self.complexity_stack.last_mut().unwrap() += n;
                                     }
+                                    Err(err) => ctx.report_error(vec![field.pos], err.to_string()),
                                 }
                             }
                         }
-
-                        return;
                     }
+
+                    return;
                 }
             }
         }
