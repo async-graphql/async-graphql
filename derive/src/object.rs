@@ -63,6 +63,14 @@ pub fn generate(
                 let mut create_ctx = true;
                 let mut args = Vec::new();
 
+                if method.sig.inputs.is_empty() {
+                    return Err(Error::new_spanned(
+                        &method.sig,
+                        "The self receiver must be the first parameter.",
+                    )
+                    .into());
+                }
+
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
                     if let FnArg::Receiver(receiver) = arg {
                         if idx != 0 {
@@ -252,6 +260,14 @@ pub fn generate(
 
                 let mut create_ctx = true;
                 let mut args = Vec::new();
+
+                if method.sig.inputs.is_empty() {
+                    return Err(Error::new_spanned(
+                        &method.sig,
+                        "The self receiver must be the first parameter.",
+                    )
+                    .into());
+                }
 
                 for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
                     if let FnArg::Receiver(receiver) = arg {

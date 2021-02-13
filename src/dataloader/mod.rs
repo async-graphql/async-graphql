@@ -68,8 +68,10 @@ use futures_util::lock::Mutex;
 
 use fnv::FnvHashMap;
 
-type ResSender<K, T> =
-    oneshot::Sender<Result<HashMap<K, <T as Loader<K>>::Value>, <T as Loader<K>>::Error>>;
+#[allow(clippy::type_complexity)]
+struct ResSender<K: Send + Hash + Eq + Clone + 'static, T: Loader<K>>(
+    oneshot::Sender<Result<HashMap<K, T::Value>, T::Error>>,
+);
 
 struct Requests<K: Send + Hash + Eq + Clone + 'static, T: Loader<K>> {
     keys: HashSet<K>,
@@ -95,12 +97,12 @@ impl<K: Send + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> {
                     for key in &keys {
                         res.extend(values.get(key).map(|value| (key.clone(), value.clone())));
                     }
-                    tx.send(Ok(res)).ok();
+                    tx.0.send(Ok(res)).ok();
                 }
             }
             Err(err) => {
                 for (_, tx) in self.pending {
-                    tx.send(Err(err.clone())).ok();
+                    tx.0.send(Err(err.clone())).ok();
                 }
             }
         }
@@ -188,7 +190,7 @@ impl<T> DataLoader<T> {
             let keys = keys.collect::<HashSet<_>>();
             typed_requests.keys.extend(keys.clone());
             let (tx, rx) = oneshot::channel();
-            typed_requests.pending.push((keys, tx));
+            typed_requests.pending.push((keys, ResSender(tx)));
             if typed_requests.keys.len() >= self.max_batch_size {
                 let r = std::mem::take(&mut *typed_requests);
                 drop(requests);

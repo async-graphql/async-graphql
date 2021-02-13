@@ -4,6 +4,7 @@
 //! It uses the [pest](https://crates.io/crates/pest) crate to parse the input and then transforms
 //! it into Rust types.
 #![warn(missing_docs)]
+#![allow(clippy::unnecessary_wraps)]
 #![forbid(unsafe_code)]
 
 use crate::types::OperationType;

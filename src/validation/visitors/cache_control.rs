@@ -17,10 +17,8 @@ impl<'ctx, 'a> Visitor<'ctx> for CacheControlCalculate<'a> {
         ctx: &mut VisitorContext<'_>,
         _selection_set: &Positioned<SelectionSet>,
     ) {
-        if let Some(current_type) = ctx.current_type() {
-            if let MetaType::Object { cache_control, .. } = current_type {
-                *self.cache_control = self.cache_control.merge(cache_control);
-            }
+        if let Some(MetaType::Object { cache_control, .. }) = ctx.current_type() {
+            *self.cache_control = self.cache_control.merge(cache_control);
         }
     }
 

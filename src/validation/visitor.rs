@@ -678,22 +678,20 @@ fn visit_input_value<'a, V: Visitor<'a>>(
             if let Some(expected_ty) = expected_ty {
                 let expected_ty = expected_ty.unwrap_non_null();
                 if let MetaTypeName::Named(expected_ty) = expected_ty {
-                    if let Some(ty) = ctx
+                    if let Some(MetaType::InputObject { input_fields, .. }) = ctx
                         .registry
                         .types
                         .get(MetaTypeName::concrete_typename(expected_ty))
                     {
-                        if let MetaType::InputObject { input_fields, .. } = ty {
-                            for (item_key, item_value) in values {
-                                if let Some(input_value) = input_fields.get(item_key.as_str()) {
-                                    visit_input_value(
-                                        v,
-                                        ctx,
-                                        pos,
-                                        Some(MetaTypeName::create(&input_value.ty)),
-                                        item_value,
-                                    );
-                                }
+                        for (item_key, item_value) in values {
+                            if let Some(input_value) = input_fields.get(item_key.as_str()) {
+                                visit_input_value(
+                                    v,
+                                    ctx,
+                                    pos,
+                                    Some(MetaTypeName::create(&input_value.ty)),
+                                    item_value,
+                                );
                             }
                         }
                     }

@@ -228,7 +228,10 @@ impl MetaType {
     }
 
     pub fn is_composite(&self) -> bool {
-        matches!(self, MetaType::Object { .. } | MetaType::Interface { .. } | MetaType::Union { .. })
+        matches!(
+            self,
+            MetaType::Object { .. } | MetaType::Interface { .. } | MetaType::Union { .. }
+        )
     }
 
     pub fn is_abstract(&self) -> bool {
@@ -240,7 +243,10 @@ impl MetaType {
     }
 
     pub fn is_input(&self) -> bool {
-        matches!(self, MetaType::Enum { .. } | MetaType::Scalar { .. } | MetaType::InputObject { .. })
+        matches!(
+            self,
+            MetaType::Enum { .. } | MetaType::Scalar { .. } | MetaType::InputObject { .. }
+        )
     }
 
     pub fn is_possible_type(&self, type_name: &str) -> bool {
