@@ -174,7 +174,10 @@
 <p>The <code>external</code> property declares that a field comes from another service。</p>
 </li>
 <li>
-<p>The <code>provides</code> property indicates the fields provided by a service. </p>
+<p>The <code>provides</code> directive is used to annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. </p>
+</li>
+<li>
+<p>The <code>requires</code> directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.</p>
 </li>
 </ul>
 <h2><a class="header" href="#entity-lookup-function" id="entity-lookup-function">Entity lookup function</a></h2>
