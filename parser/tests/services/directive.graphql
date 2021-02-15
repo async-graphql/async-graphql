@@ -1,1 +1,6 @@
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @test1(service: String!) on FIELD_DEFINITION
+directive @test2(service: String!) on FIELD
+directive @test3(service: String!) on ENUM_VALUE
+directive @test4(service: String!) on ENUM
