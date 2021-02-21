@@ -131,8 +131,7 @@ pub fn generate(
                 let mut key_pat = Vec::new();
                 let mut key_getter = Vec::new();
                 let mut use_keys = Vec::new();
-                let mut keys = Vec::new();
-                let mut keys_str = String::new();
+                let mut get_federation_key = Vec::new();
                 let mut requires_getter = Vec::new();
                 let all_key = args.iter().all(|(_, _, arg)| !arg.key);
 
@@ -153,10 +152,13 @@ pub fn generate(
                     });
 
                     if is_key {
-                        if !keys_str.is_empty() {
-                            keys_str.push(' ');
-                        }
-                        keys_str.push_str(&name);
+                        get_federation_key.push(quote! {
+                            if let Some(fields) = <#ty as #crate_name::InputType>::federation_fields() {
+                                key_str.push(format!("{} {}", #name, fields));                                
+                            } else {
+                                key_str.push(#name.to_string());
+                            }
+                        });
 
                         key_pat.push(quote! {
                             ::std::option::Option::Some(#ident)
@@ -167,7 +169,6 @@ pub fn generate(
                                 value
                             })
                         });
-                        keys.push(name);
                         use_keys.push(ident);
                     } else {
                         // requires
@@ -179,7 +180,13 @@ pub fn generate(
                     }
                 }
 
-                add_keys.push(quote! { registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), #keys_str); });
+                add_keys.push(quote! {
+                    {
+                        let mut key_str = Vec::new();
+                        #(#get_federation_key)*
+                        registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), &key_str.join(" "));
+                    }
+                });
                 create_entity_types.push(
                     quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); },
                 );

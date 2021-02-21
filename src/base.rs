@@ -45,6 +45,12 @@ pub trait InputType: Type + Send + Sync + Sized {
 
     /// Convert to a `Value` for introspection.
     fn to_value(&self) -> Value;
+
+    /// Get the federation fields, only for InputObject.
+    #[doc(hidden)]
+    fn federation_fields() -> Option<String> {
+        None
+    }
 }
 
 /// Represents a GraphQL output value.
