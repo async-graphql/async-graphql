@@ -221,6 +221,29 @@ impl Query {
 </li>
 </ul>
 <p>完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation</p>
+<h2><a class="header" href="#定义复合主键" id="定义复合主键">定义复合主键</a></h2>
+<p>一个主键可以包含多个字段，什么包含嵌套字段，你可以用<code>InputObject</code>来实现一个嵌套字段的Key类型。</p>
+<p>下面的例子中<code>User</code>对象的主键是<code>key { a b }</code>。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+struct NestedKey {
+  a: i32,
+  b: i32,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+  #[entity]
+  async fn find_user_by_key(&amp;self, key: NestedKey) -&gt; User {
+    User { ... }
+  }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 

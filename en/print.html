@@ -1834,6 +1834,29 @@ impl Query {
 </li>
 </ul>
 <p>For a complete example, refer to: <a href="https://github.com/async-graphql/examples/tree/master/federation">https://github.com/async-graphql/examples/tree/master/federation</a>.</p>
+<h2><a class="header" href="#defining-a-compound-primary-key" id="defining-a-compound-primary-key">Defining a compound primary key</a></h2>
+<p>A single primary key can consist of multiple fields, and even nested fields, you can use <code>InputObject</code> to implements a nested primary key.</p>
+<p>In the following example, the primary key of the <code>User</code> object is <code>key { a b }</code>.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(InputObject)]
+struct NestedKey {
+  a: i32,
+  b: i32,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+  #[entity]
+  async fn find_user_by_key(&amp;self, key: NestedKey) -&gt; User {
+    User { ... }
+  }
+}
+<span class="boring">}
+</span></code></pre></pre>
 
                     </main>
 
