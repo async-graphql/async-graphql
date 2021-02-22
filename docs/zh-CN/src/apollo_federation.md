@@ -51,3 +51,27 @@ impl Query {
     使用`id`和`username`查找`User`对象，`User`对象的key是`id`和`username`。
 
 完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation
+
+## 定义复合主键
+
+一个主键可以包含多个字段，什么包含嵌套字段，你可以用`InputObject`来实现一个嵌套字段的Key类型。
+
+下面的例子中`User`对象的主键是`key { a b }`。
+
+```rust
+#[derive(InputObject)]
+struct NestedKey {
+  a: i32,
+  b: i32,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+  #[entity]
+  async fn find_user_by_key(&self, key: NestedKey) -> User {
+    User { ... }
+  }
+}
+```

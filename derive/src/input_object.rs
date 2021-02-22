@@ -52,6 +52,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let mut fields = Vec::new();
     let mut schema_fields = Vec::new();
     let mut flatten_fields = Vec::new();
+    let mut federation_fields = Vec::new();
 
     for field in &s.fields {
         let ident = field.ident.as_ref().unwrap();
@@ -69,6 +70,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             fields.push(ident);
             continue;
         }
+
+        federation_fields.push((ty, name.clone()));
 
         if field.flatten {
             flatten_fields.push((ident, ty));
@@ -172,6 +175,23 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
     let visible = visible_fn(&object_args.visible);
 
+    let get_federation_fields = {
+        let fields = federation_fields.into_iter().map(|(ty, name)| {
+            quote! {
+                if let ::std::option::Option::Some(fields) = <#ty as #crate_name::InputType>::federation_fields() {
+                    res.push(::std::format!("{} {}", #name, fields));
+                } else {
+                    res.push(::std::string::ToString::to_string(#name));
+                }
+            }
+        });
+        quote! {
+            let mut res = ::std::vec::Vec::new();
+            #(#fields)*
+            ::std::option::Option::Some(::std::format!("{{ {} }}", res.join(" ")))
+        }
+    };
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -210,6 +230,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     #(#put_fields)*
                     #crate_name::Value::Object(map)
                 }
+
+                fn federation_fields() -> ::std::option::Option<::std::string::String> {
+                    #get_federation_fields
+                }
             }
 
             impl #crate_name::InputObjectType for #ident {}
@@ -247,6 +271,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     #(#put_fields)*
                     #crate_name::Value::Object(map)
                 }
+
+                fn __internal_federation_fields() -> ::std::option::Option<::std::string::String> {
+                    #get_federation_fields
+                }
             }
         });
 
@@ -275,6 +303,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
                     fn to_value(&self) -> #crate_name::Value {
                         self.__internal_to_value()
+                    }
+
+                    fn federation_fields() -> ::std::option::Option<::std::string::String> {
+                        Self::__internal_federation_fields()
                     }
                 }
 

@@ -51,3 +51,27 @@ impl Query {
     Use `id` and `username` to find an `User` object, the keys for `User` are `id` and `username`.
 
 For a complete example, refer to: <https://github.com/async-graphql/examples/tree/master/federation>.
+
+## Defining a compound primary key
+
+A single primary key can consist of multiple fields, and even nested fields, you can use `InputObject` to implements a nested primary key.
+
+In the following example, the primary key of the `User` object is `key { a b }`.
+
+```rust
+#[derive(InputObject)]
+struct NestedKey {
+  a: i32,
+  b: i32,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+  #[entity]
+  async fn find_user_by_key(&self, key: NestedKey) -> User {
+    User { ... }
+  }
+}
+```
