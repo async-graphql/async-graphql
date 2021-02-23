@@ -19,7 +19,6 @@ struct Service {
 
 pub(crate) struct QueryRoot<T> {
     pub(crate) inner: T,
-    pub(crate) disable_introspection: bool,
 }
 
 impl<T: Type> Type for QueryRoot<T> {
@@ -28,59 +27,63 @@ impl<T: Type> Type for QueryRoot<T> {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        let schema_type = __Schema::create_type_info(registry);
         let root = T::create_type_info(registry);
-        if let Some(registry::MetaType::Object { fields, .. }) =
-            registry.types.get_mut(T::type_name().as_ref())
-        {
-            fields.insert(
-                "__schema".to_string(),
-                registry::MetaField {
-                    name: "__schema".to_string(),
-                    description: Some("Access the current type schema of this server."),
-                    args: Default::default(),
-                    ty: schema_type,
-                    deprecation: None,
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                    visible: None,
-                    compute_complexity: None,
-                },
-            );
 
-            fields.insert(
-                "__type".to_string(),
-                registry::MetaField {
-                    name: "__type".to_string(),
-                    description: Some("Request the type information of a single type."),
-                    args: {
-                        let mut args = IndexMap::new();
-                        args.insert(
-                            "name",
-                            registry::MetaInputValue {
-                                name: "name",
-                                description: None,
-                                ty: "String!".to_string(),
-                                default_value: None,
-                                validator: None,
-                                visible: None,
-                            },
-                        );
-                        args
+        if !registry.disable_introspection {
+            let schema_type = __Schema::create_type_info(registry);
+            if let Some(registry::MetaType::Object { fields, .. }) =
+                registry.types.get_mut(T::type_name().as_ref())
+            {
+                fields.insert(
+                    "__schema".to_string(),
+                    registry::MetaField {
+                        name: "__schema".to_string(),
+                        description: Some("Access the current type schema of this server."),
+                        args: Default::default(),
+                        ty: schema_type,
+                        deprecation: None,
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
                     },
-                    ty: "__Type".to_string(),
-                    deprecation: None,
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                    visible: None,
-                    compute_complexity: None,
-                },
-            );
+                );
+
+                fields.insert(
+                    "__type".to_string(),
+                    registry::MetaField {
+                        name: "__type".to_string(),
+                        description: Some("Request the type information of a single type."),
+                        args: {
+                            let mut args = IndexMap::new();
+                            args.insert(
+                                "name",
+                                registry::MetaInputValue {
+                                    name: "name",
+                                    description: None,
+                                    ty: "String!".to_string(),
+                                    default_value: None,
+                                    validator: None,
+                                    visible: None,
+                                },
+                            );
+                            args
+                        },
+                        ty: "__Type".to_string(),
+                        deprecation: None,
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
+                    },
+                );
+            }
         }
+
         root
     }
 }
@@ -88,59 +91,60 @@ impl<T: Type> Type for QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: ObjectType> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if ctx.item.node.name.node == "__schema" {
-            if self.disable_introspection {
-                return Err(ServerError::new("Query introspection is disabled.").at(ctx.item.pos));
+        if !ctx.schema_env.registry.disable_introspection {
+            if ctx.item.node.name.node == "__schema" {
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                return OutputType::resolve(
+                    &__Schema {
+                        registry: &ctx.schema_env.registry,
+                    },
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
+            } else if ctx.item.node.name.node == "__type" {
+                let type_name: String = ctx.param_value("name", None)?;
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                return OutputType::resolve(
+                    &ctx.schema_env
+                        .registry
+                        .types
+                        .get(&type_name)
+                        .filter(|ty| ty.is_visible(ctx))
+                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
             }
+        }
 
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(
-                &__Schema {
-                    registry: &ctx.schema_env.registry,
-                },
-                &ctx_obj,
-                ctx.item,
-            )
-            .await
-            .map(Some);
-        } else if ctx.item.node.name.node == "__type" {
-            let type_name: String = ctx.param_value("name", None)?;
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(
-                &ctx.schema_env
-                    .registry
-                    .types
-                    .get(&type_name)
-                    .filter(|ty| ty.is_visible(ctx))
-                    .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
-                &ctx_obj,
-                ctx.item,
-            )
-            .await
-            .map(Some);
-        } else if ctx.item.node.name.node == "_entities" {
-            let representations: Vec<Any> = ctx.param_value("representations", None)?;
-            let mut res = Vec::new();
-            for item in representations {
-                res.push(
-                    self.inner
-                        .find_entity(ctx, &item.0)
-                        .await?
-                        .ok_or_else(|| ServerError::new("Entity not found.").at(ctx.item.pos))?,
-                );
+        if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
+            if ctx.item.node.name.node == "_entities" {
+                let representations: Vec<Any> = ctx.param_value("representations", None)?;
+                let mut res = Vec::new();
+                for item in representations {
+                    res.push(
+                        self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {
+                            ServerError::new("Entity not found.").at(ctx.item.pos)
+                        })?,
+                    );
+                }
+                return Ok(Some(Value::List(res)));
+            } else if ctx.item.node.name.node == "_service" {
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                return OutputType::resolve(
+                    &Service {
+                        sdl: Some(ctx.schema_env.registry.export_sdl(true)),
+                    },
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
             }
-            return Ok(Some(Value::List(res)));
-        } else if ctx.item.node.name.node == "_service" {
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(
-                &Service {
-                    sdl: Some(ctx.schema_env.registry.export_sdl(true)),
-                },
-                &ctx_obj,
-                ctx.item,
-            )
-            .await
-            .map(Some);
         }
 
         self.inner.resolve_field(ctx).await

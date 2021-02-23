@@ -300,6 +300,8 @@ pub struct Registry {
     pub query_type: String,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
+    pub disable_introspection: bool,
+    pub enable_federation: bool,
 }
 
 impl Registry {
