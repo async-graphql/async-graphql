@@ -36,7 +36,7 @@ impl SubscriptionType for EmptySubscription {
 
     fn create_field_stream<'a>(
         &'a self,
-        ctx: &'a Context<'a>,
+        ctx: &'a Context<'_>,
     ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>>
     where
         Self: Send + Sync + 'static + Sized,

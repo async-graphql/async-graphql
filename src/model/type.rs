@@ -58,35 +58,23 @@ impl<'a> __Type<'a> {
         }
     }
 
-    async fn name(&self) -> Option<String> {
+    async fn name(&self) -> Option<&str> {
         match &self.detail {
-            TypeDetail::Named(ty) => Some(ty.name().to_string()),
+            TypeDetail::Named(ty) => Some(ty.name()),
             TypeDetail::NonNull(_) => None,
             TypeDetail::List(_) => None,
         }
     }
 
-    async fn description(&self) -> Option<String> {
+    async fn description(&self) -> Option<&str> {
         match &self.detail {
             TypeDetail::Named(ty) => match ty {
-                registry::MetaType::Scalar { description, .. } => {
-                    description.map(ToString::to_string)
-                }
-                registry::MetaType::Object { description, .. } => {
-                    description.map(ToString::to_string)
-                }
-                registry::MetaType::Interface { description, .. } => {
-                    description.map(ToString::to_string)
-                }
-                registry::MetaType::Union { description, .. } => {
-                    description.map(ToString::to_string)
-                }
-                registry::MetaType::Enum { description, .. } => {
-                    description.map(ToString::to_string)
-                }
-                registry::MetaType::InputObject { description, .. } => {
-                    description.map(ToString::to_string)
-                }
+                registry::MetaType::Scalar { description, .. }
+                | registry::MetaType::Object { description, .. }
+                | registry::MetaType::Interface { description, .. }
+                | registry::MetaType::Union { description, .. }
+                | registry::MetaType::Enum { description, .. }
+                | registry::MetaType::InputObject { description, .. } => description.as_deref(),
             },
             TypeDetail::NonNull(_) => None,
             TypeDetail::List(_) => None,
