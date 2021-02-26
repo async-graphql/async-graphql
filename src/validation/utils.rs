@@ -4,7 +4,7 @@ use crate::context::QueryPathNode;
 use crate::{registry, QueryPathSegment};
 use async_graphql_value::{ConstValue, Value};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {
     Operation(Option<&'a str>),
     Fragment(&'a str),

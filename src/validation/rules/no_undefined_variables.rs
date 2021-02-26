@@ -21,26 +21,26 @@ impl<'a> NoUndefinedVariables<'a> {
         &'a self,
         scope: &Scope<'a>,
         defined: &HashSet<&'a str>,
-        unused: &mut Vec<(&'a str, Pos)>,
+        undef: &mut Vec<(&'a str, Pos)>,
         visited: &mut HashSet<Scope<'a>>,
     ) {
         if visited.contains(scope) {
             return;
         }
 
-        visited.insert(scope.clone());
+        visited.insert(*scope);
 
         if let Some(used_vars) = self.used_variables.get(scope) {
             for (var, pos) in used_vars {
                 if !defined.contains(var) {
-                    unused.push((*var, *pos));
+                    undef.push((*var, *pos));
                 }
             }
         }
 
         if let Some(spreads) = self.spreads.get(scope) {
             for spread in spreads {
-                self.find_undef_vars(&Scope::Fragment(spread), defined, unused, visited);
+                self.find_undef_vars(&Scope::Fragment(spread), defined, undef, visited);
             }
         }
     }
@@ -49,16 +49,16 @@ impl<'a> NoUndefinedVariables<'a> {
 impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
         for (op_name, &(ref def_pos, ref def_vars)) in &self.defined_variables {
-            let mut unused = Vec::new();
+            let mut undef = Vec::new();
             let mut visited = HashSet::new();
             self.find_undef_vars(
                 &Scope::Operation(*op_name),
                 def_vars,
-                &mut unused,
+                &mut undef,
                 &mut visited,
             );
 
-            for (var, pos) in unused {
+            for (var, pos) in undef {
                 if let Some(op_name) = op_name {
                     ctx.report_error(
                         vec![*def_pos, pos],
@@ -115,7 +115,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
-                .entry(scope.clone())
+                .entry(*scope)
                 .or_insert_with(HashMap::new)
                 .extend(
                     referenced_variables(&value.node)
@@ -132,7 +132,7 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
-                .entry(scope.clone())
+                .entry(*scope)
                 .or_insert_with(Vec::new)
                 .push(&fragment_spread.node.fragment_name.node);
         }

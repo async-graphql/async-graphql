@@ -80,7 +80,7 @@ impl<'a> Visitor<'a> for NoUnusedFragments<'a> {
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
-                .entry(scope.clone())
+                .entry(*scope)
                 .or_insert_with(Vec::new)
                 .push(&fragment_spread.node.fragment_name.node);
         }
