@@ -86,6 +86,35 @@ pub struct ConcreteType {
     pub params: PathList,
 }
 
+#[derive(Debug)]
+pub enum Deprecation {
+    NoDeprecated,
+    Deprecated { reason: Option<String> },
+}
+
+impl Default for Deprecation {
+    fn default() -> Self {
+        Deprecation::NoDeprecated
+    }
+}
+
+impl FromMeta for Deprecation {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Deprecation::Deprecated { reason: None })
+    }
+
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        match value {
+            Lit::Bool(LitBool { value: true, .. }) => Ok(Deprecation::Deprecated { reason: None }),
+            Lit::Bool(LitBool { value: false, .. }) => Ok(Deprecation::NoDeprecated),
+            Lit::Str(str) => Ok(Deprecation::Deprecated {
+                reason: Some(str.value()),
+            }),
+            _ => Err(darling::Error::unexpected_lit_type(value)),
+        }
+    }
+}
+
 #[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
@@ -99,7 +128,7 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
-    pub deprecation: Option<String>,
+    pub deprecation: Deprecation,
     #[darling(default)]
     pub owned: bool,
     #[darling(default)]
@@ -198,7 +227,7 @@ pub struct ObjectField {
     pub skip: bool,
     pub entity: bool,
     pub name: Option<String>,
-    pub deprecation: Option<String>,
+    pub deprecation: Deprecation,
     pub cache_control: CacheControl,
     pub external: bool,
     pub provides: Option<String>,
@@ -238,7 +267,7 @@ pub struct EnumItem {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
-    pub deprecation: Option<String>,
+    pub deprecation: Deprecation,
     #[darling(default)]
     pub visible: Option<Visible>,
 }
@@ -340,7 +369,7 @@ pub struct InterfaceField {
     #[darling(default, multiple, rename = "arg")]
     pub args: Vec<InterfaceFieldArgument>,
     #[darling(default)]
-    pub deprecation: Option<String>,
+    pub deprecation: Deprecation,
     #[darling(default)]
     pub external: bool,
     #[darling(default)]
@@ -416,7 +445,7 @@ pub struct SubscriptionFieldArgument {
 pub struct SubscriptionField {
     pub skip: bool,
     pub name: Option<String>,
-    pub deprecation: Option<String>,
+    pub deprecation: Deprecation,
     pub guard: Option<Meta>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,

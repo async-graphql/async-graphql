@@ -41,6 +41,7 @@ impl<'a> std::fmt::Display for MetaTypeName<'a> {
 }
 
 impl<'a> MetaTypeName<'a> {
+    #[inline]
     pub fn create(type_name: &str) -> MetaTypeName {
         if let Some(type_name) = type_name.strip_suffix('!') {
             MetaTypeName::NonNull(type_name)
@@ -51,6 +52,7 @@ impl<'a> MetaTypeName<'a> {
         }
     }
 
+    #[inline]
     pub fn concrete_typename(type_name: &str) -> &str {
         match MetaTypeName::create(type_name) {
             MetaTypeName::List(type_name) => Self::concrete_typename(type_name),
@@ -59,10 +61,12 @@ impl<'a> MetaTypeName<'a> {
         }
     }
 
+    #[inline]
     pub fn is_non_null(&self) -> bool {
         matches!(self, MetaTypeName::NonNull(_))
     }
 
+    #[inline]
     pub fn unwrap_non_null(&self) -> Self {
         match self {
             MetaTypeName::NonNull(ty) => MetaTypeName::create(ty),
@@ -70,6 +74,7 @@ impl<'a> MetaTypeName<'a> {
         }
     }
 
+    #[inline]
     pub fn is_subtype(&self, sub: &MetaTypeName<'_>) -> bool {
         match (self, sub) {
             (MetaTypeName::NonNull(super_type), MetaTypeName::NonNull(sub_type))
@@ -86,6 +91,7 @@ impl<'a> MetaTypeName<'a> {
         }
     }
 
+    #[inline]
     pub fn is_list(&self) -> bool {
         match self {
             MetaTypeName::List(_) => true,
@@ -95,7 +101,6 @@ impl<'a> MetaTypeName<'a> {
     }
 }
 
-#[derive(Clone)]
 pub struct MetaInputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -112,19 +117,44 @@ type ComputeComplexityFn = fn(
     usize,
 ) -> ServerResult<usize>;
 
-#[derive(Clone)]
 pub enum ComplexityType {
     Const(usize),
     Fn(ComputeComplexityFn),
 }
 
-#[derive(Clone)]
+#[derive(Debug)]
+pub enum Deprecation {
+    NoDeprecated,
+    Deprecated { reason: Option<&'static str> },
+}
+
+impl Default for Deprecation {
+    fn default() -> Self {
+        Deprecation::NoDeprecated
+    }
+}
+
+impl Deprecation {
+    #[inline]
+    pub fn is_deprecated(&self) -> bool {
+        matches!(self, Deprecation::Deprecated { .. })
+    }
+
+    #[inline]
+    pub fn reason(&self) -> Option<&str> {
+        match self {
+            Deprecation::NoDeprecated => None,
+            Deprecation::Deprecated { reason } => reason.as_deref(),
+        }
+    }
+}
+
 pub struct MetaField {
     pub name: String,
     pub description: Option<&'static str>,
     pub args: IndexMap<&'static str, MetaInputValue>,
     pub ty: String,
-    pub deprecation: Option<&'static str>,
+    pub deprecation: Deprecation,
     pub cache_control: CacheControl,
     pub external: bool,
     pub requires: Option<&'static str>,
@@ -133,11 +163,10 @@ pub struct MetaField {
     pub compute_complexity: Option<ComplexityType>,
 }
 
-#[derive(Clone)]
 pub struct MetaEnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
-    pub deprecation: Option<&'static str>,
+    pub deprecation: Deprecation,
     pub visible: Option<MetaVisibleFn>,
 }
 
@@ -189,10 +218,12 @@ pub enum MetaType {
 }
 
 impl MetaType {
+    #[inline]
     pub fn field_by_name(&self, name: &str) -> Option<&MetaField> {
         self.fields().and_then(|fields| fields.get(name))
     }
 
+    #[inline]
     pub fn fields(&self) -> Option<&IndexMap<String, MetaField>> {
         match self {
             MetaType::Object { fields, .. } => Some(&fields),
@@ -201,6 +232,7 @@ impl MetaType {
         }
     }
 
+    #[inline]
     pub fn is_visible(&self, ctx: &Context<'_>) -> bool {
         let visible = match self {
             MetaType::Scalar { visible, .. } => visible,
@@ -216,6 +248,7 @@ impl MetaType {
         }
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         match self {
             MetaType::Scalar { name, .. } => &name,
@@ -227,6 +260,7 @@ impl MetaType {
         }
     }
 
+    #[inline]
     pub fn is_composite(&self) -> bool {
         matches!(
             self,
@@ -234,14 +268,17 @@ impl MetaType {
         )
     }
 
+    #[inline]
     pub fn is_abstract(&self) -> bool {
         matches!(self, MetaType::Interface { .. } | MetaType::Union { .. })
     }
 
+    #[inline]
     pub fn is_leaf(&self) -> bool {
         matches!(self, MetaType::Enum { .. } | MetaType::Scalar { .. })
     }
 
+    #[inline]
     pub fn is_input(&self) -> bool {
         matches!(
             self,
@@ -249,6 +286,7 @@ impl MetaType {
         )
     }
 
+    #[inline]
     pub fn is_possible_type(&self, type_name: &str) -> bool {
         match self {
             MetaType::Interface { possible_types, .. } => possible_types.contains(type_name),
@@ -258,6 +296,7 @@ impl MetaType {
         }
     }
 
+    #[inline]
     pub fn possible_types(&self) -> Option<&IndexSet<String>> {
         match self {
             MetaType::Interface { possible_types, .. } => Some(possible_types),
@@ -457,7 +496,7 @@ impl Registry {
                             description: None,
                             args: Default::default(),
                             ty: "String".to_string(),
-                            deprecation: None,
+                            deprecation: Default::default(),
                             cache_control: Default::default(),
                             external: false,
                             requires: None,
@@ -486,7 +525,7 @@ impl Registry {
                     description: None,
                     args: Default::default(),
                     ty: "_Service!".to_string(),
-                    deprecation: None,
+                    deprecation: Default::default(),
                     cache_control: Default::default(),
                     external: false,
                     requires: None,
@@ -517,7 +556,7 @@ impl Registry {
                         args
                     },
                     ty: "[_Entity]!".to_string(),
-                    deprecation: None,
+                    deprecation: Default::default(),
                     cache_control: Default::default(),
                     external: false,
                     requires: None,

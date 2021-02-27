@@ -109,6 +109,15 @@ struct SimpleObject {
     #[graphql(deprecation = "Field e is deprecated")]
     e: bool,
 
+    #[graphql(deprecation)]
+    e2: bool,
+
+    #[graphql(deprecation = true)]
+    e3: bool,
+
+    #[graphql(deprecation = false)]
+    e4: bool,
+
     f: TestEnum,
 
     g: TestInterface,
@@ -330,6 +339,21 @@ pub async fn test_introspection_deprecation() {
                 "deprecationReason": "Field e is deprecated"
               },
               {
+                "name": "e2",
+                "isDeprecated": true,
+                "deprecationReason": null
+              },
+              {
+                "name": "e3",
+                "isDeprecated": true,
+                "deprecationReason": null
+              },
+              {
+                "name": "e4",
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
                 "name": "f",
                 "isDeprecated": false,
                 "deprecationReason": null
@@ -385,6 +409,11 @@ pub async fn test_introspection_deprecation() {
               },
               {
                 "name": "d",
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "e4",
                 "isDeprecated": false,
                 "deprecationReason": null
               },

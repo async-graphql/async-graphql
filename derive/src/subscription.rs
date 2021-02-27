@@ -9,9 +9,9 @@ use syn::{
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
-    generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
-    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    gen_deprecation, generate_default, generate_guards, generate_validator, get_cfg_attrs,
+    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
+    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -54,11 +54,7 @@ pub fn generate(
             let field_desc = get_rustdoc(&method.attrs)?
                 .map(|s| quote! {::std::option::Option::Some(#s)})
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
-            let field_deprecation = field
-                .deprecation
-                .as_ref()
-                .map(|s| quote! {::std::option::Option::Some(#s)})
-                .unwrap_or_else(|| quote! {::std::option::Option::None});
+            let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
             let cfg_attrs = get_cfg_attrs(&method.attrs);
 
             if method.sig.asyncness.is_none() {

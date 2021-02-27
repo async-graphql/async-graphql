@@ -7,9 +7,9 @@ use syn::{Block, Error, FnArg, Ident, ImplItem, ItemImpl, Pat, ReturnType, Type,
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
-    generate_default, generate_guards, generate_validator, get_cfg_attrs, get_crate_name,
-    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    gen_deprecation, generate_default, generate_guards, generate_validator, get_cfg_attrs,
+    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
+    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -233,11 +233,7 @@ pub fn generate(
                 let field_desc = get_rustdoc(&method.attrs)?
                     .map(|s| quote! { ::std::option::Option::Some(#s) })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let field_deprecation = method_args
-                    .deprecation
-                    .as_ref()
-                    .map(|s| quote! { ::std::option::Option::Some(#s) })
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
                 let external = method_args.external;
                 let requires = match &method_args.requires {
                     Some(requires) => quote! { ::std::option::Option::Some(#requires) },

@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.8] - 2021-02-27
+
+- Allow the `deprecation` attribute to have no reason.
+
+    ```rust
+    #[derive(SimpleObject)]
+    struct MyObject {
+        #[graphql(deprecation)]
+        a: i32,
+    
+        #[graphql(deprecation = true)]
+        b: i32,
+    
+        #[graphql(deprecation = false)]
+        c: i32,
+    
+        #[graphql(deprecation = "reason")]
+        d: i32,
+    }
+    ```
+
 ## [2.5.7] - 2021-02-23
 
 - Fix the problem that the borrowing lifetime returned by the `Context::data` function is too small.

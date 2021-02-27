@@ -41,7 +41,7 @@ impl<T: Type> Type for QueryRoot<T> {
                         description: Some("Access the current type schema of this server."),
                         args: Default::default(),
                         ty: schema_type,
-                        deprecation: None,
+                        deprecation: Default::default(),
                         cache_control: Default::default(),
                         external: false,
                         requires: None,
@@ -72,7 +72,7 @@ impl<T: Type> Type for QueryRoot<T> {
                             args
                         },
                         ty: "__Type".to_string(),
-                        deprecation: None,
+                        deprecation: Default::default(),
                         cache_control: Default::default(),
                         external: false,
                         requires: None,
