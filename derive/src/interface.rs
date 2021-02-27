@@ -9,7 +9,9 @@ use syn::{visit_mut, Error, Lifetime, Type};
 
 use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
-use crate::utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::utils::{
+    gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+};
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
@@ -241,10 +243,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .as_ref()
             .map(|s| quote! {::std::option::Option::Some(#s)})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
-        let deprecation = deprecation
-            .as_ref()
-            .map(|s| quote! {::std::option::Option::Some(#s)})
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let deprecation = gen_deprecation(deprecation, &crate_name);
 
         let oty = OutputType::parse(&ty)?;
         let ty = match oty {

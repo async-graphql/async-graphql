@@ -8,19 +8,23 @@ pub struct __EnumValue<'a> {
 /// One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.
 #[Object(internal, name = "__EnumValue")]
 impl<'a> __EnumValue<'a> {
-    async fn name(&self) -> String {
-        self.value.name.to_string()
+    #[inline]
+    async fn name(&self) -> &str {
+        self.value.name
     }
 
-    async fn description(&self) -> Option<String> {
-        self.value.description.map(ToString::to_string)
+    #[inline]
+    async fn description(&self) -> Option<&str> {
+        self.value.description
     }
 
+    #[inline]
     async fn is_deprecated(&self) -> bool {
-        self.value.deprecation.is_some()
+        self.value.deprecation.is_deprecated()
     }
 
-    async fn deprecation_reason(&self) -> Option<String> {
-        self.value.deprecation.map(ToString::to_string)
+    #[inline]
+    async fn deprecation_reason(&self) -> Option<&str> {
+        self.value.deprecation.reason()
     }
 }

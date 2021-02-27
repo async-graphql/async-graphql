@@ -5,7 +5,9 @@ use syn::ext::IdentExt;
 use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::utils::{
+    gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+};
 
 pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -52,11 +54,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let field_desc = get_rustdoc(&field.attrs)?
             .map(|s| quote! {::std::option::Option::Some(#s)})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
-        let field_deprecation = field
-            .deprecation
-            .as_ref()
-            .map(|s| quote! {::std::option::Option::Some(#s)})
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
         let external = field.external;
         let requires = match &field.requires {
             Some(requires) => quote! { ::std::option::Option::Some(#requires) },

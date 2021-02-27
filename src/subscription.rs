@@ -18,7 +18,7 @@ pub trait SubscriptionType: Type + Send + Sync {
     #[doc(hidden)]
     fn create_field_stream<'a>(
         &'a self,
-        ctx: &'a Context<'a>,
+        ctx: &'a Context<'_>,
     ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>>;
 }
 
@@ -103,7 +103,7 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
 impl<T: SubscriptionType> SubscriptionType for &T {
     fn create_field_stream<'a>(
         &'a self,
-        ctx: &'a Context<'a>,
+        ctx: &'a Context<'_>,
     ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>> {
         T::create_field_stream(*self, ctx)
     }

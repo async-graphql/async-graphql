@@ -154,7 +154,7 @@ where
                             description: Some("Information to aid in pagination."),
                             args: Default::default(),
                             ty: PageInfo::create_type_info(registry),
-                            deprecation: None,
+                            deprecation: Default::default(),
                             cache_control: Default::default(),
                             external: false,
                             requires: None,
@@ -173,7 +173,7 @@ where
                             ty: <Option<Vec<Option<Edge<C, T, EE>>>> as Type>::create_type_info(
                                 registry,
                             ),
-                            deprecation: None,
+                            deprecation: Default::default(),
                             cache_control: Default::default(),
                             external: false,
                             requires: None,

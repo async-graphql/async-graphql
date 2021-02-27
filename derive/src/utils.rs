@@ -12,7 +12,7 @@ use syn::{
 use thiserror::Error;
 
 use crate::args;
-use crate::args::Visible;
+use crate::args::{Deprecation, Visible};
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -439,4 +439,20 @@ pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)
     let mut visit = VisitComplexityExpr::default();
     visit.visit_expr(&expr);
     Ok((visit.variables, expr))
+}
+
+pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> TokenStream {
+    match deprecation {
+        Deprecation::NoDeprecated => {
+            quote! { #crate_name::registry::Deprecation::NoDeprecated }
+        }
+        Deprecation::Deprecated {
+            reason: Some(reason),
+        } => {
+            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::Some(#reason) } }
+        }
+        Deprecation::Deprecated { reason: None } => {
+            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::None } }
+        }
+    }
 }

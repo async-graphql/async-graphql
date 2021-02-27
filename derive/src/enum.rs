@@ -5,7 +5,7 @@ use syn::ext::IdentExt;
 use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
@@ -46,11 +46,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 .rename_items
                 .rename(variant.ident.unraw().to_string(), RenameTarget::EnumItem)
         });
-        let item_deprecation = variant
-            .deprecation
-            .as_ref()
-            .map(|s| quote! { ::std::option::Option::Some(#s) })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(#s) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});

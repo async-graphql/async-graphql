@@ -265,6 +265,7 @@ pub type FieldResult<T> = Result<T>;
 /// | skip          | Skip this field           | bool     | Y        |
 /// | name          | Field name                | string   | Y        |
 /// | desc          | Field description         | string   | Y        |
+/// | deprecation   | Field deprecated          | bool     | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
@@ -441,6 +442,7 @@ pub use async_graphql_derive::Object;
 /// |---------------|---------------------------|----------|----------|
 /// | skip          | Skip this field           | bool     | Y        |
 /// | name          | Field name                | string   | Y        |
+/// | deprecation   | Field deprecated          | bool     | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
 /// | owned         | Field resolver return a ownedship value  | bool   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
@@ -490,6 +492,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Item name                 | string   | Y        |
+/// | deprecation | Item deprecated           | bool     | Y        |
 /// | deprecation | Item deprecation reason   | string   | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
@@ -616,6 +619,7 @@ pub use async_graphql_derive::InputObject;
 /// | type        | Field type                | string   | N        |
 /// | method      | Rust resolver method name. If specified, `name` will not be camelCased in schema definition | string | Y |
 /// | desc        | Field description         | string   | Y        |
+/// | deprecation | Field deprecated          | bool     | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | arg         | Field arguments           | [InterfaceFieldArgument]          | Y        |
 /// | external    | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
@@ -828,6 +832,7 @@ pub use async_graphql_derive::Union;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Field name                | string   | Y        |
+/// | deprecation | Field deprecated          | bool     | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
 /// | guard       | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |

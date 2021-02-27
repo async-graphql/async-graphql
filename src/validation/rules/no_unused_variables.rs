@@ -28,7 +28,7 @@ impl<'a> NoUnusedVariables<'a> {
             return;
         }
 
-        visited.insert(from.clone());
+        visited.insert(*from);
 
         if let Some(used_vars) = self.used_variables.get(from) {
             for var in used_vars {
@@ -114,7 +114,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     ) {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
-                .entry(scope.clone())
+                .entry(*scope)
                 .or_insert_with(Vec::new)
                 .append(&mut referenced_variables(&value.node));
         }
@@ -127,7 +127,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
     ) {
         if let Some(ref scope) = self.current_scope {
             self.spreads
-                .entry(scope.clone())
+                .entry(*scope)
                 .or_insert_with(Vec::new)
                 .push(&fragment_spread.node.fragment_name.node);
         }
