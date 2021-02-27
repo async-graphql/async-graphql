@@ -208,7 +208,7 @@ pub use subscription::SubscriptionType;
 pub use async_graphql_parser as parser;
 pub use async_graphql_value::{
     from_value, to_value, value, ConstValue as Value, DeserializerError, Name, Number,
-    SerializerError,
+    SerializerError, Variables,
 };
 pub use base::{
     Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType, Type, UnionType,

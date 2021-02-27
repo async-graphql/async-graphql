@@ -118,7 +118,6 @@ impl<'a> VisitorContext<'a> {
                             .and_then(|def| {
                                 if let Some(variables) = self.variables {
                                     variables
-                                        .0
                                         .get(&def.node.name.node)
                                         .or_else(|| def.node.default_value())
                                 } else {

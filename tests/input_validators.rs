@@ -1688,9 +1688,7 @@ pub async fn test_input_validator_variable() {
     let validator_length = 6;
     for case in &test_cases {
         let mut variables = Variables::default();
-        variables
-            .0
-            .insert(Name::new("id"), Value::String(case.to_string()));
+        variables.insert(Name::new("id"), Value::String(case.to_string()));
 
         let field_query = "query($id: String!) {fieldParameter(id: $id)}";
         let object_query = "query($id: String!) {inputObject(input: {id: $id})}";
