@@ -6,6 +6,7 @@
 mod de;
 mod macros;
 mod ser;
+mod variables;
 
 use std::borrow::{Borrow, Cow};
 use std::collections::BTreeMap;
@@ -21,6 +22,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use de::{from_value, DeserializerError};
 pub use ser::{to_value, SerializerError};
 pub use serde_json::Number;
+
+pub use variables::Variables;
 
 /// A GraphQL name.
 ///

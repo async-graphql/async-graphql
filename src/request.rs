@@ -1,5 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::fmt::{self, Debug, Formatter};
 
 use serde::{Deserialize, Deserializer, Serialize};
@@ -79,7 +80,23 @@ impl Request {
     /// `request.variables["files"][2]["content"]`. If no variable exists at the path this function
     /// won't do anything.
     pub fn set_upload(&mut self, var_path: &str, upload: UploadValue) {
-        let variable = match self.variables.variable_path(var_path) {
+        fn variable_path<'a>(variables: &'a mut Variables, path: &str) -> Option<&'a mut Value> {
+            let mut parts = path.strip_prefix("variables.")?.split('.');
+
+            let initial = variables.get_mut(parts.next().unwrap())?;
+
+            parts.try_fold(initial, |current, part| match current {
+                Value::List(list) => part
+                    .parse::<u32>()
+                    .ok()
+                    .and_then(|idx| usize::try_from(idx).ok())
+                    .and_then(move |idx| list.get_mut(idx)),
+                Value::Object(obj) => obj.get_mut(part),
+                _ => None,
+            })
+        }
+
+        let variable = match variable_path(&mut self.variables, var_path) {
             Some(variable) => variable,
             None => return,
         };
@@ -171,7 +188,7 @@ mod tests {
             "query": "{ a b c }"
         }))
         .unwrap();
-        assert!(request.variables.0.is_empty());
+        assert!(request.variables.is_empty());
         assert!(request.operation_name.is_none());
         assert_eq!(request.query, "{ a b c }");
     }
@@ -183,7 +200,7 @@ mod tests {
             "operationName": "a"
         }))
         .unwrap();
-        assert!(request.variables.0.is_empty());
+        assert!(request.variables.is_empty());
         assert_eq!(request.operation_name.as_deref(), Some("a"));
         assert_eq!(request.query, "{ a b c }");
     }
@@ -219,7 +236,7 @@ mod tests {
         }))
         .unwrap();
         assert!(request.operation_name.is_none());
-        assert!(request.variables.0.is_empty());
+        assert!(request.variables.is_empty());
     }
 
     #[test]
@@ -230,7 +247,7 @@ mod tests {
         .unwrap();
 
         if let BatchRequest::Single(request) = request {
-            assert!(request.variables.0.is_empty());
+            assert!(request.variables.is_empty());
             assert!(request.operation_name.is_none());
             assert_eq!(request.query, "{ a b c }");
         } else {
@@ -251,11 +268,11 @@ mod tests {
         .unwrap();
 
         if let BatchRequest::Batch(requests) = request {
-            assert!(requests[0].variables.0.is_empty());
+            assert!(requests[0].variables.is_empty());
             assert!(requests[0].operation_name.is_none());
             assert_eq!(requests[0].query, "{ a b c }");
 
-            assert!(requests[1].variables.0.is_empty());
+            assert!(requests[1].variables.is_empty());
             assert!(requests[1].operation_name.is_none());
             assert_eq!(requests[1].query, "{ d e }");
         } else {
