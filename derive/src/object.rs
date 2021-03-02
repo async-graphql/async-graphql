@@ -57,7 +57,11 @@ pub fn generate(
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type").into())
+                        return Err(Error::new_spanned(
+                            &method.sig.output,
+                            "Resolver must have a return type",
+                        )
+                        .into())
                     }
                 };
                 let mut create_ctx = true;
@@ -250,7 +254,11 @@ pub fn generate(
                 let ty = match &method.sig.output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
-                        return Err(Error::new_spanned(&method.sig.output, "Missing type").into())
+                        return Err(Error::new_spanned(
+                            &method.sig.output,
+                            "Resolver must have a return type",
+                        )
+                        .into())
                     }
                 };
                 let cache_control = {
