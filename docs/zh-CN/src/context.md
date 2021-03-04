@@ -13,7 +13,7 @@ struct Query;
 impl Query {
     async fn borrow_from_context_data<'ctx>(
         &self,
-        ctx: &'ctx Context<'_>
+        ctx: &Context<'ctx>
     ) -> Result<&'ctx String> {
         ctx.data::<String>()
     }
