@@ -163,12 +163,12 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#warp" id="warp">Warp</a></h1>
+                        <h1 id="warp"><a class="header" href="#warp">Warp</a></h1>
 <p>For <code>Async-graphql-warp</code>, two <code>Filter</code> integrations are provided: <code>graphql</code> and <code>graphql_subscription</code>.</p>
 <p>The <code>graphql</code> filter is used for execution <code>Query</code> and <code>Mutation</code> requests. It always asks for the POST method and outputs a <code>async_graphql::Schema</code> and <code>async_graphql::Request</code>.
 You can combine other filters later, or directly call <code>Schema::execute</code> to execute the query.</p>
 <p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
-<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -185,7 +185,7 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#subscription-example" id="subscription-example">Subscription example</a></h2>
+<h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -194,7 +194,7 @@ let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#more-examples" id="more-examples">More examples</a></h2>
+<h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>
 
                     </main>

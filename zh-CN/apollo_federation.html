@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#apollo-federation集成" id="apollo-federation集成">Apollo Federation集成</a></h1>
+                        <h1 id="apollo-federation集成"><a class="header" href="#apollo-federation集成">Apollo Federation集成</a></h1>
 <p><code>Apollo Federation</code>是一个<code>GraphQL</code>网关，它可以组合多个GraphQL服务，允许每服务仅实现它负责的那一部分数据，参考<a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">官方文档</a>。</p>
 <p><code>Async-graphql</code>可以完全支持<code>Apollo Federation</code>的所有功能，但需要对<code>Schema</code>定义做一些小小的改造。</p>
 <ul>
@@ -180,7 +180,7 @@
 <p>字段的<code>requires</code>属性表示解析该字段值需要依赖该类型的字段集。</p>
 </li>
 </ul>
-<h2><a class="header" href="#实体查找函数" id="实体查找函数">实体查找函数</a></h2>
+<h2 id="实体查找函数"><a class="header" href="#实体查找函数">实体查找函数</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -221,7 +221,7 @@ impl Query {
 </li>
 </ul>
 <p>完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation</p>
-<h2><a class="header" href="#定义复合主键" id="定义复合主键">定义复合主键</a></h2>
+<h2 id="定义复合主键"><a class="header" href="#定义复合主键">定义复合主键</a></h2>
 <p>一个主键可以包含多个字段，什么包含嵌套字段，你可以用<code>InputObject</code>来实现一个嵌套字段的Key类型。</p>
 <p>下面的例子中<code>User</code>对象的主键是<code>key { a b }</code>。</p>
 <pre><pre class="playground"><code class="language-rust">

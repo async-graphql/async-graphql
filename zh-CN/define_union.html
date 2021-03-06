@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#联合union" id="联合union">联合(Union)</a></h1>
+                        <h1 id="联合union"><a class="header" href="#联合union">联合(Union)</a></h1>
 <p>联合的定义和接口非常像，<strong>但不允许定义字段</strong>。这两个类型的实现原理也差不多，对于<code>Async-graphql</code>来说，联合类型是接口类型的子集。</p>
 <p>下面把接口定义的例子做一个小小的修改，去掉字段的定义。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -208,7 +208,7 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#展平嵌套联合" id="展平嵌套联合">展平嵌套联合</a></h2>
+<h2 id="展平嵌套联合"><a class="header" href="#展平嵌套联合">展平嵌套联合</a></h2>
 <p>GraphQL的有个限制是<code>Union</code>类型内不能包含其它联合类型。 所有成员必须为<code>Object</code>。 
 位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
 <pre><pre class="playground"><code class="language-rust">

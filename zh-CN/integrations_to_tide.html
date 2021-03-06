@@ -163,9 +163,9 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#tide" id="tide">Tide</a></h1>
+                        <h1 id="tide"><a class="header" href="#tide">Tide</a></h1>
 <p><code>async_graphql_tide</code> 提供一个 trait <a href="https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html">tide::Endpoint</a> 的实现。如果您想手动处理请求的话，它还提供了 <code>receive_request</code> 和 <code>respond</code> 函数来将一个 Tide 请求转换为一个 GraphQL 请求，并返回  <code>tide::Response</code>。</p>
-<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
 <p>当创建你的 <code>tide</code> 服务器时，你需要将 <code>Schema</code> 传递给 <code>async_graphql_tide::endpoint</code> 。请注意，你需要启用 <code>async-std</code> 中的 feature <code>attributes</code> 才能使这个例子正常工作。</p>
 <pre><pre class="playground"><code class="language-rust">use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
@@ -213,7 +213,7 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
     Ok(app.listen(&quot;127.0.0.1:8080&quot;).await?)
 }
 </code></pre></pre>
-<h2><a class="header" href="#manually-handle-the-request" id="manually-handle-the-request">Manually handle the request</a></h2>
+<h2 id="manually-handle-the-request"><a class="header" href="#manually-handle-the-request">Manually handle the request</a></h2>
 <p>如果你想手动处理请求，例如读取头，你可以跳过 <code>async_graphql_tide::endpoint</code> 而使用 <code>receive_request</code> 和 <code>respond</code> 函数。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -227,7 +227,7 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
 });
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#more-examples" id="more-examples">More examples</a></h2>
+<h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/tide">https://github.com/async-graphql/examples/tree/master/tide</a></p>
 
                     </main>

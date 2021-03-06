@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#union" id="union">Union</a></h1>
+                        <h1 id="union"><a class="header" href="#union">Union</a></h1>
 <p>The definition of a <code>Union</code> is similar to an <code>Interface</code>, <strong>but with no fields allowed.</strong>.
 The implementation is quite similar for <code>Async-graphql</code>; from <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
@@ -209,7 +209,7 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#flattening-nested-unions" id="flattening-nested-unions">Flattening nested unions</a></h2>
+<h2 id="flattening-nested-unions"><a class="header" href="#flattening-nested-unions">Flattening nested unions</a></h2>
 <p>A restriction in GraphQL is the inability to create a union type out of
 other union types. All members must be <code>Object</code>. To support nested
 unions, we can &quot;flatten&quot; members that are unions, bringing their members up

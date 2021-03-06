@@ -165,20 +165,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#介绍" id="介绍">介绍</a></h1>
+                        <h1 id="介绍"><a class="header" href="#介绍">介绍</a></h1>
 <p><code>Async-graphql</code>是用Rust语言实现的GraphQL服务端库。它完全兼容GraphQL规范以及绝大部分的扩展功能，类型安全并且高性能。</p>
 <p>你可以用Rust语言的方式来定义Schema，过程宏会自动生成GraphQL查询的框架代码，没有扩展Rust的语法，意味着Rustfmt可以正常使用，我很看重这一点，这也是为什么我会开发<code>Async-graphql</code>的原因之一。</p>
-<h2><a class="header" href="#为什么我要开发async-graphql" id="为什么我要开发async-graphql">为什么我要开发Async-graphql？</a></h2>
+<h2 id="为什么我要开发async-graphql"><a class="header" href="#为什么我要开发async-graphql">为什么我要开发Async-graphql？</a></h2>
 <p>我喜欢GraphQL和Rust，之前我一直用<code>Juniper</code>，它解决了我用Rust实现GraphQL服务器的问题，但也有一些遗憾，其中最重要的是它当时不支持async/await，所以我决定做一个给自己用。</p>
-<h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
-<h2><a class="header" href="#添加依赖" id="添加依赖">添加依赖</a></h2>
+<h1 id="快速开始"><a class="header" href="#快速开始">快速开始</a></h1>
+<h2 id="添加依赖"><a class="header" href="#添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
 async-graphql = &quot;2.0&quot;
 async-graphql-actix-web = &quot;2.0&quot; # 如果你需要集成到Actix-web
 async-graphql-warp = &quot;2.0&quot; # 如果你需要集成到Warp
 async-graphql-tide = &quot;2.0&quot; # 如果你需要集成到Tide
 </code></pre>
-<h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
+<h2 id="写一个schema"><a class="header" href="#写一个schema">写一个Schema</a></h2>
 <p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的结构来描述它们，结构的字段对应GraphQL对象的字段。</p>
 <p>Async-graphql实现了常用数据类型到GraphQL类型的映射，例如<code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>等。同时，你也能够<a href="custom_scalars.html">扩展这些基础类型</a>，基础数据类型在GraphQL里面称为标量。</p>
 <p>下面是一个简单的例子，我们只提供一个查询，返回<code>a</code>和<code>b</code>的和。</p>
@@ -199,7 +199,7 @@ impl Query {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#执行查询" id="执行查询">执行查询</a></h2>
+<h2 id="执行查询"><a class="header" href="#执行查询">执行查询</a></h2>
 <p>在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用<code>EmptyMutation</code>和<code>EmptySubscription</code>来创建Schema，然后调用<code>Schema::execute</code>来执行查询。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -208,18 +208,18 @@ impl Query {
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#把查询结果输出为json" id="把查询结果输出为json">把查询结果输出为JSON</a></h2>
+<h2 id="把查询结果输出为json"><a class="header" href="#把查询结果输出为json">把查询结果输出为JSON</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let json = serde_json::to_string(&amp;res);
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#和web-server的集成" id="和web-server的集成">和Web Server的集成</a></h2>
+<h2 id="和web-server的集成"><a class="header" href="#和web-server的集成">和Web Server的集成</a></h2>
 <p>请参考https://github.com/async-graphql/examples。</p>
-<h1><a class="header" href="#类型系统" id="类型系统">类型系统</a></h1>
+<h1 id="类型系统"><a class="header" href="#类型系统">类型系统</a></h1>
 <p><code>Async-graphql</code>包含GraphQL类型到Rust类型的完整实现，并且非常易于使用。</p>
-<h1><a class="header" href="#简单对象simpleobject" id="简单对象simpleobject">简单对象(SimpleObject)</a></h1>
+<h1 id="简单对象simpleobject"><a class="header" href="#简单对象simpleobject">简单对象(SimpleObject)</a></h1>
 <p>简单对象是把Rust结构的所有字段都直接映射到GraphQL对象，不支持定义单独的Resolver函数。</p>
 <p>下面的例子定义了一个名称为MyObject的对象，包含字段<code>a</code>和<code>b</code>，<code>c</code>由于标记为<code>#[graphql(skip)]</code>，所以不会映射到GraphQL。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -240,7 +240,7 @@ struct MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#泛型" id="泛型">泛型</a></h2>
+<h2 id="泛型"><a class="header" href="#泛型">泛型</a></h2>
 <p>如果你希望其它类型能够重用<code>SimpleObject</code>，则可以定义泛型的<code>SimpleObject</code>，并指定具体的类型。</p>
 <p>在下面的示例中，创建了两种<code>SimpleObject</code>类型：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -279,7 +279,7 @@ pub struct YetAnotherObject {
 <span class="boring">}
 </span></code></pre></pre>
 <p>你可以将多个通用类型传递给<code>params（）</code>，并用逗号分隔。</p>
-<h1><a class="header" href="#对象object" id="对象object">对象(Object)</a></h1>
+<h1 id="对象object"><a class="header" href="#对象object">对象(Object)</a></h1>
 <p>和简单对象不同，对象必须为所有的字段定义Resolver函数，Resolver函数定义在impl块中。</p>
 <p><strong>一个Resolver函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>
 <p>Resolver函数用于计算字段的值，你可以执行一个数据库查询，并返回查询结果。<strong>函数的返回值是字段的类型</strong>，你也可以返回一个<code>async_graphql::Result</code>类型，这样能够返回一个错误，这个错误信息将输出到查询结果中。</p>
@@ -310,7 +310,7 @@ impl MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#查询上下文context" id="查询上下文context">查询上下文(Context)</a></h1>
+<h1 id="查询上下文context"><a class="header" href="#查询上下文context">查询上下文(Context)</a></h1>
 <p>查询上下文(Context)的主要作用是获取附加到Schema的全局数据，<strong>需要注意的是，如果你的Resolver函数返回的数据借用了Context内保存的数据，需要明确指定生命周期参数</strong>。</p>
 <p>下面是一个返回值借用Context内数据的例子：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -324,14 +324,14 @@ struct Query;
 impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
-        ctx: &amp;'ctx Context&lt;'_&gt;
+        ctx: &amp;Context&lt;'ctx&gt;
     ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#错误处理" id="错误处理">错误处理</a></h1>
+<h1 id="错误处理"><a class="header" href="#错误处理">错误处理</a></h1>
 <p>Resolver函数可以返回一个Result类型，以下是Result的定义：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -358,8 +358,8 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#合并对象mergedobject" id="合并对象mergedobject">合并对象(MergedObject)</a></h1>
-<h2><a class="header" href="#为同一类型实现多次object" id="为同一类型实现多次object">为同一类型实现多次Object</a></h2>
+<h1 id="合并对象mergedobject"><a class="header" href="#合并对象mergedobject">合并对象(MergedObject)</a></h1>
+<h2 id="为同一类型实现多次object"><a class="header" href="#为同一类型实现多次object">为同一类型实现多次Object</a></h2>
 <p>通常我们在Rust中可以为同一类型创建多个实现，但由于过程宏的限制，无法为同一个类型创建多个Object实现。例如，下面的代码将无法通过编译。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -411,7 +411,7 @@ let schema = Schema::new(
 <blockquote>
 <p>⚠️ <strong>合并的对象无法在Interface中使用。</strong></p>
 </blockquote>
-<h1><a class="header" href="#合并订阅" id="合并订阅">合并订阅</a></h1>
+<h1 id="合并订阅"><a class="header" href="#合并订阅">合并订阅</a></h1>
 <p>和<code>MergedObject</code>一样，你可以派生<code>MergedSubscription</code>来合并单独的<code>＃[Subscription]</code>块。</p>
 <p>像合并对象一样，每个订阅块都需要一个唯一的名称。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -447,7 +447,7 @@ let schema = Schema::new(
 );
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#枚举enum" id="枚举enum">枚举(Enum)</a></h1>
+<h1 id="枚举enum"><a class="header" href="#枚举enum">枚举(Enum)</a></h1>
 <p>定义枚举相当简单，直接给出一个例子。</p>
 <p><strong>Async-graphql会自动把枚举项的名称转换为GraphQL标准的大写加下划线形式，你也可以用<code>name</code>属性自已定义名称。</strong></p>
 <pre><pre class="playground"><code class="language-rust">
@@ -470,7 +470,7 @@ pub enum Episode {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#封装外部枚举类型" id="封装外部枚举类型">封装外部枚举类型</a></h2>
+<h2 id="封装外部枚举类型"><a class="header" href="#封装外部枚举类型">封装外部枚举类型</a></h2>
 <p>Rust的 <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">孤儿规则</a> 要求特质或您要实现特质的类型必须在相同的板条箱中定义，因此你不能向GraphQL公开外部枚举类型。 为了创建<code>Enum</code>类型，一种常见的解决方法是创建一个新的与现有远程枚举类型同等的枚举。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -510,7 +510,7 @@ enum LocalEnum {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
+<h1 id="接口interface"><a class="header" href="#接口interface">接口(Interface)</a></h1>
 <p>接口用于抽象具有特定字段集合的对象，<code>Async-graphql</code>内部实现实际上是一个包装器，包装器转发接口上定义的Resolver函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。</p>
 <p><code>Async-graphql</code>自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用<code>Into::into</code>。</p>
 <p>接口字段的<code>name</code>属性表示转发的Resolver函数，并且它将被转换为驼峰命名作为字段名称。
@@ -576,7 +576,7 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#联合union" id="联合union">联合(Union)</a></h1>
+<h1 id="联合union"><a class="header" href="#联合union">联合(Union)</a></h1>
 <p>联合的定义和接口非常像，<strong>但不允许定义字段</strong>。这两个类型的实现原理也差不多，对于<code>Async-graphql</code>来说，联合类型是接口类型的子集。</p>
 <p>下面把接口定义的例子做一个小小的修改，去掉字段的定义。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -621,7 +621,7 @@ enum Shape {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#展平嵌套联合" id="展平嵌套联合">展平嵌套联合</a></h2>
+<h2 id="展平嵌套联合"><a class="header" href="#展平嵌套联合">展平嵌套联合</a></h2>
 <p>GraphQL的有个限制是<code>Union</code>类型内不能包含其它联合类型。 所有成员必须为<code>Object</code>。 
 位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -670,7 +670,7 @@ pub enum TopLevelUnion {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#输入对象inputobject" id="输入对象inputobject">输入对象(InputObject)</a></h1>
+<h1 id="输入对象inputobject"><a class="header" href="#输入对象inputobject">输入对象(InputObject)</a></h1>
 <p>你可以定义一个对象作为参数类型，GraphQL称之为<code>Input Object</code>，输入对象的定义方式和<a href="define_simple_object.html">简单对象</a>很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。</p>
 <p>你也通过可选的<code>#[graphql]</code>属性来给字段添加描述，重命名。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -695,7 +695,7 @@ impl Mutation {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#泛型-1" id="泛型-1">泛型</a></h2>
+<h2 id="泛型-1"><a class="header" href="#泛型-1">泛型</a></h2>
 <p>如果你希望其它类型能够重用<code>InputObject</code>，则可以定义泛型的<code>InputObject</code>，并指定具体的类型。</p>
 <p>在下面的示例中，创建了两种<code>InputObject</code>类型：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -734,9 +734,9 @@ pub struct YetAnotherInput {
 <span class="boring">}
 </span></code></pre></pre>
 <p>你可以将多个通用类型传递给<code>params（）</code>，并用逗号分隔。</p>
-<h1><a class="header" href="#默认值" id="默认值">默认值</a></h1>
+<h1 id="默认值"><a class="header" href="#默认值">默认值</a></h1>
 <p>你可以为输入值类型定义默认值，下面展示了在不同类型上默认值的定义方法。</p>
-<h2><a class="header" href="#对象字段参数" id="对象字段参数">对象字段参数</a></h2>
+<h2 id="对象字段参数"><a class="header" href="#对象字段参数">对象字段参数</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -761,7 +761,7 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#接口字段参数" id="接口字段参数">接口字段参数</a></h2>
+<h2 id="接口字段参数"><a class="header" href="#接口字段参数">接口字段参数</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -778,7 +778,7 @@ enum MyInterface {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#输入对象inputobject-1" id="输入对象inputobject-1">输入对象(InputObject)</a></h2>
+<h2 id="输入对象inputobject-1"><a class="header" href="#输入对象inputobject-1">输入对象(InputObject)</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -797,11 +797,11 @@ enum MyInterface {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#定义模式schema" id="定义模式schema">定义模式(Schema)</a></h1>
+<h1 id="定义模式schema"><a class="header" href="#定义模式schema">定义模式(Schema)</a></h1>
 <p>在定义了基本的类型之后，需要定义一个模式把他们组合起来，模式由三种类型组成，查询对象，变更对象和订阅对象，其中变更对象和订阅对象是可选的。</p>
 <p>当模式创建时，<code>Async-graphql</code>会遍历所有对象图，并注册所有类型。这意味着，如果定义了 GraphQL 对象但从未引用，那么此对象就不会暴露在模式中。</p>
-<h1><a class="header" href="#查询和变更" id="查询和变更">查询和变更</a></h1>
-<h2><a class="header" href="#查询根对象" id="查询根对象">查询根对象</a></h2>
+<h1 id="查询和变更"><a class="header" href="#查询和变更">查询和变更</a></h1>
+<h2 id="查询根对象"><a class="header" href="#查询根对象">查询根对象</a></h2>
 <p>查询根对象是一个GraphQL对象，定义类似其它对象。查询对象的所有字段Resolver函数是并发执行的。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -819,7 +819,7 @@ impl Query {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#变更根对象" id="变更根对象">变更根对象</a></h2>
+<h2 id="变更根对象"><a class="header" href="#变更根对象">变更根对象</a></h2>
 <p>变更根对象也是一个GraphQL，但变更根对象的执行是顺序的，只有第一个变更执行完成之后才会执行下一个。</p>
 <p>下面的变更根对象提供用户注册和登录操作：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -841,7 +841,7 @@ impl Mutation {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#订阅" id="订阅">订阅</a></h1>
+<h1 id="订阅"><a class="header" href="#订阅">订阅</a></h1>
 <p>订阅根对象和其它根对象定义稍有不同，它的Resolver函数总是返回一个 <a href="https://docs.rs/futures-core/%7E0.3/futures_core/stream/trait.Stream.html">Stream</a> 或者<code>Result&lt;Stream&gt;</code>，而字段参数通常作为数据的筛选条件。</p>
 <p>下面的例子订阅一个整数流，它每秒产生一个整数，参数<code>step</code>指定了整数的步长，默认为1。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -863,8 +863,8 @@ impl Subscription {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#实用功能" id="实用功能">实用功能</a></h1>
-<h1><a class="header" href="#字段守卫field-guard" id="字段守卫field-guard">字段守卫(Field Guard)</a></h1>
+<h1 id="实用功能"><a class="header" href="#实用功能">实用功能</a></h1>
+<h1 id="字段守卫field-guard"><a class="header" href="#字段守卫field-guard">字段守卫(Field Guard)</a></h1>
 <p>您可以在给<code>Object</code>的字段定义<code>守卫</code>。 这允许在运行字段的代码逻辑之前添加检查。
 义<code>守卫</code>由你预先定义的规则组成。 规则是一种实现<code>Guard</code>特质的结构。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -930,7 +930,7 @@ struct Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#输入值校验器" id="输入值校验器">输入值校验器</a></h1>
+<h1 id="输入值校验器"><a class="header" href="#输入值校验器">输入值校验器</a></h1>
 <p>字段的参数，<a href="define_input_object.html">输入对象(InputObject)</a>的字段在GraphQL中称之为<code>Input Value</code>，如果给出的参数值类型不匹配，查询会报类型不匹配错误。但有时候我们希望给特定类型的值更多的限制，例如我们希望一个参数总是一个格式合法的Email地址，我们可以通过<a href="custom_scalars.html">自定义标量</a>来解决，但这种类型如果很多，而且我们希望能够进行自由组合，比如一个<code>String</code>类型参数，我们希望它既可以是Email地址，也可以是一个手机号码，自定义标量就特别麻烦。<code>Async-graphql</code>提供了输入值校验器来解决这个问题。</p>
 <p>输入值校验器可以通过<code>and</code>和<code>or</code>操作符自由组合。</p>
 <p>下面时一个参数校验器，它校验<code>String</code>类型的参数<code>a</code>，必须是一个合法Email或者MAC地址：</p>
@@ -970,7 +970,7 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#自定义校验器" id="自定义校验器">自定义校验器</a></h2>
+<h2 id="自定义校验器"><a class="header" href="#自定义校验器">自定义校验器</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -997,7 +997,7 @@ impl InputValueValidator for MustBeZero {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#查询缓存控制" id="查询缓存控制">查询缓存控制</a></h1>
+<h1 id="查询缓存控制"><a class="header" href="#查询缓存控制">查询缓存控制</a></h1>
 <p>生产环境下通常依赖缓存来提高性能。</p>
 <p>一个GraphQL查询会调用多个Resolver函数，每个Resolver函数都能够具有不同的缓存定义。有的可能缓存几秒钟，有的可能缓存几个小时，有的可能所有用户都相同，有的可能每个会话都不同。</p>
 <p><code>Async-graphql</code>提供一种机制允许定义结果的缓存时间和作用域。</p>
@@ -1033,7 +1033,7 @@ impl Query {
 <pre><code class="language-graphql"># max_age=60
 { value3 }
 </code></pre>
-<h1><a class="header" href="#游标连接cursor-connections" id="游标连接cursor-connections">游标连接(Cursor Connections)</a></h1>
+<h1 id="游标连接cursor-connections"><a class="header" href="#游标连接cursor-connections">游标连接(Cursor Connections)</a></h1>
 <p>Relay定义了一套游标连接规范，以提供一致性的分页查询方式，具体的规范文档请参考<a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
 <p>在<code>Async-graphql</code>中定义一个游标连接非常简单，你只需要调用connection::query函数，并在闭包中查询数据。</p>
 <p>下面是一个简单的获取连续整数的数据源：</p>
@@ -1083,9 +1083,9 @@ impl Query {
 <p>GraphQL服务可以通过扩展提供错误的附加条目。
 该条目（如果设置）必须是一个映射作为其值，用于附加错误的其它信息。</p>
 </blockquote>
-<h2><a class="header" href="#示例" id="示例">示例</a></h2>
+<h2 id="示例"><a class="header" href="#示例">示例</a></h2>
 <p>我建议您查看此 <a href="https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs">错误扩展示例</a> 作为快速入门。</p>
-<h2><a class="header" href="#一般概念" id="一般概念">一般概念</a></h2>
+<h2 id="一般概念"><a class="header" href="#一般概念">一般概念</a></h2>
 <p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
 由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
@@ -1111,7 +1111,7 @@ impl Query {
   ]
 }
 </code></pre>
-<h2><a class="header" href="#errorextensions" id="errorextensions">ErrorExtensions</a></h2>
+<h2 id="errorextensions"><a class="header" href="#errorextensions">ErrorExtensions</a></h2>
 <p>手动构造新的<code>Error</code>很麻烦。这就是为什么<code>Async-graphql</code>提供
 两个方便特性，可将您的错误转换为适当的<code>Error</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
@@ -1127,7 +1127,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#为自定义错误实现errorextensions" id="为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
+<h3 id="为自定义错误实现errorextensions"><a class="header" href="#为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
 <p>你也可以给自己的错误类型实现<code>ErrorExtensions</code>:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1185,7 +1185,7 @@ impl ErrorExtensions for MyError {
   ]
 }
 </code></pre>
-<h2><a class="header" href="#resultext" id="resultext">ResultExt</a></h2>
+<h2 id="resultext"><a class="header" href="#resultext">ResultExt</a></h2>
 <p>这个特质使您可以直接在结果上调用<code>extend_err</code>。因此上面的代码不再那么冗长。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1198,7 +1198,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#链式调用" id="链式调用">链式调用</a></h3>
+<h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
 <p>由于对所有<code>&amp;E where E: std::fmt::Display</code>实现了<code>ErrorExtensions</code>和<code>ResultsExt</code>，我们可以将扩展链接在一起。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1231,7 +1231,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
   ]
 }
 </code></pre>
-<h3><a class="header" href="#缺陷" id="缺陷">缺陷</a></h3>
+<h3 id="缺陷"><a class="header" href="#缺陷">缺陷</a></h3>
 <p>Rust的稳定版本还未提供特化功能，这就是为什么<code>ErrorExtensions</code>为<code>&amp;E where E: std::fmt::Display</code>实现，代替<code>E：std::fmt::Display</code>通过提供一些特化功能。</p>
 <p><a href="https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md">Autoref-based stable specialization</a>.</p>
 <p>缺点是下面的代码<strong>不能</strong>编译：</p>
@@ -1249,7 +1249,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
       .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
 }
 </code></pre>
-<h1><a class="header" href="#apollo-tracing支持" id="apollo-tracing支持">Apollo Tracing支持</a></h1>
+<h1 id="apollo-tracing支持"><a class="header" href="#apollo-tracing支持">Apollo Tracing支持</a></h1>
 <p><code>Apollo Tracing</code>提供了查询每个步骤的性能分析结果，它是一个<code>Schema</code>扩展，性能分析结果保存在<code>QueryResponse</code>中。</p>
 <p>启用<code>Apollo Tracing</code>扩展需要在创建<code>Schema</code>的时候添加该扩展。</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -1264,9 +1264,9 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#查询的深度和复杂度" id="查询的深度和复杂度">查询的深度和复杂度</a></h1>
+<h1 id="查询的深度和复杂度"><a class="header" href="#查询的深度和复杂度">查询的深度和复杂度</a></h1>
 <p>⚠️GraphQL提供了非常灵活的查询方法，但在客户端上滥用复杂的查询可能造成风险，限制查询语句的深度和复杂度可以减轻这种风险。</p>
-<h2><a class="header" href="#昂贵的查询" id="昂贵的查询">昂贵的查询</a></h2>
+<h2 id="昂贵的查询"><a class="header" href="#昂贵的查询">昂贵的查询</a></h2>
 <p>考虑一种允许列出博客文章的架构。每个博客帖子也与其他帖子相关。</p>
 <pre><code class="language-graphql">type Query {
 	posts(count: Int = 10): [Post!]!
@@ -1292,7 +1292,7 @@ type Post {
 }
 </code></pre>
 <p>响应的大小随<code>related</code>字段的每个其他级别呈指数增长。幸运的是，<code>Async-graphql</code>提供了一种防止此类查询的方法。</p>
-<h2><a class="header" href="#限制查询的深度" id="限制查询的深度">限制查询的深度</a></h2>
+<h2 id="限制查询的深度"><a class="header" href="#限制查询的深度">限制查询的深度</a></h2>
 <p>查询的深度是字段嵌套的层数，下面是一个深度为<code>3</code>的查询。</p>
 <pre><code class="language-graphql">{
     a {
@@ -1311,7 +1311,7 @@ type Post {
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#限制查询的复杂度" id="限制查询的复杂度">限制查询的复杂度</a></h2>
+<h2 id="限制查询的复杂度"><a class="header" href="#限制查询的复杂度">限制查询的复杂度</a></h2>
 <p>复杂度是查询语句中字段的数量，每个字段的复杂度默认为<code>1</code>，下面是一个复杂度为<code>6</code>的查询。</p>
 <pre><code class="language-graphql">{
     a b c {
@@ -1330,7 +1330,7 @@ type Post {
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#自定义字段的复杂度" id="自定义字段的复杂度">自定义字段的复杂度</a></h2>
+<h2 id="自定义字段的复杂度"><a class="header" href="#自定义字段的复杂度">自定义字段的复杂度</a></h2>
 <p>针对非列表类型和列表类型的字段，有两种自定义复杂度的方法。
 下面的代码中，<code>value</code>字段的复杂度为<code>5</code>。而<code>values</code>字段的复杂度为<code>count * child_complexity</code>，<code>child_complexity</code>是一个特殊的变量，表示子查询的复杂度，
 <code>count</code>是字段的参数，这个表达式用于计算<code>values</code>字段的复杂度，并且返回值的类型必须是<code>usize</code>。</p>
@@ -1354,7 +1354,7 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <p><strong>注意: 计算复杂度是在验证阶段完成而不是在执行阶段，所以你不用担心超限的查询语句会导致查询只执行一部分。</strong></p>
-<h1><a class="header" href="#在内省中隐藏内容" id="在内省中隐藏内容">在内省中隐藏内容</a></h1>
+<h1 id="在内省中隐藏内容"><a class="header" href="#在内省中隐藏内容">在内省中隐藏内容</a></h1>
 <p>默认情况下，所有类型，字段在内省中都是可见的。但可能你希望根据不同的用户来隐藏一些信息，避免引起不必要的误会。你可以在类型或者字段上添加<code>visible</code>属性来做到。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1397,7 +1397,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#集成到webserver" id="集成到webserver">集成到WebServer</a></h1>
+<h1 id="集成到webserver"><a class="header" href="#集成到webserver">集成到WebServer</a></h1>
 <p><code>Async-graphql</code>提供了对一些常用Web Server的集成支持。</p>
 <ul>
 <li>Actix-web <a href="https://crates.io/crates/async-graphql-actix-web">async-graphql-actix-web</a></li>
@@ -1405,11 +1405,11 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 <li>Tide <a href="https://crates.io/crates/async-graphql-tide">async-graphql-tide</a></li>
 </ul>
 <p><strong>即使你目前使用的Web Server不在上面的列表中，自己实现类似的功能也相当的简单。</strong></p>
-<h1><a class="header" href="#warp" id="warp">Warp</a></h1>
+<h1 id="warp"><a class="header" href="#warp">Warp</a></h1>
 <p><code>Async-graphql-warp</code>提供了两个<code>Filter</code>，<code>graphql</code>和<code>graphql_subscription</code>。</p>
 <p><code>graphql</code>用于执行<code>Query</code>和<code>Mutation</code>请求，他总是要求POST方法，输出一个包含<code>async_graphql::Schema</code>和<code>async_graphql::Request的元组</code>，你可以在之后组合其它Filter，或者直接调用<code>Schema::execute</code>执行查询。</p>
 <p><code>graphql_subscription</code>用于实现基于Web Socket的订阅，它输出<code>warp::Reply</code>。</p>
-<h2><a class="header" href="#请求例子" id="请求例子">请求例子</a></h2>
+<h2 id="请求例子"><a class="header" href="#请求例子">请求例子</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1426,7 +1426,7 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#订阅例子" id="订阅例子">订阅例子</a></h2>
+<h2 id="订阅例子"><a class="header" href="#订阅例子">订阅例子</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1435,12 +1435,12 @@ let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#更多例子" id="更多例子">更多例子</a></h2>
+<h2 id="更多例子"><a class="header" href="#更多例子">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>
-<h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
+<h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
 <p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>Request</code>，它其实是<code>async_graphql::Request</code>的包装，你可以调用<code>Request::into_inner</code>把它转换成一个<code>async_graphql::Request</code>。</p>
 <p><code>WSSubscription</code>是一个支持Web Socket订阅的Actor。</p>
-<h2><a class="header" href="#请求例子-1" id="请求例子-1">请求例子</a></h2>
+<h2 id="请求例子-1"><a class="header" href="#请求例子-1">请求例子</a></h2>
 <p>你需要把Schema传入<code>actix_web::App</code>作为全局数据。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1454,7 +1454,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#订阅例子-1" id="订阅例子-1">订阅例子</a></h2>
+<h2 id="订阅例子-1"><a class="header" href="#订阅例子-1">订阅例子</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1467,11 +1467,11 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#更多例子-1" id="更多例子-1">更多例子</a></h2>
+<h2 id="更多例子-1"><a class="header" href="#更多例子-1">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/actix-web">https://github.com/async-graphql/examples/tree/master/actix-web</a></p>
-<h1><a class="header" href="#tide" id="tide">Tide</a></h1>
+<h1 id="tide"><a class="header" href="#tide">Tide</a></h1>
 <p><code>async_graphql_tide</code> 提供一个 trait <a href="https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html">tide::Endpoint</a> 的实现。如果您想手动处理请求的话，它还提供了 <code>receive_request</code> 和 <code>respond</code> 函数来将一个 Tide 请求转换为一个 GraphQL 请求，并返回  <code>tide::Response</code>。</p>
-<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
 <p>当创建你的 <code>tide</code> 服务器时，你需要将 <code>Schema</code> 传递给 <code>async_graphql_tide::endpoint</code> 。请注意，你需要启用 <code>async-std</code> 中的 feature <code>attributes</code> 才能使这个例子正常工作。</p>
 <pre><pre class="playground"><code class="language-rust">use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
@@ -1519,7 +1519,7 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
     Ok(app.listen(&quot;127.0.0.1:8080&quot;).await?)
 }
 </code></pre></pre>
-<h2><a class="header" href="#manually-handle-the-request" id="manually-handle-the-request">Manually handle the request</a></h2>
+<h2 id="manually-handle-the-request"><a class="header" href="#manually-handle-the-request">Manually handle the request</a></h2>
 <p>如果你想手动处理请求，例如读取头，你可以跳过 <code>async_graphql_tide::endpoint</code> 而使用 <code>receive_request</code> 和 <code>respond</code> 函数。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1533,10 +1533,10 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
 });
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#more-examples" id="more-examples">More examples</a></h2>
+<h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/tide">https://github.com/async-graphql/examples/tree/master/tide</a></p>
-<h1><a class="header" href="#高级主题" id="高级主题">高级主题</a></h1>
-<h1><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h1>
+<h1 id="高级主题"><a class="header" href="#高级主题">高级主题</a></h1>
+<h1 id="自定义标量"><a class="header" href="#自定义标量">自定义标量</a></h1>
 <p><code>Async-graphql</code>已经内置了绝大部分常用的标量类型，同时你也能自定义标量。</p>
 <p>实现<code>Async-graphql::Scalar</code>即可自定义一个标量，你只需要实现一个解析函数和输出函数。</p>
 <p>下面的例子定义一个64位整数标量，但它的输入输出都是字符串。 (<code>Async-graphql</code>已经内置了对64位整数的支持，正是采用字符串作为输入输出)</p>
@@ -1567,7 +1567,7 @@ impl ScalarType for StringNumber {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#使用scalar宏定义标量" id="使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
+<h2 id="使用scalar宏定义标量"><a class="header" href="#使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
 <p>如果你的类型实现了<code>serde :: Serialize</code>和<code>serde :: Deserialize</code>，那么可以使用此宏更简单地定义标量。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1587,9 +1587,9 @@ scalar!(MyValue);
 // scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#优化查询解决n1问题" id="优化查询解决n1问题">优化查询（解决N+1问题）</a></h1>
+<h1 id="优化查询解决n1问题"><a class="header" href="#优化查询解决n1问题">优化查询（解决N+1问题）</a></h1>
 <p>您是否注意到某些GraphQL查询需要执行数百个数据库查询，这些查询通常包含重复的数据，让我们来看看为什么以及如何修复它。</p>
-<h2><a class="header" href="#查询解析" id="查询解析">查询解析</a></h2>
+<h2 id="查询解析"><a class="header" href="#查询解析">查询解析</a></h2>
 <p>想象一下，如果您有一个简单的查询，例如：</p>
 <pre><code class="language-graphql">query { todos { users { name } } }
 </code></pre>
@@ -1636,7 +1636,7 @@ SELECT name FROM user WHERE id = $1
 SELECT name FROM user WHERE id = $1
 </code></pre>
 <p>执行了多次<code>SELECT name FROM user WHERE id = $1</code>，并且，大多数<code>Todo</code>对象都属于同一个用户，我们需要优化这些代码！</p>
-<h2><a class="header" href="#dataloader" id="dataloader">Dataloader</a></h2>
+<h2 id="dataloader"><a class="header" href="#dataloader">Dataloader</a></h2>
 <p>我们需要对查询分组，并且排除重复的查询。<code>Dataloader</code>就能完成这个工作，<a href="https://github.com/facebook/dataloader">facebook</a> 给出了一个请求范围的批处理和缓存解决方案。</p>
 <p>下面是使用<code>DataLoader</code>来优化查询请求的例子：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -1683,7 +1683,7 @@ impl User {
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 </code></pre>
-<h2><a class="header" href="#同一个loader支持多种数据类型" id="同一个loader支持多种数据类型">同一个Loader支持多种数据类型</a></h2>
+<h2 id="同一个loader支持多种数据类型"><a class="header" href="#同一个loader支持多种数据类型">同一个Loader支持多种数据类型</a></h2>
 <p>你可以为同一个<code>Loader</code>实现多种数据类型，就像下面这样：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -1713,11 +1713,11 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h1><a class="header" href="#自定义扩展" id="自定义扩展">自定义扩展</a></h1>
+<h1 id="自定义扩展"><a class="header" href="#自定义扩展">自定义扩展</a></h1>
 <p>一个GraphQL扩展对象能够接收一个查询执行各个阶段的事件，你可以收集想要的数据，这些数据能够在查询结果中返回。</p>
 <p>只需要实现<code>async_graphql::Extension</code>就能够定义一个扩展对象，然后在创建<code>Schema</code>的时候调用<code>Schema::extension</code>应用扩展。</p>
 <p>你可以参考<a href="https://github.com/async-graphql/async-graphql/blob/master/src/extensions/tracing.rs">Apollo tracing</a>来实现自己的扩展类型。</p>
-<h1><a class="header" href="#apollo-federation集成" id="apollo-federation集成">Apollo Federation集成</a></h1>
+<h1 id="apollo-federation集成"><a class="header" href="#apollo-federation集成">Apollo Federation集成</a></h1>
 <p><code>Apollo Federation</code>是一个<code>GraphQL</code>网关，它可以组合多个GraphQL服务，允许每服务仅实现它负责的那一部分数据，参考<a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">官方文档</a>。</p>
 <p><code>Async-graphql</code>可以完全支持<code>Apollo Federation</code>的所有功能，但需要对<code>Schema</code>定义做一些小小的改造。</p>
 <ul>
@@ -1734,7 +1734,7 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
 <p>字段的<code>requires</code>属性表示解析该字段值需要依赖该类型的字段集。</p>
 </li>
 </ul>
-<h2><a class="header" href="#实体查找函数" id="实体查找函数">实体查找函数</a></h2>
+<h2 id="实体查找函数"><a class="header" href="#实体查找函数">实体查找函数</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1775,7 +1775,7 @@ impl Query {
 </li>
 </ul>
 <p>完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation</p>
-<h2><a class="header" href="#定义复合主键" id="定义复合主键">定义复合主键</a></h2>
+<h2 id="定义复合主键"><a class="header" href="#定义复合主键">定义复合主键</a></h2>
 <p>一个主键可以包含多个字段，什么包含嵌套字段，你可以用<code>InputObject</code>来实现一个嵌套字段的Key类型。</p>
 <p>下面的例子中<code>User</code>对象的主键是<code>key { a b }</code>。</p>
 <pre><pre class="playground"><code class="language-rust">

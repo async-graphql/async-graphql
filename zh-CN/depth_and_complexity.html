@@ -163,9 +163,9 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#查询的深度和复杂度" id="查询的深度和复杂度">查询的深度和复杂度</a></h1>
+                        <h1 id="查询的深度和复杂度"><a class="header" href="#查询的深度和复杂度">查询的深度和复杂度</a></h1>
 <p>⚠️GraphQL提供了非常灵活的查询方法，但在客户端上滥用复杂的查询可能造成风险，限制查询语句的深度和复杂度可以减轻这种风险。</p>
-<h2><a class="header" href="#昂贵的查询" id="昂贵的查询">昂贵的查询</a></h2>
+<h2 id="昂贵的查询"><a class="header" href="#昂贵的查询">昂贵的查询</a></h2>
 <p>考虑一种允许列出博客文章的架构。每个博客帖子也与其他帖子相关。</p>
 <pre><code class="language-graphql">type Query {
 	posts(count: Int = 10): [Post!]!
@@ -191,7 +191,7 @@ type Post {
 }
 </code></pre>
 <p>响应的大小随<code>related</code>字段的每个其他级别呈指数增长。幸运的是，<code>Async-graphql</code>提供了一种防止此类查询的方法。</p>
-<h2><a class="header" href="#限制查询的深度" id="限制查询的深度">限制查询的深度</a></h2>
+<h2 id="限制查询的深度"><a class="header" href="#限制查询的深度">限制查询的深度</a></h2>
 <p>查询的深度是字段嵌套的层数，下面是一个深度为<code>3</code>的查询。</p>
 <pre><code class="language-graphql">{
     a {
@@ -210,7 +210,7 @@ type Post {
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#限制查询的复杂度" id="限制查询的复杂度">限制查询的复杂度</a></h2>
+<h2 id="限制查询的复杂度"><a class="header" href="#限制查询的复杂度">限制查询的复杂度</a></h2>
 <p>复杂度是查询语句中字段的数量，每个字段的复杂度默认为<code>1</code>，下面是一个复杂度为<code>6</code>的查询。</p>
 <pre><code class="language-graphql">{
     a b c {
@@ -229,7 +229,7 @@ type Post {
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#自定义字段的复杂度" id="自定义字段的复杂度">自定义字段的复杂度</a></h2>
+<h2 id="自定义字段的复杂度"><a class="header" href="#自定义字段的复杂度">自定义字段的复杂度</a></h2>
 <p>针对非列表类型和列表类型的字段，有两种自定义复杂度的方法。
 下面的代码中，<code>value</code>字段的复杂度为<code>5</code>。而<code>values</code>字段的复杂度为<code>count * child_complexity</code>，<code>child_complexity</code>是一个特殊的变量，表示子查询的复杂度，
 <code>count</code>是字段的参数，这个表达式用于计算<code>values</code>字段的复杂度，并且返回值的类型必须是<code>usize</code>。</p>

@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#apollo-federation" id="apollo-federation">Apollo Federation</a></h1>
+                        <h1 id="apollo-federation"><a class="header" href="#apollo-federation">Apollo Federation</a></h1>
 <p><code>Apollo Federation</code> is a <code>GraphQL</code> API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/introduction">official documentation</a>.</p>
 <p><code>Async-graphql</code> supports all the functionality of <code>Apollo Federation</code>, but some modifications to your <code>Schema</code> are required.</p>
 <ul>
@@ -180,7 +180,7 @@
 <p>The <code>requires</code> directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.</p>
 </li>
 </ul>
-<h2><a class="header" href="#entity-lookup-function" id="entity-lookup-function">Entity lookup function</a></h2>
+<h2 id="entity-lookup-function"><a class="header" href="#entity-lookup-function">Entity lookup function</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -221,7 +221,7 @@ impl Query {
 </li>
 </ul>
 <p>For a complete example, refer to: <a href="https://github.com/async-graphql/examples/tree/master/federation">https://github.com/async-graphql/examples/tree/master/federation</a>.</p>
-<h2><a class="header" href="#defining-a-compound-primary-key" id="defining-a-compound-primary-key">Defining a compound primary key</a></h2>
+<h2 id="defining-a-compound-primary-key"><a class="header" href="#defining-a-compound-primary-key">Defining a compound primary key</a></h2>
 <p>A single primary key can consist of multiple fields, and even nested fields, you can use <code>InputObject</code> to implements a nested primary key.</p>
 <p>In the following example, the primary key of the <code>User</code> object is <code>key { a b }</code>.</p>
 <pre><pre class="playground"><code class="language-rust">

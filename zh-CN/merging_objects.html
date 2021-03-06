@@ -163,8 +163,8 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#合并对象mergedobject" id="合并对象mergedobject">合并对象(MergedObject)</a></h1>
-<h2><a class="header" href="#为同一类型实现多次object" id="为同一类型实现多次object">为同一类型实现多次Object</a></h2>
+                        <h1 id="合并对象mergedobject"><a class="header" href="#合并对象mergedobject">合并对象(MergedObject)</a></h1>
+<h2 id="为同一类型实现多次object"><a class="header" href="#为同一类型实现多次object">为同一类型实现多次Object</a></h2>
 <p>通常我们在Rust中可以为同一类型创建多个实现，但由于过程宏的限制，无法为同一个类型创建多个Object实现。例如，下面的代码将无法通过编译。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -216,7 +216,7 @@ let schema = Schema::new(
 <blockquote>
 <p>⚠️ <strong>合并的对象无法在Interface中使用。</strong></p>
 </blockquote>
-<h1><a class="header" href="#合并订阅" id="合并订阅">合并订阅</a></h1>
+<h1 id="合并订阅"><a class="header" href="#合并订阅">合并订阅</a></h1>
 <p>和<code>MergedObject</code>一样，你可以派生<code>MergedSubscription</code>来合并单独的<code>＃[Subscription]</code>块。</p>
 <p>像合并对象一样，每个订阅块都需要一个唯一的名称。</p>
 <pre><pre class="playground"><code class="language-rust">

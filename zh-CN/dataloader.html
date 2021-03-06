@@ -163,9 +163,9 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#优化查询解决n1问题" id="优化查询解决n1问题">优化查询（解决N+1问题）</a></h1>
+                        <h1 id="优化查询解决n1问题"><a class="header" href="#优化查询解决n1问题">优化查询（解决N+1问题）</a></h1>
 <p>您是否注意到某些GraphQL查询需要执行数百个数据库查询，这些查询通常包含重复的数据，让我们来看看为什么以及如何修复它。</p>
-<h2><a class="header" href="#查询解析" id="查询解析">查询解析</a></h2>
+<h2 id="查询解析"><a class="header" href="#查询解析">查询解析</a></h2>
 <p>想象一下，如果您有一个简单的查询，例如：</p>
 <pre><code class="language-graphql">query { todos { users { name } } }
 </code></pre>
@@ -212,7 +212,7 @@ SELECT name FROM user WHERE id = $1
 SELECT name FROM user WHERE id = $1
 </code></pre>
 <p>执行了多次<code>SELECT name FROM user WHERE id = $1</code>，并且，大多数<code>Todo</code>对象都属于同一个用户，我们需要优化这些代码！</p>
-<h2><a class="header" href="#dataloader" id="dataloader">Dataloader</a></h2>
+<h2 id="dataloader"><a class="header" href="#dataloader">Dataloader</a></h2>
 <p>我们需要对查询分组，并且排除重复的查询。<code>Dataloader</code>就能完成这个工作，<a href="https://github.com/facebook/dataloader">facebook</a> 给出了一个请求范围的批处理和缓存解决方案。</p>
 <p>下面是使用<code>DataLoader</code>来优化查询请求的例子：</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -259,7 +259,7 @@ impl User {
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 </code></pre>
-<h2><a class="header" href="#同一个loader支持多种数据类型" id="同一个loader支持多种数据类型">同一个Loader支持多种数据类型</a></h2>
+<h2 id="同一个loader支持多种数据类型"><a class="header" href="#同一个loader支持多种数据类型">同一个Loader支持多种数据类型</a></h2>
 <p>你可以为同一个<code>Loader</code>实现多种数据类型，就像下面这样：</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]

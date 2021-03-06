@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#simpleobject" id="simpleobject">SimpleObject</a></h1>
+                        <h1 id="simpleobject"><a class="header" href="#simpleobject">SimpleObject</a></h1>
 <p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see <a href="define_complex_object.html">Object</a>.</p>
 <p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[graphql(skip)]</code></p>
 <pre><pre class="playground"><code class="language-rust">
@@ -184,7 +184,7 @@ struct MyObject {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#generic-simpleobjects" id="generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
+<h2 id="generic-simpleobjects"><a class="header" href="#generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
 <p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
 and specify how its concrete types should be implemented.</p>
 <p>In the following example, two <code>SimpleObject</code> types are created:</p>

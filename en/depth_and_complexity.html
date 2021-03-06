@@ -163,12 +163,12 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#query-complexity-and-depth" id="query-complexity-and-depth">Query complexity and depth</a></h1>
+                        <h1 id="query-complexity-and-depth"><a class="header" href="#query-complexity-and-depth">Query complexity and depth</a></h1>
 <p>⚠️GraphQL provides a powerful way to query your data, but putting great
 power in the hands of your API clients also exposes you to a risk of denial 
 of service attacks. You can mitigate that risk with <code>Async-graphql</code> by limiting the 
 complexity and depth of the queries you allow.</p>
-<h2><a class="header" href="#expensive-queries" id="expensive-queries">Expensive Queries</a></h2>
+<h2 id="expensive-queries"><a class="header" href="#expensive-queries">Expensive Queries</a></h2>
 <p>Consider a schema that allows listing blog posts. Each blog post is also related to other posts.</p>
 <pre><code class="language-graphql">type Query {
 	posts(count: Int = 10): [Post!]!
@@ -195,7 +195,7 @@ type Post {
 </code></pre>
 <p>The size of the response increases exponentially with every other level of the <code>related</code> field. Fortunately, <code>Async-graphql</code> provides 
 a way to prevent such queries.</p>
-<h2><a class="header" href="#limiting-query-depth" id="limiting-query-depth">Limiting Query depth</a></h2>
+<h2 id="limiting-query-depth"><a class="header" href="#limiting-query-depth">Limiting Query depth</a></h2>
 <p>The depth is the number of nesting levels of the field, and the following is a query with a depth of <code>3</code>.</p>
 <pre><code class="language-graphql">{
     a {
@@ -215,7 +215,7 @@ message <code>Query is nested too deep</code> will be returned.</p>
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#limiting-query-complexity" id="limiting-query-complexity">Limiting Query complexity</a></h2>
+<h2 id="limiting-query-complexity"><a class="header" href="#limiting-query-complexity">Limiting Query complexity</a></h2>
 <p>The complexity is the number of fields in the query. The default complexity of each field is <code>1</code>. Below is a 
 query with a complexity of <code>6</code>.</p>
 <pre><code class="language-graphql">{
@@ -236,7 +236,7 @@ and <code>Query is too complex</code> will be returned.</p>
     .finish();
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#custom-complexity-calculation" id="custom-complexity-calculation">Custom Complexity Calculation</a></h2>
+<h2 id="custom-complexity-calculation"><a class="header" href="#custom-complexity-calculation">Custom Complexity Calculation</a></h2>
 <p>There are two ways to customize the complexity for non-list type and list type fields.</p>
 <p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>, 
 <code>child_complexity</code> is a special variable that represents the complexity of the subquery, and <code>count</code> is the parameter of the field,

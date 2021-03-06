@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
+                        <h1 id="enum"><a class="header" href="#enum">Enum</a></h1>
 <p>It's easy to define an <code>Enum</code>, here we have an example:</p>
 <p><strong>Async-graphql will automatically change the name of each item to GraphQL's CONSTANT_CASE convention. You can use <code>name</code> to rename.</strong></p>
 <pre><pre class="playground"><code class="language-rust">
@@ -186,7 +186,7 @@ pub enum Episode {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#wrapping-a-remote-enum" id="wrapping-a-remote-enum">Wrapping a remote enum</a></h2>
+<h2 id="wrapping-a-remote-enum"><a class="header" href="#wrapping-a-remote-enum">Wrapping a remote enum</a></h2>
 <p>Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the 
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
 expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new 

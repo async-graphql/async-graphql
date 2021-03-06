@@ -169,9 +169,9 @@
 <p>GraphQL服务可以通过扩展提供错误的附加条目。
 该条目（如果设置）必须是一个映射作为其值，用于附加错误的其它信息。</p>
 </blockquote>
-<h2><a class="header" href="#示例" id="示例">示例</a></h2>
+<h2 id="示例"><a class="header" href="#示例">示例</a></h2>
 <p>我建议您查看此 <a href="https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs">错误扩展示例</a> 作为快速入门。</p>
-<h2><a class="header" href="#一般概念" id="一般概念">一般概念</a></h2>
+<h2 id="一般概念"><a class="header" href="#一般概念">一般概念</a></h2>
 <p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
 由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
@@ -197,7 +197,7 @@
   ]
 }
 </code></pre>
-<h2><a class="header" href="#errorextensions" id="errorextensions">ErrorExtensions</a></h2>
+<h2 id="errorextensions"><a class="header" href="#errorextensions">ErrorExtensions</a></h2>
 <p>手动构造新的<code>Error</code>很麻烦。这就是为什么<code>Async-graphql</code>提供
 两个方便特性，可将您的错误转换为适当的<code>Error</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
@@ -213,7 +213,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#为自定义错误实现errorextensions" id="为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
+<h3 id="为自定义错误实现errorextensions"><a class="header" href="#为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
 <p>你也可以给自己的错误类型实现<code>ErrorExtensions</code>:</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -271,7 +271,7 @@ impl ErrorExtensions for MyError {
   ]
 }
 </code></pre>
-<h2><a class="header" href="#resultext" id="resultext">ResultExt</a></h2>
+<h2 id="resultext"><a class="header" href="#resultext">ResultExt</a></h2>
 <p>这个特质使您可以直接在结果上调用<code>extend_err</code>。因此上面的代码不再那么冗长。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -284,7 +284,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#链式调用" id="链式调用">链式调用</a></h3>
+<h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
 <p>由于对所有<code>&amp;E where E: std::fmt::Display</code>实现了<code>ErrorExtensions</code>和<code>ResultsExt</code>，我们可以将扩展链接在一起。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -317,7 +317,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
   ]
 }
 </code></pre>
-<h3><a class="header" href="#缺陷" id="缺陷">缺陷</a></h3>
+<h3 id="缺陷"><a class="header" href="#缺陷">缺陷</a></h3>
 <p>Rust的稳定版本还未提供特化功能，这就是为什么<code>ErrorExtensions</code>为<code>&amp;E where E: std::fmt::Display</code>实现，代替<code>E：std::fmt::Display</code>通过提供一些特化功能。</p>
 <p><a href="https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md">Autoref-based stable specialization</a>.</p>
 <p>缺点是下面的代码<strong>不能</strong>编译：</p>

@@ -163,10 +163,10 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#actix-web" id="actix-web">Actix-web</a></h1>
+                        <h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
 <p><code>Async-graphql-actix-web</code>提供实现了<code>actix_web::FromRequest</code>的<code>Request</code>，它其实是<code>async_graphql::Request</code>的包装，你可以调用<code>Request::into_inner</code>把它转换成一个<code>async_graphql::Request</code>。</p>
 <p><code>WSSubscription</code>是一个支持Web Socket订阅的Actor。</p>
-<h2><a class="header" href="#请求例子" id="请求例子">请求例子</a></h2>
+<h2 id="请求例子"><a class="header" href="#请求例子">请求例子</a></h2>
 <p>你需要把Schema传入<code>actix_web::App</code>作为全局数据。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -180,7 +180,7 @@
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#订阅例子" id="订阅例子">订阅例子</a></h2>
+<h2 id="订阅例子"><a class="header" href="#订阅例子">订阅例子</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -193,7 +193,7 @@
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#更多例子" id="更多例子">更多例子</a></h2>
+<h2 id="更多例子"><a class="header" href="#更多例子">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/actix-web">https://github.com/async-graphql/examples/tree/master/actix-web</a></p>
 
                     </main>

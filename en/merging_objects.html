@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#merging-objects" id="merging-objects">Merging Objects</a></h1>
+                        <h1 id="merging-objects"><a class="header" href="#merging-objects">Merging Objects</a></h1>
 <p>Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -216,7 +216,7 @@ let schema = Schema::new(
 <blockquote>
 <p>⚠️ <strong>MergedObject cannot be used in Interface。</strong></p>
 </blockquote>
-<h1><a class="header" href="#merging-subscriptions" id="merging-subscriptions">Merging Subscriptions</a></h1>
+<h1 id="merging-subscriptions"><a class="header" href="#merging-subscriptions">Merging Subscriptions</a></h1>
 <p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>

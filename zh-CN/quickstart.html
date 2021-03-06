@@ -163,15 +163,15 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#快速开始" id="快速开始">快速开始</a></h1>
-<h2><a class="header" href="#添加依赖" id="添加依赖">添加依赖</a></h2>
+                        <h1 id="快速开始"><a class="header" href="#快速开始">快速开始</a></h1>
+<h2 id="添加依赖"><a class="header" href="#添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
 async-graphql = &quot;2.0&quot;
 async-graphql-actix-web = &quot;2.0&quot; # 如果你需要集成到Actix-web
 async-graphql-warp = &quot;2.0&quot; # 如果你需要集成到Warp
 async-graphql-tide = &quot;2.0&quot; # 如果你需要集成到Tide
 </code></pre>
-<h2><a class="header" href="#写一个schema" id="写一个schema">写一个Schema</a></h2>
+<h2 id="写一个schema"><a class="header" href="#写一个schema">写一个Schema</a></h2>
 <p>一个GraphQL的Schema包含一个必须的查询(Query)根对象，可选的变更(Mutation)根对象和可选的订阅(Subscription)根对象，这些对象类型都是用Rust语言的结构来描述它们，结构的字段对应GraphQL对象的字段。</p>
 <p>Async-graphql实现了常用数据类型到GraphQL类型的映射，例如<code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>等。同时，你也能够<a href="custom_scalars.html">扩展这些基础类型</a>，基础数据类型在GraphQL里面称为标量。</p>
 <p>下面是一个简单的例子，我们只提供一个查询，返回<code>a</code>和<code>b</code>的和。</p>
@@ -192,7 +192,7 @@ impl Query {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#执行查询" id="执行查询">执行查询</a></h2>
+<h2 id="执行查询"><a class="header" href="#执行查询">执行查询</a></h2>
 <p>在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用<code>EmptyMutation</code>和<code>EmptySubscription</code>来创建Schema，然后调用<code>Schema::execute</code>来执行查询。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -201,14 +201,14 @@ impl Query {
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#把查询结果输出为json" id="把查询结果输出为json">把查询结果输出为JSON</a></h2>
+<h2 id="把查询结果输出为json"><a class="header" href="#把查询结果输出为json">把查询结果输出为JSON</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let json = serde_json::to_string(&amp;res);
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#和web-server的集成" id="和web-server的集成">和Web Server的集成</a></h2>
+<h2 id="和web-server的集成"><a class="header" href="#和web-server的集成">和Web Server的集成</a></h2>
 <p>请参考https://github.com/async-graphql/examples。</p>
 
                     </main>

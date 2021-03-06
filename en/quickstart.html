@@ -163,15 +163,15 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#quickstart" id="quickstart">Quickstart</a></h1>
-<h2><a class="header" href="#add-dependency-libraries" id="add-dependency-libraries">Add dependency libraries</a></h2>
+                        <h1 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h1>
+<h2 id="add-dependency-libraries"><a class="header" href="#add-dependency-libraries">Add dependency libraries</a></h2>
 <pre><code class="language-toml">[dependencies]
 async-graphql = &quot;2.0&quot;
 async-graphql-actix-web = &quot;2.0&quot; # If you need to integrate into actix-web
 async-graphql-warp = &quot;2.0&quot; # If you need to integrate into warp
 async-graphql-tide = &quot;2.0&quot; # If you need to integrate into tide
 </code></pre>
-<h2><a class="header" href="#write-a-schema" id="write-a-schema">Write a Schema</a></h2>
+<h2 id="write-a-schema"><a class="header" href="#write-a-schema">Write a Schema</a></h2>
 <p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object.</p>
 <p><code>Async-graphql</code> implements the mapping of common data types to GraphQL types, such as <code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, etc. Also, you can <a href="custom_scalars.html">extend these base types</a>, which are called scalars in the GraphQL.</p>
 <p>Here is a simple example where we provide just one query that returns the sum of <code>a</code> and <code>b</code>.</p>
@@ -191,7 +191,7 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#execute-the-query" id="execute-the-query">Execute the query</a></h2>
+<h2 id="execute-the-query"><a class="header" href="#execute-the-query">Execute the query</a></h2>
 <p>In our example, there is only a Query without a Mutation or Subscription, so we create the Schema with <code>EmptyMutation</code> and <code>EmptySubscription</code>, and then call <code>Schema::execute</code> to execute the Query.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -200,14 +200,14 @@ impl Query {
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#output-the-query-results-as-json" id="output-the-query-results-as-json">Output the query results as JSON</a></h2>
+<h2 id="output-the-query-results-as-json"><a class="header" href="#output-the-query-results-as-json">Output the query results as JSON</a></h2>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let json = serde_json::to_string(&amp;res);
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#web-server-integration" id="web-server-integration">Web server integration</a></h2>
+<h2 id="web-server-integration"><a class="header" href="#web-server-integration">Web server integration</a></h2>
 <p>Please refer to <a href="https://github.com/async-graphql/examples">https://github.com/async-graphql/examples</a>.</p>
 
                     </main>

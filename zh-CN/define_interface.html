@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#接口interface" id="接口interface">接口(Interface)</a></h1>
+                        <h1 id="接口interface"><a class="header" href="#接口interface">接口(Interface)</a></h1>
 <p>接口用于抽象具有特定字段集合的对象，<code>Async-graphql</code>内部实现实际上是一个包装器，包装器转发接口上定义的Resolver函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。</p>
 <p><code>Async-graphql</code>自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用<code>Into::into</code>。</p>
 <p>接口字段的<code>name</code>属性表示转发的Resolver函数，并且它将被转换为驼峰命名作为字段名称。

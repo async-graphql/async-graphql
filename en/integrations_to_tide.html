@@ -163,9 +163,9 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#tide" id="tide">Tide</a></h1>
+                        <h1 id="tide"><a class="header" href="#tide">Tide</a></h1>
 <p><code>async_graphql_tide</code> provides an implementation of <a href="https://docs.rs/tide/0.15.0/tide/trait.Endpoint.html">tide::Endpoint</a> trait. It also provides <code>receive_request</code> and <code>respond</code> functions to convert a Tide request to a GraphQL request and back to Tide response, if you want to  handle the request manually.</p>
-<h2><a class="header" href="#request-example" id="request-example">Request example</a></h2>
+<h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
 <p>When you create your <code>tide</code> server, you will need to pass the <code>async_graphql_tide::endpoint</code> with your schema as the POST request handler. Please note that you need to enable the <code>attributes</code> feature in <code>async-std</code> for this example to work.</p>
 <pre><pre class="playground"><code class="language-rust">use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
@@ -213,7 +213,7 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
     Ok(app.listen(&quot;127.0.0.1:8080&quot;).await?)
 }
 </code></pre></pre>
-<h2><a class="header" href="#manually-handle-the-request" id="manually-handle-the-request">Manually handle the request</a></h2>
+<h2 id="manually-handle-the-request"><a class="header" href="#manually-handle-the-request">Manually handle the request</a></h2>
 <p>If you want to manually handle the request, for example to read a header, you can skip <code>async_graphql_tide::endpoint</code> and use <code>receive_request</code> and <code>respond</code> functions instead.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -227,7 +227,7 @@ async fn main() -&gt; tide::Result&lt;()&gt; {
 });
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#more-examples" id="more-examples">More examples</a></h2>
+<h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/tide">https://github.com/async-graphql/examples/tree/master/tide</a></p>
 
                     </main>

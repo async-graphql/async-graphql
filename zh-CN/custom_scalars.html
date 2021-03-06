@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#自定义标量" id="自定义标量">自定义标量</a></h1>
+                        <h1 id="自定义标量"><a class="header" href="#自定义标量">自定义标量</a></h1>
 <p><code>Async-graphql</code>已经内置了绝大部分常用的标量类型，同时你也能自定义标量。</p>
 <p>实现<code>Async-graphql::Scalar</code>即可自定义一个标量，你只需要实现一个解析函数和输出函数。</p>
 <p>下面的例子定义一个64位整数标量，但它的输入输出都是字符串。 (<code>Async-graphql</code>已经内置了对64位整数的支持，正是采用字符串作为输入输出)</p>
@@ -194,7 +194,7 @@ impl ScalarType for StringNumber {
 
 <span class="boring">}
 </span></code></pre></pre>
-<h2><a class="header" href="#使用scalar宏定义标量" id="使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
+<h2 id="使用scalar宏定义标量"><a class="header" href="#使用scalar宏定义标量">使用<code>scalar!</code>宏定义标量</a></h2>
 <p>如果你的类型实现了<code>serde :: Serialize</code>和<code>serde :: Deserialize</code>，那么可以使用此宏更简单地定义标量。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]

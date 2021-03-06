@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#error-extensions" id="error-extensions">Error extensions</a></h1>
+                        <h1 id="error-extensions"><a class="header" href="#error-extensions">Error extensions</a></h1>
 <p>To quote the <a href="https://spec.graphql.org/June2018/#example-fce18">graphql-spec</a>:</p>
 <blockquote>
 <p>GraphQL services may provide an additional entry to errors with key extensions.
@@ -171,9 +171,9 @@ This entry, if set, must have a map as its value. This entry is reserved for imp
 additional information to errors however they see fit, and there are no additional restrictions on
 its contents.</p>
 </blockquote>
-<h2><a class="header" href="#example" id="example">Example</a></h2>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
 <p>I would recommend on checking out this <a href="https://github.com/async-graphql/examples/blob/master/actix-web/error-extensions/src/main.rs">async-graphql example</a> as a quickstart.</p>
-<h2><a class="header" href="#general-concept" id="general-concept">General Concept</a></h2>
+<h2 id="general-concept"><a class="header" href="#general-concept">General Concept</a></h2>
 <p>In <code>async-graphql</code> all user-facing errors are cast to the <code>Error</code> type which by default provides
 the error message exposed by <code>std::fmt::Display</code>. However, <code>Error</code> actually provides an additional information that can extend the error.</p>
 <p>A resolver looks like this:</p>
@@ -199,7 +199,7 @@ the error message exposed by <code>std::fmt::Display</code>. However, <code>Erro
   ]
 }
 </code></pre>
-<h2><a class="header" href="#errorextensions" id="errorextensions">ErrorExtensions</a></h2>
+<h2 id="errorextensions"><a class="header" href="#errorextensions">ErrorExtensions</a></h2>
 <p>Constructing new <code>Error</code>s by hand quickly becomes tedious. That is why <code>async-graphql</code> provides
 two convenience traits for casting your errors to the appropriate <code>Error</code> with
 extensions.</p>
@@ -216,7 +216,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#implementing-errorextensions-for-custom-errors" id="implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
+<h3 id="implementing-errorextensions-for-custom-errors"><a class="header" href="#implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
 <p>If you find yourself attaching extensions to your errors all over the place you might want to consider
 implementing the trait on your custom error type directly.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -276,7 +276,7 @@ Or further extend your error through <code>extend_with</code>.</p>
   ]
 }
 </code></pre>
-<h2><a class="header" href="#resultext" id="resultext">ResultExt</a></h2>
+<h2 id="resultext"><a class="header" href="#resultext">ResultExt</a></h2>
 <p>This trait enables you to call <code>extend_err</code> directly on results. So the above code becomes less verbose.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -289,7 +289,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<h3><a class="header" href="#chained-extensions" id="chained-extensions">Chained extensions</a></h3>
+<h3 id="chained-extensions"><a class="header" href="#chained-extensions">Chained extensions</a></h3>
 <p>Since <code>ErrorExtensions</code> and <code>ResultExt</code> are implemented for any type <code>&amp;E where E: std::fmt::Display</code>
 we can chain the extension together.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -323,7 +323,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
   ]
 }
 </code></pre>
-<h3><a class="header" href="#pitfalls" id="pitfalls">Pitfalls</a></h3>
+<h3 id="pitfalls"><a class="header" href="#pitfalls">Pitfalls</a></h3>
 <p>Rust does not provide stable trait specialization yet.
 That is why <code>ErrorExtensions</code> is actually implemented for <code>&amp;E where E: std::fmt::Display</code>
 instead of <code>E: std::fmt::Display</code>. Some specialization is provided through

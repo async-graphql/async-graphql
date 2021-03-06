@@ -163,7 +163,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#context" id="context">Context</a></h1>
+                        <h1 id="context"><a class="header" href="#context">Context</a></h1>
 <p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -177,7 +177,7 @@ struct Query;
 impl Query {
     async fn borrow_from_context_data&lt;'ctx&gt;(
         &amp;self,
-        ctx: &amp;'ctx Context&lt;'_&gt;
+        ctx: &amp;Context&lt;'ctx&gt;
     ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
     }
