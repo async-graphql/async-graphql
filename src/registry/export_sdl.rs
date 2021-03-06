@@ -48,7 +48,7 @@ impl Registry {
                 continue;
             }
 
-            if field.description.is_some() && !federation {
+            if field.description.is_some() {
                 writeln!(
                     sdl,
                     "\t\"\"\"\n\t{}\n\t\"\"\"",
@@ -97,7 +97,7 @@ impl Registry {
                     export_scalar = false;
                 }
                 if export_scalar {
-                    if description.is_some() && !federation {
+                    if description.is_some() {
                         writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                     }
                     writeln!(sdl, "scalar {}", name).ok();
@@ -122,7 +122,7 @@ impl Registry {
                     }
                 }
 
-                if description.is_some() && !federation {
+                if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 if federation && *extends {
@@ -151,7 +151,7 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() && !federation {
+                if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 if federation && *extends {
@@ -177,7 +177,7 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() && !federation {
+                if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "enum {} ", name).ok();
@@ -193,7 +193,7 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() && !federation {
+                if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "input {} ", name).ok();
@@ -212,7 +212,7 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() && !federation {
+                if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "union {} =", name).ok();
