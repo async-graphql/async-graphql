@@ -1,5 +1,9 @@
 #![allow(unreachable_code)]
 
+use std::collections::HashMap;
+use std::convert::Infallible;
+
+use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::*;
 
 #[async_std::test]
@@ -144,5 +148,106 @@ pub async fn test_federation() {
                 {"__typename": "Product", "upc": "B00005N5PF"},
             ]
         })
+    );
+}
+
+#[async_std::test]
+pub async fn test_find_entity_with_context() {
+    struct MyLoader;
+
+    #[async_trait::async_trait]
+    impl Loader<ID> for MyLoader {
+        type Value = MyObj;
+        type Error = Infallible;
+
+        async fn load(&self, keys: &[ID]) -> Result<HashMap<ID, Self::Value>, Self::Error> {
+            Ok(keys
+                .iter()
+                .filter(|id| id.as_str() != "999")
+                .map(|id| {
+                    (
+                        id.clone(),
+                        MyObj {
+                            id: id.clone(),
+                            value: 999,
+                        },
+                    )
+                })
+                .collect())
+        }
+    }
+
+    #[derive(Clone, SimpleObject)]
+    struct MyObj {
+        id: ID,
+        value: i32,
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        #[graphql(entity)]
+        async fn find_user_by_id(&self, ctx: &Context<'_>, id: ID) -> FieldResult<MyObj> {
+            let loader = ctx.data_unchecked::<DataLoader<MyLoader>>();
+            loader
+                .load_one(id)
+                .await
+                .unwrap()
+                .ok_or_else(|| "Not found".into())
+        }
+    }
+
+    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+        .data(DataLoader::new(MyLoader))
+        .finish();
+    let query = r#"{
+            _entities(representations: [
+                {__typename: "MyObj", id: "1"},
+                {__typename: "MyObj", id: "2"},
+                {__typename: "MyObj", id: "3"},
+                {__typename: "MyObj", id: "4"}
+            ]) {
+                __typename
+                ... on MyObj {
+                    id
+                    value
+                }
+            }
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "_entities": [
+                {"__typename": "MyObj", "id": "1", "value": 999 },
+                {"__typename": "MyObj", "id": "2", "value": 999 },
+                {"__typename": "MyObj", "id": "3", "value": 999 },
+                {"__typename": "MyObj", "id": "4", "value": 999 },
+            ]
+        })
+    );
+
+    let query = r#"{
+            _entities(representations: [
+                {__typename: "MyObj", id: "999"}
+            ]) {
+                __typename
+                ... on MyObj {
+                    id
+                    value
+                }
+            }
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap_err(),
+        vec![ServerError {
+            message: "Not found".to_string(),
+            locations: vec![Pos {
+                line: 2,
+                column: 13
+            }],
+            path: vec![PathSegment::Field("_entities".to_owned())],
+            extensions: None,
+        }]
     );
 }
