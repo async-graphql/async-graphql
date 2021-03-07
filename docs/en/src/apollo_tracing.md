@@ -9,6 +9,6 @@ use async_graphql::*;
 use async_graphql::extensions::ApolloTracing;
 
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    .extension(ApolloTracing::default) // Enable ApolloTracing extension
+    .extension(ApolloTracing) // Enable ApolloTracing extension
     .finish();
 ```
