@@ -200,9 +200,9 @@ impl Registry {
                 writeln!(sdl, "{{").ok();
                 for field in input_fields.values() {
                     if let Some(description) = field.description {
-                        writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description).ok();
+                        writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
                     }
-                    writeln!(sdl, "{}", export_input_value(&field)).ok();
+                    writeln!(sdl, "\t{}", export_input_value(&field)).ok();
                 }
                 writeln!(sdl, "}}").ok();
             }

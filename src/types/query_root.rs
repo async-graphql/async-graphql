@@ -124,14 +124,15 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
         if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
             if ctx.item.node.name.node == "_entities" {
                 let representations: Vec<Any> = ctx.param_value("representations", None)?;
-                let mut res = Vec::new();
-                for item in representations {
-                    res.push(
-                        self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {
-                            ServerError::new("Entity not found.").at(ctx.item.pos)
-                        })?,
-                    );
-                }
+                let res = futures_util::future::try_join_all(representations.iter().map(
+                    |item| async move {
+                        self.inner
+                            .find_entity(ctx, &item.0)
+                            .await?
+                            .ok_or_else(|| ServerError::new("Entity not found.").at(ctx.item.pos))
+                    },
+                ))
+                .await?;
                 return Ok(Some(Value::List(res)));
             } else if ctx.item.node.name.node == "_service" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
