@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove unnecessary Box from WebSocket messages.
 - Export subscription type to Federation SDL. (for [GraphGate](https://github.com/async-graphql/graphgate) 😁)
+- Add `extends` attribute for derive macros Subscription and MergedSubscription.
 
 ## [2.5.11] - 2021-03-07
 
