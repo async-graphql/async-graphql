@@ -105,9 +105,15 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Override the description of the specified type.
+    /// Override the name of the specified type.
     pub fn override_description<T: Type>(mut self, desc: &'static str) -> Self {
         self.registry.set_description::<T>(desc);
+        self
+    }
+
+    /// Override the name of the specified type.
+    pub fn override_name<T: Type>(mut self, new_name: impl Into<String>) -> Self {
+        self.registry.set_name::<T>(new_name.into());
         self
     }
 

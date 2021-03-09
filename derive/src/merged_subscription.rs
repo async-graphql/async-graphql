@@ -10,6 +10,7 @@ use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let ident = &object_args.ident;
+    let extends = object_args.extends;
     let gql_typename = object_args
         .name
         .clone()
@@ -68,7 +69,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         description: #desc,
                         fields,
                         cache_control: ::std::default::Default::default(),
-                        extends: false,
+                        extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                     }

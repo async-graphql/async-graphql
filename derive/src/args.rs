@@ -427,6 +427,7 @@ pub struct Subscription {
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub use_type_description: bool,
+    pub extends: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -497,6 +498,8 @@ pub struct MergedSubscription {
     pub name: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub extends: bool,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta)]

@@ -265,14 +265,8 @@ impl Protocols {
     #[inline]
     fn next_message<'s>(&self, id: &'s str, payload: Response) -> ServerMessage<'s> {
         match self {
-            Protocols::SubscriptionsTransportWS => ServerMessage::Data {
-                id,
-                payload: Box::new(payload),
-            },
-            Protocols::GraphQLWS => ServerMessage::Next {
-                id,
-                payload: Box::new(payload),
-            },
+            Protocols::SubscriptionsTransportWS => ServerMessage::Data { id, payload },
+            Protocols::GraphQLWS => ServerMessage::Next { id, payload },
         }
     }
 }
@@ -322,12 +316,12 @@ enum ServerMessage<'a> {
     /// subscriptions-transport-ws protocol next payload
     Data {
         id: &'a str,
-        payload: Box<Response>,
+        payload: Response,
     },
     /// graphql-ws protocol next payload
     Next {
         id: &'a str,
-        payload: Box<Response>,
+        payload: Response,
     },
     // Not used by this library, as it's not necessary to send
     // Error {

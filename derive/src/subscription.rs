@@ -20,6 +20,7 @@ pub fn generate(
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(subscription_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
+    let extends = subscription_args.extends;
 
     let gql_typename = subscription_args
         .name
@@ -441,7 +442,7 @@ pub fn generate(
                         fields
                     },
                     cache_control: ::std::default::Default::default(),
-                    extends: false,
+                    extends: #extends,
                     keys: ::std::option::Option::None,
                     visible: ::std::option::Option::None,
                 })

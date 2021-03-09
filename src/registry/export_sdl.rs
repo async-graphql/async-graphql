@@ -116,12 +116,6 @@ impl Registry {
                     return;
                 }
 
-                if let Some(subscription_type) = &self.subscription_type {
-                    if name == subscription_type && federation {
-                        return;
-                    }
-                }
-
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
