@@ -623,4 +623,16 @@ impl Registry {
             None => {}
         }
     }
+
+    pub fn set_name<T: Type>(&mut self, new_name: String) {
+        match self.types.get_mut(&*T::type_name()) {
+            Some(MetaType::Scalar { name, .. }) => *name = new_name,
+            Some(MetaType::Object { name, .. }) => *name = new_name,
+            Some(MetaType::Interface { name, .. }) => *name = new_name,
+            Some(MetaType::Union { name, .. }) => *name = new_name,
+            Some(MetaType::Enum { name, .. }) => *name = new_name,
+            Some(MetaType::InputObject { name, .. }) => *name = new_name,
+            None => {}
+        }
+    }
 }
