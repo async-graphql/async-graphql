@@ -1,4 +1,5 @@
 use async_graphql::*;
+use futures_util::stream::{Stream, StreamExt};
 
 #[async_std::test]
 pub async fn test_generic_object() {
@@ -122,7 +123,7 @@ pub async fn test_input_object_generic() {
             "__type": {
                 "fields": [
                     {
-                        "name": "q1", 
+                        "name": "q1",
                         "args": [{
                             "name": "input",
                             "type": {
@@ -132,7 +133,7 @@ pub async fn test_input_object_generic() {
                         }]
                     },
                     {
-                        "name": "q2", 
+                        "name": "q2",
                         "args": [{
                             "name": "input",
                             "type": {
@@ -248,4 +249,46 @@ pub async fn test_generic_simple_object() {
             }
         })
     );
+}
+
+#[async_std::test]
+pub async fn test_generic_subscription() {
+    struct MySubscription<T> {
+        values: Vec<T>,
+    }
+
+    #[Subscription]
+    impl<T: OutputType + Type> MySubscription<T>
+    where
+        T: Clone + Send + Sync + Unpin,
+    {
+        async fn values(&self) -> Result<impl Stream<Item = T> + '_> {
+            Ok(async_stream::stream! {
+                for value in self.values.iter().cloned() {
+                    yield value
+                }
+            })
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn dummy(&self) -> bool {
+            false
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, MySubscription { values: vec![1, 2] });
+    {
+        let mut stream = schema
+            .execute_stream("subscription { values }")
+            .map(|resp| resp.into_result().unwrap().data)
+            .boxed();
+        for i in 1..=2 {
+            assert_eq!(value!({ "values": i }), stream.next().await.unwrap());
+        }
+        assert!(stream.next().await.is_none());
+    }
 }
