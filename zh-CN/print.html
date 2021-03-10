@@ -853,12 +853,13 @@ struct Subscription;
 
 #[Subscription]
 impl Subscription {
-    async fn integers(&amp;self, #[graphql(default = &quot;1&quot;)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
+    async fn integers(&amp;self, #[graphql(default = 1)] step: i32) -&gt; impl Stream&lt;Item = i32&gt; {
         let mut value = 0;
-        tokio::time::interval(Duration::from_secs(1)).map(move |_| {
-            value += step;
-            value
-        })
+        tokio_stream::wrappers::IntervalStream::new(tokio::time::interval(Duration::from_secs(1)))
+            .map(move |_| {
+                value += step;
+                value
+            })
     }
 }
 <span class="boring">}
