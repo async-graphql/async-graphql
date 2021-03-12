@@ -650,7 +650,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     ///     }
     /// }
     ///
-    /// async_std::task::block_on(async move {
+    /// tokio::runtime::Runtime::new().unwrap().block_on(async move {
     ///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     ///     assert!(schema.execute("{ obj { a b c }}").await.is_ok());
     ///     assert!(schema.execute("{ obj { a ... { b c } }}").await.is_ok());

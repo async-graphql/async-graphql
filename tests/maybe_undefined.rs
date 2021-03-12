@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_maybe_undefined_type() {
     #[derive(InputObject)]
     struct MyInput {

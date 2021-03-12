@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_enum_type() {
     #[derive(Enum, Copy, Clone, Eq, PartialEq)]
     enum MyEnum {
@@ -49,7 +49,7 @@ pub async fn test_enum_type() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_enum_derive_and_item_attributes() {
     use serde::Deserialize;
 
@@ -71,7 +71,7 @@ pub async fn test_enum_derive_and_item_attributes() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_remote_enum() {
     #[derive(Enum, Copy, Clone, Eq, PartialEq)]
     #[graphql(remote = "remote::RemoteEnum")]

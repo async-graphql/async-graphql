@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
 
 //noinspection ALL
-#[async_std::test]
+#[tokio::test]
 pub async fn test_list_type() {
     #[derive(InputObject)]
     struct MyInput {

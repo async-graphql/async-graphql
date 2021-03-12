@@ -1,9 +1,9 @@
 use async_graphql::*;
-use async_std::sync::Mutex;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
@@ -21,13 +21,13 @@ pub async fn test_mutation_execution_order() {
     #[Object]
     impl MutationRoot {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
-            async_std::task::sleep(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_secs(1)).await;
             ctx.data_unchecked::<List>().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
-            async_std::task::sleep(Duration::from_millis(500)).await;
+            tokio::time::sleep(Duration::from_millis(500)).await;
             ctx.data_unchecked::<List>().lock().await.push(2);
             true
         }
@@ -42,7 +42,7 @@ pub async fn test_mutation_execution_order() {
     assert_eq!(list.lock().await[1], 2);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_mutation_fragment() {
     struct QueryRoot;
 

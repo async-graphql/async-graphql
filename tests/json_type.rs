@@ -1,7 +1,7 @@
 use async_graphql::*;
 use std::collections::HashMap;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_json_scalar() {
     #[derive(serde::Serialize, serde::Deserialize)]
     struct MyData(HashMap<String, i32>);

@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_field_merge() {
     struct Query;
 
@@ -41,7 +41,7 @@ pub async fn test_field_merge() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_field_object_merge() {
     #[derive(SimpleObject)]
     struct MyObject {
@@ -83,7 +83,7 @@ pub async fn test_field_object_merge() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_field_object_merge2() {
     #[derive(SimpleObject)]
     struct MyObject {

@@ -1,4 +1,4 @@
-#[async_std::test]
+#[tokio::test]
 pub async fn test_object() {
     macro_rules! test_data {
         ($test_name:ident) => {
@@ -19,7 +19,7 @@ pub async fn test_object() {
     test_data!(A);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription() {
     macro_rules! test_data {
         ($test_name:ident) => {
@@ -41,7 +41,7 @@ pub async fn test_subscription() {
     test_data!(A);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_scalar() {
     macro_rules! test_data {
         ($test_name:ident) => {

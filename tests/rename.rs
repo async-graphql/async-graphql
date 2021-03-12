@@ -1,7 +1,7 @@
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt};
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_enum() {
     #[derive(Enum, Eq, PartialEq, Copy, Clone)]
     #[graphql(rename_items = "camelCase")]
@@ -32,7 +32,7 @@ pub async fn test_enum() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_simple_object() {
     #[derive(SimpleObject)]
     #[graphql(rename_fields = "UPPERCASE")]
@@ -51,7 +51,7 @@ pub async fn test_simple_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_object() {
     struct Query;
 
@@ -73,7 +73,7 @@ pub async fn test_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_object() {
     #[derive(InputObject)]
     #[graphql(rename_fields = "snake_case")]
@@ -103,7 +103,7 @@ pub async fn test_input_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription() {
     struct Query;
 

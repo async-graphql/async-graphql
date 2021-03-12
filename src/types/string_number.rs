@@ -40,7 +40,7 @@ where
 mod test {
     use crate::*;
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_string_number() {
         struct Query;
 

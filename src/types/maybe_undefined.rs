@@ -28,8 +28,7 @@ use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value}
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async {
 ///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 ///     let query = r#"
 ///         {
@@ -45,7 +44,7 @@ use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value}
 ///             "v3": 2,
 ///         })
 ///     );
-/// }
+/// });
 /// ```
 #[allow(missing_docs)]
 #[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]

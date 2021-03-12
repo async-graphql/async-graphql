@@ -348,7 +348,7 @@ pub type FieldResult<T> = Result<T>;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(QueryRoot { value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{
 ///         value
@@ -406,7 +406,7 @@ pub type FieldResult<T> = Result<T>;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ objs { name } }").await.into_result().unwrap().data;
 ///     assert_eq!(res, value!({
@@ -463,7 +463,7 @@ pub use async_graphql_derive::Object;
 ///     value: i32,
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value: 10 }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
 ///     assert_eq!(res, value!({
@@ -526,7 +526,7 @@ pub use async_graphql_derive::SimpleObject;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(QueryRoot{ value1: MyEnum::A, value2: MyEnum::B }, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute("{ value1 value2 }").await.into_result().unwrap().data;
 ///     assert_eq!(res, value!({ "value1": "A", "value2": "b" }));
@@ -583,7 +583,7 @@ pub use async_graphql_derive::Enum;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"
 ///     {
@@ -713,7 +713,7 @@ pub use async_graphql_derive::InputObject;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -786,7 +786,7 @@ pub use async_graphql_derive::Interface;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///     let res = schema.execute(r#"
 ///     {
@@ -899,7 +899,7 @@ pub use async_graphql_derive::Scalar;
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
 ///
 ///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
@@ -1047,7 +1047,7 @@ pub use async_graphql_derive::MergedSubscription;
 ///     obj: MyObj,
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
 ///     assert_eq!(
 ///         schema

@@ -3,7 +3,7 @@
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt};
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_field_features() {
     #[derive(SimpleObject)]
     struct MyObj {

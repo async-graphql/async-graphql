@@ -32,7 +32,7 @@
 //!     }
 //! }
 //!
-//! async_std::task::block_on(async move {
+//! tokio::runtime::Runtime::new().unwrap().block_on(async move {
 //!     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 //!     let query = r#"
 //!         {
@@ -249,7 +249,7 @@ mod tests {
         }
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_dataloader() {
         let loader = Arc::new(DataLoader::new(MyLoader).max_batch_size(10));
         assert_eq!(
@@ -279,7 +279,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_duplicate_keys() {
         let loader = Arc::new(DataLoader::new(MyLoader).max_batch_size(10));
         assert_eq!(

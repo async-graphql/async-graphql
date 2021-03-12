@@ -1,7 +1,7 @@
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_value_custom_error() {
     #[derive(Enum, Copy, Clone, Eq, PartialEq)]
     #[allow(non_camel_case_types)]

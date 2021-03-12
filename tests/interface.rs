@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_interface_simple_object() {
     #[derive(SimpleObject)]
     struct MyObj {
@@ -45,7 +45,7 @@ pub async fn test_interface_simple_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_interface_simple_object2() {
     #[derive(SimpleObject)]
     struct MyObj {
@@ -90,7 +90,7 @@ pub async fn test_interface_simple_object2() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_multiple_interfaces() {
     struct MyObj;
 
@@ -158,7 +158,7 @@ pub async fn test_multiple_interfaces() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_multiple_objects_in_multiple_interfaces() {
     struct MyObjOne;
 
@@ -238,7 +238,7 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_interface_field_result() {
     struct MyObj;
 
@@ -282,7 +282,7 @@ pub async fn test_interface_field_result() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_interface_field_method() {
     struct A;
 
@@ -332,7 +332,7 @@ pub async fn test_interface_field_method() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_interface_implement_other_interface() {
     #[derive(Interface)]
     #[graphql(field(name = "id", type = "ID"))]
@@ -398,7 +398,7 @@ pub async fn test_interface_implement_other_interface() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_issue_330() {
     #[derive(Interface)]
     #[graphql(field(

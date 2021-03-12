@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_directive_skip() {
     struct QueryRoot;
 
@@ -30,7 +30,7 @@ pub async fn test_directive_skip() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_directive_include() {
     struct QueryRoot;
 
@@ -60,7 +60,7 @@ pub async fn test_directive_include() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_directive_ifdef() {
     struct QueryRoot;
 

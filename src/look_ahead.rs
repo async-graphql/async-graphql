@@ -70,7 +70,7 @@ fn find<'a>(
 mod tests {
     use crate::*;
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_look_ahead() {
         #[derive(SimpleObject)]
         #[graphql(internal)]

@@ -1,7 +1,7 @@
 use async_graphql::*;
 use std::collections::HashMap;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variables() {
     struct QueryRoot;
 
@@ -39,7 +39,7 @@ pub async fn test_variables() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variable_default_value() {
     struct QueryRoot;
 
@@ -68,7 +68,7 @@ pub async fn test_variable_default_value() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variable_no_value() {
     struct QueryRoot;
 
@@ -99,7 +99,7 @@ pub async fn test_variable_no_value() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variable_null() {
     struct QueryRoot;
 
@@ -130,7 +130,7 @@ pub async fn test_variable_null() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variable_in_input_object() {
     #[derive(InputObject)]
     struct MyInput {
@@ -219,7 +219,7 @@ pub async fn test_variable_in_input_object() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variables_enum() {
     #[derive(Enum, Eq, PartialEq, Copy, Clone)]
     enum MyEnum {
@@ -267,7 +267,7 @@ pub async fn test_variables_enum() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_variables_json() {
     struct QueryRoot;
 

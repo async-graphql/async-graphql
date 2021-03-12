@@ -106,7 +106,7 @@ mod test {
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_json_type() {
         #[derive(Serialize, Deserialize)]
         struct MyStruct {
@@ -138,7 +138,7 @@ mod test {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_output_json_type() {
         #[derive(Serialize)]
         struct MyStruct {

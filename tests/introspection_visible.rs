@@ -1,7 +1,7 @@
 use async_graphql::*;
 use serde::Deserialize;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_type_visible() {
     #[derive(SimpleObject)]
     #[graphql(visible = false)]
@@ -67,7 +67,7 @@ pub async fn test_type_visible() {
         .is_none());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_field_visible() {
     #[derive(SimpleObject)]
     struct MyObj {
@@ -146,7 +146,7 @@ pub async fn test_field_visible() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_enum_value_visible() {
     #[derive(Enum, Eq, PartialEq, Copy, Clone)]
     enum MyEnum {
@@ -204,7 +204,7 @@ pub async fn test_enum_value_visible() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_visible_fn() {
     struct IsAdmin(bool);
 

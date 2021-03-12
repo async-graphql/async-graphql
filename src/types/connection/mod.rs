@@ -67,8 +67,7 @@ pub struct EmptyFields;
 ///     }
 /// }
 ///
-/// #[async_std::main]
-/// async fn main() {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
 ///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
@@ -88,7 +87,7 @@ pub struct EmptyFields;
 ///             ]
 ///         },
 ///     }));
-/// }
+/// });
 /// ```
 pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R>(
     after: Option<String>,

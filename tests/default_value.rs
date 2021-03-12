@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_default_value_arg() {
     struct Query;
 
@@ -47,7 +47,7 @@ pub async fn test_default_value_arg() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_default_value_inputobject() {
     #[derive(InputObject)]
     struct MyInput {

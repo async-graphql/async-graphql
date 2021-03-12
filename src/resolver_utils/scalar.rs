@@ -77,7 +77,7 @@ pub trait ScalarType: Sized + Send {
 ///     }
 /// }
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 ///     let res = schema.execute(r#"{ value(input: {a: 10, b: {v1: 1, v2: 2} }) }"#).await.into_result().unwrap().data;
 ///     assert_eq!(res, value!({

@@ -16,7 +16,7 @@ struct Object3 {
     c: i32,
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_object() {
     type MyObj =
         MergedObject<Object1, MergedObject<Object2, MergedObject<Object3, MergedObjectTail>>>;
@@ -55,7 +55,7 @@ pub async fn test_merged_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_object_macro() {
     #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
@@ -83,7 +83,7 @@ pub async fn test_merged_object_macro() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_object_derive() {
     #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
@@ -111,7 +111,7 @@ pub async fn test_merged_object_derive() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_object_default() {
     mod a {
         use super::*;
@@ -157,7 +157,7 @@ pub async fn test_merged_object_default() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_subscription() {
     #[derive(Default)]
     struct Subscription1;
@@ -226,7 +226,7 @@ pub async fn test_merged_subscription() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_merged_entity() {
     #[derive(SimpleObject)]
     struct Fruit {
@@ -291,7 +291,7 @@ pub async fn test_merged_entity() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_issue_316() {
     #[derive(SimpleObject)]
     struct Fruit {
@@ -337,7 +337,7 @@ pub async fn test_issue_316() {
     assert!(schema.execute("{ _service { sdl }}").await.is_ok());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_issue_333() {
     #[derive(SimpleObject)]
     struct ObjectA<'a> {
