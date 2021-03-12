@@ -158,6 +158,12 @@ impl<T> DataLoader<T> {
         }
     }
 
+    /// Get the loader.
+    #[inline]
+    pub fn loader(&self) -> &T {
+        &self.loader
+    }
+
     /// Use this `DataLoader` load a data.
     pub async fn load_one<K>(&self, key: K) -> Result<Option<T::Value>, T::Error>
     where
