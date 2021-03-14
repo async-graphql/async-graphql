@@ -6,7 +6,7 @@ use std::convert::Infallible;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_nested_key() {
     #[derive(InputObject)]
     struct MyInputA {
@@ -66,7 +66,7 @@ pub async fn test_nested_key() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_federation() {
     struct User {
         id: ID,
@@ -151,7 +151,7 @@ pub async fn test_federation() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_find_entity_with_context() {
     struct MyLoader;
 

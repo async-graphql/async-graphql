@@ -72,7 +72,7 @@ mod tests {
         }
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn analyzer() {
         let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
             .extension(extensions::Analyzer)

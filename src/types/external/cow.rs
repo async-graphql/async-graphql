@@ -36,7 +36,7 @@ mod test {
     use crate::*;
     use std::borrow::Cow;
 
-    #[async_std::test]
+    #[tokio::test]
     async fn test_cow_type() {
         struct Query {
             obj: MyObj,

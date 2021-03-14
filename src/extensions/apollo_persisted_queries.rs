@@ -116,7 +116,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
 
 #[cfg(test)]
 mod tests {
-    #[async_std::test]
+    #[tokio::test]
     async fn test() {
         use super::*;
         use crate::*;

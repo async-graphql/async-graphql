@@ -4,7 +4,7 @@ use async_graphql::validators::{
 };
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_string_min_length() {
     struct QueryRoot;
 
@@ -120,7 +120,7 @@ pub async fn test_input_validator_string_min_length() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_string_max_length() {
     struct QueryRoot;
 
@@ -230,7 +230,7 @@ pub async fn test_input_validator_string_max_length() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_string_email() {
     struct QueryRoot;
 
@@ -370,7 +370,7 @@ pub async fn test_input_validator_string_email() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_string_mac() {
     struct QueryRootWithColon;
     struct QueryRootWithoutColon;
@@ -660,7 +660,7 @@ pub async fn test_input_validator_string_mac() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_int_range() {
     struct QueryRoot;
 
@@ -762,7 +762,7 @@ pub async fn test_input_validator_int_range() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_int_less_than() {
     struct QueryRoot;
 
@@ -867,7 +867,7 @@ pub async fn test_input_validator_int_less_than() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_int_greater_than() {
     struct QueryRoot;
 
@@ -974,7 +974,7 @@ pub async fn test_input_validator_int_greater_than() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_int_nonzero() {
     struct QueryRoot;
 
@@ -1074,7 +1074,7 @@ pub async fn test_input_validator_int_nonzero() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_int_equal() {
     struct QueryRoot;
 
@@ -1178,7 +1178,7 @@ pub async fn test_input_validator_int_equal() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_list_max_length() {
     struct QueryRoot;
 
@@ -1294,7 +1294,7 @@ pub async fn test_input_validator_list_max_length() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_list_min_length() {
     struct QueryRoot;
 
@@ -1410,7 +1410,7 @@ pub async fn test_input_validator_list_min_length() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_operator_or() {
     struct QueryRoot;
 
@@ -1534,7 +1534,7 @@ pub async fn test_input_validator_operator_or() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_operator_and() {
     struct QueryRoot;
 
@@ -1651,7 +1651,7 @@ pub async fn test_input_validator_operator_and() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_validator_variable() {
     struct QueryRoot;
 

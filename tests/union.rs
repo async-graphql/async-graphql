@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_union_simple_object() {
     #[derive(SimpleObject)]
     struct MyObj {
@@ -44,7 +44,7 @@ pub async fn test_union_simple_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_union_simple_object2() {
     #[derive(SimpleObject)]
     struct MyObj {
@@ -88,7 +88,7 @@ pub async fn test_union_simple_object2() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_multiple_unions() {
     struct MyObj;
 
@@ -165,7 +165,7 @@ pub async fn test_multiple_unions() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_multiple_objects_in_multiple_unions() {
     struct MyObjOne;
 
@@ -242,7 +242,7 @@ pub async fn test_multiple_objects_in_multiple_unions() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_union_field_result() {
     struct MyObj;
 
@@ -285,7 +285,7 @@ pub async fn test_union_field_result() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_union_flatten() {
     #[derive(SimpleObject)]
     struct MyObj1 {

@@ -10,7 +10,7 @@ impl QueryRoot {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription() {
     #[derive(SimpleObject)]
     struct Event {
@@ -59,7 +59,7 @@ pub async fn test_subscription() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_with_ctx_data() {
     struct QueryRoot;
 
@@ -109,7 +109,7 @@ pub async fn test_subscription_with_ctx_data() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_with_token() {
     struct QueryRoot;
 
@@ -160,7 +160,7 @@ pub async fn test_subscription_with_token() {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_inline_fragment() {
     #[derive(SimpleObject)]
     struct Event {
@@ -211,7 +211,7 @@ pub async fn test_subscription_inline_fragment() {
     assert!(stream.next().await.is_none());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_fragment() {
     #[derive(SimpleObject)]
     struct Event {
@@ -261,7 +261,7 @@ pub async fn test_subscription_fragment() {
     assert!(stream.next().await.is_none());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_fragment2() {
     #[derive(SimpleObject)]
     struct Event {
@@ -312,7 +312,7 @@ pub async fn test_subscription_fragment2() {
     assert!(stream.next().await.is_none());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_error() {
     struct Event {
         value: i32,
@@ -369,7 +369,7 @@ pub async fn test_subscription_error() {
     assert!(stream.next().await.is_none());
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription_fieldresult() {
     struct SubscriptionRoot;
 

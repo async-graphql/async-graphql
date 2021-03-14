@@ -1,7 +1,7 @@
 use async_graphql::connection::*;
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_connection_additional_fields() {
     struct QueryRoot;
 

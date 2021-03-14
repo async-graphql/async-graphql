@@ -57,7 +57,7 @@ impl Guard for AgeGuard {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_guard_simple_rule() {
     #[derive(SimpleObject)]
     struct Query {
@@ -134,7 +134,7 @@ pub async fn test_guard_simple_rule() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_guard_and_operator() {
     #[derive(SimpleObject)]
     struct Query {
@@ -218,7 +218,7 @@ pub async fn test_guard_and_operator() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_guard_or_operator() {
     #[derive(SimpleObject)]
     struct Query {
@@ -287,7 +287,7 @@ pub async fn test_guard_or_operator() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_guard_chain_operator() {
     #[derive(SimpleObject)]
     struct Query {
@@ -396,7 +396,7 @@ pub async fn test_guard_chain_operator() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_guard_race_operator() {
     #[derive(SimpleObject)]
     struct Query {

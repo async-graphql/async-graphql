@@ -1,5 +1,5 @@
 use async_graphql::*;
-use async_std::stream::{self, Stream};
+use futures_util::stream::{self, Stream};
 
 #[derive(Clone, Debug)]
 struct Circle {
@@ -171,11 +171,11 @@ impl Subscription {
         &self,
         #[graphql(default = 1)] step: i32,
     ) -> impl Stream<Item = i32> {
-        stream::once(step)
+        stream::once(async move { step })
     }
 }
 
-// #[async_std::test]
+// #[tokio::test]
 // pub async fn test_introspection_schema() {
 //     let schema = Schema::new(Query, Mutation, Subscription);
 
@@ -219,7 +219,7 @@ impl Subscription {
 //     assert_eq!(res, res_json)
 // }
 
-// #[async_std::test]
+// #[tokio::test]
 // pub async fn test_introspection_documentation() {
 //     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 //
@@ -286,7 +286,7 @@ impl Subscription {
 //     assert_eq!(res, res_json)
 // }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_deprecation() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
@@ -543,7 +543,7 @@ pub async fn test_introspection_deprecation() {
     assert_eq!(res, res_json);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_type_kind() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -702,7 +702,7 @@ pub async fn test_introspection_type_kind() {
     assert_eq!(res, res_json);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_scalar() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -729,7 +729,7 @@ pub async fn test_introspection_scalar() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_union() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -765,7 +765,7 @@ pub async fn test_introspection_union() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_interface() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
@@ -843,7 +843,7 @@ pub async fn test_introspection_interface() {
     assert_eq!(res, res_json);
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_enum() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -892,7 +892,7 @@ pub async fn test_introspection_enum() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_input_object() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -925,7 +925,7 @@ pub async fn test_introspection_input_object() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_mutation() {
     let schema = Schema::new(Query, Mutation, EmptySubscription);
 
@@ -973,7 +973,7 @@ pub async fn test_introspection_mutation() {
     assert_eq!(res, res_json)
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_introspection_subscription() {
     let schema = Schema::new(Query, EmptyMutation, Subscription);
 
@@ -1021,7 +1021,7 @@ pub async fn test_introspection_subscription() {
     assert_eq!(res, res_json)
 }
 
-// #[async_std::test]
+// #[tokio::test]
 // pub async fn test_introspection_full() {
 //     let schema = Schema::new(Query, EmptyMutation, Subscription);
 //

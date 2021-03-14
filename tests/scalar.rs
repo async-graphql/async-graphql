@@ -9,7 +9,7 @@ mod test_mod {
     }
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_scalar_macro() {
     scalar!(test_mod::MyValue, "MV", "DESC");
 

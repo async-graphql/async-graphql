@@ -3,7 +3,7 @@ use async_graphql::*;
 use spin::Mutex;
 use std::sync::Arc;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_extension_ctx() {
     #[derive(Default, Clone)]
     struct MyData(Arc<Mutex<i32>>);

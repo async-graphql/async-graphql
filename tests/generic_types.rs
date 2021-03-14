@@ -1,7 +1,7 @@
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt};
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_generic_object() {
     struct MyObj<T> {
         value: T,
@@ -49,7 +49,7 @@ pub async fn test_generic_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_object_generic() {
     #[derive(InputObject)]
     #[graphql(
@@ -148,7 +148,7 @@ pub async fn test_input_object_generic() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_generic_simple_object() {
     #[derive(SimpleObject)]
     #[graphql(concrete(name = "MyObjIntString", params(i32, String)))]
@@ -251,7 +251,7 @@ pub async fn test_generic_simple_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_generic_subscription() {
     struct MySubscription<T> {
         values: Vec<T>,

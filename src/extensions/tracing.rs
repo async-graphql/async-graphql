@@ -50,7 +50,7 @@ impl TracingConfig {
 ///     "span root"
 /// );
 ///
-/// async_std::task::block_on(async move {
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
 ///     let request = Request::new("{ value }")
 ///         .data(TracingConfig::default().parent_span(root_span));
 ///     schema.execute(request).await;

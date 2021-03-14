@@ -1,8 +1,8 @@
 use async_graphql::*;
-use async_std::stream::Stream;
 use chrono::{DateTime, Utc};
+use futures_util::stream::Stream;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_object() {
     /// Haha
     #[derive(Description, Default)]
@@ -32,7 +32,7 @@ pub async fn test_object() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_object_with_lifetime() {
     /// Haha
     #[derive(Description, Default)]
@@ -67,7 +67,7 @@ pub async fn test_object_with_lifetime() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_scalar() {
     /// Haha
     #[derive(Description, Default)]
@@ -101,7 +101,7 @@ pub async fn test_scalar() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_subscription() {
     struct Query;
 
@@ -135,7 +135,7 @@ pub async fn test_subscription() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_override_description() {
     /// Haha
     #[derive(SimpleObject)]

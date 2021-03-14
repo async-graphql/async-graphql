@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_object_default_value() {
     #[derive(InputObject)]
     struct MyInput {
@@ -87,7 +87,7 @@ pub async fn test_input_object_default_value() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_inputobject_derive_and_item_attributes() {
     use serde::Deserialize;
 
@@ -103,7 +103,7 @@ pub async fn test_inputobject_derive_and_item_attributes() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_inputobject_flatten_recursive() {
     #[derive(InputObject, Debug, Eq, PartialEq)]
     struct A {
@@ -230,7 +230,7 @@ pub async fn test_inputobject_flatten_recursive() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_inputobject_flatten_multiple() {
     #[derive(InputObject, Debug, Eq, PartialEq)]
     struct A {
@@ -288,7 +288,7 @@ pub async fn test_inputobject_flatten_multiple() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_input_object_skip_field() {
     #[derive(InputObject)]
     struct MyInput2 {
@@ -319,7 +319,7 @@ pub async fn test_input_object_skip_field() {
     );
 }
 
-#[async_std::test]
+#[tokio::test]
 pub async fn test_box_input_object() {
     #[derive(InputObject)]
     struct MyInput {
