@@ -254,6 +254,22 @@ mod tests {
     }
 
     #[test]
+    fn variable_used_by_inline_fragment() {
+        expect_passes_rule!(
+            factory,
+            r#"
+          query Foo($a: String) {
+            ... {
+                field(a: $a) {
+                  ...FragA
+                }
+            }
+          }
+        "#,
+        );
+    }
+
+    #[test]
     fn variable_not_used() {
         expect_fails_rule!(
             factory,
