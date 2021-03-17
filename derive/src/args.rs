@@ -158,6 +158,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub dummy: bool,
     #[darling(default)]
+    pub complex: bool,
+    #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
@@ -583,4 +585,28 @@ pub struct NewType {
 
     #[darling(default)]
     pub internal: bool,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct ComplexObject {
+    pub internal: bool,
+    pub name: Option<String>,
+    pub rename_fields: Option<RenameRule>,
+    pub rename_args: Option<RenameRule>,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct ComplexObjectField {
+    pub skip: bool,
+    pub name: Option<String>,
+    pub deprecation: Deprecation,
+    pub cache_control: CacheControl,
+    pub external: bool,
+    pub provides: Option<String>,
+    pub requires: Option<String>,
+    pub guard: Option<Meta>,
+    pub visible: Option<Visible>,
+    pub complexity: Option<ComplexityType>,
 }

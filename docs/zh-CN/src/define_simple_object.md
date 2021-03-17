@@ -63,3 +63,26 @@ pub struct YetAnotherObject {
 ```
 
 你可以将多个通用类型传递给`params（）`，并用逗号分隔。
+
+## 复杂字段
+
+有时GraphQL对象的大多数字段仅返回结构成员的值，但是少数字段需要计算。 通常我们使用`Object`宏来定义这样一个GraphQL对象。
+
+用`ComplexObject`宏可以更漂亮的完成这件事，我们可以使用`SimpleObject`宏来定义
+一些简单的字段，并使用`ComplexObject`宏来定义其他一些需要计算的字段。
+
+```rust
+#[derive(SimpleObject)]
+#[graphql(complex)] // 注意: 如果你希望ComplexObject宏生效，complex属性是必须的
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+
+#[ComplexObject]
+impl MyObj {
+    async fn c(&self) -> i32 {
+        self.a + self.b     
+    }
+}
+```
