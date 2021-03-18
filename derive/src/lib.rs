@@ -4,6 +4,7 @@
 extern crate proc_macro;
 
 mod args;
+mod complex_object;
 mod description;
 mod r#enum;
 mod input_object;
@@ -46,6 +47,21 @@ pub fn derive_simple_object(input: TokenStream) -> TokenStream {
             Err(err) => return TokenStream::from(err.write_errors()),
         };
     match simple_object::generate(&object_args) {
+        Ok(expanded) => expanded,
+        Err(err) => err.write_errors().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn ComplexObject(args: TokenStream, input: TokenStream) -> TokenStream {
+    let object_args =
+        match args::ComplexObject::from_list(&parse_macro_input!(args as AttributeArgs)) {
+            Ok(object_args) => object_args,
+            Err(err) => return TokenStream::from(err.write_errors()),
+        };
+    let mut item_impl = parse_macro_input!(input as ItemImpl);
+    match complex_object::generate(&object_args, &mut item_impl) {
         Ok(expanded) => expanded,
         Err(err) => err.write_errors().into(),
     }

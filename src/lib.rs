@@ -211,7 +211,8 @@ pub use async_graphql_value::{
     SerializerError, Variables,
 };
 pub use base::{
-    Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType, Type, UnionType,
+    ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType,
+    Type, UnionType,
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
@@ -472,6 +473,82 @@ pub use async_graphql_derive::Object;
 /// });
 /// ```
 pub use async_graphql_derive::SimpleObject;
+
+/// Define a complex GraphQL object for SimpleObject's complex field resolver.
+///
+/// *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html).*
+///
+/// Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
+/// fields are calculated. Usually we use the `Object` macro to define such a GraphQL object.
+///
+/// But this can be done more beautifully with the `ComplexObject` macro. We can use the `SimpleObject` macro to define
+/// some simple fields, and use the `ComplexObject` macro to define some other fields that need to be calculated.
+///
+/// # Macro parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | name          | Object name               | string   | Y        |
+/// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+/// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+///
+/// # Field parameters
+///
+/// | Attribute     | description               | Type     | Optional |
+/// |---------------|---------------------------|----------|----------|
+/// | skip          | Skip this field           | bool     | Y        |
+/// | name          | Field name                | string   | Y        |
+/// | deprecation   | Field deprecated          | bool     | Y        |
+/// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
+/// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
+/// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
+/// | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
+/// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+///
+/// # Examples
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// #[derive(SimpleObject)]
+/// #[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
+/// struct MyObj {
+///     a: i32,
+///     b: i32,
+/// }
+///
+/// #[ComplexObject]
+/// impl MyObj {
+///     async fn c(&self) -> i32 {
+///         self.a + self.b     
+///     }
+/// }
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     async fn obj(&self) -> MyObj {
+///         MyObj { a: 10, b: 20 }
+///     }
+/// }
+///
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
+///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let res = schema.execute("{ obj { a b c } }").await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "obj": {
+///             "a": 10,
+///             "b": 20,
+///             "c": 30,
+///         },
+///     }));
+/// });
+/// ```
+pub use async_graphql_derive::ComplexObject;
 
 /// Define a GraphQL enum
 ///

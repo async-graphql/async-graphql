@@ -151,6 +151,20 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let visible = visible_fn(&object_args.visible);
 
+    let mut concat_complex_fields = quote!();
+    let mut complex_resolver = quote!();
+
+    if object_args.complex {
+        concat_complex_fields = quote! {
+            fields.extend(<Self as #crate_name::ComplexObject>::fields(registry));
+        };
+        complex_resolver = quote! {
+            if let Some(value) = <Self as #crate_name::ComplexObject>::resolve_field(self, ctx).await? {
+                return Ok(Some(value));
+            }
+        };
+    }
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -171,6 +185,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();
                             #(#schema_fields)*
+                            #concat_complex_fields
                             fields
                         },
                         cache_control: #cache_control,
@@ -187,6 +202,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
                 async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                     #(#resolvers)*
+                    #complex_resolver
                     ::std::result::Result::Ok(::std::option::Option::None)
                 }
             }
