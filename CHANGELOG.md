@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2021-03-18
+
+- Add [ComplexObject](https://docs.rs/async-graphql/2.6.0/async_graphql/attr.ComplexObject.html) macro.
+
 ## [2.5.14] - 2021-03-14
 
 - Add `DataLoader::loader` method. [#441](https://github.com/async-graphql/async-graphql/issues/441)
