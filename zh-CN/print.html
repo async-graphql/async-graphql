@@ -279,6 +279,28 @@ pub struct YetAnotherObject {
 <span class="boring">}
 </span></code></pre></pre>
 <p>你可以将多个通用类型传递给<code>params（）</code>，并用逗号分隔。</p>
+<h2 id="复杂字段"><a class="header" href="#复杂字段">复杂字段</a></h2>
+<p>有时GraphQL对象的大多数字段仅返回结构成员的值，但是少数字段需要计算。 通常我们使用<code>Object</code>宏来定义这样一个GraphQL对象。</p>
+<p>用<code>ComplexObject</code>宏可以更漂亮的完成这件事，我们可以使用<code>SimpleObject</code>宏来定义
+一些简单的字段，并使用<code>ComplexObject</code>宏来定义其他一些需要计算的字段。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(complex)] // 注意: 如果你希望ComplexObject宏生效，complex属性是必须的
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+
+#[ComplexObject]
+impl MyObj {
+    async fn c(&amp;self) -&gt; i32 {
+        self.a + self.b     
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1 id="对象object"><a class="header" href="#对象object">对象(Object)</a></h1>
 <p>和简单对象不同，对象必须为所有的字段定义Resolver函数，Resolver函数定义在impl块中。</p>
 <p><strong>一个Resolver函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>

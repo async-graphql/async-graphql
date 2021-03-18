@@ -285,6 +285,29 @@ pub struct YetAnotherObject {
 <span class="boring">}
 </span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
+<h2 id="complex-resolvers"><a class="header" href="#complex-resolvers">Complex resolvers</a></h2>
+<p>Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
+fields are calculated. Usually we use the <code>Object</code> macro to define such a GraphQL object.</p>
+<p>But this can be done more beautifully with the <code>ComplexObject</code> macro. We can use the <code>SimpleObject</code> macro to define
+some simple fields, and use the <code>ComplexObject</code> macro to define some other fields that need to be calculated.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(SimpleObject)]
+#[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+
+#[ComplexObject]
+impl MyObj {
+    async fn c(&amp;self) -&gt; i32 {
+        self.a + self.b     
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
 <h1 id="object"><a class="header" href="#object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
