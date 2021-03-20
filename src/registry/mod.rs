@@ -341,6 +341,7 @@ pub struct Registry {
     pub subscription_type: Option<String>,
     pub disable_introspection: bool,
     pub enable_federation: bool,
+    pub federation_subscription: bool,
 }
 
 impl Registry {

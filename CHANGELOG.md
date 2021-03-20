@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2021-03-20
+
+- Add `SchemaBuilder::enable_subscription_in_federation` method.  [#449](https://github.com/async-graphql/async-graphql/issues/449)
+
 ## [2.6.1] - 2021-03-19
 
 Fix tracing extension doesn't work with async code. [#448](https://github.com/async-graphql/async-graphql/issues/448)
