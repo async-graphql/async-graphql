@@ -110,17 +110,17 @@ impl Extension for TracingExtension {
             "parse"
         );
 
-        root_span.with_subscriber(|(id, d)| d.enter(id));
+        enter_span(&root_span);
         self.root.replace(root_span);
 
-        parse_span.with_subscriber(|(id, d)| d.enter(id));
+        enter_span(&parse_span);
         self.parse.replace(parse_span);
     }
 
     fn parse_end(&mut self, _ctx: &ExtensionContext<'_>, _document: &ExecutableDocument) {
-        self.parse
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        if let Some(span) = self.parse.take() {
+            exit_span(span);
+        }
     }
 
     fn validation_start(&mut self, _ctx: &ExtensionContext<'_>) {
@@ -131,15 +131,15 @@ impl Extension for TracingExtension {
                 Level::INFO,
                 "validation"
             );
-            validation_span.with_subscriber(|(id, d)| d.enter(id));
+            enter_span(&validation_span);
             self.validation.replace(validation_span);
         }
     }
 
     fn validation_end(&mut self, _ctx: &ExtensionContext<'_>, _result: &ValidationResult) {
-        self.validation
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        if let Some(span) = self.validation.take() {
+            exit_span(span);
+        }
     }
 
     fn execution_start(&mut self, _ctx: &ExtensionContext<'_>) {
@@ -160,18 +160,17 @@ impl Extension for TracingExtension {
             )
         };
 
-        execute_span.with_subscriber(|(id, d)| d.enter(id));
+        enter_span(&execute_span);
         self.execute.replace(execute_span);
     }
 
     fn execution_end(&mut self, _ctx: &ExtensionContext<'_>) {
-        self.execute
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
-
-        self.root
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        if let Some(span) = self.execute.take() {
+            exit_span(span);
+        }
+        if let Some(span) = self.root.take() {
+            exit_span(span);
+        }
     }
 
     fn resolve_start(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
@@ -191,36 +190,46 @@ impl Extension for TracingExtension {
                 parent_type = %info.parent_type,
                 return_type = %info.return_type,
             );
-            span.with_subscriber(|(id, d)| d.enter(id));
+            enter_span(&span);
             self.fields.insert(info.resolve_id.current, span);
         }
     }
 
     fn resolve_end(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
         if let Some(span) = self.fields.remove(&info.resolve_id.current) {
-            span.with_subscriber(|(id, d)| d.exit(id));
+            exit_span(span);
         }
     }
 
     fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &ServerError) {
         tracing::error!(target: "async_graphql::graphql", error = %err.message);
 
-        for span in self.fields.values() {
-            span.with_subscriber(|(id, d)| d.exit(id));
+        for (_, span) in std::mem::take(&mut self.fields) {
+            exit_span(span);
         }
         self.fields.clear();
 
-        self.execute
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
-        self.validation
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
-        self.parse
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
-        self.root
-            .take()
-            .and_then(|span| span.with_subscriber(|(id, d)| d.exit(id)));
+        if let Some(span) = self.execute.take() {
+            exit_span(span);
+        }
+        if let Some(span) = self.validation.take() {
+            exit_span(span);
+        }
+        if let Some(span) = self.parse.take() {
+            exit_span(span);
+        }
+        if let Some(span) = self.root.take() {
+            exit_span(span);
+        }
     }
+}
+
+#[inline]
+fn enter_span(span: &Span) {
+    let _enter = span.enter();
+}
+
+#[inline]
+fn exit_span(span: Span) {
+    let _enter = span.enter();
 }
