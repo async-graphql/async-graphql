@@ -105,6 +105,14 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Make the Federation SDL include subscriptions.
+    ///
+    /// Note: Not included by default, in order to be compatible with Apollo Server.
+    pub fn enable_subscription_in_federation(mut self) -> Self {
+        self.registry.federation_subscription = true;
+        self
+    }
+
     /// Override the name of the specified type.
     pub fn override_description<T: Type>(mut self, desc: &'static str) -> Self {
         self.registry.set_description::<T>(desc);
@@ -251,6 +259,7 @@ where
             },
             disable_introspection: false,
             enable_federation: false,
+            federation_subscription: false,
         };
 
         registry.add_directive(MetaDirective {
