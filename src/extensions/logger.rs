@@ -7,7 +7,7 @@ use crate::parser::types::{ExecutableDocument, OperationType, Selection};
 use crate::{PathSegment, ServerError, Variables};
 
 /// Logger extension
-#[cfg_attr(docrs, doc(cfg(feature = "log")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "log")))]
 pub struct Logger;
 
 impl ExtensionFactory for Logger {

@@ -53,7 +53,7 @@ fn resolve_span_id(resolver_id: usize) -> usize {
 /// });
 /// ```
 #[derive(Default)]
-#[cfg_attr(docrs, doc(cfg(feature = "tracing")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "tracing")))]
 pub struct Tracing;
 
 impl ExtensionFactory for Tracing {
