@@ -40,7 +40,7 @@ impl UploadValue {
     }
 
     #[cfg(feature = "unblock")]
-    #[cfg_attr(docrs, doc(cfg(feature = "unblock")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "unblock")))]
     /// Convert to a `AsyncRead`.
     pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
         blocking::Unblock::new(self.content)

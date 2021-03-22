@@ -53,7 +53,7 @@ impl CacheStorage for LruCacheStorage {
 /// Apollo persisted queries extension.
 ///
 /// [Reference](https://www.apollographql.com/docs/react/api/link/persisted-queries/)
-#[cfg_attr(docrs, doc(cfg(feature = "apollo_persisted_queries")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "apollo_persisted_queries")))]
 pub struct ApolloPersistedQueries<T>(T);
 
 impl<T: CacheStorage> ApolloPersistedQueries<T> {
