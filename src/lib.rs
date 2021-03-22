@@ -54,22 +54,15 @@
 //! * Batch Queries
 //! * Apollo Persisted Queries
 //!
-//! # Crate features
+//! ## Crate features
 //!
-//! This crate offers the following features, all of which are activated by default:
-//!
-//! **I recommend that you always turn off all features and turn them on only
-//! when needed, which can significantly increase compilation speed.**
-//!
-//! ```toml
-//! async-graphql = { version = "*", default-features = false }
-//! ```
+//! This crate offers the following features, all of which are not activated by default:
 //!
 //! - `apollo_tracing`: Enable the [Apollo tracing extension](extensions/struct.ApolloTracing.html).
 //! - `apollo_persisted_queries`: Enable the [Apollo persisted queries extension](extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).
 //! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
 //! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
-//! - `multipart`: Support [sending files over HTTP multipart](http/fn.receive_body.html).
+//! - `opentelemetry`: Enable the [OpenTelemetry extension](extensions/struct.OpenTelemetry.html).
 //! - `unblock`: Support [asynchronous reader for Upload](types/struct.Upload.html)
 //! - `bson`: Integrate with the [`bson` crate](https://crates.io/crates/bson).
 //! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
@@ -164,7 +157,7 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![recursion_limit = "256"]
 #![forbid(unsafe_code)]
-#![cfg_attr(feature = "nightly", feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod base;
 mod error;
@@ -178,7 +171,7 @@ mod validation;
 
 pub mod context;
 #[cfg(feature = "dataloader")]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "dataloader")))]
+#[cfg_attr(docrs, doc(cfg(feature = "dataloader")))]
 pub mod dataloader;
 pub mod extensions;
 pub mod guard;
@@ -683,7 +676,7 @@ pub use async_graphql_derive::InputObject;
 /// | name          | Object name               | string   | Y        |
 /// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
-/// | field         | Fields of this Interface  | [InterfaceField] | N |
+/// | field         | Fields of this Interface  | InterfaceField | N |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
@@ -698,7 +691,7 @@ pub use async_graphql_derive::InputObject;
 /// | desc        | Field description         | string   | Y        |
 /// | deprecation | Field deprecated          | bool     | Y        |
 /// | deprecation | Field deprecation reason  | string   | Y        |
-/// | arg         | Field arguments           | [InterfaceFieldArgument]          | Y        |
+/// | arg         | Field arguments           | InterfaceFieldArgument          | Y        |
 /// | external    | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides    | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
 /// | requires    | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |

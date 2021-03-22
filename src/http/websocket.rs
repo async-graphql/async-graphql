@@ -25,13 +25,13 @@ pub enum WsMessage {
 }
 
 impl WsMessage {
-    /// Returns the contained [`Text`] value, consuming the `self` value.
+    /// Returns the contained [WsMessage::Text] value, consuming the `self` value.
     ///
     /// Because this function may panic, its use is generally discouraged.
     ///
     /// # Panics
     ///
-    /// Panics if the self value not equals [`Text`].
+    /// Panics if the self value not equals [WsMessage::Text].
     pub fn unwrap_text(self) -> String {
         match self {
             Self::Text(text) => text,
@@ -39,13 +39,13 @@ impl WsMessage {
         }
     }
 
-    /// Returns the contained [`Close`] value, consuming the `self` value.
+    /// Returns the contained [WsMessage::Close] value, consuming the `self` value.
     ///
     /// Because this function may panic, its use is generally discouraged.
     ///
     /// # Panics
     ///
-    /// Panics if the self value not equals [`Close`].
+    /// Panics if the self value not equals [WsMessage::Close].
     pub fn unwrap_close(self) -> (u16, String) {
         match self {
             Self::Close(code, msg) => (code, msg),

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use tracing::{span, Level, Span};
 
@@ -6,20 +6,14 @@ use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveIn
 use crate::parser::types::ExecutableDocument;
 use crate::{ServerError, ValidationResult, Variables};
 
-/// Tracing extension configuration for each request.
-#[derive(Default)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
-pub struct TracingConfig {
-    /// Use a span as the parent node of the entire query.
-    parent: Option<Span>,
-}
+const REQUEST_CTX: usize = 0;
+const PARSE_CTX: usize = 1;
+const VALIDATION_CTX: usize = 2;
+const EXECUTE_CTX: usize = 3;
 
-impl TracingConfig {
-    /// Use a span as the parent node of the entire query.
-    pub fn parent_span(mut self, span: Span) -> Self {
-        self.parent = Some(span);
-        self
-    }
+#[inline]
+fn resolve_span_id(resolver_id: usize) -> usize {
+    resolver_id + 10
 }
 
 /// Tracing extension
@@ -32,8 +26,8 @@ impl TracingConfig {
 ///
 /// ```no_run
 /// use async_graphql::*;
-/// use async_graphql::extensions::{Tracing, TracingConfig};
-/// use tracing::{span, Level};
+/// use async_graphql::extensions::Tracing;
+/// use tracing::{span, Level, Instrument};
 ///
 /// #[derive(SimpleObject)]
 /// struct Query {
@@ -44,20 +38,22 @@ impl TracingConfig {
 ///     extension(Tracing::default())
 ///     .finish();
 ///
-/// let root_span = span!(
-///     parent: None,
-///     Level::INFO,
-///     "span root"
-/// );
+/// tokio::runtime::Runtime::new().unwrap().block_on(async {
+///     schema.execute(Request::new("{ value }")).await;
+/// });
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
-///     let request = Request::new("{ value }")
-///         .data(TracingConfig::default().parent_span(root_span));
-///     schema.execute(request).await;
+/// // tracing in custom parent span
+/// tokio::runtime::Runtime::new().unwrap().block_on(async {
+///     let root_span = span!(
+///         parent: None,
+///         Level::INFO,
+///         "span root"
+///     );
+///     schema.execute(Request::new("{ value }")).instrument(root_span).await;
 /// });
 /// ```
 #[derive(Default)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
+#[cfg_attr(docrs, doc(cfg(feature = "tracing")))]
 pub struct Tracing;
 
 impl ExtensionFactory for Tracing {
@@ -68,121 +64,104 @@ impl ExtensionFactory for Tracing {
 
 #[derive(Default)]
 struct TracingExtension {
-    root: Option<Span>,
-    parse: Option<Span>,
-    validation: Option<Span>,
-    execute: Option<Span>,
-    fields: BTreeMap<usize, Span>,
+    spans: HashMap<usize, Span>,
+}
+
+impl TracingExtension {
+    fn enter_span(&mut self, id: usize, span: Span) -> &Span {
+        let _ = span.enter();
+        self.spans.insert(id, span);
+        self.spans.get(&id).unwrap()
+    }
+
+    fn exit_span(&mut self, id: usize) {
+        if let Some(span) = self.spans.remove(&id) {
+            let _ = span.enter();
+        }
+    }
 }
 
 impl Extension for TracingExtension {
     fn parse_start(
         &mut self,
-        ctx: &ExtensionContext<'_>,
+        _ctx: &ExtensionContext<'_>,
         query_source: &str,
-        _variables: &Variables,
+        variables: &Variables,
     ) {
-        let parent_span = ctx
-            .data_opt::<TracingConfig>()
-            .and_then(|cfg| cfg.parent.as_ref());
-
-        let root_span = match parent_span {
-            Some(parent) => span!(
-                target: "async_graphql::graphql",
-                parent: parent,
-                Level::INFO,
-                "query",
-                source = %query_source
-            ),
-            None => span!(
-                target: "async_graphql::graphql",
-                parent: None,
-                Level::INFO,
-                "query",
-                source = %query_source
-            ),
-        };
-
-        let parse_span = span!(
+        let request_span = span!(
             target: "async_graphql::graphql",
-            parent: &root_span,
             Level::INFO,
-            "parse"
+            "request",
         );
 
-        enter_span(&root_span);
-        self.root.replace(root_span);
+        let variables = serde_json::to_string(&variables).unwrap();
+        let parse_span = span!(
+            target: "async_graphql::graphql",
+            parent: &request_span,
+            Level::INFO,
+            "parse",
+            source = query_source,
+            variables = %variables,
+        );
 
-        enter_span(&parse_span);
-        self.parse.replace(parse_span);
+        self.enter_span(REQUEST_CTX, request_span);
+        self.enter_span(PARSE_CTX, parse_span);
     }
 
     fn parse_end(&mut self, _ctx: &ExtensionContext<'_>, _document: &ExecutableDocument) {
-        if let Some(span) = self.parse.take() {
-            exit_span(span);
-        }
+        self.exit_span(PARSE_CTX);
     }
 
     fn validation_start(&mut self, _ctx: &ExtensionContext<'_>) {
-        if let Some(parent) = &self.root {
-            let validation_span = span!(
+        if let Some(parent) = self.spans.get(&REQUEST_CTX) {
+            let span = span!(
                 target: "async_graphql::graphql",
                 parent: parent,
                 Level::INFO,
                 "validation"
             );
-            enter_span(&validation_span);
-            self.validation.replace(validation_span);
+            self.enter_span(VALIDATION_CTX, span);
         }
     }
 
     fn validation_end(&mut self, _ctx: &ExtensionContext<'_>, _result: &ValidationResult) {
-        if let Some(span) = self.validation.take() {
-            exit_span(span);
-        }
+        self.exit_span(VALIDATION_CTX);
     }
 
     fn execution_start(&mut self, _ctx: &ExtensionContext<'_>) {
-        let execute_span = if let Some(parent) = &self.root {
-            span!(
+        let span = match self.spans.get(&REQUEST_CTX) {
+            Some(parent) => span!(
                 target: "async_graphql::graphql",
                 parent: parent,
                 Level::INFO,
                 "execute"
-            )
-        } else {
-            // For every step of the subscription stream.
-            span!(
+            ),
+            None => span!(
                 target: "async_graphql::graphql",
                 parent: None,
                 Level::INFO,
                 "execute"
-            )
+            ),
         };
 
-        enter_span(&execute_span);
-        self.execute.replace(execute_span);
+        self.enter_span(EXECUTE_CTX, span);
     }
 
     fn execution_end(&mut self, _ctx: &ExtensionContext<'_>) {
-        if let Some(span) = self.execute.take() {
-            exit_span(span);
-        }
-        if let Some(span) = self.root.take() {
-            exit_span(span);
-        }
+        self.exit_span(EXECUTE_CTX);
+        self.exit_span(REQUEST_CTX);
     }
 
     fn resolve_start(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-        let parent_span = match info.resolve_id.parent {
-            Some(parent_id) if parent_id > 0 => self.fields.get(&parent_id),
-            _ => self.execute.as_ref(),
+        let parent = match info.resolve_id.parent {
+            Some(parent_id) if parent_id > 0 => self.spans.get(&resolve_span_id(parent_id)),
+            _ => self.spans.get(&EXECUTE_CTX),
         };
 
-        if let Some(parent_span) = parent_span {
+        if let Some(parent) = parent {
             let span = span!(
                 target: "async_graphql::graphql",
-                parent: parent_span,
+                parent: parent,
                 Level::INFO,
                 "field",
                 id = %info.resolve_id.current,
@@ -190,46 +169,15 @@ impl Extension for TracingExtension {
                 parent_type = %info.parent_type,
                 return_type = %info.return_type,
             );
-            enter_span(&span);
-            self.fields.insert(info.resolve_id.current, span);
+            self.enter_span(resolve_span_id(info.resolve_id.current), span);
         }
     }
 
     fn resolve_end(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-        if let Some(span) = self.fields.remove(&info.resolve_id.current) {
-            exit_span(span);
-        }
+        self.exit_span(resolve_span_id(info.resolve_id.current));
     }
 
     fn error(&mut self, _ctx: &ExtensionContext<'_>, err: &ServerError) {
         tracing::error!(target: "async_graphql::graphql", error = %err.message);
-
-        for (_, span) in std::mem::take(&mut self.fields) {
-            exit_span(span);
-        }
-        self.fields.clear();
-
-        if let Some(span) = self.execute.take() {
-            exit_span(span);
-        }
-        if let Some(span) = self.validation.take() {
-            exit_span(span);
-        }
-        if let Some(span) = self.parse.take() {
-            exit_span(span);
-        }
-        if let Some(span) = self.root.take() {
-            exit_span(span);
-        }
     }
-}
-
-#[inline]
-fn enter_span(span: &Span) {
-    let _enter = span.enter();
-}
-
-#[inline]
-fn exit_span(span: Span) {
-    let _enter = span.enter();
 }
