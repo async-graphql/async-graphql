@@ -29,7 +29,7 @@ const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 
 /// OpenTelemetry extension
 #[derive(Default)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "opentelemetry")))]
+#[cfg_attr(docrs, doc(cfg(feature = "opentelemetry")))]
 pub struct OpenTelemetry<T, U> {
     tracer: T,
     #[allow(dead_code)]

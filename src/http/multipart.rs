@@ -13,7 +13,6 @@ use crate::{BatchRequest, ParseRequestError, UploadValue};
 /// Options for `receive_multipart`.
 #[derive(Default, Clone, Copy)]
 #[non_exhaustive]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 pub struct MultipartOptions {
     /// The maximum file size.
     pub max_file_size: Option<usize>,

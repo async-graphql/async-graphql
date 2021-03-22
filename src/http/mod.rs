@@ -1,7 +1,6 @@
 //! A helper module that supports HTTP
 
 mod graphiql_source;
-#[cfg(feature = "multipart")]
 mod multipart;
 mod playground_source;
 mod websocket;
@@ -11,13 +10,10 @@ use futures_util::io::{AsyncRead, AsyncReadExt};
 use crate::{BatchRequest, ParseRequestError, Request};
 
 pub use graphiql_source::graphiql_source;
-#[cfg(feature = "multipart")]
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use websocket::{Protocols as WebSocketProtocols, WebSocket, WsMessage};
 
-#[cfg(feature = "multipart")]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
@@ -29,8 +25,6 @@ pub async fn receive_body(
         .into_single()
 }
 
-#[cfg(feature = "multipart")]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "multipart")))]
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_batch_body(
     content_type: Option<impl AsRef<str>>,

@@ -7,7 +7,7 @@ use crate::ID;
 /// Cursor type
 ///
 /// A custom scalar that serializes as a string.
-/// https://relay.dev/graphql/connections.htm#sec-Cursor
+/// <https://relay.dev/graphql/connections.htm#sec-Cursor>
 pub trait CursorType: Sized {
     /// Error type for `decode_cursor`.
     type Error: Display;

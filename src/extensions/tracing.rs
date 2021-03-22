@@ -8,7 +8,7 @@ use crate::{ServerError, ValidationResult, Variables};
 
 /// Tracing extension configuration for each request.
 #[derive(Default)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
+#[cfg_attr(docrs, doc(cfg(feature = "tracing")))]
 pub struct TracingConfig {
     /// Use a span as the parent node of the entire query.
     parent: Option<Span>,
@@ -67,7 +67,7 @@ fn resolve_span_id(resolver_id: usize) -> usize {
 /// });
 /// ```
 #[derive(Default)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "tracing")))]
+#[cfg_attr(docrs, doc(cfg(feature = "tracing")))]
 pub struct Tracing;
 
 impl ExtensionFactory for Tracing {

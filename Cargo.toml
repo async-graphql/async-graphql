@@ -13,30 +13,12 @@ categories = ["network-programming", "asynchronous"]
 readme = "README.md"
 
 [features]
-default = [
-	"apollo_persisted_queries",
-	"apollo_tracing",
-	"bson",
-	"chrono",
-	"chrono-tz",
-	"log",
-	"multipart",
-	"string_number",
-	"tracing",
-	"opentelemetry",
-	"unblock",
-	"url",
-	"uuid",
-	"dataloader"
-]
+default = []
 apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
-multipart = ["multer", "tempfile"]
 unblock = ["blocking"]
 string_number = ["num-traits"]
 dataloader = ["futures-timer", "futures-channel"]
-# Used for doc(cfg())
-nightly = []
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "=2.6.0" }
@@ -57,6 +39,8 @@ spin = "0.7.0"
 thiserror = "1.0.21"
 static_assertions = "1.1.0"
 http = "0.2.3"
+multer = "1.2.2"
+tempfile = "3.1.0"
 
 # Feature optional dependencies
 bson = { version = "1.0.0", optional = true }
@@ -71,10 +55,8 @@ uuid = { version = "0.8.1", optional = true, features = ["v4", "serde"] }
 # Non-feature optional dependencies
 blocking = { version = "1.0.0", optional = true }
 lru = { version = "0.6.0", optional = true }
-multer = { version = "1.2.2", optional = true }
 num-traits = { version = "0.2.12", optional = true }
 sha2 = { version = "0.9.1", optional = true }
-tempfile = { version = "3.1.0", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.8", optional = true }
 
@@ -83,7 +65,8 @@ tokio = { version = "1.3.0", features = ["macros", "rt", "sync", "time"] }
 futures-channel = "0.3.8"
 
 [package.metadata.docs.rs]
-features = ["nightly"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
 members = [

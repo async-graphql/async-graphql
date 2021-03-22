@@ -8,7 +8,7 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 /// A numeric value represented by a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
-#[cfg_attr(feature = "nightly", doc(cfg(feature = "string_number")))]
+#[cfg_attr(docrs, doc(cfg(feature = "string_number")))]
 pub struct StringNumber<T: Num + Display>(pub T);
 
 #[Scalar(internal)]

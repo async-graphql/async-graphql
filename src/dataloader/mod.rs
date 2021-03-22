@@ -124,7 +124,7 @@ pub trait Loader<K: Send + Hash + Eq + Clone + 'static>: Send + Sync + 'static {
 
 /// Data loader.
 ///
-/// Reference: https://github.com/facebook/dataloader
+/// Reference: <https://github.com/facebook/dataloader>
 pub struct DataLoader<T> {
     requests: Mutex<FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>>,
     delay: Duration,
