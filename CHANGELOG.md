@@ -10,10 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `extension::OpenTelemetry`.
 
-### - [Changed]
+### Removed
+
+- Remove `TracingConfig`, now Request span always takes the current span as the parent, so this option is no longer needed.
+- Remove `multipart` feature.
+
+### Changed
 
 - Now all features are not activated by default.
-- Remove `multipart` feature.
 
 ## [2.6.2] - 2021-03-20
 

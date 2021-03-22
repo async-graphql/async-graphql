@@ -28,7 +28,7 @@ pub use self::logger::Logger;
 #[cfg(feature = "opentelemetry")]
 pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
-pub use self::tracing::{Tracing, TracingConfig};
+pub use self::tracing::Tracing;
 
 pub(crate) type BoxExtension = Box<dyn Extension>;
 
