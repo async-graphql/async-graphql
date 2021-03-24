@@ -15,14 +15,14 @@ categories = ["network-programming", "asynchronous"]
 async-graphql = { path = "../..", version = "=2.6.4" }
 
 actix = "0.10.0"
-actix-http = "2.0.0"
-actix-web = { version = "3.1.0", default-features = false }
+actix-http = "2.2.0"
+actix-web = { version = "3.3.2", default-features = false }
 actix-web-actors = "3.0.0"
-async-channel = "1.5.1"
-futures-util = { version = "0.3.8", default-features = false }
-serde_json = "1.0.59"
+async-channel = "1.6.1"
+futures-util = { version = "0.3.13", default-features = false }
+serde_json = "1.0.64"
 serde_urlencoded = "0.7.0"
 
 [dev-dependencies]
-actix-rt = "1.1.1"
+actix-rt = "1.1.0"
 async-mutex = "1.4.0"

@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 async-graphql = { path = "../.." }
-lazy_static = "*"
+lazy_static = "1.4.0"
