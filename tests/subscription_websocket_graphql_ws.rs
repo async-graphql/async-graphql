@@ -430,3 +430,37 @@ pub async fn test_query_over_websocket() {
         serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
     );
 }
+
+#[tokio::test]
+pub async fn test_start_before_connection_init() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            999
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "query { value }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        stream.next().await.unwrap().unwrap_close(),
+        (1011, "The handshake is not completed.".to_string())
+    );
+}
