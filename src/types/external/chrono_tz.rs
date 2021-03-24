@@ -1,6 +1,6 @@
 use chrono_tz::Tz;
 
-use crate::{InputValueError, InputValueResult, Result, Scalar, ScalarType, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 #[Scalar(internal, name = "TimeZone")]
 impl ScalarType for Tz {
@@ -12,6 +12,6 @@ impl ScalarType for Tz {
     }
 
     fn to_value(&self) -> Value {
-        Value::String(Tz::name(self))
+        Value::String(self.name().to_owned())
     }
 }

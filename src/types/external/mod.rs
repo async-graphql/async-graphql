@@ -13,7 +13,7 @@ mod string;
 
 #[cfg(feature = "bson")]
 mod bson;
-#[cfg(feature = "chrono_tz")]
+#[cfg(feature = "chrono-tz")]
 mod chrono_tz;
 #[cfg(feature = "chrono")]
 mod datetime;
