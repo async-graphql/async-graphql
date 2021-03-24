@@ -101,7 +101,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
             } else {
                 let sha256_hash = format!("{:x}", Sha256::digest(request.query.as_bytes()));
 
-                if (persisted_query.sha256_hash != sha256_hash) {
+                if persisted_query.sha256_hash != sha256_hash {
                     Err(ServerError::new("provided sha does not match query"))
                 } else {
                     self.storage.set(sha256_hash, request.query.clone()).await;

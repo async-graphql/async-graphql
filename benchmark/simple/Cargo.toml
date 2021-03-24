@@ -1,9 +1,9 @@
 [package]
 name = "simple"
-version = "2.0.3"
+version = "2.6.5"
 authors = ["Ivan Plesskih <terma95@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 async-graphql = { path = "../.." }
-lazy_static = "*"
+lazy_static = "1.4.0"

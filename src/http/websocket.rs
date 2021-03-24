@@ -61,7 +61,7 @@ pin_project! {
     pub struct WebSocket<S, F, Query, Mutation, Subscription> {
         data_initializer: Option<F>,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
-        data: Arc<Data>,
+        data: Option<Arc<Data>>,
         schema: Schema<Query, Mutation, Subscription>,
         streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
         #[pin]
@@ -105,7 +105,7 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
         Self {
             data_initializer: Some(data_initializer),
             init_fut: None,
-            data: Arc::default(),
+            data: None,
             schema,
             streams: HashMap::new(),
             stream,
@@ -174,13 +174,17 @@ where
                         id,
                         payload: request,
                     } => {
-                        this.streams.insert(
-                            id,
-                            Box::pin(
-                                this.schema
-                                    .execute_stream_with_ctx_data(request, Arc::clone(this.data)),
-                            ),
-                        );
+                        if let Some(data) = this.data.clone() {
+                            this.streams.insert(
+                                id,
+                                Box::pin(this.schema.execute_stream_with_ctx_data(request, data)),
+                            );
+                        } else {
+                            return Poll::Ready(Some(WsMessage::Close(
+                                1011,
+                                "The handshake is not completed.".to_string(),
+                            )));
+                        }
                     }
                     ClientMessage::Stop { id } => {
                         if this.streams.remove(id).is_some() {
@@ -202,7 +206,7 @@ where
                 *this.init_fut = None;
                 return match res {
                     Ok(data) => {
-                        *this.data = Arc::new(data);
+                        *this.data = Some(Arc::new(data));
                         Poll::Ready(Some(WsMessage::Text(
                             serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
                         )))

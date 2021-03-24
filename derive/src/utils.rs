@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
-use proc_macro_crate::crate_name;
+use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::visit::Visit;
 use syn::{
@@ -38,7 +38,10 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
     if internal {
         quote! { crate }
     } else {
-        let name = crate_name("async-graphql").unwrap_or_else(|_| "async_graphql".to_owned());
+        let name = match crate_name("async-graphql") {
+            Ok(FoundCrate::Name(name)) => name,
+            Ok(FoundCrate::Itself) | Err(_) => "async_graphql".to_string(),
+        };
         TokenTree::from(Ident::new(&name, Span::call_site())).into()
     }
 }
