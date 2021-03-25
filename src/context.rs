@@ -243,6 +243,7 @@ pub struct QueryEnvInner {
     pub operation: Positioned<OperationDefinition>,
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub uploads: Vec<UploadValue>,
+    pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
     pub http_headers: spin::Mutex<HeaderMap<String>>,
 }
@@ -363,6 +364,7 @@ impl<'a, T> ContextBase<'a, T> {
             .ctx_data
             .0
             .get(&TypeId::of::<D>())
+            .or_else(|| self.query_env.session_data.0.get(&TypeId::of::<D>()))
             .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
     }
