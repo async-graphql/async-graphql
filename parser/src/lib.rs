@@ -5,6 +5,8 @@
 //! it into Rust types.
 #![warn(missing_docs)]
 #![allow(clippy::unnecessary_wraps)]
+#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::needless_question_mark)]
 #![forbid(unsafe_code)]
 
 use crate::types::OperationType;
