@@ -360,12 +360,8 @@ pub fn generate(
                                 resolve_id,
                                 &inc_resolve_id,
                             );
-                            let ctx_extension = #crate_name::extensions::ExtensionContext {
-                                schema_data: &schema_env.data,
-                                query_data: &query_env.ctx_data,
-                            };
 
-                            query_env.extensions.execution_start(&ctx_extension);
+                            query_env.extensions.execution_start();
 
                             #[allow(bare_trait_objects)]
                             let ri = #crate_name::extensions::ResolveInfo {
@@ -375,12 +371,10 @@ pub fn generate(
                                 return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                             };
 
-                            query_env.extensions.resolve_start(&ctx_extension, &ri);
-
+                            query_env.extensions.resolve_start(&ri);
                             let res = #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await;
-
-                            query_env.extensions.resolve_end(&ctx_extension, &ri);
-                            query_env.extensions.execution_end(&ctx_extension);
+                            query_env.extensions.resolve_end(&ri);
+                            query_env.extensions.execution_end();
 
                             res
                         }

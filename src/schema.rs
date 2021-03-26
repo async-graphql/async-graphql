@@ -8,7 +8,7 @@ use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
 use crate::context::{Data, QueryEnvInner, ResolveId};
-use crate::extensions::{ErrorLogger, ExtensionContext, ExtensionFactory, Extensions};
+use crate::extensions::{ErrorLogger, ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::parser::types::{DocumentOperations, OperationType};
@@ -359,57 +359,59 @@ where
         self.0.env.registry.names()
     }
 
+    fn create_extensions(&self, session_data: Arc<Data>) -> Extensions {
+        let extensions = Extensions::new(
+            self.0
+                .extensions
+                .iter()
+                .map(|factory| factory.create())
+                .collect::<Vec<_>>(),
+            self.env.clone(),
+            session_data,
+        );
+        extensions.start();
+        extensions
+    }
+
     async fn prepare_request(
         &self,
+        mut extensions: Extensions,
         request: Request,
-    ) -> Result<(QueryEnvInner, CacheControl), Vec<ServerError>> {
-        // create extension instances
-        let mut extensions: Extensions = self
-            .0
-            .extensions
-            .iter()
-            .map(|factory| factory.create())
-            .collect::<Vec<_>>()
-            .into();
-
+        session_data: Arc<Data>,
+    ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
         let mut request = request;
-        let data = std::mem::take(&mut request.data);
-        let ctx_extension = ExtensionContext {
-            schema_data: &self.env.data,
-            query_data: &data,
-        };
+        let query_data = Arc::new(std::mem::take(&mut request.data));
+        extensions.attach_query_data(query_data.clone());
+        let request = extensions.prepare_request(request).await?;
 
-        let request = extensions.prepare_request(&ctx_extension, request).await?;
-
-        extensions.parse_start(&ctx_extension, &request.query, &request.variables);
+        extensions.parse_start(&request.query, &request.variables);
         let document = parse_query(&request.query)
             .map_err(Into::<ServerError>::into)
-            .log_error(&ctx_extension, &extensions)?;
-        extensions.parse_end(&ctx_extension, &document);
+            .log_error(&extensions)?;
+        extensions.parse_end(&document);
 
         // check rules
-        extensions.validation_start(&ctx_extension);
+        extensions.validation_start();
         let validation_result = check_rules(
             &self.env.registry,
             &document,
             Some(&request.variables),
             self.validation_mode,
         )
-        .log_error(&ctx_extension, &extensions)?;
-        extensions.validation_end(&ctx_extension, &validation_result);
+        .log_error(&extensions)?;
+        extensions.validation_end(&validation_result);
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if validation_result.complexity > limit_complexity {
-                return Err(vec![ServerError::new("Query is too complex.")])
-                    .log_error(&ctx_extension, &extensions);
+                return Err(vec![ServerError::new("Query is too complex.")]).log_error(&extensions);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if validation_result.depth > limit_depth {
                 return Err(vec![ServerError::new("Query is nested too deep.")])
-                    .log_error(&ctx_extension, &extensions);
+                    .log_error(&extensions);
             }
         }
 
@@ -437,7 +439,7 @@ where
         let operation = match operation {
             Ok(operation) => operation,
             Err(e) => {
-                extensions.error(&ctx_extension, &e);
+                extensions.error(&e);
                 return Err(vec![e]);
             }
         };
@@ -448,10 +450,11 @@ where
             operation,
             fragments: document.fragments,
             uploads: request.uploads,
-            ctx_data: Arc::new(data),
+            session_data,
+            ctx_data: query_data,
             http_headers: Default::default(),
         };
-        Ok((env, validation_result.cache_control))
+        Ok((QueryEnv::new(env), validation_result.cache_control))
     }
 
     async fn execute_once(&self, env: QueryEnv) -> Response {
@@ -465,12 +468,7 @@ where
             schema_env: &self.env,
             query_env: &env,
         };
-        let ctx_extension = ExtensionContext {
-            schema_data: &self.env.data,
-            query_data: &env.ctx_data,
-        };
-
-        env.extensions.execution_start(&ctx_extension);
+        env.extensions.execution_start();
 
         let data = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
@@ -482,8 +480,8 @@ where
             }
         };
 
-        env.extensions.execution_end(&ctx_extension);
-        let extensions = env.extensions.result(&ctx_extension);
+        env.extensions.execution_end();
+        let extensions = env.extensions.result();
 
         match data {
             Ok(data) => Response::new(data),
@@ -496,11 +494,12 @@ where
     /// Execute a GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
-        match self.prepare_request(request).await {
-            Ok((env, cache_control)) => self
-                .execute_once(QueryEnv::new(env))
-                .await
-                .cache_control(cache_control),
+        let extensions = self.create_extensions(Default::default());
+        match self
+            .prepare_request(extensions, request, Default::default())
+            .await
+        {
+            Ok((env, cache_control)) => self.execute_once(env).await.cache_control(cache_control),
             Err(errors) => Response::from_errors(errors),
         }
     }
@@ -518,24 +517,25 @@ where
         }
     }
 
-    pub(crate) fn execute_stream_with_ctx_data(
+    /// Execute a GraphQL subscription with session data.
+    #[doc(hidden)]
+    pub fn execute_stream_with_session_data(
         &self,
         request: impl Into<Request> + Send,
-        ctx_data: Arc<Data>,
+        session_data: Arc<Data>,
     ) -> impl Stream<Item = Response> + Send {
         let schema = self.clone();
+        let request = request.into();
+        let extensions = self.create_extensions(session_data.clone());
 
         async_stream::stream! {
-            let request = request.into();
-            let (mut env, cache_control) = match schema.prepare_request(request).await {
+            let (env, cache_control) = match schema.prepare_request(extensions, request, session_data).await {
                 Ok(res) => res,
                 Err(errors) => {
                     yield Response::from_errors(errors);
                     return;
                 }
             };
-            env.ctx_data = ctx_data;
-            let env = QueryEnv::new(env);
 
             if env.operation.node.ty != OperationType::Subscription {
                 yield schema
@@ -553,26 +553,18 @@ where
                 ResolveId::root(),
                 &resolve_id,
             );
-            let ctx_extension = ExtensionContext {
-                schema_data: &schema.env.data,
-                query_data: &env.ctx_data,
-            };
-
-            env.extensions.execution_start(&ctx_extension);
 
             let mut streams = Vec::new();
             if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
-                env.extensions.execution_end(&ctx_extension);
+                env.extensions.execution_end();
                 yield Response::from_errors(vec![e]);
                 return;
             }
 
-            env.extensions.execution_end(&ctx_extension);
-
             let mut stream = stream::select_all(streams);
             while let Some(data) = stream.next().await {
                 let is_err = data.is_err();
-                let extensions = env.extensions.result(&ctx_extension);
+                let extensions = env.extensions.result();
                 yield match data {
                     Ok((name, value)) => {
                         let mut map = BTreeMap::new();
@@ -593,8 +585,6 @@ where
         &self,
         request: impl Into<Request>,
     ) -> impl Stream<Item = Response> + Send {
-        let mut request = request.into();
-        let ctx_data = std::mem::take(&mut request.data);
-        self.execute_stream_with_ctx_data(request, Arc::new(ctx_data))
+        self.execute_stream_with_session_data(request.into(), Default::default())
     }
 }

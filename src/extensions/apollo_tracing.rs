@@ -6,7 +6,7 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
 use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::{value, Value, Variables};
+use crate::{value, Value};
 
 struct PendingResolve {
     path: Vec<String>,
@@ -79,13 +79,10 @@ impl Extension for ApolloTracingExtension {
         Some("tracing")
     }
 
-    fn parse_start(
-        &mut self,
-        _ctx: &ExtensionContext<'_>,
-        _query_source: &str,
-        _variables: &Variables,
-    ) {
+    fn execution_start(&mut self, _ctx: &ExtensionContext<'_>) {
         self.start_time = Utc::now();
+        self.pending_resolves.clear();
+        self.resolves.clear();
     }
 
     fn execution_end(&mut self, _ctx: &ExtensionContext<'_>) {

@@ -177,7 +177,9 @@ where
                         if let Some(data) = this.data.clone() {
                             this.streams.insert(
                                 id,
-                                Box::pin(this.schema.execute_stream_with_ctx_data(request, data)),
+                                Box::pin(
+                                    this.schema.execute_stream_with_session_data(request, data),
+                                ),
                             );
                         } else {
                             return Poll::Ready(Some(WsMessage::Close(
