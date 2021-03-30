@@ -1220,3 +1220,55 @@ pub async fn test_introspection_subscription() {
 //
 //     assert_eq!(res, res_json)
 // }
+
+#[tokio::test]
+pub async fn test_disable_introspection() {
+    #[derive(SimpleObject)]
+    struct Query {
+        value: i32,
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .disable_introspection()
+        .finish();
+    assert_eq!(
+        schema
+            .execute("{ __type(name: \"Query\") { name } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": null })
+    );
+
+    assert_eq!(
+        schema
+            .execute(Request::new("{ __type(name: \"Query\") { name } }").disable_introspection())
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": null })
+    );
+
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+    assert_eq!(
+        schema
+            .execute("{ __type(name: \"Query\") { name } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": { "name": "Query" } })
+    );
+
+    assert_eq!(
+        schema
+            .execute(Request::new("{ __type(name: \"Query\") { name } }").disable_introspection())
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": null })
+    );
+}

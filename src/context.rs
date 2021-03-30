@@ -246,6 +246,7 @@ pub struct QueryEnvInner {
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
     pub http_headers: spin::Mutex<HeaderMap<String>>,
+    pub disable_introspection: bool,
 }
 
 #[doc(hidden)]

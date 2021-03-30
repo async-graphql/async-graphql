@@ -39,6 +39,10 @@ pub struct Request {
     /// The extensions config of the request.
     #[serde(default)]
     pub extensions: HashMap<String, Value>,
+
+    /// Disable introspection queries for this request.
+    #[serde(skip)]
+    pub disable_introspection: bool,
 }
 
 impl Request {
@@ -51,6 +55,7 @@ impl Request {
             uploads: Vec::default(),
             data: Data::default(),
             extensions: Default::default(),
+            disable_introspection: false,
         }
     }
 
@@ -70,6 +75,12 @@ impl Request {
     /// Insert some data for this request.
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
+        self
+    }
+
+    /// Disable introspection queries for this request.
+    pub fn disable_introspection(mut self) -> Self {
+        self.disable_introspection = true;
         self
     }
 
