@@ -453,6 +453,7 @@ where
             session_data,
             ctx_data: query_data,
             http_headers: Default::default(),
+            disable_introspection: request.disable_introspection,
         };
         Ok((QueryEnv::new(env), validation_result.cache_control))
     }

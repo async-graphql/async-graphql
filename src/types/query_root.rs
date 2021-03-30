@@ -91,7 +91,7 @@ impl<T: Type> Type for QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: ObjectType> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if !ctx.schema_env.registry.disable_introspection {
+        if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
             if ctx.item.node.name.node == "__schema" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                 return OutputType::resolve(
