@@ -3,13 +3,22 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::Error;
 
-use crate::args;
-use crate::utils::{get_crate_name, GeneratorResult};
+use crate::args::{self, NewTypeName, RenameTarget};
+use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(newtype_args.internal);
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();
+    let gql_typename = match &newtype_args.name {
+        NewTypeName::UseNewName(name) => Some(name.clone()),
+        NewTypeName::UseRustName => Some(RenameTarget::Type.rename(ident.to_string())),
+        NewTypeName::UseOriginalName => None,
+    };
+    let desc = get_rustdoc(&newtype_args.attrs)?
+        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .unwrap_or_else(|| quote! {::std::option::Option::None});
+    let visible = visible_fn(&newtype_args.visible);
 
     let fields = match &newtype_args.data {
         Data::Struct(e) => e,
@@ -24,6 +33,22 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         return Err(Error::new_spanned(ident, "Invalid type.").into());
     }
     let inner_ty = &fields.fields[0];
+    let type_name = match &gql_typename {
+        Some(name) => quote! { ::std::borrow::Cow::Borrowed(#name) },
+        None => quote! { <#inner_ty as #crate_name::Type>::type_name() },
+    };
+    let create_type_info = if let Some(name) = &gql_typename {
+        quote! {
+            registry.create_type::<#ident, _>(|_| #crate_name::registry::MetaType::Scalar {
+                name: ::std::borrow::ToOwned::to_owned(#name),
+                description: #desc,
+                is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
+                visible: #visible,
+            })
+        }
+    } else {
+        quote! { <#inner_ty as #crate_name::Type>::create_type_info(registry) }
+    };
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
@@ -37,14 +62,26 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             }
         }
 
+        impl #impl_generics ::std::convert::From<#inner_ty> for #ident #ty_generics #where_clause {
+            fn from(value: #inner_ty) -> Self {
+                Self(value)
+            }
+        }
+
+        impl #impl_generics ::std::convert::Into<#inner_ty> for #ident #ty_generics #where_clause {
+            fn into(self) -> #inner_ty {
+                self.0
+            }
+        }
+
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                <#inner_ty as #crate_name::Type>::type_name()
+                #type_name
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                <#inner_ty as #crate_name::Type>::create_type_info(registry)
+                #create_type_info
             }
         }
 

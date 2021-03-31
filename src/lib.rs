@@ -952,12 +952,83 @@ pub use async_graphql_derive::Scalar;
 
 /// Define a NewType Scalar
 ///
+/// It also implements `From<InnerType>` and `Into<InnerType>`.
+///
+/// # Macro parameters
+///
+/// | Attribute   | description               | Type     | Optional |
+/// |-------------|---------------------------|----------|----------|
+/// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | string   | Y      |
+/// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | bool   | Y        |
+/// | visible(Only valid for new scalars.)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible(Only valid for new scalars.)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+///
 /// # Examples
+///
+/// ## Use the original scalar name
 ///
 /// ```rust
 /// use async_graphql::*;
 ///
 /// #[derive(NewType)]
+/// struct Weight(f64);
+///
+/// struct QueryRoot;
+///
+/// #[Object]
+/// impl QueryRoot {
+///     async fn value(&self) -> Weight {
+///         Weight(1.234)
+///     }
+/// }
+///
+/// // Test conversion
+/// let weight: Weight = 10f64.into();
+/// let weight_f64: f64 = weight.into();
+///
+/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
+///     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).data("hello".to_string()).finish();
+///
+///     let res = schema.execute("{ value }").await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "value": 1.234,
+///     }));
+///
+///     let res = schema.execute(r#"
+///     {
+///         __type(name: "QueryRoot") {
+///             fields {
+///                 name type {
+///                     kind
+///                     ofType { name }
+///                 }
+///             }
+///         }
+///     }"#).await.into_result().unwrap().data;
+///     assert_eq!(res, value!({
+///         "__type": {
+///             "fields": [{
+///                 "name": "value",
+///                 "type": {
+///                     "kind": "NON_NULL",
+///                     "ofType": {
+///                         "name": "Float"
+///                     }
+///                 }
+///             }]
+///         }
+///     }));
+/// });
+/// ```
+///
+/// ## Define a new scalar
+///
+/// ```rust
+/// use async_graphql::*;
+///
+/// /// Widget NewType
+/// #[derive(NewType)]
+/// #[graphql(name)] // or: #[graphql(name = true)], #[graphql(name = "Weight")]
 /// struct Weight(f64);
 ///
 /// struct QueryRoot;
@@ -995,12 +1066,19 @@ pub use async_graphql_derive::Scalar;
 ///                 "type": {
 ///                     "kind": "NON_NULL",
 ///                     "ofType": {
-///                         "name": "Float"
+///                         "name": "Weight"
 ///                     }
 ///                 }
 ///             }]
 ///         }
 ///     }));
+///
+///     assert_eq!(schema.execute(r#"{ __type(name: "Weight") { name description } }"#).
+///         await.into_result().unwrap().data, value!({
+///             "__type": {
+///                 "name": "Weight", "description": "Widget NewType"
+///             }
+///         }));
 /// });
 /// ```
 pub use async_graphql_derive::NewType;

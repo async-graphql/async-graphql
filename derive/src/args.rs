@@ -2,6 +2,7 @@ use darling::ast::{Data, Fields};
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
+use std::prelude::v1::Result::Err;
 use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
 };
@@ -577,14 +578,51 @@ pub struct Description {
     pub internal: bool,
 }
 
+#[derive(Debug)]
+pub enum NewTypeName {
+    UseNewName(String),
+    UseRustName,
+    UseOriginalName,
+}
+
+impl Default for NewTypeName {
+    fn default() -> Self {
+        Self::UseOriginalName
+    }
+}
+
+impl FromMeta for NewTypeName {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self::UseRustName)
+    }
+
+    fn from_string(value: &str) -> darling::Result<Self> {
+        Ok(Self::UseNewName(value.to_string()))
+    }
+
+    fn from_bool(value: bool) -> darling::Result<Self> {
+        if value {
+            Ok(Self::UseRustName)
+        } else {
+            Ok(Self::UseOriginalName)
+        }
+    }
+}
+
 #[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
 pub struct NewType {
     pub ident: Ident,
     pub generics: Generics,
+    pub attrs: Vec<Attribute>,
     pub data: Data<Ignored, syn::Type>,
 
     #[darling(default)]
     pub internal: bool,
+    #[darling(default)]
+    pub name: NewTypeName,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
