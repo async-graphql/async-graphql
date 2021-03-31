@@ -175,8 +175,8 @@ pub fn derive_merged_subscription(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(Description)]
-pub fn derive_merged_description(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Description, attributes(graphql))]
+pub fn derive_description(input: TokenStream) -> TokenStream {
     let desc_args =
         match args::Description::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
             Ok(desc_args) => desc_args,
@@ -188,7 +188,7 @@ pub fn derive_merged_description(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(NewType)]
+#[proc_macro_derive(NewType, attributes(graphql))]
 pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let newtype_args =
         match args::NewType::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
