@@ -119,12 +119,6 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Override the name of the specified type.
-    pub fn override_name<T: Type>(mut self, new_name: impl Into<String>) -> Self {
-        self.registry.set_name::<T>(new_name.into());
-        self
-    }
-
     /// Build schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
