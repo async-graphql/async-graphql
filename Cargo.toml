@@ -18,7 +18,7 @@ apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
 unblock = ["blocking"]
 string_number = ["num-traits"]
-dataloader = ["futures-timer", "futures-channel"]
+dataloader = ["futures-timer", "futures-channel", "lru"]
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "=2.7.2" }
