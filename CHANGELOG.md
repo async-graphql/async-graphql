@@ -6,6 +6,11 @@ nd this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Add cache support for DataLoader. [#455](https://github.com/async-graphql/async-graphql/issues/455)
+- Prevent Warp WS Close, Ping, and Pong messages from being parsed as GraphQL [#459](https://github.com/async-graphql/async-graphql/pull/459)
+
+## [2.7.2]
+
 ## Removed
 
 - Remove `SchemaBuilder::override_name` method. [#437](https://github.com/async-graphql/async-graphql/issues/437)
