@@ -119,9 +119,10 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         variables: &Variables,
     ) {
         if let Some(parent_cx) = self.contexts.get(&REQUEST_CTX).cloned() {
-            let mut attributes = Vec::with_capacity(2);
-            attributes.push(KEY_SOURCE.string(query_source.to_string()));
-            attributes.push(KEY_VARIABLES.string(serde_json::to_string(variables).unwrap()));
+            let attributes = vec![
+                KEY_SOURCE.string(query_source.to_string()),
+                KEY_VARIABLES.string(serde_json::to_string(variables).unwrap()),
+            ];
             let parse_span = self
                 .tracer
                 .span_builder("parse")
@@ -189,10 +190,11 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         .cloned();
 
         if let Some(parent_cx) = parent_cx {
-            let mut attributes = Vec::with_capacity(3);
-            attributes.push(KEY_RESOLVE_ID.i64(info.resolve_id.current as i64));
-            attributes.push(KEY_PARENT_TYPE.string(info.parent_type.to_string()));
-            attributes.push(KEY_RETURN_TYPE.string(info.return_type.to_string()));
+            let attributes = vec![
+                KEY_RESOLVE_ID.i64(info.resolve_id.current as i64),
+                KEY_PARENT_TYPE.string(info.parent_type.to_string()),
+                KEY_RETURN_TYPE.string(info.return_type.to_string()),
+            ];
             let span = self
                 .tracer
                 .span_builder(&info.path_node.to_string())

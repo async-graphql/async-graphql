@@ -85,6 +85,8 @@ struct Requests<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
     cache_storage: Box<dyn CacheStorage<Key = K, Value = T::Value>>,
 }
 
+type KeysAndSender<K, T> = (HashSet<K>, Vec<(HashSet<K>, ResSender<K, T>)>);
+
 impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> {
     fn new<C: CacheFactory>(cache_factory: &C) -> Self {
         Self {
@@ -94,7 +96,7 @@ impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> 
         }
     }
 
-    fn take(&mut self) -> (HashSet<K>, Vec<(HashSet<K>, ResSender<K, T>)>) {
+    fn take(&mut self) -> KeysAndSender<K, T> {
         (
             std::mem::take(&mut self.keys),
             std::mem::take(&mut self.pending),

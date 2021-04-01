@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
-    from_value, to_value, ContextSelectionSet, InputValueResult, OutputType, Positioned, Scalar,
-    ScalarType, ServerResult, Type, Value,
+    from_value, to_value, ContextSelectionSet, InputValueError, InputValueResult, OutputType,
+    Positioned, Scalar, ScalarType, ServerResult, Type, Value,
 };
 
 /// A scalar that can represent any JSON value.
@@ -97,6 +97,20 @@ impl<T: Serialize + Send + Sync> OutputType for OutputJson<T> {
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
         Ok(to_value(&self.0).ok().unwrap_or_default())
+    }
+}
+
+/// A scalar that can represent any JSON value.
+#[Scalar(internal, name = "JSON")]
+impl ScalarType for serde_json::Value {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        value
+            .into_json()
+            .map_err(|_| InputValueError::custom("Invalid JSON"))
+    }
+
+    fn to_value(&self) -> Value {
+        Value::from_json(self.clone()).unwrap_or_default()
     }
 }
 
