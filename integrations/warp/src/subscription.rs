@@ -100,9 +100,7 @@ where
                         ws_receiver
                             .take_while(|msg| future::ready(msg.is_ok()))
                             .map(Result::unwrap)
-                            .filter(|msg | {
-                                future::ready(msg.is_text() || msg.is_binary())
-                            })
+                            .filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
                             .map(ws::Message::into_bytes),
                         initializer,
                         protocol,
