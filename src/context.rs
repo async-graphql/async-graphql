@@ -661,10 +661,11 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// });
     ///
     /// ```
-    pub fn field(&self) -> SelectionField<'a> {
+    pub fn field(&self) -> SelectionField {
         SelectionField {
             fragments: &self.query_env.fragments,
             field: &self.item.node,
+            context: self,
         }
     }
 }
@@ -674,12 +675,36 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
 pub struct SelectionField<'a> {
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     field: &'a Field,
+    context: &'a Context<'a>,
 }
 
 impl<'a> SelectionField<'a> {
     /// Get the name of this field.
+    #[inline]
     pub fn name(&self) -> &'a str {
         self.field.name.node.as_str()
+    }
+
+    /// Get the alias of this field.
+    #[inline]
+    pub fn alias(&self) -> Option<&'a str> {
+        self.field.alias.as_ref().map(|alias| alias.node.as_str())
+    }
+
+    /// Get the arguments of this field.
+    pub fn arguments(&self) -> ServerResult<Vec<(Name, Value)>> {
+        let mut arguments = Vec::with_capacity(self.field.arguments.len());
+        for (name, value) in &self.field.arguments {
+            let pos = name.pos;
+            arguments.push((
+                name.node.clone(),
+                value
+                    .clone()
+                    .node
+                    .into_const_with(|name| self.context.var_value(&name, pos))?,
+            ));
+        }
+        Ok(arguments)
     }
 
     /// Get all subfields of the current selection set.
@@ -687,20 +712,21 @@ impl<'a> SelectionField<'a> {
         SelectionFieldsIter {
             fragments: self.fragments,
             iter: vec![self.field.selection_set.node.items.iter()],
+            context: self.context,
         }
-    }
-}
-
-struct DebugSelectionSet<'a>(Vec<SelectionField<'a>>);
-
-impl<'a> Debug for DebugSelectionSet<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.0.clone()).finish()
     }
 }
 
 impl<'a> Debug for SelectionField<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        struct DebugSelectionSet<'a>(Vec<SelectionField<'a>>);
+
+        impl<'a> Debug for DebugSelectionSet<'a> {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                f.debug_list().entries(&self.0).finish()
+            }
+        }
+
         f.debug_struct(self.name())
             .field("name", &self.name())
             .field(
@@ -714,6 +740,7 @@ impl<'a> Debug for SelectionField<'a> {
 struct SelectionFieldsIter<'a> {
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     iter: Vec<std::slice::Iter<'a, Positioned<Selection>>>,
+    context: &'a Context<'a>,
 }
 
 impl<'a> Iterator for SelectionFieldsIter<'a> {
@@ -728,6 +755,7 @@ impl<'a> Iterator for SelectionFieldsIter<'a> {
                         return Some(SelectionField {
                             fragments: self.fragments,
                             field: &field.node,
+                            context: self.context,
                         });
                     }
                     Selection::FragmentSpread(fragment_spread) => {

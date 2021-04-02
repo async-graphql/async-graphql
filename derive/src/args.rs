@@ -2,7 +2,6 @@ use darling::ast::{Data, Fields};
 use darling::util::Ignored;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
-use std::prelude::v1::Result::Err;
 use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
 };
