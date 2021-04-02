@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 nd this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.7.3] 2021-04-02
  
 ## Added 
 
@@ -17,7 +17,7 @@ nd this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 - Prevent Warp WS Close, Ping, and Pong messages from being parsed as GraphQL [#459](https://github.com/async-graphql/async-graphql/pull/459)
 - Fix Schema::sdl() does not include subscription definitions. [#464](https://github.com/async-graphql/async-graphql/issues/464)
 
-## [2.7.2]
+## [2.7.2] 2021-04-01
 
 ## Removed
 
@@ -28,11 +28,11 @@ nd this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 - Add `name` and `visible` attributes for `Newtype` macro for define a new scalar. [#437](https://github.com/async-graphql/async-graphql/issues/437)
 - `NewType` macro now also implements `From<InnerType>` and `Into<InnerType>`.
 
-## [2.7.1]
+## [2.7.1] 2021-03-31
 
 - Add `Request::disable_introspection` method. [#456](https://github.com/async-graphql/async-graphql/issues/456)
 
-## [2.7.0]
+## [2.7.0] 2021-03-27
 
 ## Fixed
 
