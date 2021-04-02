@@ -10,6 +10,7 @@ nd this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 - Add cache support for DataLoader. [#455](https://github.com/async-graphql/async-graphql/issues/455)
 - Implements `ScalarType` for `serde_json::Value`.
+- Add `SelectionField::alias` and `SelectionField::arguments` methods.
 
 ## Fixed  
 
