@@ -1,6 +1,7 @@
 use std::borrow::Cow;
+use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
 
 /// Factory for creating cache storage.
@@ -80,24 +81,40 @@ where
 }
 
 /// [std::collections::HashMap] cache.
-pub struct HashMapCache;
+pub struct HashMapCache<S = RandomState> {
+    _mark: PhantomData<S>,
+}
 
-impl CacheFactory for HashMapCache {
+impl<S: Send + Sync + BuildHasher + Default + 'static> HashMapCache<S> {
+    /// Use specified `S: BuildHasher` to create a `HashMap` cache.
+    pub fn new() -> Self {
+        Self { _mark: PhantomData }
+    }
+}
+
+impl Default for HashMapCache<RandomState> {
+    fn default() -> Self {
+        Self { _mark: PhantomData }
+    }
+}
+
+impl<S: Send + Sync + BuildHasher + Default + 'static> CacheFactory for HashMapCache<S> {
     fn create<K, V>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>
     where
         K: Send + Sync + Clone + Eq + Hash + 'static,
         V: Send + Sync + Clone + 'static,
     {
-        Box::new(HashMapCacheImpl(Default::default()))
+        Box::new(HashMapCacheImpl::<K, V, S>(HashMap::<K, V, S>::default()))
     }
 }
 
-struct HashMapCacheImpl<K, V>(HashMap<K, V>);
+struct HashMapCacheImpl<K, V, S>(HashMap<K, V, S>);
 
-impl<K, V> CacheStorage for HashMapCacheImpl<K, V>
+impl<K, V, S> CacheStorage for HashMapCacheImpl<K, V, S>
 where
     K: Send + Sync + Clone + Eq + Hash + 'static,
     V: Send + Sync + Clone + 'static,
+    S: Send + Sync + BuildHasher + 'static,
 {
     type Key = K;
     type Value = V;
