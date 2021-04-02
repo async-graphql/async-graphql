@@ -66,10 +66,9 @@ use std::hash::Hash;
 use std::sync::Mutex;
 use std::time::Duration;
 
+use fnv::FnvHashMap;
 use futures_channel::oneshot;
 use futures_timer::Delay;
-
-use fnv::FnvHashMap;
 
 pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
 
@@ -391,6 +390,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fnv::FnvBuildHasher;
     use std::sync::Arc;
 
     struct MyLoader;
@@ -470,13 +470,44 @@ mod tests {
 
     #[tokio::test]
     async fn test_dataloader_load_empty() {
-        let loader = DataLoader::with_cache(MyLoader, HashMapCache);
+        let loader = DataLoader::new(MyLoader);
         assert!(loader.load_many::<i32, _>(vec![]).await.unwrap().is_empty());
     }
 
     #[tokio::test]
     async fn test_dataloader_with_cache() {
-        let loader = DataLoader::with_cache(MyLoader, HashMapCache);
+        let loader = DataLoader::with_cache(MyLoader, HashMapCache::default());
+        loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
+
+        // All from the cache
+        assert_eq!(
+            loader.load_many(vec![1, 2, 3]).await.unwrap(),
+            vec![(1, 10), (2, 20), (3, 30)].into_iter().collect()
+        );
+
+        // Part from the cache
+        assert_eq!(
+            loader.load_many(vec![1, 5, 6]).await.unwrap(),
+            vec![(1, 10), (5, 5), (6, 6)].into_iter().collect()
+        );
+
+        // All from the loader
+        assert_eq!(
+            loader.load_many(vec![8, 9, 10]).await.unwrap(),
+            vec![(8, 8), (9, 9), (10, 10)].into_iter().collect()
+        );
+
+        // Clear cache
+        loader.clear::<i32>();
+        assert_eq!(
+            loader.load_many(vec![1, 2, 3]).await.unwrap(),
+            vec![(1, 1), (2, 2), (3, 3)].into_iter().collect()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_dataloader_with_cache_hashmap_fnv() {
+        let loader = DataLoader::with_cache(MyLoader, HashMapCache::<FnvBuildHasher>::new());
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
         // All from the cache
