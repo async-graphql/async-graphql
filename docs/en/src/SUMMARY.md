@@ -16,6 +16,7 @@
 - [Schema](define_schema.md)
     - [Query and Mutation](query_and_mutation.md)
     - [Subscription](subscription.md)
+    - [SDL Export](sdl_export.md)
 - [Utilities](utilities.md)
     - [Field guard](field_guard.md)
     - [Input value validators](input_value_validators.md)
