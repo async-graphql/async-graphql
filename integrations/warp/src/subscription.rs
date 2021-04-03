@@ -72,7 +72,25 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
     F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static, { graphql_subscription_with_data_and_callbacks(schema, initializer, ||{}, ||{}) }
+
+/// GraphQL subscription filter
+///
+/// Specifies that a function converts the init payload to data.
+pub fn graphql_subscription_with_data_and_callbacks<Query, Mutation, Subscription, F, R, FO, FC>(
+    schema: Schema<Query, Mutation, Subscription>,
+    initializer: F,
+    open_callback: FO,
+    close_callback: FC,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
+    FO: FnOnce() + Clone + Send + 'static,
+    FC: FnOnce() + Clone + Send + 'static,
 {
     use async_graphql::http::WebSocketProtocols;
     use std::str::FromStr;
@@ -82,6 +100,8 @@ where
         .map(move |ws: ws::Ws, protocols: Option<String>| {
             let schema = schema.clone();
             let initializer = initializer.clone();
+            let open_callback = open_callback.clone();
+            let close_callback = close_callback.clone();
 
             let protocol = protocols
                 .and_then(|protocols| {
@@ -93,6 +113,8 @@ where
 
             let reply = ws.on_upgrade(move |websocket| {
                 let (ws_sender, ws_receiver) = websocket.split();
+
+                open_callback();
 
                 async move {
                     let _ = async_graphql::http::WebSocket::with_data(
@@ -112,6 +134,8 @@ where
                     .map(Ok)
                     .forward(ws_sender)
                     .await;
+
+                    close_callback();
                 }
             });
 
