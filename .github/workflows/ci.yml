@@ -9,8 +9,15 @@ on:
       - master
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  tests:
+    name: Run tests - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: stable, os: ubuntu-latest }
+          - { rust: 1.49.0, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -18,7 +25,7 @@ jobs:
           submodules: true
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
           components: clippy, rustfmt
       - name: Check format
@@ -34,7 +41,24 @@ jobs:
       - name: Clean
         run: cargo clean
 
-      # examples
+  examples:
+    name: Build examples - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: stable, os: ubuntu-latest }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy, rustfmt
       - name: Check examples format
         run: cargo fmt --all -- --check
         working-directory: ./examples
@@ -48,10 +72,22 @@ jobs:
         run: cargo clean
         working-directory: ./examples
 
-      # build on nightly
+  build-nightly:
+    name: Build nightly - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: nightly, os: ubuntu-latest }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: ${{ matrix.rust }}
           override: true
           components: clippy, rustfmt
       - name: Build on nightly with all features
