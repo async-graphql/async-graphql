@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - { rust: stable, os: ubuntu-latest }
-          - { rust: 1.51.0, os: ubuntu-latest }
+          - { rust: 1.49.0, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -27,11 +27,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-          components: clippy, rustfmt
-      - name: Check format
-        run: cargo fmt --all -- --check
-      - name: Check with clippy
-        run: cargo clippy --all
       - name: Build with all features
         run: cargo build --all-features
       - name: Build
@@ -40,6 +35,48 @@ jobs:
         run: cargo test --all --all-features
       - name: Clean
         run: cargo clean
+
+  rustfmt:
+    name: Run rustfmt - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: stable, os: ubuntu-latest }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt
+      - name: Check format
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Run clippy - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: stable, os: ubuntu-latest }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy
+      - name: Check with clippy
+        run: cargo clippy --all
 
   examples:
     name: Build examples - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
@@ -89,7 +126,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-          components: clippy, rustfmt
       - name: Build on nightly with all features
         run: cargo build --all-features
       - name: Build on nightly
