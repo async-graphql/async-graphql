@@ -2,10 +2,9 @@ use std::future::Future;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-use actix::ActorFutureExt;
 use actix::{
-    Actor, ActorContext, ActorStreamExt, AsyncContext, ContextFutureSpawner, StreamHandler,
-    WrapFuture, WrapStream,
+    Actor, ActorContext, ActorFutureExt, ActorStreamExt, AsyncContext, ContextFutureSpawner,
+    StreamHandler, WrapFuture, WrapStream,
 };
 use actix_http::error::PayloadError;
 use actix_http::{ws, Error};
