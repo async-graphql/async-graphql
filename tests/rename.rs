@@ -127,7 +127,6 @@ pub async fn test_subscription() {
     assert_eq!(
         Schema::new(Query, EmptyMutation, Subscription)
             .execute_stream("subscription { CREATE_OBJECT(objectid: 100) }")
-            .boxed()
             .next()
             .await
             .unwrap()

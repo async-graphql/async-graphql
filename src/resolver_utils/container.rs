@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::extensions::{ErrorLogger, ResolveInfo};
+use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{
@@ -174,18 +174,18 @@ impl<'a> Fields<'a> {
                         async move {
                             let ctx_field = ctx.with_field(field);
                             let field_name = ctx_field.item.node.response_key().node.clone();
+                            let extensions = &ctx.query_env.extensions;
 
-                            let res = if ctx_field.query_env.extensions.is_empty() {
+                            if extensions.is_empty() {
                                 match root.resolve_field(&ctx_field).await {
                                     Ok(value) => Ok((field_name, value.unwrap_or_default())),
                                     Err(e) => {
                                         Err(e.path(PathSegment::Field(field_name.to_string())))
                                     }
-                                }?
+                                }
                             } else {
                                 let type_name = T::type_name();
                                 let resolve_info = ResolveInfo {
-                                    resolve_id: ctx_field.resolve_id,
                                     path_node: ctx_field.path_node.as_ref().unwrap(),
                                     parent_type: &type_name,
                                     return_type: match ctx_field
@@ -210,20 +210,16 @@ impl<'a> Fields<'a> {
                                     },
                                 };
 
-                                ctx_field.query_env.extensions.resolve_start(&resolve_info);
-
-                                let res = match root.resolve_field(&ctx_field).await {
+                                let resolve_fut = async { root.resolve_field(&ctx_field).await };
+                                futures_util::pin_mut!(resolve_fut);
+                                let res = extensions.resolve(resolve_info, &mut resolve_fut).await;
+                                match res {
                                     Ok(value) => Ok((field_name, value.unwrap_or_default())),
                                     Err(e) => {
                                         Err(e.path(PathSegment::Field(field_name.to_string())))
                                     }
                                 }
-                                .log_error(&ctx_field.query_env.extensions)?;
-                                ctx_field.query_env.extensions.resolve_end(&resolve_info);
-                                res
-                            };
-
-                            Ok(res)
+                            }
                         }
                     }));
                 }

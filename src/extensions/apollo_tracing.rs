@@ -1,36 +1,26 @@
-use std::collections::BTreeMap;
-use std::ops::Deref;
+use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
+use futures_util::lock::Mutex;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
-use crate::{value, Value};
+use crate::extensions::{
+    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+};
+use crate::{value, Response, ServerResult, Value};
 
-struct PendingResolve {
+struct ResolveState {
     path: Vec<String>,
     field_name: String,
     parent_type: String,
     return_type: String,
     start_time: DateTime<Utc>,
-}
-
-struct ResolveStat {
-    pending_resolve: PendingResolve,
     end_time: DateTime<Utc>,
     start_offset: i64,
 }
 
-impl Deref for ResolveStat {
-    type Target = PendingResolve;
-
-    fn deref(&self) -> &Self::Target {
-        &self.pending_resolve
-    }
-}
-
-impl Serialize for ResolveStat {
+impl Serialize for ResolveState {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("path", &self.path)?;
@@ -57,76 +47,79 @@ impl Serialize for ResolveStat {
 pub struct ApolloTracing;
 
 impl ExtensionFactory for ApolloTracing {
-    fn create(&self) -> Box<dyn Extension> {
-        Box::new(ApolloTracingExtension {
-            start_time: Utc::now(),
-            end_time: Utc::now(),
-            pending_resolves: Default::default(),
-            resolves: Default::default(),
+    fn create(&self) -> Arc<dyn Extension> {
+        Arc::new(ApolloTracingExtension {
+            inner: Mutex::new(Inner {
+                start_time: Utc::now(),
+                end_time: Utc::now(),
+                resolves: Default::default(),
+            }),
         })
     }
 }
 
-struct ApolloTracingExtension {
+struct Inner {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
-    pending_resolves: BTreeMap<usize, PendingResolve>,
-    resolves: Vec<ResolveStat>,
+    resolves: Vec<ResolveState>,
 }
 
+struct ApolloTracingExtension {
+    inner: Mutex<Inner>,
+}
+
+#[async_trait::async_trait]
 impl Extension for ApolloTracingExtension {
-    fn name(&self) -> Option<&'static str> {
-        Some("tracing")
-    }
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        self.inner.lock().await.start_time = Utc::now();
+        let resp = next.execute(ctx).await;
 
-    fn execution_start(&mut self, _ctx: &ExtensionContext<'_>) {
-        self.start_time = Utc::now();
-        self.pending_resolves.clear();
-        self.resolves.clear();
-    }
-
-    fn execution_end(&mut self, _ctx: &ExtensionContext<'_>) {
-        self.end_time = Utc::now();
-    }
-
-    fn resolve_start(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-        self.pending_resolves.insert(
-            info.resolve_id.current,
-            PendingResolve {
-                path: info.path_node.to_string_vec(),
-                field_name: info.path_node.field_name().to_string(),
-                parent_type: info.parent_type.to_string(),
-                return_type: info.return_type.to_string(),
-                start_time: Utc::now(),
-            },
-        );
-    }
-
-    fn resolve_end(&mut self, _ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-        if let Some(pending_resolve) = self.pending_resolves.remove(&info.resolve_id.current) {
-            let start_offset = (pending_resolve.start_time - self.start_time)
-                .num_nanoseconds()
-                .unwrap();
-            self.resolves.push(ResolveStat {
-                pending_resolve,
-                start_offset,
-                end_time: Utc::now(),
-            });
-        }
-    }
-
-    fn result(&mut self, _ctx: &ExtensionContext<'_>) -> Option<Value> {
-        self.resolves
+        let mut inner = self.inner.lock().await;
+        inner.end_time = Utc::now();
+        inner
+            .resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
+        resp.extension(
+            "tracing",
+            value!({
+                "version": 1,
+                "startTime": inner.start_time.to_rfc3339(),
+                "endTime": inner.end_time.to_rfc3339(),
+                "duration": (inner.end_time - inner.start_time).num_nanoseconds(),
+                "execution": {
+                    "resolvers": inner.resolves
+                }
+            }),
+        )
+    }
 
-        Some(value!({
-            "version": 1,
-            "startTime": self.start_time.to_rfc3339(),
-            "endTime": self.end_time.to_rfc3339(),
-            "duration": (self.end_time - self.start_time).num_nanoseconds(),
-            "execution": {
-                "resolvers": self.resolves
-            }
-        }))
+    async fn resolve(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        info: ResolveInfo<'_>,
+        next: NextExtension<'_>,
+    ) -> ServerResult<Option<Value>> {
+        let path = info.path_node.to_string_vec();
+        let field_name = info.path_node.field_name().to_string();
+        let parent_type = info.parent_type.to_string();
+        let return_type = info.return_type.to_string();
+        let start_time = Utc::now();
+        let start_offset = (start_time - self.inner.lock().await.start_time)
+            .num_nanoseconds()
+            .unwrap();
+
+        let res = next.resolve(ctx, info).await;
+        let end_time = Utc::now();
+
+        self.inner.lock().await.resolves.push(ResolveState {
+            path,
+            field_name,
+            parent_type,
+            return_type,
+            start_time,
+            end_time,
+            start_offset,
+        });
+        res
     }
 }

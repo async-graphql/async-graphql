@@ -12,28 +12,28 @@ mod opentelemetry;
 #[cfg(feature = "tracing")]
 mod tracing;
 
-use std::any::{Any, TypeId};
-use std::collections::BTreeMap;
-use std::sync::Arc;
-
-use crate::context::{QueryPathNode, ResolveId};
-use crate::parser::types::ExecutableDocument;
-use crate::{
-    Data, Request, Result, SchemaEnv, ServerError, ServerResult, ValidationResult, Variables,
-};
-use crate::{Error, Name, Value};
-
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
 pub use self::apollo_tracing::ApolloTracing;
 #[cfg(feature = "log")]
 pub use self::logger::Logger;
 #[cfg(feature = "opentelemetry")]
-pub use self::opentelemetry::{OpenTelemetry, OpenTelemetryConfig};
+pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
-pub use self::tracing::{Tracing, TracingConfig};
+pub use self::tracing::Tracing;
 
-pub(crate) type BoxExtension = Box<dyn Extension>;
+use std::any::{Any, TypeId};
+use std::future::Future;
+use std::sync::Arc;
+
+use futures_util::stream::BoxStream;
+use futures_util::stream::StreamExt;
+
+use crate::parser::types::ExecutableDocument;
+use crate::{
+    Data, Error, QueryPathNode, Request, Response, Result, SchemaEnv, ServerError, ServerResult,
+    ValidationResult, Value, Variables,
+};
 
 /// Context for extension
 pub struct ExtensionContext<'a> {
@@ -86,10 +86,6 @@ impl<'a> ExtensionContext<'a> {
 
 /// Parameters for `Extension::resolve_field_start`
 pub struct ResolveInfo<'a> {
-    /// Because resolver is concurrent, `Extension::resolve_field_start` and `Extension::resolve_field_end` are
-    /// not strictly ordered, so each pair is identified by an id.
-    pub resolve_id: ResolveId,
-
     /// Current path node, You can go through the entire path.
     pub path_node: &'a QueryPathNode<'a>,
 
@@ -100,120 +96,250 @@ pub struct ResolveInfo<'a> {
     pub return_type: &'a str,
 }
 
-/// Represents a GraphQL extension
-///
-/// # Call order for query and mutation
-///
-/// - start
-///     - prepare_request
-///     - parse_start
-///     - parse_end
-///     - validation_start
-///     - validation_end
-///     - execution_start
-///         - resolve_start
-///         - resolve_end
-///     - result
-///     - execution_end
-/// - end
-///     
-/// # Call order for subscription
-///
-/// - start
-/// - prepare_request
-/// - parse_start
-/// - parse_end
-/// - validation_start
-/// - validation_end
-///     - execution_start
-///         - resolve_start
-///         - resolve_end
-///     - execution_end
-///     - result
-/// ```
-#[async_trait::async_trait]
-#[allow(unused_variables)]
-pub trait Extension: Sync + Send + 'static {
-    /// If this extension needs to output data to query results, you need to specify a name.
-    fn name(&self) -> Option<&'static str> {
-        None
+type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
+
+type ParseFut<'a> = &'a mut (dyn Future<Output = ServerResult<ExecutableDocument>> + Send + Unpin);
+
+type ValidationFut<'a> =
+    &'a mut (dyn Future<Output = Result<ValidationResult, Vec<ServerError>>> + Send + Unpin);
+
+type ExecuteFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
+
+type ResolveFut<'a> = &'a mut (dyn Future<Output = ServerResult<Option<Value>>> + Send + Unpin);
+
+/// The remainder of a extension chain.
+pub struct NextExtension<'a> {
+    chain: &'a [Arc<dyn Extension>],
+    request_fut: Option<RequestFut<'a>>,
+    parse_query_fut: Option<ParseFut<'a>>,
+    validation_fut: Option<ValidationFut<'a>>,
+    execute_fut: Option<ExecuteFut<'a>>,
+    resolve_fut: Option<ResolveFut<'a>>,
+}
+
+impl<'a> NextExtension<'a> {
+    #[inline]
+    pub(crate) fn new(chain: &'a [Arc<dyn Extension>]) -> Self {
+        Self {
+            chain,
+            request_fut: None,
+            parse_query_fut: None,
+            validation_fut: None,
+            execute_fut: None,
+            resolve_fut: None,
+        }
     }
 
-    /// Called at the beginning of query.
-    fn start(&mut self, ctx: &ExtensionContext<'_>) {}
+    #[inline]
+    pub(crate) fn with_chain(self, chain: &'a [Arc<dyn Extension>]) -> Self {
+        Self { chain, ..self }
+    }
 
-    /// Called at the beginning of query.
-    fn end(&mut self, ctx: &ExtensionContext<'_>) {}
+    #[inline]
+    pub(crate) fn with_request(self, fut: RequestFut<'a>) -> Self {
+        Self {
+            request_fut: Some(fut),
+            ..self
+        }
+    }
 
-    /// Called at prepare request.
-    async fn prepare_request(
-        &mut self,
+    #[inline]
+    pub(crate) fn with_parse_query(self, fut: ParseFut<'a>) -> Self {
+        Self {
+            parse_query_fut: Some(fut),
+            ..self
+        }
+    }
+
+    #[inline]
+    pub(crate) fn with_validation(self, fut: ValidationFut<'a>) -> Self {
+        Self {
+            validation_fut: Some(fut),
+            ..self
+        }
+    }
+
+    #[inline]
+    pub(crate) fn with_execute(self, fut: ExecuteFut<'a>) -> Self {
+        Self {
+            execute_fut: Some(fut),
+            ..self
+        }
+    }
+
+    #[inline]
+    pub(crate) fn with_resolve(self, fut: ResolveFut<'a>) -> Self {
+        Self {
+            resolve_fut: Some(fut),
+            ..self
+        }
+    }
+
+    /// Call the [Extension::request] function of next extension.
+    pub async fn request(mut self, ctx: &ExtensionContext<'_>) -> Response {
+        if let Some((first, next)) = self.chain.split_first() {
+            first.request(ctx, self.with_chain(next)).await
+        } else {
+            self.request_fut
+                .take()
+                .expect("You definitely called the wrong function.")
+                .await
+        }
+    }
+
+    /// Call the [Extension::subscribe] function of next extension.
+    pub fn subscribe<'s>(
+        self,
+        ctx: &ExtensionContext<'_>,
+        stream: BoxStream<'s, Response>,
+    ) -> BoxStream<'s, Response> {
+        if let Some((first, next)) = self.chain.split_first() {
+            first.subscribe(ctx, stream, self.with_chain(next))
+        } else {
+            stream
+        }
+    }
+
+    /// Call the [Extension::prepare_request] function of next extension.
+    pub async fn prepare_request(
+        self,
         ctx: &ExtensionContext<'_>,
         request: Request,
     ) -> ServerResult<Request> {
-        Ok(request)
+        if let Some((first, next)) = self.chain.split_first() {
+            first
+                .prepare_request(ctx, request, self.with_chain(next))
+                .await
+        } else {
+            Ok(request)
+        }
     }
 
-    /// Called at the beginning of parse query source.
-    fn parse_start(
-        &mut self,
+    /// Call the [Extension::parse_query] function of next extension.
+    pub async fn parse_query(
+        mut self,
         ctx: &ExtensionContext<'_>,
-        query_source: &str,
+        query: &str,
         variables: &Variables,
-    ) {
-    }
-
-    /// Called at the end of parse query source.
-    fn parse_end(&mut self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {}
-
-    /// Called at the beginning of the validation.
-    fn validation_start(&mut self, ctx: &ExtensionContext<'_>) {}
-
-    /// Called at the end of the validation.
-    fn validation_end(&mut self, ctx: &ExtensionContext<'_>, result: &ValidationResult) {}
-
-    /// Called at the beginning of execute a query.
-    fn execution_start(&mut self, ctx: &ExtensionContext<'_>) {}
-
-    /// Called at the end of execute a query.
-    fn execution_end(&mut self, ctx: &ExtensionContext<'_>) {}
-
-    /// Called at the beginning of resolve a field.
-    fn resolve_start(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {}
-
-    /// Called at the end of resolve a field.
-    fn resolve_end(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {}
-
-    /// Called when an error occurs.
-    fn error(&mut self, ctx: &ExtensionContext<'_>, err: &ServerError) {}
-
-    /// Get the results.
-    fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<Value> {
-        None
-    }
-}
-
-pub(crate) trait ErrorLogger {
-    fn log_error(self, extensions: &Extensions) -> Self;
-}
-
-impl<T> ErrorLogger for ServerResult<T> {
-    fn log_error(self, extensions: &Extensions) -> Self {
-        if let Err(err) = &self {
-            extensions.error(err);
+    ) -> ServerResult<ExecutableDocument> {
+        if let Some((first, next)) = self.chain.split_first() {
+            first
+                .parse_query(ctx, query, variables, self.with_chain(next))
+                .await
+        } else {
+            self.parse_query_fut
+                .take()
+                .expect("You definitely called the wrong function.")
+                .await
         }
-        self
+    }
+
+    /// Call the [Extension::validation] function of next extension.
+    pub async fn validation(
+        mut self,
+        ctx: &ExtensionContext<'_>,
+    ) -> Result<ValidationResult, Vec<ServerError>> {
+        if let Some((first, next)) = self.chain.split_first() {
+            first.validation(ctx, self.with_chain(next)).await
+        } else {
+            self.validation_fut
+                .take()
+                .expect("You definitely called the wrong function.")
+                .await
+        }
+    }
+
+    /// Call the [Extension::execute] function of next extension.
+    pub async fn execute(mut self, ctx: &ExtensionContext<'_>) -> Response {
+        if let Some((first, next)) = self.chain.split_first() {
+            first.execute(ctx, self.with_chain(next)).await
+        } else {
+            self.execute_fut
+                .take()
+                .expect("You definitely called the wrong function.")
+                .await
+        }
+    }
+
+    /// Call the [Extension::resolve] function of next extension.
+    pub async fn resolve(
+        mut self,
+        ctx: &ExtensionContext<'_>,
+        info: ResolveInfo<'_>,
+    ) -> ServerResult<Option<Value>> {
+        if let Some((first, next)) = self.chain.split_first() {
+            first.resolve(ctx, info, self.with_chain(next)).await
+        } else {
+            self.resolve_fut
+                .take()
+                .expect("You definitely called the wrong function.")
+                .await
+        }
     }
 }
 
-impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
-    fn log_error(self, extensions: &Extensions) -> Self {
-        if let Err(errors) = &self {
-            for error in errors {
-                extensions.error(error);
-            }
-        }
-        self
+/// Represents a GraphQL extension
+#[async_trait::async_trait]
+#[allow(unused_variables)]
+pub trait Extension: Sync + Send + 'static {
+    /// Called at start query/mutation request.
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        next.request(ctx).await
+    }
+
+    /// Called at subscribe request.
+    fn subscribe<'s>(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        stream: BoxStream<'s, Response>,
+        next: NextExtension<'_>,
+    ) -> BoxStream<'s, Response> {
+        next.subscribe(ctx, stream)
+    }
+
+    /// Called at prepare request.
+    async fn prepare_request(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        request: Request,
+        next: NextExtension<'_>,
+    ) -> ServerResult<Request> {
+        next.prepare_request(ctx, request).await
+    }
+
+    /// Called at parse query.
+    async fn parse_query(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        query: &str,
+        variables: &Variables,
+        next: NextExtension<'_>,
+    ) -> ServerResult<ExecutableDocument> {
+        next.parse_query(ctx, query, variables).await
+    }
+
+    /// Called at validation query.
+    async fn validation(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        next: NextExtension<'_>,
+    ) -> Result<ValidationResult, Vec<ServerError>> {
+        next.validation(ctx).await
+    }
+
+    /// Called at execute query.
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        next.execute(ctx).await
+    }
+
+    /// Called at resolve field.
+    async fn resolve(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        info: ResolveInfo<'_>,
+        next: NextExtension<'_>,
+    ) -> ServerResult<Option<Value>> {
+        next.resolve(ctx, info).await
     }
 }
 
@@ -222,12 +348,13 @@ impl<T> ErrorLogger for Result<T, Vec<ServerError>> {
 /// Used to create an extension instance.
 pub trait ExtensionFactory: Send + Sync + 'static {
     /// Create an extended instance.
-    fn create(&self) -> Box<dyn Extension>;
+    fn create(&self) -> Arc<dyn Extension>;
 }
 
+#[derive(Clone)]
 #[doc(hidden)]
 pub struct Extensions {
-    extensions: Option<spin::Mutex<Vec<BoxExtension>>>,
+    extensions: Vec<Arc<dyn Extension>>,
     schema_env: SchemaEnv,
     session_data: Arc<Data>,
     query_data: Option<Arc<Data>>,
@@ -235,17 +362,13 @@ pub struct Extensions {
 
 #[doc(hidden)]
 impl Extensions {
-    pub fn new(
-        extensions: Vec<BoxExtension>,
+    pub(crate) fn new(
+        extensions: impl IntoIterator<Item = Arc<dyn Extension>>,
         schema_env: SchemaEnv,
         session_data: Arc<Data>,
     ) -> Self {
         Extensions {
-            extensions: if extensions.is_empty() {
-                None
-            } else {
-                Some(spin::Mutex::new(extensions))
-            },
+            extensions: extensions.into_iter().collect(),
             schema_env,
             session_data,
             query_data: None,
@@ -255,18 +378,14 @@ impl Extensions {
     pub fn attach_query_data(&mut self, data: Arc<Data>) {
         self.query_data = Some(data);
     }
-}
 
-impl Drop for Extensions {
-    fn drop(&mut self) {
-        self.end();
-    }
-}
-
-#[doc(hidden)]
-impl Extensions {
     #[inline]
-    fn context(&self) -> ExtensionContext<'_> {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.extensions.is_empty()
+    }
+
+    #[inline]
+    fn create_context(&self) -> ExtensionContext {
         ExtensionContext {
             schema_data: &self.schema_env.data,
             session_data: &self.session_data,
@@ -274,124 +393,79 @@ impl Extensions {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.extensions.is_none()
-    }
-
-    pub fn start(&self) {
-        if let Some(e) = &self.extensions {
-            e.lock().iter_mut().for_each(|e| e.start(&self.context()));
+    pub async fn request(&self, request_fut: RequestFut<'_>) -> Response {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions).with_request(request_fut);
+            next.request(&self.create_context()).await
+        } else {
+            request_fut.await
         }
     }
 
-    pub fn end(&self) {
-        if let Some(e) = &self.extensions {
-            e.lock().iter_mut().for_each(|e| e.end(&self.context()));
+    pub fn subscribe<'s>(&self, stream: BoxStream<'s, Response>) -> BoxStream<'s, Response> {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions);
+            next.subscribe(&self.create_context(), stream)
+        } else {
+            stream.boxed()
         }
     }
 
     pub async fn prepare_request(&self, request: Request) -> ServerResult<Request> {
-        let mut request = request;
-        if let Some(e) = &self.extensions {
-            for e in e.lock().iter_mut() {
-                request = e.prepare_request(&self.context(), request).await?;
-            }
-        }
-        Ok(request)
-    }
-
-    pub fn parse_start(&self, query_source: &str, variables: &Variables) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.parse_start(&self.context(), query_source, variables));
-        }
-    }
-
-    pub fn parse_end(&self, document: &ExecutableDocument) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.parse_end(&self.context(), document));
-        }
-    }
-
-    pub fn validation_start(&self) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.validation_start(&self.context()));
-        }
-    }
-
-    pub fn validation_end(&self, result: &ValidationResult) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.validation_end(&self.context(), result));
-        }
-    }
-
-    pub fn execution_start(&self) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.execution_start(&self.context()));
-        }
-    }
-
-    pub fn execution_end(&self) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.execution_end(&self.context()));
-        }
-    }
-
-    pub fn resolve_start(&self, info: &ResolveInfo<'_>) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.resolve_start(&self.context(), info));
-        }
-    }
-
-    pub fn resolve_end(&self, resolve_id: &ResolveInfo<'_>) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.resolve_end(&self.context(), resolve_id));
-        }
-    }
-
-    pub fn error(&self, err: &ServerError) {
-        if let Some(e) = &self.extensions {
-            e.lock()
-                .iter_mut()
-                .for_each(|e| e.error(&self.context(), err));
-        }
-    }
-
-    pub fn result(&self) -> Option<Value> {
-        if let Some(e) = &self.extensions {
-            let value = e
-                .lock()
-                .iter_mut()
-                .filter_map(|e| {
-                    if let Some(name) = e.name() {
-                        e.result(&self.context()).map(|res| (Name::new(name), res))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<BTreeMap<_, _>>();
-            if value.is_empty() {
-                None
-            } else {
-                Some(Value::Object(value))
-            }
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions);
+            next.prepare_request(&self.create_context(), request).await
         } else {
-            None
+            Ok(request)
+        }
+    }
+
+    pub async fn parse_query(
+        &self,
+        query: &str,
+        variables: &Variables,
+        parse_query_fut: ParseFut<'_>,
+    ) -> ServerResult<ExecutableDocument> {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions).with_parse_query(parse_query_fut);
+            next.parse_query(&self.create_context(), query, variables)
+                .await
+        } else {
+            parse_query_fut.await
+        }
+    }
+
+    pub async fn validation(
+        &self,
+        validation_fut: ValidationFut<'_>,
+    ) -> Result<ValidationResult, Vec<ServerError>> {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions).with_validation(validation_fut);
+            next.validation(&self.create_context()).await
+        } else {
+            validation_fut.await
+        }
+    }
+
+    pub async fn execute(&self, execute_fut: ExecuteFut<'_>) -> Response {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions).with_execute(execute_fut);
+            next.execute(&self.create_context()).await
+        } else {
+            execute_fut.await
+        }
+    }
+
+    pub async fn resolve(
+        &self,
+        info: ResolveInfo<'_>,
+        resolve_fut: ResolveFut<'_>,
+    ) -> ServerResult<Option<Value>> {
+        if !self.extensions.is_empty() {
+            let next = NextExtension::new(&self.extensions).with_resolve(resolve_fut);
+            next.resolve(&self.create_context(), info).await
+        } else {
+            resolve_fut.await
         }
     }
 }

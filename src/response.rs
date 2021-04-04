@@ -1,5 +1,6 @@
-use http::header::HeaderMap;
+use std::collections::BTreeMap;
 
+use http::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};
@@ -12,8 +13,8 @@ pub struct Response {
     pub data: Value,
 
     /// Extensions result
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub extensions: Option<Value>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty", default)]
+    pub extensions: BTreeMap<String, Value>,
 
     /// Cache control value
     #[serde(skip)]
@@ -47,10 +48,11 @@ impl Response {
         }
     }
 
-    /// Set the extensions result of the response.
+    /// Set the extension result of the response.
     #[must_use]
-    pub fn extensions(self, extensions: Option<Value>) -> Self {
-        Self { extensions, ..self }
+    pub fn extension(mut self, name: impl Into<String>, value: Value) -> Self {
+        self.extensions.insert(name.into(), value);
+        self
     }
 
     /// Set the http headers of the response.

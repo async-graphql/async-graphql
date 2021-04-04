@@ -36,8 +36,7 @@ pub async fn test_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { values(start: 10, end: 20) }")
-            .map(|resp| resp.into_result().unwrap().data)
-            .boxed();
+            .map(|resp| resp.into_result().unwrap().data);
         for i in 10..20 {
             assert_eq!(value!({ "values": i }), stream.next().await.unwrap());
         }
@@ -47,8 +46,7 @@ pub async fn test_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { events(start: 10, end: 20) { a b } }")
-            .map(|resp| resp.into_result().unwrap().data)
-            .boxed();
+            .map(|resp| resp.into_result().unwrap().data);
         for i in 10..20 {
             assert_eq!(
                 value!({ "events": {"a": i, "b": i * 10} }),
@@ -98,8 +96,7 @@ pub async fn test_subscription_with_ctx_data() {
     {
         let mut stream = schema
             .execute_stream(Request::new("subscription { values objects { value } }").data(100i32))
-            .map(|resp| resp.data)
-            .boxed();
+            .map(|resp| resp.data);
         assert_eq!(value!({ "values": 100 }), stream.next().await.unwrap());
         assert_eq!(
             value!({ "objects": { "value": 100 } }),
@@ -141,8 +138,7 @@ pub async fn test_subscription_with_token() {
             .execute_stream(
                 Request::new("subscription { values }").data(Token("123456".to_string())),
             )
-            .map(|resp| resp.into_result().unwrap().data)
-            .boxed();
+            .map(|resp| resp.into_result().unwrap().data);
         assert_eq!(value!({ "values": 100 }), stream.next().await.unwrap());
         assert!(stream.next().await.is_none());
     }
@@ -152,7 +148,6 @@ pub async fn test_subscription_with_token() {
             .execute_stream(
                 Request::new("subscription { values }").data(Token("654321".to_string()))
             )
-            .boxed()
             .next()
             .await
             .unwrap()
@@ -200,8 +195,7 @@ pub async fn test_subscription_inline_fragment() {
             }
             "#,
         )
-        .map(|resp| resp.data)
-        .boxed();
+        .map(|resp| resp.data);
     for i in 10..20 {
         assert_eq!(
             value!({ "events": {"a": i, "b": i * 10} }),
@@ -250,8 +244,7 @@ pub async fn test_subscription_fragment() {
             }
             "#,
         )
-        .map(|resp| resp.data)
-        .boxed();
+        .map(|resp| resp.data);
     for i in 10i32..20 {
         assert_eq!(
             value!({ "events": {"a": i, "b": i * 10} }),
@@ -301,8 +294,7 @@ pub async fn test_subscription_fragment2() {
             }
             "#,
         )
-        .map(|resp| resp.data)
-        .boxed();
+        .map(|resp| resp.data);
     for i in 10..20 {
         assert_eq!(
             value!({ "events": {"a": i, "b": i * 10} }),
@@ -342,8 +334,7 @@ pub async fn test_subscription_error() {
     let mut stream = schema
         .execute_stream("subscription { events { value } }")
         .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data)
-        .boxed();
+        .map_ok(|resp| resp.data);
     for i in 0i32..5 {
         assert_eq!(
             value!({ "events": { "value": i } }),
@@ -388,8 +379,7 @@ pub async fn test_subscription_fieldresult() {
     let mut stream = schema
         .execute_stream("subscription { values }")
         .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data)
-        .boxed();
+        .map_ok(|resp| resp.data);
     for i in 0i32..5 {
         assert_eq!(
             value!({ "values": i }),

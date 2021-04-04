@@ -1,14 +1,12 @@
 use std::any::Any;
-use std::collections::BTreeMap;
 use std::ops::Deref;
-use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
-use crate::context::{Data, QueryEnvInner, ResolveId};
-use crate::extensions::{ErrorLogger, ExtensionFactory, Extensions};
+use crate::context::{Data, QueryEnvInner};
+use crate::extensions::{ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::parser::types::{DocumentOperations, OperationType};
@@ -19,7 +17,7 @@ use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
-    Response, ServerError, SubscriptionType, Type, Value, ID,
+    Response, ServerError, SubscriptionType, Type, ID,
 };
 
 /// Schema builder
@@ -354,17 +352,11 @@ where
     }
 
     fn create_extensions(&self, session_data: Arc<Data>) -> Extensions {
-        let extensions = Extensions::new(
-            self.0
-                .extensions
-                .iter()
-                .map(|factory| factory.create())
-                .collect::<Vec<_>>(),
+        Extensions::new(
+            self.extensions.iter().map(|f| f.create()),
             self.env.clone(),
             session_data,
-        );
-        extensions.start();
-        extensions
+        )
     }
 
     async fn prepare_request(
@@ -376,36 +368,41 @@ where
         let mut request = request;
         let query_data = Arc::new(std::mem::take(&mut request.data));
         extensions.attach_query_data(query_data.clone());
-        let request = extensions.prepare_request(request).await?;
 
-        extensions.parse_start(&request.query, &request.variables);
-        let document = parse_query(&request.query)
-            .map_err(Into::<ServerError>::into)
-            .log_error(&extensions)?;
-        extensions.parse_end(&document);
+        let request = extensions.prepare_request(request).await?;
+        let document = {
+            let query = &request.query;
+            let fut_parse = async { parse_query(&query).map_err(Into::<ServerError>::into) };
+            futures_util::pin_mut!(fut_parse);
+            extensions
+                .parse_query(&query, &request.variables, &mut fut_parse)
+                .await?
+        };
 
         // check rules
-        extensions.validation_start();
-        let validation_result = check_rules(
-            &self.env.registry,
-            &document,
-            Some(&request.variables),
-            self.validation_mode,
-        )
-        .log_error(&extensions)?;
-        extensions.validation_end(&validation_result);
+        let validation_result = {
+            let validation_fut = async {
+                check_rules(
+                    &self.env.registry,
+                    &document,
+                    Some(&request.variables),
+                    self.validation_mode,
+                )
+            };
+            futures_util::pin_mut!(validation_fut);
+            extensions.validation(&mut validation_fut).await?
+        };
 
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if validation_result.complexity > limit_complexity {
-                return Err(vec![ServerError::new("Query is too complex.")]).log_error(&extensions);
+                return Err(vec![ServerError::new("Query is too complex.")]);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if validation_result.depth > limit_depth {
-                return Err(vec![ServerError::new("Query is nested too deep.")])
-                    .log_error(&extensions);
+                return Err(vec![ServerError::new("Query is nested too deep.")]);
             }
         }
 
@@ -432,10 +429,7 @@ where
         };
         let operation = match operation {
             Ok(operation) => operation,
-            Err(e) => {
-                extensions.error(&e);
-                return Err(vec![e]);
-            }
+            Err(e) => return Err(vec![e]),
         };
 
         let env = QueryEnvInner {
@@ -454,49 +448,58 @@ where
 
     async fn execute_once(&self, env: QueryEnv) -> Response {
         // execute
-        let inc_resolve_id = AtomicUsize::default();
         let ctx = ContextBase {
             path_node: None,
-            resolve_id: ResolveId::root(),
-            inc_resolve_id: &inc_resolve_id,
             item: &env.operation.node.selection_set,
             schema_env: &self.env,
             query_env: &env,
         };
-        env.extensions.execution_start();
 
-        let data = match &env.operation.node.ty {
+        let res = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
             OperationType::Mutation => resolve_container_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
                 return Response::from_errors(vec![ServerError::new(
                     "Subscriptions are not supported on this transport.",
-                )])
+                )]);
             }
         };
 
-        env.extensions.execution_end();
-        let extensions = env.extensions.result();
-
-        match data {
-            Ok(data) => Response::new(data),
-            Err(e) => Response::from_errors(vec![e]),
+        match res {
+            Ok(data) => {
+                let resp = Response::new(data);
+                resp.http_headers(std::mem::take(&mut *env.http_headers.lock()))
+            }
+            Err(err) => Response::from_errors(vec![err]),
         }
-        .extensions(extensions)
-        .http_headers(std::mem::take(&mut *env.http_headers.lock()))
     }
 
     /// Execute a GraphQL query.
     pub async fn execute(&self, request: impl Into<Request>) -> Response {
         let request = request.into();
         let extensions = self.create_extensions(Default::default());
-        match self
-            .prepare_request(extensions, request, Default::default())
-            .await
-        {
-            Ok((env, cache_control)) => self.execute_once(env).await.cache_control(cache_control),
-            Err(errors) => Response::from_errors(errors),
-        }
+        let request_fut = {
+            let extensions = extensions.clone();
+            async move {
+                match self
+                    .prepare_request(extensions, request, Default::default())
+                    .await
+                {
+                    Ok((env, cache_control)) => {
+                        let fut = async {
+                            self.execute_once(env.clone())
+                                .await
+                                .cache_control(cache_control)
+                        };
+                        futures_util::pin_mut!(fut);
+                        env.extensions.execute(&mut fut).await
+                    }
+                    Err(errors) => Response::from_errors(errors),
+                }
+            }
+        };
+        futures_util::pin_mut!(request_fut);
+        extensions.request(&mut request_fut).await
     }
 
     /// Execute a GraphQL batch query.
@@ -518,68 +521,52 @@ where
         &self,
         request: impl Into<Request> + Send,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send {
+    ) -> impl Stream<Item = Response> + Send + Unpin {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
 
-        async_stream::stream! {
-            let (env, cache_control) = match schema.prepare_request(extensions, request, session_data).await {
-                Ok(res) => res,
-                Err(errors) => {
-                    yield Response::from_errors(errors);
+        let stream = futures_util::stream::StreamExt::boxed({
+            let extensions = extensions.clone();
+            async_stream::stream! {
+                let (env, cache_control) = match schema.prepare_request(extensions, request, session_data).await {
+                    Ok(res) => res,
+                    Err(errors) => {
+                        yield Response::from_errors(errors);
+                        return;
+                    }
+                };
+
+                if env.operation.node.ty != OperationType::Subscription {
+                    yield schema.execute_once(env).await.cache_control(cache_control);
                     return;
                 }
-            };
 
-            if env.operation.node.ty != OperationType::Subscription {
-                yield schema
-                    .execute_once(env)
-                    .await
-                    .cache_control(cache_control);
-                return;
-            }
+                let ctx = env.create_context(
+                    &schema.env,
+                    None,
+                    &env.operation.node.selection_set,
+                );
 
-            let resolve_id = AtomicUsize::default();
-            let ctx = env.create_context(
-                &schema.env,
-                None,
-                &env.operation.node.selection_set,
-                ResolveId::root(),
-                &resolve_id,
-            );
+                let mut streams = Vec::new();
+                if let Err(err) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                    yield Response::from_errors(vec![err]);
+                }
 
-            let mut streams = Vec::new();
-            if let Err(e) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
-                env.extensions.execution_end();
-                yield Response::from_errors(vec![e]);
-                return;
-            }
-
-            let mut stream = stream::select_all(streams);
-            while let Some(data) = stream.next().await {
-                let is_err = data.is_err();
-                let extensions = env.extensions.result();
-                yield match data {
-                    Ok((name, value)) => {
-                        let mut map = BTreeMap::new();
-                        map.insert(name, value);
-                        Response::new(Value::Object(map))
-                    },
-                    Err(e) => Response::from_errors(vec![e]),
-                }.extensions(extensions);
-                if is_err {
-                    break;
+                let mut stream = stream::select_all(streams);
+                while let Some(resp) = stream.next().await {
+                    yield resp;
                 }
             }
-        }
+        });
+        extensions.subscribe(stream)
     }
 
     /// Execute a GraphQL subscription.
     pub fn execute_stream(
         &self,
         request: impl Into<Request>,
-    ) -> impl Stream<Item = Response> + Send {
+    ) -> impl Stream<Item = Response> + Send + Unpin {
         self.execute_stream_with_session_data(request.into(), Default::default())
     }
 }

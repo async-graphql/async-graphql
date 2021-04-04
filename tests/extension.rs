@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
-use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, ResolveInfo};
+use async_graphql::extensions::{
+    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+};
+use async_graphql::futures_util::stream::BoxStream;
 use async_graphql::parser::types::ExecutableDocument;
 use async_graphql::*;
 use async_graphql_value::ConstValue;
+use futures_util::lock::Mutex;
 use futures_util::stream::Stream;
 use futures_util::StreamExt;
-use spin::Mutex;
 
 #[tokio::test]
 pub async fn test_extension_ctx() {
@@ -18,7 +21,7 @@ pub async fn test_extension_ctx() {
     #[Object]
     impl Query {
         async fn value(&self, ctx: &Context<'_>) -> i32 {
-            *ctx.data_unchecked::<MyData>().0.lock()
+            *ctx.data_unchecked::<MyData>().0.lock().await
         }
     }
 
@@ -27,7 +30,7 @@ pub async fn test_extension_ctx() {
     #[Subscription]
     impl Subscription {
         async fn value(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
-            let data = *ctx.data_unchecked::<MyData>().0.lock();
+            let data = *ctx.data_unchecked::<MyData>().0.lock().await;
             futures_util::stream::once(async move { data })
         }
     }
@@ -36,23 +39,25 @@ pub async fn test_extension_ctx() {
 
     #[async_trait::async_trait]
     impl Extension for MyExtensionImpl {
-        fn parse_start(
-            &mut self,
+        async fn parse_query(
+            &self,
             ctx: &ExtensionContext<'_>,
-            _query_source: &str,
-            _variables: &Variables,
-        ) {
+            query: &str,
+            variables: &Variables,
+            next: NextExtension<'_>,
+        ) -> ServerResult<ExecutableDocument> {
             if let Ok(data) = ctx.data::<MyData>() {
-                *data.0.lock() = 100;
+                *data.0.lock().await = 100;
             }
+            next.parse_query(ctx, query, variables).await
         }
     }
 
     struct MyExtension;
 
     impl ExtensionFactory for MyExtension {
-        fn create(&self) -> Box<dyn Extension> {
-            Box::new(MyExtensionImpl)
+        fn create(&self) -> Arc<dyn Extension> {
+            Arc::new(MyExtensionImpl)
         }
     }
 
@@ -104,12 +109,10 @@ pub async fn test_extension_ctx() {
 
         let mut data = Data::default();
         data.insert(MyData::default());
-        let mut stream = schema
-            .execute_stream_with_session_data(
-                Request::new("subscription { value }"),
-                Arc::new(data),
-            )
-            .boxed();
+        let mut stream = schema.execute_stream_with_session_data(
+            Request::new("subscription { value }"),
+            Arc::new(data),
+        );
         assert_eq!(
             stream.next().await.unwrap().into_result().unwrap().data,
             value! ({
@@ -128,67 +131,83 @@ pub async fn test_extension_call_order() {
     #[async_trait::async_trait]
     #[allow(unused_variables)]
     impl Extension for MyExtensionImpl {
-        fn name(&self) -> Option<&'static str> {
-            Some("test")
+        async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+            self.calls.lock().await.push("request_start");
+            let res = next.request(ctx).await;
+            self.calls.lock().await.push("request_end");
+            res
         }
 
-        fn start(&mut self, ctx: &ExtensionContext<'_>) {
-            self.calls.lock().push("start");
-        }
-
-        fn end(&mut self, ctx: &ExtensionContext<'_>) {
-            self.calls.lock().push("end");
+        fn subscribe<'s>(
+            &self,
+            ctx: &ExtensionContext<'_>,
+            mut stream: BoxStream<'s, Response>,
+            next: NextExtension<'_>,
+        ) -> BoxStream<'s, Response> {
+            let calls = self.calls.clone();
+            let stream = async_stream::stream! {
+                calls.lock().await.push("subscribe_start");
+                while let Some(item) = stream.next().await {
+                    yield item;
+                }
+                calls.lock().await.push("subscribe_end");
+            };
+            Box::pin(stream)
         }
 
         async fn prepare_request(
-            &mut self,
+            &self,
             ctx: &ExtensionContext<'_>,
             request: Request,
+            next: NextExtension<'_>,
         ) -> ServerResult<Request> {
-            self.calls.lock().push("prepare_request");
-            Ok(request)
+            self.calls.lock().await.push("prepare_request_start");
+            let res = next.prepare_request(ctx, request).await;
+            self.calls.lock().await.push("prepare_request_end");
+            res
         }
 
-        fn parse_start(
-            &mut self,
+        async fn parse_query(
+            &self,
             ctx: &ExtensionContext<'_>,
-            query_source: &str,
+            query: &str,
             variables: &Variables,
-        ) {
-            self.calls.lock().push("parse_start");
+            next: NextExtension<'_>,
+        ) -> ServerResult<ExecutableDocument> {
+            self.calls.lock().await.push("parse_query_start");
+            let res = next.parse_query(ctx, query, variables).await;
+            self.calls.lock().await.push("parse_query_end");
+            res
         }
 
-        fn parse_end(&mut self, ctx: &ExtensionContext<'_>, document: &ExecutableDocument) {
-            self.calls.lock().push("parse_end");
+        async fn validation(
+            &self,
+            ctx: &ExtensionContext<'_>,
+            next: NextExtension<'_>,
+        ) -> Result<ValidationResult, Vec<ServerError>> {
+            self.calls.lock().await.push("validation_start");
+            let res = next.validation(ctx).await;
+            self.calls.lock().await.push("validation_end");
+            res
         }
 
-        fn validation_start(&mut self, ctx: &ExtensionContext<'_>) {
-            self.calls.lock().push("validation_start");
+        async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+            self.calls.lock().await.push("execute_start");
+            let res = next.execute(ctx).await;
+            self.calls.lock().await.push("execute_end");
+            res
         }
 
-        fn validation_end(&mut self, ctx: &ExtensionContext<'_>, result: &ValidationResult) {
-            self.calls.lock().push("validation_end");
-        }
-
-        fn execution_start(&mut self, ctx: &ExtensionContext<'_>) {
-            self.calls.lock().push("execution_start");
-        }
-
-        fn execution_end(&mut self, ctx: &ExtensionContext<'_>) {
-            self.calls.lock().push("execution_end");
-        }
-
-        fn resolve_start(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-            self.calls.lock().push("resolve_start");
-        }
-
-        fn resolve_end(&mut self, ctx: &ExtensionContext<'_>, info: &ResolveInfo<'_>) {
-            self.calls.lock().push("resolve_end");
-        }
-
-        fn result(&mut self, ctx: &ExtensionContext<'_>) -> Option<ConstValue> {
-            self.calls.lock().push("result");
-            None
+        async fn resolve(
+            &self,
+            ctx: &ExtensionContext<'_>,
+            info: ResolveInfo<'_>,
+            next: NextExtension<'_>,
+        ) -> ServerResult<Option<ConstValue>> {
+            self.calls.lock().await.push("resolve_start");
+            let res = next.resolve(ctx, info).await;
+            self.calls.lock().await.push("resolve_end");
+            res
         }
     }
 
@@ -197,8 +216,8 @@ pub async fn test_extension_call_order() {
     }
 
     impl ExtensionFactory for MyExtension {
-        fn create(&self) -> Box<dyn Extension> {
-            Box::new(MyExtensionImpl {
+        fn create(&self) -> Arc<dyn Extension> {
+            Arc::new(MyExtensionImpl {
                 calls: self.calls.clone(),
             })
         }
@@ -238,24 +257,24 @@ pub async fn test_extension_call_order() {
             .await
             .into_result()
             .unwrap();
-        let calls = calls.lock();
+        let calls = calls.lock().await;
         assert_eq!(
             &*calls,
             &vec![
-                "start",
-                "prepare_request",
-                "parse_start",
-                "parse_end",
+                "request_start",
+                "prepare_request_start",
+                "prepare_request_end",
+                "parse_query_start",
+                "parse_query_end",
                 "validation_start",
                 "validation_end",
-                "execution_start",
+                "execute_start",
                 "resolve_start",
                 "resolve_end",
                 "resolve_start",
                 "resolve_end",
-                "execution_end",
-                "result",
-                "end",
+                "execute_end",
+                "request_end",
             ]
         );
     }
@@ -267,34 +286,36 @@ pub async fn test_extension_call_order() {
                 calls: calls.clone(),
             })
             .finish();
-        let mut stream = schema.execute_stream("subscription { value }").boxed();
+        let mut stream = schema.execute_stream("subscription { value }");
         while let Some(_) = stream.next().await {}
-        let calls = calls.lock();
+        let calls = calls.lock().await;
         assert_eq!(
             &*calls,
             &vec![
-                "start",
-                "prepare_request",
-                "parse_start",
-                "parse_end",
+                "subscribe_start",
+                "prepare_request_start",
+                "prepare_request_end",
+                "parse_query_start",
+                "parse_query_end",
                 "validation_start",
                 "validation_end",
-                "execution_start",
+                // push 1
+                "execute_start",
                 "resolve_start",
                 "resolve_end",
-                "execution_end",
-                "result",
-                "execution_start",
+                "execute_end",
+                // push 2
+                "execute_start",
                 "resolve_start",
                 "resolve_end",
-                "execution_end",
-                "result",
-                "execution_start",
+                "execute_end",
+                // push 3
+                "execute_start",
                 "resolve_start",
                 "resolve_end",
-                "execution_end",
-                "result",
-                "end",
+                "execute_end",
+                // end
+                "subscribe_end",
             ]
         );
     }
