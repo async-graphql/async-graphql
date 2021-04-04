@@ -1,5 +1,9 @@
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
-use crate::{value, ValidationResult, Value};
+use std::sync::Arc;
+
+use futures_util::lock::Mutex;
+
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExtension};
+use crate::{value, Response, ServerError, ValidationResult};
 
 /// Analyzer extension
 ///
@@ -7,32 +11,41 @@ use crate::{value, ValidationResult, Value};
 pub struct Analyzer;
 
 impl ExtensionFactory for Analyzer {
-    fn create(&self) -> Box<dyn Extension> {
-        Box::new(AnalyzerExtension::default())
+    fn create(&self) -> Arc<dyn Extension> {
+        Arc::new(AnalyzerExtension::default())
     }
 }
 
 #[derive(Default)]
 struct AnalyzerExtension {
-    complexity: usize,
-    depth: usize,
+    validation_result: Mutex<Option<ValidationResult>>,
 }
 
+#[async_trait::async_trait]
 impl Extension for AnalyzerExtension {
-    fn name(&self) -> Option<&'static str> {
-        Some("analyzer")
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        let mut resp = next.request(ctx).await;
+        let validation_result = self.validation_result.lock().await.take();
+        if let Some(validation_result) = validation_result {
+            resp = resp.extension(
+                "analyzer",
+                value! ({
+                    "complexity": validation_result.complexity,
+                    "depth": validation_result.depth,
+                }),
+            );
+        }
+        resp
     }
 
-    fn validation_end(&mut self, _ctx: &ExtensionContext<'_>, result: &ValidationResult) {
-        self.complexity = result.complexity;
-        self.depth = result.depth;
-    }
-
-    fn result(&mut self, _ctx: &ExtensionContext<'_>) -> Option<Value> {
-        Some(value! ({
-            "complexity": self.complexity,
-            "depth": self.depth,
-        }))
+    async fn validation(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        next: NextExtension<'_>,
+    ) -> Result<ValidationResult, Vec<ServerError>> {
+        let res = next.validation(ctx).await?;
+        *self.validation_result.lock().await = Some(res);
+        Ok(res)
     }
 }
 
@@ -78,7 +91,7 @@ mod tests {
             .extension(extensions::Analyzer)
             .finish();
 
-        let extensions = schema
+        let res = schema
             .execute(
                 r#"{
             value obj {
@@ -93,15 +106,13 @@ mod tests {
             .into_result()
             .unwrap()
             .extensions
-            .unwrap();
+            .remove("analyzer");
         assert_eq!(
-            extensions,
-            value!({
-                "analyzer": {
-                    "complexity": 5 + 10,
-                    "depth": 3,
-                }
-            })
+            res,
+            Some(value!({
+                "complexity": 5 + 10,
+                "depth": 3,
+            }))
         );
     }
 }

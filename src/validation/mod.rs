@@ -16,6 +16,7 @@ pub use visitor::VisitorContext;
 use visitor::{visit, VisitorNil};
 
 /// Validation results.
+#[derive(Debug, Copy, Clone)]
 pub struct ValidationResult {
     /// Cache control
     pub cache_control: CacheControl,

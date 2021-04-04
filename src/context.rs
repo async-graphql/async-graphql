@@ -4,7 +4,6 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::ops::Deref;
-use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use async_graphql_value::{Value as InputValue, Variables};
@@ -189,36 +188,6 @@ impl<'a> Iterator for Parents<'a> {
 
 impl<'a> std::iter::FusedIterator for Parents<'a> {}
 
-/// The unique id of the current resolution.
-#[derive(Debug, Clone, Copy)]
-pub struct ResolveId {
-    /// The unique ID of the parent resolution.
-    pub parent: Option<usize>,
-
-    /// The current unique id.
-    pub current: usize,
-}
-
-impl ResolveId {
-    #[doc(hidden)]
-    pub fn root() -> ResolveId {
-        ResolveId {
-            parent: None,
-            current: 0,
-        }
-    }
-}
-
-impl Display for ResolveId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(parent) = self.parent {
-            write!(f, "{}:{}", parent, self.current)
-        } else {
-            write!(f, "{}", self.current)
-        }
-    }
-}
-
 /// Query context.
 ///
 /// **This type is not stable and should not be used directly.**
@@ -226,8 +195,6 @@ impl Display for ResolveId {
 pub struct ContextBase<'a, T> {
     /// The current path node being resolved.
     pub path_node: Option<QueryPathNode<'a>>,
-    pub(crate) resolve_id: ResolveId,
-    pub(crate) inc_resolve_id: &'a AtomicUsize,
     #[doc(hidden)]
     pub item: T,
     #[doc(hidden)]
@@ -273,13 +240,9 @@ impl QueryEnv {
         schema_env: &'a SchemaEnv,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
-        resolve_id: ResolveId,
-        inc_resolve_id: &'a AtomicUsize,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
-            resolve_id,
-            inc_resolve_id,
             item,
             schema_env,
             query_env: self,
@@ -288,18 +251,6 @@ impl QueryEnv {
 }
 
 impl<'a, T> ContextBase<'a, T> {
-    #[doc(hidden)]
-    pub fn get_child_resolve_id(&self) -> ResolveId {
-        let id = self
-            .inc_resolve_id
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-            + 1;
-        ResolveId {
-            parent: Some(self.resolve_id.current),
-            current: id,
-        }
-    }
-
     #[doc(hidden)]
     pub fn with_field(
         &'a self,
@@ -311,8 +262,6 @@ impl<'a, T> ContextBase<'a, T> {
                 segment: QueryPathSegment::Name(&field.node.response_key().node),
             }),
             item: field,
-            resolve_id: self.get_child_resolve_id(),
-            inc_resolve_id: self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
         }
@@ -326,8 +275,6 @@ impl<'a, T> ContextBase<'a, T> {
         ContextBase {
             path_node: self.path_node,
             item: selection_set,
-            resolve_id: self.resolve_id,
-            inc_resolve_id: &self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
         }
@@ -560,8 +507,6 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
                 segment: QueryPathSegment::Index(idx),
             }),
             item: self.item,
-            resolve_id: self.get_child_resolve_id(),
-            inc_resolve_id: self.inc_resolve_id,
             schema_env: self.schema_env,
             query_env: self.query_env,
         }

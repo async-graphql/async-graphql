@@ -1,4 +1,4 @@
-use crate::extensions::{ErrorLogger, ResolveInfo};
+use crate::extensions::ResolveInfo;
 use crate::parser::types::Field;
 use crate::{ContextSelectionSet, OutputType, PathSegment, Positioned, ServerResult, Type, Value};
 
@@ -9,38 +9,49 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
     iter: impl IntoIterator<Item = T>,
     len: Option<usize>,
 ) -> ServerResult<Value> {
-    let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
+    let extensions = &ctx.query_env.extensions;
 
-    for (idx, item) in iter.into_iter().enumerate() {
-        let ctx_idx = ctx.with_index(idx);
-        futures.push(async move {
-            if ctx_idx.query_env.extensions.is_empty() {
+    if extensions.is_empty() {
+        let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
+        for (idx, item) in iter.into_iter().enumerate() {
+            futures.push({
+                let ctx = ctx.clone();
+                async move {
+                    let ctx_idx = ctx.with_index(idx);
+                    let resolve_info = ResolveInfo {
+                        path_node: ctx_idx.path_node.as_ref().unwrap(),
+                        parent_type: &Vec::<T>::type_name(),
+                        return_type: &T::qualified_type_name(),
+                    };
+                    let resolve_fut = async {
+                        OutputType::resolve(&item, &ctx_idx, field)
+                            .await
+                            .map(Option::Some)
+                            .map_err(|e| e.path(PathSegment::Index(idx)))
+                    };
+                    futures_util::pin_mut!(resolve_fut);
+                    extensions
+                        .resolve(resolve_info, &mut resolve_fut)
+                        .await
+                        .map(|value| value.expect("You definitely encountered a bug!"))
+                }
+            });
+        }
+        Ok(Value::List(
+            futures_util::future::try_join_all(futures).await?,
+        ))
+    } else {
+        let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
+        for (idx, item) in iter.into_iter().enumerate() {
+            let ctx_idx = ctx.with_index(idx);
+            futures.push(async move {
                 OutputType::resolve(&item, &ctx_idx, field)
                     .await
                     .map_err(|e| e.path(PathSegment::Index(idx)))
-                    .log_error(&ctx_idx.query_env.extensions)
-            } else {
-                let resolve_info = ResolveInfo {
-                    resolve_id: ctx_idx.resolve_id,
-                    path_node: ctx_idx.path_node.as_ref().unwrap(),
-                    parent_type: &Vec::<T>::type_name(),
-                    return_type: &T::qualified_type_name(),
-                };
-
-                ctx_idx.query_env.extensions.resolve_start(&resolve_info);
-
-                let res = OutputType::resolve(&item, &ctx_idx, field)
-                    .await
-                    .map_err(|e| e.path(PathSegment::Index(idx)))
-                    .log_error(&ctx_idx.query_env.extensions)?;
-
-                ctx_idx.query_env.extensions.resolve_end(&resolve_info);
-                Ok(res)
-            }
-        });
+            });
+        }
+        Ok(Value::List(
+            futures_util::future::try_join_all(futures).await?,
+        ))
     }
-
-    Ok(Value::List(
-        futures_util::future::try_join_all(futures).await?,
-    ))
 }

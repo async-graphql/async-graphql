@@ -6,7 +6,7 @@ use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory};
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExtension};
 use crate::{from_value, Request, ServerError, ServerResult};
 
 #[derive(Deserialize)]
@@ -64,8 +64,8 @@ impl<T: CacheStorage> ApolloPersistedQueries<T> {
 }
 
 impl<T: CacheStorage> ExtensionFactory for ApolloPersistedQueries<T> {
-    fn create(&self) -> Box<dyn Extension> {
-        Box::new(ApolloPersistedQueriesExtension {
+    fn create(&self) -> Arc<dyn Extension> {
+        Arc::new(ApolloPersistedQueriesExtension {
             storage: self.0.clone(),
         })
     }
@@ -78,18 +78,19 @@ struct ApolloPersistedQueriesExtension<T> {
 #[async_trait::async_trait]
 impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
     async fn prepare_request(
-        &mut self,
-        _ctx: &ExtensionContext<'_>,
+        &self,
+        ctx: &ExtensionContext<'_>,
         mut request: Request,
+        next: NextExtension<'_>,
     ) -> ServerResult<Request> {
-        if let Some(value) = request.extensions.remove("persistedQuery") {
+        let res = if let Some(value) = request.extensions.remove("persistedQuery") {
             let persisted_query: PersistedQuery = from_value(value).map_err(|_| {
                 ServerError::new("Invalid \"PersistedQuery\" extension configuration.")
             })?;
             if persisted_query.version != 1 {
                 return Err(ServerError::new(
                     format!("Only the \"PersistedQuery\" extension of version \"1\" is supported, and the current version is \"{}\".", persisted_query.version),
-                    ));
+                ));
             }
 
             if request.query.is_empty() {
@@ -110,7 +111,8 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
             }
         } else {
             Ok(request)
-        }
+        };
+        next.prepare_request(ctx, res?).await
     }
 }
 

@@ -3,9 +3,7 @@ use std::pin::Pin;
 use futures_util::stream::{Stream, StreamExt};
 
 use crate::parser::types::{Selection, TypeCondition};
-use crate::{
-    Context, ContextSelectionSet, Name, PathSegment, ServerError, ServerResult, Type, Value,
-};
+use crate::{Context, ContextSelectionSet, PathSegment, Response, ServerError, ServerResult, Type};
 
 /// A GraphQL subscription object
 pub trait SubscriptionType: Type + Send + Sync {
@@ -19,10 +17,10 @@ pub trait SubscriptionType: Type + Send + Sync {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>>;
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>>;
 }
 
-type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = ServerResult<(Name, Value)>> + 'a + Send>>;
+type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = Response> + 'a + Send>>;
 
 pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     ctx: &ContextSelectionSet<'a>,
@@ -41,16 +39,14 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
                     let field_name = ctx.item.node.response_key().node.clone();
                     let stream = root.create_field_stream(&ctx);
                     if let Some(mut stream) = stream {
-                        while let Some(item) = stream.next().await {
-                            yield match item {
-                                Ok(value) => Ok((field_name.to_owned(), value)),
-                                Err(e) => Err(e.path(PathSegment::Field(field_name.to_string()))),
-                            };
+                        while let Some(resp) = stream.next().await {
+                            yield resp;
                         }
                     } else {
-                        yield Err(ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()))
+                        let err = ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()))
                             .at(ctx.item.pos)
-                            .path(PathSegment::Field(field_name.to_string())));
+                            .path(PathSegment::Field(field_name.to_string()));
+                        yield Response::from_errors(vec![err]);
                     }
                 }
             })),
@@ -98,7 +94,7 @@ impl<T: SubscriptionType> SubscriptionType for &T {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>> {
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>> {
         T::create_field_stream(*self, ctx)
     }
 }

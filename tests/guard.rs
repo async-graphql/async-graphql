@@ -117,7 +117,6 @@ pub async fn test_guard_simple_rule() {
     assert_eq!(
         schema
             .execute_stream(Request::new("subscription { values }").data(Role::Guest))
-            .boxed()
             .next()
             .await
             .unwrap()
