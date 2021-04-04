@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use futures_util::stream::BoxStream;
+use futures_util::TryFutureExt;
 use tracing_futures::Instrument;
 use tracinglib::{span, Level};
 
 use crate::extensions::{
     Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
 };
-use crate::futures_util::TryFutureExt;
 use crate::parser::types::ExecutableDocument;
 use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variables};
 
@@ -22,7 +22,6 @@ use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variab
 /// ```no_run
 /// use async_graphql::*;
 /// use async_graphql::extensions::Tracing;
-/// use tracing::{span, Level, Instrument};
 ///
 /// #[derive(SimpleObject)]
 /// struct Query {

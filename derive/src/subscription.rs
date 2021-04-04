@@ -316,7 +316,9 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        err.into_server_error().at(ctx.item.pos)
+                        err.into_server_error()
+                            .at(ctx.item.pos)
+                            .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
                     })?
             };
 
@@ -325,14 +327,18 @@ pub fn generate(
                 None => None,
             };
             let guard = guard.map(|guard| quote! {
-                #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
+                #guard.check(ctx).await.map_err(|err| {
+                    err.into_server_error()
+                        .at(ctx.item.pos)
+                        .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                })?;
             });
 
             let stream_fn = quote! {
-                #(#get_params)*
-                #guard
                 let field_name = ::std::clone::Clone::clone(&ctx.item.node.response_key().node);
                 let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
+                #(#get_params)*
+                #guard
 
                 let pos = ctx.item.pos;
                 let schema_env = ::std::clone::Clone::clone(&ctx.schema_env);
@@ -373,7 +379,11 @@ pub fn generate(
                                         map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
                                         #crate_name::Response::new(#crate_name::Value::Object(map))
                                     })
-                                    .unwrap_or_else(|err| #crate_name::Response::from_errors(::std::vec![err]))
+                                    .unwrap_or_else(|err| {
+                                        #crate_name::Response::from_errors(::std::vec![
+                                            err.path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                                        ])
+                                    })
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);
                             ::std::result::Result::Ok(query_env.extensions.execute(&mut execute_fut).await)
@@ -387,8 +397,10 @@ pub fn generate(
                         if *errored {
                             return #crate_name::futures_util::future::ready(::std::option::Option::None);
                         }
-                        if item.is_err() {
-                            *errored = true;
+                        match &item {
+                            ::std::result::Result::Err(_) => *errored = true,
+                            ::std::result::Result::Ok(resp) if resp.is_err() => *errored = true,
+                            _ => {}
                         }
                         #crate_name::futures_util::future::ready(::std::option::Option::Some(item))
                     },

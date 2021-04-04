@@ -72,7 +72,10 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
     F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static, { graphql_subscription_with_data_and_callbacks(schema, initializer, ||{}, ||{}) }
+    R: Future<Output = Result<Data>> + Send + 'static,
+{
+    graphql_subscription_with_data_and_callbacks(schema, initializer, || {}, || {})
+}
 
 /// GraphQL subscription filter
 ///

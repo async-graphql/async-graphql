@@ -169,7 +169,6 @@ impl<'a> Fields<'a> {
                     }
 
                     self.0.push(Box::pin({
-                        // TODO: investigate removing this
                         let ctx = ctx.clone();
                         async move {
                             let ctx_field = ctx.with_field(field);
@@ -264,20 +263,6 @@ impl<'a> Fields<'a> {
                                 .map_or(false, |interfaces| interfaces.contains(condition))
                     });
                     if applies_concrete_object {
-                        // The fragment applies to the concrete object type.
-
-                        // TODO: This solution isn't ideal. If there are two interfaces InterfaceA
-                        // and InterfaceB and one type MyObj that implements both, then if you have
-                        // a type condition for `InterfaceA` on an `InterfaceB` and when resolving,
-                        // the `InterfaceB` is actually a `MyObj` then the contents of the fragment
-                        // will be treated as a `MyObj` rather than an `InterfaceB`. Example:
-                        //
-                        // myObjAsInterfaceB {
-                        //     ... on InterfaceA {
-                        //         # here you can query MyObj fields even when you should only be
-                        //         # able to query InterfaceA fields.
-                        //     }
-                        // }
                         root.collect_all_fields(&ctx.with_selection_set(selection_set), self)?;
                     } else if type_condition.map_or(true, |condition| T::type_name() == condition) {
                         // The fragment applies to an interface type.

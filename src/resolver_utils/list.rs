@@ -10,14 +10,15 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
     len: Option<usize>,
 ) -> ServerResult<Value> {
     let extensions = &ctx.query_env.extensions;
-
-    if extensions.is_empty() {
+    if !extensions.is_empty() {
         let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
         for (idx, item) in iter.into_iter().enumerate() {
             futures.push({
                 let ctx = ctx.clone();
                 async move {
                     let ctx_idx = ctx.with_index(idx);
+                    let extensions = &ctx.query_env.extensions;
+
                     let resolve_info = ResolveInfo {
                         path_node: ctx_idx.path_node.as_ref().unwrap(),
                         parent_type: &Vec::<T>::type_name(),
