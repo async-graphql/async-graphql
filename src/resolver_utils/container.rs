@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::extensions::{ErrorLogger, ResolveInfo};
+use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
 use crate::{
@@ -169,23 +169,22 @@ impl<'a> Fields<'a> {
                     }
 
                     self.0.push(Box::pin({
-                        // TODO: investigate removing this
                         let ctx = ctx.clone();
                         async move {
                             let ctx_field = ctx.with_field(field);
                             let field_name = ctx_field.item.node.response_key().node.clone();
+                            let extensions = &ctx.query_env.extensions;
 
-                            let res = if ctx_field.query_env.extensions.is_empty() {
+                            if extensions.is_empty() {
                                 match root.resolve_field(&ctx_field).await {
                                     Ok(value) => Ok((field_name, value.unwrap_or_default())),
                                     Err(e) => {
                                         Err(e.path(PathSegment::Field(field_name.to_string())))
                                     }
-                                }?
+                                }
                             } else {
                                 let type_name = T::type_name();
                                 let resolve_info = ResolveInfo {
-                                    resolve_id: ctx_field.resolve_id,
                                     path_node: ctx_field.path_node.as_ref().unwrap(),
                                     parent_type: &type_name,
                                     return_type: match ctx_field
@@ -210,20 +209,16 @@ impl<'a> Fields<'a> {
                                     },
                                 };
 
-                                ctx_field.query_env.extensions.resolve_start(&resolve_info);
-
-                                let res = match root.resolve_field(&ctx_field).await {
+                                let resolve_fut = async { root.resolve_field(&ctx_field).await };
+                                futures_util::pin_mut!(resolve_fut);
+                                let res = extensions.resolve(resolve_info, &mut resolve_fut).await;
+                                match res {
                                     Ok(value) => Ok((field_name, value.unwrap_or_default())),
                                     Err(e) => {
                                         Err(e.path(PathSegment::Field(field_name.to_string())))
                                     }
                                 }
-                                .log_error(&ctx_field.query_env.extensions)?;
-                                ctx_field.query_env.extensions.resolve_end(&resolve_info);
-                                res
-                            };
-
-                            Ok(res)
+                            }
                         }
                     }));
                 }
@@ -268,20 +263,6 @@ impl<'a> Fields<'a> {
                                 .map_or(false, |interfaces| interfaces.contains(condition))
                     });
                     if applies_concrete_object {
-                        // The fragment applies to the concrete object type.
-
-                        // TODO: This solution isn't ideal. If there are two interfaces InterfaceA
-                        // and InterfaceB and one type MyObj that implements both, then if you have
-                        // a type condition for `InterfaceA` on an `InterfaceB` and when resolving,
-                        // the `InterfaceB` is actually a `MyObj` then the contents of the fragment
-                        // will be treated as a `MyObj` rather than an `InterfaceB`. Example:
-                        //
-                        // myObjAsInterfaceB {
-                        //     ... on InterfaceA {
-                        //         # here you can query MyObj fields even when you should only be
-                        //         # able to query InterfaceA fields.
-                        //     }
-                        // }
                         root.collect_all_fields(&ctx.with_selection_set(selection_set), self)?;
                     } else if type_condition.map_or(true, |condition| T::type_name() == condition) {
                         // The fragment applies to an interface type.

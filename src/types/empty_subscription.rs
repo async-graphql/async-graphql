@@ -3,7 +3,7 @@ use std::pin::Pin;
 
 use futures_util::stream::{self, Stream};
 
-use crate::{registry, Context, ServerError, ServerResult, SubscriptionType, Type, Value};
+use crate::{registry, Context, Response, ServerError, SubscriptionType, Type};
 
 /// Empty subscription
 ///
@@ -37,12 +37,13 @@ impl SubscriptionType for EmptySubscription {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = ServerResult<Value>> + Send + 'a>>>
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>>
     where
         Self: Send + Sync + 'static + Sized,
     {
         Some(Box::pin(stream::once(async move {
-            Err(ServerError::new("Schema is not configured for mutations.").at(ctx.item.pos))
+            let err = ServerError::new("Schema is not configured for mutations.").at(ctx.item.pos);
+            Response::from_errors(vec![err])
         })))
     }
 }

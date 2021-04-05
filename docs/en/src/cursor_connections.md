@@ -18,7 +18,7 @@ impl Query {
         first: Option<i32>,
         last: Option<i32>,
     ) -> Result<Connection<usize, i32, EmptyFields, EmptyFields>> {
-        query(after, before, first, last, |after, before, first, last| {
+        query(after, before, first, last, |after, before, first, last| async move {
             let mut start = after.map(|after| after + 1).unwrap_or(0);
             let mut end = before.unwrap_or(10000);
             if let Some(first) = first {

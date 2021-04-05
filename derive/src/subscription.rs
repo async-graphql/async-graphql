@@ -282,7 +282,7 @@ pub fn generate(
                         quote! {
                             Some(#crate_name::registry::ComplexityType::Fn(|__ctx, __variables_definition, __field, child_complexity| {
                                 #(#parse_args)*
-                                Ok(#expr)
+                                ::std::result::Result::Ok(#expr)
                             }))
                         }
                     }
@@ -316,7 +316,9 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        err.into_server_error().at(ctx.item.pos)
+                        err.into_server_error()
+                            .at(ctx.item.pos)
+                            .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
                     })?
             };
 
@@ -325,14 +327,18 @@ pub fn generate(
                 None => None,
             };
             let guard = guard.map(|guard| quote! {
-                #guard.check(ctx).await.map_err(|err| err.into_server_error().at(ctx.item.pos))?;
+                #guard.check(ctx).await.map_err(|err| {
+                    err.into_server_error()
+                        .at(ctx.item.pos)
+                        .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                })?;
             });
 
             let stream_fn = quote! {
+                let field_name = ::std::clone::Clone::clone(&ctx.item.node.response_key().node);
+                let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
                 #(#get_params)*
                 #guard
-                let field_name = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item.node.response_key().node));
-                let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
 
                 let pos = ctx.item.pos;
                 let schema_env = ::std::clone::Clone::clone(&ctx.schema_env);
@@ -345,11 +351,6 @@ pub fn generate(
                         let field = ::std::clone::Clone::clone(&field);
                         let field_name = ::std::clone::Clone::clone(&field_name);
                         async move {
-                            let resolve_id = #crate_name::ResolveId {
-                                parent: ::std::option::Option::Some(0),
-                                current: 1,
-                            };
-                            let inc_resolve_id = ::std::sync::atomic::AtomicUsize::new(1);
                             let ctx_selection_set = query_env.create_context(
                                 &schema_env,
                                 ::std::option::Option::Some(#crate_name::QueryPathNode {
@@ -357,26 +358,35 @@ pub fn generate(
                                     segment: #crate_name::QueryPathSegment::Name(&field_name),
                                 }),
                                 &field.node.selection_set,
-                                resolve_id,
-                                &inc_resolve_id,
                             );
 
-                            query_env.extensions.execution_start();
-
-                            #[allow(bare_trait_objects)]
-                            let ri = #crate_name::extensions::ResolveInfo {
-                                resolve_id,
-                                path_node: ctx_selection_set.path_node.as_ref().unwrap(),
-                                parent_type: #gql_typename,
-                                return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                            let mut execute_fut = async {
+                                #[allow(bare_trait_objects)]
+                                let ri = #crate_name::extensions::ResolveInfo {
+                                    path_node: ctx_selection_set.path_node.as_ref().unwrap(),
+                                    parent_type: #gql_typename,
+                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                };
+                                let resolve_fut = async {
+                                    #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
+                                        .await
+                                        .map(::std::option::Option::Some)
+                                };
+                                #crate_name::futures_util::pin_mut!(resolve_fut);
+                                query_env.extensions.resolve(ri, &mut resolve_fut).await
+                                    .map(|value| {
+                                        let mut map = ::std::collections::BTreeMap::new();
+                                        map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
+                                        #crate_name::Response::new(#crate_name::Value::Object(map))
+                                    })
+                                    .unwrap_or_else(|err| {
+                                        #crate_name::Response::from_errors(::std::vec![
+                                            err.path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                                        ])
+                                    })
                             };
-
-                            query_env.extensions.resolve_start(&ri);
-                            let res = #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await;
-                            query_env.extensions.resolve_end(&ri);
-                            query_env.extensions.execution_end();
-
-                            res
+                            #crate_name::futures_util::pin_mut!(execute_fut);
+                            ::std::result::Result::Ok(query_env.extensions.execute(&mut execute_fut).await)
                         }
                     }
                 });
@@ -387,8 +397,10 @@ pub fn generate(
                         if *errored {
                             return #crate_name::futures_util::future::ready(::std::option::Option::None);
                         }
-                        if item.is_err() {
-                            *errored = true;
+                        match &item {
+                            ::std::result::Result::Err(_) => *errored = true,
+                            ::std::result::Result::Ok(resp) if resp.is_err() => *errored = true,
+                            _ => {}
                         }
                         #crate_name::futures_util::future::ready(::std::option::Option::Some(item))
                     },
@@ -398,11 +410,14 @@ pub fn generate(
             create_stream.push(quote! {
                 #(#cfg_attrs)*
                 if ctx.item.node.name.node == #field_name {
-                    return ::std::option::Option::Some(::std::boxed::Box::pin(
-                        #crate_name::futures_util::stream::TryStreamExt::try_flatten(
-                            #crate_name::futures_util::stream::once((move || async move { #stream_fn })())
-                        )
-                    ));
+                    let stream = #crate_name::futures_util::stream::TryStreamExt::try_flatten(
+                        #crate_name::futures_util::stream::once((move || async move { #stream_fn })())
+                    );
+                    let stream = #crate_name::futures_util::StreamExt::map(stream, |res| match res {
+                        ::std::result::Result::Ok(resp) => resp,
+                        ::std::result::Result::Err(err) => #crate_name::Response::from_errors(::std::vec![err]),
+                    });
+                    return ::std::option::Option::Some(::std::boxed::Box::pin(stream));
                 }
             });
 
@@ -451,7 +466,7 @@ pub fn generate(
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'_>,
-            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::ServerResult<#crate_name::Value>> + ::std::marker::Send + '__life>>> {
+            ) -> ::std::option::Option<::std::pin::Pin<::std::boxed::Box<dyn #crate_name::futures_util::stream::Stream<Item = #crate_name::Response> + ::std::marker::Send + '__life>>> {
                 #(#create_stream)*
                 ::std::option::Option::None
             }

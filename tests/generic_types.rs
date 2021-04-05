@@ -284,8 +284,7 @@ pub async fn test_generic_subscription() {
     {
         let mut stream = schema
             .execute_stream("subscription { values }")
-            .map(|resp| resp.into_result().unwrap().data)
-            .boxed();
+            .map(|resp| resp.into_result().unwrap().data);
         for i in 1..=2 {
             assert_eq!(value!({ "values": i }), stream.next().await.unwrap());
         }

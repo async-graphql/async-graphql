@@ -119,7 +119,7 @@ pub async fn test_field_features() {
         }]
     );
 
-    let mut stream = schema.execute_stream("subscription { values }").boxed();
+    let mut stream = schema.execute_stream("subscription { values }");
     assert_eq!(
         stream
             .next()
@@ -131,7 +131,7 @@ pub async fn test_field_features() {
         })
     );
 
-    let mut stream = schema.execute_stream("subscription { valuesBson }").boxed();
+    let mut stream = schema.execute_stream("subscription { valuesBson }");
     assert_eq!(
         stream.next().await.map(|resp| resp.data).unwrap(),
         value!({
@@ -142,7 +142,6 @@ pub async fn test_field_features() {
     assert_eq!(
         schema
             .execute_stream("subscription { valuesAbc }")
-            .boxed()
             .next()
             .await
             .unwrap()
