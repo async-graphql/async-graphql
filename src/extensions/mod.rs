@@ -286,7 +286,6 @@ impl<'a> NextResolve<'a> {
 
 /// Represents a GraphQL extension
 #[async_trait::async_trait]
-#[allow(unused_variables)]
 pub trait Extension: Sync + Send + 'static {
     /// Called at start query/mutation request.
     async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
