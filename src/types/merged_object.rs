@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use indexmap::IndexMap;
 
 use crate::parser::types::Field;
@@ -15,8 +13,10 @@ use async_graphql_value::ConstValue;
 pub struct MergedObject<A, B>(pub A, pub B);
 
 impl<A: Type, B: Type> Type for MergedObject<A, B> {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}_{}", A::type_name(), B::type_name()))
+    fn type_name() -> &'static str {
+        static NAME: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+        NAME.get_or_init(|| format!("{}_{}", A::type_name(), B::type_name()))
+            .as_str()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {

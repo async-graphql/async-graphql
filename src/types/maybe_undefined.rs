@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value};
@@ -99,7 +97,7 @@ impl<T> MaybeUndefined<T> {
 }
 
 impl<T: Type> Type for MaybeUndefined<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -165,8 +163,8 @@ mod tests {
     fn test_maybe_undefined_type() {
         assert_eq!(MaybeUndefined::<i32>::type_name(), "Int");
         assert_eq!(MaybeUndefined::<i32>::qualified_type_name(), "Int");
-        assert_eq!(&MaybeUndefined::<i32>::type_name(), "Int");
-        assert_eq!(&MaybeUndefined::<i32>::qualified_type_name(), "Int");
+        assert_eq!(MaybeUndefined::<i32>::type_name(), "Int");
+        assert_eq!(MaybeUndefined::<i32>::qualified_type_name(), "Int");
     }
 
     #[test]

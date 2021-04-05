@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use futures_util::stream::{Stream, StreamExt, TryStreamExt};
 use indexmap::map::IndexMap;
 
@@ -126,15 +124,17 @@ where
     EC: ObjectType,
     EE: ObjectType,
 {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}Connection", T::type_name()))
+    fn type_name() -> &'static str {
+        static NAME: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+        NAME.get_or_init(|| format!("{}Connection", T::type_name()))
+            .as_str()
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
         registry.create_type::<Self, _>(|registry| {
             EC::create_type_info(registry);
             let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.remove(EC::type_name().as_ref())
+                registry.types.remove(EC::type_name())
             {
                 fields
             } else {

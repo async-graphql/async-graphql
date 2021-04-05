@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::cmp::Eq;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -11,8 +10,10 @@ use crate::{
 };
 
 impl<T: Type> Type for HashSet<T> {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+    fn type_name() -> &'static str {
+        static NAME: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+        NAME.get_or_init(|| format!("[{}]", T::qualified_type_name()))
+            .as_str()
     }
 
     fn qualified_type_name() -> String {

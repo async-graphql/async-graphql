@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
@@ -7,7 +5,7 @@ use crate::{
 };
 
 impl<T: Type> Type for Option<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -62,7 +60,5 @@ mod tests {
     fn test_optional_type() {
         assert_eq!(Option::<i32>::type_name(), "Int");
         assert_eq!(Option::<i32>::qualified_type_name(), "Int");
-        assert_eq!(&Option::<i32>::type_name(), "Int");
-        assert_eq!(&Option::<i32>::qualified_type_name(), "Int");
     }
 }

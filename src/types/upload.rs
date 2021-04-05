@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 
@@ -101,8 +100,8 @@ impl Upload {
 }
 
 impl Type for Upload {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("Upload")
+    fn type_name() -> &'static str {
+        "Upload"
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

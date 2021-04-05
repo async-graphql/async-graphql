@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use indexmap::map::IndexMap;
 
 use crate::connection::EmptyFields;
@@ -46,8 +44,10 @@ where
     T: OutputType,
     E: ObjectType,
 {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}Edge", T::type_name()))
+    fn type_name() -> &'static str {
+        static NAME: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+        NAME.get_or_init(|| format!("{}Edge", T::type_name()))
+            .as_str()
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

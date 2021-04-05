@@ -7,7 +7,7 @@ impl<'a, T> Type for Cow<'a, T>
 where
     T: Type + ToOwned + ?Sized + Send + Sync,
 {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -86,6 +86,19 @@ mod test {
             EmptySubscription,
         );
 
+        println!("{}", MyObj::type_name());
+        println!("{}", i32::type_name());
+        let fields = schema
+            .env
+            .registry
+            .types
+            .get("MyObj")
+            .map(|ty| ty.fields().unwrap())
+            .unwrap();
+        for field in fields.values() {
+            println!("{} {}", field.name, field.ty);
+        }
+        println!("{}", schema.sdl());
         assert_eq!(
             schema.execute(query).await.into_result().unwrap().data,
             value!({

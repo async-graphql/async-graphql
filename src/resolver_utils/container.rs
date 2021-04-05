@@ -150,7 +150,7 @@ impl<'a> Fields<'a> {
                         // Get the typename
                         let ctx_field = ctx.with_field(field);
                         let field_name = ctx_field.item.node.response_key().node.clone();
-                        let typename = root.introspection_type_name().into_owned();
+                        let typename = root.introspection_type_name().to_string();
 
                         self.0.push(Box::pin(async move {
                             Ok((field_name, Value::String(typename)))
@@ -160,7 +160,7 @@ impl<'a> Fields<'a> {
 
                     if ctx.is_ifdef(&field.node.directives) {
                         if let Some(MetaType::Object { fields, .. }) =
-                            ctx.schema_env.registry.types.get(T::type_name().as_ref())
+                            ctx.schema_env.registry.types.get(T::type_name())
                         {
                             if !fields.contains_key(field.node.name.node.as_str()) {
                                 continue;
@@ -184,29 +184,28 @@ impl<'a> Fields<'a> {
                                 }
                             } else {
                                 let type_name = T::type_name();
+                                let return_type = match ctx_field
+                                    .schema_env
+                                    .registry
+                                    .types
+                                    .get(type_name)
+                                    .and_then(|ty| ty.field_by_name(field.node.name.node.as_str()))
+                                    .map(|field| &field.ty)
+                                {
+                                    Some(ty) => ty,
+                                    None => {
+                                        return Err(ServerError::new(format!(
+                                            r#"Cannot query field "{}" on type "{}"."#,
+                                            field_name, type_name
+                                        ))
+                                        .at(ctx_field.item.pos)
+                                        .path(PathSegment::Field(field_name.to_string())));
+                                    }
+                                };
                                 let resolve_info = ResolveInfo {
                                     path_node: ctx_field.path_node.as_ref().unwrap(),
-                                    parent_type: &type_name,
-                                    return_type: match ctx_field
-                                        .schema_env
-                                        .registry
-                                        .types
-                                        .get(type_name.as_ref())
-                                        .and_then(|ty| {
-                                            ty.field_by_name(field.node.name.node.as_str())
-                                        })
-                                        .map(|field| &field.ty)
-                                    {
-                                        Some(ty) => &ty,
-                                        None => {
-                                            return Err(ServerError::new(format!(
-                                                r#"Cannot query field "{}" on type "{}"."#,
-                                                field_name, type_name
-                                            ))
-                                            .at(ctx_field.item.pos)
-                                            .path(PathSegment::Field(field_name.to_string())));
-                                        }
-                                    },
+                                    parent_type: type_name,
+                                    return_type,
                                 };
 
                                 let resolve_fut = async { root.resolve_field(&ctx_field).await };

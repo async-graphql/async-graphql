@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
 use serde::de::DeserializeOwned;
@@ -75,8 +74,8 @@ impl<T: Serialize> From<T> for OutputJson<T> {
 }
 
 impl<T> Type for OutputJson<T> {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("Json")
+    fn type_name() -> &'static str {
+        "Json"
     }
 
     fn create_type_info(registry: &mut Registry) -> String {

@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::parser::types::Field;
 use crate::resolver_utils::ContainerType;
 use crate::{
@@ -32,8 +30,8 @@ use crate::{
 pub struct EmptyMutation;
 
 impl Type for EmptyMutation {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("EmptyMutation")
+    fn type_name() -> &'static str {
+        "EmptyMutation"
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

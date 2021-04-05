@@ -350,10 +350,10 @@ impl Registry {
         mut f: F,
     ) -> String {
         let name = T::type_name();
-        if !self.types.contains_key(name.as_ref()) {
+        if !self.types.contains_key(name) {
             // Inserting a fake type before calling the function allows recursive types to exist.
             self.types.insert(
-                name.clone().into_owned(),
+                name.to_string(),
                 MetaType::Object {
                     name: "".to_string(),
                     description: None,

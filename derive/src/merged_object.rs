@@ -58,8 +58,8 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> &'static ::std::primitive::str {
+                #gql_typename
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {

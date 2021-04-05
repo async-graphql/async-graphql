@@ -110,8 +110,8 @@ macro_rules! scalar {
 macro_rules! scalar_internal {
     ($ty:ty, $name:expr, $desc:expr) => {
         impl $crate::Type for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed($name)
+            fn type_name() -> &'static ::std::primitive::str {
+                $name
             }
 
             fn create_type_info(

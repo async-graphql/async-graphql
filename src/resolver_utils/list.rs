@@ -13,6 +13,7 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
     if !extensions.is_empty() {
         let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
         for (idx, item) in iter.into_iter().enumerate() {
+            let return_type = T::qualified_type_name();
             futures.push({
                 let ctx = ctx.clone();
                 async move {
@@ -21,8 +22,8 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
 
                     let resolve_info = ResolveInfo {
                         path_node: ctx_idx.path_node.as_ref().unwrap(),
-                        parent_type: &Vec::<T>::type_name(),
-                        return_type: &T::qualified_type_name(),
+                        parent_type: Vec::<T>::type_name(),
+                        return_type: &return_type,
                     };
                     let resolve_fut = async {
                         OutputType::resolve(&item, &ctx_idx, field)

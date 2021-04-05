@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, OutputType, Positioned,
@@ -26,8 +24,8 @@ impl ScalarType for String {
 }
 
 impl Type for str {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("String")
+    fn type_name() -> &'static str {
+        "String"
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

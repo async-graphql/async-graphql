@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::sync::Arc;
 
 use async_graphql_value::ConstValue;
@@ -20,7 +19,7 @@ pub trait Description {
 /// All GraphQL types implement this trait, such as `Scalar`, `Object`, `Union` ...
 pub trait Type {
     /// Type the name.
-    fn type_name() -> Cow<'static, str>;
+    fn type_name() -> &'static str;
 
     /// Qualified typename.
     fn qualified_type_name() -> String {
@@ -30,7 +29,7 @@ pub trait Type {
     /// Introspection type name
     ///
     /// Is the return value of field `__typename`, the interface and union should return the current type, and the others return `Type::type_name`.
-    fn introspection_type_name(&self) -> Cow<'static, str> {
+    fn introspection_type_name(&self) -> &'static str {
         Self::type_name()
     }
 
@@ -65,7 +64,7 @@ pub trait OutputType: Type + Send + Sync {
 }
 
 impl<T: Type + ?Sized> Type for &T {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -87,7 +86,7 @@ impl<T: OutputType + ?Sized> OutputType for &T {
 }
 
 impl<T: Type> Type for Result<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -130,7 +129,7 @@ pub trait UnionType: ContainerType {}
 pub trait InputObjectType: InputType {}
 
 impl<T: Type + ?Sized> Type for Box<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -165,7 +164,7 @@ impl<T: InputType> InputType for Box<T> {
 }
 
 impl<T: Type + ?Sized> Type for Arc<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 

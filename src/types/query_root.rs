@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use indexmap::map::IndexMap;
 
 use crate::model::{__Schema, __Type};
@@ -22,7 +20,7 @@ pub(crate) struct QueryRoot<T> {
 }
 
 impl<T: Type> Type for QueryRoot<T> {
-    fn type_name() -> Cow<'static, str> {
+    fn type_name() -> &'static str {
         T::type_name()
     }
 
@@ -32,7 +30,7 @@ impl<T: Type> Type for QueryRoot<T> {
         if !registry.disable_introspection {
             let schema_type = __Schema::create_type_info(registry);
             if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.get_mut(T::type_name().as_ref())
+                registry.types.get_mut(T::type_name())
             {
                 fields.insert(
                     "__schema".to_string(),

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::pin::Pin;
 
 use futures_util::stream::{self, Stream};
@@ -12,8 +11,8 @@ use crate::{registry, Context, Response, ServerError, SubscriptionType, Type};
 pub struct EmptySubscription;
 
 impl Type for EmptySubscription {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("EmptyMutation")
+    fn type_name() -> &'static str {
+        "EmptyMutation"
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {

@@ -34,7 +34,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     }
     let inner_ty = &fields.fields[0];
     let type_name = match &gql_typename {
-        Some(name) => quote! { ::std::borrow::Cow::Borrowed(#name) },
+        Some(name) => quote! { #name },
         None => quote! { <#inner_ty as #crate_name::Type>::type_name() },
     };
     let create_type_info = if let Some(name) = &gql_typename {
@@ -76,7 +76,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+            fn type_name() -> &'static ::std::primitive::str {
                 #type_name
             }
 

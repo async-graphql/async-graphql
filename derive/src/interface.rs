@@ -105,7 +105,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             });
 
             possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
+                possible_types.insert(::std::string::ToString::to_string(<#p as #crate_name::Type>::type_name()));
             });
 
             get_introspection_typename.push(quote! {
@@ -318,11 +318,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+            fn type_name() -> &'static ::std::primitive::str {
+                #gql_typename
             }
 
-            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+            fn introspection_type_name(&self) -> &'static ::std::primitive::str {
                 #introspection_type_name
             }
 
