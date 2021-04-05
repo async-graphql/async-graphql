@@ -4,7 +4,7 @@ use std::sync::Arc;
 use futures_util::lock::Mutex;
 
 use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextParseQuery, NextResolve, ResolveInfo,
 };
 use crate::parser::types::{ExecutableDocument, OperationType, Selection};
 use crate::{PathSegment, ServerError, ServerResult, Value, Variables};
@@ -42,12 +42,12 @@ impl Extension for LoggerExtension {
         ctx: &ExtensionContext<'_>,
         query: &str,
         variables: &Variables,
-        next: NextExtension<'_>,
+        next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
         let mut inner = self.inner.lock().await;
         inner.query = query.replace(char::is_whitespace, "");
         inner.variables = variables.clone();
-        let document = next.parse_query(ctx, query, variables).await?;
+        let document = next.run(ctx, query, variables).await?;
         let is_schema = document
             .operations
             .iter()
@@ -61,13 +61,13 @@ impl Extension for LoggerExtension {
         &self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
-        next: NextExtension<'_>,
+        next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         let enabled = self.inner.lock().await.enabled;
         if enabled {
             let path = info.path_node.to_string();
             log::trace!(target: "async-graphql", "[ResolveStart] path: \"{}\"", path);
-            let res = next.resolve(ctx, info).await;
+            let res = next.run(ctx, info).await;
             if let Err(err) = &res {
                 let inner = self.inner.lock().await;
                 log::error!(
@@ -79,7 +79,7 @@ impl Extension for LoggerExtension {
             log::trace!(target: "async-graphql", "[ResolveEnd] path: \"{}\"", path);
             res
         } else {
-            next.resolve(ctx, info).await
+            next.run(ctx, info).await
         }
     }
 }

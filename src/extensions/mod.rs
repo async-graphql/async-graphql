@@ -27,7 +27,6 @@ use std::future::Future;
 use std::sync::Arc;
 
 use futures_util::stream::BoxStream;
-use futures_util::stream::StreamExt;
 
 use crate::parser::types::ExecutableDocument;
 use crate::{
@@ -107,173 +106,180 @@ type ExecuteFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
 
 type ResolveFut<'a> = &'a mut (dyn Future<Output = ServerResult<Option<Value>>> + Send + Unpin);
 
-/// The remainder of a extension chain.
-pub struct NextExtension<'a> {
+/// The remainder of a extension chain for request.
+pub struct NextRequest<'a> {
     chain: &'a [Arc<dyn Extension>],
-    request_fut: Option<RequestFut<'a>>,
-    parse_query_fut: Option<ParseFut<'a>>,
-    validation_fut: Option<ValidationFut<'a>>,
-    execute_fut: Option<ExecuteFut<'a>>,
-    resolve_fut: Option<ResolveFut<'a>>,
+    request_fut: RequestFut<'a>,
 }
 
-impl<'a> NextExtension<'a> {
-    #[inline]
-    pub(crate) fn new(chain: &'a [Arc<dyn Extension>]) -> Self {
-        Self {
-            chain,
-            request_fut: None,
-            parse_query_fut: None,
-            validation_fut: None,
-            execute_fut: None,
-            resolve_fut: None,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn with_chain(self, chain: &'a [Arc<dyn Extension>]) -> Self {
-        Self { chain, ..self }
-    }
-
-    #[inline]
-    pub(crate) fn with_request(self, fut: RequestFut<'a>) -> Self {
-        Self {
-            request_fut: Some(fut),
-            ..self
-        }
-    }
-
-    #[inline]
-    pub(crate) fn with_parse_query(self, fut: ParseFut<'a>) -> Self {
-        Self {
-            parse_query_fut: Some(fut),
-            ..self
-        }
-    }
-
-    #[inline]
-    pub(crate) fn with_validation(self, fut: ValidationFut<'a>) -> Self {
-        Self {
-            validation_fut: Some(fut),
-            ..self
-        }
-    }
-
-    #[inline]
-    pub(crate) fn with_execute(self, fut: ExecuteFut<'a>) -> Self {
-        Self {
-            execute_fut: Some(fut),
-            ..self
-        }
-    }
-
-    #[inline]
-    pub(crate) fn with_resolve(self, fut: ResolveFut<'a>) -> Self {
-        Self {
-            resolve_fut: Some(fut),
-            ..self
-        }
-    }
-
+impl<'a> NextRequest<'a> {
     /// Call the [Extension::request] function of next extension.
-    pub async fn request(mut self, ctx: &ExtensionContext<'_>) -> Response {
+    pub async fn run(self, ctx: &ExtensionContext<'_>) -> Response {
         if let Some((first, next)) = self.chain.split_first() {
-            first.request(ctx, self.with_chain(next)).await
-        } else {
-            self.request_fut
-                .take()
-                .expect("You definitely called the wrong function.")
+            first
+                .request(
+                    ctx,
+                    NextRequest {
+                        chain: next,
+                        request_fut: self.request_fut,
+                    },
+                )
                 .await
+        } else {
+            self.request_fut.await
         }
     }
+}
 
+/// The remainder of a extension chain for subscribe.
+pub struct NextSubscribe<'a> {
+    chain: &'a [Arc<dyn Extension>],
+}
+
+impl<'a> NextSubscribe<'a> {
     /// Call the [Extension::subscribe] function of next extension.
-    pub fn subscribe<'s>(
+    pub fn run<'s>(
         self,
         ctx: &ExtensionContext<'_>,
         stream: BoxStream<'s, Response>,
     ) -> BoxStream<'s, Response> {
         if let Some((first, next)) = self.chain.split_first() {
-            first.subscribe(ctx, stream, self.with_chain(next))
+            first.subscribe(ctx, stream, NextSubscribe { chain: next })
         } else {
             stream
         }
     }
+}
 
+/// The remainder of a extension chain for subscribe.
+pub struct NextPrepareRequest<'a> {
+    chain: &'a [Arc<dyn Extension>],
+}
+
+impl<'a> NextPrepareRequest<'a> {
     /// Call the [Extension::prepare_request] function of next extension.
-    pub async fn prepare_request(
-        self,
-        ctx: &ExtensionContext<'_>,
-        request: Request,
-    ) -> ServerResult<Request> {
+    pub async fn run(self, ctx: &ExtensionContext<'_>, request: Request) -> ServerResult<Request> {
         if let Some((first, next)) = self.chain.split_first() {
             first
-                .prepare_request(ctx, request, self.with_chain(next))
+                .prepare_request(ctx, request, NextPrepareRequest { chain: next })
                 .await
         } else {
             Ok(request)
         }
     }
+}
 
+/// The remainder of a extension chain for parse query.
+pub struct NextParseQuery<'a> {
+    chain: &'a [Arc<dyn Extension>],
+    parse_query_fut: ParseFut<'a>,
+}
+
+impl<'a> NextParseQuery<'a> {
     /// Call the [Extension::parse_query] function of next extension.
-    pub async fn parse_query(
-        mut self,
+    pub async fn run(
+        self,
         ctx: &ExtensionContext<'_>,
         query: &str,
         variables: &Variables,
     ) -> ServerResult<ExecutableDocument> {
         if let Some((first, next)) = self.chain.split_first() {
             first
-                .parse_query(ctx, query, variables, self.with_chain(next))
+                .parse_query(
+                    ctx,
+                    query,
+                    variables,
+                    NextParseQuery {
+                        chain: next,
+                        parse_query_fut: self.parse_query_fut,
+                    },
+                )
                 .await
         } else {
-            self.parse_query_fut
-                .take()
-                .expect("You definitely called the wrong function.")
-                .await
+            self.parse_query_fut.await
         }
     }
+}
 
+/// The remainder of a extension chain for validation.
+pub struct NextValidation<'a> {
+    chain: &'a [Arc<dyn Extension>],
+    validation_fut: ValidationFut<'a>,
+}
+
+impl<'a> NextValidation<'a> {
     /// Call the [Extension::validation] function of next extension.
-    pub async fn validation(
-        mut self,
+    pub async fn run(
+        self,
         ctx: &ExtensionContext<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
         if let Some((first, next)) = self.chain.split_first() {
-            first.validation(ctx, self.with_chain(next)).await
-        } else {
-            self.validation_fut
-                .take()
-                .expect("You definitely called the wrong function.")
+            first
+                .validation(
+                    ctx,
+                    NextValidation {
+                        chain: next,
+                        validation_fut: self.validation_fut,
+                    },
+                )
                 .await
+        } else {
+            self.validation_fut.await
         }
     }
+}
 
+/// The remainder of a extension chain for execute.
+pub struct NextExecute<'a> {
+    chain: &'a [Arc<dyn Extension>],
+    execute_fut: ExecuteFut<'a>,
+}
+
+impl<'a> NextExecute<'a> {
     /// Call the [Extension::execute] function of next extension.
-    pub async fn execute(mut self, ctx: &ExtensionContext<'_>) -> Response {
+    pub async fn run(self, ctx: &ExtensionContext<'_>) -> Response {
         if let Some((first, next)) = self.chain.split_first() {
-            first.execute(ctx, self.with_chain(next)).await
-        } else {
-            self.execute_fut
-                .take()
-                .expect("You definitely called the wrong function.")
+            first
+                .execute(
+                    ctx,
+                    NextExecute {
+                        chain: next,
+                        execute_fut: self.execute_fut,
+                    },
+                )
                 .await
+        } else {
+            self.execute_fut.await
         }
     }
+}
 
+/// The remainder of a extension chain for resolve.
+pub struct NextResolve<'a> {
+    chain: &'a [Arc<dyn Extension>],
+    resolve_fut: ResolveFut<'a>,
+}
+
+impl<'a> NextResolve<'a> {
     /// Call the [Extension::resolve] function of next extension.
-    pub async fn resolve(
-        mut self,
+    pub async fn run(
+        self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
     ) -> ServerResult<Option<Value>> {
         if let Some((first, next)) = self.chain.split_first() {
-            first.resolve(ctx, info, self.with_chain(next)).await
-        } else {
-            self.resolve_fut
-                .take()
-                .expect("You definitely called the wrong function.")
+            first
+                .resolve(
+                    ctx,
+                    info,
+                    NextResolve {
+                        chain: next,
+                        resolve_fut: self.resolve_fut,
+                    },
+                )
                 .await
+        } else {
+            self.resolve_fut.await
         }
     }
 }
@@ -283,8 +289,8 @@ impl<'a> NextExtension<'a> {
 #[allow(unused_variables)]
 pub trait Extension: Sync + Send + 'static {
     /// Called at start query/mutation request.
-    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
-        next.request(ctx).await
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
+        next.run(ctx).await
     }
 
     /// Called at subscribe request.
@@ -292,9 +298,9 @@ pub trait Extension: Sync + Send + 'static {
         &self,
         ctx: &ExtensionContext<'_>,
         stream: BoxStream<'s, Response>,
-        next: NextExtension<'_>,
+        next: NextSubscribe<'_>,
     ) -> BoxStream<'s, Response> {
-        next.subscribe(ctx, stream)
+        next.run(ctx, stream)
     }
 
     /// Called at prepare request.
@@ -302,9 +308,9 @@ pub trait Extension: Sync + Send + 'static {
         &self,
         ctx: &ExtensionContext<'_>,
         request: Request,
-        next: NextExtension<'_>,
+        next: NextPrepareRequest<'_>,
     ) -> ServerResult<Request> {
-        next.prepare_request(ctx, request).await
+        next.run(ctx, request).await
     }
 
     /// Called at parse query.
@@ -313,23 +319,23 @@ pub trait Extension: Sync + Send + 'static {
         ctx: &ExtensionContext<'_>,
         query: &str,
         variables: &Variables,
-        next: NextExtension<'_>,
+        next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
-        next.parse_query(ctx, query, variables).await
+        next.run(ctx, query, variables).await
     }
 
     /// Called at validation query.
     async fn validation(
         &self,
         ctx: &ExtensionContext<'_>,
-        next: NextExtension<'_>,
+        next: NextValidation<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
-        next.validation(ctx).await
+        next.run(ctx).await
     }
 
     /// Called at execute query.
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
-        next.execute(ctx).await
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
+        next.run(ctx).await
     }
 
     /// Called at resolve field.
@@ -337,9 +343,9 @@ pub trait Extension: Sync + Send + 'static {
         &self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
-        next: NextExtension<'_>,
+        next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
-        next.resolve(ctx, info).await
+        next.run(ctx, info).await
     }
 }
 
@@ -375,6 +381,7 @@ impl Extensions {
         }
     }
 
+    #[inline]
     pub fn attach_query_data(&mut self, data: Arc<Data>) {
         self.query_data = Some(data);
     }
@@ -394,30 +401,25 @@ impl Extensions {
     }
 
     pub async fn request(&self, request_fut: RequestFut<'_>) -> Response {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions).with_request(request_fut);
-            next.request(&self.create_context()).await
-        } else {
-            request_fut.await
-        }
+        let next = NextRequest {
+            chain: &self.extensions,
+            request_fut,
+        };
+        next.run(&self.create_context()).await
     }
 
     pub fn subscribe<'s>(&self, stream: BoxStream<'s, Response>) -> BoxStream<'s, Response> {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions);
-            next.subscribe(&self.create_context(), stream)
-        } else {
-            stream.boxed()
-        }
+        let next = NextSubscribe {
+            chain: &self.extensions,
+        };
+        next.run(&self.create_context(), stream)
     }
 
     pub async fn prepare_request(&self, request: Request) -> ServerResult<Request> {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions);
-            next.prepare_request(&self.create_context(), request).await
-        } else {
-            Ok(request)
-        }
+        let next = NextPrepareRequest {
+            chain: &self.extensions,
+        };
+        next.run(&self.create_context(), request).await
     }
 
     pub async fn parse_query(
@@ -426,34 +428,30 @@ impl Extensions {
         variables: &Variables,
         parse_query_fut: ParseFut<'_>,
     ) -> ServerResult<ExecutableDocument> {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions).with_parse_query(parse_query_fut);
-            next.parse_query(&self.create_context(), query, variables)
-                .await
-        } else {
-            parse_query_fut.await
-        }
+        let next = NextParseQuery {
+            chain: &self.extensions,
+            parse_query_fut,
+        };
+        next.run(&self.create_context(), query, variables).await
     }
 
     pub async fn validation(
         &self,
         validation_fut: ValidationFut<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions).with_validation(validation_fut);
-            next.validation(&self.create_context()).await
-        } else {
-            validation_fut.await
-        }
+        let next = NextValidation {
+            chain: &self.extensions,
+            validation_fut,
+        };
+        next.run(&self.create_context()).await
     }
 
     pub async fn execute(&self, execute_fut: ExecuteFut<'_>) -> Response {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions).with_execute(execute_fut);
-            next.execute(&self.create_context()).await
-        } else {
-            execute_fut.await
-        }
+        let next = NextExecute {
+            chain: &self.extensions,
+            execute_fut,
+        };
+        next.run(&self.create_context()).await
     }
 
     pub async fn resolve(
@@ -461,11 +459,10 @@ impl Extensions {
         info: ResolveInfo<'_>,
         resolve_fut: ResolveFut<'_>,
     ) -> ServerResult<Option<Value>> {
-        if !self.extensions.is_empty() {
-            let next = NextExtension::new(&self.extensions).with_resolve(resolve_fut);
-            next.resolve(&self.create_context(), info).await
-        } else {
-            resolve_fut.await
-        }
+        let next = NextResolve {
+            chain: &self.extensions,
+            resolve_fut,
+        };
+        next.run(&self.create_context(), info).await
     }
 }

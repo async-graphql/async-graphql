@@ -8,7 +8,8 @@ use opentelemetry::trace::{FutureExt, SpanKind, TraceContextExt, Tracer};
 use opentelemetry::{Context as OpenTelemetryContext, Key};
 
 use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
+    NextResolve, NextSubscribe, NextValidation, ResolveInfo,
 };
 use crate::{Response, ServerError, ServerResult, ValidationResult, Value};
 
@@ -52,8 +53,8 @@ struct OpenTelemetryExtension<T> {
 
 #[async_trait::async_trait]
 impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
-    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
-        next.request(ctx)
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
+        next.run(ctx)
             .with_context(OpenTelemetryContext::current_with_span(
                 self.tracer
                     .span_builder("request")
@@ -67,10 +68,10 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         &self,
         ctx: &ExtensionContext<'_>,
         stream: BoxStream<'s, Response>,
-        next: NextExtension<'_>,
+        next: NextSubscribe<'_>,
     ) -> BoxStream<'s, Response> {
         Box::pin(
-            next.subscribe(ctx, stream)
+            next.run(ctx, stream)
                 .with_context(OpenTelemetryContext::current_with_span(
                     self.tracer
                         .span_builder("subscribe")
@@ -85,7 +86,7 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         ctx: &ExtensionContext<'_>,
         query: &str,
         variables: &Variables,
-        next: NextExtension<'_>,
+        next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
         let attributes = vec![
             KEY_SOURCE.string(query.to_string()),
@@ -97,7 +98,7 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
             .with_kind(SpanKind::Server)
             .with_attributes(attributes)
             .start(&*self.tracer);
-        next.parse_query(ctx, query, variables)
+        next.run(ctx, query, variables)
             .with_context(OpenTelemetryContext::current_with_span(span))
             .await
     }
@@ -105,14 +106,14 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
     async fn validation(
         &self,
         ctx: &ExtensionContext<'_>,
-        next: NextExtension<'_>,
+        next: NextValidation<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
         let span = self
             .tracer
             .span_builder("validation")
             .with_kind(SpanKind::Server)
             .start(&*self.tracer);
-        next.validation(ctx)
+        next.run(ctx)
             .with_context(OpenTelemetryContext::current_with_span(span))
             .map_ok(|res| {
                 let current_cx = OpenTelemetryContext::current();
@@ -124,13 +125,13 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
             .await
     }
 
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
         let span = self
             .tracer
             .span_builder("execute")
             .with_kind(SpanKind::Server)
             .start(&*self.tracer);
-        next.execute(ctx)
+        next.run(ctx)
             .with_context(OpenTelemetryContext::current_with_span(span))
             .await
     }
@@ -139,7 +140,7 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         &self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
-        next: NextExtension<'_>,
+        next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         let attributes = vec![
             KEY_PARENT_TYPE.string(info.parent_type.to_string()),
@@ -151,7 +152,7 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
             .with_kind(SpanKind::Server)
             .with_attributes(attributes)
             .start(&*self.tracer);
-        next.resolve(ctx, info)
+        next.run(ctx, info)
             .with_context(OpenTelemetryContext::current_with_span(span))
             .map_err(|err| {
                 let current_cx = OpenTelemetryContext::current();

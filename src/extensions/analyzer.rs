@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use futures_util::lock::Mutex;
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExtension};
+use crate::extensions::{
+    Extension, ExtensionContext, ExtensionFactory, NextRequest, NextValidation,
+};
 use crate::{value, Response, ServerError, ValidationResult};
 
 /// Analyzer extension
@@ -23,8 +25,8 @@ struct AnalyzerExtension {
 
 #[async_trait::async_trait]
 impl Extension for AnalyzerExtension {
-    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
-        let mut resp = next.request(ctx).await;
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
+        let mut resp = next.run(ctx).await;
         let validation_result = self.validation_result.lock().await.take();
         if let Some(validation_result) = validation_result {
             resp = resp.extension(
@@ -41,9 +43,9 @@ impl Extension for AnalyzerExtension {
     async fn validation(
         &self,
         ctx: &ExtensionContext<'_>,
-        next: NextExtension<'_>,
+        next: NextValidation<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
-        let res = next.validation(ctx).await?;
+        let res = next.run(ctx).await?;
         *self.validation_result.lock().await = Some(res);
         Ok(res)
     }

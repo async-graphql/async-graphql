@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use async_graphql::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextPrepareRequest,
+    NextRequest, NextResolve, NextSubscribe, NextValidation, ResolveInfo,
 };
 use async_graphql::futures_util::stream::BoxStream;
 use async_graphql::parser::types::ExecutableDocument;
@@ -44,12 +45,12 @@ pub async fn test_extension_ctx() {
             ctx: &ExtensionContext<'_>,
             query: &str,
             variables: &Variables,
-            next: NextExtension<'_>,
+            next: NextParseQuery<'_>,
         ) -> ServerResult<ExecutableDocument> {
             if let Ok(data) = ctx.data::<MyData>() {
                 *data.0.lock().await = 100;
             }
-            next.parse_query(ctx, query, variables).await
+            next.run(ctx, query, variables).await
         }
     }
 
@@ -131,9 +132,9 @@ pub async fn test_extension_call_order() {
     #[async_trait::async_trait]
     #[allow(unused_variables)]
     impl Extension for MyExtensionImpl {
-        async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
             self.calls.lock().await.push("request_start");
-            let res = next.request(ctx).await;
+            let res = next.run(ctx).await;
             self.calls.lock().await.push("request_end");
             res
         }
@@ -142,27 +143,29 @@ pub async fn test_extension_call_order() {
             &self,
             ctx: &ExtensionContext<'_>,
             mut stream: BoxStream<'s, Response>,
-            next: NextExtension<'_>,
+            next: NextSubscribe<'_>,
         ) -> BoxStream<'s, Response> {
             let calls = self.calls.clone();
-            let stream = async_stream::stream! {
-                calls.lock().await.push("subscribe_start");
-                while let Some(item) = stream.next().await {
-                    yield item;
-                }
-                calls.lock().await.push("subscribe_end");
-            };
-            Box::pin(stream)
+            next.run(
+                ctx,
+                Box::pin(async_stream::stream! {
+                    calls.lock().await.push("subscribe_start");
+                    while let Some(item) = stream.next().await {
+                        yield item;
+                    }
+                    calls.lock().await.push("subscribe_end");
+                }),
+            )
         }
 
         async fn prepare_request(
             &self,
             ctx: &ExtensionContext<'_>,
             request: Request,
-            next: NextExtension<'_>,
+            next: NextPrepareRequest<'_>,
         ) -> ServerResult<Request> {
             self.calls.lock().await.push("prepare_request_start");
-            let res = next.prepare_request(ctx, request).await;
+            let res = next.run(ctx, request).await;
             self.calls.lock().await.push("prepare_request_end");
             res
         }
@@ -172,10 +175,10 @@ pub async fn test_extension_call_order() {
             ctx: &ExtensionContext<'_>,
             query: &str,
             variables: &Variables,
-            next: NextExtension<'_>,
+            next: NextParseQuery<'_>,
         ) -> ServerResult<ExecutableDocument> {
             self.calls.lock().await.push("parse_query_start");
-            let res = next.parse_query(ctx, query, variables).await;
+            let res = next.run(ctx, query, variables).await;
             self.calls.lock().await.push("parse_query_end");
             res
         }
@@ -183,17 +186,17 @@ pub async fn test_extension_call_order() {
         async fn validation(
             &self,
             ctx: &ExtensionContext<'_>,
-            next: NextExtension<'_>,
+            next: NextValidation<'_>,
         ) -> Result<ValidationResult, Vec<ServerError>> {
             self.calls.lock().await.push("validation_start");
-            let res = next.validation(ctx).await;
+            let res = next.run(ctx).await;
             self.calls.lock().await.push("validation_end");
             res
         }
 
-        async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+        async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
             self.calls.lock().await.push("execute_start");
-            let res = next.execute(ctx).await;
+            let res = next.run(ctx).await;
             self.calls.lock().await.push("execute_end");
             res
         }
@@ -202,10 +205,10 @@ pub async fn test_extension_call_order() {
             &self,
             ctx: &ExtensionContext<'_>,
             info: ResolveInfo<'_>,
-            next: NextExtension<'_>,
+            next: NextResolve<'_>,
         ) -> ServerResult<Option<ConstValue>> {
             self.calls.lock().await.push("resolve_start");
-            let res = next.resolve(ctx, info).await;
+            let res = next.run(ctx, info).await;
             self.calls.lock().await.push("resolve_end");
             res
         }

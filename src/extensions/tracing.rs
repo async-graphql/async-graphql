@@ -6,7 +6,8 @@ use tracing_futures::Instrument;
 use tracinglib::{span, Level};
 
 use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
+    NextResolve, NextSubscribe, NextValidation, ResolveInfo,
 };
 use crate::parser::types::ExecutableDocument;
 use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variables};
@@ -50,8 +51,8 @@ struct TracingExtension;
 
 #[async_trait::async_trait]
 impl Extension for TracingExtension {
-    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
-        next.request(ctx)
+    async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
+        next.run(ctx)
             .instrument(span!(
                 target: "async_graphql::graphql",
                 Level::INFO,
@@ -64,9 +65,9 @@ impl Extension for TracingExtension {
         &self,
         ctx: &ExtensionContext<'_>,
         stream: BoxStream<'s, Response>,
-        next: NextExtension<'_>,
+        next: NextSubscribe<'_>,
     ) -> BoxStream<'s, Response> {
-        Box::pin(next.subscribe(ctx, stream).instrument(span!(
+        Box::pin(next.run(ctx, stream).instrument(span!(
             target: "async_graphql::graphql",
             Level::INFO,
             "subscribe",
@@ -78,7 +79,7 @@ impl Extension for TracingExtension {
         ctx: &ExtensionContext<'_>,
         query: &str,
         variables: &Variables,
-        next: NextExtension<'_>,
+        next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
         let span = span!(
             target: "async_graphql::graphql",
@@ -87,38 +88,36 @@ impl Extension for TracingExtension {
             source = query,
             variables = %serde_json::to_string(&variables).unwrap(),
         );
-        next.parse_query(ctx, query, variables)
-            .instrument(span)
-            .await
+        next.run(ctx, query, variables).instrument(span).await
     }
 
     async fn validation(
         &self,
         ctx: &ExtensionContext<'_>,
-        next: NextExtension<'_>,
+        next: NextValidation<'_>,
     ) -> Result<ValidationResult, Vec<ServerError>> {
         let span = span!(
             target: "async_graphql::graphql",
             Level::INFO,
             "validation"
         );
-        next.validation(ctx).instrument(span).await
+        next.run(ctx).instrument(span).await
     }
 
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
         let span = span!(
             target: "async_graphql::graphql",
             Level::INFO,
             "execute"
         );
-        next.execute(ctx).instrument(span).await
+        next.run(ctx).instrument(span).await
     }
 
     async fn resolve(
         &self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
-        next: NextExtension<'_>,
+        next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         let span = span!(
             target: "async_graphql::graphql",
@@ -128,7 +127,7 @@ impl Extension for TracingExtension {
             parent_type = %info.parent_type,
             return_type = %info.return_type,
         );
-        next.resolve(ctx, info)
+        next.run(ctx, info)
             .instrument(span)
             .map_err(|err| {
                 tracinglib::error!(target: "async_graphql::graphql", error = %err.message);

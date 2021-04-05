@@ -6,7 +6,7 @@ use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExtension};
+use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextPrepareRequest};
 use crate::{from_value, Request, ServerError, ServerResult};
 
 #[derive(Deserialize)]
@@ -81,7 +81,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
         &self,
         ctx: &ExtensionContext<'_>,
         mut request: Request,
-        next: NextExtension<'_>,
+        next: NextPrepareRequest<'_>,
     ) -> ServerResult<Request> {
         let res = if let Some(value) = request.extensions.remove("persistedQuery") {
             let persisted_query: PersistedQuery = from_value(value).map_err(|_| {
@@ -112,7 +112,7 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
         } else {
             Ok(request)
         };
-        next.prepare_request(ctx, res?).await
+        next.run(ctx, res?).await
     }
 }
 

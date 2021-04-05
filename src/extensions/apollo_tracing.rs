@@ -6,7 +6,7 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
 use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExtension, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextResolve, ResolveInfo,
 };
 use crate::{value, Response, ServerResult, Value};
 
@@ -70,9 +70,9 @@ struct ApolloTracingExtension {
 
 #[async_trait::async_trait]
 impl Extension for ApolloTracingExtension {
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExtension<'_>) -> Response {
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
         self.inner.lock().await.start_time = Utc::now();
-        let resp = next.execute(ctx).await;
+        let resp = next.run(ctx).await;
 
         let mut inner = self.inner.lock().await;
         inner.end_time = Utc::now();
@@ -97,7 +97,7 @@ impl Extension for ApolloTracingExtension {
         &self,
         ctx: &ExtensionContext<'_>,
         info: ResolveInfo<'_>,
-        next: NextExtension<'_>,
+        next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         let path = info.path_node.to_string_vec();
         let field_name = info.path_node.field_name().to_string();
@@ -108,7 +108,7 @@ impl Extension for ApolloTracingExtension {
             .num_nanoseconds()
             .unwrap();
 
-        let res = next.resolve(ctx, info).await;
+        let res = next.run(ctx, info).await;
         let end_time = Utc::now();
 
         self.inner.lock().await.resolves.push(ResolveState {
