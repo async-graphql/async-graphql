@@ -1,13 +1,11 @@
-use std::fmt::{self, Display, Formatter};
+use std::fmt::Write;
 use std::sync::Arc;
 
-use futures_util::lock::Mutex;
-
 use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextParseQuery, NextResolve, ResolveInfo,
+    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery,
 };
 use crate::parser::types::{ExecutableDocument, OperationType, Selection};
-use crate::{PathSegment, ServerError, ServerResult, Value, Variables};
+use crate::{PathSegment, Response, ServerResult, Variables};
 
 /// Logger extension
 #[cfg_attr(docsrs, doc(cfg(feature = "log")))]
@@ -15,25 +13,11 @@ pub struct Logger;
 
 impl ExtensionFactory for Logger {
     fn create(&self) -> Arc<dyn Extension> {
-        Arc::new(LoggerExtension {
-            inner: Mutex::new(Inner {
-                enabled: true,
-                query: String::new(),
-                variables: Default::default(),
-            }),
-        })
+        Arc::new(LoggerExtension)
     }
 }
 
-struct Inner {
-    enabled: bool,
-    query: String,
-    variables: Variables,
-}
-
-struct LoggerExtension {
-    inner: Mutex<Inner>,
-}
+struct LoggerExtension;
 
 #[async_trait::async_trait]
 impl Extension for LoggerExtension {
@@ -44,82 +28,53 @@ impl Extension for LoggerExtension {
         variables: &Variables,
         next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
-        let mut inner = self.inner.lock().await;
-        inner.query = query.replace(char::is_whitespace, "");
-        inner.variables = variables.clone();
         let document = next.run(ctx, query, variables).await?;
         let is_schema = document
             .operations
             .iter()
             .filter(|(_, operation)| operation.node.ty == OperationType::Query)
             .any(|(_, operation)| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
-        inner.enabled = !is_schema;
-        log::info!(target: "async-graphql", "[Query] query: \"{}\", variables: {}", inner.query, inner.variables);
+        if !is_schema {
+            log::info!(
+                target: "async-graphql",
+                "[Execute] {}", ctx.stringify_execute_doc(&document, variables)
+            );
+        }
         Ok(document)
     }
 
-    async fn resolve(
-        &self,
-        ctx: &ExtensionContext<'_>,
-        info: ResolveInfo<'_>,
-        next: NextResolve<'_>,
-    ) -> ServerResult<Option<Value>> {
-        let enabled = self.inner.lock().await.enabled;
-        if enabled {
-            let path = info.path_node.to_string();
-            log::trace!(target: "async-graphql", "[ResolveStart] path: \"{}\"", path);
-            let res = next.run(ctx, info).await;
-            if let Err(err) = &res {
-                let inner = self.inner.lock().await;
-                log::error!(
-                    target: "async-graphql",
-                    "{}",
-                    DisplayError { query:&inner.query,variables:&inner.variables, e: &err }
-                );
-            }
-            log::trace!(target: "async-graphql", "[ResolveEnd] path: \"{}\"", path);
-            res
-        } else {
-            next.run(ctx, info).await
-        }
-    }
-}
+    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
+        let resp = next.run(ctx).await;
+        if resp.is_err() {
+            for err in &resp.errors {
+                if !err.path.is_empty() {
+                    let mut path = String::new();
+                    for (idx, s) in err.path.iter().enumerate() {
+                        if idx > 0 {
+                            path.push('.');
+                        }
+                        match s {
+                            PathSegment::Index(idx) => {
+                                let _ = write!(&mut path, "{}", idx);
+                            }
+                            PathSegment::Field(name) => {
+                                let _ = write!(&mut path, "{}", name);
+                            }
+                        }
+                    }
 
-struct DisplayError<'a> {
-    query: &'a str,
-    variables: &'a Variables,
-    e: &'a ServerError,
-}
-impl<'a> Display for DisplayError<'a> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "[Error] ")?;
-
-        if !self.e.path.is_empty() {
-            write!(f, "path: ")?;
-            for (i, segment) in self.e.path.iter().enumerate() {
-                if i != 0 {
-                    write!(f, ".")?;
+                    log::error!(
+                        target: "async-graphql",
+                        "[Error] path={} message={}", path, err.message,
+                    );
+                } else {
+                    log::error!(
+                        target: "async-graphql",
+                        "[Error] message={}", err.message,
+                    );
                 }
-
-                match segment {
-                    PathSegment::Field(field) => write!(f, "{}", field),
-                    PathSegment::Index(i) => write!(f, "{}", i),
-                }?;
             }
-            write!(f, ", ")?;
         }
-        if !self.e.locations.is_empty() {
-            write!(f, "pos: [")?;
-            for (i, location) in self.e.locations.iter().enumerate() {
-                if i != 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}:{}", location.line, location.column)?;
-            }
-            write!(f, "], ")?;
-        }
-        write!(f, r#"query: "{}", "#, self.query)?;
-        write!(f, "variables: {}", self.variables)?;
-        write!(f, "{}", self.e.message)
+        resp
     }
 }

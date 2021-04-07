@@ -283,6 +283,7 @@ pub type FieldResult<T> = Result<T>;
 /// | complexity   | Custom field complexity.                 | string      | Y        |
 /// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 /// | key          | Is entity key(for Federation)            | bool        | Y        |
 ///
 /// # Valid field return types
@@ -630,6 +631,7 @@ pub use async_graphql_derive::Enum;
 /// | skip         | Skip this field, use `Default::default` to get a default value for this field. | bool     | Y        |
 /// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 ///
 /// # Examples
 ///
@@ -710,6 +712,7 @@ pub use async_graphql_derive::InputObject;
 /// | default_with | Expression to generate default value     | code string | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 ///
 /// # Define an interface
 ///
@@ -908,6 +911,7 @@ pub use async_graphql_derive::Union;
 /// | guard       | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 ///
 /// # Field argument parameters
 ///

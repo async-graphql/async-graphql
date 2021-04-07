@@ -184,6 +184,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             default,
             default_with,
             visible,
+            secret,
         } in args
         {
             let ident = Ident::new(name, Span::call_site());
@@ -229,6 +230,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     default_value: #schema_default,
                     validator: ::std::option::Option::None,
                     visible: #visible,
+                    is_secret: #secret,
                 });
             });
         }

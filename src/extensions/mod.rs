@@ -37,7 +37,7 @@ use crate::{
 /// Context for extension
 pub struct ExtensionContext<'a> {
     #[doc(hidden)]
-    pub schema_data: &'a Data,
+    pub schema_env: &'a SchemaEnv,
 
     #[doc(hidden)]
     pub session_data: &'a Data,
@@ -47,6 +47,16 @@ pub struct ExtensionContext<'a> {
 }
 
 impl<'a> ExtensionContext<'a> {
+    /// Convert the specified [ExecutableDocument] into a query string.
+    ///
+    /// Usually used for log extension, it can hide secret arguments.
+    pub fn stringify_execute_doc(&self, doc: &ExecutableDocument, variables: &Variables) -> String {
+        self.schema_env
+            .registry
+            .stringify_exec_doc(variables, doc)
+            .unwrap_or_default()
+    }
+
     /// Gets the global data defined in the `Context` or `Schema`.
     ///
     /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
@@ -78,7 +88,7 @@ impl<'a> ExtensionContext<'a> {
         self.query_data
             .and_then(|query_data| query_data.get(&TypeId::of::<D>()))
             .or_else(|| self.session_data.get(&TypeId::of::<D>()))
-            .or_else(|| self.schema_data.get(&TypeId::of::<D>()))
+            .or_else(|| self.schema_env.data.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
     }
 }
@@ -393,7 +403,7 @@ impl Extensions {
     #[inline]
     fn create_context(&self) -> ExtensionContext {
         ExtensionContext {
-            schema_data: &self.schema_env.data,
+            schema_env: &self.schema_env,
             session_data: &self.session_data,
             query_data: self.query_data.as_deref(),
         }

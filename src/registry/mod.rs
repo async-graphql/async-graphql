@@ -1,5 +1,6 @@
 mod cache_control;
 mod export_sdl;
+mod stringify_exec_doc;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -108,6 +109,7 @@ pub struct MetaInputValue {
     pub default_value: Option<String>,
     pub validator: Option<Arc<dyn InputValueValidator>>,
     pub visible: Option<MetaVisibleFn>,
+    pub is_secret: bool,
 }
 
 type ComputeComplexityFn = fn(
@@ -552,6 +554,7 @@ impl Registry {
                                 default_value: None,
                                 validator: None,
                                 visible: None,
+                                is_secret: false,
                             },
                         );
                         args

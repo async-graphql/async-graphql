@@ -122,6 +122,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
             })
             .unwrap_or_else(|| quote!(::std::option::Option::None));
+        let secret = field.secret;
 
         if let Some(default) = default {
             get_fields.push(quote! {
@@ -161,6 +162,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 default_value: #schema_default,
                 validator: #validator,
                 visible: #visible,
+                is_secret: #secret,
             });
         })
     }

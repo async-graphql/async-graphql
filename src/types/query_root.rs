@@ -67,6 +67,7 @@ impl<T: Type> Type for QueryRoot<T> {
                                     default_value: None,
                                     validator: None,
                                     visible: None,
+                                    is_secret: false,
                                 },
                             );
                             args

@@ -271,6 +271,7 @@ where
                     default_value: None,
                     validator: None,
                     visible: None,
+                    is_secret: false,
                 });
                 args
             }
@@ -293,6 +294,7 @@ where
                     default_value: None,
                     validator: None,
                     visible: None,
+                    is_secret: false,
                 });
                 args
             }
@@ -330,6 +332,12 @@ where
         subscription: Subscription,
     ) -> Schema<Query, Mutation, Subscription> {
         Self::build(query, mutation, subscription).finish()
+    }
+
+    #[inline]
+    #[allow(unused)]
+    pub(crate) fn registry(&self) -> &Registry {
+        &self.env.registry
     }
 
     /// Returns SDL(Schema Definition Language) of this schema.

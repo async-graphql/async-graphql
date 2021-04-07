@@ -98,9 +98,18 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
             .with_kind(SpanKind::Server)
             .with_attributes(attributes)
             .start(&*self.tracer);
-        next.run(ctx, query, variables)
-            .with_context(OpenTelemetryContext::current_with_span(span))
-            .await
+
+        async move {
+            let res = next.run(ctx, query, variables).await;
+            if let Ok(doc) = &res {
+                OpenTelemetryContext::current()
+                    .span()
+                    .set_attribute(KEY_SOURCE.string(ctx.stringify_execute_doc(doc, variables)));
+            }
+            res
+        }
+        .with_context(OpenTelemetryContext::current_with_span(span))
+        .await
     }
 
     async fn validation(
