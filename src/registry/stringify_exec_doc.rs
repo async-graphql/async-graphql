@@ -46,9 +46,9 @@ impl Registry {
                             "{}: {}",
                             variable_definition.node.name.node,
                             variable_definition.node.var_type.node
-                        );
+                        )?;
                         if let Some(default_value) = &variable_definition.node.default_value {
-                            write!(output, " = {}", default_value.node);
+                            write!(output, " = {}", default_value.node)?;
                         }
                     }
                     output.push(')');
