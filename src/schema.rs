@@ -476,7 +476,7 @@ where
         match res {
             Ok(data) => {
                 let resp = Response::new(data);
-                resp.http_headers(std::mem::take(&mut *env.http_headers.lock()))
+                resp.http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap()))
             }
             Err(err) => Response::from_errors(vec![err]),
         }

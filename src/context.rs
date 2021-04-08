@@ -4,7 +4,7 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::ops::Deref;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
@@ -212,7 +212,7 @@ pub struct QueryEnvInner {
     pub uploads: Vec<UploadValue>,
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
-    pub http_headers: spin::Mutex<HeaderMap<String>>,
+    pub http_headers: Mutex<HeaderMap<String>>,
     pub disable_introspection: bool,
 }
 
@@ -344,7 +344,11 @@ impl<'a, T> ContextBase<'a, T> {
     /// }
     /// ```
     pub fn http_header_contains(&self, key: impl AsHeaderName) -> bool {
-        self.query_env.http_headers.lock().contains_key(key)
+        self.query_env
+            .http_headers
+            .lock()
+            .unwrap()
+            .contains_key(key)
     }
 
     /// Sets a HTTP header to response.
@@ -395,6 +399,7 @@ impl<'a, T> ContextBase<'a, T> {
         self.query_env
             .http_headers
             .lock()
+            .unwrap()
             .insert(name, value.into())
     }
 
@@ -434,6 +439,7 @@ impl<'a, T> ContextBase<'a, T> {
         self.query_env
             .http_headers
             .lock()
+            .unwrap()
             .append(name, value.into())
     }
 
