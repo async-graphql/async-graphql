@@ -372,30 +372,11 @@ impl Registry {
         T::qualified_type_name()
     }
 
-    pub fn create_dummy_type<T: crate::Type>(&mut self) -> MetaType {
-        let mut dummy_registry = Registry::default();
-        T::create_type_info(&mut dummy_registry);
-        if let Some(ty) = dummy_registry.types.remove(&*T::type_name()) {
-            // Do not overwrite existing types.
-            for (name, ty) in dummy_registry.types {
-                if !self.types.contains_key(&name) {
-                    self.types.insert(name, ty);
-                }
-            }
-
-            // Do not overwrite existing implements.
-            for (name, interfaces) in dummy_registry.implements {
-                if let Some(current_interfaces) = self.implements.get_mut(&name) {
-                    current_interfaces.extend(interfaces);
-                } else {
-                    self.implements.insert(name, interfaces);
-                }
-            }
-
-            ty
-        } else {
-            unreachable!()
-        }
+    pub fn create_dummy_type<T: Type>(&mut self) -> MetaType {
+        T::create_type_info(self);
+        self.types
+            .remove(&*T::type_name())
+            .expect("You definitely encountered a bug!")
     }
 
     pub fn add_directive(&mut self, directive: MetaDirective) {

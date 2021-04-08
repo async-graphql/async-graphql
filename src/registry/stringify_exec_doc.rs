@@ -43,7 +43,7 @@ impl Registry {
                         }
                         write!(
                             output,
-                            "{}: {}",
+                            "${}: {}",
                             variable_definition.node.name.node,
                             variable_definition.node.var_type.node
                         )?;
@@ -259,7 +259,7 @@ mod tests {
                     &doc
                 )
                 .unwrap(),
-            r#"query Abc { value(input: 10) }"#
+            r#"query Abc($a: Int) { value(input: 10) }"#
         );
     }
 
