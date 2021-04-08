@@ -85,10 +85,19 @@ impl Extension for TracingExtension {
             target: "async_graphql::graphql",
             Level::INFO,
             "parse",
-            source = query,
-            variables = %serde_json::to_string(&variables).unwrap(),
         );
-        next.run(ctx, query, variables).instrument(span).await
+        async move {
+            let res = next.run(ctx, query, variables).await;
+            if let Ok(doc) = &res {
+                tracinglib::Span::current().record(
+                    "source",
+                    &ctx.stringify_execute_doc(doc, variables).as_str(),
+                );
+            }
+            res
+        }
+        .instrument(span)
+        .await
     }
 
     async fn validation(

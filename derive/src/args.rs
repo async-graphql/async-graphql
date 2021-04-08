@@ -185,6 +185,7 @@ pub struct Argument {
     pub validator: Option<Meta>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
+    pub secret: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -322,6 +323,8 @@ pub struct InputObjectField {
     pub skip: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub secret: bool,
 }
 
 #[derive(FromDeriveInput)]
@@ -357,6 +360,8 @@ pub struct InterfaceFieldArgument {
     pub default_with: Option<LitStr>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub secret: bool,
 }
 
 #[derive(FromMeta)]
@@ -441,6 +446,7 @@ pub struct SubscriptionFieldArgument {
     pub default_with: Option<LitStr>,
     pub validator: Option<Meta>,
     pub visible: Option<Visible>,
+    pub secret: bool,
 }
 
 #[derive(FromMeta, Default)]

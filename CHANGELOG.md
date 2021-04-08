@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Fix stack overflow during Registry::create_type for recursive type while running Schema::build. [#474](https://github.com/async-graphql/async-graphql/issues/474)
+
+### Added
+
+- Add `secret` attribute for arguments, they will not appear in the log.
+
+```rust
+#[Object]
+impl Query {
+    async fn login(&self, username:String, #[graphql(secret)] password: String) -> i32 {
+        todo!()
+    }
+}
+```
+
 ## [2.8.0] 2021-04-05
 
 ### Changed
