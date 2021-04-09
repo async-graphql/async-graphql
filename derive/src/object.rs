@@ -209,7 +209,7 @@ pub fn generate(
                         syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                             .expect("invalid result type");
                 }
-                let do_find = quote! { self.#field_ident(ctx, #(#use_keys),*).await.map_err(|err| err.into_server_error().at(ctx.item.pos))? };
+                let do_find = quote! { self.#field_ident(ctx, #(#use_keys),*).await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))? };
 
                 find_entities.push((
                     args.len(),
@@ -513,7 +513,7 @@ pub fn generate(
                 let resolve_obj = quote! {
                     {
                         let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| err.into_server_error().at(ctx.item.pos))?
+                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))?
                     }
                 };
 

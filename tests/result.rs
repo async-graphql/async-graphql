@@ -1,4 +1,5 @@
 use async_graphql::*;
+use futures_util::stream::Stream;
 
 #[tokio::test]
 pub async fn test_fieldresult() {
@@ -61,4 +62,57 @@ pub async fn test_fieldresult() {
             extensions: None,
         }]
     );
+}
+
+#[tokio::test]
+pub async fn test_custom_error() {
+    #[derive(Clone)]
+    struct MyError;
+
+    impl From<MyError> for Error {
+        fn from(_: MyError) -> Self {
+            Error::new("custom error")
+        }
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyObj {
+        value1: i32,
+    }
+
+    #[ComplexObject]
+    impl MyObj {
+        async fn value2(&self) -> Result<i32, MyError> {
+            Err(MyError)
+        }
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = "value2", type = "i32"))]
+    enum MyInterface {
+        MyObj(MyObj),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> Result<i32, MyError> {
+            Err(MyError)
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn value1(&self) -> Result<impl Stream<Item = i32>, MyError> {
+            Err::<futures_util::stream::Once<futures_util::future::Ready<i32>>, _>(MyError)
+        }
+
+        async fn value2(&self) -> impl Stream<Item = Result<i32, MyError>> {
+            futures_util::stream::once(async move { Err(MyError) })
+        }
+    }
 }

@@ -237,7 +237,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         for enum_name in &enum_names {
             calls.push(quote! {
-                #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*).await.map(::std::convert::Into::into)
+                #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*)
+                    .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
+                    .map(::std::convert::Into::into)
             });
         }
 
@@ -287,7 +289,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let resolve_obj = quote! {
             self.#method_name(#(#use_params),*)
                 .await
-                .map_err(|err| err.into_server_error().at(ctx.item.pos))?
+                .map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))?
         };
 
         resolvers.push(quote! {

@@ -6,8 +6,8 @@ use async_graphql_value::ConstValue;
 use crate::parser::types::Field;
 use crate::registry::{self, Registry};
 use crate::{
-    ContainerType, Context, ContextSelectionSet, InputValueError, InputValueResult, Positioned,
-    Result, ServerResult, Value,
+    ContainerType, Context, ContextSelectionSet, Error, InputValueError, InputValueResult,
+    Positioned, Result, ServerResult, Value,
 };
 
 #[doc(hidden)]
@@ -86,7 +86,7 @@ impl<T: OutputType + ?Sized> OutputType for &T {
     }
 }
 
-impl<T: Type> Type for Result<T> {
+impl<T: Type, E: Into<Error> + Send + Sync + Clone> Type for Result<T, E> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -101,7 +101,7 @@ impl<T: Type> Type for Result<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: OutputType + Sync> OutputType for Result<T> {
+impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for Result<T, E> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -109,7 +109,7 @@ impl<T: OutputType + Sync> OutputType for Result<T> {
     ) -> ServerResult<Value> {
         match self {
             Ok(value) => Ok(value.resolve(ctx, field).await?),
-            Err(err) => Err(err.clone().into_server_error().at(field.pos)),
+            Err(err) => Err(err.clone().into().into_server_error().at(field.pos)),
         }
     }
 }
