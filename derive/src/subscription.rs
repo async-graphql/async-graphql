@@ -318,7 +318,7 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        err.into_server_error()
+                        ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error()
                             .at(ctx.item.pos)
                             .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
                     })?
