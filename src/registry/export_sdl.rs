@@ -118,6 +118,21 @@ impl Registry {
                     return;
                 }
 
+                if name.as_str() == &self.query_type && federation {
+                    let mut field_count = 0;
+                    for field in fields.values() {
+                        if field.name.starts_with("__")
+                            || (federation && matches!(&*field.name, "_service" | "_entities"))
+                        {
+                            continue;
+                        }
+                        field_count += 1;
+                    }
+                    if field_count == 0 {
+                        return;
+                    }
+                }
+
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
