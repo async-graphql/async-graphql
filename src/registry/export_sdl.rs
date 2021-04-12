@@ -118,7 +118,7 @@ impl Registry {
                     return;
                 }
 
-                if name.as_str() == &self.query_type && federation {
+                if name.as_str() == self.query_type && federation {
                     let mut field_count = 0;
                     for field in fields.values() {
                         if field.name.starts_with("__")
