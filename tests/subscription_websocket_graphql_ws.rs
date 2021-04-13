@@ -1,7 +1,11 @@
+use std::pin::Pin;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+
 use async_graphql::http::WebSocketProtocols;
 use async_graphql::*;
 use futures_channel::mpsc;
-use futures_util::stream::{Stream, StreamExt};
+use futures_util::stream::{BoxStream, Stream, StreamExt};
 use futures_util::SinkExt;
 
 #[tokio::test]
@@ -463,4 +467,138 @@ pub async fn test_start_before_connection_init() {
         stream.next().await.unwrap().unwrap_close(),
         (1011, "The handshake is not completed.".to_string())
     );
+}
+
+#[tokio::test]
+pub async fn test_stream_drop() {
+    type Dropped = Arc<Mutex<bool>>;
+
+    struct TestStream {
+        inner: BoxStream<'static, i32>,
+        dropped: Dropped,
+    }
+
+    impl Drop for TestStream {
+        fn drop(&mut self) {
+            *self.dropped.lock().unwrap() = true;
+        }
+    }
+
+    impl Stream for TestStream {
+        type Item = i32;
+        fn poll_next(
+            mut self: Pin<&mut Self>,
+            cx: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Option<Self::Item>> {
+            self.inner.as_mut().poll_next(cx)
+        }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            999
+        }
+    }
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
+            TestStream {
+                inner: Box::pin(async_stream::stream! {
+                    loop {
+                        tokio::time::sleep(Duration::from_millis(10)).await;
+                        yield 10;
+                    }
+                }),
+                dropped: ctx.data_unchecked::<Dropped>().clone(),
+            }
+        }
+    }
+
+    let dropped = Dropped::default();
+    let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
+        .data(dropped.clone())
+        .finish();
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    for _ in 0..5 {
+        assert_eq!(
+            Some(value!({
+                "type": "next",
+                "id": "1",
+                "payload": { "data": { "values": 10 } },
+            })),
+            serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+        );
+    }
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "stop",
+            "id": "1",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    loop {
+        let value = serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap();
+        if value
+            == Some(value!({
+                "type": "next",
+                "id": "1",
+                "payload": { "data": { "values": 10 } },
+            }))
+        {
+            continue;
+        } else {
+            assert_eq!(
+                Some(value!({
+                    "type": "complete",
+                    "id": "1",
+                })),
+                value
+            );
+            break;
+        }
+    }
+
+    assert_eq!(*dropped.lock().unwrap(), true);
 }
