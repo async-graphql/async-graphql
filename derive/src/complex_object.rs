@@ -149,6 +149,7 @@ pub fn generate(
                     default_with,
                     validator,
                     visible,
+                    secret,
                     ..
                 },
             ) in &args
@@ -191,6 +192,7 @@ pub fn generate(
                         default_value: #schema_default,
                         validator: #validator,
                         visible: #visible,
+                        is_secret: #secret,
                     });
                 });
 
