@@ -501,6 +501,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | secret        | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 ///
 /// # Examples
 ///

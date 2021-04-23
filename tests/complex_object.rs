@@ -14,13 +14,18 @@ pub async fn test_complex_object() {
         async fn c(&self) -> i32 {
             self.a + self.b
         }
+
+        async fn d(&self, v: i32) -> i32 {
+            self.a + self.b + v
+        }
     }
 
     #[derive(Interface)]
     #[graphql(
         field(name = "a", type = "&i32"),
         field(name = "b", type = "&i32"),
-        field(name = "c", type = "i32")
+        field(name = "c", type = "i32"),
+        field(name = "d", type = "i32", arg(name = "v", type = "i32"))
     )]
     enum ObjInterface {
         MyObj(MyObj),
@@ -39,7 +44,7 @@ pub async fn test_complex_object() {
         }
     }
 
-    let query = "{ obj { a b c } obj2 { a b c } }";
+    let query = "{ obj { a b c d(v:100) } obj2 { a b c d(v:200) } }";
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,
@@ -48,11 +53,13 @@ pub async fn test_complex_object() {
                 "a": 10,
                 "b": 20,
                 "c": 30,
+                "d": 130,
             },
             "obj2": {
                 "a": 10,
                 "b": 20,
                 "c": 30,
+                "d": 230,
             }
         })
     );
