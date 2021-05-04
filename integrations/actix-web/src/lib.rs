@@ -117,6 +117,7 @@ impl FromRequest for BatchRequest {
                             }
                             PayloadError::Http2Payload(e) if e.is_io() => e.into_io().unwrap(),
                             PayloadError::Http2Payload(e) => io::Error::new(ErrorKind::Other, e),
+                            _ => io::Error::new(ErrorKind::Other, "Unknown error encountered")
                         })
                         .into_async_read(),
                         config,
