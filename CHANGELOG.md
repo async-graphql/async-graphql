@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+[Unreleased]
+
+- If `InputObject` contains an unnamed field, the correct error message will be given. [#498](https://github.com/async-graphql/async-graphql/issues/498) 
+
 ## [2.8.4] 2021-04-23
 
 - Fix the problem that the `ComplexObject` macro cannot work due to the `secret` attribute.
