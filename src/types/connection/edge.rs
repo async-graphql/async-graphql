@@ -23,8 +23,8 @@ impl<C, T, E> Edge<C, T, E> {
     pub fn with_additional_fields(cursor: C, node: T, additional_fields: E) -> Self {
         Self {
             cursor,
-            additional_fields,
             node,
+            additional_fields,
         }
     }
 }

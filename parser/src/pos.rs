@@ -51,7 +51,7 @@ impl<T> Positioned<T> {
     /// Create a new positioned node from the node and its position.
     #[must_use]
     pub const fn new(node: T, pos: Pos) -> Positioned<T> {
-        Positioned { node, pos }
+        Positioned { pos, node }
     }
 
     /// Get the inner node.
