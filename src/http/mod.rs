@@ -12,7 +12,12 @@ use crate::{BatchRequest, ParseRequestError, Request};
 pub use graphiql_source::graphiql_source;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
-pub use websocket::{Protocols as WebSocketProtocols, WebSocket, WsMessage};
+pub use websocket::{
+    Protocols as WebSocketProtocols,
+    WebSocket,
+    WsMessage,
+    ClientMessage,
+};
 
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
