@@ -1,14 +1,17 @@
 //! WebSocket transport for subscription
 
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use futures_util::{StreamExt, future::{BoxFuture, Ready}};
 use futures_util::stream::Stream;
 use futures_util::FutureExt;
+use futures_util::{
+    future::{BoxFuture, Ready},
+    StreamExt,
+};
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
@@ -74,7 +77,13 @@ type MessageMapStream<S> =
     futures_util::stream::Map<S, fn(<S as Stream>::Item) -> serde_json::Result<ClientMessage>>;
 
 impl<S, Query, Mutation, Subscription>
-    WebSocket<MessageMapStream<S>, fn(serde_json::Value) -> Ready<Result<Data>>, Query, Mutation, Subscription>
+    WebSocket<
+        MessageMapStream<S>,
+        fn(serde_json::Value) -> Ready<Result<Data>>,
+        Query,
+        Mutation,
+        Subscription,
+    >
 where
     S: Stream,
     S::Item: AsRef<[u8]>,
@@ -112,24 +121,16 @@ where
         stream: S,
         data_initializer: F,
         protocol: Protocols,
-    ) -> Self
-    {
+    ) -> Self {
         // let stream = stream.map(|message| serde_json::from_slice(message.as_ref()));
-        let stream = stream.map(
-            ClientMessage::from_bytes as fn(S::Item) -> serde_json::Result<ClientMessage>,
-        );
+        let stream = stream
+            .map(ClientMessage::from_bytes as fn(S::Item) -> serde_json::Result<ClientMessage>);
 
-        Self::with_message_stream(
-            schema,
-            stream,
-            data_initializer,
-            protocol,
-        )
+        Self::with_message_stream(schema, stream, data_initializer, protocol)
     }
 }
 
-impl<S, F, Query, Mutation, Subscription>
-    WebSocket<S, F, Query, Mutation, Subscription>
+impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subscription>
 where
     S: Stream<Item = serde_json::Result<ClientMessage>>,
 {
@@ -145,8 +146,7 @@ where
         stream: S,
         data_initializer: F,
         protocol: Protocols,
-    ) -> Self
-    {
+    ) -> Self {
         WebSocket {
             data_initializer: Some(data_initializer),
             init_fut: None,
@@ -183,9 +183,7 @@ where
 
                 let message: ClientMessage = match message {
                     Ok(message) => message,
-                    Err(err) => {
-                        return Poll::Ready(Some(WsMessage::Close(1002, err.to_string())))
-                    }
+                    Err(err) => return Poll::Ready(Some(WsMessage::Close(1002, err.to_string()))),
                 };
 
                 match message {
@@ -237,7 +235,8 @@ where
                     ClientMessage::Stop { id } => {
                         if this.streams.remove(&id).is_some() {
                             return Poll::Ready(Some(WsMessage::Text(
-                                serde_json::to_string(&ServerMessage::Complete { id: &id }).unwrap(),
+                                serde_json::to_string(&ServerMessage::Complete { id: &id })
+                                    .unwrap(),
                             )));
                         }
                     }
