@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use secrecy::{Secret, Zeroize};
 
-use crate::{registry, InputType, InputValueResult, Type, Value, InputValueError};
+use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value};
 
 impl<T: Type + Zeroize> Type for Secret<T> {
     fn type_name() -> Cow<'static, str> {
@@ -20,7 +20,9 @@ impl<T: Type + Zeroize> Type for Secret<T> {
 
 impl<T: InputType + Zeroize> InputType for Secret<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
-        T::parse(value).map(Secret::new).map_err(InputValueError::propagate)
+        T::parse(value)
+            .map(Secret::new)
+            .map_err(InputValueError::propagate)
     }
 
     fn to_value(&self) -> Value {
