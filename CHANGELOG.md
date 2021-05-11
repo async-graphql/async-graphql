@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Websocket::with_message_stream` for client message customization. [#501](https://github.com/async-graphql/async-graphql/pull/501)
 
+- Added the `Secret` type using [secrecy](https://crates.io/crates/secrecy) crate.
+
 ## [2.8.4] 2021-04-23
 
 - Fix the problem that the `ComplexObject` macro cannot work due to the `secret` attribute.
