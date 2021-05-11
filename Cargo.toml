@@ -47,6 +47,7 @@ bson = { version = "1.2.0", optional = true }
 chrono = { version = "0.4.19", optional = true }
 chrono-tz = { version = "0.5.3", optional = true }
 log = { version = "0.4.14", optional = true }
+secrecy = { version = "0.7.0", optional = true }
 tracinglib = { version = "0.1.25", optional = true, package = "tracing" }
 tracing-futures = { version = "0.2.5", optional = true, features = ["std-future", "futures-03"] }
 opentelemetry = { version = "0.13.0", optional = true }
