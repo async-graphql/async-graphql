@@ -26,7 +26,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     for field in &s.fields {
         let vis = &field.vis;
         let ty = &field.ty;
-        let ident = &field.ident;
+        let ident = match &field.ident {
+            Some(ident) => ident,
+            None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
+        };
         let attrs = field
             .attrs
             .iter()

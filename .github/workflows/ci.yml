@@ -109,24 +109,24 @@ jobs:
         run: cargo clean
         working-directory: ./examples
 
-  build-nightly:
-    name: Build nightly - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { rust: nightly-2020-09-21, os: ubuntu-latest }
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - name: Build on nightly with all features
-        run: cargo build --all-features
-      - name: Build on nightly
-        run: cargo build --all --verbose
+#  build-nightly:
+#    name: Build nightly - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - { rust: nightly-2020-09-21, os: ubuntu-latest }
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#        with:
+#          submodules: true
+#      - uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: ${{ matrix.rust }}
+#          override: true
+#      - name: Build on nightly with all features
+#        run: cargo build --all-features
+#      - name: Build on nightly
+#        run: cargo build --all --verbose

@@ -1,6 +1,7 @@
 # SimpleObject
 
-`SimpleObject` directly maps all the fields of a struct to GraphQL object. You cannot define a resolver function on it - for that, see [Object](define_complex_object.html).
+`SimpleObject` directly maps all the fields of a struct to GraphQL object. 
+If you don't require automatic mapping of fields, see [Object](define_complex_object.html).
 
 The example below defines an object `MyObject` which includes the fields `a` and `b`. `c` will be not mapped to GraphQL as it is labelled as `#[graphql(skip)]`
 
@@ -17,6 +18,32 @@ struct MyObject {
 
     #[graphql(skip)]
     c: i32,
+}
+```
+
+## User-defined resolvers
+
+Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
+fields are calculated. In this case, the [Object](define_complex_object.html) macro cannot be used unless you hand-write all the resolvers.
+
+The `ComplexObject` macro works in conjuction with the `SimpleObject` macro. The `SipmleObject` derive macro defines
+the non-calculated fields, where as the `ComplexObject` macro let's you write user-defined resolvers for the calculated fields.
+
+Resolvers added to `ComplexObject` adhere to the same rules as resolvers of [Object](define_complex_object.html).
+
+```rust
+#[derive(SimpleObject)]
+#[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+
+#[ComplexObject]
+impl MyObj {
+    async fn c(&self) -> i32 {
+        self.a + self.b     
+    }
 }
 ```
 
@@ -64,27 +91,3 @@ pub struct YetAnotherObject {
 ```
 
 You can pass multiple generic types to `params()`, separated by a comma.
-
-## Complex resolvers
-
-Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
-fields are calculated. Usually we use the `Object` macro to define such a GraphQL object.
-
-But this can be done more beautifully with the `ComplexObject` macro. We can use the `SimpleObject` macro to define
-some simple fields, and use the `ComplexObject` macro to define some other fields that need to be calculated.
-
-```rust
-#[derive(SimpleObject)]
-#[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
-struct MyObj {
-    a: i32,
-    b: i32,
-}
-
-#[ComplexObject]
-impl MyObj {
-    async fn c(&self) -> i32 {
-        self.a + self.b     
-    }
-}
-```

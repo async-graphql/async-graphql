@@ -17,11 +17,9 @@ use crate::{model, Any, Context, Positioned, ServerResult, Type, Value, VisitorC
 pub use cache_control::CacheControl;
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
-    if let Some(rest) = type_name.strip_prefix('[') {
-        Some(&rest[..rest.len() - 1])
-    } else {
-        None
-    }
+    type_name
+        .strip_prefix('[')
+        .map(|rest| &rest[..rest.len() - 1])
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
