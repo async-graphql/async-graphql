@@ -596,15 +596,15 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
         self
     }
 
-     /// Set Playground setting for per query.
-     pub fn with_setting(mut self, name: &'a str, value: &'a str) -> Self {
-      if let Some(settings) = &mut self.settings {
-        settings.insert(name, value);
-      } else {
-          let mut settings = HashMap::new();
-          settings.insert(name, value);
-          self.settings = Some(settings);
-      }
-      self
-  }
+    /// Set Playground setting for per query.
+    pub fn with_setting(mut self, name: &'a str, value: &'a str) -> Self {
+        if let Some(settings) = &mut self.settings {
+            settings.insert(name, value);
+        } else {
+            let mut settings = HashMap::new();
+            settings.insert(name, value);
+            self.settings = Some(settings);
+        }
+        self
+    }
 }
