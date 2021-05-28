@@ -27,6 +27,7 @@ pub struct WSSubscription<Query, Mutation, Subscription, F> {
     messages: Option<async_channel::Sender<Vec<u8>>>,
     initializer: Option<F>,
     continuation: Vec<u8>,
+    drop_handler: Option<Box<dyn FnOnce()>>,
 }
 
 impl<Query, Mutation, Subscription>
@@ -51,6 +52,14 @@ where
     }
 }
 
+impl<Query, Mutation, Subscription, F> Drop for WSSubscription<Query, Mutation, Subscription, F> {
+    fn drop(&mut self) {
+        if let Some(handler) = self.drop_handler.take() {
+            handler();
+        }
+    }
+}
+
 impl<Query, Mutation, Subscription, F, R> WSSubscription<Query, Mutation, Subscription, F>
 where
     Query: ObjectType + 'static,
@@ -65,6 +74,21 @@ where
         request: &HttpRequest,
         stream: T,
         initializer: F,
+    ) -> Result<HttpResponse, Error>
+    where
+        T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
+        F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
+        R: Future<Output = Result<Data>> + Send + 'static,
+    {
+        Self::start_with_initializer_and_drop_handler(schema, request, stream, initializer, None)
+    }
+
+    pub fn start_with_initializer_and_drop_handler<T>(
+        schema: Schema<Query, Mutation, Subscription>,
+        request: &HttpRequest,
+        stream: T,
+        initializer: F,
+        drop_handler: Option<Box<dyn FnOnce()>>,
     ) -> Result<HttpResponse, Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
@@ -95,6 +119,7 @@ where
                 messages: None,
                 initializer: Some(initializer),
                 continuation: Vec::new(),
+                drop_handler,
             },
             &["graphql-transport-ws", "graphql-ws"],
             request,
