@@ -11,8 +11,8 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-use std::io::Cursor;
 use core::any::Any;
+use std::io::Cursor;
 
 use async_graphql::http::MultipartOptions;
 use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
