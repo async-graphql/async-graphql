@@ -193,7 +193,7 @@ pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscriptio
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
+    F: FnOnce(serde_json::Value) -> R + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
     S: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>>
         + futures_util::Sink<warp::ws::Message>,
