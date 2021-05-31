@@ -5,7 +5,6 @@ use async_graphql::http::{WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::{future, StreamExt};
 use warp::filters::ws;
-use warp::ws::WebSocket;
 use warp::{Filter, Rejection, Reply};
 
 /// GraphQL subscription filter
@@ -165,14 +164,15 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// });
 /// ```
-pub async fn graphql_subscription_upgrade<Query, Mutation, Subscription>(
-    websocket: WebSocket,
+pub async fn graphql_subscription_upgrade<Query, Mutation, Subscription, S>(
+    websocket: S,
     protocol: WebSocketProtocols,
     schema: Schema<Query, Mutation, Subscription>,
 ) where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
+    S: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>> + futures_util::Sink<warp::ws::Message>,
 {
     graphql_subscription_upgrade_with_data(websocket, protocol, schema, |_| async {
         Ok(Default::default())
@@ -183,8 +183,8 @@ pub async fn graphql_subscription_upgrade<Query, Mutation, Subscription>(
 /// Handle the WebSocket subscription.
 ///
 /// Specifies that a function converts the init payload to data.
-pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscription, F, R>(
-    websocket: WebSocket,
+pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscription, F, R, S>(
+    websocket: S,
     protocol: WebSocketProtocols,
     schema: Schema<Query, Mutation, Subscription>,
     initializer: F,
@@ -194,6 +194,7 @@ pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscriptio
     Subscription: SubscriptionType + 'static,
     F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
+    S: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>> + futures_util::Sink<warp::ws::Message>,
 {
     let (ws_sender, ws_receiver) = websocket.split();
     let _ = async_graphql::http::WebSocket::with_data(
