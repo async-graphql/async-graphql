@@ -209,7 +209,15 @@ pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscriptio
     .await;
 }
 
-pub async fn graphql_subscription_upgrade_with_data_sink<Query, Mutation, Subscription, F, R, SenderSink, ReceiverStream>(
+pub async fn graphql_subscription_upgrade_with_data_sink<
+    Query,
+    Mutation,
+    Subscription,
+    F,
+    R,
+    SenderSink,
+    ReceiverStream,
+>(
     ws_sender: SenderSink,
     ws_receiver: ReceiverStream,
     protocol: WebSocketProtocols,
