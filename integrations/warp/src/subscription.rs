@@ -199,6 +199,31 @@ pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscriptio
     S: Stream<Item = Result<warp::ws::Message, warp::Error>> + Sink<warp::ws::Message>,
 {
     let (ws_sender, ws_receiver) = websocket.split();
+    graphql_subscription_upgrade_with_data_sink(
+        ws_sender,
+        ws_receiver,
+        protocol,
+        schema,
+        initializer,
+    )
+    .await;
+}
+
+pub async fn graphql_subscription_upgrade_with_data_sink<Query, Mutation, Subscription, F, R, SenderSink, ReceiverStream>(
+    ws_sender: SenderSink,
+    ws_receiver: ReceiverStream,
+    protocol: WebSocketProtocols,
+    schema: Schema<Query, Mutation, Subscription>,
+    initializer: F,
+) where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    F: FnOnce(serde_json::Value) -> R + Send + 'static,
+    R: Future<Output = Result<Data>> + Send + 'static,
+    SenderSink: futures_util::Sink<warp::ws::Message>,
+    ReceiverStream: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>>,
+{
     let _ = async_graphql::http::WebSocket::with_data(
         schema,
         ws_receiver
