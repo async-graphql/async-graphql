@@ -3,6 +3,8 @@ use std::str::FromStr;
 
 use async_graphql::http::{WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
+use futures_util::sink::Sink;
+use futures_util::stream::Stream;
 use futures_util::{future, StreamExt};
 use warp::filters::ws;
 use warp::{Filter, Rejection, Reply};
@@ -172,8 +174,7 @@ pub async fn graphql_subscription_upgrade<Query, Mutation, Subscription, S>(
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    S: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>>
-        + futures_util::Sink<warp::ws::Message>,
+    S: Stream<Item = Result<warp::ws::Message, warp::Error>> + Sink<warp::ws::Message>,
 {
     graphql_subscription_upgrade_with_data(websocket, protocol, schema, |_| async {
         Ok(Default::default())
@@ -195,8 +196,7 @@ pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscriptio
     Subscription: SubscriptionType + 'static,
     F: FnOnce(serde_json::Value) -> R + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
-    S: futures_util::Stream<Item = Result<warp::ws::Message, warp::Error>>
-        + futures_util::Sink<warp::ws::Message>,
+    S: Stream<Item = Result<warp::ws::Message, warp::Error>> + Sink<warp::ws::Message>,
 {
     let (ws_sender, ws_receiver) = websocket.split();
     let _ = async_graphql::http::WebSocket::with_data(
