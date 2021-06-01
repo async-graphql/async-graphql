@@ -31,11 +31,11 @@ struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[validator(
+    async fn input(#[graphql(validator(
         or(
             and(IntGreaterThan(value = "10"), IntLessThan(value = "100")),
             IntEqual(value = "0")
-        ))] a: String) {
+        )))] a: String) {
     } {
     }
 }

@@ -59,7 +59,7 @@ impl Square {
 #[derive(Interface)]
 #[graphql(
     field(name = "area", type = "f32"),
-    field(name = "scale", type = "Shape", arg(name = "s", type = "f32"))
+    field(name = "scale", type = "Shape", arg(name = "s", type = "f32")),
     field(name = "short_description", method = "short_description", type = "String")
 )]
 enum Shape {

@@ -11,6 +11,7 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
+use core::any::Any;
 use std::io::Cursor;
 
 use async_graphql::http::MultipartOptions;
@@ -111,6 +112,12 @@ impl Request {
         Subscription: SubscriptionType + 'static,
     {
         Response(schema.execute(self.0).await.into())
+    }
+
+    /// Insert some data for this request.
+    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+        self.0.data.insert(data);
+        self
     }
 }
 
