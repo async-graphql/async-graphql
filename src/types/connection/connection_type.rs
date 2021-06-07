@@ -212,14 +212,14 @@ where
                 end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
             };
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&page_info, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
+            return Ok(Some(
+                OutputType::resolve(&page_info, &ctx_obj, ctx.item).await,
+            ));
         } else if ctx.item.node.name.node == "edges" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&self.edges, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
+            return Ok(Some(
+                OutputType::resolve(&self.edges, &ctx_obj, ctx.item).await,
+            ));
         }
 
         self.additional_fields.resolve_field(ctx).await
@@ -234,11 +234,7 @@ where
     EC: ObjectType,
     EE: ObjectType,
 {
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        _field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
         resolve_container(ctx, self).await
     }
 }

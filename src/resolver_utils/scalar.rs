@@ -154,8 +154,8 @@ macro_rules! scalar_internal {
                 &self,
                 _: &$crate::ContextSelectionSet<'_>,
                 _field: &$crate::Positioned<$crate::parser::types::Field>,
-            ) -> $crate::ServerResult<$crate::Value> {
-                ::std::result::Result::Ok($crate::ScalarType::to_value(self))
+            ) -> $crate::Value {
+                $crate::ScalarType::to_value(self)
             }
         }
     };

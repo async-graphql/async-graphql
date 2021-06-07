@@ -376,27 +376,30 @@ pub async fn test_subscription_fieldresult() {
     }
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-    let mut stream = schema
-        .execute_stream("subscription { values }")
-        .map(|resp| resp.into_result())
-        .map_ok(|resp| resp.data);
+    let mut stream = schema.execute_stream("subscription { values }");
     for i in 0i32..5 {
         assert_eq!(
-            value!({ "values": i }),
-            stream.next().await.unwrap().unwrap()
+            Response::new(value!({ "values": i })),
+            stream.next().await.unwrap()
         );
     }
     assert_eq!(
-        stream.next().await,
-        Some(Err(vec![ServerError {
-            message: "StreamErr".to_string(),
-            locations: vec![Pos {
-                line: 1,
-                column: 16
+        Response {
+            data: value!({ "values": null }),
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![ServerError {
+                message: "StreamErr".to_string(),
+                locations: vec![Pos {
+                    line: 1,
+                    column: 16
+                }],
+                path: vec![PathSegment::Field("values".to_owned())],
+                extensions: None,
             }],
-            path: vec![PathSegment::Field("values".to_owned())],
-            extensions: None,
-        }]))
+            http_headers: Default::default()
+        },
+        stream.next().await.unwrap(),
     );
 
     assert!(stream.next().await.is_none());

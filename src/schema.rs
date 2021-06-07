@@ -404,13 +404,13 @@ where
         // check limit
         if let Some(limit_complexity) = self.complexity {
             if validation_result.complexity > limit_complexity {
-                return Err(vec![ServerError::new("Query is too complex.")]);
+                return Err(vec![ServerError::new("Query is too complex.", None)]);
             }
         }
 
         if let Some(limit_depth) = self.depth {
             if validation_result.depth > limit_depth {
-                return Err(vec![ServerError::new("Query is nested too deep.")]);
+                return Err(vec![ServerError::new("Query is nested too deep.", None)]);
             }
         }
 
@@ -422,7 +422,10 @@ where
                 }
             }
             .ok_or_else(|| {
-                ServerError::new(format!(r#"Unknown operation named "{}""#, operation_name))
+                ServerError::new(
+                    format!(r#"Unknown operation named "{}""#, operation_name),
+                    None,
+                )
             })
         } else {
             match document.operations {
@@ -430,9 +433,10 @@ where
                 DocumentOperations::Multiple(map) if map.len() == 1 => {
                     Ok(map.into_iter().next().unwrap().1)
                 }
-                DocumentOperations::Multiple(_) => {
-                    Err(ServerError::new("Operation name required in request."))
-                }
+                DocumentOperations::Multiple(_) => Err(ServerError::new(
+                    "Operation name required in request.",
+                    None,
+                )),
             }
         };
         let operation = match operation {
@@ -450,6 +454,7 @@ where
             ctx_data: query_data,
             http_headers: Default::default(),
             disable_introspection: request.disable_introspection,
+            errors: Default::default(),
         };
         Ok((QueryEnv::new(env), validation_result.cache_control))
     }
@@ -463,23 +468,21 @@ where
             query_env: &env,
         };
 
-        let res = match &env.operation.node.ty {
+        let value = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
             OperationType::Mutation => resolve_container_serial(&ctx, &self.mutation).await,
             OperationType::Subscription => {
                 return Response::from_errors(vec![ServerError::new(
                     "Subscriptions are not supported on this transport.",
+                    None,
                 )]);
             }
         };
 
-        match res {
-            Ok(data) => {
-                let resp = Response::new(data);
-                resp.http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap()))
-            }
-            Err(err) => Response::from_errors(vec![err]),
-        }
+        let mut resp = Response::new(value)
+            .http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap()));
+        resp.errors = std::mem::take(&mut env.errors.lock().unwrap());
+        resp
     }
 
     /// Execute a GraphQL query.

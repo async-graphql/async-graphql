@@ -2,16 +2,15 @@ mod test_utils;
 
 use std::io::Read;
 
+use async_graphql::*;
 use reqwest::{header, StatusCode};
 use serde_json::json;
-
-use async_graphql::*;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[async_std::test]
 async fn quickstart() -> Result<()> {
-    let listen_addr = test_utils::find_listen_addr();
+    let listen_addr = "127.0.0.1:8081";
 
     async_std::task::spawn(async move {
         struct QueryRoot;
@@ -36,7 +35,7 @@ async fn quickstart() -> Result<()> {
     let client = test_utils::client();
 
     let resp = client
-        .post(listen_addr)
+        .post(&format!("http://{}", listen_addr))
         .json(&json!({"query":"{ add(a: 10, b: 20) }"}))
         .send()
         .await?;
@@ -48,7 +47,7 @@ async fn quickstart() -> Result<()> {
     assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
     let resp = client
-        .get(listen_addr)
+        .get(&format!("http://{}", listen_addr))
         .query(&[("query", "{ add(a: 10, b: 20) }")])
         .send()
         .await?;
@@ -64,7 +63,7 @@ async fn quickstart() -> Result<()> {
 
 #[async_std::test]
 async fn hello() -> Result<()> {
-    let listen_addr = test_utils::find_listen_addr();
+    let listen_addr = "127.0.0.1:8082";
 
     async_std::task::spawn(async move {
         struct Hello(String);
@@ -104,7 +103,7 @@ async fn hello() -> Result<()> {
     let client = test_utils::client();
 
     let resp = client
-        .post(listen_addr)
+        .post(&format!("http://{}", listen_addr))
         .json(&json!({"query":"{ hello }"}))
         .header("Name", "Foo")
         .send()
@@ -117,7 +116,7 @@ async fn hello() -> Result<()> {
     assert_eq!(string, json!({"data":{"hello":"Hello, Foo!"}}).to_string());
 
     let resp = client
-        .post(listen_addr)
+        .post(&format!("http://{}", listen_addr))
         .json(&json!({"query":"{ hello }"}))
         .header(header::CONTENT_TYPE, "application/json")
         .send()
@@ -137,7 +136,7 @@ async fn hello() -> Result<()> {
 
 #[async_std::test]
 async fn upload() -> Result<()> {
-    let listen_addr = test_utils::find_listen_addr();
+    let listen_addr = "127.0.0.1:8083";
 
     async_std::task::spawn(async move {
         struct QueryRoot;
@@ -198,7 +197,11 @@ async fn upload() -> Result<()> {
         .text("map", r#"{ "0": ["variables.file"] }"#)
         .part("0", reqwest::multipart::Part::stream("test").file_name("test.txt").mime_str("text/plain")?);
 
-    let resp = client.post(listen_addr).multipart(form).send().await?;
+    let resp = client
+        .post(&format!("http://{}", listen_addr))
+        .multipart(form)
+        .send()
+        .await?;
 
     assert_eq!(resp.status(), StatusCode::OK);
     let string = resp.text().await?;
