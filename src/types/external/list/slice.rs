@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
-use crate::{registry, ContextSelectionSet, OutputType, Positioned, Type, Value};
+use crate::{registry, ContextSelectionSet, OutputType, Positioned, ServerResult, Type, Value};
 
 impl<'a, T: Type + 'a> Type for &'a [T] {
     fn type_name() -> Cow<'static, str> {
@@ -21,7 +21,11 @@ impl<'a, T: Type + 'a> Type for &'a [T] {
 
 #[async_trait::async_trait]
 impl<T: OutputType> OutputType for &[T] {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
         resolve_list(ctx, field, self.iter(), Some(self.len())).await
     }
 }

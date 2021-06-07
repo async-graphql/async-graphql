@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputValueError, InputValueResult, OutputType, Positioned,
-    Scalar, ScalarType, Type, Value,
+    Scalar, ScalarType, ServerResult, Type, Value,
 };
 
 /// The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
@@ -37,7 +37,11 @@ impl Type for str {
 
 #[async_trait::async_trait]
 impl OutputType for str {
-    async fn resolve(&self, _: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
-        Value::String(self.to_string())
+    async fn resolve(
+        &self,
+        _: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        Ok(Value::String(self.to_string()))
     }
 }

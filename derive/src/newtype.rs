@@ -103,8 +103,8 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,
                 _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
-            ) -> #crate_name::Value {
-                #crate_name::ScalarType::to_value(self)
+            ) -> #crate_name::ServerResult<#crate_name::Value> {
+                Ok(#crate_name::ScalarType::to_value(self))
             }
         }
     };

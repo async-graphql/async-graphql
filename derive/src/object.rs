@@ -212,7 +212,7 @@ pub fn generate(
                 let do_find = quote! {
                     self.#field_ident(ctx, #(#use_keys),*)
                         .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err)
-                        .into_server_error(ctx.item.pos))?
+                        .into_server_error(ctx.item.pos))
                 };
 
                 find_entities.push((
@@ -221,9 +221,13 @@ pub fn generate(
                         #(#cfg_attrs)*
                         if typename == &<#entity_type as #crate_name::Type>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
-                                #(#requires_getter)*
+                                let f = async move {
+                                    #(#requires_getter)*
+                                    #do_find
+                                };
+                                let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
                                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&#do_find, &ctx_obj, ctx.item).await));
+                                return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                             }
                         }
                     },
@@ -517,7 +521,7 @@ pub fn generate(
                 let resolve_obj = quote! {
                     {
                         let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))?
+                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
                     }
                 };
 
@@ -535,11 +539,14 @@ pub fn generate(
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
                     if ctx.item.node.name.node == #field_name {
-                        #(#get_params)*
-                        #guard
+                        let f = async move {
+                            #(#get_params)*
+                            #guard
+                            #resolve_obj
+                        };
+                        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                        let res = #resolve_obj;
-                        return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await));
+                        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                     }
                 });
             }
@@ -633,7 +640,11 @@ pub fn generate(
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputType for #shadow_type<#generics_params> #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+            async fn resolve(
+                &self,
+                ctx: &#crate_name::ContextSelectionSet<'_>,
+                _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
+            ) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }

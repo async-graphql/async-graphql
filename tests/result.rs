@@ -23,9 +23,12 @@ pub async fn test_fieldresult() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
     assert_eq!(
-        schema.execute("{ error1:error error2:error }").await,
+        schema.execute("{ error1:optError error2:optError }").await,
         Response {
-            data: value!({ "error1": null, "error2": null }),
+            data: value!({
+                "error1": null,
+                "error2": null,
+            }),
             extensions: Default::default(),
             cache_control: Default::default(),
             errors: vec![
@@ -39,7 +42,7 @@ pub async fn test_fieldresult() {
                     message: "TestError".to_string(),
                     locations: vec![Pos {
                         line: 1,
-                        column: 16,
+                        column: 19,
                     }],
                     path: vec![PathSegment::Field("error2".to_owned())],
                     extensions: None,
@@ -132,4 +135,121 @@ pub async fn test_custom_error() {
             futures_util::stream::once(async move { Err(MyError) })
         }
     }
+}
+
+#[tokio::test]
+pub async fn test_error_propagation() {
+    struct ParentObject;
+
+    #[Object]
+    impl ParentObject {
+        async fn child(&self) -> ChildObject {
+            ChildObject
+        }
+
+        async fn child_opt(&self) -> Option<ChildObject> {
+            Some(ChildObject)
+        }
+    }
+
+    struct ChildObject;
+
+    #[Object]
+    impl ChildObject {
+        async fn name(&self) -> Result<i32> {
+            Err("myerror".into())
+        }
+
+        async fn name_opt(&self) -> Option<Result<i32>> {
+            Some(Err("myerror".into()))
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn parent(&self) -> ParentObject {
+            ParentObject
+        }
+
+        async fn parent_opt(&self) -> Option<ParentObject> {
+            Some(ParentObject)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema.execute("{ parent { child { name } } }").await,
+        Response {
+            data: Value::Null,
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![ServerError {
+                message: "myerror".to_string(),
+                locations: vec![Pos {
+                    line: 1,
+                    column: 20
+                }],
+                path: vec![
+                    PathSegment::Field("parent".to_owned()),
+                    PathSegment::Field("child".to_owned()),
+                    PathSegment::Field("name".to_owned()),
+                ],
+                extensions: None,
+            }],
+            http_headers: Default::default()
+        }
+    );
+
+    assert_eq!(
+        schema.execute("{ parent { childOpt { name } } }").await,
+        Response {
+            data: value!({
+                "parent": {
+                    "childOpt": null,
+                }
+            }),
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![ServerError {
+                message: "myerror".to_string(),
+                locations: vec![Pos {
+                    line: 1,
+                    column: 23
+                }],
+                path: vec![
+                    PathSegment::Field("parent".to_owned()),
+                    PathSegment::Field("childOpt".to_owned()),
+                    PathSegment::Field("name".to_owned()),
+                ],
+                extensions: None,
+            }],
+            http_headers: Default::default()
+        }
+    );
+
+    assert_eq!(
+        schema.execute("{ parentOpt { child { name } } }").await,
+        Response {
+            data: value!({ "parentOpt": null }),
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![ServerError {
+                message: "myerror".to_string(),
+                locations: vec![Pos {
+                    line: 1,
+                    column: 23
+                }],
+                path: vec![
+                    PathSegment::Field("parentOpt".to_owned()),
+                    PathSegment::Field("child".to_owned()),
+                    PathSegment::Field("name".to_owned()),
+                ],
+                extensions: None,
+            }],
+            http_headers: Default::default()
+        }
+    );
 }

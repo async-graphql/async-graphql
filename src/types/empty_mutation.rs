@@ -62,12 +62,15 @@ impl ContainerType for EmptyMutation {
 
 #[async_trait::async_trait]
 impl OutputType for EmptyMutation {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
-        ctx.add_error(ServerError::new(
+    async fn resolve(
+        &self,
+        _ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        Err(ServerError::new(
             "Schema is not configured for mutations.",
             None,
-        ));
-        Value::Null
+        ))
     }
 }
 

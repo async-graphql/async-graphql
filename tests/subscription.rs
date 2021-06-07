@@ -385,7 +385,7 @@ pub async fn test_subscription_fieldresult() {
     }
     assert_eq!(
         Response {
-            data: value!({ "values": null }),
+            data: Value::Null,
             extensions: Default::default(),
             cache_control: Default::default(),
             errors: vec![ServerError {

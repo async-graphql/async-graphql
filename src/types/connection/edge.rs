@@ -122,9 +122,9 @@ where
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if ctx.item.node.name.node == "node" {
             let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return Ok(Some(
-                OutputType::resolve(&self.node, &ctx_obj, ctx.item).await,
-            ));
+            return OutputType::resolve(&self.node, &ctx_obj, ctx.item)
+                .await
+                .map(Some);
         } else if ctx.item.node.name.node == "cursor" {
             return Ok(Some(Value::String(self.cursor.encode_cursor())));
         }
@@ -140,7 +140,11 @@ where
     T: OutputType,
     E: ObjectType,
 {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
         resolve_container(ctx, self).await
     }
 }

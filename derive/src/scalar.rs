@@ -67,8 +67,8 @@ pub fn generate(
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,
                 _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
-            ) -> #crate_name::Value {
-                #crate_name::ScalarType::to_value(self)
+            ) -> #crate_name::ServerResult<#crate_name::Value> {
+                ::std::result::Result::Ok(#crate_name::ScalarType::to_value(self))
             }
         }
     };
