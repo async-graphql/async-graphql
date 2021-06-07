@@ -288,7 +288,7 @@ impl<'a, T> ContextBase<'a, T> {
                 let mut path = Vec::new();
                 node.for_each(|current_node| {
                     path.push(match current_node {
-                        QueryPathSegment::Name(name) => PathSegment::Field(name.to_string()),
+                        QueryPathSegment::Name(name) => PathSegment::Field((*name).to_string()),
                         QueryPathSegment::Index(idx) => PathSegment::Index(*idx),
                     })
                 });
