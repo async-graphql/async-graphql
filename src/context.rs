@@ -281,7 +281,9 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
-    #[doc(hidden)]
+    /// Report a resolver error.
+    ///
+    /// When implementing `OutputType`, if an error occurs, call this function to report this error and return `Value::Null`.
     pub fn add_error(&self, error: ServerError) {
         match self.path_node {
             Some(node) => {
