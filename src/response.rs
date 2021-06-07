@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{CacheControl, Result, ServerError, Value};
 
 /// Query response
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Response {
     /// Data of query result
     #[serde(default)]

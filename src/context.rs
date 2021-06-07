@@ -18,8 +18,8 @@ use crate::parser::types::{
 };
 use crate::schema::SchemaEnv;
 use crate::{
-    Error, InputType, Lookahead, Name, Pos, Positioned, Result, ServerError, ServerResult,
-    UploadValue, Value,
+    Error, InputType, Lookahead, Name, PathSegment, Pos, Positioned, Result, ServerError,
+    ServerResult, UploadValue, Value,
 };
 
 /// Schema/Context data.
@@ -214,6 +214,7 @@ pub struct QueryEnvInner {
     pub ctx_data: Arc<Data>,
     pub http_headers: Mutex<HeaderMap<String>>,
     pub disable_introspection: bool,
+    pub errors: Mutex<Vec<ServerError>>,
 }
 
 #[doc(hidden)]
@@ -277,6 +278,33 @@ impl<'a, T> ContextBase<'a, T> {
             item: selection_set,
             schema_env: self.schema_env,
             query_env: self.query_env,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn add_error(&self, error: ServerError) {
+        match self.path_node {
+            Some(node) => {
+                let mut path = Vec::new();
+                node.for_each(|current_node| {
+                    path.push(match current_node {
+                        QueryPathSegment::Name(name) => PathSegment::Field(name.to_string()),
+                        QueryPathSegment::Index(idx) => PathSegment::Index(*idx),
+                    })
+                });
+                self.query_env
+                    .errors
+                    .lock()
+                    .unwrap()
+                    .push(ServerError { path, ..error });
+            }
+            None => {
+                self.query_env
+                    .errors
+                    .lock()
+                    .unwrap()
+                    .push(ServerError { ..error });
+            }
         }
     }
 
@@ -457,7 +485,9 @@ impl<'a, T> ContextBase<'a, T> {
                     .or_else(|| def.node.default_value())
             })
             .cloned()
-            .ok_or_else(|| ServerError::new(format!("Variable {} is not defined.", name)).at(pos))
+            .ok_or_else(|| {
+                ServerError::new(format!("Variable {} is not defined.", name), Some(pos))
+            })
     }
 
     fn resolve_input_value(&self, value: Positioned<InputValue>) -> ServerResult<Value> {
@@ -486,7 +516,7 @@ impl<'a, T> ContextBase<'a, T> {
             let condition_input = directive
                 .node
                 .get_argument("if")
-                .ok_or_else(|| ServerError::new(format!(r#"Directive @{} requires argument `if` of type `Boolean!` but it was not provided."#, if include { "include" } else { "skip" })).at(directive.pos))?
+                .ok_or_else(|| ServerError::new(format!(r#"Directive @{} requires argument `if` of type `Boolean!` but it was not provided."#, if include { "include" } else { "skip" }),Some(directive.pos)))?
                 .clone();
 
             let pos = condition_input.pos;
@@ -494,7 +524,7 @@ impl<'a, T> ContextBase<'a, T> {
 
             if include
                 != <bool as InputType>::parse(Some(condition_input))
-                    .map_err(|e| e.into_server_error().at(pos))?
+                    .map_err(|e| e.into_server_error(pos))?
             {
                 return Ok(true);
             }
@@ -536,7 +566,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
             None => (Pos::default(), None),
         };
-        InputType::parse(value).map_err(|e| e.into_server_error().at(pos))
+        InputType::parse(value).map_err(|e| e.into_server_error(pos))
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.

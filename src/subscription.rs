@@ -43,9 +43,8 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
                             yield resp;
                         }
                     } else {
-                        let err = ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()))
-                            .at(ctx.item.pos)
-                            .path(PathSegment::Field(field_name.to_string()));
+                        let err = ServerError::new(format!(r#"Cannot query field "{}" on type "{}"."#, field_name, T::type_name()), Some(ctx.item.pos))
+                            .with_path(vec![PathSegment::Field(field_name.to_string())]);
                         yield Response::from_errors(vec![err]);
                     }
                 }

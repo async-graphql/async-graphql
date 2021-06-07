@@ -41,25 +41,18 @@ fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
 
 impl ServerError {
     /// Create a new server error with the message.
-    pub fn new(message: impl Into<String>) -> Self {
+    pub fn new(message: impl Into<String>, pos: Option<Pos>) -> Self {
         Self {
             message: message.into(),
-            locations: Vec::new(),
+            locations: pos.map(|pos| vec![pos]).unwrap_or_default(),
             path: Vec::new(),
             extensions: None,
         }
     }
 
-    /// Add a position to the error.
-    pub fn at(mut self, at: Pos) -> Self {
-        self.locations.push(at);
-        self
-    }
-
-    /// Prepend a path to the error.
-    pub fn path(mut self, path: PathSegment) -> Self {
-        self.path.insert(0, path);
-        self
+    #[doc(hidden)]
+    pub fn with_path(self, path: Vec<PathSegment>) -> Self {
+        Self { path, ..self }
     }
 }
 
@@ -72,12 +65,6 @@ impl Display for ServerError {
 impl From<ServerError> for Vec<ServerError> {
     fn from(single: ServerError) -> Self {
         vec![single]
-    }
-}
-
-impl From<Error> for ServerError {
-    fn from(e: Error) -> Self {
-        e.into_server_error()
     }
 }
 
@@ -158,8 +145,8 @@ impl<T: InputType> InputValueError<T> {
     }
 
     /// Convert the error into a server error.
-    pub fn into_server_error(self) -> ServerError {
-        ServerError::new(self.message)
+    pub fn into_server_error(self, pos: Pos) -> ServerError {
+        ServerError::new(self.message, Some(pos))
     }
 }
 
@@ -193,10 +180,10 @@ impl Error {
 
     /// Convert the error to a server error.
     #[must_use]
-    pub fn into_server_error(self) -> ServerError {
+    pub fn into_server_error(self, pos: Pos) -> ServerError {
         ServerError {
             message: self.message,
-            locations: Vec::new(),
+            locations: vec![pos],
             path: Vec::new(),
             extensions: self.extensions,
         }

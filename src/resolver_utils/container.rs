@@ -5,9 +5,7 @@ use std::pin::Pin;
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
 use crate::registry::MetaType;
-use crate::{
-    Context, ContextSelectionSet, Name, OutputType, PathSegment, ServerError, ServerResult, Value,
-};
+use crate::{Context, ContextSelectionSet, Name, OutputType, ServerError, ServerResult, Value};
 
 /// Represents a GraphQL container object.
 ///
@@ -64,7 +62,7 @@ impl<T: ContainerType> ContainerType for &T {
 pub async fn resolve_container<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> ServerResult<Value> {
+) -> Value {
     resolve_container_inner(ctx, root, true).await
 }
 
@@ -72,7 +70,7 @@ pub async fn resolve_container<'a, T: ContainerType + ?Sized>(
 pub async fn resolve_container_serial<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> ServerResult<Value> {
+) -> Value {
     resolve_container_inner(ctx, root, false).await
 }
 
@@ -106,16 +104,20 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
     parallel: bool,
-) -> ServerResult<Value> {
+) -> Value {
     let mut fields = Fields(Vec::new());
-    fields.add_set(ctx, root)?;
+
+    if let Err(err) = fields.add_set(ctx, root) {
+        ctx.add_error(err);
+        return Value::Null;
+    }
 
     let res = if parallel {
-        futures_util::future::try_join_all(fields.0).await?
+        futures_util::future::join_all(fields.0).await
     } else {
         let mut results = Vec::with_capacity(fields.0.len());
         for field in fields.0 {
-            results.push(field.await?);
+            results.push(field.await);
         }
         results
     };
@@ -124,10 +126,10 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     for (name, value) in res {
         insert_value(&mut map, name, value);
     }
-    Ok(Value::Object(map))
+    Value::Object(map)
 }
 
-type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = (Name, Value)> + 'a + Send>>;
 
 /// A set of fields on an container that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
@@ -152,9 +154,9 @@ impl<'a> Fields<'a> {
                         let field_name = ctx_field.item.node.response_key().node.clone();
                         let typename = root.introspection_type_name().into_owned();
 
-                        self.0.push(Box::pin(async move {
-                            Ok((field_name, Value::String(typename)))
-                        }));
+                        self.0.push(Box::pin(
+                            async move { (field_name, Value::String(typename)) },
+                        ));
                         continue;
                     }
 
@@ -177,9 +179,10 @@ impl<'a> Fields<'a> {
 
                             if extensions.is_empty() {
                                 match root.resolve_field(&ctx_field).await {
-                                    Ok(value) => Ok((field_name, value.unwrap_or_default())),
+                                    Ok(value) => (field_name, value.unwrap_or_default()),
                                     Err(e) => {
-                                        Err(e.path(PathSegment::Field(field_name.to_string())))
+                                        ctx_field.add_error(e);
+                                        (field_name, Value::Null)
                                     }
                                 }
                             } else {
@@ -199,23 +202,26 @@ impl<'a> Fields<'a> {
                                     {
                                         Some(ty) => &ty,
                                         None => {
-                                            return Err(ServerError::new(format!(
-                                                r#"Cannot query field "{}" on type "{}"."#,
-                                                field_name, type_name
-                                            ))
-                                            .at(ctx_field.item.pos)
-                                            .path(PathSegment::Field(field_name.to_string())));
+                                            ctx_field.add_error(ServerError::new(
+                                                format!(
+                                                    r#"Cannot query field "{}" on type "{}"."#,
+                                                    field_name, type_name
+                                                ),
+                                                Some(ctx_field.item.pos),
+                                            ));
+                                            return (field_name, Value::Null);
                                         }
                                     },
                                 };
 
-                                let resolve_fut = async { root.resolve_field(&ctx_field).await };
+                                let resolve_fut = root.resolve_field(&ctx_field);
                                 futures_util::pin_mut!(resolve_fut);
                                 let res = extensions.resolve(resolve_info, &mut resolve_fut).await;
                                 match res {
-                                    Ok(value) => Ok((field_name, value.unwrap_or_default())),
-                                    Err(e) => {
-                                        Err(e.path(PathSegment::Field(field_name.to_string())))
+                                    Ok(value) => (field_name, value.unwrap_or_default()),
+                                    Err(err) => {
+                                        ctx.add_error(err);
+                                        (field_name, Value::Null)
                                     }
                                 }
                             }
@@ -231,11 +237,13 @@ impl<'a> Fields<'a> {
                             let fragment = match fragment {
                                 Some(fragment) => fragment,
                                 None => {
-                                    return Err(ServerError::new(format!(
-                                        r#"Unknown fragment "{}"."#,
-                                        spread.node.fragment_name.node
-                                    ))
-                                    .at(spread.pos));
+                                    return Err(ServerError::new(
+                                        format!(
+                                            r#"Unknown fragment "{}"."#,
+                                            spread.node.fragment_name.node
+                                        ),
+                                        Some(spread.pos),
+                                    ));
                                 }
                             };
                             (

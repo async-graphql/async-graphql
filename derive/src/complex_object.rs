@@ -311,7 +311,7 @@ pub fn generate(
             let resolve_obj = quote! {
                 {
                     let res = self.#field_ident(ctx, #(#use_params),*).await;
-                    res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))?
+                    res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))?
                 }
             };
 
@@ -323,7 +323,7 @@ pub fn generate(
             let guard = guard.map(|guard| {
                 quote! {
                     #guard.check(ctx).await
-                        .map_err(|err| err.into_server_error().at(ctx.item.pos))?;
+                        .map_err(|err| err.into_server_error(ctx.item.pos))?;
                 }
             });
 
@@ -334,7 +334,7 @@ pub fn generate(
                     #guard
                     let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                     let res = #resolve_obj;
-                    return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                    return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await));
                 }
             });
 

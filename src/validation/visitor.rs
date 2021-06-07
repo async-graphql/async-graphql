@@ -126,8 +126,10 @@ impl<'a> VisitorContext<'a> {
                             })
                             .cloned()
                             .ok_or_else(|| {
-                                ServerError::new(format!("Variable {} is not defined.", name))
-                                    .at(pos)
+                                ServerError::new(
+                                    format!("Variable {} is not defined.", name),
+                                    Some(pos),
+                                )
                             })
                     })?),
                 )
@@ -135,7 +137,7 @@ impl<'a> VisitorContext<'a> {
             None => (Pos::default(), None),
         };
 
-        T::parse(value).map_err(|e| e.into_server_error().at(pos))
+        T::parse(value).map_err(|e| e.into_server_error(pos))
     }
 }
 

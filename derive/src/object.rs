@@ -178,7 +178,7 @@ pub fn generate(
                         // requires
                         requires_getter.push(quote! {
                             let #ident: #ty = #crate_name::InputType::parse(params.get(#name).cloned()).
-                                map_err(|err| err.into_server_error().at(ctx.item.pos))?;
+                                map_err(|err| err.into_server_error(ctx.item.pos))?;
                         });
                         use_keys.push(ident);
                     }
@@ -209,7 +209,11 @@ pub fn generate(
                         syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                             .expect("invalid result type");
                 }
-                let do_find = quote! { self.#field_ident(ctx, #(#use_keys),*).await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))? };
+                let do_find = quote! {
+                    self.#field_ident(ctx, #(#use_keys),*)
+                        .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err)
+                        .into_server_error(ctx.item.pos))?
+                };
 
                 find_entities.push((
                     args.len(),
@@ -219,7 +223,7 @@ pub fn generate(
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 #(#requires_getter)*
                                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                                return #crate_name::OutputType::resolve(&#do_find, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&#do_find, &ctx_obj, ctx.item).await));
                             }
                         }
                     },
@@ -513,7 +517,7 @@ pub fn generate(
                 let resolve_obj = quote! {
                     {
                         let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error().at(ctx.item.pos))?
+                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))?
                     }
                 };
 
@@ -524,8 +528,7 @@ pub fn generate(
 
                 let guard = guard.map(|guard| {
                     quote! {
-                        #guard.check(ctx).await
-                            .map_err(|err| err.into_server_error().at(ctx.item.pos))?;
+                        #guard.check(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?;
                     }
                 });
 
@@ -536,7 +539,7 @@ pub fn generate(
                         #guard
                         let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                         let res = #resolve_obj;
-                        return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                        return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await));
                     }
                 });
             }
@@ -619,8 +622,7 @@ pub fn generate(
                     typename
                 } else {
                     return ::std::result::Result::Err(
-                        #crate_name::ServerError::new(r#""__typename" must be an existing string."#)
-                            .at(ctx.item.pos)
+                        #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
                     );
                 };
                 #(#find_entities_iter)*
@@ -631,7 +633,7 @@ pub fn generate(
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generics #crate_name::OutputType for #shadow_type<#generics_params> #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }

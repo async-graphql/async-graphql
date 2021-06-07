@@ -318,9 +318,8 @@ pub fn generate(
                 self.#ident(ctx, #(#use_params),*)
                     .await
                     .map_err(|err| {
-                        ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error()
-                            .at(ctx.item.pos)
-                            .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                        ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos)
+                            .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
                     })?
             };
 
@@ -330,12 +329,10 @@ pub fn generate(
             };
             let guard = guard.map(|guard| quote! {
                 #guard.check(ctx).await.map_err(|err| {
-                    err.into_server_error()
-                        .at(ctx.item.pos)
-                        .path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
+                    err.into_server_error(ctx.item.pos)
+                        .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
                 })?;
             });
-
             let stream_fn = quote! {
                 let field_name = ::std::clone::Clone::clone(&ctx.item.node.response_key().node);
                 let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
@@ -370,22 +367,21 @@ pub fn generate(
                                     return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                                 };
                                 let resolve_fut = async {
-                                    #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
-                                        .await
-                                        .map(::std::option::Option::Some)
+                                    ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await))
                                 };
                                 #crate_name::futures_util::pin_mut!(resolve_fut);
-                                query_env.extensions.resolve(ri, &mut resolve_fut).await
-                                    .map(|value| {
-                                        let mut map = ::std::collections::BTreeMap::new();
-                                        map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
-                                        #crate_name::Response::new(#crate_name::Value::Object(map))
-                                    })
-                                    .unwrap_or_else(|err| {
-                                        #crate_name::Response::from_errors(::std::vec![
-                                            err.path(#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name)))
-                                        ])
-                                    })
+                                let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
+                                    let mut map = ::std::collections::BTreeMap::new();
+                                    map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
+                                    #crate_name::Response::new(#crate_name::Value::Object(map))
+                                })
+                                .unwrap_or_else(|err| {
+                                    #crate_name::Response::from_errors(::std::vec![
+                                        err.with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
+                                    ])
+                                });
+                                resp.errors = ::std::mem::take(&mut query_env.errors.lock().unwrap());
+                                resp
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);
                             ::std::result::Result::Ok(query_env.extensions.execute(&mut execute_fut).await)
@@ -474,5 +470,6 @@ pub fn generate(
             }
         }
     };
+
     Ok(expanded.into())
 }

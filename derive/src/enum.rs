@@ -162,8 +162,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputType for #ident {
-            async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                ::std::result::Result::Ok(#crate_name::resolver_utils::enum_value(*self))
+            async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+                #crate_name::resolver_utils::enum_value(*self)
             }
         }
 

@@ -57,11 +57,7 @@ pub trait InputType: Type + Send + Sync + Sized {
 #[async_trait::async_trait]
 pub trait OutputType: Type + Send + Sync {
     /// Resolve an output value to `async_graphql::Value`.
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value>;
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value;
 }
 
 impl<T: Type + ?Sized> Type for &T {
@@ -77,11 +73,7 @@ impl<T: Type + ?Sized> Type for &T {
 #[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for &T {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
         T::resolve(*self, ctx, field).await
     }
 }
@@ -102,14 +94,13 @@ impl<T: Type, E: Into<Error> + Send + Sync + Clone> Type for Result<T, E> {
 
 #[async_trait::async_trait]
 impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for Result<T, E> {
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
         match self {
-            Ok(value) => Ok(value.resolve(ctx, field).await?),
-            Err(err) => Err(err.clone().into().into_server_error().at(field.pos)),
+            Ok(value) => value.resolve(ctx, field).await,
+            Err(err) => {
+                ctx.add_error(err.clone().into().into_server_error(field.pos));
+                Value::Null
+            }
         }
     }
 }
@@ -142,11 +133,7 @@ impl<T: Type + ?Sized> Type for Box<T> {
 #[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for Box<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
         T::resolve(&**self, ctx, field).await
     }
 }
@@ -177,11 +164,7 @@ impl<T: Type + ?Sized> Type for Arc<T> {
 #[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for Arc<T> {
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
         T::resolve(&**self, ctx, field).await
     }
 }
