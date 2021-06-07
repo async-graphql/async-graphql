@@ -23,13 +23,30 @@ pub async fn test_fieldresult() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
     assert_eq!(
-        schema.execute("{ error }").await.into_result().unwrap_err(),
-        vec![ServerError {
-            message: "TestError".to_string(),
-            locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("error".to_owned())],
-            extensions: None,
-        }]
+        schema.execute("{ error1:error error2:error }").await,
+        Response {
+            data: value!({ "error1": null, "error2": null }),
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![
+                ServerError {
+                    message: "TestError".to_string(),
+                    locations: vec![Pos { line: 1, column: 3 }],
+                    path: vec![PathSegment::Field("error1".to_owned())],
+                    extensions: None,
+                },
+                ServerError {
+                    message: "TestError".to_string(),
+                    locations: vec![Pos {
+                        line: 1,
+                        column: 16,
+                    }],
+                    path: vec![PathSegment::Field("error2".to_owned())],
+                    extensions: None,
+                },
+            ],
+            http_headers: Default::default(),
+        }
     );
 
     assert_eq!(
