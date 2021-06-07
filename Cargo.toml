@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.8.3"
+version = "2.9.0"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -22,9 +22,9 @@ dataloader = ["futures-timer", "futures-channel", "lru"]
 tracing = ["tracinglib", "tracing-futures"]
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "=2.8.2" }
+async-graphql-derive = { path = "derive", version = "2.9.0" }
 async-graphql-value = { path = "value", version = "=2.6.5" }
-async-graphql-parser = { path = "parser", version = "=2.7.1" }
+async-graphql-parser = { path = "parser", version = "2.9.0" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
@@ -39,7 +39,7 @@ serde_json = "1.0.64"
 thiserror = "1.0.24"
 static_assertions = "1.1.0"
 http = "0.2.3"
-multer = "1.2.2"
+multer = "2.0.0"
 tempfile = "3.2.0"
 
 # Feature optional dependencies
@@ -47,6 +47,7 @@ bson = { version = "1.2.0", optional = true }
 chrono = { version = "0.4.19", optional = true }
 chrono-tz = { version = "0.5.3", optional = true }
 log = { version = "0.4.14", optional = true }
+secrecy = { version = "0.7.0", optional = true }
 tracinglib = { version = "0.1.25", optional = true, package = "tracing" }
 tracing-futures = { version = "0.2.5", optional = true, features = ["std-future", "futures-03"] }
 opentelemetry = { version = "0.13.0", optional = true }

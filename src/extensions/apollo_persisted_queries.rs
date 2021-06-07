@@ -85,11 +85,11 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
     ) -> ServerResult<Request> {
         let res = if let Some(value) = request.extensions.remove("persistedQuery") {
             let persisted_query: PersistedQuery = from_value(value).map_err(|_| {
-                ServerError::new("Invalid \"PersistedQuery\" extension configuration.")
+                ServerError::new("Invalid \"PersistedQuery\" extension configuration.", None)
             })?;
             if persisted_query.version != 1 {
                 return Err(ServerError::new(
-                    format!("Only the \"PersistedQuery\" extension of version \"1\" is supported, and the current version is \"{}\".", persisted_query.version),
+                    format!("Only the \"PersistedQuery\" extension of version \"1\" is supported, and the current version is \"{}\".", persisted_query.version), None
                 ));
             }
 
@@ -97,13 +97,13 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
                 if let Some(query) = self.storage.get(persisted_query.sha256_hash).await {
                     Ok(Request { query, ..request })
                 } else {
-                    Err(ServerError::new("PersistedQueryNotFound".to_string()))
+                    Err(ServerError::new("PersistedQueryNotFound", None))
                 }
             } else {
                 let sha256_hash = format!("{:x}", Sha256::digest(request.query.as_bytes()));
 
                 if persisted_query.sha256_hash != sha256_hash {
-                    Err(ServerError::new("provided sha does not match query"))
+                    Err(ServerError::new("provided sha does not match query", None))
                 } else {
                     self.storage.set(sha256_hash, request.query.clone()).await;
                     Ok(request)
@@ -179,7 +179,7 @@ mod tests {
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap_err(),
-            vec![ServerError::new("PersistedQueryNotFound")]
+            vec![ServerError::new("PersistedQueryNotFound", None)]
         );
     }
 }

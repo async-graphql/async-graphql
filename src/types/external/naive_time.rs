@@ -20,13 +20,13 @@ impl ScalarType for NaiveDate {
 impl ScalarType for NaiveTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(NaiveTime::parse_from_str(&s, "%H:%M:%S")?),
+            Value::String(s) => Ok(NaiveTime::parse_from_str(&s, "%H:%M:%S%.f")?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }
 
     fn to_value(&self) -> Value {
-        Value::String(self.format("%H:%M:%S").to_string())
+        Value::String(self.format("%H:%M:%S%.f").to_string())
     }
 }
 
@@ -34,12 +34,12 @@ impl ScalarType for NaiveTime {
 impl ScalarType for NaiveDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")?),
+            Value::String(s) => Ok(NaiveDateTime::parse_from_str(&s, "%Y-%m-%dT%H:%M:%S%.f")?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }
 
     fn to_value(&self) -> Value {
-        Value::String(self.format("%Y-%m-%d %H:%M:%S").to_string())
+        Value::String(self.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
     }
 }

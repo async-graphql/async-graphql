@@ -5,7 +5,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, ServerResult, Type, Value,
+    Positioned, Type, Value,
 };
 
 impl<T: Type> Type for LinkedList<T> {
@@ -47,11 +47,7 @@ impl<T: InputType> InputType for LinkedList<T> {
 
 #[async_trait::async_trait]
 impl<T: OutputType> OutputType for LinkedList<T> {
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
         resolve_list(ctx, field, self, Some(self.len())).await
     }
 }

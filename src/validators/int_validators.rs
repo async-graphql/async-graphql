@@ -26,9 +26,9 @@ impl InputValueValidator for IntRange {
     }
 }
 
-/// Integer less then validator
+/// Integer less than validator
 pub struct IntLessThan {
-    /// Less then this value.
+    /// Less than this value.
     pub value: i64,
 }
 
@@ -48,9 +48,9 @@ impl InputValueValidator for IntLessThan {
     }
 }
 
-/// Integer greater then validator
+/// Integer greater than validator
 pub struct IntGreaterThan {
-    /// Greater then this value.
+    /// Greater than this value.
     pub value: i64,
 }
 

@@ -95,30 +95,32 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
         if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
             if ctx.item.node.name.node == "__schema" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &__Schema {
-                        registry: &ctx.schema_env.registry,
-                    },
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
+                return Ok(Some(
+                    OutputType::resolve(
+                        &__Schema {
+                            registry: &ctx.schema_env.registry,
+                        },
+                        &ctx_obj,
+                        ctx.item,
+                    )
+                    .await,
+                ));
             } else if ctx.item.node.name.node == "__type" {
                 let type_name: String = ctx.param_value("name", None)?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &ctx.schema_env
-                        .registry
-                        .types
-                        .get(&type_name)
-                        .filter(|ty| ty.is_visible(ctx))
-                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
+                return Ok(Some(
+                    OutputType::resolve(
+                        &ctx.schema_env
+                            .registry
+                            .types
+                            .get(&type_name)
+                            .filter(|ty| ty.is_visible(ctx))
+                            .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
+                        &ctx_obj,
+                        ctx.item,
+                    )
+                    .await,
+                ));
             }
         }
 
@@ -127,25 +129,25 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 let representations: Vec<Any> = ctx.param_value("representations", None)?;
                 let res = futures_util::future::try_join_all(representations.iter().map(
                     |item| async move {
-                        self.inner
-                            .find_entity(ctx, &item.0)
-                            .await?
-                            .ok_or_else(|| ServerError::new("Entity not found.").at(ctx.item.pos))
+                        self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {
+                            ServerError::new("Entity not found.", Some(ctx.item.pos))
+                        })
                     },
                 ))
                 .await?;
                 return Ok(Some(Value::List(res)));
             } else if ctx.item.node.name.node == "_service" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &Service {
-                        sdl: Some(ctx.schema_env.registry.export_sdl(true)),
-                    },
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
+                return Ok(Some(
+                    OutputType::resolve(
+                        &Service {
+                            sdl: Some(ctx.schema_env.registry.export_sdl(true)),
+                        },
+                        &ctx_obj,
+                        ctx.item,
+                    )
+                    .await,
+                ));
             }
         }
 
@@ -155,11 +157,7 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType> OutputType for QueryRoot<T> {
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        _field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
+    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
         resolve_container(ctx, self).await
     }
 }

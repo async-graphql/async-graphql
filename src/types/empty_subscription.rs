@@ -36,13 +36,13 @@ impl SubscriptionType for EmptySubscription {
 
     fn create_field_stream<'a>(
         &'a self,
-        ctx: &'a Context<'_>,
+        _ctx: &'a Context<'_>,
     ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>>
     where
         Self: Send + Sync + 'static + Sized,
     {
         Some(Box::pin(stream::once(async move {
-            let err = ServerError::new("Schema is not configured for mutations.").at(ctx.item.pos);
+            let err = ServerError::new("Schema is not configured for subscription.", None);
             Response::from_errors(vec![err])
         })))
     }

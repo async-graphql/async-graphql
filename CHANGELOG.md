@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] 2021-06-01
+
+- Add support for returning multiple resolver errors. [#531](https://github.com/async-graphql/async-graphql/issues/531)
+
+- Bump upstream crate `multer` from `v1.2.2` to `v2.0.0`.
+
+- Aligned NaiveDateTime formatting with DateTime. [#535](https://github.com/async-graphql/async-graphql/pull/535)
+
+## [2.8.6] 2021-06-01
+
+- Allow the ability to set GraphQL Playground settings. [#508](https://github.com/async-graphql/async-graphql/pull/508)
+
+- WebSocket is now generic in graphql_subscription_upgrade functions. [#530](https://github.com/async-graphql/async-graphql/pull/530)
+
+- Removed `Copy` trait from initializer in `graphql_subscription_with_data`. [#530](https://github.com/async-graphql/async-graphql/pull/530)
+
+## [2.8.5] 2021-05-11
+
+- If `InputObject` contains an unnamed field, the correct error message will be given. [#498](https://github.com/async-graphql/async-graphql/issues/498)
+
+- Added `Websocket::with_message_stream` for client message customization. [#501](https://github.com/async-graphql/async-graphql/pull/501)
+
+- Added the `Secret` type using [secrecy](https://crates.io/crates/secrecy) crate.
+
 ## [2.8.4] 2021-04-23
 
 - Fix the problem that the `ComplexObject` macro cannot work due to the `secret` attribute.

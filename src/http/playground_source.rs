@@ -564,6 +564,7 @@ pub struct GraphQLPlaygroundConfig<'a> {
     endpoint: &'a str,
     subscription_endpoint: Option<&'a str>,
     headers: Option<HashMap<&'a str, &'a str>>,
+    settings: Option<HashMap<&'a str, &'a str>>,
 }
 
 impl<'a> GraphQLPlaygroundConfig<'a> {
@@ -573,6 +574,7 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
             endpoint,
             subscription_endpoint: None,
             headers: Default::default(),
+            settings: Default::default(),
         }
     }
 
@@ -590,6 +592,18 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
             let mut headers = HashMap::new();
             headers.insert(name, value);
             self.headers = Some(headers);
+        }
+        self
+    }
+
+    /// Set Playground setting for per query.
+    pub fn with_setting(mut self, name: &'a str, value: &'a str) -> Self {
+        if let Some(settings) = &mut self.settings {
+            settings.insert(name, value);
+        } else {
+            let mut settings = HashMap::new();
+            settings.insert(name, value);
+            self.settings = Some(settings);
         }
         self
     }

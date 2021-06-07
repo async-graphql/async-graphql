@@ -38,21 +38,19 @@ impl<'a> __Schema<'a> {
     /// If this server supports mutation, the type that mutation operations will be rooted at.
     #[inline]
     async fn mutation_type(&self) -> Option<__Type<'a>> {
-        if let Some(ty) = &self.registry.mutation_type {
-            Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
-        } else {
-            None
-        }
+        self.registry
+            .mutation_type
+            .as_ref()
+            .map(|ty| __Type::new_simple(self.registry, &self.registry.types[ty]))
     }
 
     /// If this server support subscription, the type that subscription operations will be rooted at.
     #[inline]
     async fn subscription_type(&self) -> Option<__Type<'a>> {
-        if let Some(ty) = &self.registry.subscription_type {
-            Some(__Type::new_simple(self.registry, &self.registry.types[ty]))
-        } else {
-            None
-        }
+        self.registry
+            .subscription_type
+            .as_ref()
+            .map(|ty| __Type::new_simple(self.registry, &self.registry.types[ty]))
     }
 
     /// A list of all directives supported by this server.

@@ -6,9 +6,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use futures_util::future::{BoxFuture, Ready};
 use futures_util::stream::Stream;
 use futures_util::FutureExt;
+use futures_util::{
+    future::{BoxFuture, Ready},
+    StreamExt,
+};
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
@@ -70,8 +73,20 @@ pin_project! {
     }
 }
 
+type MessageMapStream<S> =
+    futures_util::stream::Map<S, fn(<S as Stream>::Item) -> serde_json::Result<ClientMessage>>;
+
 impl<S, Query, Mutation, Subscription>
-    WebSocket<S, fn(serde_json::Value) -> Ready<Result<Data>>, Query, Mutation, Subscription>
+    WebSocket<
+        MessageMapStream<S>,
+        fn(serde_json::Value) -> Ready<Result<Data>>,
+        Query,
+        Mutation,
+        Subscription,
+    >
+where
+    S: Stream,
+    S::Item: AsRef<[u8]>,
 {
     /// Create a new websocket.
     #[must_use]
@@ -89,7 +104,12 @@ impl<S, Query, Mutation, Subscription>
     }
 }
 
-impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subscription> {
+impl<S, F, Query, Mutation, Subscription>
+    WebSocket<MessageMapStream<S>, F, Query, Mutation, Subscription>
+where
+    S: Stream,
+    S::Item: AsRef<[u8]>,
+{
     /// Create a new websocket with a data initialization function.
     ///
     /// This function, if present, will be called with the data sent by the client in the
@@ -102,7 +122,32 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
         data_initializer: F,
         protocol: Protocols,
     ) -> Self {
-        Self {
+        // let stream = stream.map(|message| serde_json::from_slice(message.as_ref()));
+        let stream = stream
+            .map(ClientMessage::from_bytes as fn(S::Item) -> serde_json::Result<ClientMessage>);
+
+        Self::with_message_stream(schema, stream, data_initializer, protocol)
+    }
+}
+
+impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subscription>
+where
+    S: Stream<Item = serde_json::Result<ClientMessage>>,
+{
+    /// Create a new websocket with a data initialization function from a stream of ClientMessage
+    /// structs.
+    ///
+    /// This function, if present, will be called with the data sent by the client in the
+    /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
+    /// From that point on the returned data will be accessible to all requests.
+    #[must_use]
+    pub fn with_message_stream(
+        schema: Schema<Query, Mutation, Subscription>,
+        stream: S,
+        data_initializer: F,
+        protocol: Protocols,
+    ) -> Self {
+        WebSocket {
             data_initializer: Some(data_initializer),
             init_fut: None,
             data: None,
@@ -117,8 +162,7 @@ impl<S, F, Query, Mutation, Subscription> WebSocket<S, F, Query, Mutation, Subsc
 impl<S, F, R, Query, Mutation, Subscription> Stream
     for WebSocket<S, F, Query, Mutation, Subscription>
 where
-    S: Stream,
-    S::Item: AsRef<[u8]>,
+    S: Stream<Item = serde_json::Result<ClientMessage>>,
     F: FnOnce(serde_json::Value) -> R + Send + 'static,
     R: Future<Output = Result<Data>> + Send + 'static,
     Query: ObjectType + 'static,
@@ -137,7 +181,7 @@ where
                     None => return Poll::Ready(None),
                 };
 
-                let message: ClientMessage = match serde_json::from_slice(message.as_ref()) {
+                let message: ClientMessage = match message {
                     Ok(message) => message,
                     Err(err) => return Poll::Ready(Some(WsMessage::Close(1002, err.to_string()))),
                 };
@@ -189,9 +233,10 @@ where
                         }
                     }
                     ClientMessage::Stop { id } => {
-                        if this.streams.remove(id).is_some() {
+                        if this.streams.remove(&id).is_some() {
                             return Poll::Ready(Some(WsMessage::Text(
-                                serde_json::to_string(&ServerMessage::Complete { id }).unwrap(),
+                                serde_json::to_string(&ServerMessage::Complete { id: &id })
+                                    .unwrap(),
                             )));
                         }
                     }
@@ -294,22 +339,42 @@ impl std::str::FromStr for Protocols {
     }
 }
 
+/// A websocket message received from the client
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
-enum ClientMessage<'a> {
+pub enum ClientMessage {
+    /// A new connection
     ConnectionInit {
+        /// Optional init payload from the client
         payload: Option<serde_json::Value>,
     },
+    /// The start of a Websocket subscription
     #[serde(alias = "subscribe")]
     Start {
+        /// Message ID
         id: String,
+        /// The GraphQL Request - this can be modified by protocol implementors to add files
+        /// uploads.
         payload: Request,
     },
+    /// The end of a Websocket subscription
     #[serde(alias = "complete")]
     Stop {
-        id: &'a str,
+        /// Message ID
+        id: String,
     },
+    /// Connection terminated by the client
     ConnectionTerminate,
+}
+
+impl ClientMessage {
+    /// Creates a ClientMessage from an array of bytes
+    pub fn from_bytes<T>(message: T) -> serde_json::Result<Self>
+    where
+        T: AsRef<[u8]>,
+    {
+        serde_json::from_slice(message.as_ref())
+    }
 }
 
 #[derive(Serialize)]

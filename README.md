@@ -75,6 +75,7 @@ This crate offers the following features, all of which are not activated by defa
 - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
 - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
+- `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
 
 ## Examples
 
