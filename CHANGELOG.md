@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for returning multiple resolver errors. [#531](https://github.com/async-graphql/async-graphql/issues/531)
 
-- Bump upstream crate `multer` from `v1.2.2` to `v2.0.0`. 
+- Bump upstream crate `multer` from `v1.2.2` to `v2.0.0`.
+
+- Aligned NaiveDateTime formatting with DateTime. [#535](https://github.com/async-graphql/async-graphql/pull/535)
 
 ## [2.8.6] 2021-06-01
 
