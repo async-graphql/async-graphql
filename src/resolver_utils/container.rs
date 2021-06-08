@@ -62,7 +62,7 @@ impl<T: ContainerType> ContainerType for &T {
 pub async fn resolve_container<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> Value {
+) -> ServerResult<Value> {
     resolve_container_inner(ctx, root, true).await
 }
 
@@ -70,7 +70,7 @@ pub async fn resolve_container<'a, T: ContainerType + ?Sized>(
 pub async fn resolve_container_serial<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
-) -> Value {
+) -> ServerResult<Value> {
     resolve_container_inner(ctx, root, false).await
 }
 
@@ -104,20 +104,16 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     ctx: &ContextSelectionSet<'a>,
     root: &'a T,
     parallel: bool,
-) -> Value {
+) -> ServerResult<Value> {
     let mut fields = Fields(Vec::new());
-
-    if let Err(err) = fields.add_set(ctx, root) {
-        ctx.add_error(err);
-        return Value::Null;
-    }
+    fields.add_set(ctx, root)?;
 
     let res = if parallel {
-        futures_util::future::join_all(fields.0).await
+        futures_util::future::try_join_all(fields.0).await?
     } else {
         let mut results = Vec::with_capacity(fields.0.len());
         for field in fields.0 {
-            results.push(field.await);
+            results.push(field.await?);
         }
         results
     };
@@ -126,10 +122,10 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     for (name, value) in res {
         insert_value(&mut map, name, value);
     }
-    Value::Object(map)
+    Ok(Value::Object(map))
 }
 
-type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = (Name, Value)> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
 
 /// A set of fields on an container that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
@@ -154,9 +150,9 @@ impl<'a> Fields<'a> {
                         let field_name = ctx_field.item.node.response_key().node.clone();
                         let typename = root.introspection_type_name().into_owned();
 
-                        self.0.push(Box::pin(
-                            async move { (field_name, Value::String(typename)) },
-                        ));
+                        self.0.push(Box::pin(async move {
+                            Ok((field_name, Value::String(typename)))
+                        }));
                         continue;
                     }
 
@@ -178,13 +174,10 @@ impl<'a> Fields<'a> {
                             let extensions = &ctx.query_env.extensions;
 
                             if extensions.is_empty() {
-                                match root.resolve_field(&ctx_field).await {
-                                    Ok(value) => (field_name, value.unwrap_or_default()),
-                                    Err(e) => {
-                                        ctx_field.add_error(e);
-                                        (field_name, Value::Null)
-                                    }
-                                }
+                                Ok((
+                                    field_name,
+                                    root.resolve_field(&ctx_field).await?.unwrap_or_default(),
+                                ))
                             } else {
                                 let type_name = T::type_name();
                                 let resolve_info = ResolveInfo {
@@ -202,28 +195,26 @@ impl<'a> Fields<'a> {
                                     {
                                         Some(ty) => &ty,
                                         None => {
-                                            ctx_field.add_error(ServerError::new(
+                                            return Err(ServerError::new(
                                                 format!(
                                                     r#"Cannot query field "{}" on type "{}"."#,
                                                     field_name, type_name
                                                 ),
                                                 Some(ctx_field.item.pos),
                                             ));
-                                            return (field_name, Value::Null);
                                         }
                                     },
                                 };
 
                                 let resolve_fut = root.resolve_field(&ctx_field);
                                 futures_util::pin_mut!(resolve_fut);
-                                let res = extensions.resolve(resolve_info, &mut resolve_fut).await;
-                                match res {
-                                    Ok(value) => (field_name, value.unwrap_or_default()),
-                                    Err(err) => {
-                                        ctx.add_error(err);
-                                        (field_name, Value::Null)
-                                    }
-                                }
+                                Ok((
+                                    field_name,
+                                    extensions
+                                        .resolve(resolve_info, &mut resolve_fut)
+                                        .await?
+                                        .unwrap_or_default(),
+                                ))
                             }
                         }
                     }));

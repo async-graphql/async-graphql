@@ -124,10 +124,13 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         resolvers.push(quote! {
             if ctx.item.node.name.node == #field_name {
-                #guard
-                let res = self.#ident(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?;
+                let f = async move {
+                    #guard
+                    self.#ident(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))
+                };
+                let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await));
+                return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });
     }
@@ -212,7 +215,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             #[allow(clippy::all, clippy::pedantic)]
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-                async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+                async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                     #crate_name::resolver_utils::resolve_container(ctx, self).await
                 }
             }
@@ -277,7 +280,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[allow(clippy::all, clippy::pedantic)]
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::OutputType for #concrete_type {
-                    async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+                    async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                         #crate_name::resolver_utils::resolve_container(ctx, self).await
                     }
                 }

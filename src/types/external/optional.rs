@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::parser::types::Field;
 use crate::{
     registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, Type, Value,
+    Positioned, ServerResult, Type, Value,
 };
 
 impl<T: Type> Type for Option<T> {
@@ -41,11 +41,21 @@ impl<T: InputType> InputType for Option<T> {
 
 #[async_trait::async_trait]
 impl<T: OutputType + Sync> OutputType for Option<T> {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, field: &Positioned<Field>) -> Value {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
         if let Some(inner) = self {
-            OutputType::resolve(inner, ctx, field).await
+            match OutputType::resolve(inner, ctx, field).await {
+                Ok(value) => Ok(value),
+                Err(err) => {
+                    ctx.add_error(err);
+                    Ok(Value::Null)
+                }
+            }
         } else {
-            Value::Null
+            Ok(Value::Null)
         }
     }
 }

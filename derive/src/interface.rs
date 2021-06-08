@@ -296,7 +296,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             if ctx.item.node.name.node == #name {
                 #(#get_params)*
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&#resolve_obj, &ctx_obj, ctx.item).await));
+                return #crate_name::OutputType::resolve(&#resolve_obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
             }
         });
     }
@@ -373,7 +373,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+            async fn resolve(
+                &self,
+                ctx: &#crate_name::ContextSelectionSet<'_>,
+                _field: &#crate_name::Positioned<#crate_name::parser::types::Field>,
+            ) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }

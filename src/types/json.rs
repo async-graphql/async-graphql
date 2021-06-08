@@ -8,7 +8,7 @@ use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
 use crate::{
     from_value, to_value, ContextSelectionSet, InputValueError, InputValueResult, OutputType,
-    Positioned, Scalar, ScalarType, Type, Value,
+    Positioned, Scalar, ScalarType, ServerResult, Type, Value,
 };
 
 /// A scalar that can represent any JSON value.
@@ -91,8 +91,12 @@ impl<T> Type for OutputJson<T> {
 
 #[async_trait::async_trait]
 impl<T: Serialize + Send + Sync> OutputType for OutputJson<T> {
-    async fn resolve(&self, _ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
-        to_value(&self.0).ok().unwrap_or_default()
+    async fn resolve(
+        &self,
+        _ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        Ok(to_value(&self.0).ok().unwrap_or_default())
     }
 }
 

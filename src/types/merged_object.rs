@@ -90,7 +90,11 @@ where
     A: ObjectType,
     B: ObjectType,
 {
-    async fn resolve(&self, ctx: &ContextSelectionSet<'_>, _field: &Positioned<Field>) -> Value {
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
         resolve_container(ctx, self).await
     }
 }

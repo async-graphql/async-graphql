@@ -367,7 +367,9 @@ pub fn generate(
                                     return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                                 };
                                 let resolve_fut = async {
-                                    ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field).await))
+                                    #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
+                                        .await
+                                        .map(::std::option::Option::Some)
                                 };
                                 #crate_name::futures_util::pin_mut!(resolve_fut);
                                 let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
@@ -375,12 +377,10 @@ pub fn generate(
                                     map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
                                     #crate_name::Response::new(#crate_name::Value::Object(map))
                                 })
-                                .unwrap_or_else(|err| {
-                                    #crate_name::Response::from_errors(::std::vec![
-                                        err.with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
-                                    ])
-                                });
-                                resp.errors = ::std::mem::take(&mut query_env.errors.lock().unwrap());
+                                .unwrap_or_else(|err| #crate_name::Response::from_errors(::std::vec![err]));
+
+                                use ::std::iter::Extend;
+                                resp.errors.extend(::std::mem::take(&mut *query_env.errors.lock().unwrap()));
                                 resp
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);
