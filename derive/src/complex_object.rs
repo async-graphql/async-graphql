@@ -334,7 +334,7 @@ pub fn generate(
                     #guard
                     let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                     let res = #resolve_obj;
-                    return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await));
+                    return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                 }
             });
 

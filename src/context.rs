@@ -281,33 +281,27 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
+    #[doc(hidden)]
+    pub fn set_error_path(&self, error: ServerError) -> ServerError {
+        if let Some(node) = self.path_node {
+            let mut path = Vec::new();
+            node.for_each(|current_node| {
+                path.push(match current_node {
+                    QueryPathSegment::Name(name) => PathSegment::Field((*name).to_string()),
+                    QueryPathSegment::Index(idx) => PathSegment::Index(*idx),
+                })
+            });
+            ServerError { path, ..error }
+        } else {
+            error
+        }
+    }
+
     /// Report a resolver error.
     ///
     /// When implementing `OutputType`, if an error occurs, call this function to report this error and return `Value::Null`.
     pub fn add_error(&self, error: ServerError) {
-        match self.path_node {
-            Some(node) => {
-                let mut path = Vec::new();
-                node.for_each(|current_node| {
-                    path.push(match current_node {
-                        QueryPathSegment::Name(name) => PathSegment::Field((*name).to_string()),
-                        QueryPathSegment::Index(idx) => PathSegment::Index(*idx),
-                    })
-                });
-                self.query_env
-                    .errors
-                    .lock()
-                    .unwrap()
-                    .push(ServerError { path, ..error });
-            }
-            None => {
-                self.query_env
-                    .errors
-                    .lock()
-                    .unwrap()
-                    .push(ServerError { ..error });
-            }
-        }
+        self.query_env.errors.lock().unwrap().push(error);
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.

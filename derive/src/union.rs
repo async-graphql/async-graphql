@@ -200,7 +200,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::Value {
+            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }
         }

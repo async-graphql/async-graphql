@@ -1,6 +1,6 @@
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Field;
-use crate::{ContextSelectionSet, OutputType, Positioned, Type, Value};
+use crate::{ContextSelectionSet, OutputType, Positioned, ServerResult, Type, Value};
 
 /// Resolve an list by executing each of the items concurrently.
 pub async fn resolve_list<'a, T: OutputType + 'a>(
@@ -8,7 +8,7 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
     field: &Positioned<Field>,
     iter: impl IntoIterator<Item = T>,
     len: Option<usize>,
-) -> Value {
+) -> ServerResult<Value> {
     let extensions = &ctx.query_env.extensions;
     if !extensions.is_empty() {
         let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
@@ -24,24 +24,35 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
                         parent_type: &Vec::<T>::type_name(),
                         return_type: &T::qualified_type_name(),
                     };
-                    let resolve_fut =
-                        async { Ok(Some(OutputType::resolve(&item, &ctx_idx, field).await)) };
+                    let resolve_fut = async {
+                        OutputType::resolve(&item, &ctx_idx, field)
+                            .await
+                            .map(Option::Some)
+                            .map_err(|err| ctx_idx.set_error_path(err))
+                    };
                     futures_util::pin_mut!(resolve_fut);
                     extensions
                         .resolve(resolve_info, &mut resolve_fut)
                         .await
-                        .unwrap()
-                        .expect("You definitely encountered a bug!")
+                        .map(|value| value.expect("You definitely encountered a bug!"))
                 }
             });
         }
-        Value::List(futures_util::future::join_all(futures).await)
+        Ok(Value::List(
+            futures_util::future::try_join_all(futures).await?,
+        ))
     } else {
         let mut futures = len.map(Vec::with_capacity).unwrap_or_default();
         for (idx, item) in iter.into_iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
-            futures.push(async move { OutputType::resolve(&item, &ctx_idx, field).await });
+            futures.push(async move {
+                OutputType::resolve(&item, &ctx_idx, field)
+                    .await
+                    .map_err(|err| ctx_idx.set_error_path(err))
+            });
         }
-        Value::List(futures_util::future::join_all(futures).await)
+        Ok(Value::List(
+            futures_util::future::try_join_all(futures).await?,
+        ))
     }
 }

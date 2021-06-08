@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.0] 2021-06-01
+## [2.9.1] 2021-06-08
+
+- Rework error propagation. [#531](https://github.com/async-graphql/async-graphql/issues/531)
+
+## [2.9.0] 2021-06-07
 
 - Add support for returning multiple resolver errors. [#531](https://github.com/async-graphql/async-graphql/issues/531)
 
