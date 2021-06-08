@@ -190,7 +190,7 @@ pub async fn test_error_propagation() {
                 message: "myerror".to_string(),
                 locations: vec![Pos {
                     line: 1,
-                    column: 20
+                    column: 20,
                 }],
                 path: vec![
                     PathSegment::Field("parent".to_owned()),
@@ -199,7 +199,7 @@ pub async fn test_error_propagation() {
                 ],
                 extensions: None,
             }],
-            http_headers: Default::default()
+            http_headers: Default::default(),
         }
     );
 
@@ -217,7 +217,7 @@ pub async fn test_error_propagation() {
                 message: "myerror".to_string(),
                 locations: vec![Pos {
                     line: 1,
-                    column: 23
+                    column: 23,
                 }],
                 path: vec![
                     PathSegment::Field("parent".to_owned()),
@@ -226,7 +226,7 @@ pub async fn test_error_propagation() {
                 ],
                 extensions: None,
             }],
-            http_headers: Default::default()
+            http_headers: Default::default(),
         }
     );
 
@@ -240,7 +240,7 @@ pub async fn test_error_propagation() {
                 message: "myerror".to_string(),
                 locations: vec![Pos {
                     line: 1,
-                    column: 23
+                    column: 23,
                 }],
                 path: vec![
                     PathSegment::Field("parentOpt".to_owned()),
@@ -249,7 +249,36 @@ pub async fn test_error_propagation() {
                 ],
                 extensions: None,
             }],
-            http_headers: Default::default()
+            http_headers: Default::default(),
+        }
+    );
+
+    assert_eq!(
+        schema.execute("{ parentOpt { child { nameOpt } } }").await,
+        Response {
+            data: value!({
+                "parentOpt": {
+                    "child": {
+                        "nameOpt": null,
+                    }
+                },
+            }),
+            extensions: Default::default(),
+            cache_control: Default::default(),
+            errors: vec![ServerError {
+                message: "myerror".to_string(),
+                locations: vec![Pos {
+                    line: 1,
+                    column: 23,
+                }],
+                path: vec![
+                    PathSegment::Field("parentOpt".to_owned()),
+                    PathSegment::Field("child".to_owned()),
+                    PathSegment::Field("nameOpt".to_owned()),
+                ],
+                extensions: None,
+            }],
+            http_headers: Default::default(),
         }
     );
 }
