@@ -8,8 +8,12 @@ enum Role {
     Guest,
 }
 
-struct RoleGuard {
+pub struct RoleGuard {
     role: Role,
+}
+
+mod guards {
+    pub use super::RoleGuard;
 }
 
 #[async_trait::async_trait]
@@ -61,7 +65,7 @@ impl Guard for AgeGuard {
 pub async fn test_guard_simple_rule() {
     #[derive(SimpleObject)]
     struct Query {
-        #[graphql(guard(RoleGuard(role = "Role::Admin")))]
+        #[graphql(guard(guards::RoleGuard(role = "Role::Admin")))]
         value: i32,
     }
 
