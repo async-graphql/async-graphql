@@ -207,6 +207,7 @@ pub struct ContextBase<'a, T> {
 pub struct QueryEnvInner {
     pub extensions: Extensions,
     pub variables: Variables,
+    pub operation_name: Option<String>,
     pub operation: Positioned<OperationDefinition>,
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub uploads: Vec<UploadValue>,

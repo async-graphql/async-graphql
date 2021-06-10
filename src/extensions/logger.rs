@@ -43,8 +43,13 @@ impl Extension for LoggerExtension {
         Ok(document)
     }
 
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
-        let resp = next.run(ctx).await;
+    async fn execute(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        next: NextExecute<'_>,
+    ) -> Response {
+        let resp = next.run(ctx, operation_name).await;
         if resp.is_err() {
             for err in &resp.errors {
                 if !err.path.is_empty() {

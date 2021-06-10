@@ -384,7 +384,7 @@ pub fn generate(
                                 resp
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);
-                            ::std::result::Result::Ok(query_env.extensions.execute(&mut execute_fut).await)
+                            ::std::result::Result::Ok(query_env.extensions.execute(query_env.operation_name.as_deref(), &mut execute_fut).await)
                         }
                     }
                 });

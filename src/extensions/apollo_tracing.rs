@@ -70,9 +70,14 @@ struct ApolloTracingExtension {
 
 #[async_trait::async_trait]
 impl Extension for ApolloTracingExtension {
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
+    async fn execute(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        next: NextExecute<'_>,
+    ) -> Response {
         self.inner.lock().await.start_time = Utc::now();
-        let resp = next.run(ctx).await;
+        let resp = next.run(ctx, operation_name).await;
 
         let mut inner = self.inner.lock().await;
         inner.end_time = Utc::now();
