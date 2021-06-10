@@ -247,11 +247,12 @@ pub struct NextExecute<'a> {
 
 impl<'a> NextExecute<'a> {
     /// Call the [Extension::execute] function of next extension.
-    pub async fn run(self, ctx: &ExtensionContext<'_>) -> Response {
+    pub async fn run(self, ctx: &ExtensionContext<'_>, operation_name: Option<&str>) -> Response {
         if let Some((first, next)) = self.chain.split_first() {
             first
                 .execute(
                     ctx,
+                    operation_name,
                     NextExecute {
                         chain: next,
                         execute_fut: self.execute_fut,
@@ -343,8 +344,13 @@ pub trait Extension: Sync + Send + 'static {
     }
 
     /// Called at execute query.
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
-        next.run(ctx).await
+    async fn execute(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        next: NextExecute<'_>,
+    ) -> Response {
+        next.run(ctx, operation_name).await
     }
 
     /// Called at resolve field.
@@ -455,12 +461,16 @@ impl Extensions {
         next.run(&self.create_context()).await
     }
 
-    pub async fn execute(&self, execute_fut: ExecuteFut<'_>) -> Response {
+    pub async fn execute(
+        &self,
+        operation_name: Option<&str>,
+        execute_fut: ExecuteFut<'_>,
+    ) -> Response {
         let next = NextExecute {
             chain: &self.extensions,
             execute_fut,
         };
-        next.run(&self.create_context()).await
+        next.run(&self.create_context(), operation_name).await
     }
 
     pub async fn resolve(

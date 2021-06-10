@@ -194,9 +194,15 @@ pub async fn test_extension_call_order() {
             res
         }
 
-        async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
+        async fn execute(
+            &self,
+            ctx: &ExtensionContext<'_>,
+            operation_name: Option<&str>,
+            next: NextExecute<'_>,
+        ) -> Response {
+            assert_eq!(operation_name, Some("Abc"));
             self.calls.lock().await.push("execute_start");
-            let res = next.run(ctx).await;
+            let res = next.run(ctx, operation_name).await;
             self.calls.lock().await.push("execute_end");
             res
         }
@@ -256,7 +262,7 @@ pub async fn test_extension_call_order() {
             })
             .finish();
         let _ = schema
-            .execute("{ value1 value2 }")
+            .execute("query Abc { value1 value2 }")
             .await
             .into_result()
             .unwrap();
@@ -289,7 +295,7 @@ pub async fn test_extension_call_order() {
                 calls: calls.clone(),
             })
             .finish();
-        let mut stream = schema.execute_stream("subscription { value }");
+        let mut stream = schema.execute_stream("subscription Abc { value }");
         while let Some(_) = stream.next().await {}
         let calls = calls.lock().await;
         assert_eq!(
