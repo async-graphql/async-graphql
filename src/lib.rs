@@ -284,6 +284,7 @@ pub type FieldResult<T> = Result<T>;
 /// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 /// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
+/// | serial       | Resolve each field sequentially.         | bool        | Y        |
 /// | key          | Is entity key(for Federation)            | bool        | Y        |
 ///
 /// # Valid field return types
@@ -430,6 +431,8 @@ pub use async_graphql_derive::Object;
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented. *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html#generic-simpleobjects) | ConcreteType |  Y |
+/// | serial        | Resolve each field sequentially.         | bool        | Y        |
 ///
 /// # Field parameters
 ///

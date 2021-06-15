@@ -84,3 +84,103 @@ pub async fn test_mutation_fragment() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_serial() {
+    type List = Arc<Mutex<Vec<i32>>>;
+
+    struct MyObj;
+
+    #[Object(serial)]
+    impl MyObj {
+        async fn append1(&self, ctx: &Context<'_>) -> bool {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            ctx.data_unchecked::<List>().lock().await.push(1);
+            true
+        }
+
+        async fn append2(&self, ctx: &Context<'_>) -> bool {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            ctx.data_unchecked::<List>().lock().await.push(2);
+            true
+        }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct MutationRoot;
+
+    #[Object]
+    impl MutationRoot {
+        async fn obj(&self) -> MyObj {
+            MyObj
+        }
+    }
+
+    let list = List::default();
+    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+        .data(list.clone())
+        .finish();
+    schema.execute("mutation { obj { append1 append2 } }").await;
+    assert_eq!(list.lock().await[0], 1);
+    assert_eq!(list.lock().await[1], 2);
+}
+
+#[tokio::test]
+pub async fn test_serial_simple_object() {
+    type List = Arc<Mutex<Vec<i32>>>;
+
+    #[derive(SimpleObject)]
+    #[graphql(complex, serial)]
+    struct MyObj {
+        value: i32,
+    }
+
+    #[ComplexObject]
+    impl MyObj {
+        async fn append1(&self, ctx: &Context<'_>) -> bool {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            ctx.data_unchecked::<List>().lock().await.push(1);
+            true
+        }
+
+        async fn append2(&self, ctx: &Context<'_>) -> bool {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            ctx.data_unchecked::<List>().lock().await.push(2);
+            true
+        }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct MutationRoot;
+
+    #[Object]
+    impl MutationRoot {
+        async fn obj(&self) -> MyObj {
+            MyObj { value: 10 }
+        }
+    }
+
+    let list = List::default();
+    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+        .data(list.clone())
+        .finish();
+    schema.execute("mutation { obj { append1 append2 } }").await;
+    assert_eq!(list.lock().await[0], 1);
+    assert_eq!(list.lock().await[1], 2);
+}
