@@ -9,7 +9,6 @@ use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputType, Positioned,
     ServerResult, SimpleObject, Type, Value,
 };
-use async_graphql_value::ConstValue;
 
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
@@ -71,11 +70,7 @@ where
         }
     }
 
-    async fn find_entity(
-        &self,
-        ctx: &Context<'_>,
-        params: &ConstValue,
-    ) -> ServerResult<Option<ConstValue>> {
+    async fn find_entity(&self, ctx: &Context<'_>, params: &Value) -> ServerResult<Option<Value>> {
         match self.0.find_entity(ctx, params).await {
             Ok(Some(value)) => Ok(Some(value)),
             Ok(None) => self.1.find_entity(ctx, params).await,
