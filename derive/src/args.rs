@@ -487,6 +487,8 @@ pub struct MergedObject {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub serial: bool,
 }
 
 #[derive(FromField)]

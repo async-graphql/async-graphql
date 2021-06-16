@@ -4,9 +4,8 @@ use indexmap::IndexMap;
 
 use crate::parser::types::Field;
 use crate::registry::{MetaType, Registry};
-use crate::resolver_utils::resolve_container;
 use crate::{
-    CacheControl, ContainerType, Context, ContextSelectionSet, ObjectType, OutputType, Positioned,
+    CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned,
     ServerResult, SimpleObject, Type, Value,
 };
 
@@ -59,8 +58,8 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
 #[async_trait::async_trait]
 impl<A, B> ContainerType for MergedObject<A, B>
 where
-    A: ObjectType,
-    B: ObjectType,
+    A: ContainerType,
+    B: ContainerType,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         match self.0.resolve_field(ctx).await {
@@ -82,23 +81,16 @@ where
 #[async_trait::async_trait]
 impl<A, B> OutputType for MergedObject<A, B>
 where
-    A: ObjectType,
-    B: ObjectType,
+    A: ContainerType,
+    B: ContainerType,
 {
     async fn resolve(
         &self,
-        ctx: &ContextSelectionSet<'_>,
+        _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_container(ctx, self).await
+        unreachable!()
     }
-}
-
-impl<A, B> ObjectType for MergedObject<A, B>
-where
-    A: ObjectType,
-    B: ObjectType,
-{
 }
 
 #[doc(hidden)]
