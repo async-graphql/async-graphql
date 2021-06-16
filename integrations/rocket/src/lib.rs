@@ -56,10 +56,7 @@ impl BatchRequest {
 impl<'r> FromData<'r> for BatchRequest {
     type Error = ParseRequestError;
 
-    async fn from_data(
-        req: &'r rocket::Request<'_>,
-        data: Data,
-    ) -> data::Outcome<Self, Self::Error> {
+    async fn from_data(req: &'r rocket::Request<'_>, data: Data<'r>) -> data::Outcome<'r, Self> {
         let opts: MultipartOptions = req.rocket().state().copied().unwrap_or_default();
 
         let request = async_graphql::http::receive_batch_body(
@@ -177,10 +174,7 @@ impl Query {
 impl<'r> FromData<'r> for Request {
     type Error = ParseRequestError;
 
-    async fn from_data(
-        req: &'r rocket::Request<'_>,
-        data: Data,
-    ) -> data::Outcome<Self, Self::Error> {
+    async fn from_data(req: &'r rocket::Request<'_>, data: Data<'r>) -> data::Outcome<'r, Self> {
         BatchRequest::from_data(req, data)
             .await
             .and_then(|request| match request.0.into_single() {
