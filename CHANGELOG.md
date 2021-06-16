@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump upstream crate `bson` from `v1.2.0` to `v2.0.0-beta.1`. [#516](https://github.com/async-graphql/async-graphql/pull/516)
 
-- Add `serial` attribute for `Object`, `SimpleObject` and `MergedObject` macros. #539
+- Add `serial` attribute for `Object`, `SimpleObject` and `MergedObject` macros. [#539](https://github.com/async-graphql/async-graphql/issues/539)
+
+- Remove the `static` constraint of the `receive_body` and `receive_batch_body` functions. [#544](https://github.com/async-graphql/async-graphql/issues/544) 
 
 ## [2.9.2] 2021-06-10
 
