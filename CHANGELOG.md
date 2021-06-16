@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump upstream crate `bson` from `v1.2.0` to `v2.0.0-beta.1`. [#516](https://github.com/async-graphql/async-graphql/pull/516)
 
+- Add `serial` attribute for `Object`, `SimpleObject` and `MergedObject` macros. #539
+
 ## [2.9.2] 2021-06-10
 
 - Allow field guards to support paths. [#536](https://github.com/async-graphql/async-graphql/issues/536)
