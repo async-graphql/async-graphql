@@ -1,3 +1,4 @@
+mod array;
 mod btree_set;
 mod hash_set;
 mod linked_list;
