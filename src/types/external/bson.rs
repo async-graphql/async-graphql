@@ -10,7 +10,7 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 impl ScalarType for ObjectId {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(ObjectId::with_string(&s)?),
+            Value::String(s) => Ok(ObjectId::parse_str(&s)?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }
@@ -26,10 +26,10 @@ impl ScalarType for UtcDateTime {
     fn parse(value: Value) -> InputValueResult<Self> {
         <DateTime<Utc>>::parse(value)
             .map_err(InputValueError::propagate)
-            .map(UtcDateTime::from)
+            .map(UtcDateTime::from_chrono)
     }
 
     fn to_value(&self) -> Value {
-        (**self).to_value()
+        self.to_chrono().to_value()
     }
 }

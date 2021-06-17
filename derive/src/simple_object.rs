@@ -170,6 +170,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
     }
 
+    let resolve_container = if object_args.serial {
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+    } else {
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+    };
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -216,7 +222,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
                 async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                    #crate_name::resolver_utils::resolve_container(ctx, self).await
+                    #resolve_container
                 }
             }
 
@@ -281,7 +287,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::OutputType for #concrete_type {
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                        #crate_name::resolver_utils::resolve_container(ctx, self).await
+                        #resolve_container
                     }
                 }
 

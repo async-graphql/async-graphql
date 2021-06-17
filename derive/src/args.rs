@@ -173,6 +173,8 @@ pub struct SimpleObject {
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    #[darling(default)]
+    pub serial: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -199,6 +201,7 @@ pub struct Object {
     pub extends: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
+    pub serial: bool,
 }
 
 pub enum ComplexityType {
@@ -484,6 +487,8 @@ pub struct MergedObject {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub serial: bool,
 }
 
 #[derive(FromField)]

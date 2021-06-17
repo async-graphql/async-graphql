@@ -55,6 +55,12 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     };
 
     let visible = visible_fn(&object_args.visible);
+    let resolve_container = if object_args.serial {
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+    } else {
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+    };
+
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
@@ -105,7 +111,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                #crate_name::resolver_utils::resolve_container(ctx, self).await
+                #resolve_container
             }
         }
 

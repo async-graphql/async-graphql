@@ -1,13 +1,13 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeReference};
+use syn::{Block, Error, ImplItem, ItemImpl, ReturnType};
 
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
-    gen_deprecation, generate_default, generate_guards, generate_validator, get_cfg_attrs,
-    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
+    extract_input_args, gen_deprecation, generate_default, generate_guards, generate_validator,
+    get_cfg_attrs, get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
     parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
@@ -50,16 +50,6 @@ pub fn generate(
                 Some(provides) => quote! { ::std::option::Option::Some(#provides) },
                 None => quote! { ::std::option::Option::None },
             };
-            let ty = match &method.sig.output {
-                ReturnType::Type(_, ty) => OutputType::parse(ty)?,
-                ReturnType::Default => {
-                    return Err(Error::new_spanned(
-                        &method.sig.output,
-                        "Resolver must have a return type",
-                    )
-                    .into())
-                }
-            };
             let cache_control = {
                 let public = method_args.cache_control.is_public();
                 let max_age = method_args.cache_control.max_age;
@@ -72,68 +62,17 @@ pub fn generate(
             };
             let cfg_attrs = get_cfg_attrs(&method.attrs);
 
-            let mut create_ctx = true;
-            let mut args = Vec::new();
-
-            if method.sig.inputs.is_empty() {
-                return Err(Error::new_spanned(
-                    &method.sig,
-                    "The self receiver must be the first parameter.",
-                )
-                .into());
-            }
-
-            for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
-                if let FnArg::Receiver(receiver) = arg {
-                    if idx != 0 {
-                        return Err(Error::new_spanned(
-                            receiver,
-                            "The self receiver must be the first parameter.",
-                        )
-                        .into());
-                    }
-                } else if let FnArg::Typed(pat) = arg {
-                    if idx == 0 {
-                        return Err(Error::new_spanned(
-                            pat,
-                            "The self receiver must be the first parameter.",
-                        )
-                        .into());
-                    }
-
-                    match (&*pat.pat, &*pat.ty) {
-                        (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
-                            args.push((
-                                arg_ident.clone(),
-                                arg_ty.clone(),
-                                parse_graphql_attrs::<args::Argument>(&pat.attrs)?
-                                    .unwrap_or_default(),
-                            ));
-                            remove_graphql_attrs(&mut pat.attrs);
-                        }
-                        (arg, Type::Reference(TypeReference { elem, .. })) => {
-                            if let Type::Path(path) = elem.as_ref() {
-                                if idx != 1 || path.path.segments.last().unwrap().ident != "Context"
-                                {
-                                    return Err(Error::new_spanned(
-                                        arg,
-                                        "Only types that implement `InputType` can be used as input arguments.",
-                                    )
-                                        .into());
-                                }
-
-                                create_ctx = false;
-                            }
-                        }
-                        _ => return Err(Error::new_spanned(arg, "Invalid argument type.").into()),
-                    }
+            let args = extract_input_args(&crate_name, method)?;
+            let ty = match &method.sig.output {
+                ReturnType::Type(_, ty) => OutputType::parse(ty)?,
+                ReturnType::Default => {
+                    return Err(Error::new_spanned(
+                        &method.sig.output,
+                        "Resolver must have a return type",
+                    )
+                    .into())
                 }
-            }
-
-            if create_ctx {
-                let arg = syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
-                method.sig.inputs.insert(1, arg);
-            }
+            };
 
             let mut schema_args = Vec::new();
             let mut use_params = Vec::new();

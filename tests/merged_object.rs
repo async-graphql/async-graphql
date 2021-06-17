@@ -17,45 +17,6 @@ struct Object3 {
 }
 
 #[tokio::test]
-pub async fn test_merged_object() {
-    type MyObj =
-        MergedObject<Object1, MergedObject<Object2, MergedObject<Object3, MergedObjectTail>>>;
-
-    struct Query;
-
-    #[Object]
-    impl Query {
-        async fn obj(&self) -> MyObj {
-            MergedObject(
-                Object1 { a: 10 },
-                MergedObject(
-                    Object2 { b: 20 },
-                    MergedObject(Object3 { c: 30 }, MergedObjectTail),
-                ),
-            )
-        }
-    }
-
-    assert_eq!(
-        MyObj::type_name(),
-        "Object1_Object2_Object3_MergedObjectTail"
-    );
-
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-    let query = "{ obj { a b c } }";
-    assert_eq!(
-        schema.execute(query).await.into_result().unwrap().data,
-        value!({
-            "obj": {
-                "a": 10,
-                "b": 20,
-                "c": 30,
-            }
-        })
-    );
-}
-
-#[tokio::test]
 pub async fn test_merged_object_macro() {
     #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
