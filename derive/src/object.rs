@@ -109,15 +109,14 @@ pub fn generate(
                                 value
                             })
                         });
-                        use_keys.push(ident);
                     } else {
                         // requires
                         requires_getter.push(quote! {
                             let #ident: #ty = #crate_name::InputType::parse(params.get(#name).cloned()).
                                 map_err(|err| err.into_server_error(ctx.item.pos))?;
                         });
-                        use_keys.push(ident);
                     }
+                    use_keys.push(ident);
                 }
 
                 add_keys.push(quote! {
