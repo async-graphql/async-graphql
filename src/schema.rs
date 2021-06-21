@@ -322,6 +322,7 @@ where
             Subscription::create_type_info(&mut registry);
         }
 
+        registry.remove_unused_types();
         registry
     }
 

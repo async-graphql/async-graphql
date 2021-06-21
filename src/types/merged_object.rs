@@ -23,16 +23,6 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
             let mut cc = CacheControl::default();
 
             if let MetaType::Object {
-                fields: a_fields,
-                cache_control: a_cc,
-                ..
-            } = registry.create_dummy_type::<A>()
-            {
-                fields.extend(a_fields);
-                cc = cc.merge(&a_cc);
-            }
-
-            if let MetaType::Object {
                 fields: b_fields,
                 cache_control: b_cc,
                 ..
@@ -40,6 +30,16 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
             {
                 fields.extend(b_fields);
                 cc = cc.merge(&b_cc);
+            }
+
+            if let MetaType::Object {
+                fields: a_fields,
+                cache_control: a_cc,
+                ..
+            } = registry.create_dummy_type::<A>()
+            {
+                fields.extend(a_fields);
+                cc = cc.merge(&a_cc);
             }
 
             MetaType::Object {
