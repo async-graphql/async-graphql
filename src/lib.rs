@@ -133,7 +133,6 @@
 #![deny(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::match_same_arms)]
-#![allow(clippy::filter_map)]
 #![allow(clippy::default_trait_access)]
 #![allow(clippy::map_flatten)]
 #![allow(clippy::map_unwrap_or)]

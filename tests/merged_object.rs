@@ -346,3 +346,58 @@ pub async fn test_issue_333() {
         })
     )
 }
+
+#[tokio::test]
+pub async fn test_issue_539() {
+    // https://github.com/async-graphql/async-graphql/issues/539#issuecomment-862209442
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct A {
+        a: Option<Box<A>>,
+    }
+
+    #[derive(SimpleObject)]
+    struct B {
+        b: Option<Box<B>>,
+    }
+
+    #[derive(MergedObject)]
+    pub struct Mutation(A, B);
+
+    let schema = Schema::new(
+        Query,
+        Mutation(A { a: None }, B { b: None }),
+        EmptySubscription,
+    );
+    assert_eq!(
+        schema
+            .execute("{ __type(name: \"Mutation\") { fields { name type { name } } } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "__type": {
+                "fields": [
+                    {
+                        "name": "a",
+                        "type": { "name": "A" },
+                    },
+                    {
+                        "name": "b",
+                        "type": { "name": "B" },
+                    }
+                ]
+            }
+        })
+    )
+}

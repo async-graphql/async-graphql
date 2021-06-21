@@ -38,7 +38,7 @@ impl WsMessage {
     pub fn unwrap_text(self) -> String {
         match self {
             Self::Text(text) => text,
-            _ => panic!("Not a text message"),
+            Self::Close(_, _) => panic!("Not a text message"),
         }
     }
 
@@ -52,7 +52,7 @@ impl WsMessage {
     pub fn unwrap_close(self) -> (u16, String) {
         match self {
             Self::Close(code, msg) => (code, msg),
-            _ => panic!("Not a close message"),
+            Self::Text(_) => panic!("Not a close message"),
         }
     }
 }

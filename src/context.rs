@@ -121,7 +121,7 @@ impl<'a> QueryPathNode<'a> {
 
     /// Get the path represented by `Vec<String>`; numbers will be stringified.
     #[must_use]
-    pub fn to_string_vec(&self) -> Vec<String> {
+    pub fn to_string_vec(self) -> Vec<String> {
         let mut res = Vec::new();
         self.for_each(|s| {
             res.push(match s {
