@@ -103,6 +103,12 @@ pub struct ResolveInfo<'a> {
 
     /// Current return type, is qualified name.
     pub return_type: &'a str,
+
+    /// Current field name
+    pub name: &'a str,
+
+    /// Current field alias
+    pub alias: Option<&'a str>,
 }
 
 type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
