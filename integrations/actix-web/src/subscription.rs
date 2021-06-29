@@ -6,8 +6,8 @@ use actix::{
     Actor, ActorContext, ActorFutureExt, ActorStreamExt, AsyncContext, ContextFutureSpawner,
     StreamHandler, WrapFuture, WrapStream,
 };
-use actix_http::error::PayloadError;
-use actix_http::{ws, Error};
+use actix_http::ws::Item;
+use actix_web::error::{Error, PayloadError};
 use actix_web::web::{BufMut, Bytes, BytesMut};
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
@@ -179,16 +179,16 @@ where
                 None
             }
             Message::Continuation(item) => match item {
-                ws::Item::FirstText(bytes) | ws::Item::FirstBinary(bytes) => {
+                Item::FirstText(bytes) | ws::Item::FirstBinary(bytes) => {
                     self.continuation.clear();
                     self.continuation.put(bytes);
                     None
                 }
-                ws::Item::Continue(bytes) => {
+                Item::Continue(bytes) => {
                     self.continuation.put(bytes);
                     None
                 }
-                ws::Item::Last(bytes) => {
+                Item::Last(bytes) => {
                     self.continuation.put(bytes);
                     Some(std::mem::take(&mut self.continuation).freeze())
                 }
