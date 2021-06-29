@@ -23,6 +23,8 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
                         path_node: ctx_idx.path_node.as_ref().unwrap(),
                         parent_type: &Vec::<T>::type_name(),
                         return_type: &T::qualified_type_name(),
+                        name: field.node.name.node.as_str(),
+                        alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                     };
                     let resolve_fut = async {
                         OutputType::resolve(&item, &ctx_idx, field)
