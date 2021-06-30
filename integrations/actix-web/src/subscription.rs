@@ -179,7 +179,7 @@ where
                 None
             }
             Message::Continuation(item) => match item {
-                Item::FirstText(bytes) | ws::Item::FirstBinary(bytes) => {
+                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
                     self.continuation.clear();
                     self.continuation.put(bytes);
                     None
