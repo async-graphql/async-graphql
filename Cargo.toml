@@ -20,6 +20,7 @@ unblock = ["blocking"]
 string_number = ["num-traits"]
 dataloader = ["futures-timer", "futures-channel", "lru"]
 tracing = ["tracinglib", "tracing-futures"]
+decimal = ["rust_decimal"]
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "=2.9.5" }
@@ -53,6 +54,7 @@ tracing-futures = { version = "0.2.5", optional = true, features = ["std-future"
 opentelemetry = { version = "0.13.0", optional = true }
 url = { version = "2.2.1", optional = true }
 uuid = { version = "0.8.2", optional = true, features = ["v4", "serde"] }
+rust_decimal = { version = "1.14.3", optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
