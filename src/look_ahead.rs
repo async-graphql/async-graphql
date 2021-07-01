@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::parser::types::{Field, FragmentDefinition, Selection, SelectionSet};
-use crate::{Name, Positioned};
+use crate::{Name, Positioned, SelectionField};
 
 /// A selection performed by a query.
 pub struct Lookahead<'a> {
@@ -38,6 +38,15 @@ impl<'a> Lookahead<'a> {
     #[inline]
     pub fn exists(&self) -> bool {
         self.field.is_some()
+    }
+}
+
+impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
+    fn from(selection_field: SelectionField<'a>) -> Self {
+        Lookahead {
+            fragments: selection_field.fragments,
+            field: Some(selection_field.field),
+        }
     }
 }
 
