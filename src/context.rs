@@ -651,8 +651,8 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
 /// Selection field.
 #[derive(Clone, Copy)]
 pub struct SelectionField<'a> {
-    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
-    field: &'a Field,
+    pub(crate) fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
+    pub(crate) field: &'a Field,
     context: &'a Context<'a>,
 }
 

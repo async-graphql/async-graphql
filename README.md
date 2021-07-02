@@ -76,6 +76,7 @@ This crate offers the following features, all of which are not activated by defa
 - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
+- `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
 
 ## Examples
 

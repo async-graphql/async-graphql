@@ -71,6 +71,7 @@
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
 //! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
+//! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
 //!
 //! ## Integrations
 //!
