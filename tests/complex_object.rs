@@ -1,4 +1,5 @@
 use async_graphql::*;
+use core::marker::PhantomData;
 
 #[tokio::test]
 pub async fn test_complex_object() {
@@ -60,6 +61,65 @@ pub async fn test_complex_object() {
                 "b": 20,
                 "c": 30,
                 "d": 230,
+            }
+        })
+    );
+}
+
+
+#[tokio::test]
+pub async fn test_complex_object_with_generic_context_data() {
+    trait MyData: Send + Sync {
+        fn answer(&self) -> i64;
+    }
+
+    struct DefaultMyData {}
+
+    impl MyData for DefaultMyData {
+        fn answer(&self) -> i64 { 42 }
+    }
+
+    struct MyQuery<D: MyData> {
+        marker: PhantomData<D>,
+    }
+
+    #[Object]
+    impl<D> MyQuery<D> where D: 'static + MyData {
+        #[graphql(skip)]
+        pub fn new() -> Self {
+            Self { marker: PhantomData }
+        }
+
+        async fn obj(&self, ctx: &Context<'_>) -> MyObject<D> {
+            MyObject::new(ctx.data_unchecked::<D>().answer())
+        }
+    }
+
+    #[derive(SimpleObject, Debug, Clone, Hash, Eq, PartialEq)]
+    #[graphql(complex)]
+    struct MyObject<D: MyData> {
+        my_val: i64,
+        #[graphql(skip)]
+        marker: PhantomData<D>,
+    }
+
+    #[ComplexObject]
+    impl<D: MyData> MyObject<D> {
+        #[graphql(skip)]
+        pub fn new(my_val: i64) -> Self {
+            Self { my_val, marker: PhantomData }
+        }
+    }
+
+    let schema = Schema::build(MyQuery::<DefaultMyData>::new(), EmptyMutation, EmptySubscription)
+        .data(DefaultMyData {})
+        .finish();
+
+    assert_eq!(
+        schema.execute("{ obj { myVal } }").await.data,
+        value!({
+            "obj": {
+                "myVal": 42,
             }
         })
     );
