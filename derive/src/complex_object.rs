@@ -18,7 +18,6 @@ pub fn generate(
     let crate_name = get_crate_name(object_args.internal);
     let (self_ty, _) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;
-    let generics_params = &generics.params;
     let where_clause = &item_impl.generics.where_clause;
 
     let mut resolvers = Vec::new();
@@ -286,7 +285,7 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::ComplexObject for #self_ty#generics_params #where_clause {
+        impl #generics #crate_name::ComplexObject for #self_ty #where_clause {
             fn fields(registry: &mut #crate_name::registry::Registry) -> ::std::vec::Vec<(::std::string::String, #crate_name::registry::MetaField)> {
                 let mut fields = ::std::vec::Vec::new();
                 #(#schema_fields)*
