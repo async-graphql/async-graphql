@@ -1,8 +1,5 @@
 //! Async-graphql integration with Tide
 //!
-//! Tide [does not support websockets](https://github.com/http-rs/tide/issues/67), so you can't use
-//! subscriptions with it.
-//!
 //! # Examples
 //! *[Full Example](<https://github.com/async-graphql/examples/blob/master/tide/starwars/src/main.rs>)*
 
