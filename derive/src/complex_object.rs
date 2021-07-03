@@ -28,6 +28,7 @@ pub fn generate(
             let method_args: args::ObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
             if method_args.skip {
+                remove_graphql_attrs(&mut method.attrs);
                 continue;
             }
 
