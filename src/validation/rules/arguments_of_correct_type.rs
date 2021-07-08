@@ -68,7 +68,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 }
             }
 
-            if let Some(reason) = value.and_then(|value| {
+            if let Some(e) = value.and_then(|value| {
                 is_valid_input_value(
                     ctx.registry,
                     &arg.ty,
@@ -79,9 +79,10 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                     },
                 )
             }) {
-                ctx.report_error(
+                ctx.report_error_with_extensions(
                     vec![name.pos],
-                    format!("Invalid value for argument {}", reason),
+                    format!("Invalid value for argument {}", e.message),
+                    e.extensions,
                 );
             }
         }

@@ -80,8 +80,7 @@ where
     /// ```
     fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
         // By default, use is_valid method to keep compatible with previous version
-        self.is_valid(value)?;
-        Ok(())
+        self.is_valid(value).map_err(|reason| Error::new(reason))
     }
 }
 
@@ -98,7 +97,7 @@ pub trait InputValueValidatorExt: InputValueValidator + Sized {
     }
 
     /// Changes the error message
-    fn map_err<F: Fn(String) -> String>(self, f: F) -> MapErr<Self, F> {
+    fn map_err<F: Fn(Error) -> Error>(self, f: F) -> MapErr<Self, F> {
         MapErr(self, f)
     }
 }
@@ -113,9 +112,10 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Result<(), String> {
-        self.0.is_valid(value)?;
-        self.1.is_valid(value)
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        // By default, use is_valid method to keep compatible with previous version
+        self.0.is_valid_with_extensions(value)?;
+        self.1.is_valid_with_extensions(value)
     }
 }
 
@@ -127,9 +127,10 @@ where
     A: InputValueValidator,
     B: InputValueValidator,
 {
-    fn is_valid(&self, value: &Value) -> Result<(), String> {
-        if self.0.is_valid(value).is_err() {
-            self.1.is_valid(value)
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        // By default, use is_valid method to keep compatible with previous version
+        if self.0.is_valid_with_extensions(value).is_err() {
+            self.1.is_valid_with_extensions(value)
         } else {
             Ok(())
         }
@@ -142,9 +143,9 @@ pub struct MapErr<I, F>(I, F);
 impl<I, F> InputValueValidator for MapErr<I, F>
 where
     I: InputValueValidator,
-    F: Fn(String) -> String + Send + Sync,
+    F: Fn(Error) -> Error + Send + Sync,
 {
-    fn is_valid(&self, value: &Value) -> Result<(), String> {
-        self.0.is_valid(value).map_err(&self.1)
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        self.0.is_valid_with_extensions(value).map_err(&self.1)
     }
 }
