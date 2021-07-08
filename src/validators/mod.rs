@@ -4,7 +4,7 @@ mod int_validators;
 mod list_validators;
 mod string_validators;
 
-use crate::Value;
+use crate::{Error, Value};
 
 pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
 pub use list_validators::{ListMaxLength, ListMinLength};
@@ -47,7 +47,42 @@ where
     /// Check value is valid, returns the reason for the error if it fails, otherwise None.
     ///
     /// If the input type is different from the required type, return `Ok(())` directly, and other validators will find this error.
-    fn is_valid(&self, value: &Value) -> Result<(), String>;
+    fn is_valid(&self, _value: &Value) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Check value is valid, returns the reason include extensions for the error if it fails, otherwise None.
+    ///
+    /// If the input type is different from the required type, return `Ok(())` directly, and other validators will find this error.
+    ///
+    /// # Examples:
+    ///
+    /// ```no_run
+    /// use async_graphql::validators::InputValueValidator;
+    /// use async_graphql::{Value, Error, ErrorExtensions};
+    ///
+    /// pub struct IntGreaterThanZero;
+    ///
+    /// impl InputValueValidator for IntGreaterThanZero {
+    ///     fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+    ///         if let Value::Number(n) = value {
+    ///             if let Some(n) = n.as_i64() {
+    ///                 if n <= 0 {
+    ///                     return Err(
+    ///                         Error::new("Value must be greater than 0").extend_with(|_, e| e.set("code", 400))
+    ///                     );
+    ///                 }
+    ///             }
+    ///         }
+    ///         Ok(())
+    ///     }
+    /// }
+    /// ```
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        // By default, use is_valid method to keep compatible with previous version
+        self.is_valid(value)?;
+        Ok(())
+    }
 }
 
 /// An extension trait for `InputValueValidator`

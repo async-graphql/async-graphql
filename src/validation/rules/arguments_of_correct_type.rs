@@ -57,11 +57,11 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
 
             if let Some(validator) = &arg.validator {
                 if let Some(value) = &value {
-                    if let Err(reason) = validator.is_valid(value) {
+                    if let Err(e) = validator.is_valid_with_extensions(value) {
                         ctx.report_error_with_extensions(
                             vec![name.pos],
-                            format!("Invalid value for argument \"{}\", {}", arg.name, reason),
-                            None,
+                            format!("Invalid value for argument \"{}\", {}", arg.name, e.message),
+                            e.extensions,
                         );
                         return;
                     }
