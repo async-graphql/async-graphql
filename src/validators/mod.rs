@@ -97,8 +97,13 @@ pub trait InputValueValidatorExt: InputValueValidator + Sized {
     }
 
     /// Changes the error message
-    fn map_err<F: Fn(Error) -> Error>(self, f: F) -> MapErr<Self, F> {
+    fn map_err<F: Fn(String) -> String>(self, f: F) -> MapErr<Self, F> {
         MapErr(self, f)
+    }
+
+    /// Changes the error struct
+    fn map_err_ext<F: Fn(Error) -> Error>(self, f: F) -> MapErrExt<Self, F> {
+        MapErrExt(self, f)
     }
 }
 
@@ -141,6 +146,19 @@ where
 pub struct MapErr<I, F>(I, F);
 
 impl<I, F> InputValueValidator for MapErr<I, F>
+where
+    I: InputValueValidator,
+    F: Fn(String) -> String + Send + Sync,
+{
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        self.0.is_valid(value).map_err(&self.1)
+    }
+}
+
+/// Invalidator for `InputValueValidator::map_err_ext`
+pub struct MapErrExt<I, F>(I, F);
+
+impl<I, F> InputValueValidator for MapErrExt<I, F>
 where
     I: InputValueValidator,
     F: Fn(Error) -> Error + Send + Sync,
