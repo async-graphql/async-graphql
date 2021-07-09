@@ -80,7 +80,7 @@ where
     /// ```
     fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
         // By default, use is_valid method to keep compatible with previous version
-        self.is_valid(value).map_err(|reason| Error::new(reason))
+        self.is_valid(value).map_err(Error::new)
     }
 }
 
