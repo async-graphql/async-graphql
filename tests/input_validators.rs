@@ -1,6 +1,6 @@
 use async_graphql::validators::{
-    Email, IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange, ListMaxLength,
-    ListMinLength, StringMaxLength, StringMinLength, MAC,
+    Email, InputValueValidator, IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange,
+    ListMaxLength, ListMinLength, StringMaxLength, StringMinLength, MAC,
 };
 use async_graphql::*;
 
@@ -1769,4 +1769,63 @@ pub async fn test_input_validator_variable() {
             );
         }
     }
+}
+
+#[tokio::test]
+pub async fn test_custom_input_validator_with_extensions() {
+    pub struct IntGreaterThanZero;
+
+    impl InputValueValidator for IntGreaterThanZero {
+        fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+            if let Value::Number(n) = value {
+                if let Some(n) = n.as_i64() {
+                    if n <= 0 {
+                        let e = Error::new("Value must be greater than 0")
+                            .extend_with(|_, e| e.set("code", 400));
+                        return Err(e);
+                    }
+                }
+            }
+            Ok(())
+        }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn field_parameter(
+            &self,
+            #[graphql(validator(IntGreaterThanZero))] _id: i32,
+        ) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+
+    let case = 0;
+    let field_query = format!("{{fieldParameter(id: {})}}", case);
+    let should_fail_msg = "IntGreaterThanZero must failed, but not";
+    let field_error_msg = "Invalid value for argument \"id\", Value must be greater than 0";
+
+    let mut error_extensions = ErrorExtensionValues::default();
+    error_extensions.set("code", 400);
+
+    assert_eq!(
+        schema
+            .execute(&field_query)
+            .await
+            .into_result()
+            .expect_err(&should_fail_msg),
+        vec![ServerError {
+            message: field_error_msg.into(),
+            locations: vec!(Pos {
+                line: 1,
+                column: 17
+            }),
+            path: Vec::new(),
+            extensions: Some(error_extensions),
+        }]
+    );
 }

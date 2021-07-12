@@ -2,7 +2,7 @@ mod cache_control;
 mod export_sdl;
 mod stringify_exec_doc;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use indexmap::map::IndexMap;
@@ -614,12 +614,12 @@ impl Registry {
     }
 
     pub fn remove_unused_types(&mut self) {
-        let mut used_types = HashSet::new();
-        let mut unused_types = HashSet::new();
+        let mut used_types = BTreeSet::new();
+        let mut unused_types = BTreeSet::new();
 
         fn traverse_field<'a>(
             types: &'a IndexMap<String, MetaType>,
-            used_types: &mut HashSet<&'a str>,
+            used_types: &mut BTreeSet<&'a str>,
             field: &'a MetaField,
         ) {
             traverse_type(
@@ -634,7 +634,7 @@ impl Registry {
 
         fn traverse_input_value<'a>(
             types: &'a IndexMap<String, MetaType>,
-            used_types: &mut HashSet<&'a str>,
+            used_types: &mut BTreeSet<&'a str>,
             input_value: &'a MetaInputValue,
         ) {
             traverse_type(
@@ -646,7 +646,7 @@ impl Registry {
 
         fn traverse_type<'a>(
             types: &'a IndexMap<String, MetaType>,
-            used_types: &mut HashSet<&'a str>,
+            used_types: &mut BTreeSet<&'a str>,
             type_name: &'a str,
         ) {
             if used_types.contains(type_name) {

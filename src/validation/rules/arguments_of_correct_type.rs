@@ -57,17 +57,18 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
 
             if let Some(validator) = &arg.validator {
                 if let Some(value) = &value {
-                    if let Err(reason) = validator.is_valid(value) {
-                        ctx.report_error(
+                    if let Err(e) = validator.is_valid_with_extensions(value) {
+                        ctx.report_error_with_extensions(
                             vec![name.pos],
-                            format!("Invalid value for argument \"{}\", {}", arg.name, reason),
+                            format!("Invalid value for argument \"{}\", {}", arg.name, e.message),
+                            e.extensions,
                         );
                         return;
                     }
                 }
             }
 
-            if let Some(reason) = value.and_then(|value| {
+            if let Some(e) = value.and_then(|value| {
                 is_valid_input_value(
                     ctx.registry,
                     &arg.ty,
@@ -78,9 +79,10 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                     },
                 )
             }) {
-                ctx.report_error(
+                ctx.report_error_with_extensions(
                     vec![name.pos],
-                    format!("Invalid value for argument {}", reason),
+                    format!("Invalid value for argument {}", e.message),
+                    e.extensions,
                 );
             }
         }
