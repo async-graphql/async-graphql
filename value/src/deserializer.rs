@@ -14,18 +14,21 @@ use serde::forward_to_deserialize_any;
 pub struct DeserializerError(String);
 
 impl de::Error for DeserializerError {
+    #[inline]
     fn custom<T: fmt::Display>(msg: T) -> Self {
         DeserializerError(msg.to_string())
     }
 }
 
 impl std::error::Error for DeserializerError {
+    #[inline]
     fn description(&self) -> &str {
         "Value deserializer error"
     }
 }
 
 impl fmt::Display for DeserializerError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             DeserializerError(msg) => write!(f, "{}", msg),
@@ -34,18 +37,21 @@ impl fmt::Display for DeserializerError {
 }
 
 impl From<de::value::Error> for DeserializerError {
+    #[inline]
     fn from(e: de::value::Error) -> DeserializerError {
         DeserializerError(e.to_string())
     }
 }
 
 impl ConstValue {
+    #[inline]
     fn unexpected(&self) -> Unexpected {
         match self {
             ConstValue::Null => Unexpected::Unit,
             ConstValue::Number(_) => Unexpected::Other("number"),
             ConstValue::String(v) => Unexpected::Str(v),
             ConstValue::Boolean(v) => Unexpected::Bool(*v),
+            ConstValue::Binary(v) => Unexpected::Bytes(v),
             ConstValue::Enum(v) => Unexpected::Str(v),
             ConstValue::List(_) => Unexpected::Seq,
             ConstValue::Object(_) => Unexpected::Map,
@@ -95,6 +101,7 @@ where
 impl<'de> de::Deserializer<'de> for ConstValue {
     type Error = DeserializerError;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -106,6 +113,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
                 .map_err(|err| DeserializerError(err.to_string())),
             ConstValue::String(v) => visitor.visit_str(&v),
             ConstValue::Boolean(v) => visitor.visit_bool(v),
+            ConstValue::Binary(bytes) => visitor.visit_byte_buf(bytes),
             ConstValue::Enum(v) => visitor.visit_str(v.as_str()),
             ConstValue::List(v) => visit_array(v, visitor),
             ConstValue::Object(v) => visit_object(v, visitor),
@@ -118,6 +126,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
         tuple_struct map struct identifier ignored_any
     }
 
+    #[inline]
     fn deserialize_option<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -128,6 +137,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
         }
     }
 
+    #[inline]
     fn deserialize_newtype_struct<V>(
         self,
         _name: &'static str,
@@ -181,6 +191,11 @@ impl<'de> de::Deserializer<'de> for ConstValue {
 
         visitor.visit_enum(EnumDeserializer { variant, value })
     }
+
+    #[inline]
+    fn is_human_readable(&self) -> bool {
+        false
+    }
 }
 
 struct EnumDeserializer {
@@ -192,6 +207,7 @@ impl<'de> EnumAccess<'de> for EnumDeserializer {
     type Error = DeserializerError;
     type Variant = VariantDeserializer;
 
+    #[inline]
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer), DeserializerError>
     where
         V: DeserializeSeed<'de>,
@@ -217,6 +233,7 @@ struct VariantDeserializer {
 impl<'de> VariantAccess<'de> for VariantDeserializer {
     type Error = DeserializerError;
 
+    #[inline]
     fn unit_variant(self) -> Result<(), DeserializerError> {
         match self.value {
             Some(value) => Deserialize::deserialize(value),
@@ -224,6 +241,7 @@ impl<'de> VariantAccess<'de> for VariantDeserializer {
         }
     }
 
+    #[inline]
     fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, DeserializerError>
     where
         T: DeserializeSeed<'de>,
@@ -337,6 +355,7 @@ impl<'de> SeqAccess<'de> for SeqDeserializer {
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> Option<usize> {
         match self.iter.size_hint() {
             (lower, Some(upper)) if lower == upper => Some(upper),
@@ -351,6 +370,7 @@ struct MapDeserializer {
 }
 
 impl MapDeserializer {
+    #[inline]
     fn new(map: BTreeMap<Name, ConstValue>) -> Self {
         MapDeserializer {
             iter: map.into_iter(),
@@ -376,6 +396,7 @@ impl<'de> MapAccess<'de> for MapDeserializer {
         }
     }
 
+    #[inline]
     fn next_value_seed<T>(&mut self, seed: T) -> Result<T::Value, DeserializerError>
     where
         T: DeserializeSeed<'de>,
@@ -386,6 +407,7 @@ impl<'de> MapAccess<'de> for MapDeserializer {
         }
     }
 
+    #[inline]
     fn size_hint(&self) -> Option<usize> {
         match self.iter.size_hint() {
             (lower, Some(upper)) if lower == upper => Some(upper),
@@ -419,6 +441,7 @@ struct MapKeyDeserializer {
 impl<'de> serde::Deserializer<'de> for MapKeyDeserializer {
     type Error = DeserializerError;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, DeserializerError>
     where
         V: Visitor<'de>,
@@ -426,6 +449,7 @@ impl<'de> serde::Deserializer<'de> for MapKeyDeserializer {
         NameDeserializer::new(self.key).deserialize_any(visitor)
     }
 
+    #[inline]
     fn deserialize_enum<V>(
         self,
         name: &'static str,
@@ -452,6 +476,7 @@ struct NameDeserializer {
 }
 
 impl NameDeserializer {
+    #[inline]
     fn new(value: Name) -> Self {
         NameDeserializer { value }
     }
@@ -460,6 +485,7 @@ impl NameDeserializer {
 impl<'de> de::Deserializer<'de> for NameDeserializer {
     type Error = DeserializerError;
 
+    #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, DeserializerError>
     where
         V: de::Visitor<'de>,
@@ -475,6 +501,7 @@ impl<'de> de::Deserializer<'de> for NameDeserializer {
 }
 
 /// Interpret a `ConstValue` as an instance of type `T`.
+#[inline]
 pub fn from_value<T: DeserializeOwned>(value: ConstValue) -> Result<T, DeserializerError> {
     T::deserialize(value)
 }

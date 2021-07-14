@@ -3,9 +3,10 @@
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
 
-mod de;
+mod deserializer;
 mod macros;
-mod ser;
+mod serializer;
+mod value_serde;
 mod variables;
 
 use std::borrow::{Borrow, Cow};
@@ -16,12 +17,11 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use serde::ser::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-pub use de::{from_value, DeserializerError};
-pub use ser::{to_value, SerializerError};
+pub use deserializer::{from_value, DeserializerError};
 pub use serde_json::Number;
+pub use serializer::{to_value, SerializerError};
 
 pub use variables::Variables;
 
@@ -121,8 +121,7 @@ impl<'de> Deserialize<'de> for Name {
 /// serialize `Upload` will fail, and `Enum` and `Upload` cannot be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
-#[derive(Clone, Debug, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Clone, Debug, Eq)]
 pub enum ConstValue {
     /// `null`.
     Null,
@@ -132,8 +131,9 @@ pub enum ConstValue {
     String(String),
     /// A boolean.
     Boolean(bool),
+    /// A binary.
+    Binary(Vec<u8>),
     /// An enum. These are typically in `SCREAMING_SNAKE_CASE`.
-    #[serde(skip_deserializing)]
     Enum(Name),
     /// A list of values.
     List(Vec<ConstValue>),
@@ -151,6 +151,7 @@ impl PartialEq for ConstValue {
             (ConstValue::Enum(a), ConstValue::String(b)) => a == b,
             (ConstValue::String(a), ConstValue::Enum(b)) => a == b,
             (ConstValue::Enum(a), ConstValue::Enum(b)) => a == b,
+            (ConstValue::Binary(a), ConstValue::Binary(b)) => a == b,
             (ConstValue::List(a), ConstValue::List(b)) => {
                 if a.len() != b.len() {
                     return false;
@@ -267,6 +268,7 @@ impl ConstValue {
             Self::Number(num) => Value::Number(num),
             Self::String(s) => Value::String(s),
             Self::Boolean(b) => Value::Boolean(b),
+            Self::Binary(bytes) => Value::Binary(bytes),
             Self::Enum(v) => Value::Enum(v),
             Self::List(items) => {
                 Value::List(items.into_iter().map(ConstValue::into_value).collect())
@@ -311,6 +313,7 @@ impl Display for ConstValue {
             Self::String(val) => write_quoted(val, f),
             Self::Boolean(true) => f.write_str("true"),
             Self::Boolean(false) => f.write_str("false"),
+            Self::Binary(bytes) => write_binary(bytes, f),
             Self::Null => f.write_str("null"),
             Self::Enum(name) => f.write_str(name),
             Self::List(items) => write_list(items, f),
@@ -341,11 +344,9 @@ impl TryFrom<ConstValue> for serde_json::Value {
 /// deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
     /// A variable, without the `$`.
-    #[serde(serialize_with = "fail_serialize_variable", skip_deserializing)]
     Variable(Name),
     /// `null`.
     Null,
@@ -355,8 +356,9 @@ pub enum Value {
     String(String),
     /// A boolean.
     Boolean(bool),
+    /// A binary.
+    Binary(Vec<u8>),
     /// An enum. These are typically in `SCREAMING_SNAKE_CASE`.
-    #[serde(skip_deserializing)]
     Enum(Name),
     /// A list of values.
     List(Vec<Value>),
@@ -383,6 +385,7 @@ impl Value {
             Self::Number(num) => ConstValue::Number(num),
             Self::String(s) => ConstValue::String(s),
             Self::Boolean(b) => ConstValue::Boolean(b),
+            Self::Binary(v) => ConstValue::Binary(v),
             Self::Enum(v) => ConstValue::Enum(v),
             Self::List(items) => ConstValue::List(
                 items
@@ -439,6 +442,7 @@ impl Display for Value {
             Self::String(val) => write_quoted(val, f),
             Self::Boolean(true) => f.write_str("true"),
             Self::Boolean(false) => f.write_str("false"),
+            Self::Binary(bytes) => write_binary(bytes, f),
             Self::Null => f.write_str("null"),
             Self::Enum(name) => f.write_str(name),
             Self::List(items) => write_list(items, f),
@@ -466,10 +470,6 @@ impl TryFrom<Value> for serde_json::Value {
     }
 }
 
-fn fail_serialize_variable<S: Serializer>(_: &str, _: S) -> Result<S::Ok, S::Error> {
-    Err(S::Error::custom("cannot serialize variable"))
-}
-
 fn write_quoted(s: &str, f: &mut Formatter<'_>) -> fmt::Result {
     f.write_char('"')?;
     for c in s.chars() {
@@ -485,21 +485,45 @@ fn write_quoted(s: &str, f: &mut Formatter<'_>) -> fmt::Result {
     }
     f.write_char('"')
 }
-fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'_>) -> fmt::Result {
+
+fn write_binary(bytes: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
     f.write_char('[')?;
-    for item in list {
-        item.fmt(f)?;
+    let mut iter = bytes.iter().copied();
+    if let Some(value) = iter.next() {
+        value.fmt(f)?;
+    }
+    for value in iter {
         f.write_char(',')?;
+        value.fmt(f)?;
     }
     f.write_char(']')
 }
+
+fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'_>) -> fmt::Result {
+    f.write_char('[')?;
+    let mut iter = list.into_iter();
+    if let Some(item) = iter.next() {
+        item.fmt(f)?;
+    }
+    for item in iter {
+        f.write_char(',')?;
+        item.fmt(f)?;
+    }
+    f.write_char(']')
+}
+
 fn write_object<K: Display, V: Display>(
     object: impl IntoIterator<Item = (K, V)>,
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
     f.write_char('{')?;
-    for (name, value) in object {
-        write!(f, "{}: {},", name, value)?;
+    let mut iter = object.into_iter();
+    if let Some((name, value)) = iter.next() {
+        write!(f, "{}: {}", name, value)?;
+    }
+    for (name, value) in iter {
+        f.write_char(',')?;
+        write!(f, "{}: {}", name, value)?;
     }
     f.write_char('}')
 }
