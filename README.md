@@ -96,6 +96,14 @@ cd examples && cargo run --bin [name]
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 
+## Blog Posts
+
+- [GraphQL in Rust](https://romankudryashov.com/blog/2020/12/graphql-rust/)
+
+- [How to implement a Rust micro-service using Rocket, GraphQL, PostgreSQL](https://lionkeng.medium.com/how-to-implement-a-rust-micro-service-using-rocket-graphql-postgresql-a3f455f2ae8b)
+
+- [Running GraphQL on Lambda with Rust](https://dylananthony.com/posts/graphql-lambda-rust)
+
 ## License
 
 Licensed under either of
