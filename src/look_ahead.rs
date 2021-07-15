@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 use crate::parser::types::{Field, FragmentDefinition, Selection, SelectionSet};
 use crate::{Name, Positioned, SelectionField};
@@ -49,6 +50,28 @@ impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
         Lookahead {
             fragments: selection_field.fragments,
             fields: vec![selection_field.field],
+        }
+    }
+}
+
+/// Convert a slice of `SelectionField`s to a `Lookahead`.
+/// Assumes all `SelectionField`s are from the same query and thus have the same fragments.
+///
+/// Fails if either no `SelectionField`s were provided.
+impl<'a> TryFrom<&[SelectionField<'a>]> for Lookahead<'a> {
+    type Error = ();
+
+    fn try_from(selection_fields: &[SelectionField<'a>]) -> Result<Self, Self::Error> {
+        if selection_fields.is_empty() {
+            Err(())
+        } else {
+            Ok(Lookahead {
+                fragments: selection_fields[0].fragments,
+                fields: selection_fields
+                    .iter()
+                    .map(|selection_field| selection_field.field)
+                    .collect(),
+            })
         }
     }
 }
