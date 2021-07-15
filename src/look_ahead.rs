@@ -53,6 +53,24 @@ impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
     }
 }
 
+/// Convert a slice of `SelectionField`s to a `Lookahead`.
+///
+/// This assumes that the `SelectionField`s are all from the same query.
+///
+/// # Panics
+/// Panics if 0 `SelectionField`s are provided.
+impl<'a> From<&[SelectionField<'a>]> for Lookahead<'a> {
+    fn from(selection_fields: &[SelectionField<'a>]) -> Self {
+        Lookahead {
+            fragments: selection_fields[0].fragments,
+            fields: selection_fields
+                .iter()
+                .map(|selection_field| selection_field.field)
+                .collect(),
+        }
+    }
+}
+
 fn filter<'a>(
     fields: &mut Vec<&'a Field>,
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
