@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Add binary types to `ConstValue` and `Value`. [#569](https://github.com/async-graphql/async-graphql/issues/569)
+- Changed Lookahead to support multiple fields. [#574](https://github.com/async-graphql/async-graphql/issues/547)
 
 ## [2.9.8] 2021-07-12
 
