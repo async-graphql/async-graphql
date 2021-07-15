@@ -6,7 +6,7 @@ use crate::{Name, Positioned, SelectionField};
 /// A selection performed by a query.
 pub struct Lookahead<'a> {
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
-    field: Option<&'a Field>,
+    fields: Vec<&'a Field>,
 }
 
 impl<'a> Lookahead<'a> {
@@ -16,28 +16,31 @@ impl<'a> Lookahead<'a> {
     ) -> Self {
         Self {
             fragments,
-            field: Some(field),
+            fields: vec![field],
         }
     }
 
-    /// Get the first subfield of the selection set with the specified name. This will ignore
+    /// Get the field of the selection set with the specified name. This will ignore
     /// aliases.
     ///
     /// For example, calling `.field("a")` on `{ a { b } }` will return a lookahead that
     /// represents `{ b }`.
     pub fn field(&self, name: &str) -> Self {
+        let mut fields = Vec::new();
+        for field in &self.fields {
+            filter(&mut fields, self.fragments, &field.selection_set.node, name)
+        }
+
         Self {
             fragments: self.fragments,
-            field: self
-                .field
-                .and_then(|field| find(self.fragments, &field.selection_set.node, name)),
+            fields,
         }
     }
 
     /// Returns true if field exists otherwise return false.
     #[inline]
     pub fn exists(&self) -> bool {
-        self.field.is_some()
+        !self.fields.is_empty()
     }
 }
 
@@ -45,34 +48,36 @@ impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
     fn from(selection_field: SelectionField<'a>) -> Self {
         Lookahead {
             fragments: selection_field.fragments,
-            field: Some(selection_field.field),
+            fields: vec![selection_field.field],
         }
     }
 }
 
-fn find<'a>(
+fn filter<'a>(
+    fields: &mut Vec<&'a Field>,
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     selection_set: &'a SelectionSet,
     name: &str,
-) -> Option<&'a Field> {
-    selection_set
-        .items
-        .iter()
-        .find_map(|item| match &item.node {
+) {
+    for item in &selection_set.items {
+        // doing this imperatively is a bit nasty, but using iterators would
+        // require a boxed return type (I believe) as its recusive
+        match &item.node {
             Selection::Field(field) => {
                 if field.node.name.node == name {
-                    Some(&field.node)
-                } else {
-                    None
+                    fields.push(&field.node)
                 }
             }
             Selection::InlineFragment(fragment) => {
-                find(fragments, &fragment.node.selection_set.node, name)
+                filter(fields, fragments, &fragment.node.selection_set.node, name)
             }
-            Selection::FragmentSpread(spread) => fragments
-                .get(&spread.node.fragment_name.node)
-                .and_then(|fragment| find(fragments, &fragment.node.selection_set.node, name)),
-        })
+            Selection::FragmentSpread(spread) => {
+                if let Some(fragment) = fragments.get(&spread.node.fragment_name.node) {
+                    filter(fields, fragments, &fragment.node.selection_set.node, name)
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -104,12 +109,17 @@ mod tests {
                 if ctx.look_ahead().field("a").exists() {
                     // This is a query like `obj { a }`
                     assert_eq!(n, 1);
-                } else if ctx.look_ahead().field("detail").field("c").exists() {
+                } else if ctx.look_ahead().field("detail").field("c").exists()
+                    && ctx.look_ahead().field("detail").field("d").exists()
+                {
                     // This is a query like `obj { detail { c } }`
                     assert_eq!(n, 2);
+                } else if ctx.look_ahead().field("detail").field("c").exists() {
+                    // This is a query like `obj { detail { c } }`
+                    assert_eq!(n, 3);
                 } else {
                     // This query doesn't have `a`
-                    assert_eq!(n, 3);
+                    assert_eq!(n, 4);
                 }
                 MyObj {
                     a: 0,
@@ -146,7 +156,7 @@ mod tests {
         assert!(schema
             .execute(
                 r#"{
-            obj(n: 2) {
+            obj(n: 3) {
                 detail {
                     c
                 }
@@ -159,7 +169,24 @@ mod tests {
         assert!(schema
             .execute(
                 r#"{
-            obj(n: 3) {
+            obj(n: 2) {
+                detail {
+                    d
+                }
+
+                detail {
+                    c
+                }
+            }
+        }"#,
+            )
+            .await
+            .is_ok());
+
+        assert!(schema
+            .execute(
+                r#"{
+            obj(n: 4) {
                 b
             }
         }"#,
@@ -183,8 +210,27 @@ mod tests {
         assert!(schema
             .execute(
                 r#"{
+            obj(n: 3) {
+                ... {
+                    detail {
+                        c
+                    }
+                }
+            }
+        }"#,
+            )
+            .await
+            .is_ok());
+
+        assert!(schema
+            .execute(
+                r#"{
             obj(n: 2) {
                 ... {
+                    detail {
+                        d
+                    }
+
                     detail {
                         c
                     }
@@ -213,12 +259,36 @@ mod tests {
         assert!(schema
             .execute(
                 r#"{
-            obj(n: 2) {
+            obj(n: 3) {
                 ... A
             }
         }
         
         fragment A on MyObj {
+            detail {
+                c
+            }
+        }"#,
+            )
+            .await
+            .is_ok());
+
+        assert!(schema
+            .execute(
+                r#"{
+            obj(n: 2) {
+                ... A
+                ... B
+            }
+        }
+        
+        fragment A on MyObj {
+            detail {
+                d
+            }
+        }
+        
+        fragment B on MyObj {
             detail {
                 c
             }
