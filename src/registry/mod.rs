@@ -2,7 +2,7 @@ mod cache_control;
 mod export_sdl;
 mod stringify_exec_doc;
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use indexmap::map::IndexMap;
@@ -338,7 +338,7 @@ pub struct MetaDirective {
 
 #[derive(Default)]
 pub struct Registry {
-    pub types: IndexMap<String, MetaType>,
+    pub types: BTreeMap<String, MetaType>,
     pub directives: HashMap<String, MetaDirective>,
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
@@ -618,7 +618,7 @@ impl Registry {
         let mut unused_types = BTreeSet::new();
 
         fn traverse_field<'a>(
-            types: &'a IndexMap<String, MetaType>,
+            types: &'a BTreeMap<String, MetaType>,
             used_types: &mut BTreeSet<&'a str>,
             field: &'a MetaField,
         ) {
@@ -633,7 +633,7 @@ impl Registry {
         }
 
         fn traverse_input_value<'a>(
-            types: &'a IndexMap<String, MetaType>,
+            types: &'a BTreeMap<String, MetaType>,
             used_types: &mut BTreeSet<&'a str>,
             input_value: &'a MetaInputValue,
         ) {
@@ -645,7 +645,7 @@ impl Registry {
         }
 
         fn traverse_type<'a>(
-            types: &'a IndexMap<String, MetaType>,
+            types: &'a BTreeMap<String, MetaType>,
             used_types: &mut BTreeSet<&'a str>,
             type_name: &'a str,
         ) {
