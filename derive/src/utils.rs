@@ -403,8 +403,7 @@ pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
         None | Some(Visible::None) => quote! { ::std::option::Option::None },
         Some(Visible::HiddenAlways) => quote! { ::std::option::Option::Some(|_| false) },
         Some(Visible::FnName(name)) => {
-            let ident = Ident::new(name, Span::call_site());
-            quote! { ::std::option::Option::Some(#ident) }
+            quote! { ::std::option::Option::Some(#name) }
         }
     }
 }
