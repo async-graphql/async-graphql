@@ -50,7 +50,7 @@ impl FromMeta for DefaultValue {
 pub enum Visible {
     None,
     HiddenAlways,
-    FnName(String),
+    FnName(Path),
 }
 
 impl FromMeta for Visible {
@@ -58,7 +58,7 @@ impl FromMeta for Visible {
         match value {
             Lit::Bool(LitBool { value: true, .. }) => Ok(Visible::None),
             Lit::Bool(LitBool { value: false, .. }) => Ok(Visible::HiddenAlways),
-            Lit::Str(str) => Ok(Visible::FnName(str.value())),
+            Lit::Str(str) => Ok(Visible::FnName(syn::parse_str::<Path>(&str.value())?)),
             _ => Err(darling::Error::unexpected_lit_type(value)),
         }
     }
