@@ -17,6 +17,7 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use bytes::Bytes;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub use deserializer::{from_value, DeserializerError};
@@ -132,7 +133,7 @@ pub enum ConstValue {
     /// A boolean.
     Boolean(bool),
     /// A binary.
-    Binary(Vec<u8>),
+    Binary(Bytes),
     /// An enum. These are typically in `SCREAMING_SNAKE_CASE`.
     Enum(Name),
     /// A list of values.
@@ -357,7 +358,7 @@ pub enum Value {
     /// A boolean.
     Boolean(bool),
     /// A binary.
-    Binary(Vec<u8>),
+    Binary(Bytes),
     /// An enum. These are typically in `SCREAMING_SNAKE_CASE`.
     Enum(Name),
     /// A list of values.

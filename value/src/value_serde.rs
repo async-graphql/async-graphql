@@ -87,7 +87,7 @@ impl<'de> Deserialize<'de> for ConstValue {
             where
                 E: DeError,
             {
-                Ok(ConstValue::Binary(v.to_vec()))
+                Ok(ConstValue::Binary(v.to_vec().into()))
             }
 
             #[inline]
@@ -95,7 +95,7 @@ impl<'de> Deserialize<'de> for ConstValue {
             where
                 E: DeError,
             {
-                Ok(ConstValue::Binary(v))
+                Ok(ConstValue::Binary(v.into()))
             }
 
             #[inline]
@@ -230,7 +230,7 @@ impl<'de> Deserialize<'de> for Value {
             where
                 E: DeError,
             {
-                Ok(Value::Binary(v.to_vec()))
+                Ok(Value::Binary(v.to_vec().into()))
             }
 
             #[inline]
@@ -238,7 +238,7 @@ impl<'de> Deserialize<'de> for Value {
             where
                 E: DeError,
             {
-                Ok(Value::Binary(v))
+                Ok(Value::Binary(v.into()))
             }
 
             #[inline]

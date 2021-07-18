@@ -113,7 +113,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
                 .map_err(|err| DeserializerError(err.to_string())),
             ConstValue::String(v) => visitor.visit_str(&v),
             ConstValue::Boolean(v) => visitor.visit_bool(v),
-            ConstValue::Binary(bytes) => visitor.visit_byte_buf(bytes),
+            ConstValue::Binary(bytes) => visitor.visit_bytes(&*bytes),
             ConstValue::Enum(v) => visitor.visit_str(v.as_str()),
             ConstValue::List(v) => visit_array(v, visitor),
             ConstValue::Object(v) => visit_object(v, visitor),

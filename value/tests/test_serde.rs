@@ -1,4 +1,5 @@
 use async_graphql_value::*;
+use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -57,7 +58,12 @@ fn test_serde() {
 #[test]
 fn test_binary() {
     assert_eq!(
-        to_value(Value::Binary(b"123456".to_vec())).unwrap(),
-        ConstValue::Binary(b"123456".to_vec())
+        to_value(Bytes::from_static(b"123456")).unwrap(),
+        ConstValue::Binary(Bytes::from_static(b"123456"))
+    );
+
+    assert_eq!(
+        from_value::<Bytes>(ConstValue::Binary(Bytes::from_static(b"123456"))).unwrap(),
+        Bytes::from_static(b"123456")
     );
 }

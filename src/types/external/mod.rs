@@ -1,6 +1,7 @@
 //! Implementations of `Type`, `ScalarType`, etc on external types.
 
 mod bool;
+mod bytes;
 mod char;
 mod cow;
 mod floats;

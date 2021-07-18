@@ -120,7 +120,7 @@ impl ser::Serializer for Serializer {
 
     #[inline]
     fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Ok(ConstValue::Binary(v.to_vec()))
+        Ok(ConstValue::Binary(v.to_vec().into()))
     }
 
     #[inline]
