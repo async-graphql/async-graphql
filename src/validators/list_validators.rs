@@ -48,3 +48,17 @@ impl InputValueValidator for ListMaxLength {
         }
     }
 }
+
+#[doc(hidden)]
+pub struct List<T>(pub T);
+
+impl<T: InputValueValidator> InputValueValidator for List<T> {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        if let Value::List(elems) = value {
+            for elem in elems {
+                self.0.is_valid(elem)?;
+            }
+        }
+        Ok(())
+    }
+}

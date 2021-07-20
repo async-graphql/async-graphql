@@ -7,7 +7,7 @@ mod string_validators;
 use crate::{Error, Value};
 
 pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
-pub use list_validators::{ListMaxLength, ListMinLength};
+pub use list_validators::{List, ListMaxLength, ListMinLength};
 pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
 
 /// Input value validator

@@ -77,6 +77,23 @@ fn generate_nested_validator(
                         None => Some(item),
                     })
                     .unwrap())
+            } else if ls.path.is_ident("list") {
+                if ls.nested.len() > 1 {
+                    return Err(Error::new_spanned(
+                        ls,
+                        "Only one validator can be wrapped with list.",
+                    )
+                    .into());
+                }
+                if ls.nested.is_empty() {
+                    return Err(
+                        Error::new_spanned(ls, "At least one validator must be defined").into(),
+                    );
+                }
+                let validator = generate_nested_validator(crate_name, &ls.nested[0])?;
+                Ok(quote! {
+                    #crate_name::validators::List(#validator)
+                })
             } else {
                 let ty = &ls.path;
                 for item in &ls.nested {
