@@ -479,10 +479,10 @@ where
         };
 
         let mut resp = match res {
-            Ok(value) => Response::new(value)
-                .http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap())),
+            Ok(value) => Response::new(value),
             Err(err) => Response::from_errors(vec![err]),
-        };
+        }
+        .http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap()));
 
         resp.errors
             .extend(std::mem::take(&mut *env.errors.lock().unwrap()));

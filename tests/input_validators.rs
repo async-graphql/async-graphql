@@ -1829,3 +1829,62 @@ pub async fn test_custom_input_validator_with_extensions() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_input_validator_list() {
+    struct QueryRoot;
+
+    #[derive(InputObject)]
+    struct InputEmail {
+        #[graphql(validator(list(Email)))]
+        pub emails: Vec<String>,
+    }
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self, #[graphql(validator(list(Email)))] _emails: Vec<String>) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"
+                {
+                    value(
+                        emails: [
+                            "a@a.com",
+                            "b@abc.com",
+                        ]
+                    )
+                }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({"value": true})
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"
+                {
+                    value(
+                        emails: [
+                            "123456",
+                        ]
+                    )
+                }"#
+            )
+            .await
+            .into_result()
+            .unwrap_err()[0]
+            .message,
+        "Invalid value for argument \"emails\", invalid email format"
+    );
+}

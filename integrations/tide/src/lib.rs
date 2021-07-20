@@ -164,9 +164,9 @@ pub fn respond(resp: impl Into<async_graphql::BatchResponse>) -> tide::Result {
         if let Some(cache_control) = resp.cache_control().value() {
             response.insert_header(headers::CACHE_CONTROL, cache_control);
         }
-        for (name, value) in resp.http_headers() {
-            response.append_header(name, value);
-        }
+    }
+    for (name, value) in resp.http_headers() {
+        response.append_header(name, value);
     }
     response.set_body(Body::from_json(&resp)?);
     Ok(response)
