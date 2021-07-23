@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use crate::Value;
 use serde::Serialize;
+
+use crate::Value;
 
 /// Generate the page for GraphQL Playground
 ///
@@ -632,7 +633,7 @@ mod tests {
             .with_setting("bool", false)
             .with_setting("number", 10)
             .with_setting("null", Value::Null)
-            .with_setting("array", Vec::from([1,2,3]))
+            .with_setting("array", Vec::from([1, 2, 3]))
             .with_setting("object", BTreeMap::new());
 
         let json = serde_json::to_value(settings).unwrap();
