@@ -70,7 +70,7 @@ pub(super) async fn receive_batch_multipart(
                 let request_str = field.text().await?;
                 request = Some(
                     serde_json::from_str::<BatchRequest>(&request_str)
-                        .map_err(ParseRequestError::InvalidRequest)?,
+                        .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))?,
                 );
             }
             Some("map") => {
