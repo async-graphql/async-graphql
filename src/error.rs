@@ -213,7 +213,7 @@ pub enum ParseRequestError {
 
     /// The request's syntax was invalid.
     #[error("Invalid request: {0}")]
-    InvalidRequest(serde_json::Error),
+    InvalidRequest(Box<dyn std::error::Error>),
 
     /// The request's files map was invalid.
     #[error("Invalid files map: {0}")]

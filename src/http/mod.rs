@@ -52,15 +52,17 @@ pub async fn receive_batch_json(body: impl AsyncRead) -> Result<BatchRequest, Pa
     body.read_to_end(&mut data)
         .await
         .map_err(ParseRequestError::Io)?;
-    Ok(serde_json::from_slice::<BatchRequest>(&data).map_err(ParseRequestError::InvalidRequest)?)
+    Ok(serde_json::from_slice::<BatchRequest>(&data)
+        .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))?)
 }
 
-
+/// Receive a GraphQL request from a body as CBOR
 pub async fn receive_batch_cbor(body: impl AsyncRead) -> Result<BatchRequest, ParseRequestError> {
     let mut data = Vec::new();
     futures_util::pin_mut!(body);
     body.read_to_end(&mut data)
         .await
         .map_err(ParseRequestError::Io)?;
-    Ok(serde_cbor::from_slice::<BatchRequest>(&data).map_err(ParseRequestError::InvalidRequest)?)
+    Ok(serde_cbor::from_slice::<BatchRequest>(&data)
+        .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))?)
 }
