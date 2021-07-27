@@ -36,7 +36,7 @@ pub async fn receive_batch_body(
     if let Some(Ok(boundary)) = content_type.map(multer::parse_boundary) {
         multipart::receive_batch_multipart(body, boundary, opts).await
     } else {
-        receive_batch_json(body).await
+        receive_batch_cbor(body).await
     }
 }
 
