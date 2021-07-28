@@ -52,6 +52,7 @@ pub async fn receive_batch_json(body: impl AsyncRead) -> Result<BatchRequest, Pa
     body.read_to_end(&mut data)
         .await
         .map_err(ParseRequestError::Io)?;
+    println!("{}", String::from_utf8_lossy(&data));
     Ok(serde_json::from_slice::<BatchRequest>(&data)
         .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))?)
 }
