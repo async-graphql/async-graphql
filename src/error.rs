@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{parser, InputType, Pos, Value};
-use serde::de::Error as SerdeError;
 
 /// Extensions to the error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -256,6 +255,12 @@ impl From<multer::Error> for ParseRequestError {
             }
             _ => ParseRequestError::InvalidMultipart(err),
         }
+    }
+}
+
+impl From<mime::FromStrError> for ParseRequestError {
+    fn from(e: mime::FromStrError) -> Self {
+        Self::InvalidRequest(Box::new(e))
     }
 }
 
