@@ -402,26 +402,23 @@ mod tests {
     #[test]
     fn test_parser() {
         for entry in fs::read_dir("tests/executables").unwrap() {
-            if let Ok(entry) = entry {
-                eprintln!("Parsing file {}", entry.path().display());
+            let entry = entry.unwrap();
+            eprintln!("Parsing file {}", entry.path().display());
 
-                GraphQLParser::parse(
-                    Rule::executable_document,
-                    &fs::read_to_string(entry.path()).unwrap(),
-                )
-                .unwrap();
-            }
+            GraphQLParser::parse(
+                Rule::executable_document,
+                &fs::read_to_string(entry.path()).unwrap(),
+            )
+            .unwrap();
         }
     }
 
     #[test]
     fn test_parser_ast() {
         for entry in fs::read_dir("tests/executables").unwrap() {
-            if let Ok(entry) = entry {
-                eprintln!("Parsing and transforming file {}", entry.path().display());
-
-                parse_query(fs::read_to_string(entry.path()).unwrap()).unwrap();
-            }
+            let entry = entry.unwrap();
+            eprintln!("Parsing and transforming file {}", entry.path().display());
+            parse_query(fs::read_to_string(entry.path()).unwrap()).unwrap();
         }
     }
 

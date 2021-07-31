@@ -397,7 +397,7 @@ pub fn get_type_path_and_name(ty: &Type) -> GeneratorResult<(&Type, String)> {
                 .map(|s| s.ident.to_string())
                 .unwrap(),
         )),
-        Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(&elem),
+        Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(elem),
         Type::TraitObject(trait_object) => Ok((
             ty,
             trait_object

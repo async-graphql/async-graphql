@@ -296,7 +296,7 @@ pub async fn test_extension_call_order() {
             })
             .finish();
         let mut stream = schema.execute_stream("subscription Abc { value }");
-        while let Some(_) = stream.next().await {}
+        while stream.next().await.is_some() {}
         let calls = calls.lock().await;
         assert_eq!(
             &*calls,
