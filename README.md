@@ -100,6 +100,7 @@ cd examples && cargo run --bin [name]
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
+* Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 
 ## Blog Posts
 
