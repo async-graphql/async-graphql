@@ -85,7 +85,7 @@ pub(super) async fn receive_batch_multipart(
                     if let Some(filename) = field.file_name().map(ToString::to_string) {
                         let content_type = field.content_type().map(ToString::to_string);
                         let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
-                        while let Some(chunk) = field.chunk().await.unwrap() {
+                        while let Some(chunk) = field.chunk().await? {
                             file.write(&chunk).map_err(ParseRequestError::Io)?;
                         }
                         file.seek(SeekFrom::Start(0))?;
