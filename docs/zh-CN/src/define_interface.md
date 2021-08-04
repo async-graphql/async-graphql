@@ -65,3 +65,42 @@ enum Shape {
     Square(Square),
 }
 ```
+
+## 手工注册接口类型
+
+`Async-graphql`在初始化阶段从`Schema`开始遍历并注册所有被直接或者间接引用的类型，如果某个接口没有被引用到，那么它将不会存在于注册表中，就像下面的例子，
+即使`MyObject`实现了`MyInterface`，但由于`Schema`中并没有引用`MyInterface`，类型注册表中将不会存在`MyInterface`类型的信息。
+
+```rust
+#[derive(Interface)]
+#[graphql(
+    field(name = "name", type = "String"),
+)]
+enum MyInterface {
+    MyObject(MyObject),
+}
+
+#[derive(SimpleObject)]
+struct MyObject {
+    name: String,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn obj(&self) -> MyObject {
+        todo!()
+    }
+}
+
+type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
+```
+
+你需要在构造Schema时手工注册`MyInterface`类型：
+
+```rust
+Schema::build(Query, EmptyMutation, EmptySubscription)
+    .register_type::<MyInterface>()
+    .build();
+```
