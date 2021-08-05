@@ -151,7 +151,7 @@
 <p>I like GraphQL and Rust. I've been using <code>Juniper</code>, which solves the problem of implementing a GraphQL server with Rust. But Juniper had several problems, the most important of which is that it didn't support async/await at the time. So I decided to make this library for myself.</p>
 <h2 id="benchmarks"><a class="header" href="#benchmarks">Benchmarks</a></h2>
 <p>Ensure that there is no CPU-heavy process in background!</p>
-<pre><code class="language-shellscript">cd benchmark
+<pre><code class="language-shell script">cd benchmark
 cargo bench
 </code></pre>
 <p>Now a HTML report is available at <code>benchmark/target/criterion/report</code>.</p>
@@ -594,6 +594,47 @@ enum Shape {
     Circle(Circle),
     Square(Square),
 }
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="register-the-interface-manually"><a class="header" href="#register-the-interface-manually">Register the interface manually</a></h2>
+<p><code>Async-graphql</code> traverses and registers all directly or indirectly referenced types from <code>Schema</code> in the initialization phase.
+If an interface is not referenced, it will not exist in the registry, as in the following example , even if <code>MyObject</code> implements <code>MyInterface</code>,
+because <code>MyInterface</code> is not referenced in <code>Schema</code>, the <code>MyInterface</code> type will not exist in the registry.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Interface)]
+#[graphql(
+    field(name = &quot;name&quot;, type = &quot;String&quot;),
+)]
+enum MyInterface {
+    MyObject(MyObject),
+}
+
+#[derive(SimpleObject)]
+struct MyObject {
+    name: String,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn obj(&amp;self) -&gt; MyObject {
+        todo!()
+    }
+}
+
+type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
+<span class="boring">}
+</span></code></pre></pre>
+<p>You need to manually register the <code>MyInterface</code> type when constructing the <code>Schema</code>:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Schema::build(Query, EmptyMutation, EmptySubscription)
+    .register_type::&lt;MyInterface&gt;()
+    .build();
 <span class="boring">}
 </span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="union"><a class="header" href="#union">Union</a></h1>
