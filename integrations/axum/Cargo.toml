@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-axum"
-version = "2.9.9"
+version = "2.9.10"
 edition = "2018"
 
 [dependencies]
