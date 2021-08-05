@@ -7,8 +7,7 @@ edition = "2018"
 async-graphql = { path = "../..", version = "2.9.8" }
 
 async-trait = "0.1.51"
-#axum = { version = "0.1.2", features = ["ws", "headers"] }
-axum = { git = "https://github.com/sunli829/axum.git", rev = "f43470a", features = ["ws", "headers"] }
+axum = { git = "https://github.com/tokio-rs/axum.git", rev = "1509d4a", features = ["ws", "headers"] }
 bytes = "1.0.1"
 headers = "0.3.4"
 http = "0.2.4"
