@@ -78,6 +78,11 @@ This crate offers the following features, all of which are not activated by defa
 - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
 - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
 
+## Apollo Studio
+
+Apollo Studio is a cloud platform that helps you build, monitor, validate, and secure your organization's data graph.
+An existing extension is available for this crate [here](https://github.com/async-graphql/async_graphql_apollo_studio_extension)
+
 ## Examples
 
 All examples are in the [sub-repository](https://github.com/async-graphql/examples), located in the examples directory.
@@ -95,6 +100,7 @@ cd examples && cargo run --bin [name]
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
+* Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 
 ## Blog Posts
 

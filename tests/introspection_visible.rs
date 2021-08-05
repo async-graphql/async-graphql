@@ -59,12 +59,7 @@ pub async fn test_type_visible() {
     )
     .unwrap();
 
-    assert!(resp
-        .schema
-        .types
-        .into_iter()
-        .find(|ty| ty.name == "MyObj")
-        .is_none());
+    assert!(!resp.schema.types.into_iter().any(|ty| ty.name == "MyObj"));
 }
 
 #[tokio::test]

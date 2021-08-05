@@ -1,0 +1,18 @@
+[package]
+name = "async-graphql-axum"
+version = "2.9.10"
+edition = "2018"
+
+[dependencies]
+async-graphql = { path = "../..", version = "2.9.8" }
+
+async-trait = "0.1.51"
+axum = { git = "https://github.com/tokio-rs/axum.git", rev = "1509d4a", features = ["ws", "headers"] }
+bytes = "1.0.1"
+headers = "0.3.4"
+http = "0.2.4"
+http-body = "0.4.2"
+serde_json = "1.0.66"
+serde_urlencoded = "0.7.0"
+tokio-util = { version = "0.6.7", features = ["io", "compat"] }
+futures-util = "0.3.13"

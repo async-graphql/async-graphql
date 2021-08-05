@@ -97,7 +97,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         });
 
         let guard = match &field.guard {
-            Some(meta) => generate_guards(&crate_name, &meta)?,
+            Some(meta) => generate_guards(&crate_name, meta)?,
             None => None,
         };
         let guard = guard.map(

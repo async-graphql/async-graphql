@@ -1817,7 +1817,7 @@ pub async fn test_custom_input_validator_with_extensions() {
             .execute(&field_query)
             .await
             .into_result()
-            .expect_err(&should_fail_msg),
+            .expect_err(should_fail_msg),
         vec![ServerError {
             message: field_error_msg.into(),
             locations: vec!(Pos {

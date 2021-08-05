@@ -17,6 +17,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Data, Error, ObjectType, Request, Response, Result, Schema, SubscriptionType};
 
+/// All known protocols based on WebSocket.
+pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
+
 /// An enum representing the various forms of a WebSocket message.
 #[derive(Clone, Debug)]
 pub enum WsMessage {
@@ -296,7 +299,7 @@ where
 }
 
 /// Specification of which GraphQL Over WebSockets protocol is being utilized
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Protocols {
     /// [subscriptions-transport-ws protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
     SubscriptionsTransportWS,
@@ -306,7 +309,7 @@ pub enum Protocols {
 
 impl Protocols {
     /// Returns the `Sec-WebSocket-Protocol` header value for the protocol
-    pub fn sec_websocket_protocol(&self) -> &str {
+    pub fn sec_websocket_protocol(&self) -> &'static str {
         match self {
             Protocols::SubscriptionsTransportWS => "graphql-ws",
             Protocols::GraphQLWS => "graphql-transport-ws",

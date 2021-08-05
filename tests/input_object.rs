@@ -248,7 +248,7 @@ pub async fn test_inputobject_flatten_multiple() {
     }
 
     #[derive(InputObject, Debug, Eq, PartialEq)]
-    struct ABC {
+    struct Abc {
         #[graphql(flatten)]
         a: A,
 
@@ -260,13 +260,13 @@ pub async fn test_inputobject_flatten_multiple() {
     }
 
     assert_eq!(
-        ABC::parse(Some(value!({
+        Abc::parse(Some(value!({
            "a": 10,
            "b": 20,
            "c": 30,
         })))
         .unwrap(),
-        ABC {
+        Abc {
             a: A { a: 10 },
             b: B { b: 20 },
             c: C { c: 30 }
@@ -274,7 +274,7 @@ pub async fn test_inputobject_flatten_multiple() {
     );
 
     assert_eq!(
-        ABC {
+        Abc {
             a: A { a: 10 },
             b: B { b: 20 },
             c: C { c: 30 }

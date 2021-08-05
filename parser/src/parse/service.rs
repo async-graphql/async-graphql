@@ -403,22 +403,20 @@ mod tests {
     #[test]
     fn test_parser() {
         for entry in fs::read_dir("tests/services").unwrap() {
-            if let Ok(entry) = entry {
-                GraphQLParser::parse(
-                    Rule::service_document,
-                    &fs::read_to_string(entry.path()).unwrap(),
-                )
-                .unwrap();
-            }
+            let entry = entry.unwrap();
+            GraphQLParser::parse(
+                Rule::service_document,
+                &fs::read_to_string(entry.path()).unwrap(),
+            )
+            .unwrap();
         }
     }
 
     #[test]
     fn test_parser_ast() {
         for entry in fs::read_dir("tests/services").unwrap() {
-            if let Ok(entry) = entry {
-                parse_schema(fs::read_to_string(entry.path()).unwrap()).unwrap();
-            }
+            let entry = entry.unwrap();
+            parse_schema(fs::read_to_string(entry.path()).unwrap()).unwrap();
         }
     }
 }

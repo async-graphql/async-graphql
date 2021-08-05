@@ -28,3 +28,4 @@ Comparing Features of Other Rust GraphQL Implementations
 | Apollo Federation | 👍         | ⛔️               |
 | Apollo Tracing | 👍         | ⛔️               |
 | Apollo Persisted Queries | 👍         | ⛔️               |
+| Disabling introspection | 👍         | ⛔️               |
