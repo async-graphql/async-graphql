@@ -156,6 +156,16 @@ where
     }
 }
 
+impl<T> From<MaybeUndefined<T>> for Option<Option<T>> {
+    fn from(maybe_undefined: MaybeUndefined<T>) -> Self {
+        match maybe_undefined {
+            MaybeUndefined::Undefined => None,
+            MaybeUndefined::Null => Some(None),
+            MaybeUndefined::Value(value) => Some(Some(value)),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -233,6 +243,21 @@ mod tests {
             A {
                 a: MaybeUndefined::Null
             }
+        );
+    }
+
+    #[test]
+    fn test_maybe_undefined_to_nested_option() {
+        assert_eq!(Option::<Option<i32>>::from(MaybeUndefined::Undefined), None);
+
+        assert_eq!(
+            Option::<Option<i32>>::from(MaybeUndefined::Null),
+            Some(None)
+        );
+
+        assert_eq!(
+            Option::<Option<i32>>::from(MaybeUndefined::Value(42)),
+            Some(Some(42))
         );
     }
 }
