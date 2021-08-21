@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use axum::body::Body;
-use axum::prelude::response::IntoResponse;
+use axum::response::IntoResponse;
 use headers::HeaderName;
 use http::{HeaderValue, Response};
 
@@ -24,6 +24,9 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 }
 
 impl IntoResponse for GraphQLResponse {
+    type Body = Body;
+    type BodyError = <Self::Body as axum::body::HttpBody>::Error;
+
     fn into_response(self) -> Response<Body> {
         let mut resp = Response::new(serde_json::to_string(&self.0).unwrap().into());
         resp.headers_mut().insert(

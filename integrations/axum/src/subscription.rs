@@ -1,8 +1,9 @@
+use std::borrow::Cow;
 use std::future::Future;
 
 use async_graphql::http::{WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use axum::ws::{Message, WebSocket};
+use axum::extract::ws::{CloseFrame, Message, WebSocket};
 use futures_util::{future, SinkExt, StreamExt};
 use headers::{Header, HeaderName, HeaderValue};
 
@@ -77,19 +78,22 @@ pub async fn graphql_subscription_with_data<Query, Mutation, Subscription, F, R>
         .take_while(|res| future::ready(res.is_ok()))
         .map(Result::unwrap)
         .filter_map(|msg| {
-            if msg.is_text() || msg.is_binary() {
+            if let Message::Text(_) | Message::Binary(_) = msg {
                 future::ready(Some(msg))
             } else {
                 future::ready(None)
             }
         })
-        .map(Message::into_bytes);
+        .map(Message::into_data);
 
     let mut stream =
         async_graphql::http::WebSocket::with_data(schema, input, initializer, protocol.0).map(
             |msg| match msg {
-                WsMessage::Text(text) => Message::text(text),
-                WsMessage::Close(code, status) => Message::close_with(code, status),
+                WsMessage::Text(text) => Message::Text(text),
+                WsMessage::Close(code, status) => Message::Close(Some(CloseFrame {
+                    code,
+                    reason: Cow::from(status),
+                })),
             },
         );
 
