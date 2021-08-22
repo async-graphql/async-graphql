@@ -246,7 +246,7 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 </span><span class="boring">fn main() {
 </span>Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_type::&lt;MyInterface&gt;()
-    .build();
+    .finish();
 <span class="boring">}
 </span></code></pre></pre>
 
