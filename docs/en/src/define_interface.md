@@ -105,5 +105,5 @@ You need to manually register the `MyInterface` type when constructing the `Sche
 ```rust
 Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_type::<MyInterface>()
-    .build();
+    .finish();
 ```

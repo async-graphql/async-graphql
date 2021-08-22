@@ -102,5 +102,5 @@ type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 ```rust
 Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_type::<MyInterface>()
-    .build();
+    .finish();
 ```
