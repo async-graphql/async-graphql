@@ -1,10 +1,10 @@
 [package]
 name = "async-graphql-axum"
-version = "2.9.11"
+version = "2.9.12"
 edition = "2018"
 
 [dependencies]
-async-graphql = { path = "../..", version = "2.9.8" }
+async-graphql = { path = "../..", version = "=2.9.12" }
 
 async-trait = "0.1.51"
 axum = { git = "https://github.com/tokio-rs/axum.git", rev = "1509d4a", features = ["ws", "headers"] }
