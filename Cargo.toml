@@ -78,6 +78,7 @@ members = [
     "value",
     "parser",
     "derive",
+    "integrations/poem",
     "integrations/actix-web",
     "integrations/rocket",
     "integrations/tide",
