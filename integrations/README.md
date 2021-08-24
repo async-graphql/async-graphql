@@ -40,7 +40,8 @@ they must all internally use the below functions.
 
 ## Integration Status
 
-- Actix-web: Complete integration.
-- Rocket: Missing websocket support (blocked on [support in Rocket itself](https://github.com/SergioBenitez/Rocket/issues/90)).
-- Tide: Missing websocket support (blocked on [support in Tide itself](https://github.com/http-rs/tide/issues/67)).
-- Warp: Complete integration.
+- **Poem**: Complete integration.
+- **Actix-web**: Complete integration.
+- **Rocket**: Missing websocket support (blocked on [support in Rocket itself](https://github.com/SergioBenitez/Rocket/issues/90)).
+- **Tide**: Complete integration.
+- **Warp**: Complete integration.

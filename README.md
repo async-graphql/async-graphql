@@ -34,7 +34,7 @@
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
-* Minimum supported Rust version: 1.51.0 or later
+* Minimum supported Rust version: 1.54.0 or later
 
 ## Safety
 
@@ -47,7 +47,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 * Rustfmt friendly (Procedural Macro)
 * Custom scalars
 * Minimal overhead
-* Easy integration (actix_web, tide, warp, rocket ...)
+* Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 * Upload files (Multipart request)
 * Subscriptions (WebSocket transport)
 * Custom extensions
@@ -96,6 +96,7 @@ cd examples && cargo run --bin [name]
 
 ## Integrations
 
+* Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
