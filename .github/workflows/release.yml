@@ -36,6 +36,9 @@ jobs:
           - name: async-graphql-tide
             registryName: async-graphql-tide
             path: integrations/tide
+          - name: async-graphql-poem
+            registryName: async-graphql-poem
+            path: integrations/poem
 #          - name: async-graphql-rocket
 #            registryName: async-graphql-rocket
 #            path: async-graphql-rocket
