@@ -312,8 +312,13 @@ impl MyObject {
 <span class="boring">}
 </span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="查询上下文context"><a class="header" href="#查询上下文context">查询上下文(Context)</a></h1>
-<p>查询上下文(Context)的主要作用是获取附加到Schema的全局数据，<strong>需要注意的是，如果你的Resolver函数返回的数据借用了Context内保存的数据，需要明确指定生命周期参数</strong>。</p>
-<p>下面是一个返回值借用Context内数据的例子：</p>
+<p><code>Context</code>的主要目标是获取附加到<code>Schema</code>的全局数据或者与正在处理的实际查询相关的数据。</p>
+<h2 id="存储数据"><a class="header" href="#存储数据">存储数据</a></h2>
+<p>在<code>Context</code>中你可以存放全局数据，例如环境变量、数据库连接池，以及你在每个查询中可能需要的任何内容。</p>
+<p>数据必须实现<code>Send</code>和<code>Sync</code>。</p>
+<p>你可以通过调用<code>ctx.data::&lt;TypeOfYourData&gt;()</code>来获取查询中的数据。</p>
+<p><strong>主意：如果Resolver函数的返回值是从<code>Context</code>中借用的，则需要明确说明参数的生命周期。</strong></p>
+<p>下面的例子展示了如何从<code>Context</code>中借用数据。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -328,6 +333,104 @@ impl Query {
         ctx: &amp;Context&lt;'ctx&gt;
     ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="schema数据"><a class="header" href="#schema数据">Schema数据</a></h3>
+<p>你可以在创建<code>Schema</code>时将数据放入上下文中，这对于不会更改的数据非常有用，例如连接池。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>  let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+    .data(env_struct)
+    .data(s3_storage)
+    .data(db_core)
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="请求数据"><a class="header" href="#请求数据">请求数据</a></h3>
+<p>你可以在执行请求时将数据放入上下文中，它对于身份验证数据很有用。</p>
+<p>一个使用<code>warp</code>的小例子：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let graphql_post = warp::post()
+  .and(warp::path(&quot;graphql&quot;))
+  .and(schema_filter)
+  .and(a_warp_filter)
+  ...
+  .and_then( |schema: (Schema&lt;Query, Mutation, Subscriptions&gt;, async_graphql::Request), arg2: ArgType2 ...| async move {
+    let (schema, request) = schema;
+    let your_auth_data = auth_function_from_headers(headers).await?;
+    let response = schema
+      .execute(
+        request
+         .data(your_auth_data)
+         .data(something_else)
+      ).await;
+      
+    Ok(async_graphql_warp::Response::from(response))
+  });
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="http头"><a class="header" href="#http头">HTTP头</a></h2>
+<p>使用<code>Context</code>你还可以插入或添加HTTP头。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl Query {
+    async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
+        // Headers can be inserted using the `http` constants
+        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, &quot;*&quot;);
+
+        // They can also be inserted using &amp;str
+        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;1234&quot;);
+
+        // If multiple headers with the same key are `inserted` then the most recent
+        // one overwrites the previous. If you want multiple headers for the same key, use
+        // `append_http_header` for subsequent headers
+        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;Hello World&quot;);
+
+        String::from(&quot;Hello world&quot;)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
+<p>有时你想知道子查询中请求了哪些字段用于优化数据处理，则可以使用<code>ctx.fields()</code>读取查询中的字段，它将提供一个<code>SelectionField</code>，允许你在当前字段和子字段之间导航。</p>
+<p>如果要跨查询或子查询执行搜索，则不必使用 <code>SelectionField</code> 手动执行此操作，可以使用 <code>ctx.look_ahead()</code> 来执行选择。</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[derive(SimpleObject)]
+struct Detail {
+    c: i32,
+    d: i32,
+}
+
+#[derive(SimpleObject)]
+struct MyObj {
+    a: i32,
+    b: i32,
+    detail: Detail,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn obj(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; MyObj {
+        if ctx.look_ahead().field(&quot;a&quot;).exists() {
+            // This is a query like `obj { a }`
+        } else if ctx.look_ahead().field(&quot;detail&quot;).field(&quot;c&quot;).exists() {
+            // This is a query like `obj { detail { c } }`
+        } else {
+            // This query doesn't have `a`
+        }
+        unimplemented!()
     }
 }
 <span class="boring">}

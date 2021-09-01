@@ -144,7 +144,12 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="context"><a class="header" href="#context">Context</a></h1>
-<p>The main goal of <code>Context</code> is to acquire global data attached to Schema. <strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
+<p>The main goal of <code>Context</code> is to acquire global data attached to Schema and also data related to the actual query being processed.</p>
+<h2 id="store-data"><a class="header" href="#store-data">Store Data</a></h2>
+<p>Inside the <code>Context</code> you can put global data, like environnement variables, db connection pool, whatever you may need in every query.</p>
+<p>The data must implement <code>Send</code> and <code>Sync</code>.</p>
+<p>You can request the data inside a query by just calling <code>ctx.data::&lt;TypeOfYourData&gt;()</code>.</p>
+<p><strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
@@ -160,6 +165,105 @@ impl Query {
         ctx: &amp;Context&lt;'ctx&gt;
     ) -&gt; Result&lt;&amp;'ctx String&gt; {
         ctx.data::&lt;String&gt;()
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="schema-data"><a class="header" href="#schema-data">Schema data</a></h3>
+<p>You can put data inside the context at the creation of the schema, it's usefull for data that do not change, like a connection pool.</p>
+<p>An instance of how it would be written inside an application:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>  let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+    .data(env_struct)
+    .data(s3_storage)
+    .data(db_core)
+<span class="boring">}
+</span></code></pre></pre>
+<h3 id="request-data"><a class="header" href="#request-data">Request data</a></h3>
+<p>You can put data inside the context at the execution of the request, it's usefull for authentification data for instance.</p>
+<p>A little example with a <code>warp</code> route:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let graphql_post = warp::post()
+  .and(warp::path(&quot;graphql&quot;))
+  .and(schema_filter)
+  .and(a_warp_filter)
+  ...
+  .and_then( |schema: (Schema&lt;Query, Mutation, Subscriptions&gt;, async_graphql::Request), arg2: ArgType2 ...| async move {
+    let (schema, request) = schema;
+    let your_auth_data = auth_function_from_headers(headers).await?;
+    let response = schema
+      .execute(
+        request
+         .data(your_auth_data)
+         .data(something_else)
+      ).await;
+      
+    Ok(async_graphql_warp::Response::from(response))
+  });
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="headers"><a class="header" href="#headers">Headers</a></h2>
+<p>With the Context you can also insert and appends headers.</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[Object]
+impl Query {
+    async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
+        // Headers can be inserted using the `http` constants
+        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, &quot;*&quot;);
+
+        // They can also be inserted using &amp;str
+        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;1234&quot;);
+
+        // If multiple headers with the same key are `inserted` then the most recent
+        // one overwrites the previous. If you want multiple headers for the same key, use
+        // `append_http_header` for subsequent headers
+        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;Hello World&quot;);
+
+        String::from(&quot;Hello world&quot;)
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
+<p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with <code>ctx.fields()</code> which will give you a <code>SelectionField</code> which will allow you to navigate accross the fields and subfields.</p>
+<p>If you want to perform a search accross the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use async_graphql::*;
+
+#[derive(SimpleObject)]
+struct Detail {
+    c: i32,
+    d: i32,
+}
+
+#[derive(SimpleObject)]
+struct MyObj {
+    a: i32,
+    b: i32,
+    detail: Detail,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn obj(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; MyObj {
+        if ctx.look_ahead().field(&quot;a&quot;).exists() {
+            // This is a query like `obj { a }`
+        } else if ctx.look_ahead().field(&quot;detail&quot;).field(&quot;c&quot;).exists() {
+            // This is a query like `obj { detail { c } }`
+        } else {
+            // This query doesn't have `a`
+        }
+        unimplemented!()
     }
 }
 <span class="boring">}
