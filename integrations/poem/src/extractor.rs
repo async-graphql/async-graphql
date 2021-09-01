@@ -12,7 +12,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// # Example
 ///
 /// ```
-/// use poem::{handler, route, EndpointExt};
+/// use poem::{handler, RouteMethod, route, EndpointExt};
 /// use poem::web::{Json, Data};
 /// use poem::middleware::AddData;
 /// use async_graphql_poem::GraphQLRequest;
@@ -29,17 +29,20 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 ///
 /// type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 ///
-/// #[handler(method = "get")]
+/// #[handler]
 /// async fn index(req: GraphQLRequest, schema: Data<&MySchema>) -> Json<async_graphql::Response> {
 ///     Json(schema.execute(req.0).await)
 /// }
 ///
-/// let app = route().at("/", index.with(AddData::new(Schema::new(Query, EmptyMutation, EmptySubscription))));
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+/// let app = route().at("/", RouteMethod::new().post(index.with(AddData::new(schema))));
 /// ```
 pub struct GraphQLRequest(pub async_graphql::Request);
 
 #[async_trait]
 impl<'a> FromRequest<'a> for GraphQLRequest {
+    type Error = Error;
+
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         Ok(GraphQLRequest(
             GraphQLBatchRequest::from_request(req, body)
@@ -56,6 +59,8 @@ pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
 #[async_trait]
 impl<'a> FromRequest<'a> for GraphQLBatchRequest {
+    type Error = Error;
+
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
             let req = Query::from_request(req, body)
