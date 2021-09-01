@@ -12,7 +12,7 @@ use poem::{http, Endpoint, FromRequest, IntoResponse, Request, Response, Result}
 /// # Example
 ///
 /// ```
-/// use poem::route;
+/// use poem::{route, RouteMethod};
 /// use async_graphql_poem::GraphQLSubscription;
 /// use async_graphql::{EmptyMutation, Object, Schema, Subscription};
 /// use futures_util::{Stream, stream};
@@ -37,7 +37,8 @@ use poem::{http, Endpoint, FromRequest, IntoResponse, Request, Response, Result}
 ///
 /// type MySchema = Schema<Query, EmptyMutation, Subscription>;
 ///
-/// let app = route().at("/ws", GraphQLSubscription::new(Schema::new(Query, EmptyMutation, Subscription)));
+/// let schema = Schema::new(Query, EmptyMutation, Subscription);
+/// let app = route().at("/ws", RouteMethod::new().get(GraphQLSubscription::new(schema)));
 /// ```
 pub struct GraphQLSubscription<Query, Mutation, Subscription, F> {
     schema: Schema<Query, Mutation, Subscription>,
