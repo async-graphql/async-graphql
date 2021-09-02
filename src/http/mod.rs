@@ -43,16 +43,6 @@ pub async fn receive_batch_body(
     let content_type: mime::Mime = content_type.parse()?;
 
     match (content_type.type_(), content_type.subtype()) {
-        // application/json -> try json
-        (mime::APPLICATION, mime::JSON) => receive_batch_json(body).await,
-
-        // cbor is in application/octet-stream.
-        // TODO: wait for mime to add application/cbor and match against that too
-        #[cfg(feature = "cbor")]
-        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
-            receive_batch_cbor(body).await
-        }
-
         // try to use multipart
         (mime::MULTIPART, _) => {
             if let Some(boundary) = content_type.get_param("boundary") {
@@ -65,11 +55,9 @@ pub async fn receive_batch_body(
         }
         // application/json or cbor (currently)
         // cbor is in application/octet-stream.
+        // Note: cbor will only match if feature ``cbor`` is active
         // TODO: wait for mime to add application/cbor and match against that too
-        (mime::APPLICATION, mime::JSON)
-        | (mime::OCTET_STREAM, _)
-        | (mime::APPLICATION, mime::OCTET_STREAM)
-        | _ => receive_batch_body_no_multipart(&content_type, body).await,
+        _ => receive_batch_body_no_multipart(&content_type, body).await,
     }
 }
 
@@ -81,13 +69,14 @@ pub(super) async fn receive_batch_body_no_multipart(
 ) -> Result<BatchRequest, ParseRequestError> {
     assert_ne!(content_type.type_(), mime::MULTIPART, "received multipart");
     match (content_type.type_(), content_type.subtype()) {
+        #[cfg(feature = "cbor")]
         // cbor is in application/octet-stream.
         // TODO: wait for mime to add application/cbor and match against that too
         (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
             receive_batch_cbor(body).await
         }
-        // application/json -> try json
-        (mime::APPLICATION, mime::JSON) | _ => receive_batch_json(body).await,
+        // default to json
+        _ => receive_batch_json(body).await,
     }
 }
 /// Receive a GraphQL request from a body as JSON.
