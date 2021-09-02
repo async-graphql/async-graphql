@@ -53,10 +53,6 @@ pub async fn receive_batch_body(
             receive_batch_cbor(body).await
         }
 
-        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
-            receive_batch_cbor(body).await
-        }
-
         // try to use multipart
         (mime::MULTIPART, _) => {
             if let Some(boundary) = content_type.get_param("boundary") {
