@@ -77,7 +77,7 @@ pub(super) async fn receive_batch_multipart(
                 let map_str = field.text().await?;
                 map = Some(
                     serde_json::from_str::<HashMap<String, Vec<String>>>(&map_str)
-                        .map_err(ParseRequestError::InvalidFilesMap)?,
+                        .map_err(|e| ParseRequestError::InvalidFilesMap(Box::new(e)))?,
                 );
             }
             _ => {

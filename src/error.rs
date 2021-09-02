@@ -216,7 +216,7 @@ pub enum ParseRequestError {
 
     /// The request's files map was invalid.
     #[error("Invalid files map: {0}")]
-    InvalidFilesMap(serde_json::Error),
+    InvalidFilesMap(Box<dyn std::error::Error>),
 
     /// The request's multipart data was invalid.
     #[error("Invalid multipart data")]
