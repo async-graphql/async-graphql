@@ -5,17 +5,17 @@ mod multipart;
 mod playground_source;
 mod websocket;
 
+use futures_util::io::{AsyncRead, AsyncReadExt};
+use mime;
+
+use crate::{BatchRequest, ParseRequestError, Request};
+
 pub use graphiql_source::graphiql_source;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use websocket::{
     ClientMessage, Protocols as WebSocketProtocols, WebSocket, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
 };
-
-use futures_util::io::{AsyncRead, AsyncReadExt};
-use mime;
-
-use crate::{BatchRequest, ParseRequestError, Request};
 
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
@@ -49,6 +49,10 @@ pub async fn receive_batch_body(
         // cbor is in application/octet-stream.
         // TODO: wait for mime to add application/cbor and match against that too
         #[cfg(feature = "cbor")]
+        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
+            receive_batch_cbor(body).await
+        }
+
         (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
             receive_batch_cbor(body).await
         }
