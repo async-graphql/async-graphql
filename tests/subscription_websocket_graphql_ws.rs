@@ -600,5 +600,5 @@ pub async fn test_stream_drop() {
         }
     }
 
-    assert_eq!(*dropped.lock().unwrap(), true);
+    assert!(*dropped.lock().unwrap());
 }

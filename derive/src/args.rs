@@ -590,31 +590,31 @@ pub struct Description {
 
 #[derive(Debug)]
 pub enum NewTypeName {
-    UseNewName(String),
-    UseRustName,
-    UseOriginalName,
+    New(String),
+    Rust,
+    Original,
 }
 
 impl Default for NewTypeName {
     fn default() -> Self {
-        Self::UseOriginalName
+        Self::Original
     }
 }
 
 impl FromMeta for NewTypeName {
     fn from_word() -> darling::Result<Self> {
-        Ok(Self::UseRustName)
+        Ok(Self::Rust)
     }
 
     fn from_string(value: &str) -> darling::Result<Self> {
-        Ok(Self::UseNewName(value.to_string()))
+        Ok(Self::New(value.to_string()))
     }
 
     fn from_bool(value: bool) -> darling::Result<Self> {
         if value {
-            Ok(Self::UseRustName)
+            Ok(Self::Rust)
         } else {
-            Ok(Self::UseOriginalName)
+            Ok(Self::Original)
         }
     }
 }

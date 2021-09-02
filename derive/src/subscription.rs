@@ -165,7 +165,7 @@ pub fn generate(
                     .as_ref()
                     .map(|s| quote! {::std::option::Option::Some(#s)})
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let default = generate_default(&default, &default_with)?;
+                let default = generate_default(default, default_with)?;
 
                 let validator = match &validator {
                     Some(meta) => {
@@ -186,7 +186,7 @@ pub fn generate(
                     })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
 
-                let visible = visible_fn(&arg_visible);
+                let visible = visible_fn(arg_visible);
                 schema_args.push(quote! {
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
@@ -264,7 +264,7 @@ pub fn generate(
                                 .iter()
                                 .find(|(pat_ident, _, _)| pat_ident.ident == variable)
                             {
-                                let default = match generate_default(&default, &default_with)? {
+                                let default = match generate_default(default, default_with)? {
                                     Some(default) => {
                                         quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
                                     }

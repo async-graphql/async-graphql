@@ -249,7 +249,7 @@ impl ser::Serializer for Serializer {
 
     #[inline]
     fn is_human_readable(&self) -> bool {
-        false
+        true
     }
 }
 

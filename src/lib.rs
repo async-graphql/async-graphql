@@ -43,7 +43,7 @@
 //! * Rustfmt friendly (Procedural Macro)
 //! * Custom scalars
 //! * Minimal overhead
-//! * Easy integration (actix_web, tide, warp, rocket ...)
+//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 //! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions

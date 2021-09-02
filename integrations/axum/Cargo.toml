@@ -1,0 +1,26 @@
+[package]
+name = "async-graphql-axum"
+version = "2.9.13"
+authors = ["sunli <scott_s829@163.com>"]
+edition = "2018"
+description = "async-graphql for axum"
+license = "MIT/Apache-2.0"
+documentation = "https://docs.rs/async-graphql-axum/"
+homepage = "https://github.com/async-graphql/async-graphql"
+repository = "https://github.com/async-graphql/async-graphql"
+keywords = ["futures", "async", "graphql", "axum"]
+categories = ["network-programming", "asynchronous"]
+
+[dependencies]
+async-graphql = { path = "../..", version = "=2.9.13" }
+
+async-trait = "0.1.51"
+axum = { version = "0.2.3", features = ["ws", "headers"] }
+bytes = "1.0.1"
+headers = "0.3.4"
+http = "0.2.4"
+http-body = "0.4.2"
+serde_json = "1.0.66"
+serde_urlencoded = "0.7.0"
+tokio-util = { version = "0.6.7", features = ["io", "compat"] }
+futures-util = "0.3.13"

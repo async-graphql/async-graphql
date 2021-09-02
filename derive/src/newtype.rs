@@ -11,9 +11,9 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();
     let gql_typename = match &newtype_args.name {
-        NewTypeName::UseNewName(name) => Some(name.clone()),
-        NewTypeName::UseRustName => Some(RenameTarget::Type.rename(ident.to_string())),
-        NewTypeName::UseOriginalName => None,
+        NewTypeName::New(name) => Some(name.clone()),
+        NewTypeName::Rust => Some(RenameTarget::Type.rename(ident.to_string())),
+        NewTypeName::Original => None,
     };
     let desc = get_rustdoc(&newtype_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })

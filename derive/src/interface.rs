@@ -148,7 +148,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let (name, method_name) = if let Some(method) = method {
             (name.to_string(), Ident::new(method, Span::call_site()))
         } else {
-            let method_name = Ident::new(&name, Span::call_site());
+            let method_name = Ident::new(name, Span::call_site());
             (
                 interface_args
                     .rename_fields
@@ -198,7 +198,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
 
-            let default = generate_default(&default, &default_with)?;
+            let default = generate_default(default, default_with)?;
             let get_default = match &default {
                 Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
                 None => quote! { ::std::option::Option::None },
@@ -221,7 +221,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     }
                 })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
-            let visible = visible_fn(&visible);
+            let visible = visible_fn(visible);
             schema_args.push(quote! {
                 args.insert(#name, #crate_name::registry::MetaInputValue {
                     name: #name,
@@ -265,7 +265,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             }
         });
 
-        let visible = visible_fn(&visible);
+        let visible = visible_fn(visible);
         schema_fields.push(quote! {
             fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {
                 name: ::std::string::ToString::to_string(#name),

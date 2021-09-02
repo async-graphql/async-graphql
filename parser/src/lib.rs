@@ -113,7 +113,7 @@ impl Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Syntax { message, .. } => f.write_str(&message),
+            Self::Syntax { message, .. } => f.write_str(message),
             Self::MissingQueryRoot { .. } => f.write_str("schema definition is missing query root"),
             Self::MultipleRoots { root, .. } => {
                 write!(f, "multiple {} roots in schema definition", root)
