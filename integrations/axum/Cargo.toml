@@ -5,10 +5,10 @@ authors = ["sunli <scott_s829@163.com>"]
 edition = "2018"
 description = "async-graphql for axum"
 license = "MIT/Apache-2.0"
-documentation = "https://docs.rs/async-graphql-poem/"
+documentation = "https://docs.rs/async-graphql-axum/"
 homepage = "https://github.com/async-graphql/async-graphql"
 repository = "https://github.com/async-graphql/async-graphql"
-keywords = ["futures", "async", "graphql", "poem"]
+keywords = ["futures", "async", "graphql", "axum"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
