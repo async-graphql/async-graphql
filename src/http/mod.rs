@@ -63,12 +63,33 @@ pub async fn receive_batch_body(
                 ))
             }
         }
-
-        // default to json and try that
-        _ => receive_batch_json(body).await,
+        // application/json or cbor (currently)
+        // cbor is in application/octet-stream.
+        // TODO: wait for mime to add application/cbor and match against that too
+        (mime::APPLICATION, mime::JSON)
+        | (mime::OCTET_STREAM, _)
+        | (mime::APPLICATION, mime::OCTET_STREAM)
+        | _ => receive_batch_body_no_multipart(&content_type, body).await,
     }
 }
 
+/// Recieves a GraphQL query which is either cbor or json but NOT multipart
+/// This method is only to avoid recursive calls with [``receive_batch_body``] and [``multipart::receive_batch_multipart``]
+pub(super) async fn receive_batch_body_no_multipart(
+    content_type: &mime::Mime,
+    body: impl AsyncRead + Send,
+) -> Result<BatchRequest, ParseRequestError> {
+    assert_ne!(content_type.type_(), mime::MULTIPART, "received multipart");
+    match (content_type.type_(), content_type.subtype()) {
+        // cbor is in application/octet-stream.
+        // TODO: wait for mime to add application/cbor and match against that too
+        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
+            receive_batch_cbor(body).await
+        }
+        // application/json -> try json
+        (mime::APPLICATION, mime::JSON) | _ => receive_batch_json(body).await,
+    }
+}
 /// Receive a GraphQL request from a body as JSON.
 pub async fn receive_json(body: impl AsyncRead) -> Result<Request, ParseRequestError> {
     receive_batch_json(body).await?.into_single()
