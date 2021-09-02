@@ -4,8 +4,8 @@ mod graphiql_source;
 mod multipart;
 mod playground_source;
 mod websocket;
-use mime::{self};
 use futures_util::io::{AsyncRead, AsyncReadExt};
+use mime;
 
 use crate::{BatchRequest, ParseRequestError, Request};
 
@@ -32,26 +32,33 @@ pub async fn receive_batch_body(
     opts: MultipartOptions,
 ) -> Result<BatchRequest, ParseRequestError> {
     // if no content-type header is set, we default to json
-    let content_type = content_type.as_ref().map(AsRef::as_ref).unwrap_or("application/json");
-        
+    let content_type = content_type
+        .as_ref()
+        .map(AsRef::as_ref)
+        .unwrap_or("application/json");
+
     let content_type: mime::Mime = content_type.parse()?;
     match (content_type.type_(), content_type.subtype()) {
         // application/json -> try json
         (mime::APPLICATION, mime::JSON) => receive_batch_json(body).await,
         // cbor is in application/octet-stream.
         // TODO: wait for mime to add application/cbor and match against that too
-        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => receive_batch_cbor(body).await,
+        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
+            receive_batch_cbor(body).await
+        }
         // try to use multipart
         (mime::MULTIPART, _) => {
             if let Some(boundary) = content_type.get_param("boundary") {
                 multipart::receive_batch_multipart(body, boundary.to_string(), opts).await
             } else {
-                Err(ParseRequestError::InvalidMultipart(multer::Error::NoBoundary))
+                Err(ParseRequestError::InvalidMultipart(
+                    multer::Error::NoBoundary,
+                ))
             }
         }
 
         // default to json and try that
-        _ => receive_batch_json(body).await
+        _ => receive_batch_json(body).await,
     }
 }
 
