@@ -65,20 +65,47 @@ pub(super) async fn receive_batch_multipart(
     let mut files = Vec::new();
 
     while let Some(mut field) = multipart.next_field().await? {
+        // in multipart, each field / file can actually have a own Content-Type.
+        // We use this to determine the encoding of the graphql query
+        let content_type = field
+            .content_type()
+            // default to json
+            .unwrap_or(&mime::APPLICATION_JSON)
+            .clone();
         match field.name() {
             Some("operations") => {
-                let request_str = field.text().await?;
+                let body = field.bytes().await?;
                 request = Some(
-                    serde_json::from_str::<BatchRequest>(&request_str)
-                        .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))?,
-                );
+                    super::receive_batch_body_no_multipart(&content_type, body.as_ref()).await?,
+                )
             }
             Some("map") => {
-                let map_str = field.text().await?;
-                map = Some(
-                    serde_json::from_str::<HashMap<String, Vec<String>>>(&map_str)
-                        .map_err(|e| ParseRequestError::InvalidFilesMap(Box::new(e)))?,
-                );
+                let map_bytes = field.bytes().await?;
+
+                match (content_type.type_(), content_type.subtype()) {
+                    // cbor is in application/octet-stream.
+                    // TODO: wait for mime to add application/cbor and match against that too
+                    // Note: we actually differ here from the inoffical spec for this:
+                    // (https://github.com/jaydenseric/graphql-multipart-request-spec#multipart-form-field-structure)
+                    // It says: "map: A JSON encoded map of where files occurred in the operations.
+                    // For each file, the key is the file multipart form field name and the value is an array of operations paths."
+                    // However, I think, that since we accepct CBOR as operation, which is valid, we should also accept it
+                    // as the mapping for the files.
+                    #[cfg(feature = "cbor")]
+                    (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
+                        map = Some(
+                            serde_cbor::from_slice::<HashMap<String, Vec<String>>>(&map_bytes)
+                                .map_err(|e| ParseRequestError::InvalidFilesMap(Box::new(e)))?,
+                        );
+                    }
+                    // default to json
+                    _ => {
+                        map = Some(
+                            serde_json::from_slice::<HashMap<String, Vec<String>>>(&map_bytes)
+                                .map_err(|e| ParseRequestError::InvalidFilesMap(Box::new(e)))?,
+                        );
+                    }
+                }
             }
             _ => {
                 if let Some(name) = field.name().map(ToString::to_string) {
