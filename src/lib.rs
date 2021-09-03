@@ -72,6 +72,7 @@
 //! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 //! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+//! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 //!
 //! ## Integrations
 //!

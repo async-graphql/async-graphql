@@ -212,11 +212,11 @@ pub enum ParseRequestError {
 
     /// The request's syntax was invalid.
     #[error("Invalid request: {0}")]
-    InvalidRequest(serde_json::Error),
+    InvalidRequest(Box<dyn std::error::Error + Send + Sync>),
 
     /// The request's files map was invalid.
     #[error("Invalid files map: {0}")]
-    InvalidFilesMap(serde_json::Error),
+    InvalidFilesMap(Box<dyn std::error::Error + Send + Sync>),
 
     /// The request's multipart data was invalid.
     #[error("Invalid multipart data")]
@@ -255,6 +255,12 @@ impl From<multer::Error> for ParseRequestError {
             }
             _ => ParseRequestError::InvalidMultipart(err),
         }
+    }
+}
+
+impl From<mime::FromStrError> for ParseRequestError {
+    fn from(e: mime::FromStrError) -> Self {
+        Self::InvalidRequest(Box::new(e))
     }
 }
 

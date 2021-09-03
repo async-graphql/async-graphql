@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.9.13"
+version = "2.9.14"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -21,11 +21,12 @@ string_number = ["num-traits"]
 dataloader = ["futures-timer", "futures-channel", "lru"]
 tracing = ["tracinglib", "tracing-futures"]
 decimal = ["rust_decimal"]
+cbor = ["serde_cbor"]
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "=2.9.13" }
-async-graphql-value = { path = "value", version = "=2.9.13" }
-async-graphql-parser = { path = "parser", version = "=2.9.13" }
+async-graphql-derive = { path = "derive", version = "=2.9.14" }
+async-graphql-value = { path = "value", version = "=2.9.14" }
+async-graphql-parser = { path = "parser", version = "=2.9.14" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
@@ -43,6 +44,7 @@ http = "0.2.3"
 multer = "2.0.0"
 tempfile = "3.2.0"
 bytes = { version = "1.0.1", features = ["serde"] }
+mime = "0.3.15"
 
 # Feature optional dependencies
 bson = { version = "2.0.0-beta.1", optional = true, features = ["chrono-0_4"] }
@@ -64,6 +66,7 @@ num-traits = { version = "0.2.14", optional = true }
 sha2 = { version = "0.9.3", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.13", optional = true }
+serde_cbor = { version = "0.11.1", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.4.0", features = ["macros", "rt-multi-thread", "sync", "time"] }
