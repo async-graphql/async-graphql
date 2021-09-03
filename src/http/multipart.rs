@@ -89,7 +89,7 @@ pub(super) async fn receive_batch_multipart(
                     // (https://github.com/jaydenseric/graphql-multipart-request-spec#multipart-form-field-structure)
                     // It says: "map: A JSON encoded map of where files occurred in the operations.
                     // For each file, the key is the file multipart form field name and the value is an array of operations paths."
-                    // However, I think, that since we accepct CBOR as operation, which is valid, we should also accept it
+                    // However, I think, that since we accept CBOR as operation, which is valid, we should also accept it
                     // as the mapping for the files.
                     #[cfg(feature = "cbor")]
                     (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
