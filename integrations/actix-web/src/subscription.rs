@@ -3,12 +3,13 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use actix::{
-    Actor, ActorContext, ActorFuture, ActorStream, AsyncContext, ContextFutureSpawner,
+    Actor, ActorContext, ActorFutureExt, ActorStreamExt, AsyncContext, ContextFutureSpawner,
     StreamHandler, WrapFuture, WrapStream,
 };
 use actix_http::error::PayloadError;
-use actix_http::{ws, Error};
+use actix_http::ws;
 use actix_web::web::Bytes;
+use actix_web::Error;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
 use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
@@ -190,7 +191,7 @@ where
                     Some(std::mem::take(&mut self.continuation))
                 }
             },
-            Message::Text(s) => Some(s.into_bytes()),
+            Message::Text(s) => Some(s.into_bytes().to_vec()),
             Message::Binary(bytes) => Some(bytes.to_vec()),
             Message::Close(_) => {
                 ctx.stop();
