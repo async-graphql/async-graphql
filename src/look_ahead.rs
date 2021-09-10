@@ -54,6 +54,17 @@ impl<'a> Lookahead<'a> {
     pub fn exists(&self) -> bool {
         !self.fields.is_empty()
     }
+
+    pub fn selection_fields(&self) -> Vec<SelectionField<'a>> {
+        self.fields
+            .iter()
+            .map(|field| SelectionField {
+                fragments: self.fragments,
+                field,
+                context: self.context,
+            })
+            .collect()
+    }
 }
 
 impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
