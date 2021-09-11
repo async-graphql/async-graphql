@@ -104,6 +104,18 @@ cd examples && cargo run --bin [name]
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 * Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 
+## Who's using Async-graphql in production?
+
+- [Vector](https://vector.dev/)
+- [Kairos Sports tech](https://kairostech.io/)
+- [AxieInfinity](https://axieinfinity.com/)
+- [Nando's](https://www.nandos.co.uk/)
+- [Prima.it](https://www.prima.it/)
+- [VoxJar](https://voxjar.com/)
+- [Zenly](https://zen.ly/)
+- [Brevz](https://brevz.io/)
+- [thorndyke](https://www.thorndyke.ai/)
+
 ## Blog Posts
 
 - [GraphQL in Rust](https://romankudryashov.com/blog/2020/12/graphql-rust/)
