@@ -85,3 +85,35 @@ impl InputValueValidator for MustBeZero {
     }
 }
 ```
+
+Here is an example of a custom validator with extensions (return `async_graphql::Error`):
+
+```rust
+pub struct Email;
+
+impl InputValueValidator for Email {
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        if let Value::String(s) = value {
+            if &s.to_lowercase() != s {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "email_must_lowercase")
+                }));
+            }
+
+            if !validate_non_control_character(s) {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "email_must_no_non_control_character")
+                }));
+            }
+
+            if !validate_email(s) {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "invalid_email_format")
+                }));
+            }
+        }
+
+        Ok(())
+    }
+}
+```
