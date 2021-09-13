@@ -2,7 +2,7 @@ mod cache_control;
 mod export_sdl;
 mod stringify_exec_doc;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use indexmap::map::IndexMap;
@@ -100,6 +100,7 @@ impl<'a> MetaTypeName<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct MetaInputValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -117,12 +118,13 @@ type ComputeComplexityFn = fn(
     usize,
 ) -> ServerResult<usize>;
 
+#[derive(Clone)]
 pub enum ComplexityType {
     Const(usize),
     Fn(ComputeComplexityFn),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Deprecation {
     NoDeprecated,
     Deprecated { reason: Option<&'static str> },
@@ -149,6 +151,7 @@ impl Deprecation {
     }
 }
 
+#[derive(Clone)]
 pub struct MetaField {
     pub name: String,
     pub description: Option<&'static str>,
@@ -163,6 +166,7 @@ pub struct MetaField {
     pub compute_complexity: Option<ComplexityType>,
 }
 
+#[derive(Clone)]
 pub struct MetaEnumValue {
     pub name: &'static str,
     pub description: Option<&'static str>,
@@ -172,6 +176,7 @@ pub struct MetaEnumValue {
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
 
+#[derive(Clone)]
 pub enum MetaType {
     Scalar {
         name: String,
@@ -333,7 +338,7 @@ pub struct MetaDirective {
 
 #[derive(Default)]
 pub struct Registry {
-    pub types: IndexMap<String, MetaType>,
+    pub types: BTreeMap<String, MetaType>,
     pub directives: HashMap<String, MetaDirective>,
     pub implements: HashMap<String, HashSet<String>>,
     pub query_type: String,
@@ -373,7 +378,8 @@ impl Registry {
     pub fn create_dummy_type<T: Type>(&mut self) -> MetaType {
         T::create_type_info(self);
         self.types
-            .remove(&*T::type_name())
+            .get(&*T::type_name())
+            .cloned()
             .expect("You definitely encountered a bug!")
     }
 
@@ -423,8 +429,8 @@ impl Registry {
         self.types.values().any(|ty| match ty {
             MetaType::Object {
                 keys: Some(keys), ..
-            } => !keys.is_empty(),
-            MetaType::Interface {
+            }
+            | MetaType::Interface {
                 keys: Some(keys), ..
             } => !keys.is_empty(),
             _ => false,
@@ -604,6 +610,125 @@ impl Registry {
             Some(MetaType::Enum { description, .. }) => *description = Some(desc),
             Some(MetaType::InputObject { description, .. }) => *description = Some(desc),
             None => {}
+        }
+    }
+
+    pub fn remove_unused_types(&mut self) {
+        let mut used_types = BTreeSet::new();
+        let mut unused_types = BTreeSet::new();
+
+        fn traverse_field<'a>(
+            types: &'a BTreeMap<String, MetaType>,
+            used_types: &mut BTreeSet<&'a str>,
+            field: &'a MetaField,
+        ) {
+            traverse_type(
+                types,
+                used_types,
+                MetaTypeName::concrete_typename(&field.ty),
+            );
+            for arg in field.args.values() {
+                traverse_input_value(types, used_types, arg);
+            }
+        }
+
+        fn traverse_input_value<'a>(
+            types: &'a BTreeMap<String, MetaType>,
+            used_types: &mut BTreeSet<&'a str>,
+            input_value: &'a MetaInputValue,
+        ) {
+            traverse_type(
+                types,
+                used_types,
+                MetaTypeName::concrete_typename(&input_value.ty),
+            );
+        }
+
+        fn traverse_type<'a>(
+            types: &'a BTreeMap<String, MetaType>,
+            used_types: &mut BTreeSet<&'a str>,
+            type_name: &'a str,
+        ) {
+            if used_types.contains(type_name) {
+                return;
+            }
+
+            if let Some(ty) = types.get(type_name) {
+                used_types.insert(type_name);
+                match ty {
+                    MetaType::Object { fields, .. } => {
+                        for field in fields.values() {
+                            traverse_field(types, used_types, field);
+                        }
+                    }
+                    MetaType::Interface {
+                        fields,
+                        possible_types,
+                        ..
+                    } => {
+                        for field in fields.values() {
+                            traverse_field(types, used_types, field);
+                        }
+                        for type_name in possible_types.iter() {
+                            traverse_type(types, used_types, type_name);
+                        }
+                    }
+                    MetaType::Union { possible_types, .. } => {
+                        for type_name in possible_types.iter() {
+                            traverse_type(types, used_types, type_name);
+                        }
+                    }
+                    MetaType::InputObject { input_fields, .. } => {
+                        for field in input_fields.values() {
+                            traverse_input_value(types, used_types, field);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        for type_name in Some(&self.query_type)
+            .into_iter()
+            .chain(self.mutation_type.iter())
+            .chain(self.subscription_type.iter())
+        {
+            traverse_type(&self.types, &mut used_types, type_name);
+        }
+
+        for ty in self.types.values().filter(|ty| match ty {
+            MetaType::Object {
+                keys: Some(keys), ..
+            }
+            | MetaType::Interface {
+                keys: Some(keys), ..
+            } => !keys.is_empty(),
+            _ => false,
+        }) {
+            traverse_type(&self.types, &mut used_types, ty.name());
+        }
+
+        fn is_system_type(name: &str) -> bool {
+            if name.starts_with("__") {
+                return true;
+            }
+
+            name == "Boolean"
+                || name == "Int"
+                || name == "Float"
+                || name == "String"
+                || name == "ID"
+        }
+
+        for ty in self.types.values() {
+            let name = ty.name();
+            if !is_system_type(name) && !used_types.contains(name) {
+                unused_types.insert(name.to_string());
+            }
+        }
+
+        for type_name in unused_types {
+            self.types.remove(&type_name);
         }
     }
 }

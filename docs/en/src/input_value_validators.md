@@ -24,7 +24,7 @@ impl Query {
 The following example verifies that the `i32` parameter `a` is greater than 10 and less than 100, or else equal to 0:
 
 ```rust
-use async_graphql:*;
+use async_graphql::*;
 use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
 
 struct Query;
@@ -36,7 +36,23 @@ impl Query {
             and(IntGreaterThan(value = "10"), IntLessThan(value = "100")),
             IntEqual(value = "0")
         )))] a: String) {
-    } {
+    }
+}
+```
+
+## Validate the elements of the list.
+
+You can use the `list` operator to indicate that the internal validator is used for all elements in a list:
+
+```rust
+use async_graphql::*;
+use async_graphql::validators::Email;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn input(#[graphql(validator(list(Email)))] emails: Vec<String>) {
     }
 }
 ```
@@ -66,6 +82,38 @@ impl InputValueValidator for MustBeZero {
             // will pick up on the error
             Ok(())
         }
+    }
+}
+```
+
+Here is an example of a custom validator with extensions (return `async_graphql::Error`):
+
+```rust
+pub struct Email;
+
+impl InputValueValidator for Email {
+    fn is_valid_with_extensions(&self, value: &Value) -> Result<(), Error> {
+        if let Value::String(s) = value {
+            if &s.to_lowercase() != s {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "email_must_lowercase")
+                }));
+            }
+
+            if !validate_non_control_character(s) {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "email_must_no_non_control_character")
+                }));
+            }
+
+            if !validate_email(s) {
+                return Err(Error::new("Validation Error").extend_with(|_, e| {
+                    e.set("key", "invalid_email_format")
+                }));
+            }
+        }
+
+        Ok(())
     }
 }
 ```

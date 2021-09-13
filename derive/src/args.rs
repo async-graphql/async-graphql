@@ -50,7 +50,7 @@ impl FromMeta for DefaultValue {
 pub enum Visible {
     None,
     HiddenAlways,
-    FnName(String),
+    FnName(Path),
 }
 
 impl FromMeta for Visible {
@@ -58,7 +58,7 @@ impl FromMeta for Visible {
         match value {
             Lit::Bool(LitBool { value: true, .. }) => Ok(Visible::None),
             Lit::Bool(LitBool { value: false, .. }) => Ok(Visible::HiddenAlways),
-            Lit::Str(str) => Ok(Visible::FnName(str.value())),
+            Lit::Str(str) => Ok(Visible::FnName(syn::parse_str::<Path>(&str.value())?)),
             _ => Err(darling::Error::unexpected_lit_type(value)),
         }
     }
@@ -173,6 +173,8 @@ pub struct SimpleObject {
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    #[darling(default)]
+    pub serial: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -199,6 +201,7 @@ pub struct Object {
     pub extends: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
+    pub serial: bool,
 }
 
 pub enum ComplexityType {
@@ -484,6 +487,8 @@ pub struct MergedObject {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub serial: bool,
 }
 
 #[derive(FromField)]
@@ -585,31 +590,31 @@ pub struct Description {
 
 #[derive(Debug)]
 pub enum NewTypeName {
-    UseNewName(String),
-    UseRustName,
-    UseOriginalName,
+    New(String),
+    Rust,
+    Original,
 }
 
 impl Default for NewTypeName {
     fn default() -> Self {
-        Self::UseOriginalName
+        Self::Original
     }
 }
 
 impl FromMeta for NewTypeName {
     fn from_word() -> darling::Result<Self> {
-        Ok(Self::UseRustName)
+        Ok(Self::Rust)
     }
 
     fn from_string(value: &str) -> darling::Result<Self> {
-        Ok(Self::UseNewName(value.to_string()))
+        Ok(Self::New(value.to_string()))
     }
 
     fn from_bool(value: bool) -> darling::Result<Self> {
         if value {
-            Ok(Self::UseRustName)
+            Ok(Self::Rust)
         } else {
-            Ok(Self::UseOriginalName)
+            Ok(Self::Original)
         }
     }
 }

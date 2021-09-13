@@ -1,6 +1,7 @@
 //! Implementations of `Type`, `ScalarType`, etc on external types.
 
 mod bool;
+mod bytes;
 mod char;
 mod cow;
 mod floats;
@@ -17,6 +18,8 @@ mod bson;
 mod chrono_tz;
 #[cfg(feature = "chrono")]
 mod datetime;
+#[cfg(feature = "decimal")]
+mod decimal;
 #[cfg(feature = "chrono")]
 mod naive_time;
 #[cfg(feature = "secrecy")]

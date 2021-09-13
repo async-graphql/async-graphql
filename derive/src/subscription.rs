@@ -165,7 +165,7 @@ pub fn generate(
                     .as_ref()
                     .map(|s| quote! {::std::option::Option::Some(#s)})
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let default = generate_default(&default, &default_with)?;
+                let default = generate_default(default, default_with)?;
 
                 let validator = match &validator {
                     Some(meta) => {
@@ -186,7 +186,7 @@ pub fn generate(
                     })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
 
-                let visible = visible_fn(&arg_visible);
+                let visible = visible_fn(arg_visible);
                 schema_args.push(quote! {
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
@@ -264,7 +264,7 @@ pub fn generate(
                                 .iter()
                                 .find(|(pat_ident, _, _)| pat_ident.ident == variable)
                             {
-                                let default = match generate_default(&default, &default_with)? {
+                                let default = match generate_default(default, default_with)? {
                                     Some(default) => {
                                         quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
                                     }
@@ -365,6 +365,8 @@ pub fn generate(
                                     path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                     parent_type: #gql_typename,
                                     return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                    name: field.node.name.node.as_str(),
+                                    alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                 };
                                 let resolve_fut = async {
                                     #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
@@ -384,7 +386,7 @@ pub fn generate(
                                 resp
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);
-                            ::std::result::Result::Ok(query_env.extensions.execute(&mut execute_fut).await)
+                            ::std::result::Result::Ok(query_env.extensions.execute(query_env.operation_name.as_deref(), &mut execute_fut).await)
                         }
                     }
                 });

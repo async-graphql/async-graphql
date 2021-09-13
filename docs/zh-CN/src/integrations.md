@@ -2,6 +2,7 @@
 
 `Async-graphql`提供了对一些常用Web Server的集成支持。
 
+- Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 - Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 - Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 - Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)

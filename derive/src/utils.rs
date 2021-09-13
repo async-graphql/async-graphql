@@ -6,13 +6,13 @@ use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::visit::Visit;
 use syn::{
-    Attribute, Error, Expr, ExprPath, Ident, Lit, LitStr, Meta, NestedMeta, Type, TypeGroup,
-    TypeParamBound,
+    Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lit, LitStr, Meta, NestedMeta,
+    Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
 };
 use thiserror::Error;
 
 use crate::args;
-use crate::args::{Deprecation, Visible};
+use crate::args::{Argument, Deprecation, Visible};
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -77,6 +77,23 @@ fn generate_nested_validator(
                         None => Some(item),
                     })
                     .unwrap())
+            } else if ls.path.is_ident("list") {
+                if ls.nested.len() > 1 {
+                    return Err(Error::new_spanned(
+                        ls,
+                        "Only one validator can be wrapped with list.",
+                    )
+                    .into());
+                }
+                if ls.nested.is_empty() {
+                    return Err(
+                        Error::new_spanned(ls, "At least one validator must be defined").into(),
+                    );
+                }
+                let validator = generate_nested_validator(crate_name, &ls.nested[0])?;
+                Ok(quote! {
+                    #crate_name::validators::List(#validator)
+                })
             } else {
                 let ty = &ls.path;
                 for item in &ls.nested {
@@ -133,148 +150,135 @@ pub fn generate_guards(
     args: &Meta,
 ) -> GeneratorResult<Option<TokenStream>> {
     match args {
-        Meta::List(args) => match args.path.get_ident() {
-            Some(ident) => match ident.to_string().as_str() {
-                "guard" => {
-                    if args.nested.len() != 1 {
-                        return Err(Error::new_spanned(
-                            args,
-                            "Chained rules isn't possible anymore, please use operators.",
-                        )
-                        .into());
-                    }
-                    if let NestedMeta::Meta(rule) = &args.nested[0] {
-                        generate_guards(crate_name, rule)
-                    } else {
-                        Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into())
-                    }
+        Meta::List(args) => match args.path.get_ident().map(ToString::to_string) {
+            Some(ident) if ident == "guard" => {
+                if args.nested.len() != 1 {
+                    return Err(Error::new_spanned(
+                        args,
+                        "Chained rules isn't possible anymore, please use operators.",
+                    )
+                    .into());
                 }
-                "and" => {
-                    if args.nested.len() != 2 {
-                        return Err(Error::new_spanned(
-                            args,
-                            "and operator support only 2 operands.",
-                        )
-                        .into());
-                    }
-                    let first_rule: Option<TokenStream>;
-                    let second_rule: Option<TokenStream>;
-                    if let NestedMeta::Meta(rule) = &args.nested[0] {
-                        first_rule = generate_guards(crate_name, rule)?;
-                    } else {
-                        return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
-                    }
-                    if let NestedMeta::Meta(rule) = &args.nested[1] {
-                        second_rule = generate_guards(crate_name, rule)?;
-                    } else {
-                        return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
-                    }
-                    Ok(Some(
-                        quote! { #crate_name::guard::GuardExt::and(#first_rule, #second_rule) },
-                    ))
+                if let NestedMeta::Meta(rule) = &args.nested[0] {
+                    generate_guards(crate_name, rule)
+                } else {
+                    Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into())
                 }
-                "or" => {
-                    if args.nested.len() != 2 {
-                        return Err(Error::new_spanned(
-                            args,
-                            "or operator support only 2 operands.",
-                        )
-                        .into());
-                    }
-                    let first_rule: Option<TokenStream>;
-                    let second_rule: Option<TokenStream>;
-                    if let NestedMeta::Meta(rule) = &args.nested[0] {
-                        first_rule = generate_guards(crate_name, rule)?;
-                    } else {
-                        return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
-                    }
-                    if let NestedMeta::Meta(rule) = &args.nested[1] {
-                        second_rule = generate_guards(crate_name, rule)?;
-                    } else {
-                        return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
-                    }
-                    Ok(Some(
-                        quote! { #crate_name::guard::GuardExt::or(#first_rule, #second_rule) },
-                    ))
+            }
+            Some(ident) if ident == "and" => {
+                if args.nested.len() != 2 {
+                    return Err(
+                        Error::new_spanned(args, "and operator support only 2 operands.").into(),
+                    );
                 }
-                "chain" => {
-                    if args.nested.len() < 2 {
-                        return Err(Error::new_spanned(
-                            args,
-                            "chain operator need at least 1 operand.",
-                        )
-                        .into());
-                    }
-                    let mut guards: Option<TokenStream> = None;
-                    for arg in &args.nested {
-                        if let NestedMeta::Meta(rule) = &arg {
-                            let guard = generate_guards(crate_name, rule)?;
-                            if guards.is_none() {
-                                guards = guard;
-                            } else {
-                                guards = Some(
-                                    quote! { #crate_name::guard::GuardExt::and(#guard, #guards) },
-                                );
-                            }
+                let first_rule: Option<TokenStream>;
+                let second_rule: Option<TokenStream>;
+                if let NestedMeta::Meta(rule) = &args.nested[0] {
+                    first_rule = generate_guards(crate_name, rule)?;
+                } else {
+                    return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
+                }
+                if let NestedMeta::Meta(rule) = &args.nested[1] {
+                    second_rule = generate_guards(crate_name, rule)?;
+                } else {
+                    return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
+                }
+                Ok(Some(
+                    quote! { #crate_name::guard::GuardExt::and(#first_rule, #second_rule) },
+                ))
+            }
+            Some(ident) if ident == "or" => {
+                if args.nested.len() != 2 {
+                    return Err(
+                        Error::new_spanned(args, "or operator support only 2 operands.").into(),
+                    );
+                }
+                let first_rule: Option<TokenStream>;
+                let second_rule: Option<TokenStream>;
+                if let NestedMeta::Meta(rule) = &args.nested[0] {
+                    first_rule = generate_guards(crate_name, rule)?;
+                } else {
+                    return Err(Error::new_spanned(&args.nested[0], "Invalid rule.").into());
+                }
+                if let NestedMeta::Meta(rule) = &args.nested[1] {
+                    second_rule = generate_guards(crate_name, rule)?;
+                } else {
+                    return Err(Error::new_spanned(&args.nested[1], "Invalid rule.").into());
+                }
+                Ok(Some(
+                    quote! { #crate_name::guard::GuardExt::or(#first_rule, #second_rule) },
+                ))
+            }
+            Some(ident) if ident == "chain" => {
+                if args.nested.len() < 2 {
+                    return Err(Error::new_spanned(
+                        args,
+                        "chain operator need at least 1 operand.",
+                    )
+                    .into());
+                }
+                let mut guards: Option<TokenStream> = None;
+                for arg in &args.nested {
+                    if let NestedMeta::Meta(rule) = &arg {
+                        let guard = generate_guards(crate_name, rule)?;
+                        if guards.is_none() {
+                            guards = guard;
+                        } else {
+                            guards =
+                                Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
                         }
                     }
-                    Ok(guards)
                 }
-                "race" => {
-                    if args.nested.len() < 2 {
-                        return Err(Error::new_spanned(
-                            args,
-                            "race operator need at least 1 operand.",
-                        )
-                        .into());
-                    }
-                    let mut guards: Option<TokenStream> = None;
-                    for arg in &args.nested {
-                        if let NestedMeta::Meta(rule) = &arg {
-                            let guard = generate_guards(crate_name, rule)?;
-                            if guards.is_none() {
-                                guards = guard;
-                            } else {
-                                guards = Some(
-                                    quote! { #crate_name::guard::GuardExt::or(#guard, #guards) },
-                                );
-                            }
+                Ok(guards)
+            }
+            Some(ident) if ident == "race" => {
+                if args.nested.len() < 2 {
+                    return Err(
+                        Error::new_spanned(args, "race operator need at least 1 operand.").into(),
+                    );
+                }
+                let mut guards: Option<TokenStream> = None;
+                for arg in &args.nested {
+                    if let NestedMeta::Meta(rule) = &arg {
+                        let guard = generate_guards(crate_name, rule)?;
+                        if guards.is_none() {
+                            guards = guard;
+                        } else {
+                            guards =
+                                Some(quote! { #crate_name::guard::GuardExt::or(#guard, #guards) });
                         }
                     }
-                    Ok(guards)
                 }
-                _ => {
-                    let ty = &args.path;
-                    let mut params = Vec::new();
-                    for attr in &args.nested {
-                        if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
-                            let name = &nv.path;
-                            if let Lit::Str(value) = &nv.lit {
-                                let value_str = value.value();
-                                if let Some(value_str) = value_str.strip_prefix('@') {
-                                    let getter_name = get_param_getter_ident(value_str);
-                                    params.push(quote! { #name: #getter_name()? });
-                                } else {
-                                    let expr = syn::parse_str::<Expr>(&value_str)?;
-                                    params.push(quote! { #name: (#expr).into() });
-                                }
+                Ok(guards)
+            }
+            _ => {
+                let ty = &args.path;
+                let mut params = Vec::new();
+                for attr in &args.nested {
+                    if let NestedMeta::Meta(Meta::NameValue(nv)) = attr {
+                        let name = &nv.path;
+                        if let Lit::Str(value) = &nv.lit {
+                            let value_str = value.value();
+                            if let Some(value_str) = value_str.strip_prefix('@') {
+                                let getter_name = get_param_getter_ident(value_str);
+                                params.push(quote! { #name: #getter_name()? });
                             } else {
-                                return Err(Error::new_spanned(
-                                    &nv.lit,
-                                    "Value must be string literal",
-                                )
-                                .into());
+                                let expr = syn::parse_str::<Expr>(&value_str)?;
+                                params.push(quote! { #name: (#expr).into() });
                             }
                         } else {
-                            return Err(
-                                Error::new_spanned(attr, "Invalid property for guard").into()
-                            );
+                            return Err(Error::new_spanned(
+                                &nv.lit,
+                                "Value must be string literal",
+                            )
+                            .into());
                         }
+                    } else {
+                        return Err(Error::new_spanned(attr, "Invalid property for guard").into());
                     }
-                    Ok(Some(quote! { #ty { #(#params),* } }))
                 }
-            },
-            None => Err(Error::new_spanned(args, "Invalid guards").into()),
+                Ok(Some(quote! { #ty { #(#params),* } }))
+            }
         },
         _ => Err(Error::new_spanned(args, "Invalid guards").into()),
     }
@@ -393,7 +397,7 @@ pub fn get_type_path_and_name(ty: &Type) -> GeneratorResult<(&Type, String)> {
                 .map(|s| s.ident.to_string())
                 .unwrap(),
         )),
-        Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(&elem),
+        Type::Group(TypeGroup { elem, .. }) => get_type_path_and_name(elem),
         Type::TraitObject(trait_object) => Ok((
             ty,
             trait_object
@@ -416,8 +420,7 @@ pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
         None | Some(Visible::None) => quote! { ::std::option::Option::None },
         Some(Visible::HiddenAlways) => quote! { ::std::option::Option::Some(|_| false) },
         Some(Visible::FnName(name)) => {
-            let ident = Ident::new(name, Span::call_site());
-            quote! { ::std::option::Option::Some(#ident) }
+            quote! { ::std::option::Option::Some(#name) }
         }
     }
 }
@@ -458,4 +461,75 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
             quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::None } }
         }
     }
+}
+
+pub fn extract_input_args(
+    crate_name: &proc_macro2::TokenStream,
+    method: &mut ImplItemMethod,
+) -> GeneratorResult<Vec<(PatIdent, Type, Argument)>> {
+    let mut args = Vec::new();
+    let mut create_ctx = true;
+
+    if method.sig.inputs.is_empty() {
+        return Err(Error::new_spanned(
+            &method.sig,
+            "The self receiver must be the first parameter.",
+        )
+        .into());
+    }
+
+    for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
+        if let FnArg::Receiver(receiver) = arg {
+            if idx != 0 {
+                return Err(Error::new_spanned(
+                    receiver,
+                    "The self receiver must be the first parameter.",
+                )
+                .into());
+            }
+        } else if let FnArg::Typed(pat) = arg {
+            if idx == 0 {
+                return Err(Error::new_spanned(
+                    pat,
+                    "The self receiver must be the first parameter.",
+                )
+                .into());
+            }
+
+            match (&*pat.pat, &*pat.ty) {
+                (Pat::Ident(arg_ident), Type::Reference(TypeReference { elem, .. })) => {
+                    if let Type::Path(path) = elem.as_ref() {
+                        if idx != 1 || path.path.segments.last().unwrap().ident != "Context" {
+                            args.push((
+                                arg_ident.clone(),
+                                pat.ty.as_ref().clone(),
+                                parse_graphql_attrs::<args::Argument>(&pat.attrs)?
+                                    .unwrap_or_default(),
+                            ));
+                        } else {
+                            create_ctx = false;
+                        }
+                    }
+                }
+                (Pat::Ident(arg_ident), ty) => {
+                    args.push((
+                        arg_ident.clone(),
+                        ty.clone(),
+                        parse_graphql_attrs::<args::Argument>(&pat.attrs)?.unwrap_or_default(),
+                    ));
+                    remove_graphql_attrs(&mut pat.attrs);
+                }
+                _ => {
+                    return Err(Error::new_spanned(arg, "Invalid argument type.").into());
+                }
+            }
+        }
+    }
+
+    if create_ctx {
+        let arg = syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
+        method.sig.inputs.insert(1, arg);
+    }
+
+    Ok(args)
 }

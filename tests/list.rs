@@ -2,7 +2,6 @@ use async_graphql::*;
 use std::cmp::Ordering;
 use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
 
-//noinspection ALL
 #[tokio::test]
 pub async fn test_list_type() {
     #[derive(InputObject)]
@@ -114,5 +113,66 @@ pub async fn test_list_type() {
             "valueInputSlice1": vec![1, 2, 3],
             "valueInputSlice2": vec![55],
         })
+    );
+}
+
+#[tokio::test]
+pub async fn test_array_type() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn values(&self) -> [i32; 6] {
+            [1, 2, 3, 4, 5, 6]
+        }
+
+        async fn array_input(&self, values: [i32; 6]) -> [i32; 6] {
+            assert_eq!(values, [1, 2, 3, 4, 5, 6]);
+            values
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema
+            .execute("{ values }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "values": [1, 2, 3, 4, 5, 6]
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ arrayInput(values: [1, 2, 3, 4, 5, 6]) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "arrayInput": [1, 2, 3, 4, 5, 6]
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ arrayInput(values: [1, 2, 3, 4, 5]) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[Int!]": Expected input type "[Int; 6]", found [Int; 5]."#
+                .to_owned(),
+            locations: vec![Pos {
+                line: 1,
+                column: 22,
+            }],
+            path: vec![PathSegment::Field("arrayInput".to_owned())],
+            extensions: None,
+        }],
     );
 }

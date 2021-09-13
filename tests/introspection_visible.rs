@@ -59,12 +59,7 @@ pub async fn test_type_visible() {
     )
     .unwrap();
 
-    assert!(resp
-        .schema
-        .types
-        .into_iter()
-        .find(|ty| ty.name == "MyObj")
-        .is_none());
+    assert!(!resp.schema.types.into_iter().any(|ty| ty.name == "MyObj"));
 }
 
 #[tokio::test]
@@ -206,16 +201,22 @@ pub async fn test_enum_value_visible() {
 
 #[tokio::test]
 pub async fn test_visible_fn() {
-    struct IsAdmin(bool);
+    mod nested {
+        use async_graphql::Context;
 
-    #[derive(SimpleObject)]
-    #[graphql(visible = "is_admin")]
-    struct MyObj {
-        a: i32,
+        pub struct IsAdmin(pub bool);
+
+        pub fn is_admin(ctx: &Context<'_>) -> bool {
+            ctx.data_unchecked::<IsAdmin>().0
+        }
     }
 
-    fn is_admin(ctx: &Context<'_>) -> bool {
-        ctx.data_unchecked::<IsAdmin>().0
+    use nested::IsAdmin;
+
+    #[derive(SimpleObject)]
+    #[graphql(visible = "nested::is_admin")]
+    struct MyObj {
+        a: i32,
     }
 
     struct Query;

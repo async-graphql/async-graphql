@@ -22,7 +22,7 @@ impl Query {
 下面的例子校验`i32`类型的参数`a`必须大于10，并且小于100，或者等于0：
 
 ```rust
-use async_graphql:*;
+use async_graphql::*;
 use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
 
 struct Query;
@@ -34,7 +34,23 @@ impl Query {
             and(IntGreaterThan(value = "10"), IntLessThan(value = "100")),
             IntEqual(value = "0")
         )))] a: String) {
-    } {
+    }
+}
+```
+
+## 校验列表成员
+
+你可以用`list`操作符表示内部的校验器作用于一个列表内的所有成员:
+
+```rust
+use async_graphql::*;
+use async_graphql::validators::{Email};
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn input(#[graphql(validator(list(Email)))] emails: Vec<String>) {
     }
 }
 ```

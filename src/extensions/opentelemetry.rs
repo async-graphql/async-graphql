@@ -134,13 +134,18 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
             .await
     }
 
-    async fn execute(&self, ctx: &ExtensionContext<'_>, next: NextExecute<'_>) -> Response {
+    async fn execute(
+        &self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        next: NextExecute<'_>,
+    ) -> Response {
         let span = self
             .tracer
             .span_builder("execute")
             .with_kind(SpanKind::Server)
             .start(&*self.tracer);
-        next.run(ctx)
+        next.run(ctx, operation_name)
             .with_context(OpenTelemetryContext::current_with_span(span))
             .await
     }
@@ -157,18 +162,17 @@ impl<T: Tracer + Send + Sync> Extension for OpenTelemetryExtension<T> {
         ];
         let span = self
             .tracer
-            .span_builder(&info.path_node.to_string())
+            .span_builder(info.path_node.to_string())
             .with_kind(SpanKind::Server)
             .with_attributes(attributes)
             .start(&*self.tracer);
         next.run(ctx, info)
             .with_context(OpenTelemetryContext::current_with_span(span))
-            .map_err(|err| {
+            .inspect_err(|err| {
                 let current_cx = OpenTelemetryContext::current();
                 current_cx
                     .span()
                     .add_event("error".to_string(), vec![KEY_ERROR.string(err.to_string())]);
-                err
             })
             .await
     }

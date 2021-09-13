@@ -1,4 +1,5 @@
 use async_graphql_value::*;
+use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -19,6 +20,7 @@ fn test_serde() {
     test_value(Some(100i32));
     test_value(ConstValue::Null);
     test_value(vec![0i32, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    test_value(b"123456".to_vec());
 
     #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
     struct NewType(i32);
@@ -51,4 +53,17 @@ fn test_serde() {
         a: 100,
         b: Some(Enum::B),
     });
+}
+
+#[test]
+fn test_binary() {
+    assert_eq!(
+        to_value(Bytes::from_static(b"123456")).unwrap(),
+        ConstValue::Binary(Bytes::from_static(b"123456"))
+    );
+
+    assert_eq!(
+        from_value::<Bytes>(ConstValue::Binary(Bytes::from_static(b"123456"))).unwrap(),
+        Bytes::from_static(b"123456")
+    );
 }

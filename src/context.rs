@@ -121,7 +121,7 @@ impl<'a> QueryPathNode<'a> {
 
     /// Get the path represented by `Vec<String>`; numbers will be stringified.
     #[must_use]
-    pub fn to_string_vec(&self) -> Vec<String> {
+    pub fn to_string_vec(self) -> Vec<String> {
         let mut res = Vec::new();
         self.for_each(|s| {
             res.push(match s {
@@ -207,6 +207,7 @@ pub struct ContextBase<'a, T> {
 pub struct QueryEnvInner {
     pub extensions: Extensions,
     pub variables: Variables,
+    pub operation_name: Option<String>,
     pub operation: Positioned<OperationDefinition>,
     pub fragments: HashMap<Name, Positioned<FragmentDefinition>>,
     pub uploads: Vec<UploadValue>,
@@ -602,7 +603,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// }
     /// ```
     pub fn look_ahead(&self) -> Lookahead {
-        Lookahead::new(&self.query_env.fragments, &self.item.node)
+        Lookahead::new(&self.query_env.fragments, &self.item.node, self)
     }
 
     /// Get the current field.
@@ -650,9 +651,9 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
 /// Selection field.
 #[derive(Clone, Copy)]
 pub struct SelectionField<'a> {
-    fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
-    field: &'a Field,
-    context: &'a Context<'a>,
+    pub(crate) fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
+    pub(crate) field: &'a Field,
+    pub(crate) context: &'a Context<'a>,
 }
 
 impl<'a> SelectionField<'a> {
@@ -726,7 +727,20 @@ impl<'a> Iterator for SelectionFieldsIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let it = self.iter.last_mut()?;
-            match it.next() {
+            let item = it.next();
+            if let Some(item) = item {
+                // ignore any items that are skipped (i.e. @skip/@include)
+                if self
+                    .context
+                    .is_skip(&item.node.directives())
+                    .unwrap_or(false)
+                {
+                    // TODO: should we throw errors here? they will be caught later in execution and it'd cause major backwards compatibility issues
+                    continue;
+                }
+            }
+
+            match item {
                 Some(selection) => match &selection.node {
                     Selection::Field(field) => {
                         return Some(SelectionField {

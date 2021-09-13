@@ -31,10 +31,11 @@ impl<'a> CycleDetector<'a> {
                     *pos
                 };
 
-                self.errors.push(RuleError {
-                    locations: vec![err_pos],
-                    message: format!("Cannot spread fragment \"{}\"", name),
-                });
+                self.errors.push(RuleError::new(
+                    vec![err_pos],
+                    format!("Cannot spread fragment \"{}\"", name),
+                    None,
+                ));
             } else if !self.visited.contains(name) {
                 path.push((name, *pos));
                 self.detect_from(name, path);

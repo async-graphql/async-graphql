@@ -204,6 +204,12 @@ impl<'a> Fields<'a> {
                                             ));
                                         }
                                     },
+                                    name: field.node.name.node.as_str(),
+                                    alias: field
+                                        .node
+                                        .alias
+                                        .as_ref()
+                                        .map(|alias| alias.node.as_str()),
                                 };
 
                                 let resolve_fut = root.resolve_field(&ctx_field);

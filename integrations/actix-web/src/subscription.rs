@@ -11,7 +11,7 @@ use actix_http::{ws, Error};
 use actix_web::web::{BufMut, Bytes, BytesMut};
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage};
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_channel::mpsc;
 use futures_util::future::Ready;
@@ -98,7 +98,7 @@ where
                 initializer: Some(initializer),
                 continuation: BytesMut::new(),
             },
-            &["graphql-transport-ws", "graphql-ws"],
+            &ALL_WEBSOCKET_PROTOCOLS,
             request,
             stream,
         )

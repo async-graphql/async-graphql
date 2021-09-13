@@ -34,7 +34,7 @@
 //! * [Docs](https://docs.rs/async-graphql)
 //! * [GitHub repository](https://github.com/async-graphql/async-graphql)
 //! * [Cargo package](https://crates.io/crates/async-graphql)
-//! * Minimum supported Rust version: 1.42 or later
+//! * Minimum supported Rust version: 1.51 or later
 //!
 //! ## Features
 //!
@@ -43,7 +43,7 @@
 //! * Rustfmt friendly (Procedural Macro)
 //! * Custom scalars
 //! * Minimal overhead
-//! * Easy integration (actix_web, tide, warp, rocket ...)
+//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 //! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions
@@ -71,6 +71,8 @@
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
 //! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
+//! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+//! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 //!
 //! ## Integrations
 //!
@@ -133,7 +135,6 @@
 #![deny(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::match_same_arms)]
-#![allow(clippy::filter_map)]
 #![allow(clippy::default_trait_access)]
 #![allow(clippy::map_flatten)]
 #![allow(clippy::map_unwrap_or)]
@@ -284,6 +285,7 @@ pub type FieldResult<T> = Result<T>;
 /// | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 /// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
+/// | serial       | Resolve each field sequentially.         | bool        | Y        |
 /// | key          | Is entity key(for Federation)            | bool        | Y        |
 ///
 /// # Valid field return types
@@ -430,6 +432,8 @@ pub use async_graphql_derive::Object;
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented. *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html#generic-simpleobjects) | ConcreteType |  Y |
+/// | serial        | Resolve each field sequentially.         | bool        | Y        |
 ///
 /// # Field parameters
 ///
@@ -1101,6 +1105,7 @@ pub use async_graphql_derive::NewType;
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | serial        | Resolve each field sequentially.         | bool        | Y        |
 ///
 /// # Examples
 ///

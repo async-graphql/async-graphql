@@ -17,45 +17,6 @@ struct Object3 {
 }
 
 #[tokio::test]
-pub async fn test_merged_object() {
-    type MyObj =
-        MergedObject<Object1, MergedObject<Object2, MergedObject<Object3, MergedObjectTail>>>;
-
-    struct Query;
-
-    #[Object]
-    impl Query {
-        async fn obj(&self) -> MyObj {
-            MergedObject(
-                Object1 { a: 10 },
-                MergedObject(
-                    Object2 { b: 20 },
-                    MergedObject(Object3 { c: 30 }, MergedObjectTail),
-                ),
-            )
-        }
-    }
-
-    assert_eq!(
-        MyObj::type_name(),
-        "Object1_Object2_Object3_MergedObjectTail"
-    );
-
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-    let query = "{ obj { a b c } }";
-    assert_eq!(
-        schema.execute(query).await.into_result().unwrap().data,
-        value!({
-            "obj": {
-                "a": 10,
-                "b": 20,
-                "c": 30,
-            }
-        })
-    );
-}
-
-#[tokio::test]
 pub async fn test_merged_object_macro() {
     #[derive(MergedObject)]
     struct MyObj(Object1, Object2, Object3);
@@ -381,6 +342,61 @@ pub async fn test_issue_333() {
             "obj": {
                 "fieldA": "haha",
                 "fieldB": "hehe",
+            }
+        })
+    )
+}
+
+#[tokio::test]
+pub async fn test_issue_539() {
+    // https://github.com/async-graphql/async-graphql/issues/539#issuecomment-862209442
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct A {
+        a: Option<Box<A>>,
+    }
+
+    #[derive(SimpleObject)]
+    struct B {
+        b: Option<Box<B>>,
+    }
+
+    #[derive(MergedObject)]
+    pub struct Mutation(A, B);
+
+    let schema = Schema::new(
+        Query,
+        Mutation(A { a: None }, B { b: None }),
+        EmptySubscription,
+    );
+    assert_eq!(
+        schema
+            .execute("{ __type(name: \"Mutation\") { fields { name type { name } } } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "__type": {
+                "fields": [
+                    {
+                        "name": "a",
+                        "type": { "name": "A" },
+                    },
+                    {
+                        "name": "b",
+                        "type": { "name": "B" },
+                    }
+                ]
             }
         })
     )

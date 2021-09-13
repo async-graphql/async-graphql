@@ -67,3 +67,43 @@ enum Shape {
     Square(Square),
 }
 ```
+
+## Register the interface manually
+
+`Async-graphql` traverses and registers all directly or indirectly referenced types from `Schema` in the initialization phase.
+If an interface is not referenced, it will not exist in the registry, as in the following example , even if `MyObject` implements `MyInterface`,
+because `MyInterface` is not referenced in `Schema`, the `MyInterface` type will not exist in the registry.
+
+```rust
+#[derive(Interface)]
+#[graphql(
+    field(name = "name", type = "String"),
+)]
+enum MyInterface {
+    MyObject(MyObject),
+}
+
+#[derive(SimpleObject)]
+struct MyObject {
+    name: String,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn obj(&self) -> MyObject {
+        todo!()
+    }
+}
+
+type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
+```
+
+You need to manually register the `MyInterface` type when constructing the `Schema`:
+
+```rust
+Schema::build(Query, EmptyMutation, EmptySubscription)
+    .register_type::<MyInterface>()
+    .finish();
+```

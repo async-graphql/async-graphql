@@ -85,12 +85,11 @@ impl Reply for BatchResponse {
                     resp.headers_mut().insert("cache-control", value);
                 }
             }
-            for (name, value) in self.0.http_headers() {
-                if let (Ok(name), Ok(value)) =
-                    (TryInto::<HeaderName>::try_into(name), value.try_into())
-                {
-                    resp.headers_mut().append(name, value);
-                }
+        }
+        for (name, value) in self.0.http_headers() {
+            if let (Ok(name), Ok(value)) = (TryInto::<HeaderName>::try_into(name), value.try_into())
+            {
+                resp.headers_mut().append(name, value);
             }
         }
 

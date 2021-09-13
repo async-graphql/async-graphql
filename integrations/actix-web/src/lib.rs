@@ -1,6 +1,7 @@
 //! Async-graphql integration with Actix-web
 #![forbid(unsafe_code)]
 #![allow(clippy::upper_case_acronyms)]
+#![warn(missing_docs)]
 
 mod subscription;
 
@@ -167,9 +168,9 @@ impl Responder for Response {
             if let Some(cache_control) = self.0.cache_control().value() {
                 res.append_header(("cache-control", cache_control));
             }
-            for (name, value) in self.0.http_headers() {
-                res.append_header((name, value));
-            }
+        }
+        for (name, value) in self.0.http_headers() {
+            res.header(name, value);
         }
         res.body(serde_json::to_string(&self.0).unwrap())
     }

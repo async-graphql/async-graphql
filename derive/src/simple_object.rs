@@ -97,7 +97,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         });
 
         let guard = match &field.guard {
-            Some(meta) => generate_guards(&crate_name, &meta)?,
+            Some(meta) => generate_guards(&crate_name, meta)?,
             None => None,
         };
         let guard = guard.map(
@@ -170,6 +170,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
     }
 
+    let resolve_container = if object_args.serial {
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+    } else {
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+    };
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -216,7 +222,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
                 async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                    #crate_name::resolver_utils::resolve_container(ctx, self).await
+                    #resolve_container
                 }
             }
 
@@ -229,13 +235,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             impl #impl_generics #ident #ty_generics #where_clause {
                 #(#getters)*
 
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::OutputType {
+                fn __internal_create_type_info(
+                    registry: &mut #crate_name::registry::Registry,
+                    name: &str,
+                    complex_fields: #crate_name::indexmap::IndexMap<::std::string::String, #crate_name::registry::MetaField>,
+                ) -> ::std::string::String where Self: #crate_name::OutputType {
                     registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();
                             #(#schema_fields)*
+                            ::std::iter::Extend::extend(&mut fields, complex_fields.clone());
                             fields
                         },
                         cache_control: #cache_control,
@@ -265,7 +276,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry, #gql_typename)
+                        let mut fields = #crate_name::indexmap::IndexMap::new();
+                        #concat_complex_fields
+                        Self::__internal_create_type_info(registry, #gql_typename, fields)
                     }
                 }
 
@@ -273,6 +286,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        #complex_resolver
                         self.__internal_resolve_field(ctx).await
                     }
                 }
@@ -281,7 +295,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::OutputType for #concrete_type {
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                        #crate_name::resolver_utils::resolve_container(ctx, self).await
+                        #resolve_container
                     }
                 }
 

@@ -322,6 +322,7 @@ where
             Subscription::create_type_info(&mut registry);
         }
 
+        registry.remove_unused_types();
         registry
     }
 
@@ -417,9 +418,9 @@ where
         let operation = if let Some(operation_name) = &request.operation_name {
             match document.operations {
                 DocumentOperations::Single(_) => None,
-                DocumentOperations::Multiple(mut operations) => {
-                    operations.remove(operation_name.as_str())
-                }
+                DocumentOperations::Multiple(mut operations) => operations
+                    .remove(operation_name.as_str())
+                    .map(|operation| (Some(operation_name.clone()), operation)),
             }
             .ok_or_else(|| {
                 ServerError::new(
@@ -429,9 +430,10 @@ where
             })
         } else {
             match document.operations {
-                DocumentOperations::Single(operation) => Ok(operation),
+                DocumentOperations::Single(operation) => Ok((None, operation)),
                 DocumentOperations::Multiple(map) if map.len() == 1 => {
-                    Ok(map.into_iter().next().unwrap().1)
+                    let (operation_name, operation) = map.into_iter().next().unwrap();
+                    Ok((Some(operation_name.to_string()), operation))
                 }
                 DocumentOperations::Multiple(_) => Err(ServerError::new(
                     "Operation name required in request.",
@@ -439,14 +441,13 @@ where
                 )),
             }
         };
-        let operation = match operation {
-            Ok(operation) => operation,
-            Err(e) => return Err(vec![e]),
-        };
+
+        let (operation_name, operation) = operation.map_err(|err| vec![err])?;
 
         let env = QueryEnvInner {
             extensions,
             variables: request.variables,
+            operation_name,
             operation,
             fragments: document.fragments,
             uploads: request.uploads,
@@ -478,10 +479,10 @@ where
         };
 
         let mut resp = match res {
-            Ok(value) => Response::new(value)
-                .http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap())),
+            Ok(value) => Response::new(value),
             Err(err) => Response::from_errors(vec![err]),
-        };
+        }
+        .http_headers(std::mem::take(&mut *env.http_headers.lock().unwrap()));
 
         resp.errors
             .extend(std::mem::take(&mut *env.errors.lock().unwrap()));
@@ -506,7 +507,9 @@ where
                                 .cache_control(cache_control)
                         };
                         futures_util::pin_mut!(fut);
-                        env.extensions.execute(&mut fut).await
+                        env.extensions
+                            .execute(env.operation_name.as_deref(), &mut fut)
+                            .await
                     }
                     Err(errors) => Response::from_errors(errors),
                 }

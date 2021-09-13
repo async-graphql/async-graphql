@@ -2,6 +2,7 @@
 
 `Async-graphql` supports several common Rust web servers.
 
+- Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 - Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 - Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 - Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)

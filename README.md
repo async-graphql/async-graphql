@@ -34,7 +34,7 @@
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
-* Minimum supported Rust version: 1.50.0 or later
+* Minimum supported Rust version: 1.54.0 or later
 
 ## Safety
 
@@ -47,7 +47,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 * Rustfmt friendly (Procedural Macro)
 * Custom scalars
 * Minimal overhead
-* Easy integration (actix_web, tide, warp, rocket ...)
+* Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 * Upload files (Multipart request)
 * Subscriptions (WebSocket transport)
 * Custom extensions
@@ -76,6 +76,13 @@ This crate offers the following features, all of which are not activated by defa
 - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
+- `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+- `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
+
+## Apollo Studio
+
+Apollo Studio is a cloud platform that helps you build, monitor, validate, and secure your organization's data graph.
+An existing extension is available for this crate [here](https://github.com/async-graphql/async_graphql_apollo_studio_extension)
 
 ## Examples
 
@@ -90,10 +97,32 @@ cd examples && cargo run --bin [name]
 
 ## Integrations
 
+* Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
+* Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
+
+## Who's using Async-graphql in production?
+
+- [Vector](https://vector.dev/)
+- [Kairos Sports tech](https://kairostech.io/)
+- [AxieInfinity](https://axieinfinity.com/)
+- [Nando's](https://www.nandos.co.uk/)
+- [Prima.it](https://www.prima.it/)
+- [VoxJar](https://voxjar.com/)
+- [Zenly](https://zen.ly/)
+- [Brevz](https://brevz.io/)
+- [thorndyke](https://www.thorndyke.ai/)
+
+## Blog Posts
+
+- [GraphQL in Rust](https://romankudryashov.com/blog/2020/12/graphql-rust/)
+
+- [How to implement a Rust micro-service using Rocket, GraphQL, PostgreSQL](https://lionkeng.medium.com/how-to-implement-a-rust-micro-service-using-rocket-graphql-postgresql-a3f455f2ae8b)
+
+- [Running GraphQL on Lambda with Rust](https://dylananthony.com/posts/graphql-lambda-rust)
 
 ## License
 

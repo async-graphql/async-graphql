@@ -34,7 +34,10 @@ impl<'a> __Type<'a> {
             },
             registry::MetaTypeName::Named(ty) => __Type {
                 registry,
-                detail: TypeDetail::Named(&registry.types[ty]),
+                detail: TypeDetail::Named(match registry.types.get(ty) {
+                    Some(t) => t,
+                    None => panic!("Type '{}' not found!", ty),
+                }),
             },
         }
     }

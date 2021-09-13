@@ -4,6 +4,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.15] 2021-09-10
+
+- Added Axum error handling. [#629](https://github.com/async-graphql/async-graphql/pull/629)
+- Bump bson from `2.0.0-beta.1` to `2.0.0`. [#628](https://github.com/async-graphql/async-graphql/pull/628)
+
+## [2.9.14] 2021-09-03
+
+- Add support for [serde_cbor](https://crates.io/crates/serde_cbor). [#619](https://github.com/async-graphql/async-graphql/pull/619)
+
+## [2.9.13] 2021-09-01
+
+- Released [`Axum`](https://github.com/tokio-rs/axum) integration. [`async-graphql-axum`](https://crates.io/crates/async-graphql-axum)
+
+## [2.9.12] 2021-08-24
+
+- Add integration for [`Poem`](https://github.com/poem-web/poem).
+- Ignore items flagged `@skip` in `SelectionField` and `Lookahead`. [#605](https://github.com/async-graphql/async-graphql/pull/605)
+
+## [2.9.11] 2021-08-22
+
+- Implement `From<MaybeUndefined<T>> for Option<Option<T>>`. [#599](https://github.com/async-graphql/async-graphql/issues/599)
+- Add human readable for serializer. [#604](https://github.com/async-graphql/async-graphql/pull/604)
+
+## [2.9.10] 2021-08-05
+
+- Change `GraphQLPlaygroundConfig::with_setting` to accept `impl Into<Value>` [#583](https://github.com/async-graphql/async-graphql/issues/583)
+- Remove unnecessary unwrap in multipart handler [#594](https://github.com/async-graphql/async-graphql/pull/594)
+
+## [2.9.9] 2021-07-20
+
+- Add binary types to `ConstValue` and `Value`. [#569](https://github.com/async-graphql/async-graphql/issues/569)
+- Implemented `OutputType` for [Bytes](https://docs.rs/bytes/1.0.1/bytes/struct.Bytes.html).
+- Changed Lookahead to support multiple fields. [#574](https://github.com/async-graphql/async-graphql/issues/574)
+- Implement `TryFrom<&[SelectionField<'a>]>` for `Lookahead<'a>`. [#575](https://github.com/async-graphql/async-graphql/issues/575)
+- Attach custom HTTP headers to the response when an error occurs. [#572](https://github.com/async-graphql/async-graphql/issues/572)
+- Allow field visible to support paths. [#578](https://github.com/async-graphql/async-graphql/pull/578)
+- Add support for the `list` operator to the input value validator. [#579](https://github.com/async-graphql/async-graphql/issues/579)
+
+## [2.9.8] 2021-07-12
+
+- Add Extensions in Error of `InputValueValidator`. [#564](https://github.com/async-graphql/async-graphql/pull/564)
+
+- Fix SDL print is not stable. [#547](https://github.com/async-graphql/async-graphql/issues/547)
+
+## [2.9.7] 2021-07-04
+
+- Add support for generic `ComplexObject`. [#562](https://github.com/async-graphql/async-graphql/pull/562)
+
+## [2.9.6] 2021-07-02
+
+- Implement `From<SelectionField>` for `Lookahead`. [#557](https://github.com/async-graphql/async-graphql/issues/557)
+  
+- Add Decimal scalar (from `rust_decimal` crate) [#559](https://github.com/async-graphql/async-graphql/pull/559)
+
+## [2.9.5] 2021-06-29
+
+- Allows to get the actual field name and alias in `ResolveInfo`. [#551](https://github.com/async-graphql/async-graphql/issues/551)
+
+## [2.9.4] 2021-06-21
+
+- Fix the bug that `MergedObject` may cause panic. [#539](https://github.com/async-graphql/async-graphql/issues/539#issuecomment-862209442)
+
+## [2.9.3] 2021-06-17
+
+- Bump upstream crate `bson` from `v1.2.0` to `v2.0.0-beta.1`. [#516](https://github.com/async-graphql/async-graphql/pull/516)
+
+- Add `serial` attribute for `Object`, `SimpleObject` and `MergedObject` macros. [#539](https://github.com/async-graphql/async-graphql/issues/539)
+
+- Remove the `static` constraint of the `receive_body` and `receive_batch_body` functions. [#544](https://github.com/async-graphql/async-graphql/issues/544)
+
+- Implement `InputType` and `OutputType` for `[T; N]` array.
+
+## [2.9.2] 2021-06-10
+
+- Allow field guards to support paths. [#536](https://github.com/async-graphql/async-graphql/issues/536)
+  
+- Add the `operation_name` to `Extension::execute` method. [#538](https://github.com/async-graphql/async-graphql/issues/538)
+
 ## [2.9.1] 2021-06-08
 
 - Rework error propagation. [#531](https://github.com/async-graphql/async-graphql/issues/531)
