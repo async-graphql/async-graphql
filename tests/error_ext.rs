@@ -2,6 +2,13 @@ use async_graphql::*;
 
 #[tokio::test]
 pub async fn test_error_extensions() {
+    #[derive(Enum, Eq, PartialEq, Copy, Clone)]
+    enum MyEnum {
+        Create,
+        Delete,
+        Update,
+    }
+
     struct Query;
 
     #[Object]
@@ -10,6 +17,7 @@ pub async fn test_error_extensions() {
             Err("my error".extend_with(|err, e| {
                 e.set("msg", err.to_string());
                 e.set("code", 100);
+                e.set("action", MyEnum::Create)
             }))
         }
 
@@ -40,7 +48,8 @@ pub async fn test_error_extensions() {
                 "path": ["extendErr"],
                 "extensions": {
                     "msg": "my error",
-                    "code": 100
+                    "code": 100,
+                    "action": "CREATE",
                 }
             }]
         })
