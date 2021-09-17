@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for `graphql-ws` pings. [#635](https://github.com/async-graphql/async-graphql/issues/635)
 - Add feature gate `websocket` for async-graphql-tide. [#636](https://github.com/async-graphql/async-graphql/issues/636)
+- Implement GraphQL enum to `Value` conversion. [#617](https://github.com/async-graphql/async-graphql/issues/617)
+- Implement `ScalarType` for `HashMap`/`BTreeMap` to use `ToString`/`FromStr`. [#585](https://github.com/async-graphql/async-graphql/issues/585)
 
 ## [2.9.15] 2021-09-10
 

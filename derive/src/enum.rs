@@ -167,7 +167,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             }
         }
 
-        impl From<#ident> for #crate_name::Value {
+        impl ::std::convert::From<#ident> for #crate_name::Value {
             fn from(value: #ident) -> #crate_name::Value {
                 #crate_name::resolver_utils::enum_value(value)
             }
