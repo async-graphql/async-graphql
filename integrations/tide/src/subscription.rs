@@ -9,6 +9,7 @@ use tide::{Endpoint, Request, Response};
 use tide_websockets::Message;
 
 /// GraphQL subscription endpoint.
+#[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
 pub struct Subscription<S> {
     inner: Pin<Box<dyn Endpoint<S>>>,
 }

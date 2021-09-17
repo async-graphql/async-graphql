@@ -8,6 +8,7 @@
 #![allow(clippy::needless_doctest_main)]
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "websocket")]
 mod subscription;
 
 use async_graphql::http::MultipartOptions;
@@ -21,6 +22,7 @@ use tide::{
     Body, Request, Response, StatusCode,
 };
 
+#[cfg(feature = "websocket")]
 pub use subscription::Subscription;
 
 /// Create a new GraphQL endpoint with the schema.

@@ -64,6 +64,7 @@ pin_project! {
     /// A GraphQL connection over websocket.
     ///
     /// [Reference](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
+    /// [Reference](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md).
     pub struct WebSocket<S, F, Query, Mutation, Subscription> {
         data_initializer: Option<F>,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
@@ -247,6 +248,15 @@ where
                     // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
                     // handled by disconnecting the websocket
                     ClientMessage::ConnectionTerminate => return Poll::Ready(None),
+                    // Pong must be sent in response from the receiving party as soon as possible.
+                    ClientMessage::Ping { .. } => {
+                        return Poll::Ready(Some(WsMessage::Text(
+                            serde_json::to_string(&ServerMessage::Pong { payload: None }).unwrap(),
+                        )));
+                    }
+                    ClientMessage::Pong { .. } => {
+                        // Do nothing...
+                    }
                 }
             }
         }
@@ -368,6 +378,20 @@ pub enum ClientMessage {
     },
     /// Connection terminated by the client
     ConnectionTerminate,
+    /// Useful for detecting failed connections, displaying latency metrics or other types of network probing.
+    ///
+    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping
+    Ping {
+        /// Additional details about the ping.
+        payload: Option<serde_json::Value>,
+    },
+    /// The response to the Ping message.
+    ///
+    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong
+    Pong {
+        /// Additional details about the pong.
+        payload: Option<serde_json::Value>,
+    },
 }
 
 impl ClientMessage {
@@ -404,6 +428,13 @@ enum ServerMessage<'a> {
     // },
     Complete {
         id: &'a str,
+    },
+    /// The response to the Ping message.
+    ///
+    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong
+    Pong {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        payload: Option<serde_json::Value>,
     },
     // Not used by this library
     // #[serde(rename = "ka")]

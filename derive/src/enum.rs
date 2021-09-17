@@ -167,6 +167,12 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             }
         }
 
+        impl ::std::convert::From<#ident> for #crate_name::Value {
+            fn from(value: #ident) -> #crate_name::Value {
+                #crate_name::resolver_utils::enum_value(value)
+            }
+        }
+
         #remote_conversion
     };
     Ok(expanded.into())
