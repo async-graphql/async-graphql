@@ -16,6 +16,7 @@ readme = "README.md"
 default = []
 apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
+relay_persisted_queries = []
 unblock = ["blocking"]
 string_number = ["num-traits"]
 dataloader = ["futures-timer", "futures-channel", "lru"]

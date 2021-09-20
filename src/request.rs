@@ -18,6 +18,12 @@ pub struct Request {
     #[serde(default)]
     pub query: String,
 
+    /// The doc_id used for persisted queries in relay.
+    /// This field is not used by the async-graphql engine, but to be able to deserialize it and
+    /// use it inside extensions we need it there.
+    #[serde(default)]
+    pub doc_id: Option<String>,
+
     /// The operation name of the request.
     #[serde(default, rename = "operationName")]
     pub operation_name: Option<String>,
@@ -50,6 +56,7 @@ impl Request {
     pub fn new(query: impl Into<String>) -> Self {
         Self {
             query: query.into(),
+            doc_id: None,
             operation_name: None,
             variables: Variables::default(),
             uploads: Vec::default(),
