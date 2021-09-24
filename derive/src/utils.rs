@@ -225,7 +225,7 @@ pub fn generate_guards(
                             guards = guard;
                         } else {
                             guards =
-                                Some(quote! { #crate_name::guard::GuardExt::and(#guard, #guards) });
+                                Some(quote! { #crate_name::guard::GuardExt::and(#guards, #guard) });
                         }
                     }
                 }
@@ -245,7 +245,7 @@ pub fn generate_guards(
                             guards = guard;
                         } else {
                             guards =
-                                Some(quote! { #crate_name::guard::GuardExt::or(#guard, #guards) });
+                                Some(quote! { #crate_name::guard::GuardExt::or(#guards, #guard) });
                         }
                     }
                 }

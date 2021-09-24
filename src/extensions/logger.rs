@@ -68,12 +68,12 @@ impl Extension for LoggerExtension {
                         }
                     }
 
-                    log::error!(
+                    log::info!(
                         target: "async-graphql",
                         "[Error] path={} message={}", path, err.message,
                     );
                 } else {
-                    log::error!(
+                    log::info!(
                         target: "async-graphql",
                         "[Error] message={}", err.message,
                     );

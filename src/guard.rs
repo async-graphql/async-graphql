@@ -45,7 +45,9 @@ pub struct Or<A: Guard, B: Guard>(A, B);
 #[async_trait::async_trait]
 impl<A: Guard + Send + Sync, B: Guard + Send + Sync> Guard for Or<A, B> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        let second_result = self.1.check(ctx).await;
-        self.0.check(ctx).await.or(second_result)
+        if self.0.check(ctx).await.is_ok() {
+            return Ok(());
+        }
+        self.1.check(ctx).await
     }
 }
