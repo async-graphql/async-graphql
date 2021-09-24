@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.1] 2021-09-24
+
+- Add `DataLoader::enable_all_cache` and `DataLoader::enable_cache` methods. [#642](https://github.com/async-graphql/async-graphql/issues/642)
+- Change the execution order of `chain` and `race` guards. [#614](https://github.com/async-graphql/async-graphql/issues/614)
+- Change log level from `error` to `info`. [#518](https://github.com/async-graphql/async-graphql/issues/518)
+
 ## [2.10.0] 2021-09-17
 
 - Add support for `graphql-ws` pings. [#635](https://github.com/async-graphql/async-graphql/issues/635)
