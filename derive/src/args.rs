@@ -202,6 +202,8 @@ pub struct Object {
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
+    #[darling(multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
 }
 
 pub enum ComplexityType {
