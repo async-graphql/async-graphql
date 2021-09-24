@@ -1807,6 +1807,7 @@ SELECT name FROM user WHERE id = $1
 </span>use async_graphql::*;
 use async_graphql::dataloader::*;
 use itertools::Itertools;
+use std::sync::Arc;
 
 struct UserNameLoader {
     pool: sqlx::Pool&lt;Postgres&gt;,
@@ -1815,14 +1816,15 @@ struct UserNameLoader {
 #[async_trait::async_trait]
 impl Loader&lt;u64&gt; for UserNameLoader {
     type Value = String;
-    type Error = sqlx::Error;
-    
+    type Error = Arc&lt;sqlx::Error&gt;;
+
     async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
         let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
         let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
         Ok(sqlx::query_as(query)
             .fetch(&amp;self.pool)
             .map_ok(|name: String| name)
+            .map_err(Arc::new)
             .try_collect().await?)
     }
 }
@@ -1857,7 +1859,7 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 #[async_trait::async_trait]
 impl Loader&lt;UserId&gt; for PostgresLoader {
     type Value = User;
-    type Error = sqlx::Error;
+    type Error = Arc&lt;sqlx::Error&gt;;
 
     async fn load(&amp;self, keys: &amp;[UserId]) -&gt; Result&lt;HashMap&lt;UserId, Self::Value&gt;, Self::Error&gt; {
         // 从数据库中加载User
