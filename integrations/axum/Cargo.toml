@@ -15,7 +15,7 @@ categories = ["network-programming", "asynchronous"]
 async-graphql = { path = "../..", version = "=2.10.0" }
 
 async-trait = "0.1.51"
-axum = { version = "0.2.3", features = ["ws", "headers"] }
+axum = { version = "0.2.5", features = ["ws", "headers"] }
 bytes = "1.0.1"
 headers = "0.3.4"
 http = "0.2.4"
