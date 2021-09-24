@@ -109,6 +109,7 @@ cd examples && cargo run --bin [name]
 ## Who's using Async-graphql in production?
 
 - [Vector](https://vector.dev/)
+- [DiveDB](https://divedb.net)
 - [Kairos Sports tech](https://kairostech.io/)
 - [AxieInfinity](https://axieinfinity.com/)
 - [Nando's](https://www.nandos.co.uk/)
@@ -117,6 +118,15 @@ cd examples && cargo run --bin [name]
 - [Zenly](https://zen.ly/)
 - [Brevz](https://brevz.io/)
 - [thorndyke](https://www.thorndyke.ai/)
+
+## Community Showcase
+
+- [rust-actix-graphql-sqlx-postgresql](https://github.com/camsjams/rust-actix-graphql-sqlx-postgresql)
+  Using GraphQL with Rust and Apollo Federation
+- [entity-rs](https://github.com/chipsenkbeil/entity-rs) A simplistic framework based on TAO, Facebook's distributed database for Social Graph.
+- [vimwiki-server](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki-server) Provides graphql server to inspect and manipulate vimwiki files.
+- [Diana](https://github.com/arctic-hen7/diana) Diana is a GraphQL system for Rust that's designed to work as simply as possible out of the box, without sacrificing configuration ability.
+- [cindythink](https://www.cindythink.com/)
 
 ## Blog Posts
 
