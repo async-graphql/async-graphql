@@ -4,7 +4,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.11]
+## Unreleased
+
+- Add concrete names support for `Object` macro. [#633](https://github.com/async-graphql/async-graphql/issues/633)
+
+## [2.10.1] 2021-09-24
+
+- Add `DataLoader::enable_all_cache` and `DataLoader::enable_cache` methods. [#642](https://github.com/async-graphql/async-graphql/issues/642)
+- Change the execution order of `chain` and `race` guards. [#614](https://github.com/async-graphql/async-graphql/issues/614)
+- Change log level from `error` to `info`. [#518](https://github.com/async-graphql/async-graphql/issues/518)
+
+## [2.10.0] 2021-09-17
+
+- Add support for `graphql-ws` pings. [#635](https://github.com/async-graphql/async-graphql/issues/635)
+- Add feature gate `websocket` for async-graphql-tide. [#636](https://github.com/async-graphql/async-graphql/issues/636)
+- Implement GraphQL enum to `Value` conversion. [#617](https://github.com/async-graphql/async-graphql/issues/617)
+- Implement `ScalarType` for `HashMap`/`BTreeMap` to use `ToString`/`FromStr`. [#585](https://github.com/async-graphql/async-graphql/issues/585)
+
+## [2.9.15] 2021-09-10
+
+- Added Axum error handling. [#629](https://github.com/async-graphql/async-graphql/pull/629)
+- Bump bson from `2.0.0-beta.1` to `2.0.0`. [#628](https://github.com/async-graphql/async-graphql/pull/628)
+
+## [2.9.14] 2021-09-03
+
+- Add support for [serde_cbor](https://crates.io/crates/serde_cbor). [#619](https://github.com/async-graphql/async-graphql/pull/619)
+
+## [2.9.13] 2021-09-01
+
+- Released [`Axum`](https://github.com/tokio-rs/axum) integration. [`async-graphql-axum`](https://crates.io/crates/async-graphql-axum)
+
+## [2.9.12] 2021-08-24
+
+- Add integration for [`Poem`](https://github.com/poem-web/poem).
+- Ignore items flagged `@skip` in `SelectionField` and `Lookahead`. [#605](https://github.com/async-graphql/async-graphql/pull/605)
+
+## [2.9.11] 2021-08-22
 
 - Implement `From<MaybeUndefined<T>> for Option<Option<T>>`. [#599](https://github.com/async-graphql/async-graphql/issues/599)
 - Add human readable for serializer. [#604](https://github.com/async-graphql/async-graphql/pull/604)

@@ -602,3 +602,79 @@ pub async fn test_stream_drop() {
 
     assert!(*dropped.lock().unwrap());
 }
+
+#[tokio::test]
+pub async fn test_ping_pong() {
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct SubscriptionRoot;
+
+    #[Subscription]
+    impl SubscriptionRoot {
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(0..10)
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    for _ in 0..5 {
+        tx.send(
+            serde_json::to_string(&value!({
+                "type": "ping",
+            }))
+            .unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+                .unwrap(),
+            serde_json::json!({
+                "type": "pong",
+            }),
+        );
+    }
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "pong",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert!(
+        tokio::time::timeout(Duration::from_millis(100), stream.next())
+            .await
+            .is_err()
+    );
+}

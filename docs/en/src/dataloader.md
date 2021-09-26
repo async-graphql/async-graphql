@@ -69,6 +69,7 @@ The following is an example of using `DataLoader` to optimize queries::
 use async_graphql::*;
 use async_graphql::dataloader::*;
 use itertools::Itertools;
+use std::sync::Arc;
 
 struct UserNameLoader {
     pool: sqlx::Pool<Postgres>,
@@ -77,7 +78,7 @@ struct UserNameLoader {
 #[async_trait::async_trait]
 impl Loader<u64> for UserNameLoader {
     type Value = String;
-    type Error = sqlx::Error;
+    type Error = Arc<sqlx::Error>;
 
     async fn load(&self, keys: &[u64]) -> Result<HashMap<u64, Self::Value>, Self::Error> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
@@ -85,6 +86,7 @@ impl Loader<u64> for UserNameLoader {
         Ok(sqlx::query_as(query)
             .fetch(&self.pool)
             .map_ok(|name: String| name)
+            .map_err(Arc::new)
             .try_collect().await?)
     }
 }
@@ -122,7 +124,7 @@ struct PostgresLoader {
 #[async_trait::async_trait]
 impl Loader<UserId> for PostgresLoader {
     type Value = User;
-    type Error = sqlx::Error;
+    type Error = Arc<sqlx::Error>;
 
     async fn load(&self, keys: &[UserId]) -> Result<HashMap<UserId, Self::Value>, Self::Error> {
         // Load users from database

@@ -1,8 +1,7 @@
 use proc_macro::TokenStream;
-use proc_macro2::Span;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{Block, Error, Ident, ImplItem, ItemImpl, ReturnType};
+use syn::{Block, Error, ImplItem, ItemImpl, ReturnType};
 
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
@@ -18,15 +17,12 @@ pub fn generate(
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
-    let generics = &item_impl.generics;
-    let generics_params = &generics.params;
-    let where_clause = &item_impl.generics.where_clause;
+    let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
     let gql_typename = object_args
         .name
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
-    let shadow_type = Ident::new(&format!("__Shadow{}", gql_typename), Span::call_site());
 
     let desc = if object_args.use_type_description {
         quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
@@ -453,77 +449,177 @@ pub fn generate(
         quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
     };
 
-    let expanded = quote! {
-        #item_impl
+    let expanded = if object_args.concretes.is_empty() {
+        quote! {
+            #item_impl
 
-        #[allow(non_snake_case)]
-        type #shadow_type<#generics_params> = #self_ty;
+            #[allow(clippy::all, clippy::pedantic)]
+            impl #impl_generics #crate_name::Type for #self_ty #where_clause {
+                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #shadow_type<#generics_params> #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        cache_control: #cache_control,
+                        extends: #extends,
+                        keys: ::std::option::Option::None,
+                        visible: #visible,
+                    });
+                    #(#create_entity_types)*
+                    #(#add_keys)*
+                    ty
+                }
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
-                    description: #desc,
-                    fields: {
-                        let mut fields = #crate_name::indexmap::IndexMap::new();
-                        #(#schema_fields)*
-                        fields
-                    },
-                    cache_control: #cache_control,
-                    extends: #extends,
-                    keys: ::std::option::Option::None,
-                    visible: #visible,
-                });
-                #(#create_entity_types)*
-                #(#add_keys)*
-                ty
+            #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
+            #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
+            #[#crate_name::async_trait::async_trait]
+            impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
+                async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                    #(#resolvers)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
+
+                async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                    let params = match params {
+                        #crate_name::Value::Object(params) => params,
+                        _ => return ::std::result::Result::Ok(::std::option::Option::None),
+                    };
+                    let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                        typename
+                    } else {
+                        return ::std::result::Result::Err(
+                            #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
+                        );
+                    };
+                    #(#find_entities_iter)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
             }
+
+            #[allow(clippy::all, clippy::pedantic)]
+            #[#crate_name::async_trait::async_trait]
+            impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
+                async fn resolve(
+                    &self,
+                    ctx: &#crate_name::ContextSelectionSet<'_>,
+                    _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
+                ) -> #crate_name::ServerResult<#crate_name::Value> {
+                    #resolve_container
+                }
+            }
+
+            impl #impl_generics #crate_name::ObjectType for #self_ty #where_clause {}
+        }
+    } else {
+        let mut codes = Vec::new();
+
+        codes.push(quote! {
+            #item_impl
+
+            impl #impl_generics #self_ty #where_clause {
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
+                    let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                        name: ::std::borrow::ToOwned::to_owned(name),
+                        description: #desc,
+                        fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        cache_control: #cache_control,
+                        extends: #extends,
+                        keys: ::std::option::Option::None,
+                        visible: #visible,
+                    });
+                    #(#create_entity_types)*
+                    #(#add_keys)*
+                    ty
+                }
+
+                async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
+                    #(#resolvers)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
+
+                async fn __internal_find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                    let params = match params {
+                        #crate_name::Value::Object(params) => params,
+                        _ => return ::std::result::Result::Ok(::std::option::Option::None),
+                    };
+                    let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                        typename
+                    } else {
+                        return ::std::result::Result::Err(
+                            #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
+                        );
+                    };
+                    #(#find_entities_iter)*
+                    ::std::result::Result::Ok(::std::option::Option::None)
+                }
+            }
+        });
+
+        for concrete in &object_args.concretes {
+            let gql_typename = &concrete.name;
+            let params = &concrete.params.0;
+            let ty = {
+                let s = quote!(#self_ty).to_string();
+                match s.rfind('<') {
+                    Some(pos) => syn::parse_str(&s[..pos]).unwrap(),
+                    None => self_ty.clone(),
+                }
+            };
+            let concrete_type = quote! { #ty<#(#params),*> };
+
+            codes.push(quote! {
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #crate_name::Type for #concrete_type {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        ::std::borrow::Cow::Borrowed(#gql_typename)
+                    }
+
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        Self::__internal_create_type_info(registry, #gql_typename)
+                    }
+                }
+
+                #[#crate_name::async_trait::async_trait]
+                impl #crate_name::resolver_utils::ContainerType for #concrete_type {
+                    async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        self.__internal_resolve_field(ctx).await
+                    }
+
+                    async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        self.__internal_find_entity(ctx, params).await
+                    }
+                }
+
+                #[#crate_name::async_trait::async_trait]
+                impl #crate_name::OutputType for #concrete_type {
+                    async fn resolve(
+                        &self,
+                        ctx: &#crate_name::ContextSelectionSet<'_>,
+                        _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
+                    ) -> #crate_name::ServerResult<#crate_name::Value> {
+                        #resolve_container
+                    }
+                }
+
+                impl #crate_name::ObjectType for #concrete_type {}
+            });
         }
 
-        #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
-        #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
-        #[#crate_name::async_trait::async_trait]
-        impl#generics #crate_name::resolver_utils::ContainerType for #shadow_type<#generics_params> #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                #(#resolvers)*
-                ::std::result::Result::Ok(::std::option::Option::None)
-            }
-
-            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                let params = match params {
-                    #crate_name::Value::Object(params) => params,
-                    _ => return ::std::result::Result::Ok(::std::option::Option::None),
-                };
-                let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
-                    typename
-                } else {
-                    return ::std::result::Result::Err(
-                        #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
-                    );
-                };
-                #(#find_entities_iter)*
-                ::std::result::Result::Ok(::std::option::Option::None)
-            }
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #generics #crate_name::OutputType for #shadow_type<#generics_params> #where_clause {
-            async fn resolve(
-                &self,
-                ctx: &#crate_name::ContextSelectionSet<'_>,
-                _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
-            ) -> #crate_name::ServerResult<#crate_name::Value> {
-                #resolve_container
-            }
-        }
-
-        impl #generics #crate_name::ObjectType for #shadow_type<#generics_params> #where_clause {}
+        quote!(#(#codes)*)
     };
+
     Ok(expanded.into())
 }

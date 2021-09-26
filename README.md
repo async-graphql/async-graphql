@@ -34,7 +34,7 @@
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
-* Minimum supported Rust version: 1.51.0 or later
+* Minimum supported Rust version: 1.54.0 or later
 
 ## Safety
 
@@ -47,7 +47,7 @@ This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented in
 * Rustfmt friendly (Procedural Macro)
 * Custom scalars
 * Minimal overhead
-* Easy integration (actix_web, tide, warp, rocket ...)
+* Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 * Upload files (Multipart request)
 * Subscriptions (WebSocket transport)
 * Custom extensions
@@ -77,6 +77,7 @@ This crate offers the following features, all of which are not activated by defa
 - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
 - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+- `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 
 ## Apollo Studio
 
@@ -96,11 +97,36 @@ cd examples && cargo run --bin [name]
 
 ## Integrations
 
+* Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
 * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 * Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
+
+**About actix-web-v4**: The beta version is supported in the branch `actix-web-beta` [Related Issue](https://github.com/async-graphql/async-graphql/issues/590)
+
+## Who's using Async-graphql in production?
+
+- [Vector](https://vector.dev/)
+- [DiveDB](https://divedb.net)
+- [Kairos Sports tech](https://kairostech.io/)
+- [AxieInfinity](https://axieinfinity.com/)
+- [Nando's](https://www.nandos.co.uk/)
+- [Prima.it](https://www.prima.it/)
+- [VoxJar](https://voxjar.com/)
+- [Zenly](https://zen.ly/)
+- [Brevz](https://brevz.io/)
+- [thorndyke](https://www.thorndyke.ai/)
+
+## Community Showcase
+
+- [rust-actix-graphql-sqlx-postgresql](https://github.com/camsjams/rust-actix-graphql-sqlx-postgresql)
+  Using GraphQL with Rust and Apollo Federation
+- [entity-rs](https://github.com/chipsenkbeil/entity-rs) A simplistic framework based on TAO, Facebook's distributed database for Social Graph.
+- [vimwiki-server](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki-server) Provides graphql server to inspect and manipulate vimwiki files.
+- [Diana](https://github.com/arctic-hen7/diana) Diana is a GraphQL system for Rust that's designed to work as simply as possible out of the box, without sacrificing configuration ability.
+- [cindythink](https://www.cindythink.com/)
 
 ## Blog Posts
 

@@ -1,11 +1,13 @@
-use std::fmt::Display;
 use std::io::ErrorKind;
 
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::http::MultipartOptions;
 use async_graphql::ParseRequestError;
-use axum::extract::{BodyStream, FromRequest, RequestParts};
-use bytes::Buf;
+use axum::{
+    extract::{BodyStream, FromRequest, RequestParts},
+    BoxError,
+};
+use bytes::Bytes;
 use http::Method;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
@@ -25,13 +27,26 @@ pub mod rejection {
     use async_graphql::ParseRequestError;
     use axum::body::Body;
     use axum::response::IntoResponse;
+    use http::StatusCode;
 
     /// Rejection used for [`GraphQLRequest`](GraphQLRequest).
     pub struct GraphQLRejection(pub ParseRequestError);
 
     impl IntoResponse for GraphQLRejection {
+        type Body = axum::body::Body;
+        type BodyError = <Self::Body as axum::body::HttpBody>::Error;
+
         fn into_response(self) -> http::Response<Body> {
-            todo!()
+            match self.0 {
+                ParseRequestError::PayloadTooLarge => http::Response::builder()
+                    .status(StatusCode::PAYLOAD_TOO_LARGE)
+                    .body(Body::empty())
+                    .unwrap(),
+                bad_request => http::Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::from(format!("{:?}", bad_request)))
+                    .unwrap(),
+            }
         }
     }
 
@@ -46,8 +61,8 @@ pub mod rejection {
 impl<B> FromRequest<B> for GraphQLRequest
 where
     B: http_body::Body + Unpin + Send + Sync + 'static,
-    B::Data: Buf + Send,
-    B::Error: Display + Send,
+    B::Data: Into<Bytes>,
+    B::Error: Into<BoxError>,
 {
     type Rejection = rejection::GraphQLRejection;
 
@@ -76,13 +91,13 @@ impl GraphQLBatchRequest {
 impl<B> FromRequest<B> for GraphQLBatchRequest
 where
     B: http_body::Body + Unpin + Send + Sync + 'static,
-    B::Data: Buf + Send,
-    B::Error: Display + Send,
+    B::Data: Into<Bytes>,
+    B::Error: Into<BoxError>,
 {
     type Rejection = rejection::GraphQLRejection;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        if let (Some(&Method::GET), Some(uri)) = (req.method(), req.uri()) {
+        if let (&Method::GET, uri) = (req.method(), req.uri()) {
             let res = serde_urlencoded::from_str(uri.query().unwrap_or_default()).map_err(|err| {
                 ParseRequestError::Io(std::io::Error::new(
                     ErrorKind::Other,

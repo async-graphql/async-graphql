@@ -43,7 +43,7 @@
 //! * Rustfmt friendly (Procedural Macro)
 //! * Custom scalars
 //! * Minimal overhead
-//! * Easy integration (actix_web, tide, warp, rocket ...)
+//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
 //! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions
@@ -72,6 +72,7 @@
 //! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 //! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+//! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 //!
 //! ## Integrations
 //!
