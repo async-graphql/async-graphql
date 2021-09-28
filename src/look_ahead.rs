@@ -54,6 +54,20 @@ impl<'a> Lookahead<'a> {
     pub fn exists(&self) -> bool {
         !self.fields.is_empty()
     }
+
+    /// Get the `SelectionField`s for each of the fields covered by this `Lookahead`.
+    ///
+    /// There will be multiple fields in situations where the same field is queried twice.
+    pub fn selection_fields(&self) -> Vec<SelectionField<'a>> {
+        self.fields
+            .iter()
+            .map(|field| SelectionField {
+                fragments: self.fragments,
+                field,
+                context: self.context,
+            })
+            .collect()
+    }
 }
 
 impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
