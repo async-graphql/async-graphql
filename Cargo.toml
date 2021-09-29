@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.10.1"
+version = "2.10.2"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2018"
 description = "A GraphQL server library implemented in Rust"
@@ -24,9 +24,9 @@ decimal = ["rust_decimal"]
 cbor = ["serde_cbor"]
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "=2.10.1" }
-async-graphql-value = { path = "value", version = "=2.10.1" }
-async-graphql-parser = { path = "parser", version = "=2.10.1" }
+async-graphql-derive = { path = "derive", version = "2.10.2" }
+async-graphql-value = { path = "value", version = "2.10.2" }
+async-graphql-parser = { path = "parser", version = "2.10.2" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
