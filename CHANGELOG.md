@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Add concrete names support for `Object` macro. [#633](https://github.com/async-graphql/async-graphql/issues/633)
+- Add `Lookahead::selection_fields` method. [#643](https://github.com/async-graphql/async-graphql/pull/643)
 
 ## [2.10.1] 2021-09-24
 
