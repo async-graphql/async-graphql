@@ -25,12 +25,18 @@ Instead, the `#[derive(MergedObject)]` macro allows you to split an object's res
 **Note:** This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.
 
 ```rust
+#[derive(Default)]
+struct UserQuery;
+
 #[Object]
 impl UserQuery {
     async fn users(&self) -> Vec<User> {
         todo!()
     }
 }
+
+#[derive(Default)]
+struct MovieQuery;
 
 #[Object]
 impl MovieQuery {
