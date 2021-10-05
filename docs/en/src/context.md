@@ -40,6 +40,7 @@ An instance of how it would be written inside an application:
     .data(env_struct)
     .data(s3_storage)
     .data(db_core)
+    .finish();
 ```
 
 ### Request data
