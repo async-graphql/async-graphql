@@ -39,6 +39,7 @@ impl Query {
     .data(env_struct)
     .data(s3_storage)
     .data(db_core)
+    .finish();
 ```
 
 ### 请求数据
