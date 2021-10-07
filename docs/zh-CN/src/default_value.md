@@ -47,7 +47,7 @@ enum MyInterface {
 ```rust
 use async_graphql::*;
 
-#derive(InputObject)
+#[derive(InputObject)]
 struct MyInputObject {
     #[graphql(default)]
     value1: i32,
