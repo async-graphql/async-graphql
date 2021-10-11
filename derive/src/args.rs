@@ -304,6 +304,8 @@ pub struct UnionItem {
 
     #[darling(default)]
     pub flatten: bool,
+    #[darling(default)]
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromField)]
