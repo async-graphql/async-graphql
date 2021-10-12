@@ -1,7 +1,7 @@
 # Field Guard
 
-You can define `guard` to field of an `Object`. This permit to add checks before run the code logic of the field.
-`Guard` are made of rules that you need to define before. A rule is a structure which implement the trait `Guard`.
+You can define a `guard` to a field of an `Object`. This permits you to add checks before runing the code logic of the field.
+`Guard` are made of rules that you need to define before. A rule is a structure which implements the trait `Guard`.
 
 ```rust
 #[derive(Eq, PartialEq, Copy, Clone)]
@@ -27,15 +27,15 @@ impl Guard for RoleGuard {
 ```
 
 Once you have defined your rule you can use it in the `guard` field attribute.
-This attribute support 4 operators to create complex rules :
+This attribute supports 4 operators to create complex rules :
 
-- `and` : perform a `and` operation between two rules. (If one rule return an error the `and` operator will return the error. If both rules return a error it's the first one that will be returned).
+- `and` : perform an `and` operation between two rules. (If one rule returns an error the `and` operator will return the error. If both rules return an error it's the first one that will be returned).
 
-- `or` : perform a `or` operation between two rules. (If both rules return an error the error returned is the first one)
+- `or` : performs an `or` operation between two rules. (If both rules return an error the error returned is the first one)
 
-- `chain` : take a set of rules and run them until one return an error or return `Ok` if all rules pass.
+- `chain` : takes a set of rules and runs them until one returns an error or it returns `Ok` if all rules pass.
 
-- `race` : take a set of rules and run them until one return `Ok` if they all fail it return the last error.
+- `race` : takes a set of rules and runs them until one returns `Ok` if they all fail, it returns the last error.
 
 ```rust
 #[derive(SimpleObject)]
@@ -66,4 +66,3 @@ struct Query {
     value5: i32,
 }
 ```
-

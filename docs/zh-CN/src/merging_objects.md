@@ -25,12 +25,18 @@ impl MyObject {
 **提示:** 每个`#[Object]`需要一个唯一的名称，即使在一个`MergedObject`内，所以确保每个对象有单独的名称。
 
 ```rust
+#[derive(Default)]
+struct UserQuery;
+
 #[Object]
 impl UserQuery {
     async fn users(&self) -> Vec<User> {
         todo!()
     }
 }
+
+#[derive(Default)]
+struct MovieQuery;
 
 #[Object]
 impl MovieQuery {

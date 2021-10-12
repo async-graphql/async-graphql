@@ -1,6 +1,6 @@
 # SimpleObject
 
-`SimpleObject` directly maps all the fields of a struct to GraphQL object. 
+`SimpleObject` directly maps all the fields of a struct to GraphQL object.
 If you don't require automatic mapping of fields, see [Object](define_complex_object.html).
 
 The example below defines an object `MyObject` which includes the fields `a` and `b`. `c` will be not mapped to GraphQL as it is labelled as `#[graphql(skip)]`
@@ -26,7 +26,7 @@ struct MyObject {
 Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
 fields are calculated. In this case, the [Object](define_complex_object.html) macro cannot be used unless you hand-write all the resolvers.
 
-The `ComplexObject` macro works in conjuction with the `SimpleObject` macro. The `SipmleObject` derive macro defines
+The `ComplexObject` macro works in conjuction with the `SimpleObject` macro. The `SimpleObject` derive macro defines
 the non-calculated fields, where as the `ComplexObject` macro let's you write user-defined resolvers for the calculated fields.
 
 Resolvers added to `ComplexObject` adhere to the same rules as resolvers of [Object](define_complex_object.html).
@@ -42,7 +42,7 @@ struct MyObj {
 #[ComplexObject]
 impl MyObj {
     async fn c(&self) -> i32 {
-        self.a + self.b     
+        self.a + self.b
     }
 }
 ```

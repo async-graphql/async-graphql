@@ -35,16 +35,18 @@ impl Query {
 You can put data inside the context at the creation of the schema, it's usefull for data that do not change, like a connection pool.
 
 An instance of how it would be written inside an application:
+
 ```rust
   let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
     .data(env_struct)
     .data(s3_storage)
     .data(db_core)
+    .finish();
 ```
 
 ### Request data
 
-You can put data inside the context at the execution of the request, it's usefull for authentification data for instance.
+You can put data inside the context at the execution of the request, it's useful for authentication data for instance.
 
 A little example with a `warp` route:
 
@@ -63,11 +65,10 @@ let graphql_post = warp::post()
          .data(your_auth_data)
          .data(something_else)
       ).await;
-      
+
     Ok(async_graphql_warp::Response::from(response))
   });
 ```
-
 
 ## Headers
 
@@ -86,7 +87,7 @@ impl Query {
         // If multiple headers with the same key are `inserted` then the most recent
         // one overwrites the previous. If you want multiple headers for the same key, use
         // `append_http_header` for subsequent headers
-        let was_in_headers = ctx.insert_http_header("Custom-Header", "Hello World");
+        let was_in_headers = ctx.append_http_header("Custom-Header", "Hello World");
 
         String::from("Hello world")
     }

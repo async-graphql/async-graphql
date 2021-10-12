@@ -33,11 +33,13 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
+    let mut union_values = Vec::new();
     let mut get_introspection_typename = Vec::new();
     let mut collect_all_fields = Vec::new();
 
     for variant in s {
         let enum_name = &variant.ident;
+        let union_visible = visible_fn(&variant.visible);
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
             Style::Tuple => {
@@ -70,6 +72,15 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             }
 
             enum_names.push(enum_name);
+            union_values.push(quote! {
+                union_values.insert(
+                    <#p as #crate_name::Type>::type_name().into_owned(),
+                    #crate_name::registry::MetaUnionValue {
+                        name: <#p as #crate_name::Type>::type_name().into_owned(),
+                        visible: #union_visible,
+                    }
+                );
+            });
 
             struct RemoveLifetime;
             impl VisitMut for RemoveLifetime {
@@ -175,6 +186,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                             let mut possible_types = #crate_name::indexmap::IndexSet::new();
                             #(#possible_types)*
                             possible_types
+                        },
+                        union_values: {
+                            let mut union_values = #crate_name::indexmap::IndexMap::new();
+                            #(#union_values)*
+                            union_values
                         },
                         visible: #visible,
                     }

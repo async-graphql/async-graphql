@@ -1,12 +1,10 @@
 # Input value validators
 
-
-Arguments to a query ([InputObject](define_input_object.md)) are called `Input Objects` in GraphQL. If the provided input type does not match for a query, the query will return a type mismatch error. But sometimes we want to provide more restrictions on specific types of values. For example, we might want to require that an argument is a valid email address. `Async-graphql` provides an input validators to solve this problem.
+Arguments to a query ([InputObject](define_input_object.md)) are called `Input Objects` in GraphQL. If the provided input type does not match for a query, the query will return a type mismatch error. But, sometimes we want to provide more restrictions on specific types of values. For example, we might want to require that an argument is a valid email address. `Async-graphql` provides an input validators to solve this problem.
 
 An input validator can be combined via `and` and `or` operators.
 
 The following is an input validator which checks that a `String` is a valid Email or MAC address:
-
 
 ```rust
 use async_graphql::*;
