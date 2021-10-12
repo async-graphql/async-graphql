@@ -831,6 +831,8 @@ pub use async_graphql_derive::Interface;
 /// | Attribute    | description                              | Type     | Optional |
 /// |--------------|------------------------------------------|----------|----------|
 /// | flatten      | Similar to serde (flatten)               | boolean  | Y        |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Define a union
 ///

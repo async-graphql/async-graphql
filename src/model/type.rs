@@ -133,7 +133,7 @@ impl<'a> __Type<'a> {
         }
     }
 
-    async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
+    async fn possible_types(&self, ctx: &Context<'_>) -> Option<Vec<__Type<'a>>> {
         if let TypeDetail::Named(registry::MetaType::Interface { possible_types, .. }) =
             &self.detail
         {
@@ -143,13 +143,17 @@ impl<'a> __Type<'a> {
                     .map(|ty| __Type::new(self.registry, ty))
                     .collect(),
             )
-        } else if let TypeDetail::Named(registry::MetaType::Union { possible_types, .. }) =
+        } else if let TypeDetail::Named(registry::MetaType::Union { union_values, .. }) =
             &self.detail
         {
             Some(
-                possible_types
-                    .iter()
-                    .map(|ty| __Type::new(self.registry, ty))
+                union_values
+                    .values()
+                    .filter(|value| match &value.visible {
+                        Some(f) => f(ctx),
+                        None => true,
+                    })
+                    .map(|ty| __Type::new(self.registry, &ty.name))
                     .collect(),
             )
         } else {

@@ -174,6 +174,12 @@ pub struct MetaEnumValue {
     pub visible: Option<MetaVisibleFn>,
 }
 
+#[derive(Clone)]
+pub struct MetaUnionValue {
+    pub name: String,
+    pub visible: Option<MetaVisibleFn>,
+}
+
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
 
 #[derive(Clone)]
@@ -205,6 +211,7 @@ pub enum MetaType {
     Union {
         name: String,
         description: Option<&'static str>,
+        union_values: IndexMap<String, MetaUnionValue>,
         possible_types: IndexSet<String>,
         visible: Option<MetaVisibleFn>,
     },
@@ -461,6 +468,7 @@ impl Registry {
             MetaType::Union {
                 name: "_Entity".to_string(),
                 description: None,
+                union_values: Default::default(),
                 possible_types,
                 visible: None,
             },
