@@ -52,7 +52,7 @@ impl InputValueValidator for StringMaxLength {
     }
 }
 
-/// Chars minimum length validator. This supports multibyte character.
+/// Chars in string minimum length validator.
 pub struct CharsMinLength {
     /// Must be greater than or equal to this value.
     pub length: i32,
@@ -76,7 +76,7 @@ impl InputValueValidator for CharsMinLength {
     }
 }
 
-/// Chars maximum length validator. This supports multibyte characters.
+/// Chars in string maximum length validator.
 pub struct CharsMaxLength {
     /// Must be less than or equal to this value.
     pub length: i32,
