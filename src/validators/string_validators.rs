@@ -13,10 +13,10 @@ pub struct StringMinLength {
 impl InputValueValidator for StringMinLength {
     fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
-            if s.len() < self.length as usize {
+            if s.chars().count() < self.length as usize {
                 Err(format!(
                     "the value length is {}, must be greater than or equal to {}",
-                    s.len(),
+                    s.chars().count(),
                     self.length
                 ))
             } else {
@@ -37,10 +37,10 @@ pub struct StringMaxLength {
 impl InputValueValidator for StringMaxLength {
     fn is_valid(&self, value: &Value) -> Result<(), String> {
         if let Value::String(s) = value {
-            if s.len() > self.length as usize {
+            if s.chars().count() > self.length as usize {
                 Err(format!(
                     "the value length is {}, must be less than or equal to {}",
-                    s.len(),
+                    s.chars().count(),
                     self.length
                 ))
             } else {
