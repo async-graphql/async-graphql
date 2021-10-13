@@ -31,21 +31,18 @@ pub async fn test_input_validator_string_min_length() {
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let test_cases = [
         "abc",
-        "abcde",
+        "acbce",
         "abcdef",
         "abcdefghi",
         "abcdefghijkl",
         "abcdefghijklmnop",
-        "一二三四五",
-        "壹贰叁肆伍陆",
-        "一二三四五六七",
     ];
 
     let validator_length = 6;
     for case in &test_cases {
         let field_query = format!("{{fieldParameter(id: \"{}\")}}", case);
         let object_query = format!("{{inputObject(input: {{id: \"{}\"}})}}", case);
-        let case_length = case.chars().count();
+        let case_length = case.len();
 
         if case_length < validator_length {
             let should_fail_msg = format!(
@@ -150,21 +147,18 @@ pub async fn test_input_validator_string_max_length() {
     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
     let test_cases = [
         "abc",
-        "abcde",
+        "acbce",
         "abcdef",
         "abcdefghi",
         "abcdefghijkl",
         "abcdefghijklmnop",
-        "一二三四五",
-        "壹贰叁肆伍陆",
-        "一二三四五六七",
     ];
 
     let validator_length = 6;
     for case in &test_cases {
         let field_query = format!("{{fieldParameter(id: \"{}\")}}", case);
         let object_query = format!("{{inputObject(input: {{id: \"{}\"}})}}", case);
-        let case_length = case.chars().count();
+        let case_length = case.len();
 
         if case_length > validator_length {
             let should_fail_msg = format!(
