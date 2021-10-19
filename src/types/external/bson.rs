@@ -1,4 +1,5 @@
-use bson::oid::ObjectId;
+use bson::{oid::ObjectId, Bson, Document};
+
 #[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
 #[cfg(feature = "chrono")]
@@ -31,5 +32,27 @@ impl ScalarType for UtcDateTime {
 
     fn to_value(&self) -> Value {
         self.to_chrono().to_value()
+    }
+}
+
+#[Scalar(internal, name = "JSON")]
+impl ScalarType for Bson {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        bson::to_bson(&value).map_err(InputValueError::custom)
+    }
+
+    fn to_value(&self) -> Value {
+        bson::from_bson(self.clone()).unwrap_or_default()
+    }
+}
+
+#[Scalar(internal, name = "JSONObject")]
+impl ScalarType for Document {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        bson::to_document(&value).map_err(InputValueError::custom)
+    }
+
+    fn to_value(&self) -> Value {
+        bson::from_document(self.clone()).unwrap_or_default()
     }
 }
