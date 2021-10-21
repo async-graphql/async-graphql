@@ -303,7 +303,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
+                    ty: <<dyn #stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: ::std::default::Default::default(),
                     external: false,
@@ -364,7 +364,7 @@ pub fn generate(
                                 let ri = #crate_name::extensions::ResolveInfo {
                                     path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                     parent_type: #gql_typename,
-                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                    return_type: &<<dyn #stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
                                     name: field.node.name.node.as_str(),
                                     alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                 };
