@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.10.4] 2021-10-22
 
 - Implement `Default` for ID #659.
+- Implement `ScalarType` for `bson::Bson` and `bson::Document`. [#661](https://github.com/async-graphql/async-graphql/pull/661)
+- Add `CharsMinLength` and `CharsMaxLength` validators. [#656](https://github.com/async-graphql/async-graphql/pull/656)
 - Fix the `Subscription` macro to work on Rust 2021. [#665](https://github.com/async-graphql/async-graphql/pull/665)
 
 ## [2.10.3] 2021-10-12
