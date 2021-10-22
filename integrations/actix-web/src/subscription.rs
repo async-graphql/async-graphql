@@ -3,18 +3,19 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use actix::{
-    Actor, ActorContext, ActorFuture, ActorStream, AsyncContext, ContextFutureSpawner,
-    StreamHandler, WrapFuture, WrapStream,
+    Actor, ActorContext, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture, WrapStream,
 };
+use actix::{ActorFutureExt, ActorStreamExt};
 use actix_http::error::PayloadError;
-use actix_http::{ws, Error};
+use actix_http::ws;
 use actix_web::web::Bytes;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::future::Ready;
 use futures_util::stream::Stream;
+
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
+use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -41,7 +42,7 @@ where
         schema: Schema<Query, Mutation, Subscription>,
         request: &HttpRequest,
         stream: T,
-    ) -> Result<HttpResponse, Error>
+    ) -> Result<HttpResponse, actix_web::error::Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
     {
@@ -65,7 +66,7 @@ where
         request: &HttpRequest,
         stream: T,
         initializer: F,
-    ) -> Result<HttpResponse, Error>
+    ) -> Result<HttpResponse, actix_web::error::Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
         F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
@@ -190,7 +191,7 @@ where
                     Some(std::mem::take(&mut self.continuation))
                 }
             },
-            Message::Text(s) => Some(s.into_bytes()),
+            Message::Text(s) => Some(s.into_bytes().to_vec()),
             Message::Binary(bytes) => Some(bytes.to_vec()),
             Message::Close(_) => {
                 ctx.stop();
