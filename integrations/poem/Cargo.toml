@@ -2,7 +2,7 @@
 name = "async-graphql-poem"
 version = "2.10.4"
 authors = ["sunli <scott_s829@163.com>"]
-edition = "2018"
+edition = "2021"
 description = "async-graphql for poem"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql-poem/"

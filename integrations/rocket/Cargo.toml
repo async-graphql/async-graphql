@@ -2,7 +2,7 @@
 name = "async-graphql-rocket"
 version = "2.10.4"
 authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
-edition = "2018"
+edition = "2021"
 description = "async-graphql for Rocket.rs"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"

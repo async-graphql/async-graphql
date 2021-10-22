@@ -2,7 +2,7 @@
 name = "async-graphql-parser"
 version = "2.10.4"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
-edition = "2018"
+edition = "2021"
 description = "GraphQL query parser for async-graphql"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
