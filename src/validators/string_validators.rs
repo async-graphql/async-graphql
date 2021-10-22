@@ -52,6 +52,54 @@ impl InputValueValidator for StringMaxLength {
     }
 }
 
+/// Chars in string minimum length validator.
+pub struct CharsMinLength {
+    /// Must be greater than or equal to this value.
+    pub length: i32,
+}
+
+impl InputValueValidator for CharsMinLength {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        if let Value::String(s) = value {
+            if s.chars().count() < self.length as usize {
+                Err(format!(
+                    "the value chars count is {}, must be greater than or equal to {}",
+                    s.chars().count(),
+                    self.length
+                ))
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Chars in string maximum length validator.
+pub struct CharsMaxLength {
+    /// Must be less than or equal to this value.
+    pub length: i32,
+}
+
+impl InputValueValidator for CharsMaxLength {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        if let Value::String(s) = value {
+            if s.chars().count() > self.length as usize {
+                Err(format!(
+                    "the value chars count is {}, must be less than or equal to {}",
+                    s.chars().count(),
+                    self.length
+                ))
+            } else {
+                Ok(())
+            }
+        } else {
+            Ok(())
+        }
+    }
+}
+
 static EMAIL_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new("^(([0-9A-Za-z!#$%&'*+-/=?^_`{|}~&&[^@]]+)|(\"([0-9A-Za-z!#$%&'*+-/=?^_`{|}~ \"(),:;<>@\\[\\\\\\]]+)\"))@").unwrap()
 });

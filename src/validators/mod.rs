@@ -8,7 +8,9 @@ use crate::{Error, Value};
 
 pub use int_validators::{IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange};
 pub use list_validators::{List, ListMaxLength, ListMinLength};
-pub use string_validators::{Email, StringMaxLength, StringMinLength, MAC};
+pub use string_validators::{
+    CharsMaxLength, CharsMinLength, Email, StringMaxLength, StringMinLength, MAC,
+};
 
 /// Input value validator
 ///

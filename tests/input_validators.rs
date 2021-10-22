@@ -1,6 +1,7 @@
 use async_graphql::validators::{
-    Email, InputValueValidator, IntEqual, IntGreaterThan, IntLessThan, IntNonZero, IntRange,
-    ListMaxLength, ListMinLength, StringMaxLength, StringMinLength, MAC,
+    CharsMaxLength, CharsMinLength, Email, InputValueValidator, IntEqual, IntGreaterThan,
+    IntLessThan, IntNonZero, IntRange, ListMaxLength, ListMinLength, StringMaxLength,
+    StringMinLength, MAC,
 };
 use async_graphql::*;
 
@@ -224,6 +225,226 @@ pub async fn test_input_validator_string_max_length() {
                     .data,
                 value!({"inputObject": true}),
                 "Failed to validate {} with StringMaxLength",
+                case
+            );
+        }
+    }
+}
+
+#[tokio::test]
+pub async fn test_input_validator_chars_min_length() {
+    struct QueryRoot;
+
+    #[derive(InputObject)]
+    struct InputMaxLength {
+        #[graphql(validator(CharsMinLength(length = "6")))]
+        pub id: String,
+    }
+
+    #[Object]
+    impl QueryRoot {
+        async fn field_parameter(
+            &self,
+            #[graphql(validator(CharsMinLength(length = "6")))] _id: String,
+        ) -> bool {
+            true
+        }
+
+        async fn input_object(&self, _input: InputMaxLength) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let test_cases = ["一2三4五", "壹2叁4伍6", "一2三4五6七", "壹2叁4伍6Ⅶ8"];
+
+    let validator_length = 6;
+    for case in &test_cases {
+        let field_query = format!("{{fieldParameter(id: \"{}\")}}", case);
+        let object_query = format!("{{inputObject(input: {{id: \"{}\"}})}}", case);
+        let case_length = case.chars().count();
+
+        if case_length < validator_length {
+            let should_fail_msg = format!(
+                "CharsMinLength case {} should have failed, but did not",
+                case
+            );
+
+            let field_error_msg = format!(
+                "Invalid value for argument \"id\", the value chars count is {}, must be greater than or equal to {}",
+                case_length, validator_length
+            );
+            let object_error_msg = format!(
+                "Invalid value for argument \"input.id\", the value chars count is {}, must be greater than or equal to {}",
+                case_length, validator_length
+            );
+            assert_eq!(
+                schema
+                    .execute(&field_query)
+                    .await
+                    .into_result()
+                    .expect_err(&should_fail_msg),
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
+            );
+
+            assert_eq!(
+                schema
+                    .execute(&object_query)
+                    .await
+                    .into_result()
+                    .expect_err(&should_fail_msg[..]),
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
+            );
+        } else {
+            let error_msg = format!("Schema returned error with test_string = {}", case);
+            assert_eq!(
+                schema
+                    .execute(&field_query)
+                    .await
+                    .into_result()
+                    .expect(&error_msg[..])
+                    .data,
+                value!({"fieldParameter": true}),
+                "Failed to validate {} with CharsMinLength",
+                case
+            );
+
+            assert_eq!(
+                schema
+                    .execute(&object_query)
+                    .await
+                    .into_result()
+                    .expect(&error_msg[..])
+                    .data,
+                value!({"inputObject": true}),
+                "Failed to validate {} with CharsMinLength",
+                case
+            );
+        }
+    }
+}
+
+#[tokio::test]
+pub async fn test_input_validator_chars_max_length() {
+    struct QueryRoot;
+
+    #[derive(InputObject)]
+    struct InputMaxLength {
+        #[graphql(validator(CharsMaxLength(length = "6")))]
+        pub id: String,
+    }
+
+    #[Object]
+    impl QueryRoot {
+        async fn field_parameter(
+            &self,
+            #[graphql(validator(CharsMaxLength(length = "6")))] _id: String,
+        ) -> bool {
+            true
+        }
+
+        async fn input_object(&self, _input: InputMaxLength) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let test_cases = ["一2三4五", "壹2叁4伍6", "一2三4五6七", "壹2叁4伍6Ⅶ8"];
+
+    let validator_length = 6;
+    for case in &test_cases {
+        let field_query = format!("{{fieldParameter(id: \"{}\")}}", case);
+        let object_query = format!("{{inputObject(input: {{id: \"{}\"}})}}", case);
+        let case_length = case.chars().count();
+
+        if case_length > validator_length {
+            let should_fail_msg = format!(
+                "CharsMaxLength case {} should have failed, but did not",
+                case
+            );
+
+            let field_error_msg = format!(
+                "Invalid value for argument \"id\", the value chars count is {}, must be less than or equal to {}",
+                case_length,
+                validator_length
+            );
+            let object_error_msg = format!(
+                "Invalid value for argument \"input.id\", the value chars count is {}, must be less than or equal to {}",
+                case_length,
+                validator_length
+            );
+            assert_eq!(
+                schema
+                    .execute(&field_query)
+                    .await
+                    .into_result()
+                    .expect_err(&should_fail_msg[..]),
+                vec![ServerError {
+                    message: field_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 17
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
+            );
+
+            assert_eq!(
+                schema
+                    .execute(&object_query)
+                    .await
+                    .into_result()
+                    .expect_err(&should_fail_msg[..]),
+                vec![ServerError {
+                    message: object_error_msg,
+                    locations: vec!(Pos {
+                        line: 1,
+                        column: 14
+                    }),
+                    path: Vec::new(),
+                    extensions: None,
+                }]
+            );
+        } else {
+            let error_msg = format!("Schema returned error with test_string = {}", case);
+            assert_eq!(
+                schema
+                    .execute(&field_query)
+                    .await
+                    .into_result()
+                    .expect(&error_msg[..])
+                    .data,
+                value!({"fieldParameter": true}),
+                "Failed to validate {} with CharsMaxLength",
+                case
+            );
+
+            assert_eq!(
+                schema
+                    .execute(&object_query)
+                    .await
+                    .into_result()
+                    .expect(&error_msg[..])
+                    .data,
+                value!({"inputObject": true}),
+                "Failed to validate {} with CharsMaxLength",
                 case
             );
         }
