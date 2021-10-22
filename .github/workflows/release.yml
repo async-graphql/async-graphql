@@ -44,7 +44,7 @@ jobs:
             path: integrations/axum
           - name: async-graphql-rocket
             registryName: async-graphql-rocket
-            path: async-graphql-rocket
+            path: integrations/rocket
     steps:
       - uses: actions-rs/toolchain@v1
         with:
