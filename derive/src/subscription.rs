@@ -219,7 +219,7 @@ pub fn generate(
                 let mut r = None;
                 for b in bounds {
                     if let TypeParamBound::Trait(b) = b {
-                        r = Some(quote! { #b });
+                        r = Some(quote! { dyn #b });
                     }
                 }
                 quote! { #r }
