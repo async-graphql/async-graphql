@@ -11,9 +11,7 @@ mod variables;
 
 use std::borrow::{Borrow, Cow};
 use std::collections::BTreeMap;
-use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter, Write};
-use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
 
