@@ -4,13 +4,13 @@ When you are working on a GraphQL project, you usually have to explain and share
 be interpreted by your consumers. Sometimes, you event want to have the same data and the same logic exposing
 the data in another type.
 
-Within `async-graphql` you can create derivated fields for objects to generate derivated fields.
+Within `async-graphql` you can create derived fields for objects to generate derived fields.
 
 Consider you want to create a `Date` scalar, to represent an event of time.
 How will you represent and format this date? You could create a scalar `Date` where you specified it's the RFCXXX
 implemented to format it.
 
-With derivated fields there is a simple way to support multiple representation of a `Date` easily:
+With derived fields there is a simple way to support multiple representation of a `Date` easily:
 
 ```rust
 struct DateRFC3339(chrono::DateTime);
