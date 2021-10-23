@@ -9,7 +9,7 @@ use crate::GraphQLBatchRequest;
 /// # Example
 ///
 /// ```
-/// use poem::{route, RouteMethod};
+/// use poem::{Route, post};
 /// use async_graphql_poem::GraphQL;
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
 ///
@@ -25,7 +25,7 @@ use crate::GraphQLBatchRequest;
 /// type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 ///
 /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-/// let app = route().at("/", RouteMethod::new().post(GraphQL::new(schema)));
+/// let app = Route::new().at("/", post(GraphQL::new(schema)));
 /// ```
 pub struct GraphQL<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
