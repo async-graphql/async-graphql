@@ -12,7 +12,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// # Example
 ///
 /// ```
-/// use poem::{handler, RouteMethod, route, EndpointExt};
+/// use poem::{handler, Route, post, EndpointExt};
 /// use poem::web::{Json, Data};
 /// use poem::middleware::AddData;
 /// use async_graphql_poem::GraphQLRequest;
@@ -35,7 +35,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// }
 ///
 /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-/// let app = route().at("/", RouteMethod::new().post(index.with(AddData::new(schema))));
+/// let app = Route::new().at("/", post(index.with(AddData::new(schema))));
 /// ```
 pub struct GraphQLRequest(pub async_graphql::Request);
 
