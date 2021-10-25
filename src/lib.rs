@@ -515,6 +515,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | name          | Field name                | string   | Y        |
 /// | deprecation   | Field deprecated          | bool     | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | derived      | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                 | object        | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
@@ -523,6 +524,13 @@ pub use async_graphql_derive::SimpleObject;
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 /// | secret        | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
+///
+/// # Derived argument parameters
+///
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|------------ |----------|
+/// | name         | Generated derived field name             | string      | N        |
+/// | into         | Type to derived an into                  | string      | Y        |
 ///
 /// # Examples
 ///

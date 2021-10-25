@@ -1,7 +1,13 @@
 use proc_macro::TokenStream;
+use proc_macro2::Ident;
 use quote::quote;
+use std::iter::FromIterator;
+use std::str::FromStr;
 use syn::ext::IdentExt;
-use syn::{Block, Error, ImplItem, ItemImpl, ReturnType};
+use syn::{
+    punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Token, Type,
+    TypeReference,
+};
 
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
@@ -22,6 +28,86 @@ pub fn generate(
 
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
+
+    // Computation of the derivated fields
+    let mut derived_impls = vec![];
+    for item in &mut item_impl.items {
+        if let ImplItem::Method(method) = item {
+            let method_args: args::ObjectField =
+                parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
+
+            for derived in method_args.derived {
+                if derived.name.is_some() && derived.into.is_some() {
+                    let base_function_name = &method.sig.ident;
+                    let name = derived.name.unwrap();
+                    let into = Type::Verbatim(
+                        proc_macro2::TokenStream::from_str(&derived.into.unwrap()).unwrap(),
+                    );
+
+                    let mut new_impl = method.clone();
+                    new_impl.sig.ident = name;
+                    new_impl.sig.output =
+                        syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#into> })
+                            .expect("invalid result type");
+
+                    let should_create_context = new_impl
+                        .sig
+                        .inputs
+                        .iter()
+                        .nth(1)
+                        .map(|x| {
+                            if let FnArg::Typed(pat) = x {
+                                if let Type::Reference(TypeReference { elem, .. }) = &*pat.ty {
+                                    if let Type::Path(path) = elem.as_ref() {
+                                        return path.path.segments.last().unwrap().ident
+                                            != "Context";
+                                    }
+                                }
+                            };
+                            true
+                        })
+                        .unwrap_or(true);
+
+                    if should_create_context {
+                        let arg_ctx = syn::parse2::<FnArg>(quote! { ctx: &Context<'_> })
+                            .expect("invalid arg type");
+                        new_impl.sig.inputs.insert(1, arg_ctx);
+                    }
+
+                    let other_atts: Punctuated<Ident, Token![,]> = Punctuated::from_iter(
+                        new_impl
+                            .sig
+                            .inputs
+                            .iter()
+                            .filter_map(|x| match x {
+                                FnArg::Typed(pat) => match &*pat.pat {
+                                    Pat::Ident(ident) => Some(Ok(ident.ident.clone())),
+                                    _ => Some(Err(Error::new_spanned(
+                                        &pat,
+                                        "Must be a simple argument",
+                                    )
+                                    .into())),
+                                },
+                                FnArg::Receiver(_) => None,
+                            })
+                            .collect::<Result<Vec<Ident>, Error>>()?
+                            .into_iter(),
+                    );
+
+                    let new_block = quote!({
+                        {
+                            ::std::result::Result::Ok(#self_ty::#base_function_name(&self, #other_atts).await?.into())
+                        }
+                    });
+
+                    new_impl.block = syn::parse2::<Block>(new_block).expect("invalid block");
+
+                    derived_impls.push(ImplItem::Method(new_impl));
+                }
+            }
+        }
+    }
+    item_impl.items.append(&mut derived_impls);
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
