@@ -191,7 +191,7 @@ macro_rules! value_internal {
 
     ({ $($tt:tt)+ }) => {
         $crate::ConstValue::Object({
-            let mut object = std::collections::BTreeMap::new();
+            let mut object = $crate::indexmap::IndexMap::new();
             $crate::value_internal!(@object object () ($($tt)+) ($($tt)+));
             object
         })
@@ -227,7 +227,7 @@ macro_rules! value_expect_expr_comma {
 #[cfg(test)]
 mod tests {
     use crate::{ConstValue, Name};
-    use std::collections::BTreeMap;
+    use indexmap::IndexMap;
 
     #[test]
     fn test_macro() {
@@ -254,7 +254,7 @@ mod tests {
             )
         );
         assert_eq!(value!({"a": 10, "b": true}), {
-            let mut map = BTreeMap::new();
+            let mut map = IndexMap::new();
             map.insert(Name::new("a"), ConstValue::Number(10.into()));
             map.insert(Name::new("b"), ConstValue::Boolean(true));
             ConstValue::Object(map)

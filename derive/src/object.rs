@@ -100,8 +100,7 @@ pub fn generate(
                                     _ => Some(Err(Error::new_spanned(
                                         &pat,
                                         "Must be a simple argument",
-                                    )
-                                    .into())),
+                                    ))),
                                 },
                                 FnArg::Receiver(_) => None,
                             })

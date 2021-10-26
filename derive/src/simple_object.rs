@@ -53,7 +53,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     // Before processing the fields, we generate the derivated fields
     for field in &s.fields {
         processed_fields.push(SimpleObjectFieldGenerator {
-            field: &field,
+            field,
             derived: None,
         });
 
@@ -66,7 +66,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 let derived = DerivedFieldMetadata { ident: name, into };
 
                 processed_fields.push(SimpleObjectFieldGenerator {
-                    field: &field,
+                    field,
                     derived: Some(derived),
                 })
             }

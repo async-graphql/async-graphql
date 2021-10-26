@@ -375,7 +375,7 @@ pub fn generate(
                                 };
                                 #crate_name::futures_util::pin_mut!(resolve_fut);
                                 let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
-                                    let mut map = ::std::collections::BTreeMap::new();
+                                    let mut map = #crate_name::indexmap::IndexMap::new();
                                     map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
                                     #crate_name::Response::new(#crate_name::Value::Object(map))
                                 })

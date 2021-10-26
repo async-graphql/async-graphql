@@ -98,6 +98,7 @@ impl Response {
 }
 
 /// Response for batchable queries
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 pub enum BatchResponse {

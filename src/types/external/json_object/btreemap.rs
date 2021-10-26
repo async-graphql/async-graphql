@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
+use indexmap::IndexMap;
+
 use crate::{
     InputType, InputValueError, InputValueResult, Name, OutputType, Scalar, ScalarType, Value,
 };
@@ -33,7 +35,7 @@ where
     }
 
     fn to_value(&self) -> Value {
-        let mut map = BTreeMap::new();
+        let mut map = IndexMap::new();
         for (name, value) in self {
             map.insert(Name::new(name.to_string()), value.to_value());
         }
