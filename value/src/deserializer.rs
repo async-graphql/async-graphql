@@ -1,5 +1,6 @@
-use std::collections::BTreeMap;
 use std::{fmt, vec};
+
+use indexmap::IndexMap;
 
 use crate::{ConstValue, Name};
 
@@ -78,7 +79,7 @@ where
 }
 
 fn visit_object<'de, V>(
-    object: BTreeMap<Name, ConstValue>,
+    object: IndexMap<Name, ConstValue>,
     visitor: V,
 ) -> Result<V::Value, DeserializerError>
 where
@@ -365,13 +366,13 @@ impl<'de> SeqAccess<'de> for SeqDeserializer {
 }
 
 struct MapDeserializer {
-    iter: <BTreeMap<Name, ConstValue> as IntoIterator>::IntoIter,
+    iter: <IndexMap<Name, ConstValue> as IntoIterator>::IntoIter,
     value: Option<ConstValue>,
 }
 
 impl MapDeserializer {
     #[inline]
-    fn new(map: BTreeMap<Name, ConstValue>) -> Self {
+    fn new(map: IndexMap<Name, ConstValue>) -> Self {
         MapDeserializer {
             iter: map.into_iter(),
             value: None,
