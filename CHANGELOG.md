@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [2.10.6] 2021-10-26
 
 - Add derived for object & simple object & complex object. [#667](https://github.com/async-graphql/async-graphql/pull/667) [#670](https://github.com/async-graphql/async-graphql/pull/670)
 - Respect query object field order. [#612](https://github.com/async-graphql/async-graphql/issues/612)
