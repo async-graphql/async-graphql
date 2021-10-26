@@ -143,6 +143,8 @@ pub struct SimpleObjectField {
     pub guard: Option<Meta>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default, multiple)]
+    pub derived: Vec<DerivedField>,
 }
 
 #[derive(FromDeriveInput)]

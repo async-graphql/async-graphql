@@ -1,13 +1,24 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
+use std::str::FromStr;
 use syn::ext::IdentExt;
-use syn::Error;
+use syn::{Error, Ident, Type};
 
-use crate::args::{self, RenameRuleExt, RenameTarget};
+use crate::args::{self, RenameRuleExt, RenameTarget, SimpleObjectField};
 use crate::utils::{
     gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
 };
+
+struct DerivedFieldMetadata {
+    ident: Ident,
+    into: Type,
+}
+
+struct SimpleObjectFieldGenerator<'a> {
+    field: &'a SimpleObjectField,
+    derived: Option<DerivedFieldMetadata>,
+}
 
 pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -37,13 +48,46 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
 
+    let mut processed_fields: Vec<SimpleObjectFieldGenerator> = vec![];
+
+    // Before processing the fields, we generate the derivated fields
     for field in &s.fields {
+        processed_fields.push(SimpleObjectFieldGenerator {
+            field: &field,
+            derived: None,
+        });
+
+        for derived in &field.derived {
+            if derived.name.is_some() && derived.into.is_some() {
+                let name = derived.name.clone().unwrap();
+                let into = Type::Verbatim(
+                    proc_macro2::TokenStream::from_str(&derived.into.clone().unwrap()).unwrap(),
+                );
+                let derived = DerivedFieldMetadata { ident: name, into };
+
+                processed_fields.push(SimpleObjectFieldGenerator {
+                    field: &field,
+                    derived: Some(derived),
+                })
+            }
+        }
+    }
+
+    for SimpleObjectFieldGenerator { field, derived } in &processed_fields {
         if field.skip {
             continue;
         }
-        let ident = match &field.ident {
+
+        let base_ident = match &field.ident {
             Some(ident) => ident,
             None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
+        };
+
+        let is_derived = derived.is_some();
+        let ident = if let Some(derived) = derived {
+            &derived.ident
+        } else {
+            base_ident
         };
 
         let field_name = field.name.clone().unwrap_or_else(|| {
@@ -65,7 +109,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             None => quote! { ::std::option::Option::None },
         };
         let vis = &field.vis;
-        let ty = &field.ty;
+        let ty = if let Some(derived) = derived {
+            &derived.into
+        } else {
+            &field.ty
+        };
 
         let cache_control = {
             let public = field.cache_control.is_public();
@@ -104,23 +152,38 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             |guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?; },
         );
 
-        getters.push(if !field.owned {
+        let mut block = match !field.owned {
+            true => quote! {
+                &self.#base_ident
+            },
+            false => quote! {
+                ::std::clone::Clone::clone(&self.#base_ident)
+            },
+        };
+
+        block = match is_derived {
+            false => quote! {
+                #block
+            },
+            true => quote! {
+                ::std::convert::Into::into(#block)
+            },
+        };
+
+        let ty = match !field.owned {
+            true => quote! { &#ty },
+            false => quote! { #ty },
+        };
+
+        getters.push(
             quote! {
                  #[inline]
                  #[allow(missing_docs)]
-                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<&#ty> {
-                     ::std::result::Result::Ok(&self.#ident)
+                 #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
+                     ::std::result::Result::Ok(#block)
                  }
             }
-        } else {
-            quote! {
-                #[inline]
-                #[allow(missing_docs)]
-                #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
-                    ::std::result::Result::Ok(::std::clone::Clone::clone(&self.#ident))
-                }
-            }
-        });
+        );
 
         resolvers.push(quote! {
             if ctx.item.node.name.node == #field_name {
