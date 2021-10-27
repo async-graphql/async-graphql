@@ -7,12 +7,27 @@ use syn::{Error, Ident, Type};
 
 use crate::args::{self, RenameRuleExt, RenameTarget, SimpleObjectField};
 use crate::utils::{
-    gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+    derive_type_coercion, gen_deprecation, generate_guards, get_crate_name, get_rustdoc,
+    visible_fn, DerivedIntoCoercion, GeneratorResult,
 };
 
+#[derive(Debug)]
 struct DerivedFieldMetadata {
     ident: Ident,
     into: Type,
+    owned: Option<bool>,
+    // The into argument for a derive field won't be able to transform everythings:
+    // Without the specialization from Rust, we can't implement things like From between Vec<T> ->
+    // Vec<U> or Option<T> -> Option<U>.
+    // But there are cases which you want to have this coercion derived, so to have it working
+    // until the specialization feature comes, we manually check coercion for the most usual cases
+    // which are:
+    //
+    // - Vec<T> -> Vec<U>
+    // - Option<T> -> Option<U>
+    // - Option<Vec<T>> -> Option<Vec<U>>
+    // - Vec<Option<T>> -> Vec<Option<U>>
+    coercion: DerivedIntoCoercion,
 }
 
 struct SimpleObjectFieldGenerator<'a> {
@@ -60,10 +75,30 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         for derived in &field.derived {
             if derived.name.is_some() && derived.into.is_some() {
                 let name = derived.name.clone().unwrap();
-                let into = Type::Verbatim(
+                let into = match syn::parse2::<Type>(
                     proc_macro2::TokenStream::from_str(&derived.into.clone().unwrap()).unwrap(),
-                );
-                let derived = DerivedFieldMetadata { ident: name, into };
+                ) {
+                    Ok(e) => e,
+                    _ => {
+                        return Err(Error::new_spanned(
+                            &name,
+                            "derived into must be a valid type.",
+                        )
+                        .into());
+                    }
+                };
+
+                let ty = &field.ty;
+
+                let derived_type = quote! { #into }.to_string();
+                let base_type = quote! { #ty }.to_string();
+
+                let derived = DerivedFieldMetadata {
+                    ident: name,
+                    into,
+                    owned: derived.owned,
+                    coercion: derive_type_coercion(&base_type, &derived_type),
+                };
 
                 processed_fields.push(SimpleObjectFieldGenerator {
                     field,
@@ -83,7 +118,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
         };
 
-        let is_derived = derived.is_some();
         let ident = if let Some(derived) = derived {
             &derived.ident
         } else {
@@ -109,10 +143,22 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             None => quote! { ::std::option::Option::None },
         };
         let vis = &field.vis;
+        let derived_coercion = if let Some(derived) = derived {
+            Some(&derived.coercion)
+        } else {
+            None
+        };
+
         let ty = if let Some(derived) = derived {
             &derived.into
         } else {
             &field.ty
+        };
+
+        let owned = if let Some(derived) = derived {
+            derived.owned.unwrap_or(field.owned)
+        } else {
+            field.owned
         };
 
         let cache_control = {
@@ -152,7 +198,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             |guard| quote! { #guard.check(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?; },
         );
 
-        let mut block = match !field.owned {
+        let mut block = match !owned {
             true => quote! {
                 &self.#base_ident
             },
@@ -161,16 +207,45 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             },
         };
 
-        block = match is_derived {
-            false => quote! {
-                #block
-            },
-            true => quote! {
+        // If the field is derived, it means it has a derived_coercion, depending on the coercion
+        // we have to implement several way to coerce it.
+        block = match derived_coercion {
+            Some(DerivedIntoCoercion::Unknown) => quote! {
                 ::std::convert::Into::into(#block)
+            },
+            Some(DerivedIntoCoercion::OptionToOption) => quote! {
+                ::std::option::Option::and_then(#block, |value| ::std::option::Option::Some(::std::convert::Into::into(value)))
+            },
+            Some(DerivedIntoCoercion::VecToVec) => quote! {
+                {
+                    let mut result = vec![];
+                    ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))));
+                    result
+                }
+            },
+            Some(DerivedIntoCoercion::OptionVecToOptionVec) => quote! {
+                    ::std::option::Option::and_then(#block, |value| ::std::option::Option::Some({
+                        let mut result = vec![];
+                        ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(value), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))));
+                        result
+                    }))
+            },
+            Some(DerivedIntoCoercion::VecOptionToVecOption) => quote! {
+                {
+                    let mut result = vec![];
+                    ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::option::Option::and_then(x, |value| ::std::option::Option::Some(
+                        ::std::convert::Into::into(value)
+                    ))));
+                    result
+                }
+            },
+            // If the field is not derived, we follow the normal process.
+            _ => quote! {
+                #block
             },
         };
 
-        let ty = match !field.owned {
+        let ty = match !owned {
             true => quote! { &#ty },
             false => quote! { #ty },
         };

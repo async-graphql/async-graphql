@@ -59,3 +59,47 @@ type Query {
 	duration_rfc3339(arg: String): DateRFC3339!
 }
 ```
+
+## Wrapper types
+
+A derived field won't be able to manage everythings easily: without the specialization from the Rust language, you won't be able to implement specialized trait like:
+```
+impl From<Vec<U>> for Vec<T> {
+  ...
+}
+```
+
+So you wouldn't be able to generate derived fields for existing wrapper type structures like `Vec` or `Option`. But when you implement a `From<U> for T` you should be able to derived a `From<Vec<U>> for Vec<T>` and a `From<Option<U>> for Option<T>`, so a coercion mecanism has been included so you'll be able to use the derived macro argument with `Vec` and `Option`.
+
+This coercion mecanism impose these derived to be `owned`.
+
+### Example
+
+```rust
+#[derive(Serialize, Deserialize, Clone)]
+struct ValueDerived(String);
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ValueDerived2(String);
+
+scalar!(ValueDerived);
+scalar!(ValueDerived2);
+
+impl From<ValueDerived> for ValueDerived2 {
+    fn from(value: ValueDerived) -> Self {
+        ValueDerived2(value.0)
+    }
+}
+
+#[derive(SimpleObject)]
+struct TestObj {
+    #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>"))]
+    pub value1: Option<ValueDerived>,
+    #[graphql(derived(owned, name = "value_vec_2", into = "Vec<ValueDerived2>"))]
+    pub value_vec_1: Vec<ValueDerived>,
+    #[graphql(derived(owned, name = "value_opt_vec_2", into = "Option<Vec<ValueDerived2>>"))]
+    pub value_opt_vec_1: Option<Vec<ValueDerived>>,
+    #[graphql(derived(owned, name = "value_vec_opt_2", into = "Vec<Option<ValueDerived2>>"))]
+    pub value_vec_opt_1: Vec<Option<ValueDerived>>,
+}
+```

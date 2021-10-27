@@ -103,6 +103,68 @@ pub async fn test_derived_field_simple_object() {
 }
 
 #[tokio::test]
+pub async fn test_derived_field_simple_object_option() {
+    use serde::{Deserialize, Serialize};
+
+    struct Query;
+
+    #[derive(Serialize, Deserialize, Clone)]
+    struct ValueDerived(String);
+
+    #[derive(Serialize, Deserialize, Clone)]
+    struct ValueDerived2(String);
+
+    scalar!(ValueDerived);
+    scalar!(ValueDerived2);
+
+    impl From<ValueDerived> for ValueDerived2 {
+        fn from(value: ValueDerived) -> Self {
+            ValueDerived2(value.0)
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct TestObj {
+        #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>"))]
+        pub value1: Option<ValueDerived>,
+        #[graphql(derived(owned, name = "value_vec_2", into = "Vec<ValueDerived2>"))]
+        pub value_vec_1: Vec<ValueDerived>,
+        #[graphql(derived(owned, name = "value_opt_vec_2", into = "Option<Vec<ValueDerived2>>"))]
+        pub value_opt_vec_1: Option<Vec<ValueDerived>>,
+        #[graphql(derived(owned, name = "value_vec_opt_2", into = "Vec<Option<ValueDerived2>>"))]
+        pub value_vec_opt_1: Vec<Option<ValueDerived>>,
+    }
+
+    #[Object]
+    impl Query {
+        async fn test(&self) -> TestObj {
+            TestObj {
+                value1: Some(ValueDerived("Test".to_string())),
+                value_vec_1: vec![ValueDerived("Test".to_string())],
+                value_opt_vec_1: Some(vec![ValueDerived("Test".to_string())]),
+                value_vec_opt_1: vec![Some(ValueDerived("Test".to_string()))],
+            }
+        }
+    }
+
+    let query = "{ test { value1 value2 valueVec1 valueVec2 valueOptVec1 valueOptVec2} }";
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "test": {
+                "value1": "Test",
+                "value2": "Test",
+                "valueVec1": vec!["Test"],
+                "valueVec2": vec!["Test"],
+                "valueOptVec1": vec!["Test"],
+                "valueOptVec2": vec!["Test"],
+            }
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_derived_field_complex_object() {
     use serde::{Deserialize, Serialize};
 

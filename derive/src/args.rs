@@ -255,6 +255,8 @@ pub struct ObjectField {
 pub struct DerivedField {
     pub name: Option<Ident>,
     pub into: Option<String>,
+    #[darling(default)]
+    pub owned: Option<bool>,
 }
 
 #[derive(FromDeriveInput)]

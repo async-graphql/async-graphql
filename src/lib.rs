@@ -467,6 +467,8 @@ pub use async_graphql_derive::Object;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | into         | Type to derived an into                  | string      | Y        |
+/// | owned        | Field resolver return a ownedship value  | bool        | Y        |
 ///
 ///
 /// # Examples
