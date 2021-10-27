@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-tide"
-version = "2.10.7"
+version = "2.10.8"
 authors = ["vkill <vkill.net@gmail.com>"]
 edition = "2018"
 description = "async-graphql for tide"
@@ -16,7 +16,7 @@ default = ["websocket"]
 websocket = ["tide-websockets"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "=2.10.7" }
+async-graphql = { path = "../..", version = "2.10.8" }
 async-trait = "0.1.48"
 futures-util = "0.3.13"
 serde_json = "1.0.64"
