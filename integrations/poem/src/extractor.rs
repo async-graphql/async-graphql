@@ -64,7 +64,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
 
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
-            let req = Query::from_request(req, body).await.map_err(BadRequest)?.0;
+            let req = Query::from_request(req, body).await?.0;
             Ok(Self(async_graphql::BatchRequest::Single(req)))
         } else {
             let content_type = req
@@ -78,8 +78,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
                     body.take()?.into_async_read().compat(),
                     MultipartOptions::default(),
                 )
-                .await
-                .map_err(BadRequest)?,
+                .await?,
             ))
         }
     }
