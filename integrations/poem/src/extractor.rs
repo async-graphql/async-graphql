@@ -1,4 +1,5 @@
 use async_graphql::http::MultipartOptions;
+use poem::error::BadRequest;
 use poem::http::{header, Method};
 use poem::web::Query;
 use poem::{async_trait, Error, FromRequest, Request, RequestBody, Result};
@@ -49,7 +50,7 @@ impl<'a> FromRequest<'a> for GraphQLRequest {
                 .await?
                 .0
                 .into_single()
-                .map_err(Error::bad_request)?,
+                .map_err(BadRequest)?,
         ))
     }
 }
@@ -63,10 +64,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
 
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
-            let req = Query::from_request(req, body)
-                .await
-                .map_err(Error::bad_request)?
-                .0;
+            let req = Query::from_request(req, body).await.map_err(BadRequest)?.0;
             Ok(Self(async_graphql::BatchRequest::Single(req)))
         } else {
             let content_type = req
@@ -81,7 +79,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
                     MultipartOptions::default(),
                 )
                 .await
-                .map_err(Error::bad_request)?,
+                .map_err(BadRequest)?,
             ))
         }
     }
