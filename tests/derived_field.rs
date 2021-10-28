@@ -366,7 +366,6 @@ pub async fn test_derived_field_complex_object_derived() {
 
     let query = "{ obj { a b c d(v:100) e(v: 200) f } }";
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-    dbg!(schema.execute(query).await);
     assert_eq!(
         schema.execute(query).await.data,
         value!({
