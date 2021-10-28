@@ -68,6 +68,9 @@ pub trait ScalarType: Sized + Send {
 /// // Rename to `MV` and add description.
 /// // scalar!(MyValue, "MV", "This is my value");
 ///
+/// // Rename to `MV`, add description and specifiedByURL.
+/// // scalar!(MyValue, "MV", "This is my value", "https://tools.ietf.org/html/rfc4122");
+///
 /// struct Query;
 ///
 /// #[Object]
@@ -92,23 +95,47 @@ pub trait ScalarType: Sized + Send {
 /// ```
 #[macro_export]
 macro_rules! scalar {
+    ($ty:ty, $name:literal, $desc:literal, $specified_by_url:literal) => {
+        $crate::scalar_internal!(
+            $ty,
+            $name,
+            ::std::option::Option::Some($desc),
+            ::std::option::Option::Some($specified_by_url)
+        );
+    };
+
     ($ty:ty, $name:literal, $desc:literal) => {
-        $crate::scalar_internal!($ty, $name, ::std::option::Option::Some($desc));
+        $crate::scalar_internal!(
+            $ty,
+            $name,
+            ::std::option::Option::Some($desc),
+            ::std::option::Option::None
+        );
     };
 
     ($ty:ty, $name:literal) => {
-        $crate::scalar_internal!($ty, $name, ::std::option::Option::None);
+        $crate::scalar_internal!(
+            $ty,
+            $name,
+            ::std::option::Option::None,
+            ::std::option::Option::None
+        );
     };
 
     ($ty:ty) => {
-        $crate::scalar_internal!($ty, ::std::stringify!($ty), ::std::option::Option::None);
+        $crate::scalar_internal!(
+            $ty,
+            ::std::stringify!($ty),
+            ::std::option::Option::None,
+            ::std::option::Option::None
+        );
     };
 }
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! scalar_internal {
-    ($ty:ty, $name:expr, $desc:expr) => {
+    ($ty:ty, $name:expr, $desc:expr, $specified_by_url:expr) => {
         impl $crate::Type for $ty {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
@@ -122,6 +149,7 @@ macro_rules! scalar_internal {
                     description: $desc,
                     is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
                     visible: ::std::option::Option::None,
+                    specified_by_url: $specified_by_url,
                 })
             }
         }

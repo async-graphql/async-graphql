@@ -111,6 +111,7 @@ impl Type for Upload {
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
             visible: None,
+            specified_by_url: None,
         })
     }
 }

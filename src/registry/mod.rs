@@ -189,6 +189,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         is_valid: fn(value: &Value) -> bool,
         visible: Option<MetaVisibleFn>,
+        specified_by_url: Option<&'static str>,
     },
     Object {
         name: String,

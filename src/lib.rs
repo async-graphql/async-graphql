@@ -987,6 +987,7 @@ pub use async_graphql_derive::Subscription;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Scalar name               | string   | Y        |
+/// | specified_by_url | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 pub use async_graphql_derive::Scalar;
 
@@ -1000,8 +1001,9 @@ pub use async_graphql_derive::Scalar;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | string   | Y      |
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | bool   | Y        |
-/// | visible(Only valid for new scalars.)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-/// | visible(Only valid for new scalars.)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | visible(Only valid for new scalars)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible(Only valid for new scalars)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | specified_by_url(Only valid for new scalars) | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 /// # Examples
 ///

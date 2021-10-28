@@ -85,6 +85,7 @@ impl<T> Type for OutputJson<T> {
             description: None,
             is_valid: |_| true,
             visible: None,
+            specified_by_url: None,
         })
     }
 }
