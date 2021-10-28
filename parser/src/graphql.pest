@@ -10,7 +10,7 @@ executable_definition = { operation_definition | fragment_definition }
 operation_definition       = { named_operation_definition | selection_set }
 named_operation_definition = { operation_type ~ name? ~ variable_definitions? ~ directives? ~ selection_set }
 variable_definitions       = { "(" ~ variable_definition* ~ ")" }
-variable_definition        = { variable ~ ":" ~ type_ ~ default_value? }
+variable_definition        = { variable ~ ":" ~ type_ ~ directives? ~ default_value? }
 
 selection_set = { "{" ~ selection+ ~ "}" }
 selection = { field | inline_fragment | fragment_spread }
@@ -86,6 +86,7 @@ directive_location = {
 	| "FRAGMENT_DEFINITION"
 	| "FRAGMENT_SPREAD"
 	| "INLINE_FRAGMENT"
+	| "VARIABLE_DEFINITION"
 	| "SCHEMA"
 	| "SCALAR"
 	| "OBJECT"

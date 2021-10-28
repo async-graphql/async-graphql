@@ -4,7 +4,7 @@
 //! [`ServiceDocument`](struct.ServiceDocument.html), representing an executable GraphQL query and a
 //! GraphQL service respectively.
 //!
-//! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/June2018/).
+//! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/October2021/).
 
 mod executable;
 mod service;
@@ -19,7 +19,7 @@ pub use service::*;
 
 /// The type of an operation; `query`, `mutation` or `subscription`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#OperationType).
+/// [Reference](https://spec.graphql.org/October2021/#OperationType).
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperationType {
     /// A query.
@@ -42,7 +42,7 @@ impl Display for OperationType {
 
 /// A GraphQL type, for example `String` or `[String!]!`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Type).
+/// [Reference](https://spec.graphql.org/October2021/#Type).
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Type {
     /// The base type.
@@ -105,7 +105,7 @@ impl Display for BaseType {
 /// from [`Directive`](struct.Directive.html) in that it uses [`ConstValue`](enum.ConstValue.html)
 /// instead of [`Value`](enum.Value.html).
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Directive).
+/// [Reference](https://spec.graphql.org/October2021/#Directive).
 #[derive(Debug, Clone)]
 pub struct ConstDirective {
     /// The name of the directive.
@@ -140,7 +140,7 @@ impl ConstDirective {
 
 /// A GraphQL directive, such as `@deprecated(reason: "Use the other field")`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Directive).
+/// [Reference](https://spec.graphql.org/October2021/#Directive).
 #[derive(Debug, Clone)]
 pub struct Directive {
     /// The name of the directive.
