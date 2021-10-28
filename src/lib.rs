@@ -295,6 +295,7 @@ pub type FieldResult<T> = Result<T>;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Valid field return types
 ///
@@ -467,8 +468,8 @@ pub use async_graphql_derive::Object;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
-/// | into         | Type to derived an into                  | string      | Y        |
 /// | owned        | Field resolver return a ownedship value  | bool        | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 ///
 /// # Examples
@@ -533,6 +534,7 @@ pub use async_graphql_derive::SimpleObject;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Examples
 ///

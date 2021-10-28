@@ -69,9 +69,9 @@ impl From<Vec<U>> for Vec<T> {
 }
 ```
 
-So you wouldn't be able to generate derived fields for existing wrapper type structures like `Vec` or `Option`. But when you implement a `From<U> for T` you should be able to derived a `From<Vec<U>> for Vec<T>` and a `From<Option<U>> for Option<T>`, so a coercion mecanism has been included so you'll be able to use the derived macro argument with `Vec` and `Option`.
+So you wouldn't be able to generate derived fields for existing wrapper type structures like `Vec` or `Option`. But when you implement a `From<U> for T` you should be able to derived a `From<Vec<U>> for Vec<T>` and a `From<Option<U>> for Option<T>`.
+We included a `with` parameter to help you define a function to call instead of using the `Into` trait implementation between wrapper structures.
 
-This coercion mecanism impose these derived to be `owned`.
 
 ### Example
 
@@ -91,15 +91,13 @@ impl From<ValueDerived> for ValueDerived2 {
     }
 }
 
+fn option_to_option<T, U: From<T>>(value: Option<T>) -> Option<U> {
+    value.map(|x| x.into())
+}
+
 #[derive(SimpleObject)]
 struct TestObj {
-    #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>"))]
+    #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>", with = "option_to_option"))]
     pub value1: Option<ValueDerived>,
-    #[graphql(derived(owned, name = "value_vec_2", into = "Vec<ValueDerived2>"))]
-    pub value_vec_1: Vec<ValueDerived>,
-    #[graphql(derived(owned, name = "value_opt_vec_2", into = "Option<Vec<ValueDerived2>>"))]
-    pub value_opt_vec_1: Option<Vec<ValueDerived>>,
-    #[graphql(derived(owned, name = "value_vec_opt_2", into = "Vec<Option<ValueDerived2>>"))]
-    pub value_vec_opt_1: Vec<Option<ValueDerived>>,
 }
 ```
