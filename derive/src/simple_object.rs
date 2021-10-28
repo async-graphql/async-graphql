@@ -218,25 +218,19 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             },
             Some(DerivedIntoCoercion::VecToVec) => quote! {
                 {
-                    let mut result = vec![];
-                    ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))));
-                    result
+                    ::std::iter::Iterator::collect(::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))))
                 }
             },
             Some(DerivedIntoCoercion::OptionVecToOptionVec) => quote! {
                     ::std::option::Option::and_then(#block, |value| ::std::option::Option::Some({
-                        let mut result = vec![];
-                        ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(value), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))));
-                        result
+                        ::std::iter::Iterator::collect(::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(value), |x| ::std::convert::Into::into(::std::clone::Clone::clone(&x))))
                     }))
             },
             Some(DerivedIntoCoercion::VecOptionToVecOption) => quote! {
                 {
-                    let mut result = vec![];
-                    ::std::iter::Extend::extend(&mut result, ::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::option::Option::and_then(x, |value| ::std::option::Option::Some(
+                    ::std::iter::Iterator::collect(::std::iter::Iterator::map(::std::iter::IntoIterator::into_iter(#block), |x| ::std::option::Option::and_then(x, |value| ::std::option::Option::Some(
                         ::std::convert::Into::into(value)
-                    ))));
-                    result
+                    ))))
                 }
             },
             // If the field is not derived, we follow the normal process.
