@@ -199,6 +199,7 @@ pub enum MetaType {
         extends: bool,
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
+        is_subscription: bool,
     },
     Interface {
         name: String,
@@ -375,6 +376,7 @@ impl Registry {
                     extends: false,
                     keys: None,
                     visible: None,
+                    is_subscription: false,
                 },
             );
             let ty = f(self);
@@ -508,6 +510,7 @@ impl Registry {
                 extends: false,
                 keys: None,
                 visible: None,
+                is_subscription: false,
             },
         );
 

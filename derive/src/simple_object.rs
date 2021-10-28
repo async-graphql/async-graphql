@@ -293,6 +293,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     })
                 }
             }
@@ -343,6 +344,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     })
                 }
 
