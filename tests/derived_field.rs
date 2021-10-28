@@ -123,15 +123,51 @@ pub async fn test_derived_field_simple_object_option() {
         }
     }
 
+    fn option_to_option<T, U: From<T>>(value: Option<T>) -> Option<U> {
+        value.map(|x| x.into())
+    }
+
+    fn vec_to_vec<T, U: From<T>>(value: Vec<T>) -> Vec<U> {
+        value.into_iter().map(|x| x.into()).collect()
+    }
+
+    fn vecopt_to_vecopt<T, U: From<T>>(value: Vec<Option<T>>) -> Vec<Option<U>> {
+        value.into_iter().map(|x| x.map(|opt| opt.into())).collect()
+    }
+
+    fn optvec_to_optvec<T, U: From<T>>(value: Option<Vec<T>>) -> Option<Vec<U>> {
+        value.map(|x| x.into_iter().map(|y| y.into()).collect())
+    }
+
     #[derive(SimpleObject)]
     struct TestObj {
-        #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>"))]
+        #[graphql(derived(
+            owned,
+            name = "value2",
+            into = "Option<ValueDerived2>",
+            with = "option_to_option"
+        ))]
         pub value1: Option<ValueDerived>,
-        #[graphql(derived(owned, name = "value_vec_2", into = "Vec<ValueDerived2>"))]
+        #[graphql(derived(
+            owned,
+            name = "value_vec_2",
+            into = "Vec<ValueDerived2>",
+            with = "vec_to_vec"
+        ))]
         pub value_vec_1: Vec<ValueDerived>,
-        #[graphql(derived(owned, name = "value_opt_vec_2", into = "Option<Vec<ValueDerived2>>"))]
+        #[graphql(derived(
+            owned,
+            name = "value_opt_vec_2",
+            into = "Option<Vec<ValueDerived2>>",
+            with = "optvec_to_optvec"
+        ))]
         pub value_opt_vec_1: Option<Vec<ValueDerived>>,
-        #[graphql(derived(owned, name = "value_vec_opt_2", into = "Vec<Option<ValueDerived2>>"))]
+        #[graphql(derived(
+            owned,
+            name = "value_vec_opt_2",
+            into = "Vec<Option<ValueDerived2>>",
+            with = "vecopt_to_vecopt"
+        ))]
         pub value_vec_opt_1: Vec<Option<ValueDerived>>,
     }
 
@@ -147,7 +183,7 @@ pub async fn test_derived_field_simple_object_option() {
         }
     }
 
-    let query = "{ test { value1 value2 valueVec1 valueVec2 valueOptVec1 valueOptVec2} }";
+    let query = "{ test { value1 value2 valueVec1 valueVec2 valueOptVec1 valueOptVec2 } }";
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema.execute(query).await.data,

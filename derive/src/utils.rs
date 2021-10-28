@@ -1,11 +1,9 @@
 use std::collections::HashSet;
 
 use darling::FromMeta;
-use once_cell::sync::Lazy;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
-use regex::Regex;
 use syn::visit::Visit;
 use syn::{
     Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lit, LitStr, Meta, NestedMeta,
@@ -534,62 +532,4 @@ pub fn extract_input_args(
     }
 
     Ok(args)
-}
-
-#[derive(Debug)]
-pub enum DerivedIntoCoercion {
-    Unknown = 1,
-    VecToVec = 2,
-    OptionToOption = 3,
-    OptionVecToOptionVec = 4,
-    VecOptionToVecOption = 5,
-}
-
-static CHECK_OPTION: Lazy<Regex> = Lazy::new(|| Regex::new("^Option <(.*?) >$").unwrap());
-static CHECK_VEC: Lazy<Regex> = Lazy::new(|| Regex::new("^Vec <(.*?) >$").unwrap());
-static CHECK_VEC_OPTION: Lazy<Regex> =
-    Lazy::new(|| Regex::new("^Vec < Option <(.*?)> >$").unwrap());
-static CHECK_OPTION_VEC: Lazy<Regex> =
-    Lazy::new(|| Regex::new("^Option < Vec <(.*?)> >$").unwrap());
-
-/// The into argument for a derive field won't be able to transform everythings:
-/// Without the specialization from Rust, we can't implement things like From between Vec<T> ->
-/// Vec<U> or Option<T> -> Option<U>.
-/// But there are cases which you want to have this coercion derived, so to have it working
-/// until the specialization feature comes, we manually check coercion for the most usual cases
-/// which are:
-///
-/// - Vec<T> -> Vec<U>
-/// - Option<T> -> Option<U>
-/// - Option<Vec<T>> -> Option<Vec<U>>
-/// - Vec<Option<T>> -> Vec<Option<U>>
-pub fn derive_type_coercion<S1: AsRef<str>, S2: AsRef<str>>(
-    base_type: S1,
-    target_type: S2,
-) -> DerivedIntoCoercion {
-    if CHECK_OPTION_VEC.find(base_type.as_ref()).is_some()
-        && CHECK_OPTION_VEC.find(target_type.as_ref()).is_some()
-    {
-        return DerivedIntoCoercion::OptionVecToOptionVec;
-    }
-
-    if CHECK_VEC_OPTION.find(base_type.as_ref()).is_some()
-        && CHECK_VEC_OPTION.find(target_type.as_ref()).is_some()
-    {
-        return DerivedIntoCoercion::VecOptionToVecOption;
-    }
-
-    if CHECK_VEC.find(base_type.as_ref()).is_some()
-        && CHECK_VEC.find(target_type.as_ref()).is_some()
-    {
-        return DerivedIntoCoercion::VecToVec;
-    }
-
-    if CHECK_OPTION.find(base_type.as_ref()).is_some()
-        && CHECK_OPTION.find(target_type.as_ref()).is_some()
-    {
-        return DerivedIntoCoercion::OptionToOption;
-    }
-
-    DerivedIntoCoercion::Unknown
 }
