@@ -2,7 +2,11 @@ use chrono_tz::Tz;
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
-#[Scalar(internal, name = "TimeZone")]
+#[Scalar(
+    internal,
+    name = "TimeZone",
+    specified_by_url = "http://www.iana.org/time-zones"
+)]
 impl ScalarType for Tz {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
