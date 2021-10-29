@@ -59,3 +59,45 @@ type Query {
 	duration_rfc3339(arg: String): DateRFC3339!
 }
 ```
+
+## Wrapper types
+
+A derived field won't be able to manage everythings easily: without the specialization from the Rust language, you won't be able to implement specialized trait like:
+```
+impl From<Vec<U>> for Vec<T> {
+  ...
+}
+```
+
+So you wouldn't be able to generate derived fields for existing wrapper type structures like `Vec` or `Option`. But when you implement a `From<U> for T` you should be able to derived a `From<Vec<U>> for Vec<T>` and a `From<Option<U>> for Option<T>`.
+We included a `with` parameter to help you define a function to call instead of using the `Into` trait implementation between wrapper structures.
+
+
+### Example
+
+```rust
+#[derive(Serialize, Deserialize, Clone)]
+struct ValueDerived(String);
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ValueDerived2(String);
+
+scalar!(ValueDerived);
+scalar!(ValueDerived2);
+
+impl From<ValueDerived> for ValueDerived2 {
+    fn from(value: ValueDerived) -> Self {
+        ValueDerived2(value.0)
+    }
+}
+
+fn option_to_option<T, U: From<T>>(value: Option<T>) -> Option<U> {
+    value.map(|x| x.into())
+}
+
+#[derive(SimpleObject)]
+struct TestObj {
+    #[graphql(derived(owned, name = "value2", into = "Option<ValueDerived2>", with = "option_to_option"))]
+    pub value1: Option<ValueDerived>,
+}
+```
