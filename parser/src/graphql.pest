@@ -116,7 +116,7 @@ value       = { variable | number | string | boolean | null | enum_value |      
 
 variable = { "$" ~ name }
 
-number     = @{ float | int }
+number     = @{ (float | int) ~ !name_start }
 float      = { int ~ ((fractional ~ exponent) | fractional | exponent) }
 fractional = { "." ~ ASCII_DIGIT+ }
 exponent   = { ("E" | "e") ~ ("+" | "-")? ~ ASCII_DIGIT+ }
@@ -165,4 +165,5 @@ arguments       = { "(" ~       argument+ ~ ")" }
 const_argument = { name ~ ":" ~ const_value }
 argument       = { name ~ ":" ~       value }
 
-name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
+name_start = @{ (ASCII_ALPHA | "_") }
+name = @{ name_start ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
