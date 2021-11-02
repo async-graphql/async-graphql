@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::convert::TryInto;
 
 use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
