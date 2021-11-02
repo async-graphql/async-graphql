@@ -316,11 +316,11 @@ fn generate_default_value(lit: &Lit) -> GeneratorResult<TokenStream> {
         }
         Lit::Int(value) => {
             let value = value.base10_parse::<i32>()?;
-            Ok(quote!({ ::TryInto::try_into(#value).unwrap() }))
+            Ok(quote!({ ::std::convert::TryInto::try_into(#value).unwrap() }))
         }
         Lit::Float(value) => {
             let value = value.base10_parse::<f64>()?;
-            Ok(quote!({ ::TryInto::try_into(#value) }))
+            Ok(quote!({ ::std::convert::TryInto::try_into(#value) }))
         }
         Lit::Bool(value) => {
             let value = value.value;
