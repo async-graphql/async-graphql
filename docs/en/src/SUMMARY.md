@@ -8,6 +8,7 @@
         - [Context](context.md)
         - [Error handling](error_handling.md)
         - [Merging Objects / Subscriptions](merging_objects.md)
+        - [Derived fields](derived_fields.md)
     - [Enum](define_enum.md)
     - [Interface](define_interface.md)
     - [Union](define_union.md)

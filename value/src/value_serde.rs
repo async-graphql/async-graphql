@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
 use std::fmt::{self, Formatter};
 
+use indexmap::IndexMap;
 use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
 use serde::ser::Error as SerError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -137,7 +137,7 @@ impl<'de> Deserialize<'de> for ConstValue {
             where
                 A: MapAccess<'de>,
             {
-                let mut map = BTreeMap::new();
+                let mut map = IndexMap::new();
                 while let Some((name, value)) = visitor.next_entry()? {
                     map.insert(name, value);
                 }
@@ -280,7 +280,7 @@ impl<'de> Deserialize<'de> for Value {
             where
                 A: MapAccess<'de>,
             {
-                let mut map = BTreeMap::new();
+                let mut map = IndexMap::new();
                 while let Some((name, value)) = visitor.next_entry()? {
                     map.insert(name, value);
                 }

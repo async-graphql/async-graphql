@@ -231,7 +231,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
 
                 fn to_value(&self) -> #crate_name::Value {
-                    let mut map = ::std::collections::BTreeMap::new();
+                    let mut map = #crate_name::indexmap::IndexMap::new();
                     #(#put_fields)*
                     #crate_name::Value::Object(map)
                 }
@@ -272,7 +272,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
 
                 fn __internal_to_value(&self) -> #crate_name::Value where Self: #crate_name::InputType {
-                    let mut map = ::std::collections::BTreeMap::new();
+                    let mut map = #crate_name::indexmap::IndexMap::new();
                     #(#put_fields)*
                     #crate_name::Value::Object(map)
                 }

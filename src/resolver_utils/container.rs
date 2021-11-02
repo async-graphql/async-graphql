@@ -1,6 +1,7 @@
-use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
+
+use indexmap::IndexMap;
 
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
@@ -74,7 +75,7 @@ pub async fn resolve_container_serial<'a, T: ContainerType + ?Sized>(
     resolve_container_inner(ctx, root, false).await
 }
 
-fn insert_value(target: &mut BTreeMap<Name, Value>, name: Name, value: Value) {
+fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
     if let Some(prev_value) = target.get_mut(&name) {
         if let Value::Object(target_map) = prev_value {
             if let Value::Object(obj) = value {
@@ -118,7 +119,7 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
         results
     };
 
-    let mut map = BTreeMap::new();
+    let mut map = IndexMap::new();
     for (name, value) in res {
         insert_value(&mut map, name, value);
     }
