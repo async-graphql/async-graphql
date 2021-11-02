@@ -111,7 +111,7 @@ impl Type for Upload {
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
             visible: None,
-            specified_by_url: None,
+            specified_by_url: Some("https://github.com/jaydenseric/graphql-multipart-request-spec"),
         })
     }
 }
