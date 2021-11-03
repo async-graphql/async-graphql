@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-value"
-version = "2.10.8"
+version = "2.11.0"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "GraphQL value for async-graphql"
