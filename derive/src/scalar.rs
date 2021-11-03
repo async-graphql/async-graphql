@@ -30,6 +30,11 @@ pub fn generate(
     let generic = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
     let visible = visible_fn(&scalar_args.visible);
+    let specified_by_url = match &scalar_args.specified_by_url {
+        Some(specified_by_url) => quote! { ::std::option::Option::Some(#specified_by_url) },
+        None => quote! { ::std::option::Option::None },
+    };
+
     let expanded = quote! {
         #item_impl
 
@@ -45,6 +50,7 @@ pub fn generate(
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
                     visible: #visible,
+                    specified_by_url: #specified_by_url,
                 })
             }
         }

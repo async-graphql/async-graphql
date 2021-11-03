@@ -38,12 +38,18 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         None => quote! { <#inner_ty as #crate_name::Type>::type_name() },
     };
     let create_type_info = if let Some(name) = &gql_typename {
+        let specified_by_url = match &newtype_args.specified_by_url {
+            Some(specified_by_url) => quote! { ::std::option::Option::Some(#specified_by_url) },
+            None => quote! { ::std::option::Option::None },
+        };
+
         quote! {
             registry.create_type::<#ident, _>(|_| #crate_name::registry::MetaType::Scalar {
                 name: ::std::borrow::ToOwned::to_owned(#name),
                 description: #desc,
                 is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
                 visible: #visible,
+                specified_by_url: #specified_by_url,
             })
         }
     } else {

@@ -55,6 +55,7 @@ pub fn generate(
                 if derived.name.is_some() && derived.into.is_some() {
                     let base_function_name = &method.sig.ident;
                     let name = derived.name.unwrap();
+                    let with = derived.with;
                     let into = Type::Verbatim(
                         proc_macro2::TokenStream::from_str(&derived.into.unwrap()).unwrap(),
                     );
@@ -108,11 +109,16 @@ pub fn generate(
                             .into_iter(),
                     );
 
-                    let new_block = quote!({
-                        {
-                            ::std::result::Result::Ok(#self_ty::#base_function_name(&self, #other_atts).await?.into())
-                        }
-                    });
+                    let new_block = match with {
+                        Some(with) => quote!({
+                            ::std::result::Result::Ok(#with(#self_ty::#base_function_name(&self, #other_atts).await?))
+                        }),
+                        None => quote!({
+                            {
+                                ::std::result::Result::Ok(#self_ty::#base_function_name(&self, #other_atts).await?.into())
+                            }
+                        }),
+                    };
 
                     new_impl.block = syn::parse2::<Block>(new_block).expect("invalid block");
 
@@ -557,6 +563,7 @@ pub fn generate(
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -624,6 +631,7 @@ pub fn generate(
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

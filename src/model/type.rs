@@ -218,4 +218,16 @@ impl<'a> __Type<'a> {
             None
         }
     }
+
+    #[graphql(name = "specifiedByURL")]
+    async fn specified_by_url(&self) -> Option<&'a str> {
+        if let TypeDetail::Named(registry::MetaType::Scalar {
+            specified_by_url, ..
+        }) = &self.detail
+        {
+            *specified_by_url
+        } else {
+            None
+        }
+    }
 }

@@ -189,6 +189,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         is_valid: fn(value: &Value) -> bool,
         visible: Option<MetaVisibleFn>,
+        specified_by_url: Option<&'static str>,
     },
     Object {
         name: String,
@@ -198,6 +199,7 @@ pub enum MetaType {
         extends: bool,
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
+        is_subscription: bool,
     },
     Interface {
         name: String,
@@ -374,6 +376,7 @@ impl Registry {
                     extends: false,
                     keys: None,
                     visible: None,
+                    is_subscription: false,
                 },
             );
             let ty = f(self);
@@ -507,6 +510,7 @@ impl Registry {
                 extends: false,
                 keys: None,
                 visible: None,
+                is_subscription: false,
             },
         );
 

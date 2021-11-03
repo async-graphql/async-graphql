@@ -5,7 +5,7 @@ use async_graphql_value::Name;
 
 /// A GraphQL file or request string defining a GraphQL service.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Document).
+/// [Reference](https://spec.graphql.org/October2021/#Document).
 #[derive(Debug, Clone)]
 pub struct ServiceDocument {
     /// The definitions of this document.
@@ -14,8 +14,8 @@ pub struct ServiceDocument {
 
 /// A definition concerning the type system of a GraphQL service.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#TypeSystemDefinition). This enum also covers
-/// [extensions](https://spec.graphql.org/June2018/#TypeSystemExtension).
+/// [Reference](https://spec.graphql.org/October2021/#TypeSystemDefinition). This enum also covers
+/// [extensions](https://spec.graphql.org/October2021/#TypeSystemExtension).
 #[derive(Debug, Clone)]
 pub enum TypeSystemDefinition {
     /// The definition of the schema of the service.
@@ -28,8 +28,8 @@ pub enum TypeSystemDefinition {
 
 /// The definition of the schema in a GraphQL service.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#SchemaDefinition). This also covers
-/// [extensions](https://spec.graphql.org/June2018/#SchemaExtension).
+/// [Reference](https://spec.graphql.org/October2021/#SchemaDefinition). This also covers
+/// [extensions](https://spec.graphql.org/October2021/#SchemaExtension).
 #[derive(Debug, Clone)]
 pub struct SchemaDefinition {
     /// Whether the schema is an extension of another schema.
@@ -46,8 +46,8 @@ pub struct SchemaDefinition {
 
 /// The definition of a type in a GraphQL service.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#TypeDefinition). This also covers
-/// [extensions](https://spec.graphql.org/June2018/#TypeExtension).
+/// [Reference](https://spec.graphql.org/October2021/#TypeDefinition). This also covers
+/// [extensions](https://spec.graphql.org/October2021/#TypeExtension).
 #[derive(Debug, Clone)]
 pub struct TypeDefinition {
     /// Whether the type is an extension of another type.
@@ -81,7 +81,7 @@ pub enum TypeKind {
 
 /// The definition of an object type.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#ObjectType).
+/// [Reference](https://spec.graphql.org/October2021/#ObjectType).
 #[derive(Debug, Clone)]
 pub struct ObjectType {
     /// The interfaces implemented by the object.
@@ -92,7 +92,7 @@ pub struct ObjectType {
 
 /// The definition of a field inside an object or interface.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#FieldDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#FieldDefinition).
 #[derive(Debug, Clone)]
 pub struct FieldDefinition {
     /// The description of the field.
@@ -109,7 +109,7 @@ pub struct FieldDefinition {
 
 /// The definition of an interface type.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#InterfaceType).
+/// [Reference](https://spec.graphql.org/October2021/#InterfaceType).
 #[derive(Debug, Clone)]
 pub struct InterfaceType {
     /// The interfaces implemented by the interface.
@@ -120,7 +120,7 @@ pub struct InterfaceType {
 
 /// The definition of a union type.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#UnionType).
+/// [Reference](https://spec.graphql.org/October2021/#UnionType).
 #[derive(Debug, Clone)]
 pub struct UnionType {
     /// The member types of the union.
@@ -129,7 +129,7 @@ pub struct UnionType {
 
 /// The definition of an enum.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#EnumType).
+/// [Reference](https://spec.graphql.org/October2021/#EnumType).
 #[derive(Debug, Clone)]
 pub struct EnumType {
     /// The possible values of the enum.
@@ -138,7 +138,7 @@ pub struct EnumType {
 
 /// The definition of a value inside an enum.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#EnumValueDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#EnumValueDefinition).
 #[derive(Debug, Clone)]
 pub struct EnumValueDefinition {
     /// The description of the argument.
@@ -151,7 +151,7 @@ pub struct EnumValueDefinition {
 
 /// The definition of an input object.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#InputObjectType).
+/// [Reference](https://spec.graphql.org/October2021/#InputObjectType).
 #[derive(Debug, Clone)]
 pub struct InputObjectType {
     /// The fields of the input object.
@@ -160,7 +160,7 @@ pub struct InputObjectType {
 
 /// The definition of an input value inside the arguments of a field.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#InputValueDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#InputValueDefinition).
 #[derive(Debug, Clone)]
 pub struct InputValueDefinition {
     /// The description of the argument.
@@ -177,7 +177,7 @@ pub struct InputValueDefinition {
 
 /// The definition of a directive in a service.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#DirectiveDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#DirectiveDefinition).
 #[derive(Debug, Clone)]
 pub struct DirectiveDefinition {
     /// The description of the directive.
@@ -192,7 +192,7 @@ pub struct DirectiveDefinition {
 
 /// Where a directive can apply to.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#DirectiveLocation).
+/// [Reference](https://spec.graphql.org/October2021/#DirectiveLocation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DirectiveLocation {
     /// A [query](enum.OperationType.html#variant.Query) [operation](struct.OperationDefinition.html).
@@ -233,4 +233,6 @@ pub enum DirectiveLocation {
     /// An [input value definition](struct.InputValueDefinition.html) on an input object but not a
     /// field.
     InputFieldDefinition,
+    /// An [variable definition](struct.VariableDefinition.html).
+    VariableDefinition,
 }

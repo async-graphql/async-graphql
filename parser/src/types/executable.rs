@@ -5,7 +5,7 @@ use async_graphql_value::{ConstValue, Name, Value};
 
 /// An executable GraphQL file or request string.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#ExecutableDocument).
+/// [Reference](https://spec.graphql.org/October2021/#ExecutableDocument).
 #[derive(Debug, Clone)]
 pub struct ExecutableDocument {
     /// The operations of the document.
@@ -93,7 +93,7 @@ enum OperationsIterInner<'a> {
 
 /// A GraphQL operation, such as `mutation($content:String!) { makePost(content: $content) { id } }`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#OperationDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#OperationDefinition).
 #[derive(Debug, Clone)]
 pub struct OperationDefinition {
     /// The type of operation.
@@ -108,13 +108,15 @@ pub struct OperationDefinition {
 
 /// A variable definition inside a list of variable definitions, for example `$name:String!`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#VariableDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#VariableDefinition).
 #[derive(Debug, Clone)]
 pub struct VariableDefinition {
     /// The name of the variable, without the preceding `$`.
     pub name: Positioned<Name>,
     /// The type of the variable.
     pub var_type: Positioned<Type>,
+    /// The variable's directives.
+    pub directives: Vec<Positioned<Directive>>,
     /// The optional default value of the variable.
     pub default_value: Option<Positioned<ConstValue>>,
 }
@@ -139,7 +141,7 @@ impl VariableDefinition {
 
 /// A set of fields to be selected, for example `{ name age }`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#SelectionSet).
+/// [Reference](https://spec.graphql.org/October2021/#SelectionSet).
 #[derive(Debug, Default, Clone)]
 pub struct SelectionSet {
     /// The fields to be selected.
@@ -148,7 +150,7 @@ pub struct SelectionSet {
 
 /// A part of an object to be selected; a single field, a fragment spread or an inline fragment.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Selection).
+/// [Reference](https://spec.graphql.org/October2021/#Selection).
 #[derive(Debug, Clone)]
 pub enum Selection {
     /// Select a single field, such as `name` or `weightKilos: weight(unit: KILOGRAMS)`.
@@ -182,7 +184,7 @@ impl Selection {
 
 /// A field being selected on an object, such as `name` or `weightKilos: weight(unit: KILOGRAMS)`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#Field).
+/// [Reference](https://spec.graphql.org/October2021/#Field).
 #[derive(Debug, Clone)]
 pub struct Field {
     /// The optional field alias.
@@ -217,7 +219,7 @@ impl Field {
 
 /// A fragment selector, such as `... userFields`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#FragmentSpread).
+/// [Reference](https://spec.graphql.org/October2021/#FragmentSpread).
 #[derive(Debug, Clone)]
 pub struct FragmentSpread {
     /// The name of the fragment being selected.
@@ -228,7 +230,7 @@ pub struct FragmentSpread {
 
 /// An inline fragment selector, such as `... on User { name }`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#InlineFragment).
+/// [Reference](https://spec.graphql.org/October2021/#InlineFragment).
 #[derive(Debug, Clone)]
 pub struct InlineFragment {
     /// The type condition.
@@ -241,7 +243,7 @@ pub struct InlineFragment {
 
 /// The definition of a fragment, such as `fragment userFields on User { name age }`.
 ///
-/// [Reference](https://spec.graphql.org/June2018/#FragmentDefinition).
+/// [Reference](https://spec.graphql.org/October2021/#FragmentDefinition).
 #[derive(Debug, Clone)]
 pub struct FragmentDefinition {
     /// The type this fragment operates on.
@@ -254,7 +256,7 @@ pub struct FragmentDefinition {
 
 /// A type a fragment can apply to (`on` followed by the type).
 ///
-/// [Reference](https://spec.graphql.org/June2018/#TypeCondition).
+/// [Reference](https://spec.graphql.org/October2021/#TypeCondition).
 #[derive(Debug, Clone)]
 pub struct TypeCondition {
     /// The type this fragment applies to.

@@ -323,6 +323,7 @@ fn parse_directive_definition(
                         "FRAGMENT_DEFINITION" => DirectiveLocation::FragmentDefinition,
                         "FRAGMENT_SPREAD" => DirectiveLocation::FragmentSpread,
                         "INLINE_FRAGMENT" => DirectiveLocation::InlineFragment,
+                        "VARIABLE_DEFINITION" => DirectiveLocation::VariableDefinition,
                         "SCHEMA" => DirectiveLocation::Schema,
                         "SCALAR" => DirectiveLocation::Scalar,
                         "OBJECT" => DirectiveLocation::Object,

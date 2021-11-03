@@ -190,6 +190,7 @@ where
                 extends: false,
                 keys: None,
                 visible: None,
+                is_subscription: false,
             }
         })
     }

@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
-          - { rust: 1.54.0, os: ubuntu-latest }
+#          - { rust: stable, os: ubuntu-latest }
+          - { rust: 1.56.1, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2

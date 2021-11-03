@@ -295,6 +295,7 @@ pub type FieldResult<T> = Result<T>;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Valid field return types
 ///
@@ -467,6 +468,8 @@ pub use async_graphql_derive::Object;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | owned        | Field resolver return a ownedship value  | bool        | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 ///
 /// # Examples
@@ -531,6 +534,7 @@ pub use async_graphql_derive::SimpleObject;
 /// |--------------|------------------------------------------|------------ |----------|
 /// | name         | Generated derived field name             | string      | N        |
 /// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Examples
 ///
@@ -983,6 +987,7 @@ pub use async_graphql_derive::Subscription;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Scalar name               | string   | Y        |
+/// | specified_by_url | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 pub use async_graphql_derive::Scalar;
 
@@ -996,8 +1001,9 @@ pub use async_graphql_derive::Scalar;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | string   | Y      |
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | bool   | Y        |
-/// | visible(Only valid for new scalars.)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-/// | visible(Only valid for new scalars.)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | visible(Only valid for new scalars)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible(Only valid for new scalars)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | specified_by_url(Only valid for new scalars) | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 /// # Examples
 ///

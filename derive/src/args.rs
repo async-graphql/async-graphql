@@ -255,6 +255,9 @@ pub struct ObjectField {
 pub struct DerivedField {
     pub name: Option<Ident>,
     pub into: Option<String>,
+    pub with: Option<Path>,
+    #[darling(default)]
+    pub owned: Option<bool>,
 }
 
 #[derive(FromDeriveInput)]
@@ -443,6 +446,7 @@ pub struct Scalar {
     pub name: Option<String>,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
+    pub specified_by_url: Option<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -649,6 +653,8 @@ pub struct NewType {
     pub name: NewTypeName,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub specified_by_url: Option<String>,
 }
 
 #[derive(FromMeta, Default)]

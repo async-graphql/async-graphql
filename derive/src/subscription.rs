@@ -456,6 +456,7 @@ pub fn generate(
                     extends: #extends,
                     keys: ::std::option::Option::None,
                     visible: ::std::option::Option::None,
+                    is_subscription: true,
                 })
             }
         }
