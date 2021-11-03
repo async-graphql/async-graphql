@@ -208,6 +208,8 @@ fn parse_variable_definition(
 
     let variable = parse_variable(pairs.next().unwrap(), pc)?;
     let var_type = parse_type(pairs.next().unwrap(), pc)?;
+
+    let directives = parse_opt_directives(&mut pairs, pc)?;
     let default_value = parse_if_rule(&mut pairs, Rule::default_value, |pair| {
         parse_default_value(pair, pc)
     })?;
@@ -218,6 +220,7 @@ fn parse_variable_definition(
         VariableDefinition {
             name: variable,
             var_type,
+            directives,
             default_value,
         },
         pos,

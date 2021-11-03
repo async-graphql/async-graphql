@@ -6,7 +6,7 @@ use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value}
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///
-/// **Reference:** <https://spec.graphql.org/June2018/#sec-Null-Value>
+/// **Reference:** <https://spec.graphql.org/October2021/#sec-Null-Value>
 ///
 /// # Examples
 ///

@@ -563,6 +563,7 @@ pub fn generate(
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -630,6 +631,7 @@ pub fn generate(
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        is_subscription: false,
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

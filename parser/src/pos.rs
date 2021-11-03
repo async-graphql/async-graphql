@@ -10,7 +10,7 @@ use std::str::Chars;
 /// Original position of an element in source code.
 ///
 /// You can serialize and deserialize it to the GraphQL `locations` format
-/// ([reference](https://spec.graphql.org/June2018/#sec-Errors)).
+/// ([reference](https://spec.graphql.org/October2021/#sec-Errors)).
 #[derive(PartialOrd, Ord, PartialEq, Eq, Clone, Copy, Default, Hash, Serialize, Deserialize)]
 pub struct Pos {
     /// One-based line number.

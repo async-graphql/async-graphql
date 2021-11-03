@@ -2,7 +2,7 @@ use url::Url;
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
-#[Scalar(internal)]
+#[Scalar(internal, specified_by_url = "http://url.spec.whatwg.org/")]
 /// URL is a String implementing the [URL Standard](http://url.spec.whatwg.org/)
 impl ScalarType for Url {
     fn parse(value: Value) -> InputValueResult<Self> {

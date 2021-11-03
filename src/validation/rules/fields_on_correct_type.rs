@@ -329,4 +329,9 @@ mod tests {
         "#,
         );
     }
+
+    #[test]
+    fn typename_in_subscription_root() {
+        expect_fails_rule!(factory, "subscription { __typename }");
+    }
 }

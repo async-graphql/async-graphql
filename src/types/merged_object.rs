@@ -50,6 +50,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
                 extends: false,
                 keys: None,
                 visible: None,
+                is_subscription: false,
             }
         })
     }
