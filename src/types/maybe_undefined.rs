@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::ops::Deref;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -61,25 +62,25 @@ impl<T> Default for MaybeUndefined<T> {
 }
 
 impl<T> MaybeUndefined<T> {
-    /// Returns true if the MaybeUndefined<T> is undefined.
+    /// Returns true if the `MaybeUndefined<T>` is undefined.
     #[inline]
     pub fn is_undefined(&self) -> bool {
         matches!(self, MaybeUndefined::Undefined)
     }
 
-    /// Returns true if the MaybeUndefined<T> is null.
+    /// Returns true if the `MaybeUndefined<T>` is null.
     #[inline]
     pub fn is_null(&self) -> bool {
         matches!(self, MaybeUndefined::Null)
     }
 
-    /// Returns true if the MaybeUndefined<T> is value.
+    /// Returns true if the `MaybeUndefined<T>` contains value.
     #[inline]
     pub fn is_value(&self) -> bool {
         matches!(self, MaybeUndefined::Value(_))
     }
 
-    /// Borrow the value, returns `None` if the value is `undefined` or `null`, otherwise returns `Some(T)`.
+    /// Borrow the value, returns `None` if the the `MaybeUndefined<T>` is `undefined` or `null`, otherwise returns `Some(T)`.
     #[inline]
     pub fn value(&self) -> Option<&T> {
         match self {
@@ -88,12 +89,36 @@ impl<T> MaybeUndefined<T> {
         }
     }
 
-    /// Convert MaybeUndefined<T> to Option<T>.
+    /// Converts the `MaybeUndefined<T>` to `Option<T>`.
     #[inline]
     pub fn take(self) -> Option<T> {
         match self {
             MaybeUndefined::Value(value) => Some(value),
             _ => None,
+        }
+    }
+
+    /// Converts the `MaybeUndefined<T>` to `Option<Option<T>>`.
+    #[inline]
+    pub fn as_opt_ref(&self) -> Option<Option<&T>> {
+        match self {
+            MaybeUndefined::Undefined => None,
+            MaybeUndefined::Null => Some(None),
+            MaybeUndefined::Value(value) => Some(Some(value)),
+        }
+    }
+
+    /// Converts the `MaybeUndefined<T>` to `Option<Option<&U>>`.
+    #[inline]
+    pub fn as_opt_deref<U>(&self) -> Option<Option<&U>>
+    where
+        U: ?Sized,
+        T: Deref<Target = U>,
+    {
+        match self {
+            MaybeUndefined::Undefined => None,
+            MaybeUndefined::Null => Some(None),
+            MaybeUndefined::Value(value) => Some(Some(value.deref())),
         }
     }
 }
@@ -162,6 +187,16 @@ impl<T> From<MaybeUndefined<T>> for Option<Option<T>> {
             MaybeUndefined::Undefined => None,
             MaybeUndefined::Null => Some(None),
             MaybeUndefined::Value(value) => Some(Some(value)),
+        }
+    }
+}
+
+impl<T> From<Option<Option<T>>> for MaybeUndefined<T> {
+    fn from(value: Option<Option<T>>) -> Self {
+        match value {
+            Some(Some(value)) => Self::Value(value),
+            Some(None) => Self::Null,
+            None => Self::Undefined,
         }
     }
 }
@@ -259,5 +294,41 @@ mod tests {
             Option::<Option<i32>>::from(MaybeUndefined::Value(42)),
             Some(Some(42))
         );
+    }
+
+    #[test]
+    fn test_as_opt_ref() {
+        let mut value: MaybeUndefined<String>;
+        let mut r: Option<Option<&String>>;
+
+        value = MaybeUndefined::Undefined;
+        r = value.as_opt_ref();
+        assert_eq!(r, None);
+
+        value = MaybeUndefined::Null;
+        r = value.as_opt_ref();
+        assert_eq!(r, Some(None));
+
+        value = MaybeUndefined::Value("abc".to_string());
+        r = value.as_opt_ref();
+        assert_eq!(r, Some(Some(&"abc".to_string())));
+    }
+
+    #[test]
+    fn test_as_opt_deref() {
+        let mut value: MaybeUndefined<String>;
+        let mut r: Option<Option<&str>>;
+
+        value = MaybeUndefined::Undefined;
+        r = value.as_opt_deref();
+        assert_eq!(r, None);
+
+        value = MaybeUndefined::Null;
+        r = value.as_opt_deref();
+        assert_eq!(r, Some(None));
+
+        value = MaybeUndefined::Value("abc".to_string());
+        r = value.as_opt_deref();
+        assert_eq!(r, Some(Some("abc")));
     }
 }
