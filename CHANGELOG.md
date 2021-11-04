@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement `From<Option<Option<T>>>` for `MaybeUndefined<T>`.
 - Add `MaybeUndefined::as_opt_ref` and `MaybeUndefined::as_opt_deref` methods.
 - Add `Failure` type. [#671](https://github.com/async-graphql/async-graphql/issues/671)
+- [async-graphql-axum] Bump axum from `0.2.5` to `0.3`.
 
 ## [2.11.0] 2021-11-03
 
