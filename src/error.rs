@@ -177,6 +177,7 @@ pub struct Error {
     /// The error message.
     pub message: String,
     /// The debug error message.
+    #[serde(skip)]
     pub debug_message: Option<String>,
     /// Extensions to the error.
     #[serde(skip_serializing_if = "error_extensions_is_empty")]
