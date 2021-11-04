@@ -24,6 +24,11 @@ impl ErrorExtensionValues {
 pub struct ServerError {
     /// An explanatory message of the error.
     pub message: String,
+    /// An explanatory message of the error. (for debug)
+    ///
+    /// This message comes from [`Failure<T>`].
+    #[serde(skip)]
+    pub debug_message: Option<String>,
     /// Where the error occurred.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub locations: Vec<Pos>,
@@ -44,10 +49,16 @@ impl ServerError {
     pub fn new(message: impl Into<String>, pos: Option<Pos>) -> Self {
         Self {
             message: message.into(),
+            debug_message: None,
             locations: pos.map(|pos| vec![pos]).unwrap_or_default(),
             path: Vec::new(),
             extensions: None,
         }
+    }
+
+    /// Returns `debug_message` if it is `Some`, otherwise returns `message`.
+    pub fn debug_message(&self) -> &str {
+        self.debug_message.as_deref().unwrap_or(&self.message)
     }
 
     #[doc(hidden)]
@@ -72,6 +83,7 @@ impl From<parser::Error> for ServerError {
     fn from(e: parser::Error) -> Self {
         Self {
             message: e.to_string(),
+            debug_message: None,
             locations: e.positions().collect(),
             path: Vec::new(),
             extensions: None,
@@ -164,6 +176,8 @@ pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 pub struct Error {
     /// The error message.
     pub message: String,
+    /// The debug error message.
+    pub debug_message: Option<String>,
     /// Extensions to the error.
     #[serde(skip_serializing_if = "error_extensions_is_empty")]
     pub extensions: Option<ErrorExtensionValues>,
@@ -174,6 +188,7 @@ impl Error {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
+            debug_message: None,
             extensions: None,
         }
     }
@@ -183,6 +198,7 @@ impl Error {
     pub fn into_server_error(self, pos: Pos) -> ServerError {
         ServerError {
             message: self.message,
+            debug_message: self.debug_message,
             locations: vec![pos],
             path: Vec::new(),
             extensions: self.extensions,
@@ -194,6 +210,17 @@ impl<T: Display> From<T> for Error {
     fn from(e: T) -> Self {
         Self {
             message: e.to_string(),
+            debug_message: None,
+            extensions: None,
+        }
+    }
+}
+
+impl<T: Display + Debug> From<Failure<T>> for Error {
+    fn from(err: Failure<T>) -> Self {
+        Self {
+            message: format!("{}", err.0),
+            debug_message: Some(format!("{:?}", err.0)),
             extensions: None,
         }
     }
@@ -267,37 +294,54 @@ impl From<mime::FromStrError> for ParseRequestError {
 /// An error which can be extended into a `Error`.
 pub trait ErrorExtensions: Sized {
     /// Convert the error to a `Error`.
-    fn extend(&self) -> Error;
+    fn extend(self) -> Error;
 
     /// Add extensions to the error, using a callback to make the extensions.
     fn extend_with<C>(self, cb: C) -> Error
     where
         C: FnOnce(&Self, &mut ErrorExtensionValues),
     {
-        let message = self.extend().message;
-        let mut extensions = self.extend().extensions.unwrap_or_default();
-        cb(&self, &mut extensions);
+        let mut new_extensions = Default::default();
+        cb(&self, &mut new_extensions);
+
+        let Error {
+            message,
+            debug_message,
+            extensions,
+        } = self.extend();
+
+        let mut extensions = extensions.unwrap_or_default();
+        extensions.0.extend(new_extensions.0);
+
         Error {
             message,
+            debug_message,
             extensions: Some(extensions),
         }
     }
 }
 
 impl ErrorExtensions for Error {
-    fn extend(&self) -> Error {
-        self.clone()
+    fn extend(self) -> Error {
+        self
     }
 }
 
 // implementing for &E instead of E gives the user the possibility to implement for E which does
 // not conflict with this implementation acting as a fallback.
 impl<E: std::fmt::Display> ErrorExtensions for &E {
-    fn extend(&self) -> Error {
+    fn extend(self) -> Error {
         Error {
             message: self.to_string(),
+            debug_message: None,
             extensions: None,
         }
+    }
+}
+
+impl<T: Display + Debug> ErrorExtensions for Failure<T> {
+    fn extend(self) -> Error {
+        Error::from(self)
     }
 }
 
@@ -333,5 +377,25 @@ where
             Err(err) => Err(err.extend()),
             Ok(value) => Ok(value),
         }
+    }
+}
+
+/// An error type contains `T` that implements `Display` and `Debug`.
+///
+/// This type can solve the problem described in [#671](https://github.com/async-graphql/async-graphql/issues/671).
+#[derive(Debug)]
+pub struct Failure<T>(pub T);
+
+impl<T: Display + Debug> From<T> for Failure<T> {
+    fn from(err: T) -> Self {
+        Self(err)
+    }
+}
+
+impl<T: Display + Debug> Failure<T> {
+    /// Create a new failure.
+    #[inline]
+    pub fn new(err: T) -> Self {
+        Self(err)
     }
 }

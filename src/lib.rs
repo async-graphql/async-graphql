@@ -209,7 +209,7 @@ pub use base::{
     Type, UnionType,
 };
 pub use error::{
-    Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
+    Error, ErrorExtensionValues, ErrorExtensions, Failure, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
