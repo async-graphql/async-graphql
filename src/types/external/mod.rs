@@ -18,10 +18,10 @@ mod bson;
 mod chrono_tz;
 #[cfg(feature = "chrono")]
 mod datetime;
-#[cfg(feature = "chrono-duration")]
-mod duration;
 #[cfg(feature = "decimal")]
 mod decimal;
+#[cfg(feature = "chrono-duration")]
+mod duration;
 #[cfg(feature = "chrono")]
 mod naive_time;
 #[cfg(feature = "secrecy")]
