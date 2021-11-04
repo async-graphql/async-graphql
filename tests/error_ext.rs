@@ -1,5 +1,4 @@
 use async_graphql::*;
-use std::fmt::{self, Display, Formatter};
 
 #[tokio::test]
 pub async fn test_error_extensions() {
@@ -79,13 +78,13 @@ pub async fn test_error_extensions() {
 
 #[tokio::test]
 pub async fn test_failure() {
-    #[derive(Debug)]
-    struct MyError;
+    #[derive(thiserror::Error, Debug, PartialEq)]
+    enum MyError {
+        #[error("error1")]
+        Error1,
 
-    impl Display for MyError {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "my error")
-        }
+        #[error("error2")]
+        Error2,
     }
 
     struct Query;
@@ -93,23 +92,23 @@ pub async fn test_failure() {
     #[Object]
     impl Query {
         async fn failure(&self) -> Result<i32> {
-            Err(Failure(MyError).into())
+            Err(Failure(MyError::Error1).into())
         }
 
         async fn failure2(&self) -> Result<i32> {
-            Err(Failure(MyError))?;
+            Err(Failure(MyError::Error2))?;
             Ok(1)
         }
 
         async fn failure3(&self) -> Result<i32> {
-            Err(Failure(MyError)
+            Err(Failure(MyError::Error1)
                 .extend_with(|_, values| values.set("a", 1))
                 .extend_with(|_, values| values.set("b", 2)))?;
             Ok(1)
         }
 
         async fn failure4(&self) -> Result<i32> {
-            Err(Failure(MyError))
+            Err(Failure(MyError::Error2))
                 .extend_err(|_, values| values.set("a", 1))
                 .extend_err(|_, values| values.set("b", 2))?;
             Ok(1)
@@ -117,73 +116,53 @@ pub async fn test_failure() {
     }
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let err = schema
+        .execute("{ failure }")
+        .await
+        .into_result()
+        .unwrap_err()
+        .remove(0);
+    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error1);
+
+    let err = schema
+        .execute("{ failure2 }")
+        .await
+        .into_result()
+        .unwrap_err()
+        .remove(0);
+    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error2);
+
+    let err = schema
+        .execute("{ failure3 }")
+        .await
+        .into_result()
+        .unwrap_err()
+        .remove(0);
+    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error1);
     assert_eq!(
-        schema
-            .execute("{ failure }")
-            .await
-            .into_result()
-            .unwrap_err(),
-        vec![ServerError {
-            message: "my error".to_string(),
-            debug_message: Some("MyError".to_string()),
-            locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("failure".to_string())],
-            extensions: None
-        }]
+        err.extensions,
+        Some({
+            let mut values = ErrorExtensionValues::default();
+            values.set("a", 1);
+            values.set("b", 2);
+            values
+        })
     );
 
+    let err = schema
+        .execute("{ failure4 }")
+        .await
+        .into_result()
+        .unwrap_err()
+        .remove(0);
+    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error2);
     assert_eq!(
-        schema
-            .execute("{ failure2 }")
-            .await
-            .into_result()
-            .unwrap_err(),
-        vec![ServerError {
-            message: "my error".to_string(),
-            debug_message: Some("MyError".to_string()),
-            locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("failure2".to_string())],
-            extensions: None
-        }]
-    );
-
-    assert_eq!(
-        schema
-            .execute("{ failure3 }")
-            .await
-            .into_result()
-            .unwrap_err(),
-        vec![ServerError {
-            message: "my error".to_string(),
-            debug_message: Some("MyError".to_string()),
-            locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("failure3".to_string())],
-            extensions: Some({
-                let mut values = ErrorExtensionValues::default();
-                values.set("a", 1);
-                values.set("b", 2);
-                values
-            })
-        }]
-    );
-
-    assert_eq!(
-        schema
-            .execute("{ failure4 }")
-            .await
-            .into_result()
-            .unwrap_err(),
-        vec![ServerError {
-            message: "my error".to_string(),
-            debug_message: Some("MyError".to_string()),
-            locations: vec![Pos { line: 1, column: 3 }],
-            path: vec![PathSegment::Field("failure4".to_string())],
-            extensions: Some({
-                let mut values = ErrorExtensionValues::default();
-                values.set("a", 1);
-                values.set("b", 2);
-                values
-            })
-        }]
+        err.extensions,
+        Some({
+            let mut values = ErrorExtensionValues::default();
+            values.set("a", 1);
+            values.set("b", 2);
+            values
+        })
     );
 }

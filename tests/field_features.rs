@@ -85,7 +85,7 @@ pub async fn test_field_features() {
         vec![ServerError {
             message: r#"Unknown field "valueAbc" on type "QueryRoot". Did you mean "value"?"#
                 .to_owned(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { column: 3, line: 1 }],
             path: Vec::new(),
             extensions: None,
@@ -114,7 +114,7 @@ pub async fn test_field_features() {
         vec![ServerError {
             message: r#"Unknown field "valueAbc" on type "MyObj". Did you mean "value"?"#
                 .to_owned(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { column: 9, line: 1 }],
             path: Vec::new(),
             extensions: None,
@@ -150,7 +150,7 @@ pub async fn test_field_features() {
             .errors,
         vec![ServerError {
             message: r#"Unknown field "valuesAbc" on type "SubscriptionRoot". Did you mean "values", "valuesBson"?"#.to_owned(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos {
                 column: 16,
                 line: 1

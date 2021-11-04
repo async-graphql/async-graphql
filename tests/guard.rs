@@ -99,7 +99,7 @@ pub async fn test_guard_simple_rule() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -128,7 +128,7 @@ pub async fn test_guard_simple_rule() {
             .errors,
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos {
                 line: 1,
                 column: 16
@@ -178,7 +178,7 @@ pub async fn test_guard_and_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -198,7 +198,7 @@ pub async fn test_guard_and_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -218,7 +218,7 @@ pub async fn test_guard_and_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -288,7 +288,7 @@ pub async fn test_guard_or_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -338,7 +338,7 @@ pub async fn test_guard_chain_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -359,7 +359,7 @@ pub async fn test_guard_chain_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -380,7 +380,7 @@ pub async fn test_guard_chain_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -401,7 +401,7 @@ pub async fn test_guard_chain_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -493,7 +493,7 @@ pub async fn test_guard_race_operator() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("value".to_owned())],
             extensions: None,
@@ -549,7 +549,7 @@ pub async fn test_guard_use_params() {
             .unwrap_err(),
         vec![ServerError {
             message: "Forbidden".to_string(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("get".to_owned())],
             extensions: None,

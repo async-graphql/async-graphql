@@ -851,7 +851,7 @@ impl From<RuleError> for ServerError {
     fn from(e: RuleError) -> Self {
         Self {
             message: e.message,
-            debug_message: None,
+            error: None,
             locations: e.locations,
             path: Vec::new(),
             extensions: e.extensions,

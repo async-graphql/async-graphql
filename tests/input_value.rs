@@ -18,7 +18,7 @@ pub async fn test_input_value_custom_error() {
         vec![ServerError {
             message: "Failed to parse \"Int\": Only integers from -128 to 127 are accepted."
                 .to_owned(),
-            debug_message: None,
+            error: None,
             locations: vec![Pos {
                 line: 1,
                 column: 14,

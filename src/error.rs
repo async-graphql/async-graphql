@@ -1,6 +1,9 @@
+use std::any::Any;
 use std::collections::BTreeMap;
+use std::error::Error as StdError;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -20,15 +23,13 @@ impl ErrorExtensionValues {
 }
 
 /// An error in a GraphQL server.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ServerError {
     /// An explanatory message of the error.
     pub message: String,
-    /// An explanatory message of the error. (for debug)
-    ///
-    /// This message comes from [`Failure<T>`].
+    /// The concrete error type, comes from [`Failure<T>`].
     #[serde(skip)]
-    pub debug_message: Option<String>,
+    pub error: Option<Arc<dyn Any + Send + Sync>>,
     /// Where the error occurred.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub locations: Vec<Pos>,
@@ -44,21 +45,53 @@ fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
     values.as_ref().map_or(true, |values| values.0.is_empty())
 }
 
+impl Debug for ServerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ServerError")
+            .field("message", &self.message)
+            .field("locations", &self.locations)
+            .field("path", &self.path)
+            .field("extensions", &self.extensions)
+            .finish()
+    }
+}
+
+impl PartialEq for ServerError {
+    fn eq(&self, other: &Self) -> bool {
+        self.message.eq(&other.message)
+            && self.locations.eq(&other.locations)
+            && self.path.eq(&other.path)
+            && self.extensions.eq(&other.extensions)
+    }
+}
+
 impl ServerError {
     /// Create a new server error with the message.
     pub fn new(message: impl Into<String>, pos: Option<Pos>) -> Self {
         Self {
             message: message.into(),
-            debug_message: None,
+            error: None,
             locations: pos.map(|pos| vec![pos]).unwrap_or_default(),
             path: Vec::new(),
             extensions: None,
         }
     }
 
-    /// Returns `debug_message` if it is `Some`, otherwise returns `message`.
-    pub fn debug_message(&self) -> &str {
-        self.debug_message.as_deref().unwrap_or(&self.message)
+    /// Downcast the error object by reference.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use std::string::FromUtf8Error;
+    /// use async_graphql::{Failure, Error, ServerError, Pos};
+    ///
+    /// let bytes = vec![0, 159];
+    /// let err: Error = String::from_utf8(bytes).map_err(Failure).unwrap_err().into();
+    /// let server_err: ServerError = err.into_server_error(Pos { line: 1, column: 1 });
+    /// assert!(server_err.concrete_error::<FromUtf8Error>().is_some());
+    /// ```
+    pub fn concrete_error<T: Any + Send + Sync>(&self) -> Option<&T> {
+        self.error.as_ref().map(|err| err.downcast_ref()).flatten()
     }
 
     #[doc(hidden)]
@@ -83,7 +116,7 @@ impl From<parser::Error> for ServerError {
     fn from(e: parser::Error) -> Self {
         Self {
             message: e.to_string(),
-            debug_message: None,
+            error: None,
             locations: e.positions().collect(),
             path: Vec::new(),
             extensions: None,
@@ -172,16 +205,31 @@ impl<T: InputType, E: Display> From<E> for InputValueError<T> {
 pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 
 /// An error with a message and optional extensions.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct Error {
     /// The error message.
     pub message: String,
-    /// The debug error message.
+    /// The concrete error type, comes from [`Failure<T>`].
     #[serde(skip)]
-    pub debug_message: Option<String>,
+    pub error: Option<Arc<dyn Any + Send + Sync>>,
     /// Extensions to the error.
     #[serde(skip_serializing_if = "error_extensions_is_empty")]
     pub extensions: Option<ErrorExtensionValues>,
+}
+
+impl Debug for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Error")
+            .field("message", &self.message)
+            .field("extensions", &self.extensions)
+            .finish()
+    }
+}
+
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        self.message.eq(&other.message) && self.extensions.eq(&other.extensions)
+    }
 }
 
 impl Error {
@@ -189,7 +237,7 @@ impl Error {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
-            debug_message: None,
+            error: None,
             extensions: None,
         }
     }
@@ -199,7 +247,7 @@ impl Error {
     pub fn into_server_error(self, pos: Pos) -> ServerError {
         ServerError {
             message: self.message,
-            debug_message: self.debug_message,
+            error: self.error,
             locations: vec![pos],
             path: Vec::new(),
             extensions: self.extensions,
@@ -207,21 +255,21 @@ impl Error {
     }
 }
 
-impl<T: Display> From<T> for Error {
+impl<T: Display + Send + Sync + 'static> From<T> for Error {
     fn from(e: T) -> Self {
         Self {
             message: e.to_string(),
-            debug_message: None,
+            error: None,
             extensions: None,
         }
     }
 }
 
-impl<T: Display + Debug> From<Failure<T>> for Error {
-    fn from(err: Failure<T>) -> Self {
+impl<T: StdError + Send + Sync + 'static> From<Failure<T>> for Error {
+    fn from(e: Failure<T>) -> Self {
         Self {
-            message: format!("{}", err.0),
-            debug_message: Some(format!("{:?}", err.0)),
+            message: e.0.to_string(),
+            error: Some(Arc::new(e.0)),
             extensions: None,
         }
     }
@@ -307,7 +355,7 @@ pub trait ErrorExtensions: Sized {
 
         let Error {
             message,
-            debug_message,
+            error,
             extensions,
         } = self.extend();
 
@@ -316,7 +364,7 @@ pub trait ErrorExtensions: Sized {
 
         Error {
             message,
-            debug_message,
+            error,
             extensions: Some(extensions),
         }
     }
@@ -330,17 +378,17 @@ impl ErrorExtensions for Error {
 
 // implementing for &E instead of E gives the user the possibility to implement for E which does
 // not conflict with this implementation acting as a fallback.
-impl<E: std::fmt::Display> ErrorExtensions for &E {
+impl<E: Display> ErrorExtensions for &E {
     fn extend(self) -> Error {
         Error {
             message: self.to_string(),
-            debug_message: None,
+            error: None,
             extensions: None,
         }
     }
 }
 
-impl<T: Display + Debug> ErrorExtensions for Failure<T> {
+impl<T: StdError + Send + Sync + 'static> ErrorExtensions for Failure<T> {
     fn extend(self) -> Error {
         Error::from(self)
     }
@@ -381,19 +429,17 @@ where
     }
 }
 
-/// An error type contains `T` that implements `Display` and `Debug`.
-///
-/// This type can solve the problem described in [#671](https://github.com/async-graphql/async-graphql/issues/671).
+/// A wrapper around a dynamic error type.
 #[derive(Debug)]
 pub struct Failure<T>(pub T);
 
-impl<T: Display + Debug> From<T> for Failure<T> {
+impl<T: Any + Send + Sync> From<T> for Failure<T> {
     fn from(err: T) -> Self {
         Self(err)
     }
 }
 
-impl<T: Display + Debug> Failure<T> {
+impl<T: Any + Send + Sync> Failure<T> {
     /// Create a new failure.
     #[inline]
     pub fn new(err: T) -> Self {

@@ -67,7 +67,7 @@ pub async fn test_input_validator_string_min_length() {
                     .expect_err(&should_fail_msg),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -85,7 +85,7 @@ pub async fn test_input_validator_string_min_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -179,7 +179,7 @@ pub async fn test_input_validator_string_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -197,7 +197,7 @@ pub async fn test_input_validator_string_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -290,7 +290,7 @@ pub async fn test_input_validator_chars_min_length() {
                     .expect_err(&should_fail_msg),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -308,7 +308,7 @@ pub async fn test_input_validator_chars_min_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -403,7 +403,7 @@ pub async fn test_input_validator_chars_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -421,7 +421,7 @@ pub async fn test_input_validator_chars_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -542,7 +542,7 @@ pub async fn test_input_validator_string_email() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -561,7 +561,7 @@ pub async fn test_input_validator_string_email() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -692,7 +692,7 @@ pub async fn test_input_validator_string_mac() {
                 .expect_err(&should_fail_msg[..]),
             vec![ServerError {
                 message: field_error_msg.clone(),
-                debug_message: None,
+                error: None,
                 locations: vec!(Pos {
                     line: 1,
                     column: 17
@@ -711,7 +711,7 @@ pub async fn test_input_validator_string_mac() {
                 .expect_err(&should_fail_msg[..]),
             vec![ServerError {
                 message: object_error_msg.clone(),
-                debug_message: None,
+                error: None,
                 locations: vec!(Pos {
                     line: 1,
                     column: 14
@@ -729,7 +729,7 @@ pub async fn test_input_validator_string_mac() {
                 .expect_err(&should_fail_msg[..]),
             vec![ServerError {
                 message: field_error_msg,
-                debug_message: None,
+                error: None,
                 locations: vec!(Pos {
                     line: 1,
                     column: 17
@@ -748,7 +748,7 @@ pub async fn test_input_validator_string_mac() {
                 .expect_err(&should_fail_msg[..]),
             vec![ServerError {
                 message: object_error_msg,
-                debug_message: None,
+                error: None,
                 locations: vec!(Pos {
                     line: 1,
                     column: 14
@@ -806,7 +806,7 @@ pub async fn test_input_validator_string_mac() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -825,7 +825,7 @@ pub async fn test_input_validator_string_mac() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -867,7 +867,7 @@ pub async fn test_input_validator_string_mac() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -886,7 +886,7 @@ pub async fn test_input_validator_string_mac() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -947,7 +947,7 @@ pub async fn test_input_validator_int_range() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -965,7 +965,7 @@ pub async fn test_input_validator_int_range() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1054,7 +1054,7 @@ pub async fn test_input_validator_int_less_than() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1072,7 +1072,7 @@ pub async fn test_input_validator_int_less_than() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1163,7 +1163,7 @@ pub async fn test_input_validator_int_greater_than() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1181,7 +1181,7 @@ pub async fn test_input_validator_int_greater_than() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1265,7 +1265,7 @@ pub async fn test_input_validator_int_nonzero() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1283,7 +1283,7 @@ pub async fn test_input_validator_int_nonzero() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1371,7 +1371,7 @@ pub async fn test_input_validator_int_equal() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1389,7 +1389,7 @@ pub async fn test_input_validator_int_equal() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1489,7 +1489,7 @@ pub async fn test_input_validator_list_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1507,7 +1507,7 @@ pub async fn test_input_validator_list_max_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1607,7 +1607,7 @@ pub async fn test_input_validator_list_min_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1625,7 +1625,7 @@ pub async fn test_input_validator_list_min_length() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1733,7 +1733,7 @@ pub async fn test_input_validator_operator_or() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1751,7 +1751,7 @@ pub async fn test_input_validator_operator_or() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1852,7 +1852,7 @@ pub async fn test_input_validator_operator_and() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 17
@@ -1870,7 +1870,7 @@ pub async fn test_input_validator_operator_and() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 14
@@ -1974,7 +1974,7 @@ pub async fn test_input_validator_variable() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: field_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 37
@@ -1992,7 +1992,7 @@ pub async fn test_input_validator_variable() {
                     .expect_err(&should_fail_msg[..]),
                 vec![ServerError {
                     message: object_error_msg,
-                    debug_message: None,
+                    error: None,
                     locations: vec!(Pos {
                         line: 1,
                         column: 34
@@ -2079,7 +2079,7 @@ pub async fn test_custom_input_validator_with_extensions() {
             .expect_err(should_fail_msg),
         vec![ServerError {
             message: field_error_msg.into(),
-            debug_message: None,
+            error: None,
             locations: vec!(Pos {
                 line: 1,
                 column: 17
