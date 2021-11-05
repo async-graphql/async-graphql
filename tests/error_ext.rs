@@ -92,23 +92,23 @@ pub async fn test_failure() {
     #[Object]
     impl Query {
         async fn failure(&self) -> Result<i32> {
-            Err(Failure(MyError::Error1).into())
+            Err(Failure::new(MyError::Error1).into())
         }
 
         async fn failure2(&self) -> Result<i32> {
-            Err(Failure(MyError::Error2))?;
+            Err(Failure::new(MyError::Error2))?;
             Ok(1)
         }
 
         async fn failure3(&self) -> Result<i32> {
-            Err(Failure(MyError::Error1)
+            Err(Failure::new(MyError::Error1)
                 .extend_with(|_, values| values.set("a", 1))
                 .extend_with(|_, values| values.set("b", 2)))?;
             Ok(1)
         }
 
         async fn failure4(&self) -> Result<i32> {
-            Err(Failure(MyError::Error2))
+            Err(Failure::new(MyError::Error2))
                 .extend_err(|_, values| values.set("a", 1))
                 .extend_err(|_, values| values.set("b", 2))?;
             Ok(1)
@@ -165,4 +165,22 @@ pub async fn test_failure() {
             values
         })
     );
+}
+
+#[tokio::test]
+pub async fn test_failure2() {
+    #[derive(thiserror::Error, Debug, PartialEq)]
+    enum MyError {
+        #[error("error1")]
+        Error1,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn failure(&self) -> Result<i32, Failure> {
+            Err(MyError::Error1)?
+        }
+    }
 }

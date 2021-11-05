@@ -86,7 +86,7 @@ impl ServerError {
     /// use async_graphql::{Failure, Error, ServerError, Pos};
     ///
     /// let bytes = vec![0, 159];
-    /// let err: Error = String::from_utf8(bytes).map_err(Failure).unwrap_err().into();
+    /// let err: Error = String::from_utf8(bytes).map_err(Failure::new).unwrap_err().into();
     /// let server_err: ServerError = err.into_server_error(Pos { line: 1, column: 1 });
     /// assert!(server_err.concrete_error::<FromUtf8Error>().is_some());
     /// ```
@@ -265,11 +265,11 @@ impl<T: Display + Send + Sync + 'static> From<T> for Error {
     }
 }
 
-impl<T: StdError + Send + Sync + 'static> From<Failure<T>> for Error {
-    fn from(e: Failure<T>) -> Self {
+impl From<Failure> for Error {
+    fn from(e: Failure) -> Self {
         Self {
-            message: e.0.to_string(),
-            error: Some(Arc::new(e.0)),
+            message: e.message,
+            error: Some(e.error),
             extensions: None,
         }
     }
@@ -388,7 +388,8 @@ impl<E: Display> ErrorExtensions for &E {
     }
 }
 
-impl<T: StdError + Send + Sync + 'static> ErrorExtensions for Failure<T> {
+impl ErrorExtensions for Failure {
+    #[inline]
     fn extend(self) -> Error {
         Error::from(self)
     }
@@ -431,18 +432,24 @@ where
 
 /// A wrapper around a dynamic error type.
 #[derive(Debug)]
-pub struct Failure<T>(pub T);
+pub struct Failure {
+    message: String,
+    error: Arc<dyn Any + Send + Sync>,
+}
 
-impl<T: Any + Send + Sync> From<T> for Failure<T> {
+impl<T: StdError + Send + Sync + 'static> From<T> for Failure {
     fn from(err: T) -> Self {
-        Self(err)
+        Self {
+            message: err.to_string(),
+            error: Arc::new(err),
+        }
     }
 }
 
-impl<T: Any + Send + Sync> Failure<T> {
+impl Failure {
     /// Create a new failure.
     #[inline]
-    pub fn new(err: T) -> Self {
-        Self(err)
+    pub fn new<T: StdError + Send + Sync + 'static>(err: T) -> Self {
+        From::from(err)
     }
 }
