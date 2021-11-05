@@ -151,17 +151,13 @@ impl<T> MaybeUndefined<T> {
     #[inline]
     pub fn map<U, F: FnOnce(Option<T>) -> Option<U>>(self, f: F) -> MaybeUndefined<U> {
         match self {
-            MaybeUndefined::Value(v) => {
-                match f(Some(v)) {
-                    Some(v) => MaybeUndefined::Value(v),
-                    None => MaybeUndefined::Null
-                }
+            MaybeUndefined::Value(v) => match f(Some(v)) {
+                Some(v) => MaybeUndefined::Value(v),
+                None => MaybeUndefined::Null,
             },
-            MaybeUndefined::Null => {
-                match f(None) {
-                    Some(v) => MaybeUndefined::Value(v),
-                    None => MaybeUndefined::Null
-                }
+            MaybeUndefined::Null => match f(None) {
+                Some(v) => MaybeUndefined::Value(v),
+                None => MaybeUndefined::Null,
             },
             MaybeUndefined::Undefined => MaybeUndefined::Undefined,
         }
@@ -225,7 +221,7 @@ impl<T, E> MaybeUndefined<Result<T, E>> {
             MaybeUndefined::Undefined => Ok(MaybeUndefined::Undefined),
             MaybeUndefined::Null => Ok(MaybeUndefined::Null),
             MaybeUndefined::Value(Ok(v)) => Ok(MaybeUndefined::Value(v)),
-            MaybeUndefined::Value(Err(e)) => Err(e)
+            MaybeUndefined::Value(Err(e)) => Err(e),
         }
     }
 }
@@ -419,7 +415,6 @@ mod tests {
         assert!(value.contains_value(&test));
     }
 
-    
     #[test]
     fn test_contains() {
         let test = Some("abc");
@@ -456,10 +451,16 @@ mod tests {
         assert_eq!(value.map(|v| Some(v.is_some())), MaybeUndefined::Undefined);
 
         value = MaybeUndefined::Null;
-        assert_eq!(value.map(|v| Some(v.is_some())), MaybeUndefined::Value(false));
+        assert_eq!(
+            value.map(|v| Some(v.is_some())),
+            MaybeUndefined::Value(false)
+        );
 
         value = MaybeUndefined::Value(5);
-        assert_eq!(value.map(|v| Some(v.is_some())), MaybeUndefined::Value(true));
+        assert_eq!(
+            value.map(|v| Some(v.is_some())),
+            MaybeUndefined::Value(true)
+        );
     }
 
     #[test]
