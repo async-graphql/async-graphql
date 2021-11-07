@@ -242,6 +242,7 @@ pub async fn test_find_entity_with_context() {
         schema.execute(query).await.into_result().unwrap_err(),
         vec![ServerError {
             message: "Not found".to_string(),
+            source: None,
             locations: vec![Pos {
                 line: 2,
                 column: 13

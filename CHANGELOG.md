@@ -6,12 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Add `chrono::Duration` custom scalar. [#689](https://github.com/async-graphql/async-graphql/pull/689)
+- Implement `From<Option<Option<T>>>` for `MaybeUndefined<T>`.
+- Add `MaybeUndefined::as_opt_ref`, `MaybeUndefined::as_opt_deref`, `MaybeUndefined::map`, `MaybeUndefined::map_value`, `MaybeUndefined::contains`, `MaybeUndefined::contains_value`, and `MaybeUndefined::transpose` methods.
+- Made `MaybeUndefined::is_undefined`, `MaybeUndefined::is_null`, `MaybeUndefined::is_value`, `MaybeUndefined::value` and `MaybeUndefined::as_opt_ref` const.
+- Add `ResolverError` type. [#671](https://github.com/async-graphql/async-graphql/issues/671)
+- [async-graphql-axum] Bump axum from `0.2.5` to `0.3`.
+- [async-graphql-poem] Export the HTTP headers in the `Context`.
+
+## [2.11.0] 2021-11-03
+
 - Use Rust `2021` edition.
 - Subscription typename - [GraphQL - October 2021] [#681](https://github.com/async-graphql/async-graphql/issues/681)
 - Allow directive on variable definition - [GraphQL - October 2021] [#678](https://github.com/async-graphql/async-graphql/issues/678)
 - Specified By - [GraphQL - October 2021] [#677](https://github.com/async-graphql/async-graphql/issues/677)
 - Add `specified_by_url` for `Tz`, `DateTime<Tz>`, `Url`, `Uuid` and `Upload` scalars.
-- Number value literal lookahead restrictions - [GraphQL - October 2021] (https://github.com/async-graphql/async-graphql/issues/685)
+- Number value literal lookahead restrictions - [GraphQL - October 2021] [#685](https://github.com/async-graphql/async-graphql/issues/685)
 
 ## [2.10.8] 2021-10-26
 

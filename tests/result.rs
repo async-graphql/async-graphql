@@ -34,12 +34,14 @@ pub async fn test_fieldresult() {
             errors: vec![
                 ServerError {
                     message: "TestError".to_string(),
+                    source: None,
                     locations: vec![Pos { line: 1, column: 3 }],
                     path: vec![PathSegment::Field("error1".to_owned())],
                     extensions: None,
                 },
                 ServerError {
                     message: "TestError".to_string(),
+                    source: None,
                     locations: vec![Pos {
                         line: 1,
                         column: 19,
@@ -60,6 +62,7 @@ pub async fn test_fieldresult() {
             .unwrap_err(),
         vec![ServerError {
             message: "TestError".to_string(),
+            source: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![PathSegment::Field("optError".to_owned())],
             extensions: None,
@@ -74,6 +77,7 @@ pub async fn test_fieldresult() {
             .unwrap_err(),
         vec![ServerError {
             message: "TestError".to_string(),
+            source: None,
             locations: vec![Pos { line: 1, column: 3 }],
             path: vec![
                 PathSegment::Field("vecError".to_owned()),
@@ -188,6 +192,7 @@ pub async fn test_error_propagation() {
             cache_control: Default::default(),
             errors: vec![ServerError {
                 message: "myerror".to_string(),
+                source: None,
                 locations: vec![Pos {
                     line: 1,
                     column: 20,
@@ -215,6 +220,7 @@ pub async fn test_error_propagation() {
             cache_control: Default::default(),
             errors: vec![ServerError {
                 message: "myerror".to_string(),
+                source: None,
                 locations: vec![Pos {
                     line: 1,
                     column: 23,
@@ -238,6 +244,7 @@ pub async fn test_error_propagation() {
             cache_control: Default::default(),
             errors: vec![ServerError {
                 message: "myerror".to_string(),
+                source: None,
                 locations: vec![Pos {
                     line: 1,
                     column: 23,
@@ -267,6 +274,7 @@ pub async fn test_error_propagation() {
             cache_control: Default::default(),
             errors: vec![ServerError {
                 message: "myerror".to_string(),
+                source: None,
                 locations: vec![Pos {
                     line: 1,
                     column: 23,

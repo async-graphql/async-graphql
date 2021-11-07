@@ -1,8 +1,7 @@
-use async_graphql::{BatchResponse as GraphQLBatchResponse, ObjectType, Schema, SubscriptionType};
-use poem::web::Json;
+use async_graphql::{ObjectType, Schema, SubscriptionType};
 use poem::{async_trait, Endpoint, FromRequest, Request, Result};
 
-use crate::GraphQLBatchRequest;
+use crate::{GraphQLBatchRequest, GraphQLBatchResponse};
 
 /// A GraphQL query endpoint.
 ///
@@ -45,11 +44,11 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    type Output = Result<Json<GraphQLBatchResponse>>;
+    type Output = Result<GraphQLBatchResponse>;
 
     async fn call(&self, req: Request) -> Self::Output {
         let (req, mut body) = req.split();
         let req = GraphQLBatchRequest::from_request(&req, &mut body).await?;
-        Ok(Json(self.schema.execute_batch(req.0).await))
+        Ok(GraphQLBatchResponse(self.schema.execute_batch(req.0).await))
     }
 }

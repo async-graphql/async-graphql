@@ -34,7 +34,7 @@
 //! * [Docs](https://docs.rs/async-graphql)
 //! * [GitHub repository](https://github.com/async-graphql/async-graphql)
 //! * [Cargo package](https://crates.io/crates/async-graphql)
-//! * Minimum supported Rust version: 1.51 or later
+//! * Minimum supported Rust version: 1.56.1 or later
 //!
 //! ## Features
 //!
@@ -210,7 +210,7 @@ pub use base::{
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
-    ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
+    ParseRequestError, PathSegment, ResolverError, Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;

@@ -167,6 +167,7 @@ pub async fn test_array_type() {
         vec![ServerError {
             message: r#"Failed to parse "[Int!]": Expected input type "[Int; 6]", found [Int; 5]."#
                 .to_owned(),
+            source: None,
             locations: vec![Pos {
                 line: 1,
                 column: 22,
