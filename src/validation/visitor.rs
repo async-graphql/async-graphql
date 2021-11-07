@@ -611,6 +611,17 @@ fn visit_selection<'a, V: Visitor<'a>>(
                         visit_field(v, ctx, field);
                     },
                 );
+            } else if ctx.current_type().map(|ty| match ty {
+                MetaType::Object {
+                    is_subscription, ..
+                } => *is_subscription,
+                _ => false,
+            }) == Some(true)
+            {
+                ctx.report_error(
+                    vec![field.pos],
+                    "Unknown field \"__typename\" on type \"Subscription\".",
+                );
             }
         }
         Selection::FragmentSpread(fragment_spread) => {
@@ -840,6 +851,7 @@ impl From<RuleError> for ServerError {
     fn from(e: RuleError) -> Self {
         Self {
             message: e.message,
+            source: None,
             locations: e.locations,
             path: Vec::new(),
             extensions: e.extensions,

@@ -10,17 +10,17 @@ mod value_serde;
 mod variables;
 
 use std::borrow::{Borrow, Cow};
-use std::collections::BTreeMap;
-use std::convert::{TryFrom, TryInto};
 use std::fmt::{self, Display, Formatter, Write};
-use std::iter::FromIterator;
 use std::ops::Deref;
 use std::sync::Arc;
 
 use bytes::Bytes;
+use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub use deserializer::{from_value, DeserializerError};
+#[doc(hidden)]
+pub use indexmap;
 pub use serde_json::Number;
 pub use serializer::{to_value, SerializerError};
 
@@ -139,7 +139,7 @@ pub enum ConstValue {
     /// A list of values.
     List(Vec<ConstValue>),
     /// An object. This is a map of keys to values.
-    Object(BTreeMap<Name, ConstValue>),
+    Object(IndexMap<Name, ConstValue>),
 }
 
 impl PartialEq for ConstValue {
@@ -254,8 +254,8 @@ impl<T: Into<ConstValue>> From<Vec<T>> for ConstValue {
     }
 }
 
-impl From<BTreeMap<Name, ConstValue>> for ConstValue {
-    fn from(f: BTreeMap<Name, ConstValue>) -> Self {
+impl From<IndexMap<Name, ConstValue>> for ConstValue {
+    fn from(f: IndexMap<Name, ConstValue>) -> Self {
         ConstValue::Object(f)
     }
 }
@@ -364,7 +364,7 @@ pub enum Value {
     /// A list of values.
     List(Vec<Value>),
     /// An object. This is a map of keys to values.
-    Object(BTreeMap<Name, Value>),
+    Object(IndexMap<Name, Value>),
 }
 
 impl Value {

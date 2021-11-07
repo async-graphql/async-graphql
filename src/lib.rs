@@ -34,7 +34,7 @@
 //! * [Docs](https://docs.rs/async-graphql)
 //! * [GitHub repository](https://github.com/async-graphql/async-graphql)
 //! * [Cargo package](https://crates.io/crates/async-graphql)
-//! * Minimum supported Rust version: 1.51 or later
+//! * Minimum supported Rust version: 1.56.1 or later
 //!
 //! ## Features
 //!
@@ -210,7 +210,7 @@ pub use base::{
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
-    ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
+    ParseRequestError, PathSegment, ResolverError, Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;
@@ -279,6 +279,7 @@ pub type FieldResult<T> = Result<T>;
 /// | default      | Use `Default::default` for default value | none        | Y        |
 /// | default      | Argument default value                   | literal     | Y        |
 /// | default_with | Expression to generate default value     | code string | Y        |
+/// | derived      | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                 | object        | Y        |
 /// | validator    | Input value validator                    | [`InputValueValidator`](validators/trait.InputValueValidator.html) | Y        |
 /// | complexity   | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                 | bool        | Y        |
 /// | complexity   | Custom field complexity.                 | string      | Y        |
@@ -287,6 +288,14 @@ pub type FieldResult<T> = Result<T>;
 /// | secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
 /// | serial       | Resolve each field sequentially.         | bool        | Y        |
 /// | key          | Is entity key(for Federation)            | bool        | Y        |
+///
+/// # Derived argument parameters
+///
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|------------ |----------|
+/// | name         | Generated derived field name             | string      | N        |
+/// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Valid field return types
 ///
@@ -443,6 +452,7 @@ pub use async_graphql_derive::Object;
 /// | name          | Field name                | string   | Y        |
 /// | deprecation   | Field deprecated          | bool     | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | derived      | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                 | object        | Y        |
 /// | owned         | Field resolver return a ownedship value  | bool   | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
@@ -451,6 +461,16 @@ pub use async_graphql_derive::Object;
 /// | guard         | Field of guard            | [`Guard`](guard/trait.Guard.html) | Y        |
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+///
+/// # Derived argument parameters
+///
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|------------ |----------|
+/// | name         | Generated derived field name             | string      | N        |
+/// | into         | Type to derived an into                  | string      | Y        |
+/// | owned        | Field resolver return a ownedship value  | bool        | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
+///
 ///
 /// # Examples
 ///
@@ -498,6 +518,7 @@ pub use async_graphql_derive::SimpleObject;
 /// | name          | Field name                | string   | Y        |
 /// | deprecation   | Field deprecated          | bool     | Y        |
 /// | deprecation   | Field deprecation reason  | string   | Y        |
+/// | derived      | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                 | object        | Y        |
 /// | cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
 /// | external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
 /// | provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
@@ -506,6 +527,14 @@ pub use async_graphql_derive::SimpleObject;
 /// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
 /// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 /// | secret        | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
+///
+/// # Derived argument parameters
+///
+/// | Attribute    | description                              | Type        | Optional |
+/// |--------------|------------------------------------------|------------ |----------|
+/// | name         | Generated derived field name             | string      | N        |
+/// | into         | Type to derived an into                  | string      | Y        |
+/// | with         | Function to apply to manage advanced use cases | string| Y        |
 ///
 /// # Examples
 ///
@@ -958,6 +987,7 @@ pub use async_graphql_derive::Subscription;
 /// | Attribute   | description               | Type     | Optional |
 /// |-------------|---------------------------|----------|----------|
 /// | name        | Scalar name               | string   | Y        |
+/// | specified_by_url | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 pub use async_graphql_derive::Scalar;
 
@@ -971,8 +1001,9 @@ pub use async_graphql_derive::Scalar;
 /// |-------------|---------------------------|----------|----------|
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | string   | Y      |
 /// | name        | If this attribute is provided then define a new scalar, otherwise it is just a transparent proxy for the internal scalar. | bool   | Y        |
-/// | visible(Only valid for new scalars.)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-/// | visible(Only valid for new scalars.)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | visible(Only valid for new scalars)   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible(Only valid for new scalars)   | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+/// | specified_by_url(Only valid for new scalars) | Provide a specification URL for this scalar type, it must link to a human-readable specification of the data format, serialization and coercion rules for this scalar. | string | Y |
 ///
 /// # Examples
 ///

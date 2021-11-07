@@ -4,6 +4,7 @@
 
 use once_cell::sync::Lazy;
 
+use crate::futures_util::Stream;
 use crate::parser::types::ExecutableDocument;
 use crate::validation::visitor::{visit, RuleError, Visitor, VisitorContext};
 use crate::*;
@@ -345,8 +346,17 @@ impl MutationRoot {
     }
 }
 
-static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, EmptySubscription>> =
-    Lazy::new(|| Schema::new(QueryRoot, MutationRoot, EmptySubscription));
+pub struct SubscriptionRoot;
+
+#[Subscription(internal)]
+impl SubscriptionRoot {
+    async fn values(&self) -> impl Stream<Item = i32> {
+        futures_util::stream::once(async move { 10 })
+    }
+}
+
+static TEST_HARNESS: Lazy<Schema<QueryRoot, MutationRoot, SubscriptionRoot>> =
+    Lazy::new(|| Schema::new(QueryRoot, MutationRoot, SubscriptionRoot));
 
 pub(crate) fn validate<'a, V, F>(
     doc: &'a ExecutableDocument,

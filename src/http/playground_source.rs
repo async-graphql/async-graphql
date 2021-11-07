@@ -624,7 +624,7 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::BTreeMap;
+    use indexmap::IndexMap;
 
     #[test]
     fn test_with_setting_can_use_any_json_value() {
@@ -634,7 +634,7 @@ mod tests {
             .with_setting("number", 10)
             .with_setting("null", Value::Null)
             .with_setting("array", Vec::from([1, 2, 3]))
-            .with_setting("object", BTreeMap::new());
+            .with_setting("object", IndexMap::new());
 
         let json = serde_json::to_value(settings).unwrap();
         let settings = json["settings"].as_object().unwrap();

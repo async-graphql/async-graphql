@@ -6,7 +6,7 @@ use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
 };
 
-#[derive(FromMeta)]
+#[derive(FromMeta, Clone)]
 #[darling(default)]
 pub struct CacheControl {
     public: bool,
@@ -46,7 +46,7 @@ impl FromMeta for DefaultValue {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Visible {
     None,
     HiddenAlways,
@@ -86,7 +86,7 @@ pub struct ConcreteType {
     pub params: PathList,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Deprecation {
     NoDeprecated,
     Deprecated { reason: Option<String> },
@@ -115,7 +115,7 @@ impl FromMeta for Deprecation {
     }
 }
 
-#[derive(FromField)]
+#[derive(FromField, Clone)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
     pub ident: Option<Ident>,
@@ -143,6 +143,8 @@ pub struct SimpleObjectField {
     pub guard: Option<Meta>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default, multiple)]
+    pub derived: Vec<DerivedField>,
 }
 
 #[derive(FromDeriveInput)]
@@ -243,6 +245,19 @@ pub struct ObjectField {
     pub guard: Option<Meta>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
+    #[darling(default, multiple)]
+    pub derived: Vec<DerivedField>,
+}
+
+#[derive(FromMeta, Default, Clone)]
+#[darling(default)]
+/// Derivied fields arguments: are used to generate derivied fields.
+pub struct DerivedField {
+    pub name: Option<Ident>,
+    pub into: Option<String>,
+    pub with: Option<Path>,
+    #[darling(default)]
+    pub owned: Option<bool>,
 }
 
 #[derive(FromDeriveInput)]
@@ -431,6 +446,7 @@ pub struct Scalar {
     pub name: Option<String>,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
+    pub specified_by_url: Option<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -637,6 +653,8 @@ pub struct NewType {
     pub name: NewTypeName,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub specified_by_url: Option<String>,
 }
 
 #[derive(FromMeta, Default)]

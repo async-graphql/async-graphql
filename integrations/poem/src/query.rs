@@ -1,15 +1,14 @@
-use async_graphql::{BatchResponse as GraphQLBatchResponse, ObjectType, Schema, SubscriptionType};
-use poem::web::Json;
+use async_graphql::{ObjectType, Schema, SubscriptionType};
 use poem::{async_trait, Endpoint, FromRequest, Request, Result};
 
-use crate::GraphQLBatchRequest;
+use crate::{GraphQLBatchRequest, GraphQLBatchResponse};
 
 /// A GraphQL query endpoint.
 ///
 /// # Example
 ///
 /// ```
-/// use poem::{route, RouteMethod};
+/// use poem::{Route, post};
 /// use async_graphql_poem::GraphQL;
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
 ///
@@ -25,7 +24,7 @@ use crate::GraphQLBatchRequest;
 /// type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 ///
 /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-/// let app = route().at("/", RouteMethod::new().post(GraphQL::new(schema)));
+/// let app = Route::new().at("/", post(GraphQL::new(schema)));
 /// ```
 pub struct GraphQL<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
@@ -45,11 +44,11 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    type Output = Result<Json<GraphQLBatchResponse>>;
+    type Output = Result<GraphQLBatchResponse>;
 
     async fn call(&self, req: Request) -> Self::Output {
         let (req, mut body) = req.split();
         let req = GraphQLBatchRequest::from_request(&req, &mut body).await?;
-        Ok(Json(self.schema.execute_batch(req.0).await))
+        Ok(GraphQLBatchResponse(self.schema.execute_batch(req.0).await))
     }
 }

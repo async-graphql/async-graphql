@@ -1,8 +1,8 @@
 [package]
 name = "async-graphql-poem"
-version = "2.10.4"
+version = "2.11.0"
 authors = ["sunli <scott_s829@163.com>"]
-edition = "2018"
+edition = "2021"
 description = "async-graphql for poem"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql-poem/"
@@ -11,11 +11,10 @@ repository = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql", "poem"]
 categories = ["network-programming", "asynchronous"]
 
-
 [dependencies]
-async-graphql = { path = "../..", version = "=2.10.4" }
+async-graphql = { path = "../..", version = "=2.11.0" }
 
-poem = { version = "0.6.6", features = ["websocket"] }
+poem = { version = "1.0.19", features = ["websocket"] }
 futures-util = { version = "0.3.13", default-features = false }
 serde_json = "1.0.66"
 tokio-util = { version = "0.6.7", features = ["compat"] }

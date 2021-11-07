@@ -1,4 +1,5 @@
 use async_graphql::http::MultipartOptions;
+use poem::error::BadRequest;
 use poem::http::{header, Method};
 use poem::web::Query;
 use poem::{async_trait, Error, FromRequest, Request, RequestBody, Result};
@@ -12,7 +13,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// # Example
 ///
 /// ```
-/// use poem::{handler, RouteMethod, route, EndpointExt};
+/// use poem::{handler, Route, post, EndpointExt};
 /// use poem::web::{Json, Data};
 /// use poem::middleware::AddData;
 /// use async_graphql_poem::GraphQLRequest;
@@ -35,7 +36,7 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// }
 ///
 /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-/// let app = route().at("/", RouteMethod::new().post(index.with(AddData::new(schema))));
+/// let app = Route::new().at("/", post(index.with(AddData::new(schema))));
 /// ```
 pub struct GraphQLRequest(pub async_graphql::Request);
 
@@ -49,7 +50,7 @@ impl<'a> FromRequest<'a> for GraphQLRequest {
                 .await?
                 .0
                 .into_single()
-                .map_err(Error::bad_request)?,
+                .map_err(BadRequest)?,
         ))
     }
 }
@@ -63,10 +64,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
 
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
-            let req = Query::from_request(req, body)
-                .await
-                .map_err(Error::bad_request)?
-                .0;
+            let req = Query::from_request(req, body).await?.0;
             Ok(Self(async_graphql::BatchRequest::Single(req)))
         } else {
             let content_type = req
@@ -80,8 +78,7 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
                     body.take()?.into_async_read().compat(),
                     MultipartOptions::default(),
                 )
-                .await
-                .map_err(Error::bad_request)?,
+                .await?,
             ))
         }
     }

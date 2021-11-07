@@ -1,8 +1,8 @@
 [package]
 name = "async-graphql-axum"
-version = "2.10.4"
+version = "2.11.0"
 authors = ["sunli <scott_s829@163.com>"]
-edition = "2018"
+edition = "2021"
 description = "async-graphql for axum"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql-axum/"
@@ -12,10 +12,10 @@ keywords = ["futures", "async", "graphql", "axum"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "=2.10.4" }
+async-graphql = { path = "../..", version = "=2.11.0" }
 
 async-trait = "0.1.51"
-axum = { version = "0.2.5", features = ["ws", "headers"] }
+axum = { version = "0.3", features = ["ws", "headers"] }
 bytes = "1.0.1"
 headers = "0.3.4"
 http = "0.2.4"

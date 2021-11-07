@@ -25,6 +25,7 @@ impl Type for EmptySubscription {
             extends: false,
             keys: None,
             visible: None,
+            is_subscription: true,
         })
     }
 }

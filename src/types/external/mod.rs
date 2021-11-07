@@ -20,6 +20,8 @@ mod chrono_tz;
 mod datetime;
 #[cfg(feature = "decimal")]
 mod decimal;
+#[cfg(feature = "chrono-duration")]
+mod duration;
 #[cfg(feature = "chrono")]
 mod naive_time;
 #[cfg(feature = "secrecy")]

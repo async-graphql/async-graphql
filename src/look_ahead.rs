@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::convert::TryFrom;
 
 use crate::parser::types::{Field, FragmentDefinition, Selection, SelectionSet};
 use crate::Context;

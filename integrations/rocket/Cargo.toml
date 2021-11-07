@@ -1,8 +1,8 @@
 [package]
 name = "async-graphql-rocket"
-version = "2.10.4"
+version = "2.11.0"
 authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
-edition = "2018"
+edition = "2021"
 description = "async-graphql for Rocket.rs"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"
@@ -12,7 +12,7 @@ keywords = ["futures", "async", "graphql", "rocket"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "=2.10.4" }
+async-graphql = { path = "../..", version = "=2.11.0" }
 
 rocket = { version = "0.5.0-rc.1", default-features = false }
 serde = "1.0.126"
