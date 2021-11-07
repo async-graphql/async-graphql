@@ -3,20 +3,19 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use actix::{
-    Actor, ActorContext, ActorFutureExt, ActorStreamExt, AsyncContext, ContextFutureSpawner,
-    StreamHandler, WrapFuture, WrapStream,
+    Actor, ActorContext, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture, WrapStream,
 };
-use actix_http::ws::Item;
-use actix_web::error::{Error, PayloadError};
-use actix_web::web::{BufMut, Bytes, BytesMut};
+use actix::{ActorFutureExt, ActorStreamExt};
+use actix_http::error::PayloadError;
+use actix_http::ws;
+use actix_web::web::Bytes;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures_channel::mpsc;
 use futures_util::future::Ready;
 use futures_util::stream::Stream;
-use futures_util::SinkExt;
+
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
+use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -26,9 +25,9 @@ pub struct WSSubscription<Query, Mutation, Subscription, F> {
     schema: Schema<Query, Mutation, Subscription>,
     protocol: WebSocketProtocols,
     last_heartbeat: Instant,
-    messages: Option<mpsc::UnboundedSender<Bytes>>,
+    messages: Option<async_channel::Sender<Vec<u8>>>,
     initializer: Option<F>,
-    continuation: BytesMut,
+    continuation: Vec<u8>,
 }
 
 impl<Query, Mutation, Subscription>
@@ -43,7 +42,7 @@ where
         schema: Schema<Query, Mutation, Subscription>,
         request: &HttpRequest,
         stream: T,
-    ) -> Result<HttpResponse, Error>
+    ) -> Result<HttpResponse, actix_web::error::Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
     {
@@ -67,7 +66,7 @@ where
         request: &HttpRequest,
         stream: T,
         initializer: F,
-    ) -> Result<HttpResponse, Error>
+    ) -> Result<HttpResponse, actix_web::error::Error>
     where
         T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
         F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
@@ -96,7 +95,7 @@ where
                 last_heartbeat: Instant::now(),
                 messages: None,
                 initializer: Some(initializer),
-                continuation: BytesMut::new(),
+                continuation: Vec::new(),
             },
             &ALL_WEBSOCKET_PROTOCOLS,
             request,
@@ -127,7 +126,7 @@ where
     fn started(&mut self, ctx: &mut Self::Context) {
         self.send_heartbeats(ctx);
 
-        let (tx, rx) = mpsc::unbounded();
+        let (tx, rx) = async_channel::unbounded();
 
         WebSocket::with_data(
             self.schema.clone(),
@@ -179,22 +178,21 @@ where
                 None
             }
             Message::Continuation(item) => match item {
-                Item::FirstText(bytes) | Item::FirstBinary(bytes) => {
-                    self.continuation.clear();
-                    self.continuation.put(bytes);
+                ws::Item::FirstText(bytes) | ws::Item::FirstBinary(bytes) => {
+                    self.continuation = bytes.to_vec();
                     None
                 }
-                Item::Continue(bytes) => {
-                    self.continuation.put(bytes);
+                ws::Item::Continue(bytes) => {
+                    self.continuation.extend_from_slice(&bytes);
                     None
                 }
-                Item::Last(bytes) => {
-                    self.continuation.put(bytes);
-                    Some(std::mem::take(&mut self.continuation).freeze())
+                ws::Item::Last(bytes) => {
+                    self.continuation.extend_from_slice(&bytes);
+                    Some(std::mem::take(&mut self.continuation))
                 }
             },
-            Message::Text(s) => Some(s.into_bytes()),
-            Message::Binary(bytes) => Some(bytes),
+            Message::Text(s) => Some(s.into_bytes().to_vec()),
+            Message::Binary(bytes) => Some(bytes.to_vec()),
             Message::Close(_) => {
                 ctx.stop();
                 None
@@ -203,7 +201,7 @@ where
         };
 
         if let Some(message) = message {
-            let mut sender = self.messages.as_ref().unwrap().clone();
+            let sender = self.messages.as_ref().unwrap().clone();
 
             async move { sender.send(message).await }
                 .into_actor(self)

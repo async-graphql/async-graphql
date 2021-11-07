@@ -1,14 +1,16 @@
-mod test_utils;
-use actix_http::Request;
-use actix_web::dev::{MessageBody, Service, ServiceResponse};
-use actix_web::{guard, test, web, App};
-use async_graphql::*;
+use actix_http::Method;
+use actix_web::dev::{AnyBody, Service};
+use actix_web::{guard, test, web, web::Data, App};
 use serde_json::json;
+
+use async_graphql::*;
 use test_utils::*;
+
+mod test_utils;
 
 #[actix_rt::test]
 async fn test_playground() {
-    let app = test::init_service(
+    let srv = test::init_service(
         App::new().service(
             web::resource("/")
                 .guard(guard::Get())
@@ -16,20 +18,26 @@ async fn test_playground() {
         ),
     )
     .await;
-
     let req = test::TestRequest::with_uri("/").to_request();
-
-    let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
-    assert!(std::str::from_utf8(&body).unwrap().contains("graphql"));
+    let response = srv.call(req).await.unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    if let AnyBody::Bytes(bytes) = body {
+        assert!(std::str::from_utf8(&bytes).unwrap().contains("graphql"));
+    } else {
+        panic!("response body must be Bytes {:?}", body);
+    }
 }
 
 #[actix_rt::test]
 async fn test_add() {
-    let app = test::init_service(
+    let srv = test::init_service(
         App::new()
-            .data(Schema::new(AddQueryRoot, EmptyMutation, EmptySubscription))
+            .app_data(Data::new(Schema::new(
+                AddQueryRoot,
+                EmptyMutation,
+                EmptySubscription,
+            )))
             .service(
                 web::resource("/")
                     .guard(guard::Post())
@@ -37,27 +45,32 @@ async fn test_add() {
             ),
     )
     .await;
-
-    let resp = test::TestRequest::post()
-        .uri("/")
-        .set_payload(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
-        .send_request(&app)
-        .await;
-
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
-    assert_eq!(body, json!({"data": {"add": 30}}).to_string());
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"{ add(a: 10, b: 20) }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(json!({"data": {"add": 30}}).to_string().into_bytes().into())
+    );
 }
 
 #[actix_rt::test]
 async fn test_hello() {
-    let app = test::init_service(
+    let srv = test::init_service(
         App::new()
-            .data(Schema::new(
+            .app_data(Data::new(Schema::new(
                 HelloQueryRoot,
                 EmptyMutation,
                 EmptySubscription,
-            ))
+            )))
             .service(
                 web::resource("/")
                     .guard(guard::Post())
@@ -66,29 +79,37 @@ async fn test_hello() {
     )
     .await;
 
-    let resp = test::TestRequest::post()
-        .uri("/")
-        .set_payload(r#"{"query":"{ hello }"}"#)
-        .send_request(&app)
-        .await;
-
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"{ hello }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
     assert_eq!(
         body,
-        json!({"data": {"hello": "Hello, world!"}}).to_string()
+        &AnyBody::Bytes(
+            json!({"data": {"hello": "Hello, world!"}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
     );
 }
 
 #[actix_rt::test]
 async fn test_hello_header() {
-    let app = test::init_service(
+    let srv = test::init_service(
         App::new()
-            .data(Schema::new(
+            .app_data(Data::new(Schema::new(
                 HelloQueryRoot,
                 EmptyMutation,
                 EmptySubscription,
-            ))
+            )))
             .service(
                 web::resource("/")
                     .guard(guard::Post())
@@ -97,27 +118,38 @@ async fn test_hello_header() {
     )
     .await;
 
-    let resp = test::TestRequest::post()
-        .uri("/")
-        .append_header(("Name", "Foo"))
-        .set_payload(r#"{"query":"{ hello }"}"#)
-        .send_request(&app)
-        .await;
-
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
-    assert_eq!(body, json!({"data": {"hello": "Hello, Foo!"}}).to_string());
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .insert_header(("Name", "Foo"))
+                .set_payload(r#"{"query":"{ hello }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(
+            json!({"data": {"hello": "Hello, Foo!"}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
+    );
 }
 
 #[actix_rt::test]
 async fn test_count() {
-    let app = test::init_service(
+    let srv = test::init_service(
         App::new()
-            .data(
+            .app_data(Data::new(
                 Schema::build(CountQueryRoot, CountMutation, EmptySubscription)
                     .data(Count::default())
                     .finish(),
-            )
+            ))
             .service(
                 web::resource("/")
                     .guard(guard::Post())
@@ -126,37 +158,87 @@ async fn test_count() {
     )
     .await;
 
-    count_action_helper(0, r#"{"query":"{ count }"}"#, &app).await;
-    count_action_helper(10, r#"{"query":"mutation{ addCount(count: 10) }"}"#, &app).await;
-    count_action_helper(
-        8,
-        r#"{"query":"mutation{ subtractCount(count: 2) }"}"#,
-        &app,
-    )
-    .await;
-    count_action_helper(
-        6,
-        r#"{"query":"mutation{ subtractCount(count: 2) }"}"#,
-        &app,
-    )
-    .await;
-}
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"{ count }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(
+            json!({"data": {"count": 0}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
+    );
 
-async fn count_action_helper<S, B, E>(expected: i32, payload: &'static str, app: &S)
-where
-    S: Service<Request, Response = ServiceResponse<B>, Error = E>,
-    B: MessageBody + Unpin,
-    E: std::fmt::Debug,
-{
-    let resp = test::TestRequest::post()
-        .uri("/")
-        .set_payload(payload)
-        .send_request(app)
-        .await;
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"mutation{ addCount(count: 10) }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(
+            json!({"data": {"addCount": 10}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
+    );
 
-    assert!(resp.status().is_success());
-    let body = test::read_body(resp).await;
-    assert!(std::str::from_utf8(&body)
-        .unwrap()
-        .contains(&expected.to_string()));
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"mutation{ subtractCount(count: 2) }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(
+            json!({"data": {"subtractCount": 8}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
+    );
+
+    let response = srv
+        .call(
+            test::TestRequest::with_uri("/")
+                .method(Method::POST)
+                .set_payload(r#"{"query":"mutation{ subtractCount(count: 2) }"}"#)
+                .to_request(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status().is_success());
+    let body = response.response().body();
+    assert_eq!(
+        body,
+        &AnyBody::Bytes(
+            json!({"data": {"subtractCount": 6}})
+                .to_string()
+                .into_bytes()
+                .into()
+        )
+    );
 }

@@ -3,23 +3,22 @@
 #![allow(clippy::upper_case_acronyms)]
 #![warn(missing_docs)]
 
-mod subscription;
-
-pub use subscription::WSSubscription;
-
 use std::future::Future;
 use std::io::{self, ErrorKind};
 use std::pin::Pin;
 
+use actix_http::error::PayloadError;
 use actix_web::dev::{Payload, PayloadStream};
-use actix_web::error::PayloadError;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
+use futures_util::future::{self, FutureExt};
+use futures_util::{StreamExt, TryStreamExt};
+
 use async_graphql::http::MultipartOptions;
 use async_graphql::ParseRequestError;
-use futures_channel::mpsc;
-use futures_util::future::{self, FutureExt};
-use futures_util::{SinkExt, StreamExt, TryStreamExt};
+pub use subscription::WSSubscription;
+
+mod subscription;
 
 /// Extractor for GraphQL request.
 ///
@@ -40,7 +39,6 @@ type BatchToRequestMapper =
 impl FromRequest for Request {
     type Error = Error;
     type Future = future::Map<<BatchRequest as FromRequest>::Future, BatchToRequestMapper>;
-    type Config = MultipartOptions;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         BatchRequest::from_request(req, payload).map(|res| {
@@ -69,10 +67,12 @@ impl BatchRequest {
 impl FromRequest for BatchRequest {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<BatchRequest>>>>;
-    type Config = MultipartOptions;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
-        let config = req.app_data::<Self::Config>().cloned().unwrap_or_default();
+        let config = req
+            .app_data::<MultipartOptions>()
+            .cloned()
+            .unwrap_or_default();
 
         if req.method() == Method::GET {
             let res = serde_urlencoded::from_str(req.query_string());
@@ -84,7 +84,7 @@ impl FromRequest for BatchRequest {
                 .and_then(|value| value.to_str().ok())
                 .map(|value| value.to_string());
 
-            let (mut tx, rx) = mpsc::channel(16);
+            let (tx, rx) = async_channel::bounded(16);
 
             // Payload is !Send so we create indirection with a channel
             let mut payload = payload.take();
@@ -118,7 +118,7 @@ impl FromRequest for BatchRequest {
                             }
                             PayloadError::Http2Payload(e) if e.is_io() => e.into_io().unwrap(),
                             PayloadError::Http2Payload(e) => io::Error::new(ErrorKind::Other, e),
-                            _ => io::Error::new(ErrorKind::Other, "unknown error"),
+                            _ => io::Error::new(ErrorKind::Other, e),
                         })
                         .into_async_read(),
                         config,
