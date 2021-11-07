@@ -27,9 +27,9 @@ impl ErrorExtensionValues {
 pub struct ServerError {
     /// An explanatory message of the error.
     pub message: String,
-    /// The concrete error type, comes from [`Failure<T>`].
+    /// The source of the error, comes from [`ResolverError<T>`].
     #[serde(skip)]
-    pub error: Option<Arc<dyn Any + Send + Sync>>,
+    pub source: Option<Arc<dyn Any + Send + Sync>>,
     /// Where the error occurred.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub locations: Vec<Pos>,
@@ -70,28 +70,28 @@ impl ServerError {
     pub fn new(message: impl Into<String>, pos: Option<Pos>) -> Self {
         Self {
             message: message.into(),
-            error: None,
+            source: None,
             locations: pos.map(|pos| vec![pos]).unwrap_or_default(),
             path: Vec::new(),
             extensions: None,
         }
     }
 
-    /// Downcast the error object by reference.
+    /// Get the source of the error.
     ///
     /// # Examples
     ///
     /// ```rust
     /// use std::string::FromUtf8Error;
-    /// use async_graphql::{Failure, Error, ServerError, Pos};
+    /// use async_graphql::{ResolverError, Error, ServerError, Pos};
     ///
     /// let bytes = vec![0, 159];
-    /// let err: Error = String::from_utf8(bytes).map_err(Failure::new).unwrap_err().into();
+    /// let err: Error = String::from_utf8(bytes).map_err(ResolverError::new).unwrap_err().into();
     /// let server_err: ServerError = err.into_server_error(Pos { line: 1, column: 1 });
-    /// assert!(server_err.concrete_error::<FromUtf8Error>().is_some());
+    /// assert!(server_err.source::<FromUtf8Error>().is_some());
     /// ```
-    pub fn concrete_error<T: Any + Send + Sync>(&self) -> Option<&T> {
-        self.error.as_ref().map(|err| err.downcast_ref()).flatten()
+    pub fn source<T: Any + Send + Sync>(&self) -> Option<&T> {
+        self.source.as_ref().map(|err| err.downcast_ref()).flatten()
     }
 
     #[doc(hidden)]
@@ -116,7 +116,7 @@ impl From<parser::Error> for ServerError {
     fn from(e: parser::Error) -> Self {
         Self {
             message: e.to_string(),
-            error: None,
+            source: None,
             locations: e.positions().collect(),
             path: Vec::new(),
             extensions: None,
@@ -209,9 +209,9 @@ pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 pub struct Error {
     /// The error message.
     pub message: String,
-    /// The concrete error type, comes from [`Failure<T>`].
+    /// The source of the error, comes from [`ResolverError<T>`].
     #[serde(skip)]
-    pub error: Option<Arc<dyn Any + Send + Sync>>,
+    pub source: Option<Arc<dyn Any + Send + Sync>>,
     /// Extensions to the error.
     #[serde(skip_serializing_if = "error_extensions_is_empty")]
     pub extensions: Option<ErrorExtensionValues>,
@@ -237,7 +237,7 @@ impl Error {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
-            error: None,
+            source: None,
             extensions: None,
         }
     }
@@ -247,7 +247,7 @@ impl Error {
     pub fn into_server_error(self, pos: Pos) -> ServerError {
         ServerError {
             message: self.message,
-            error: self.error,
+            source: self.source,
             locations: vec![pos],
             path: Vec::new(),
             extensions: self.extensions,
@@ -259,17 +259,17 @@ impl<T: Display + Send + Sync + 'static> From<T> for Error {
     fn from(e: T) -> Self {
         Self {
             message: e.to_string(),
-            error: None,
+            source: None,
             extensions: None,
         }
     }
 }
 
-impl From<Failure> for Error {
-    fn from(e: Failure) -> Self {
+impl From<ResolverError> for Error {
+    fn from(e: ResolverError) -> Self {
         Self {
             message: e.message,
-            error: Some(e.error),
+            source: Some(e.error),
             extensions: None,
         }
     }
@@ -355,7 +355,7 @@ pub trait ErrorExtensions: Sized {
 
         let Error {
             message,
-            error,
+            source,
             extensions,
         } = self.extend();
 
@@ -364,7 +364,7 @@ pub trait ErrorExtensions: Sized {
 
         Error {
             message,
-            error,
+            source,
             extensions: Some(extensions),
         }
     }
@@ -382,13 +382,13 @@ impl<E: Display> ErrorExtensions for &E {
     fn extend(self) -> Error {
         Error {
             message: self.to_string(),
-            error: None,
+            source: None,
             extensions: None,
         }
     }
 }
 
-impl ErrorExtensions for Failure {
+impl ErrorExtensions for ResolverError {
     #[inline]
     fn extend(self) -> Error {
         Error::from(self)
@@ -430,14 +430,14 @@ where
     }
 }
 
-/// A wrapper around a dynamic error type.
+/// A wrapper around a dynamic error type for resolver.
 #[derive(Debug)]
-pub struct Failure {
+pub struct ResolverError {
     message: String,
     error: Arc<dyn Any + Send + Sync>,
 }
 
-impl<T: StdError + Send + Sync + 'static> From<T> for Failure {
+impl<T: StdError + Send + Sync + 'static> From<T> for ResolverError {
     fn from(err: T) -> Self {
         Self {
             message: err.to_string(),
@@ -446,7 +446,7 @@ impl<T: StdError + Send + Sync + 'static> From<T> for Failure {
     }
 }
 
-impl Failure {
+impl ResolverError {
     /// Create a new failure.
     #[inline]
     pub fn new<T: StdError + Send + Sync + 'static>(err: T) -> Self {

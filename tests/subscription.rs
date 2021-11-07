@@ -345,7 +345,7 @@ pub async fn test_subscription_error() {
         stream.next().await,
         Some(Err(vec![ServerError {
             message: "TestError".to_string(),
-            error: None,
+            source: None,
             locations: vec![Pos {
                 line: 1,
                 column: 25
@@ -391,7 +391,7 @@ pub async fn test_subscription_fieldresult() {
             cache_control: Default::default(),
             errors: vec![ServerError {
                 message: "StreamErr".to_string(),
-                error: None,
+                source: None,
                 locations: vec![Pos {
                     line: 1,
                     column: 16

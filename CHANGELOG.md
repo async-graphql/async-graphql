@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement `From<Option<Option<T>>>` for `MaybeUndefined<T>`.
 - Add `MaybeUndefined::as_opt_ref`, `MaybeUndefined::as_opt_deref`, `MaybeUndefined::map`, `MaybeUndefined::map_value`, `MaybeUndefined::contains`, `MaybeUndefined::contains_value`, and `MaybeUndefined::transpose` methods.
 - Made `MaybeUndefined::is_undefined`, `MaybeUndefined::is_null`, `MaybeUndefined::is_value`, `MaybeUndefined::value` and `MaybeUndefined::as_opt_ref` const.
-- Add `Failure` type. [#671](https://github.com/async-graphql/async-graphql/issues/671)
+- Add `ResolverError` type. [#671](https://github.com/async-graphql/async-graphql/issues/671)
 - [async-graphql-axum] Bump axum from `0.2.5` to `0.3`.
 - [async-graphql-poem] Export the HTTP headers in the `Context`.
 

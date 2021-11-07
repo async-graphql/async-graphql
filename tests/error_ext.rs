@@ -92,23 +92,23 @@ pub async fn test_failure() {
     #[Object]
     impl Query {
         async fn failure(&self) -> Result<i32> {
-            Err(Failure::new(MyError::Error1).into())
+            Err(ResolverError::new(MyError::Error1).into())
         }
 
         async fn failure2(&self) -> Result<i32> {
-            Err(Failure::new(MyError::Error2))?;
+            Err(ResolverError::new(MyError::Error2))?;
             Ok(1)
         }
 
         async fn failure3(&self) -> Result<i32> {
-            Err(Failure::new(MyError::Error1)
+            Err(ResolverError::new(MyError::Error1)
                 .extend_with(|_, values| values.set("a", 1))
                 .extend_with(|_, values| values.set("b", 2)))?;
             Ok(1)
         }
 
         async fn failure4(&self) -> Result<i32> {
-            Err(Failure::new(MyError::Error2))
+            Err(ResolverError::new(MyError::Error2))
                 .extend_err(|_, values| values.set("a", 1))
                 .extend_err(|_, values| values.set("b", 2))?;
             Ok(1)
@@ -122,7 +122,7 @@ pub async fn test_failure() {
         .into_result()
         .unwrap_err()
         .remove(0);
-    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error1);
+    assert_eq!(err.source::<MyError>().unwrap(), &MyError::Error1);
 
     let err = schema
         .execute("{ failure2 }")
@@ -130,7 +130,7 @@ pub async fn test_failure() {
         .into_result()
         .unwrap_err()
         .remove(0);
-    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error2);
+    assert_eq!(err.source::<MyError>().unwrap(), &MyError::Error2);
 
     let err = schema
         .execute("{ failure3 }")
@@ -138,7 +138,7 @@ pub async fn test_failure() {
         .into_result()
         .unwrap_err()
         .remove(0);
-    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error1);
+    assert_eq!(err.source::<MyError>().unwrap(), &MyError::Error1);
     assert_eq!(
         err.extensions,
         Some({
@@ -155,7 +155,7 @@ pub async fn test_failure() {
         .into_result()
         .unwrap_err()
         .remove(0);
-    assert_eq!(err.concrete_error::<MyError>().unwrap(), &MyError::Error2);
+    assert_eq!(err.source::<MyError>().unwrap(), &MyError::Error2);
     assert_eq!(
         err.extensions,
         Some({
@@ -179,7 +179,7 @@ pub async fn test_failure2() {
 
     #[Object]
     impl Query {
-        async fn failure(&self) -> Result<i32, Failure> {
+        async fn failure(&self) -> Result<i32, ResolverError> {
             Err(MyError::Error1)?
         }
     }
