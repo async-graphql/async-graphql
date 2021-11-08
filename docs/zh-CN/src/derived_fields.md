@@ -1,8 +1,8 @@
-# Derived fields
+# 派生字段
 
-Sometimes two fields have the same query logic, but the output type is different. In `async-graphql`, you can create a derived field for it.
+有时两个字段有一样的查询逻辑，仅仅是输出的类型不同，在 `async-graphql` 中，你可以为它创建派生字段。
 
-In the following example, you already have a `duration_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `date_rfc3339` field.
+在以下例子中，你已经有一个`duration_rfc2822`字段输出`RFC2822`格式的时间格式，然后复用它派生一个新的`date_rfc3339`字段。
 
 ```rust
 struct DateRFC3339(chrono::DateTime);
@@ -43,7 +43,7 @@ impl Query {
 }
 ```
 
-It will render a GraphQL like:
+它将呈现为如下GraphQL：
 
 ```graphql
 type Query {
@@ -52,10 +52,9 @@ type Query {
 }
 ```
 
-## Wrapper types
+## 包装类型
 
-A derived field won't be able to manage everythings easily: Rust's [orphan rule](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits) requires that either the
-trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:
+因为 [孤儿规则](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits)，以下代码无法通过编译：
 
 ```
 impl From<Vec<U>> for Vec<T> {
@@ -63,9 +62,9 @@ impl From<Vec<U>> for Vec<T> {
 }
 ```
 
-So you wouldn't be able to generate derived fields for existing wrapper type structures like `Vec` or `Option`. But when you implement a `From<U> for T` you should be able to derived a `From<Vec<U>> for Vec<T>` and a `From<Option<U>> for Option<T>`.
-We included a `with` parameter to help you define a function to call instead of using the `Into` trait implementation between wrapper structures.
-
+因此，你将无法为现有的包装类型结构（如`Vec`或`Option`）生成派生字段。 
+但是当你为 `T` 实现了 `From<U>` 后，你可以为 `Vec<T>` 实现 `From<Vec<U>>`，为 `Option<T>` 实现 `From<Option<U>>`.
+使用 `with` 参数来定义一个转换函数，而不是用 `Into::into`。
 
 ### Example
 

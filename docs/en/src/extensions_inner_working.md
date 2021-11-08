@@ -22,10 +22,10 @@ async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>)
 }
 ```
 
-As you have seen, a `Middleware` is only a function calling the next function at the end, but we could also do a middleware with the `next` function at the start. This is where it's becoming tricky: depending on where you put your logics and where is the `next` call, your logic won't have the same execution order.
+As you have seen, a `Middleware` is only a function calling the next function at the end, but we could also do a middleware with the `next.run` function at the start. This is where it's becoming tricky: depending on where you put your logics and where is the `next.run` call, your logic won't have the same execution order.
 
 
-Depending on your logic code, you'll want to process it before or after the `next` call. If you need more information about middlewares, there are a lot of things in the web.
+Depending on your logic code, you'll want to process it before or after the `next.run` call. If you need more information about middlewares, there are a lot of things in the web.
 
 ## Processing of a query
 
@@ -50,7 +50,7 @@ Depending on where you put your logic code, it'll be executed at the beginning o
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     // The code here will be run before the prepare_request is executed.
     let result = next.run(ctx).await;
-    // The code after the completion of this futue will be after the processing, just before sending the result to the user.
+    // The code after the completion of this future will be after the processing, just before sending the result to the user.
     result
 }
 ```
@@ -119,7 +119,7 @@ async fn execute(
     operation_name: Option<&str>,
     next: NextExecute<'_>,
 ) -> Response {
-    // Befoe starting resolving the whole query
+    // Before starting resolving the whole query
     let result = next.run(ctx, operation_name).await;
     // After resolving the whole query
     result
