@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Fix the problem that `EmptyMutation` may cause when used in `MergedObject`. [#694](https://github.com/async-graphql/async-graphql/issues/694)
+
+## [2.11.1] 2021-11-07
+
 - Add `chrono::Duration` custom scalar. [#689](https://github.com/async-graphql/async-graphql/pull/689)
 - Implement `From<Option<Option<T>>>` for `MaybeUndefined<T>`.
 - Add `MaybeUndefined::as_opt_ref`, `MaybeUndefined::as_opt_deref`, `MaybeUndefined::map`, `MaybeUndefined::map_value`, `MaybeUndefined::contains`, `MaybeUndefined::contains_value`, and `MaybeUndefined::transpose` methods.

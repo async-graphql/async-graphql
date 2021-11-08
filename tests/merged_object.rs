@@ -401,3 +401,30 @@ pub async fn test_issue_539() {
         })
     )
 }
+
+#[tokio::test]
+pub async fn test_issue_694() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(&self) -> bool {
+            true
+        }
+    }
+
+    #[derive(MergedObject)]
+    pub struct QueryRoot(Query, EmptyMutation);
+
+    let schema = Schema::new(
+        QueryRoot(Query, EmptyMutation),
+        EmptyMutation,
+        EmptySubscription,
+    );
+    assert_eq!(
+        schema.execute("{ test }").await.into_result().unwrap().data,
+        value!({
+            "test": true,
+        })
+    );
+}

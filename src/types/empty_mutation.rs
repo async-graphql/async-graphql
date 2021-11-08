@@ -57,7 +57,7 @@ impl ContainerType for EmptyMutation {
     }
 
     async fn resolve_field(&self, _ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        unreachable!()
+        Ok(None)
     }
 }
 
