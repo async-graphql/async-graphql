@@ -51,6 +51,7 @@ impl<A: Type, B: Type> Type for MergedObject<A, B> {
                 keys: None,
                 visible: None,
                 is_subscription: false,
+                rust_typename: std::any::type_name::<Self>(),
             }
         })
     }

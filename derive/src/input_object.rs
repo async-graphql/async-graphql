@@ -215,6 +215,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     })
                 }
             }
@@ -259,6 +260,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     })
                 }
 

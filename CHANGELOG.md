@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Fix the problem that `EmptyMutation` may cause when used in `MergedObject`. [#694](https://github.com/async-graphql/async-graphql/issues/694)
+- If a GraphQL name conflict is detected when creating schema, it will cause panic. [#499](https://github.com/async-graphql/async-graphql/issues/499)
 
 ## [2.11.1] 2021-11-07
 

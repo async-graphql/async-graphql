@@ -350,6 +350,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })
             }

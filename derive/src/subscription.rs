@@ -457,6 +457,7 @@ pub fn generate(
                     keys: ::std::option::Option::None,
                     visible: ::std::option::Option::None,
                     is_subscription: true,
+                    rust_typename: ::std::any::type_name::<Self>(),
                 })
             }
         }

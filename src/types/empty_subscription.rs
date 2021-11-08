@@ -26,6 +26,7 @@ impl Type for EmptySubscription {
             keys: None,
             visible: None,
             is_subscription: true,
+            rust_typename: std::any::type_name::<Self>(),
         })
     }
 }
