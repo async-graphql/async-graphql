@@ -70,7 +70,7 @@ impl<Query, Mutation, Subscription, F> GraphQLSubscription<Query, Mutation, Subs
     ) -> GraphQLSubscription<Query, Mutation, Subscription, F2>
     where
         F2: FnOnce(serde_json::Value) -> R + Clone + Send + Sync + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        R: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLSubscription {
             schema: self.schema,
