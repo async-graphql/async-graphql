@@ -107,10 +107,8 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let (mut tx, rx) = mpsc::unbounded();
-    let mut stream = http::WebSocket::with_data(
-        schema,
-        rx,
-        |value| async {
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::SubscriptionsTransportWS)
+        .with_initializer(|value| async {
             #[derive(serde::Deserialize)]
             struct Payload {
                 token: String,
@@ -120,9 +118,7 @@ pub async fn test_subscription_ws_transport_with_token() {
             let mut data = Data::default();
             data.insert(Token(payload.token));
             Ok(data)
-        },
-        WebSocketProtocols::SubscriptionsTransportWS,
-    );
+        });
 
     tx.send(
         serde_json::to_string(&value!({

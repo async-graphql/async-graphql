@@ -111,10 +111,8 @@ pub async fn test_subscription_ws_transport_with_token() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let (mut tx, rx) = mpsc::unbounded();
-    let mut stream = http::WebSocket::with_data(
-        schema,
-        rx,
-        |value| async {
+    let mut stream = http::WebSocket::new(schema.clone(), rx, WebSocketProtocols::GraphQLWS)
+        .with_initializer(|value| async {
             #[derive(serde::Deserialize)]
             struct Payload {
                 token: String,
@@ -124,14 +122,66 @@ pub async fn test_subscription_ws_transport_with_token() {
             let mut data = Data::default();
             data.insert(Token(payload.token));
             Ok(data)
-        },
-        WebSocketProtocols::GraphQLWS,
-    );
+        });
 
     tx.send(
         serde_json::to_string(&value!({
             "type": "connection_init",
             "payload": { "token": "123456" }
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        Some(value!({
+            "type": "connection_ack",
+        })),
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { values }"
+            },
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    for i in 0..10 {
+        assert_eq!(
+            Some(value!({
+                "type": "next",
+                "id": "1",
+                "payload": { "data": { "values": i } },
+            })),
+            serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+        );
+    }
+
+    assert_eq!(
+        Some(value!({
+            "type": "complete",
+            "id": "1",
+        })),
+        serde_json::from_str(&stream.next().await.unwrap().unwrap_text()).unwrap()
+    );
+
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut data = Data::default();
+    data.insert(Token("123456".to_string()));
+    let mut stream =
+        http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS).connection_data(data);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
         }))
         .unwrap(),
     )
@@ -296,12 +346,8 @@ pub async fn test_subscription_init_error() {
 
     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
     let (mut tx, rx) = mpsc::unbounded();
-    let mut stream = http::WebSocket::with_data(
-        schema,
-        rx,
-        |_| async move { Err("Error!".into()) },
-        WebSocketProtocols::GraphQLWS,
-    );
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS)
+        .with_initializer(|_| async move { Err("Error!".into()) });
 
     tx.send(
         serde_json::to_string(&value!({
