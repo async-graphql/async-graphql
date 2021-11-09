@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{registry, InputType, InputValueError, InputValueResult, Type, Value};
+use crate::{registry, InputType, InputValueError, InputValueResult, Value};
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///
@@ -174,7 +174,7 @@ impl<T> MaybeUndefined<T> {
     }
 }
 
-impl<T: Type> Type for MaybeUndefined<T> {
+impl<T: InputType> InputType for MaybeUndefined<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -187,9 +187,7 @@ impl<T: Type> Type for MaybeUndefined<T> {
         T::create_type_info(registry);
         T::type_name().to_string()
     }
-}
 
-impl<T: InputType> InputType for MaybeUndefined<T> {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         match value {
             None => Ok(MaybeUndefined::Undefined),

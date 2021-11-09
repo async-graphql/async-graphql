@@ -152,8 +152,8 @@ pub async fn test_override_description() {
         EmptyMutation,
         EmptySubscription,
     )
-    .override_description::<Query>("Hehe")
-    .override_description::<DateTime<Utc>>("DT")
+    .override_output_type_description::<Query>("Hehe")
+    .override_output_type_description::<DateTime<Utc>>("DT")
     .finish();
 
     assert_eq!(

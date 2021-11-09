@@ -349,3 +349,60 @@ pub async fn test_box_input_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_both_input_output() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjectInput")]
+    #[allow(dead_code)]
+    struct MyObject {
+        #[graphql(default = 10)]
+        a: i32,
+        b: bool,
+        #[graphql(skip)]
+        c: String,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: {a: 1, b: true}) { a b } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 1,
+                "b": true,
+            }
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ obj(input: {b: true}) { a b } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 10,
+                "b": true,
+            }
+        })
+    );
+
+    assert_eq!(<MyObject as InputType>::type_name(), "MyObjectInput");
+    assert_eq!(<MyObject as OutputType>::type_name(), "MyObject");
+}

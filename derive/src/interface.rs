@@ -100,16 +100,16 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             enum_names.push(enum_name);
 
             registry_types.push(quote! {
-                <#p as #crate_name::Type>::create_type_info(registry);
-                registry.add_implements(&<#p as #crate_name::Type>::type_name(), #gql_typename);
+                <#p as #crate_name::OutputType>::create_type_info(registry);
+                registry.add_implements(&<#p as #crate_name::OutputType>::type_name(), #gql_typename);
             });
 
             possible_types.push(quote! {
-                possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
+                possible_types.insert(<#p as #crate_name::OutputType>::type_name().into_owned());
             });
 
             get_introspection_typename.push(quote! {
-                #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+                #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
             });
 
             collect_all_fields.push(quote! {
@@ -226,7 +226,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 args.insert(#name, #crate_name::registry::MetaInputValue {
                     name: #name,
                     description: #desc,
-                    ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                    ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                     default_value: #schema_default,
                     validator: ::std::option::Option::None,
                     visible: #visible,
@@ -275,7 +275,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     #(#schema_args)*
                     args
                 },
-                ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
+                ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
                 deprecation: #deprecation,
                 cache_control: ::std::default::Default::default(),
                 external: #external,
@@ -321,7 +321,23 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
+        #[#crate_name::async_trait::async_trait]
+        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                #(#resolvers)*
+                ::std::result::Result::Ok(::std::option::Option::None)
+            }
+
+            fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
+                match self {
+                    #(#collect_all_fields),*
+                }
+            }
+        }
+
+        #[allow(clippy::all, clippy::pedantic)]
+        #[#crate_name::async_trait::async_trait]
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -331,7 +347,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| {
+                registry.create_output_type::<Self, _>(|registry| {
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Interface {
@@ -354,26 +370,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     }
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                #(#resolvers)*
-                ::std::result::Result::Ok(::std::option::Option::None)
-            }
-
-            fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
-                match self {
-                    #(#collect_all_fields),*
-                }
-            }
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             async fn resolve(
                 &self,
                 ctx: &#crate_name::ContextSelectionSet<'_>,

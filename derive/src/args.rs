@@ -115,7 +115,7 @@ impl FromMeta for Deprecation {
     }
 }
 
-#[derive(FromField, Clone)]
+#[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
     pub ident: Option<Ident>,
@@ -145,6 +145,17 @@ pub struct SimpleObjectField {
     pub visible: Option<Visible>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
+    // for InputObject
+    #[darling(default)]
+    pub default: Option<DefaultValue>,
+    #[darling(default)]
+    pub default_with: Option<LitStr>,
+    #[darling(default)]
+    pub validator: Option<Meta>,
+    #[darling(default)]
+    pub flatten: bool,
+    #[darling(default)]
+    pub secret: bool,
 }
 
 #[derive(FromDeriveInput)]
@@ -158,7 +169,7 @@ pub struct SimpleObject {
     #[darling(default)]
     pub internal: bool,
     #[darling(default)]
-    pub dummy: bool,
+    pub fake: bool,
     #[darling(default)]
     pub complex: bool,
     #[darling(default)]
@@ -177,6 +188,9 @@ pub struct SimpleObject {
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
     pub serial: bool,
+    // for InputObject
+    #[darling(default)]
+    pub input_name: Option<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -361,6 +375,8 @@ pub struct InputObject {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub input_name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]

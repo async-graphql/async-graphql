@@ -1,28 +1,22 @@
-use std::borrow::Cow;
-
 use bytes::Bytes;
 
-use crate::parser::types::Field;
-use crate::parser::Positioned;
-use crate::{registry, ContextSelectionSet, OutputType, ServerResult, Type, Value};
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
-impl Type for Bytes {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("Binary")
+/// The `Binary` scalar type represents binary data.
+#[Scalar(internal)]
+impl ScalarType for Bytes {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        match value {
+            Value::Binary(data) => Ok(data),
+            _ => Err(InputValueError::expected_type(value)),
+        }
     }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        <String as Type>::create_type_info(registry)
+    fn is_valid(value: &Value) -> bool {
+        matches!(value, Value::Binary(_))
     }
-}
 
-#[async_trait::async_trait]
-impl OutputType for Bytes {
-    async fn resolve(
-        &self,
-        _: &ContextSelectionSet<'_>,
-        _field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        Ok(Value::Binary(self.clone()))
+    fn to_value(&self) -> Value {
+        Value::Binary(self.clone())
     }
 }

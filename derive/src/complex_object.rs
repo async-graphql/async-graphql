@@ -218,7 +218,7 @@ pub fn generate(
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
                         description: #desc,
-                        ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
                         validator: #validator,
                         visible: #visible,
@@ -310,7 +310,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
+                    ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: #cache_control,
                     external: #external,

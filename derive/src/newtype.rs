@@ -35,7 +35,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let inner_ty = &fields.fields[0];
     let type_name = match &gql_typename {
         Some(name) => quote! { ::std::borrow::Cow::Borrowed(#name) },
-        None => quote! { <#inner_ty as #crate_name::Type>::type_name() },
+        None => quote! { <#inner_ty as #crate_name::InputType>::type_name() },
     };
     let create_type_info = if let Some(name) = &gql_typename {
         let specified_by_url = match &newtype_args.specified_by_url {
@@ -44,7 +44,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         };
 
         quote! {
-            registry.create_type::<#ident, _>(|_| #crate_name::registry::MetaType::Scalar {
+            registry.create_input_type::<#ident, _>(|_| #crate_name::registry::MetaType::Scalar {
                 name: ::std::borrow::ToOwned::to_owned(#name),
                 description: #desc,
                 is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
@@ -53,7 +53,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             })
         }
     } else {
-        quote! { <#inner_ty as #crate_name::Type>::create_type_info(registry) }
+        quote! { <#inner_ty as #crate_name::InputType>::create_type_info(registry) }
     };
 
     let expanded = quote! {
@@ -81,7 +81,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
+        impl #impl_generics #crate_name::InputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #type_name
             }
@@ -89,10 +89,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 #create_type_info
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::InputType for #ident #ty_generics #where_clause {
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 <#ident as #crate_name::ScalarType>::parse(value.unwrap_or_default())
             }
@@ -105,6 +102,14 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                #type_name
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                #create_type_info
+            }
+
             async fn resolve(
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,

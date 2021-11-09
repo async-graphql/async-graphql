@@ -229,7 +229,7 @@ pub async fn test_subscription_fragment() {
     }
 
     let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
-        .register_type::<MyInterface>()
+        .register_output_type::<MyInterface>()
         .finish();
     let mut stream = schema
         .execute_stream(
@@ -278,7 +278,7 @@ pub async fn test_subscription_fragment2() {
     }
 
     let schema = Schema::build(QueryRoot, EmptyMutation, SubscriptionRoot)
-        .register_type::<MyInterface>()
+        .register_output_type::<MyInterface>()
         .finish();
     let mut stream = schema
         .execute_stream(

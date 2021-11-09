@@ -16,8 +16,8 @@ use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, ObjectType, QueryEnv, Request,
-    Response, ServerError, SubscriptionType, Type, ID,
+    BatchRequest, BatchResponse, CacheControl, ContextBase, InputType, ObjectType, OutputType,
+    QueryEnv, Request, Response, ServerError, SubscriptionType, ID,
 };
 
 /// Schema builder
@@ -34,10 +34,18 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
 }
 
 impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription> {
-    /// Manually register a type in the schema.
+    /// Manually register a input type in the schema.
     ///
     /// You can use this function to register schema types that are not directly referenced.
-    pub fn register_type<T: Type>(mut self) -> Self {
+    pub fn register_input_type<T: InputType>(mut self) -> Self {
+        T::create_type_info(&mut self.registry);
+        self
+    }
+
+    /// Manually register a output type in the schema.
+    ///
+    /// You can use this function to register schema types that are not directly referenced.
+    pub fn register_output_type<T: OutputType>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
         self
     }
@@ -111,9 +119,15 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Override the name of the specified type.
-    pub fn override_description<T: Type>(mut self, desc: &'static str) -> Self {
-        self.registry.set_description::<T>(desc);
+    /// Override the name of the specified input type.
+    pub fn override_input_type_description<T: InputType>(mut self, desc: &'static str) -> Self {
+        self.registry.set_description(&*T::type_name(), desc);
+        self
+    }
+
+    /// Override the name of the specified output type.
+    pub fn override_output_type_description<T: OutputType>(mut self, desc: &'static str) -> Self {
+        self.registry.set_description(&*T::type_name(), desc);
         self
     }
 
@@ -308,11 +322,11 @@ where
         });
 
         // register scalars
-        bool::create_type_info(&mut registry);
-        i32::create_type_info(&mut registry);
-        f32::create_type_info(&mut registry);
-        String::create_type_info(&mut registry);
-        ID::create_type_info(&mut registry);
+        <bool as InputType>::create_type_info(&mut registry);
+        <i32 as InputType>::create_type_info(&mut registry);
+        <f32 as InputType>::create_type_info(&mut registry);
+        <String as InputType>::create_type_info(&mut registry);
+        <ID as InputType>::create_type_info(&mut registry);
 
         QueryRoot::<Query>::create_type_info(&mut registry);
         if !Mutation::is_empty() {

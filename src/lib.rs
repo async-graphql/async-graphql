@@ -206,7 +206,7 @@ pub use async_graphql_value::{
 };
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType,
-    Type, UnionType,
+    UnionType,
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,

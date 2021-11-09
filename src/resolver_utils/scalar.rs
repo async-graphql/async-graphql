@@ -136,24 +136,6 @@ macro_rules! scalar {
 #[doc(hidden)]
 macro_rules! scalar_internal {
     ($ty:ty, $name:expr, $desc:expr, $specified_by_url:expr) => {
-        impl $crate::Type for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed($name)
-            }
-
-            fn create_type_info(
-                registry: &mut $crate::registry::Registry,
-            ) -> ::std::string::String {
-                registry.create_type::<$ty, _>(|_| $crate::registry::MetaType::Scalar {
-                    name: ::std::borrow::ToOwned::to_owned($name),
-                    description: $desc,
-                    is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
-                    visible: ::std::option::Option::None,
-                    specified_by_url: $specified_by_url,
-                })
-            }
-        }
-
         impl $crate::ScalarType for $ty {
             fn parse(value: $crate::Value) -> $crate::InputValueResult<Self> {
                 ::std::result::Result::Ok($crate::from_value(value)?)
@@ -165,6 +147,22 @@ macro_rules! scalar_internal {
         }
 
         impl $crate::InputType for $ty {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                ::std::borrow::Cow::Borrowed($name)
+            }
+
+            fn create_type_info(
+                registry: &mut $crate::registry::Registry,
+            ) -> ::std::string::String {
+                registry.create_input_type::<$ty, _>(|_| $crate::registry::MetaType::Scalar {
+                    name: ::std::borrow::ToOwned::to_owned($name),
+                    description: $desc,
+                    is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                    visible: ::std::option::Option::None,
+                    specified_by_url: $specified_by_url,
+                })
+            }
+
             fn parse(
                 value: ::std::option::Option<$crate::Value>,
             ) -> $crate::InputValueResult<Self> {
@@ -178,6 +176,22 @@ macro_rules! scalar_internal {
 
         #[$crate::async_trait::async_trait]
         impl $crate::OutputType for $ty {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                ::std::borrow::Cow::Borrowed($name)
+            }
+
+            fn create_type_info(
+                registry: &mut $crate::registry::Registry,
+            ) -> ::std::string::String {
+                registry.create_output_type::<$ty, _>(|_| $crate::registry::MetaType::Scalar {
+                    name: ::std::borrow::ToOwned::to_owned($name),
+                    description: $desc,
+                    is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                    visible: ::std::option::Option::None,
+                    specified_by_url: $specified_by_url,
+                })
+            }
+
             async fn resolve(
                 &self,
                 _: &$crate::ContextSelectionSet<'_>,

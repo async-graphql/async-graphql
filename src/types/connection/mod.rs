@@ -16,7 +16,7 @@ pub use page_info::PageInfo;
 
 /// Empty additional fields
 #[derive(SimpleObject)]
-#[graphql(internal, dummy)]
+#[graphql(internal, fake)]
 pub struct EmptyFields;
 
 /// Parses the parameters and executes the query.

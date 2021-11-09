@@ -12,7 +12,10 @@ use crate::parser::types::{
     BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition,
 };
 use crate::validators::InputValueValidator;
-use crate::{model, Any, Context, Positioned, ServerResult, Type, Value, VisitorContext};
+use crate::{
+    model, Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
+    VisitorContext,
+};
 
 pub use cache_control::CacheControl;
 
@@ -375,15 +378,41 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn create_type<T: crate::Type + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
+    pub fn create_input_type<T: InputType + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
         &mut self,
         mut f: F,
     ) -> String {
-        let name = T::type_name();
+        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+        T::qualified_type_name()
+    }
 
-        match self.types.get(name.as_ref()) {
+    pub fn create_output_type<T: OutputType + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
+        &mut self,
+        mut f: F,
+    ) -> String {
+        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+        T::qualified_type_name()
+    }
+
+    pub fn create_subscription_type<
+        T: SubscriptionType + ?Sized,
+        F: FnMut(&mut Registry) -> MetaType,
+    >(
+        &mut self,
+        mut f: F,
+    ) -> String {
+        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+        T::qualified_type_name()
+    }
+
+    fn create_type<F: FnMut(&mut Registry) -> MetaType>(
+        &mut self,
+        f: &mut F,
+        name: &str,
+        rust_typename: &str,
+    ) {
+        match self.types.get(name) {
             Some(ty) => {
-                let rust_typename = std::any::type_name::<T>();
                 if let Some(prev_typename) = ty.rust_typename() {
                     if prev_typename != "__fake_type__" && rust_typename != prev_typename {
                         panic!(
@@ -396,7 +425,7 @@ impl Registry {
             None => {
                 // Inserting a fake type before calling the function allows recursive types to exist.
                 self.types.insert(
-                    name.clone().into_owned(),
+                    name.to_string(),
                     MetaType::Object {
                         name: "".to_string(),
                         description: None,
@@ -413,11 +442,25 @@ impl Registry {
                 *self.types.get_mut(&*name).unwrap() = ty;
             }
         }
-
-        T::qualified_type_name()
     }
 
-    pub fn create_dummy_type<T: Type>(&mut self) -> MetaType {
+    pub fn create_fake_output_type<T: OutputType>(&mut self) -> MetaType {
+        T::create_type_info(self);
+        self.types
+            .get(&*T::type_name())
+            .cloned()
+            .expect("You definitely encountered a bug!")
+    }
+
+    pub fn create_fake_input_type<T: InputType>(&mut self) -> MetaType {
+        T::create_type_info(self);
+        self.types
+            .get(&*T::type_name())
+            .cloned()
+            .expect("You definitely encountered a bug!")
+    }
+
+    pub fn create_fake_subscription_type<T: SubscriptionType>(&mut self) -> MetaType {
         T::create_type_info(self);
         self.types
             .get(&*T::type_name())
@@ -512,7 +555,7 @@ impl Registry {
     }
 
     pub(crate) fn create_federation_types(&mut self) {
-        Any::create_type_info(self);
+        <Any as InputType>::create_type_info(self);
 
         self.types.insert(
             "_Service".to_string(),
@@ -647,8 +690,8 @@ impl Registry {
         names.into_iter().collect()
     }
 
-    pub fn set_description<T: Type>(&mut self, desc: &'static str) {
-        match self.types.get_mut(&*T::type_name()) {
+    pub fn set_description(&mut self, name: &str, desc: &'static str) {
+        match self.types.get_mut(name) {
             Some(MetaType::Scalar { description, .. }) => *description = Some(desc),
             Some(MetaType::Object { description, .. }) => *description = Some(desc),
             Some(MetaType::Interface { description, .. }) => *description = Some(desc),

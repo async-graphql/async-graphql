@@ -7,8 +7,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::CursorType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerResult, Type,
-    Value,
+    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerResult, Value,
 };
 
 /// The edge type output by the data source
@@ -40,9 +39,31 @@ impl<C: CursorType, T> Edge<C, T, EmptyFields> {
     }
 }
 
-impl<C, T, E> Type for Edge<C, T, E>
+#[async_trait::async_trait]
+impl<C, T, E> ContainerType for Edge<C, T, E>
 where
-    C: CursorType,
+    C: CursorType + Send + Sync,
+    T: OutputType,
+    E: ObjectType,
+{
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
+        if ctx.item.node.name.node == "node" {
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+            return OutputType::resolve(&self.node, &ctx_obj, ctx.item)
+                .await
+                .map(Some);
+        } else if ctx.item.node.name.node == "cursor" {
+            return Ok(Some(Value::String(self.cursor.encode_cursor())));
+        }
+
+        self.additional_fields.resolve_field(ctx).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<C, T, E> OutputType for Edge<C, T, E>
+where
+    C: CursorType + Send + Sync,
     T: OutputType,
     E: ObjectType,
 {
@@ -51,9 +72,9 @@ where
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|registry| {
+        registry.create_output_type::<Self, _>(|registry| {
             let additional_fields = if let registry::MetaType::Object { fields, .. } =
-                registry.create_dummy_type::<E>()
+                registry.create_fake_output_type::<E>()
             {
                 fields
             } else {
@@ -112,36 +133,7 @@ where
             }
         })
     }
-}
 
-#[async_trait::async_trait]
-impl<C, T, E> ContainerType for Edge<C, T, E>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    E: ObjectType,
-{
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if ctx.item.node.name.node == "node" {
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&self.node, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
-        } else if ctx.item.node.name.node == "cursor" {
-            return Ok(Some(Value::String(self.cursor.encode_cursor())));
-        }
-
-        self.additional_fields.resolve_field(ctx).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<C, T, E> OutputType for Edge<C, T, E>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    E: ObjectType,
-{
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

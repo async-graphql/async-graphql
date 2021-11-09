@@ -7,7 +7,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
     registry, Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, SimpleObject, Type, Value,
+    ServerResult, SimpleObject, Value,
 };
 
 /// Federation service
@@ -19,74 +19,6 @@ struct Service {
 
 pub(crate) struct QueryRoot<T> {
     pub(crate) inner: T,
-}
-
-impl<T: Type> Type for QueryRoot<T> {
-    fn type_name() -> Cow<'static, str> {
-        T::type_name()
-    }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        let root = T::create_type_info(registry);
-
-        if !registry.disable_introspection {
-            let schema_type = __Schema::create_type_info(registry);
-            if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.get_mut(T::type_name().as_ref())
-            {
-                fields.insert(
-                    "__schema".to_string(),
-                    registry::MetaField {
-                        name: "__schema".to_string(),
-                        description: Some("Access the current type schema of this server."),
-                        args: Default::default(),
-                        ty: schema_type,
-                        deprecation: Default::default(),
-                        cache_control: Default::default(),
-                        external: false,
-                        requires: None,
-                        provides: None,
-                        visible: None,
-                        compute_complexity: None,
-                    },
-                );
-
-                fields.insert(
-                    "__type".to_string(),
-                    registry::MetaField {
-                        name: "__type".to_string(),
-                        description: Some("Request the type information of a single type."),
-                        args: {
-                            let mut args = IndexMap::new();
-                            args.insert(
-                                "name",
-                                registry::MetaInputValue {
-                                    name: "name",
-                                    description: None,
-                                    ty: "String!".to_string(),
-                                    default_value: None,
-                                    validator: None,
-                                    visible: None,
-                                    is_secret: false,
-                                },
-                            );
-                            args
-                        },
-                        ty: "__Type".to_string(),
-                        deprecation: Default::default(),
-                        cache_control: Default::default(),
-                        external: false,
-                        requires: None,
-                        provides: None,
-                        visible: None,
-                        compute_complexity: None,
-                    },
-                );
-            }
-        }
-
-        root
-    }
 }
 
 #[async_trait::async_trait]
@@ -154,6 +86,72 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
 
 #[async_trait::async_trait]
 impl<T: ObjectType> OutputType for QueryRoot<T> {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        let root = T::create_type_info(registry);
+
+        if !registry.disable_introspection {
+            let schema_type = __Schema::create_type_info(registry);
+            if let Some(registry::MetaType::Object { fields, .. }) =
+                registry.types.get_mut(T::type_name().as_ref())
+            {
+                fields.insert(
+                    "__schema".to_string(),
+                    registry::MetaField {
+                        name: "__schema".to_string(),
+                        description: Some("Access the current type schema of this server."),
+                        args: Default::default(),
+                        ty: schema_type,
+                        deprecation: Default::default(),
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
+                    },
+                );
+
+                fields.insert(
+                    "__type".to_string(),
+                    registry::MetaField {
+                        name: "__type".to_string(),
+                        description: Some("Request the type information of a single type."),
+                        args: {
+                            let mut args = IndexMap::new();
+                            args.insert(
+                                "name",
+                                registry::MetaInputValue {
+                                    name: "name",
+                                    description: None,
+                                    ty: "String!".to_string(),
+                                    default_value: None,
+                                    validator: None,
+                                    visible: None,
+                                    is_secret: false,
+                                },
+                            );
+                            args
+                        },
+                        ty: "__Type".to_string(),
+                        deprecation: Default::default(),
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
+                    },
+                );
+            }
+        }
+
+        root
+    }
+
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

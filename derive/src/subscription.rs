@@ -191,7 +191,7 @@ pub fn generate(
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
                         description: #desc,
-                        ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
                         validator: #validator,
                         visible: #visible,
@@ -303,7 +303,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
+                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: ::std::default::Default::default(),
                     external: false,
@@ -364,7 +364,7 @@ pub fn generate(
                                 let ri = #crate_name::extensions::ResolveInfo {
                                     path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                     parent_type: #gql_typename,
-                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
                                     name: field.node.name.node.as_str(),
                                     alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                 };
@@ -437,14 +437,15 @@ pub fn generate(
         #item_impl
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #self_ty #where_clause {
+        #[allow(unused_braces, unused_variables)]
+        impl #generics #crate_name::SubscriptionType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             #[allow(bare_trait_objects)]
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                registry.create_subscription_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     fields: {
@@ -460,11 +461,7 @@ pub fn generate(
                     rust_typename: ::std::any::type_name::<Self>(),
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[allow(unused_braces, unused_variables)]
-        impl #generics #crate_name::SubscriptionType for #self_ty #where_clause {
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'_>,
