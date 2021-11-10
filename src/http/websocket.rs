@@ -6,6 +6,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
+use futures_util::future::Ready;
 use futures_util::stream::Stream;
 use futures_util::FutureExt;
 use futures_util::{future::BoxFuture, StreamExt};
@@ -57,16 +58,15 @@ impl WsMessage {
     }
 }
 
-type BoxInitializer =
-    Box<(dyn FnOnce(serde_json::Value) -> BoxFuture<'static, Result<Data>> + Send + 'static)>;
-
 pin_project! {
     /// A GraphQL connection over websocket.
     ///
-    /// [Reference](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md).
-    /// [Reference](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md).
-    pub struct WebSocket<S, Query, Mutation, Subscription> {
-        data_initializer: Option<BoxInitializer>,
+    /// # References
+    ///
+    /// - [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
+    /// - [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
+    pub struct WebSocket<S, Query, Mutation, Subscription, OnInit> {
+        on_connection_init: Option<OnInit>,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
@@ -81,7 +81,14 @@ pin_project! {
 type MessageMapStream<S> =
     futures_util::stream::Map<S, fn(<S as Stream>::Item) -> serde_json::Result<ClientMessage>>;
 
-impl<S, Query, Mutation, Subscription> WebSocket<S, Query, Mutation, Subscription>
+type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
+
+fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
+    futures_util::future::ready(Ok(Data::default()))
+}
+
+impl<S, Query, Mutation, Subscription>
+    WebSocket<S, Query, Mutation, Subscription, DefaultOnConnInitType>
 where
     S: Stream<Item = serde_json::Result<ClientMessage>>,
 {
@@ -92,7 +99,7 @@ where
         protocol: Protocols,
     ) -> Self {
         WebSocket {
-            data_initializer: Some(Box::new(|_| Box::pin(async move { Ok(Data::default()) }))),
+            on_connection_init: Some(default_on_connection_init),
             init_fut: None,
             connection_data: None,
             data: None,
@@ -102,33 +109,10 @@ where
             protocol,
         }
     }
-
-    /// Specify a connection initializer.
-    ///
-    /// This function, if present, will be called with the data sent by the client in the
-    /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
-    /// From that point on the returned data will be accessible to all requests.
-    pub fn with_initializer<F, R>(mut self, initializer: F) -> Self
-    where
-        F: FnOnce(serde_json::Value) -> R + Send + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
-    {
-        self.data_initializer = Some(Box::new(move |value| Box::pin(initializer(value))));
-        self
-    }
-
-    /// Specify a connection data.
-    ///
-    /// This data usually comes from HTTP requests.
-    /// When the `GQL_CONNECTION_INIT` message is received, this data will be merged with the data
-    /// returned by the closure specified by `with_initializer` into the final subscription context data.
-    pub fn connection_data(mut self, data: Data) -> Self {
-        self.connection_data = Some(data);
-        self
-    }
 }
 
-impl<S, Query, Mutation, Subscription> WebSocket<MessageMapStream<S>, Query, Mutation, Subscription>
+impl<S, Query, Mutation, Subscription>
+    WebSocket<MessageMapStream<S>, Query, Mutation, Subscription, DefaultOnConnInitType>
 where
     S: Stream,
     S::Item: AsRef<[u8]>,
@@ -138,23 +122,62 @@ where
         schema: Schema<Query, Mutation, Subscription>,
         stream: S,
         protocol: Protocols,
-    ) -> Self
-    where
-        S: Stream,
-        S::Item: AsRef<[u8]>,
-    {
+    ) -> Self {
         let stream = stream
             .map(ClientMessage::from_bytes as fn(S::Item) -> serde_json::Result<ClientMessage>);
         WebSocket::from_message_stream(schema, stream, protocol)
     }
 }
 
-impl<S, Query, Mutation, Subscription> Stream for WebSocket<S, Query, Mutation, Subscription>
+impl<S, Query, Mutation, Subscription, OnInit> WebSocket<S, Query, Mutation, Subscription, OnInit>
+where
+    S: Stream<Item = serde_json::Result<ClientMessage>>,
+{
+    /// Specify a connection data.
+    ///
+    /// This data usually comes from HTTP requests.
+    /// When the `GQL_CONNECTION_INIT` message is received, this data will be merged with the data
+    /// returned by the closure specified by `with_initializer` into the final subscription context data.
+    pub fn connection_data(mut self, data: Data) -> Self {
+        self.connection_data = Some(data);
+        self
+    }
+
+    /// Specify a connection initialize callback function.
+    ///
+    /// This function if present, will be called with the data sent by the client in the
+    /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
+    /// From that point on the returned data will be accessible to all requests.
+    pub fn on_connection_init<F, R>(
+        self,
+        callback: F,
+    ) -> WebSocket<S, Query, Mutation, Subscription, F>
+    where
+        F: FnOnce(serde_json::Value) -> R + Send + 'static,
+        R: Future<Output = Result<Data>> + Send + 'static,
+    {
+        WebSocket {
+            on_connection_init: Some(callback),
+            init_fut: self.init_fut,
+            connection_data: self.connection_data,
+            data: self.data,
+            schema: self.schema,
+            streams: self.streams,
+            stream: self.stream,
+            protocol: self.protocol,
+        }
+    }
+}
+
+impl<S, Query, Mutation, Subscription, OnInit, InitFut> Stream
+    for WebSocket<S, Query, Mutation, Subscription, OnInit>
 where
     S: Stream<Item = serde_json::Result<ClientMessage>>,
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
+    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
+    InitFut: Future<Output = Result<Data>> + Send + 'static,
 {
     type Item = WsMessage;
 
@@ -175,9 +198,9 @@ where
 
                 match message {
                     ClientMessage::ConnectionInit { payload } => {
-                        if let Some(data_initializer) = this.data_initializer.take() {
+                        if let Some(on_connection_init) = this.on_connection_init.take() {
                             *this.init_fut = Some(Box::pin(async move {
-                                data_initializer(payload.unwrap_or_default()).await
+                                on_connection_init(payload.unwrap_or_default()).await
                             }));
                             break;
                         } else {
