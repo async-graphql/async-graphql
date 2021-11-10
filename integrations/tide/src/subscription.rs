@@ -1,63 +1,122 @@
 use std::future::Future;
+use std::marker::PhantomData;
 use std::pin::Pin;
 use std::str::FromStr;
 
 use async_graphql::http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
+use futures_util::future::Ready;
 use futures_util::{future, StreamExt};
-use tide::{Endpoint, Request, Response};
+use tide::{Endpoint, Request, Response, StatusCode};
 use tide_websockets::Message;
 
-/// GraphQL subscription endpoint.
+type DefaultOnConnCreateType<S> = fn(&Request<S>) -> Ready<Result<Data>>;
+
+fn default_on_connection_create<S>(_: &Request<S>) -> Ready<Result<Data>> {
+    futures_util::future::ready(Ok(Data::default()))
+}
+
+type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
+
+fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
+    futures_util::future::ready(Ok(Data::default()))
+}
+
+/// GraphQL subscription builder.
 #[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
-pub struct Subscription<S> {
-    inner: Pin<Box<dyn Endpoint<S>>>,
+pub struct SubscriptionBuilder<S, Query, Mutation, Subscription, OnCreate, OnInit> {
+    schema: Schema<Query, Mutation, Subscription>,
+    on_connection_create: OnCreate,
+    on_connection_init: OnInit,
+    _mark: PhantomData<S>,
 }
 
-#[async_trait::async_trait]
-impl<S> Endpoint<S> for Subscription<S>
-where
-    S: Send + Sync + Clone + 'static,
+impl<S, Query, Mutation, Subscription>
+    SubscriptionBuilder<
+        S,
+        Query,
+        Mutation,
+        Subscription,
+        DefaultOnConnCreateType<S>,
+        DefaultOnConnInitType,
+    >
 {
-    async fn call(&self, req: Request<S>) -> tide::Result<Response> {
-        self.inner.call(req).await
+    /// Create a GraphQL subscription builder.
+    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+        Self {
+            schema,
+            on_connection_create: default_on_connection_create,
+            on_connection_init: default_on_connection_init,
+            _mark: Default::default(),
+        }
     }
 }
 
-impl<S> Subscription<S>
-where
-    S: Send + Sync + Clone + 'static,
+impl<S, Query, Mutation, Subscription, OnCreate, OnInit>
+    SubscriptionBuilder<S, Query, Mutation, Subscription, OnCreate, OnInit>
 {
-    /// Create a graphql subscription endpoint.
-    pub fn new<Query, Mutation, Subscription>(schema: Schema<Query, Mutation, Subscription>) -> Self
-    where
-        Query: ObjectType + 'static,
-        Mutation: ObjectType + 'static,
-        Subscription: SubscriptionType + 'static,
-    {
-        Self::new_with_initializer(schema, |_| {
-            futures_util::future::ready(Ok(Default::default()))
-        })
-    }
-
-    /// Create a graphql subscription endpoint.
+    /// Specify the callback function to be called when the connection is created.
     ///
-    /// Specifies that a function converts the init payload to data.
-    pub fn new_with_initializer<Query, Mutation, Subscription, F, R>(
-        schema: Schema<Query, Mutation, Subscription>,
-        initializer: F,
-    ) -> Self
+    /// You can get something from the incoming request to create [`Data`].
+    pub fn on_connection_create<OnCreate2, Fut>(
+        self,
+        callback: OnCreate2,
+    ) -> SubscriptionBuilder<S, Query, Mutation, Subscription, OnCreate2, OnInit>
     where
-        Query: ObjectType + 'static,
-        Mutation: ObjectType + 'static,
-        Subscription: SubscriptionType + 'static,
-        F: FnOnce(serde_json::Value) -> R + Unpin + Send + Sync + Clone + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        OnCreate2: Fn(&Request<S>) -> Fut + Clone + Send + Sync + 'static,
+        Fut: Future<Output = Result<Data>> + Send + 'static,
     {
-        let endpoint = tide_websockets::WebSocket::<S, _>::new(move |request, connection| {
-            let schema = schema.clone();
-            let initializer = initializer.clone();
+        SubscriptionBuilder {
+            schema: self.schema,
+            on_connection_create: callback,
+            on_connection_init: self.on_connection_init,
+            _mark: Default::default(),
+        }
+    }
+
+    /// Specify a callback function to be called when the connection is initialized.
+    ///
+    /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
+    pub fn on_connection_init<OnInit2, Fut>(
+        self,
+        callback: OnInit2,
+    ) -> SubscriptionBuilder<S, Query, Mutation, Subscription, OnCreate, OnInit2>
+    where
+        OnInit2: FnOnce(serde_json::Value) -> Fut + Clone + Send + Sync + 'static,
+        Fut: Future<Output = Result<Data>> + Send + 'static,
+    {
+        SubscriptionBuilder {
+            schema: self.schema,
+            on_connection_create: self.on_connection_create,
+            on_connection_init: callback,
+            _mark: Default::default(),
+        }
+    }
+}
+
+impl<S, Query, Mutation, Subscription, OnCreate, OnCreateFut, OnInit, OnInitFut>
+    SubscriptionBuilder<S, Query, Mutation, Subscription, OnCreate, OnInit>
+where
+    S: Send + Sync + Clone + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    OnCreate: Fn(&Request<S>) -> OnCreateFut + Send + Clone + Sync + 'static,
+    OnCreateFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Clone + Send + Sync + 'static,
+    OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+{
+    pub fn build(self) -> impl Endpoint<S> {
+        tide_websockets::WebSocket::<S, _>::new(move |request, connection| {
+            let schema = self.schema.clone();
+            let on_connection_create = self.on_connection_create.clone();
+            let on_connection_init = self.on_connection_init.clone();
+
             async move {
+                let data = on_connection_create(&request)
+                    .await
+                    .map_err(|_| tide::Error::from_str(StatusCode::BadRequest, "bad request"))?;
+
                 let protocol = match request
                     .header("sec-websocket-protocol")
                     .map(|value| value.as_str())
@@ -74,15 +133,17 @@ where
                 };
 
                 let sink = connection.clone();
-                let mut stream = AGWebSocket::with_data(
+                let mut stream = AGWebSocket::new(
                     schema.clone(),
                     connection
                         .take_while(|msg| future::ready(msg.is_ok()))
                         .map(Result::unwrap)
                         .map(Message::into_data),
-                    initializer,
                     protocol,
-                );
+                )
+                .connection_data(data)
+                .on_connection_init(on_connection_init);
+
                 while let Some(data) = stream.next().await {
                     match data {
                         WsMessage::Text(text) => {
@@ -100,9 +161,6 @@ where
                 Ok(())
             }
         })
-        .with_protocols(&["graphql-transport-ws", "graphql-ws"]);
-        Self {
-            inner: Box::pin(endpoint),
-        }
+        .with_protocols(&["graphql-transport-ws", "graphql-ws"])
     }
 }

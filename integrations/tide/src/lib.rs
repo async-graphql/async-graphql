@@ -23,7 +23,7 @@ use tide::{
 };
 
 #[cfg(feature = "websocket")]
-pub use subscription::Subscription;
+pub use subscription::SubscriptionBuilder;
 
 /// Create a new GraphQL endpoint with the schema.
 ///
