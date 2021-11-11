@@ -23,49 +23,24 @@ use tide::{
 };
 
 #[cfg(feature = "websocket")]
-pub use subscription::SubscriptionBuilder;
+pub use subscription::GraphQLSubscriptionBuilder;
 
-/// Create a new GraphQL endpoint with the schema.
-///
-/// Default multipart options are used and batch operations are supported.
-pub fn endpoint<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-) -> Endpoint<Query, Mutation, Subscription> {
-    Endpoint {
-        schema,
-        opts: MultipartOptions::default(),
-        batch: true,
-    }
-}
-
-/// A GraphQL endpoint.
+/// An endpoint for GraphQL.
 ///
 /// This is created with the [`endpoint`](fn.endpoint.html) function.
-#[non_exhaustive]
-pub struct Endpoint<Query, Mutation, Subscription> {
+pub struct GraphQLEndpoint<Query, Mutation, Subscription> {
     /// The schema of the endpoint.
-    pub schema: Schema<Query, Mutation, Subscription>,
-    /// The multipart options of the endpoint.
-    pub opts: MultipartOptions,
-    /// Whether to support batch requests in the endpoint.
-    pub batch: bool,
-}
+    schema: Schema<Query, Mutation, Subscription>,
 
-impl<Query, Mutation, Subscription> Endpoint<Query, Mutation, Subscription> {
-    /// Set the multipart options of the endpoint.
-    #[must_use]
-    pub fn multipart_opts(self, opts: MultipartOptions) -> Self {
-        Self { opts, ..self }
-    }
-    /// Set whether batch requests are supported in the endpoint.
-    #[must_use]
-    pub fn batch(self, batch: bool) -> Self {
-        Self { batch, ..self }
-    }
+    /// The multipart options of the endpoint.
+    opts: MultipartOptions,
+
+    /// Whether to support batch requests in the endpoint.
+    batch: bool,
 }
 
 // Manual impl to remove bounds on generics
-impl<Query, Mutation, Subscription> Clone for Endpoint<Query, Mutation, Subscription> {
+impl<Query, Mutation, Subscription> Clone for GraphQLEndpoint<Query, Mutation, Subscription> {
     fn clone(&self) -> Self {
         Self {
             schema: self.schema.clone(),
@@ -75,9 +50,34 @@ impl<Query, Mutation, Subscription> Clone for Endpoint<Query, Mutation, Subscrip
     }
 }
 
+impl<Query, Mutation, Subscription> GraphQLEndpoint<Query, Mutation, Subscription> {
+    /// Create a new GraphQL endpoint with the schema.
+    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+        GraphQLEndpoint {
+            schema,
+            opts: MultipartOptions::default(),
+            batch: true,
+        }
+    }
+
+    /// Set the multipart options of the endpoint.
+    #[must_use]
+    pub fn multipart_opts(self, opts: MultipartOptions) -> Self {
+        Self { opts, ..self }
+    }
+
+    /// Set whether batch requests are supported in the endpoint.
+    ///
+    /// Default is `true`.
+    #[must_use]
+    pub fn batch(self, batch: bool) -> Self {
+        Self { batch, ..self }
+    }
+}
+
 #[async_trait]
 impl<Query, Mutation, Subscription, TideState> tide::Endpoint<TideState>
-    for Endpoint<Query, Mutation, Subscription>
+    for GraphQLEndpoint<Query, Mutation, Subscription>
 where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,

@@ -3,6 +3,7 @@ mod test_utils;
 use std::io::Read;
 
 use async_graphql::*;
+use async_graphql_tide::GraphQLEndpoint;
 use reqwest::{header, StatusCode};
 use serde_json::json;
 
@@ -25,7 +26,7 @@ async fn quickstart() -> Result<()> {
         let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
 
         let mut app = tide::new();
-        let endpoint = async_graphql_tide::endpoint(schema);
+        let endpoint = GraphQLEndpoint::new(schema);
         app.at("/").post(endpoint.clone()).get(endpoint);
         app.listen(listen_addr).await
     });
@@ -184,7 +185,7 @@ async fn upload() -> Result<()> {
         let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).finish();
 
         let mut app = tide::new();
-        app.at("/").post(async_graphql_tide::endpoint(schema));
+        app.at("/").post(GraphQLEndpoint::new(schema));
         app.listen(listen_addr).await
     });
 
