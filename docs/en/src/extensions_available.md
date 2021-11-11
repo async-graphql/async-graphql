@@ -24,9 +24,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 }
 ```
 
-### References
-
-[Apollo doc - Persisted Queries](https://www.apollographql.com/docs/react/api/link/persisted-queries/)
+References: [Apollo doc - Persisted Queries](https://www.apollographql.com/docs/react/api/link/persisted-queries/)
 
 ## Apollo Tracing
 *Available in the repository*

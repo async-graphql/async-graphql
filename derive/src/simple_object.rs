@@ -294,6 +294,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     })
                 }
             }
@@ -345,6 +346,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     })
                 }
 

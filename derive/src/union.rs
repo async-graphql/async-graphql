@@ -193,6 +193,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                             union_values
                         },
                         visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })
             }

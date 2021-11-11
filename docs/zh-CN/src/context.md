@@ -85,7 +85,7 @@ impl Query {
         // If multiple headers with the same key are `inserted` then the most recent
         // one overwrites the previous. If you want multiple headers for the same key, use
         // `append_http_header` for subsequent headers
-        let was_in_headers = ctx.insert_http_header("Custom-Header", "Hello World");
+        let was_in_headers = ctx.append_http_header("Custom-Header", "Hello World");
 
         String::from("Hello world")
     }

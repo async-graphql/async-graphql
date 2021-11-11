@@ -46,6 +46,7 @@ impl Type for EmptyMutation {
             keys: None,
             visible: None,
             is_subscription: false,
+            rust_typename: std::any::type_name::<Self>(),
         })
     }
 }
@@ -57,7 +58,7 @@ impl ContainerType for EmptyMutation {
     }
 
     async fn resolve_field(&self, _ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        unreachable!()
+        Ok(None)
     }
 }
 

@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [2.11.2] 2021-11-11
+
+- Fix the problem that `EmptyMutation` may cause when used in `MergedObject`. [#694](https://github.com/async-graphql/async-graphql/issues/694)
+- If a GraphQL name conflict is detected when creating schema, it will cause panic. [#499](https://github.com/async-graphql/async-graphql/issues/499)
+
+## [2.11.1] 2021-11-07
 
 - Add `chrono::Duration` custom scalar. [#689](https://github.com/async-graphql/async-graphql/pull/689)
 - Implement `From<Option<Option<T>>>` for `MaybeUndefined<T>`.

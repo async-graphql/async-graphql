@@ -140,6 +140,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                             enum_items
                         },
                         visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })
             }

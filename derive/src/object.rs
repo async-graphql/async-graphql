@@ -564,6 +564,7 @@ pub fn generate(
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -632,6 +633,7 @@ pub fn generate(
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
+                        rust_typename: ::std::any::type_name::<Self>(),
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

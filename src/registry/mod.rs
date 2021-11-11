@@ -200,6 +200,7 @@ pub enum MetaType {
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
         is_subscription: bool,
+        rust_typename: &'static str,
     },
     Interface {
         name: String,
@@ -209,6 +210,7 @@ pub enum MetaType {
         extends: bool,
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
+        rust_typename: &'static str,
     },
     Union {
         name: String,
@@ -216,18 +218,21 @@ pub enum MetaType {
         union_values: IndexMap<String, MetaUnionValue>,
         possible_types: IndexSet<String>,
         visible: Option<MetaVisibleFn>,
+        rust_typename: &'static str,
     },
     Enum {
         name: String,
         description: Option<&'static str>,
         enum_values: IndexMap<&'static str, MetaEnumValue>,
         visible: Option<MetaVisibleFn>,
+        rust_typename: &'static str,
     },
     InputObject {
         name: String,
         description: Option<&'static str>,
         input_fields: IndexMap<String, MetaInputValue>,
         visible: Option<MetaVisibleFn>,
+        rust_typename: &'static str,
     },
 }
 
@@ -336,6 +341,17 @@ impl MetaType {
             (false, false) => false,
         }
     }
+
+    pub fn rust_typename(&self) -> Option<&'static str> {
+        match self {
+            MetaType::Scalar { .. } => None,
+            MetaType::Object { rust_typename, .. } => Some(rust_typename),
+            MetaType::Interface { rust_typename, .. } => Some(rust_typename),
+            MetaType::Union { rust_typename, .. } => Some(rust_typename),
+            MetaType::Enum { rust_typename, .. } => Some(rust_typename),
+            MetaType::InputObject { rust_typename, .. } => Some(rust_typename),
+        }
+    }
 }
 
 pub struct MetaDirective {
@@ -364,24 +380,40 @@ impl Registry {
         mut f: F,
     ) -> String {
         let name = T::type_name();
-        if !self.types.contains_key(name.as_ref()) {
-            // Inserting a fake type before calling the function allows recursive types to exist.
-            self.types.insert(
-                name.clone().into_owned(),
-                MetaType::Object {
-                    name: "".to_string(),
-                    description: None,
-                    fields: Default::default(),
-                    cache_control: Default::default(),
-                    extends: false,
-                    keys: None,
-                    visible: None,
-                    is_subscription: false,
-                },
-            );
-            let ty = f(self);
-            *self.types.get_mut(&*name).unwrap() = ty;
+
+        match self.types.get(name.as_ref()) {
+            Some(ty) => {
+                let rust_typename = std::any::type_name::<T>();
+                if let Some(prev_typename) = ty.rust_typename() {
+                    if prev_typename != "__fake_type__" && rust_typename != prev_typename {
+                        panic!(
+                            "`{}` and `{}` have the same GraphQL name `{}`",
+                            prev_typename, rust_typename, name,
+                        );
+                    }
+                }
+            }
+            None => {
+                // Inserting a fake type before calling the function allows recursive types to exist.
+                self.types.insert(
+                    name.clone().into_owned(),
+                    MetaType::Object {
+                        name: "".to_string(),
+                        description: None,
+                        fields: Default::default(),
+                        cache_control: Default::default(),
+                        extends: false,
+                        keys: None,
+                        visible: None,
+                        is_subscription: false,
+                        rust_typename: "__fake_type__",
+                    },
+                );
+                let ty = f(self);
+                *self.types.get_mut(&*name).unwrap() = ty;
+            }
         }
+
         T::qualified_type_name()
     }
 
@@ -474,6 +506,7 @@ impl Registry {
                 union_values: Default::default(),
                 possible_types,
                 visible: None,
+                rust_typename: "async_graphql::federation::Entity",
             },
         );
     }
@@ -511,6 +544,7 @@ impl Registry {
                 keys: None,
                 visible: None,
                 is_subscription: false,
+                rust_typename: "async_graphql::federation::Service",
             },
         );
 

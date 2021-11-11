@@ -191,6 +191,7 @@ where
                 keys: None,
                 visible: None,
                 is_subscription: false,
+                rust_typename: std::any::type_name::<Self>(),
             }
         })
     }
