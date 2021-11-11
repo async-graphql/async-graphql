@@ -27,10 +27,9 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
         if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
             if ctx.item.node.name.node == "__schema" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
                 return OutputType::resolve(
-                    &__Schema {
-                        registry: &ctx.schema_env.registry,
-                    },
+                    &__Schema::new(&ctx.schema_env.registry, &visible_types),
                     &ctx_obj,
                     ctx.item,
                 )
@@ -39,13 +38,14 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
             } else if ctx.item.node.name.node == "__type" {
                 let type_name: String = ctx.param_value("name", None)?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
                 return OutputType::resolve(
                     &ctx.schema_env
                         .registry
                         .types
                         .get(&type_name)
-                        .filter(|ty| ty.is_visible(ctx))
-                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
+                        .filter(|_| visible_types.contains(type_name.as_str()))
+                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, &visible_types, ty)),
                     &ctx_obj,
                     ctx.item,
                 )

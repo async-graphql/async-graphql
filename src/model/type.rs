@@ -1,4 +1,7 @@
+use std::collections::HashSet;
+
 use crate::model::{__EnumValue, __Field, __InputValue, __TypeKind};
+use crate::registry::is_visible;
 use crate::{registry, Context, Object};
 
 enum TypeDetail<'a> {
@@ -9,31 +12,44 @@ enum TypeDetail<'a> {
 
 pub struct __Type<'a> {
     registry: &'a registry::Registry,
+    visible_types: &'a HashSet<&'a str>,
     detail: TypeDetail<'a>,
 }
 
 impl<'a> __Type<'a> {
     #[inline]
-    pub fn new_simple(registry: &'a registry::Registry, ty: &'a registry::MetaType) -> __Type<'a> {
+    pub fn new_simple(
+        registry: &'a registry::Registry,
+        visible_types: &'a HashSet<&'a str>,
+        ty: &'a registry::MetaType,
+    ) -> __Type<'a> {
         __Type {
             registry,
+            visible_types,
             detail: TypeDetail::Named(ty),
         }
     }
 
     #[inline]
-    pub fn new(registry: &'a registry::Registry, type_name: &str) -> __Type<'a> {
+    pub fn new(
+        registry: &'a registry::Registry,
+        visible_types: &'a HashSet<&'a str>,
+        type_name: &str,
+    ) -> __Type<'a> {
         match registry::MetaTypeName::create(type_name) {
             registry::MetaTypeName::NonNull(ty) => __Type {
                 registry,
+                visible_types,
                 detail: TypeDetail::NonNull(ty.to_string()),
             },
             registry::MetaTypeName::List(ty) => __Type {
                 registry,
+                visible_types,
                 detail: TypeDetail::List(ty.to_string()),
             },
             registry::MetaTypeName::Named(ty) => __Type {
                 registry,
+                visible_types,
                 detail: TypeDetail::Named(match registry.types.get(ty) {
                     Some(t) => t,
                     None => panic!("Type '{}' not found!", ty),
@@ -98,16 +114,14 @@ impl<'a> __Type<'a> {
             ty.fields().map(|fields| {
                 fields
                     .values()
-                    .filter(|field| match &field.visible {
-                        Some(f) => f(ctx),
-                        None => true,
-                    })
+                    .filter(|field| is_visible(ctx, &field.visible))
                     .filter(|field| {
                         (include_deprecated || !field.deprecation.is_deprecated())
                             && !field.name.starts_with("__")
                     })
                     .map(|field| __Field {
                         registry: self.registry,
+                        visible_types: self.visible_types,
                         field,
                     })
                     .collect()
@@ -125,7 +139,8 @@ impl<'a> __Type<'a> {
                     .get(name)
                     .unwrap_or(&Default::default())
                     .iter()
-                    .map(|ty| __Type::new(self.registry, ty))
+                    .filter(|ty| self.visible_types.contains(ty.as_str()))
+                    .map(|ty| __Type::new(self.registry, self.visible_types, ty))
                     .collect(),
             )
         } else {
@@ -133,27 +148,15 @@ impl<'a> __Type<'a> {
         }
     }
 
-    async fn possible_types(&self, ctx: &Context<'_>) -> Option<Vec<__Type<'a>>> {
-        if let TypeDetail::Named(registry::MetaType::Interface { possible_types, .. }) =
-            &self.detail
+    async fn possible_types(&self) -> Option<Vec<__Type<'a>>> {
+        if let TypeDetail::Named(registry::MetaType::Interface { possible_types, .. })
+        | TypeDetail::Named(registry::MetaType::Union { possible_types, .. }) = &self.detail
         {
             Some(
                 possible_types
                     .iter()
-                    .map(|ty| __Type::new(self.registry, ty))
-                    .collect(),
-            )
-        } else if let TypeDetail::Named(registry::MetaType::Union { union_values, .. }) =
-            &self.detail
-        {
-            Some(
-                union_values
-                    .values()
-                    .filter(|value| match &value.visible {
-                        Some(f) => f(ctx),
-                        None => true,
-                    })
-                    .map(|ty| __Type::new(self.registry, &ty.name))
+                    .filter(|ty| self.visible_types.contains(ty.as_str()))
+                    .map(|ty| __Type::new(self.registry, self.visible_types, ty))
                     .collect(),
             )
         } else {
@@ -170,10 +173,7 @@ impl<'a> __Type<'a> {
             Some(
                 enum_values
                     .values()
-                    .filter(|value| match &value.visible {
-                        Some(f) => f(ctx),
-                        None => true,
-                    })
+                    .filter(|value| is_visible(ctx, &value.visible))
                     .filter(|value| include_deprecated || !value.deprecation.is_deprecated())
                     .map(|value| __EnumValue {
                         registry: self.registry,
@@ -193,12 +193,10 @@ impl<'a> __Type<'a> {
             Some(
                 input_fields
                     .values()
-                    .filter(|input_value| match &input_value.visible {
-                        Some(f) => f(ctx),
-                        None => true,
-                    })
+                    .filter(|input_value| is_visible(ctx, &input_value.visible))
                     .map(|input_value| __InputValue {
                         registry: self.registry,
+                        visible_types: self.visible_types,
                         input_value,
                     })
                     .collect(),
@@ -211,9 +209,9 @@ impl<'a> __Type<'a> {
     #[inline]
     async fn of_type(&self) -> Option<__Type<'a>> {
         if let TypeDetail::List(ty) = &self.detail {
-            Some(__Type::new(self.registry, &ty))
+            Some(__Type::new(self.registry, self.visible_types, &ty))
         } else if let TypeDetail::NonNull(ty) = &self.detail {
-            Some(__Type::new(self.registry, &ty))
+            Some(__Type::new(self.registry, self.visible_types, &ty))
         } else {
             None
         }

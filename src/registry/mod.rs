@@ -177,12 +177,6 @@ pub struct MetaEnumValue {
     pub visible: Option<MetaVisibleFn>,
 }
 
-#[derive(Clone)]
-pub struct MetaUnionValue {
-    pub name: String,
-    pub visible: Option<MetaVisibleFn>,
-}
-
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
 
 #[derive(Clone)]
@@ -218,7 +212,6 @@ pub enum MetaType {
     Union {
         name: String,
         description: Option<&'static str>,
-        union_values: IndexMap<String, MetaUnionValue>,
         possible_types: IndexSet<String>,
         visible: Option<MetaVisibleFn>,
         rust_typename: &'static str,
@@ -264,10 +257,7 @@ impl MetaType {
             MetaType::Enum { visible, .. } => visible,
             MetaType::InputObject { visible, .. } => visible,
         };
-        match visible {
-            Some(f) => f(ctx),
-            None => true,
-        }
+        is_visible(ctx, visible)
     }
 
     #[inline]
@@ -546,7 +536,6 @@ impl Registry {
             MetaType::Union {
                 name: "_Entity".to_string(),
                 description: None,
-                union_values: Default::default(),
                 possible_types,
                 visible: None,
                 rust_typename: "async_graphql::federation::Entity",
@@ -797,18 +786,6 @@ impl Registry {
             traverse_type(&self.types, &mut used_types, ty.name());
         }
 
-        fn is_system_type(name: &str) -> bool {
-            if name.starts_with("__") {
-                return true;
-            }
-
-            name == "Boolean"
-                || name == "Int"
-                || name == "Float"
-                || name == "String"
-                || name == "ID"
-        }
-
         for ty in self.types.values() {
             let name = ty.name();
             if !is_system_type(name) && !used_types.contains(name) {
@@ -820,4 +797,143 @@ impl Registry {
             self.types.remove(&type_name);
         }
     }
+
+    pub fn find_visible_types(&self, ctx: &Context<'_>) -> HashSet<&str> {
+        let mut visible_types = HashSet::new();
+
+        fn traverse_field<'a>(
+            ctx: &Context<'_>,
+            types: &'a BTreeMap<String, MetaType>,
+            visible_types: &mut HashSet<&'a str>,
+            field: &'a MetaField,
+        ) {
+            if !is_visible(ctx, &field.visible) {
+                return;
+            }
+
+            traverse_type(
+                ctx,
+                types,
+                visible_types,
+                MetaTypeName::concrete_typename(&field.ty),
+            );
+            for arg in field.args.values() {
+                traverse_input_value(ctx, types, visible_types, arg);
+            }
+        }
+
+        fn traverse_input_value<'a>(
+            ctx: &Context<'_>,
+            types: &'a BTreeMap<String, MetaType>,
+            visible_types: &mut HashSet<&'a str>,
+            input_value: &'a MetaInputValue,
+        ) {
+            if !is_visible(ctx, &input_value.visible) {
+                return;
+            }
+
+            traverse_type(
+                ctx,
+                types,
+                visible_types,
+                MetaTypeName::concrete_typename(&input_value.ty),
+            );
+        }
+
+        fn traverse_type<'a>(
+            ctx: &Context<'_>,
+            types: &'a BTreeMap<String, MetaType>,
+            visible_types: &mut HashSet<&'a str>,
+            type_name: &'a str,
+        ) {
+            if visible_types.contains(type_name) {
+                return;
+            }
+
+            if let Some(ty) = types.get(type_name) {
+                if !ty.is_visible(ctx) {
+                    return;
+                }
+
+                visible_types.insert(type_name);
+                match ty {
+                    MetaType::Object { fields, .. } => {
+                        for field in fields.values() {
+                            traverse_field(ctx, types, visible_types, field);
+                        }
+                    }
+                    MetaType::Interface {
+                        fields,
+                        possible_types,
+                        ..
+                    } => {
+                        for field in fields.values() {
+                            traverse_field(ctx, types, visible_types, field);
+                        }
+                        for type_name in possible_types.iter() {
+                            traverse_type(ctx, types, visible_types, type_name);
+                        }
+                    }
+                    MetaType::Union { possible_types, .. } => {
+                        for type_name in possible_types.iter() {
+                            traverse_type(ctx, types, visible_types, type_name);
+                        }
+                    }
+                    MetaType::InputObject { input_fields, .. } => {
+                        for field in input_fields.values() {
+                            traverse_input_value(ctx, types, visible_types, field);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        for type_name in Some(&self.query_type)
+            .into_iter()
+            .chain(self.mutation_type.iter())
+            .chain(self.subscription_type.iter())
+        {
+            traverse_type(ctx, &self.types, &mut visible_types, type_name);
+        }
+
+        for ty in self.types.values().filter(|ty| match ty {
+            MetaType::Object {
+                keys: Some(keys), ..
+            }
+            | MetaType::Interface {
+                keys: Some(keys), ..
+            } => !keys.is_empty(),
+            _ => false,
+        }) {
+            traverse_type(ctx, &self.types, &mut visible_types, ty.name());
+        }
+
+        self.types
+            .values()
+            .filter_map(|ty| {
+                let name = ty.name();
+                if is_system_type(name) || visible_types.contains(name) {
+                    Some(name)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+}
+
+pub(crate) fn is_visible(ctx: &Context<'_>, visible: &Option<MetaVisibleFn>) -> bool {
+    match visible {
+        Some(f) => f(ctx),
+        None => true,
+    }
+}
+
+fn is_system_type(name: &str) -> bool {
+    if name.starts_with("__") {
+        return true;
+    }
+
+    name == "Boolean" || name == "Int" || name == "Float" || name == "String" || name == "ID"
 }

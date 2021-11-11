@@ -1,8 +1,11 @@
+use std::collections::HashSet;
+
 use crate::model::__Type;
 use crate::{registry, Object};
 
 pub struct __InputValue<'a> {
     pub registry: &'a registry::Registry,
+    pub visible_types: &'a HashSet<&'a str>,
     pub input_value: &'a registry::MetaInputValue,
 }
 
@@ -22,7 +25,7 @@ impl<'a> __InputValue<'a> {
     #[graphql(name = "type")]
     #[inline]
     async fn ty(&self) -> __Type<'a> {
-        __Type::new(self.registry, &self.input_value.ty)
+        __Type::new(self.registry, self.visible_types, &self.input_value.ty)
     }
 
     #[inline]

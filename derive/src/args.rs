@@ -333,8 +333,6 @@ pub struct UnionItem {
 
     #[darling(default)]
     pub flatten: bool,
-    #[darling(default)]
-    pub visible: Option<Visible>,
 }
 
 #[derive(FromField)]
@@ -474,6 +472,7 @@ pub struct Subscription {
     pub rename_args: Option<RenameRule>,
     pub use_type_description: bool,
     pub extends: bool,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]

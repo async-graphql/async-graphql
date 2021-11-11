@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::model::__InputValue;
 use crate::{registry, Enum, Object};
 
@@ -66,6 +68,7 @@ pub enum __DirectiveLocation {
 
 pub struct __Directive<'a> {
     pub registry: &'a registry::Registry,
+    pub visible_types: &'a HashSet<&'a str>,
     pub directive: &'a registry::MetaDirective,
 }
 
@@ -95,6 +98,7 @@ impl<'a> __Directive<'a> {
             .values()
             .map(|input_value| __InputValue {
                 registry: self.registry,
+                visible_types: self.visible_types,
                 input_value,
             })
             .collect()

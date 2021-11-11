@@ -433,6 +433,8 @@ pub fn generate(
         .into());
     }
 
+    let visible = visible_fn(&subscription_args.visible);
+
     let expanded = quote! {
         #item_impl
 
@@ -456,7 +458,7 @@ pub fn generate(
                     cache_control: ::std::default::Default::default(),
                     extends: #extends,
                     keys: ::std::option::Option::None,
-                    visible: ::std::option::Option::None,
+                    visible: #visible,
                     is_subscription: true,
                     rust_typename: ::std::any::type_name::<Self>(),
                 })
