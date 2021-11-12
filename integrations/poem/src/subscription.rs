@@ -187,8 +187,7 @@ where
                     future::ready(None)
                 }
             })
-            .map(Message::into_bytes)
-            .boxed();
+            .map(Message::into_bytes);
 
         let mut stream =
             async_graphql::http::WebSocket::new(self.schema.clone(), stream, self.protocol.0)
