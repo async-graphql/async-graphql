@@ -31,6 +31,30 @@ impl CursorType for usize {
     }
 }
 
+impl CursorType for i32 {
+    type Error = ParseIntError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl CursorType for i64 {
+    type Error = ParseIntError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
 impl CursorType for String {
     type Error = Infallible;
 
