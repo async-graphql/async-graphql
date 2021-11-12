@@ -10,4 +10,4 @@ mod subscription;
 pub use extractor::{GraphQLBatchRequest, GraphQLRequest};
 pub use query::GraphQL;
 pub use response::{GraphQLBatchResponse, GraphQLResponse};
-pub use subscription::GraphQLSubscription;
+pub use subscription::{GraphQLProtocol, GraphQLSubscription, GraphQLWebSocket};

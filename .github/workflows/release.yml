@@ -33,9 +33,6 @@ jobs:
           - name: async-graphql-warp
             registryName: async-graphql-warp
             path: integrations/warp
-          - name: async-graphql-tide
-            registryName: async-graphql-tide
-            path: integrations/tide
           - name: async-graphql-poem
             registryName: async-graphql-poem
             path: integrations/poem

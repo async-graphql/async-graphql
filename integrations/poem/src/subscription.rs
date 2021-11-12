@@ -5,8 +5,34 @@ use async_graphql::{Data, ObjectType, Schema, SubscriptionType};
 use futures_util::future::{self, Ready};
 use futures_util::{Future, SinkExt, StreamExt};
 use poem::http::StatusCode;
-use poem::web::websocket::{Message, WebSocket};
-use poem::{http, Endpoint, Error, FromRequest, IntoResponse, Request, Response, Result};
+use poem::web::websocket::{Message, WebSocket, WebSocketStream};
+use poem::{
+    http, Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
+};
+
+/// A GraphQL protocol extractor.
+///
+/// It extract GraphQL protocol from `SEC_WEBSOCKET_PROTOCOL` header.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct GraphQLProtocol(WebSocketProtocols);
+
+#[poem::async_trait]
+impl<'a> FromRequest<'a> for GraphQLProtocol {
+    type Error = Error;
+
+    async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, Self::Error> {
+        req.headers()
+            .get(http::header::SEC_WEBSOCKET_PROTOCOL)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|protocols| {
+                protocols
+                    .split(',')
+                    .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
+            })
+            .map(Self)
+            .ok_or_else(|| Error::new(StatusCode::BAD_REQUEST))
+    }
+}
 
 /// A GraphQL subscription endpoint.
 ///
@@ -41,149 +67,143 @@ use poem::{http, Endpoint, Error, FromRequest, IntoResponse, Request, Response, 
 /// let schema = Schema::new(Query, EmptyMutation, Subscription);
 /// let app = Route::new().at("/ws", get(GraphQLSubscription::new(schema)));
 /// ```
-pub struct GraphQLSubscription<Query, Mutation, Subscription, OnCreate, OnInit> {
+pub struct GraphQLSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
-    on_connection_create: OnCreate,
-    on_connection_init: OnInit,
 }
 
-type DefaultOnConnCreateType = fn(&Request) -> Ready<Result<Data>>;
+impl<Query, Mutation, Subscription> GraphQLSubscription<Query, Mutation, Subscription> {
+    /// Create a GraphQL subscription endpoint.
+    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+        Self { schema }
+    }
+}
 
-fn default_on_connection_create(_: &Request) -> Ready<Result<Data>> {
+#[poem::async_trait]
+impl<Query, Mutation, Subscription> Endpoint for GraphQLSubscription<Query, Mutation, Subscription>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+{
+    type Output = Result<Response>;
+
+    async fn call(&self, req: Request) -> Self::Output {
+        let (req, mut body) = req.split();
+        let websocket = WebSocket::from_request(&req, &mut body).await?;
+        let protocol = GraphQLProtocol::from_request(&req, &mut body).await?;
+        let schema = self.schema.clone();
+
+        let resp = websocket
+            .protocols(ALL_WEBSOCKET_PROTOCOLS)
+            .on_upgrade(move |stream| GraphQLWebSocket::new(stream, schema, protocol).serve())
+            .into_response();
+
+        Ok(resp)
+    }
+}
+
+type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
+
+fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Result<Data>> {
     futures_util::future::ready(Ok(Data::default()))
 }
 
-type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
-
-fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
-    futures_util::future::ready(Ok(Data::default()))
+/// A Websocket connection for GraphQL subscription.
+pub struct GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit> {
+    schema: Schema<Query, Mutation, Subscription>,
+    stream: WebSocketStream,
+    data: Data,
+    on_connection_init: OnConnInit,
+    protocol: GraphQLProtocol,
 }
 
 impl<Query, Mutation, Subscription>
-    GraphQLSubscription<
-        Query,
-        Mutation,
-        Subscription,
-        DefaultOnConnCreateType,
-        DefaultOnConnInitType,
-    >
+    GraphQLWebSocket<Query, Mutation, Subscription, DefaultOnConnInitType>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
 {
-    /// Create a GraphQL subscription endpoint.
-    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
-        Self {
+    /// Create a [`GraphQLWebSocket`] object.
+    pub fn new(
+        stream: WebSocketStream,
+        schema: Schema<Query, Mutation, Subscription>,
+        protocol: GraphQLProtocol,
+    ) -> Self {
+        GraphQLWebSocket {
             schema,
-            on_connection_create: default_on_connection_create,
+            stream,
+            data: Data::default(),
             on_connection_init: default_on_connection_init,
+            protocol,
         }
     }
 }
 
-impl<Query, Mutation, Subscription, OnCreate, OnInit>
-    GraphQLSubscription<Query, Mutation, Subscription, OnCreate, OnInit>
+impl<Query, Mutation, Subscription, OnConnInit, OnConnInitFut>
+    GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Send + Sync + 'static,
+    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Specify the callback function to be called when the connection is created.
-    ///
-    /// You can get something from the incoming request to create [`Data`].
-    pub fn on_connection_create<OnCreate2, Fut>(
-        self,
-        callback: OnCreate2,
-    ) -> GraphQLSubscription<Query, Mutation, Subscription, OnCreate2, OnInit>
-    where
-        OnCreate2: Fn(&Request) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<Data>> + Send + 'static,
-    {
-        GraphQLSubscription {
-            schema: self.schema,
-            on_connection_create: callback,
-            on_connection_init: self.on_connection_init,
-        }
+    /// Specify the initial subscription context data, usually you can get something from the
+    /// incoming request to create it.
+    pub fn with_data(self, data: Data) -> Self {
+        Self { data, ..self }
     }
 
     /// Specify a callback function to be called when the connection is initialized.
     ///
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
-    pub fn on_connection_init<OnInit2, Fut>(
+    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    pub fn on_connection_init<OnConnInit2, Fut>(
         self,
-        callback: OnInit2,
-    ) -> GraphQLSubscription<Query, Mutation, Subscription, OnCreate, OnInit2>
+        callback: OnConnInit2,
+    ) -> GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit2>
     where
-        OnInit2: FnOnce(serde_json::Value) -> Fut + Clone + Send + Sync + 'static,
-        Fut: Future<Output = Result<Data>> + Send + 'static,
+        OnConnInit2: Fn(serde_json::Value) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
-        GraphQLSubscription {
+        GraphQLWebSocket {
             schema: self.schema,
-            on_connection_create: self.on_connection_create,
+            stream: self.stream,
+            data: self.data,
             on_connection_init: callback,
+            protocol: self.protocol,
         }
     }
-}
 
-#[poem::async_trait]
-impl<Query, Mutation, Subscription, OnCreate, OnCreateFut, OnInit, OnInitFut> Endpoint
-    for GraphQLSubscription<Query, Mutation, Subscription, OnCreate, OnInit>
-where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
-    OnCreate: Fn(&Request) -> OnCreateFut + Send + Sync + 'static,
-    OnCreateFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
-    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Clone + Send + Sync + 'static,
-    OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
-{
-    type Output = Result<Response>;
+    /// Processing subscription requests.
+    pub async fn serve(self) {
+        let (mut sink, stream) = self.stream.split();
 
-    async fn call(&self, req: Request) -> Self::Output {
-        let data = (self.on_connection_create)(&req)
-            .await
-            .map_err(|_| Error::new(StatusCode::BAD_REQUEST))?;
-
-        let (req, mut body) = req.split();
-        let websocket = WebSocket::from_request(&req, &mut body).await?;
-        let protocol = req
-            .headers()
-            .get(http::header::SEC_WEBSOCKET_PROTOCOL)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|protocols| {
-                protocols
-                    .split(',')
-                    .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
-            })
-            .unwrap_or(WebSocketProtocols::SubscriptionsTransportWS);
-        let schema = self.schema.clone();
-        let on_connection_init = self.on_connection_init.clone();
-
-        let resp = websocket
-            .protocols(ALL_WEBSOCKET_PROTOCOLS)
-            .on_upgrade(move |socket| async move {
-                let (mut sink, stream) = socket.split();
-
-                let stream = stream
-                    .take_while(|res| future::ready(res.is_ok()))
-                    .map(Result::unwrap)
-                    .filter_map(|msg| {
-                        if msg.is_text() || msg.is_binary() {
-                            future::ready(Some(msg))
-                        } else {
-                            future::ready(None)
-                        }
-                    })
-                    .map(Message::into_bytes)
-                    .boxed();
-
-                let mut stream = async_graphql::http::WebSocket::new(schema, stream, protocol)
-                    .connection_data(data)
-                    .on_connection_init(on_connection_init)
-                    .map(|msg| match msg {
-                        WsMessage::Text(text) => Message::text(text),
-                        WsMessage::Close(code, status) => Message::close_with(code, status),
-                    });
-
-                while let Some(item) = stream.next().await {
-                    let _ = sink.send(item).await;
+        let stream = stream
+            .take_while(|res| future::ready(res.is_ok()))
+            .map(Result::unwrap)
+            .filter_map(|msg| {
+                if msg.is_text() || msg.is_binary() {
+                    future::ready(Some(msg))
+                } else {
+                    future::ready(None)
                 }
             })
-            .into_response();
+            .map(Message::into_bytes)
+            .boxed();
 
-        Ok(resp)
+        let mut stream =
+            async_graphql::http::WebSocket::new(self.schema.clone(), stream, self.protocol.0)
+                .connection_data(self.data)
+                .on_connection_init(self.on_connection_init)
+                .map(|msg| match msg {
+                    WsMessage::Text(text) => Message::text(text),
+                    WsMessage::Close(code, status) => Message::close_with(code, status),
+                });
+
+        while let Some(item) = stream.next().await {
+            let _ = sink.send(item).await;
+        }
     }
 }

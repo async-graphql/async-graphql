@@ -86,7 +86,6 @@ members = [
     "integrations/poem",
     "integrations/actix-web",
     "integrations/rocket",
-    "integrations/tide",
     "integrations/warp",
     "integrations/axum",
 ]
