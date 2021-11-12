@@ -3,7 +3,7 @@ use async_graphql::{BatchRequest, ObjectType, Request, Schema, SubscriptionType}
 use warp::reply::Response as WarpResponse;
 use warp::{Filter, Rejection, Reply};
 
-use crate::{graphql_batch_opts, BadRequest, BatchResponse};
+use crate::{graphql_batch_opts, GraphQLBadRequest, GraphQLBatchResponse};
 
 /// GraphQL request filter
 ///
@@ -35,7 +35,7 @@ use crate::{graphql_batch_opts, BadRequest, BatchResponse};
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///     let filter = async_graphql_warp::graphql(schema)
 ///         .and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
-///             Ok::<_, Infallible>(async_graphql_warp::Response::from(schema.execute(request).await))
+///             Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(schema.execute(request).await))
 ///         });
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// });
@@ -72,23 +72,23 @@ where
             schema,
             batch
                 .into_single()
-                .map_err(|e| warp::reject::custom(BadRequest(e)))?,
+                .map_err(|e| warp::reject::custom(GraphQLBadRequest(e)))?,
         ))
     })
 }
 
 /// Reply for `async_graphql::Request`.
 #[derive(Debug)]
-pub struct Response(pub async_graphql::Response);
+pub struct GraphQLResponse(pub async_graphql::Response);
 
-impl From<async_graphql::Response> for Response {
+impl From<async_graphql::Response> for GraphQLResponse {
     fn from(resp: async_graphql::Response) -> Self {
-        Response(resp)
+        GraphQLResponse(resp)
     }
 }
 
-impl Reply for Response {
+impl Reply for GraphQLResponse {
     fn into_response(self) -> WarpResponse {
-        BatchResponse(self.0.into()).into_response()
+        GraphQLBatchResponse(self.0.into()).into_response()
     }
 }
