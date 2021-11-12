@@ -3,6 +3,8 @@
 #![allow(clippy::upper_case_acronyms)]
 #![warn(missing_docs)]
 
+mod subscription;
+
 use std::future::Future;
 use std::io::{self, ErrorKind};
 use std::pin::Pin;
@@ -16,16 +18,14 @@ use futures_util::{StreamExt, TryStreamExt};
 
 use async_graphql::http::MultipartOptions;
 use async_graphql::ParseRequestError;
-pub use subscription::WSSubscription;
-
-mod subscription;
+pub use subscription::GraphQLSubscription;
 
 /// Extractor for GraphQL request.
 ///
 /// `async_graphql::http::MultipartOptions` allows to configure extraction process.
-pub struct Request(pub async_graphql::Request);
+pub struct GraphQLRequest(pub async_graphql::Request);
 
-impl Request {
+impl GraphQLRequest {
     /// Unwraps the value to `async_graphql::Request`.
     #[must_use]
     pub fn into_inner(self) -> async_graphql::Request {
@@ -34,14 +34,14 @@ impl Request {
 }
 
 type BatchToRequestMapper =
-    fn(<<BatchRequest as FromRequest>::Future as Future>::Output) -> Result<Request>;
+    fn(<<GraphQLBatchRequest as FromRequest>::Future as Future>::Output) -> Result<GraphQLRequest>;
 
-impl FromRequest for Request {
+impl FromRequest for GraphQLRequest {
     type Error = Error;
-    type Future = future::Map<<BatchRequest as FromRequest>::Future, BatchToRequestMapper>;
+    type Future = future::Map<<GraphQLBatchRequest as FromRequest>::Future, BatchToRequestMapper>;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
-        BatchRequest::from_request(req, payload).map(|res| {
+        GraphQLBatchRequest::from_request(req, payload).map(|res| {
             Ok(Self(
                 res?.0
                     .into_single()
@@ -54,9 +54,9 @@ impl FromRequest for Request {
 /// Extractor for GraphQL batch request.
 ///
 /// `async_graphql::http::MultipartOptions` allows to configure extraction process.
-pub struct BatchRequest(pub async_graphql::BatchRequest);
+pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
-impl BatchRequest {
+impl GraphQLBatchRequest {
     /// Unwraps the value to `async_graphql::BatchRequest`.
     #[must_use]
     pub fn into_inner(self) -> async_graphql::BatchRequest {
@@ -64,9 +64,9 @@ impl BatchRequest {
     }
 }
 
-impl FromRequest for BatchRequest {
+impl FromRequest for GraphQLBatchRequest {
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<BatchRequest>>>>;
+    type Future = Pin<Box<dyn Future<Output = Result<GraphQLBatchRequest>>>>;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
         let config = req
@@ -97,7 +97,7 @@ impl FromRequest for BatchRequest {
             });
 
             Box::pin(async move {
-                Ok(BatchRequest(
+                Ok(GraphQLBatchRequest(
                     async_graphql::http::receive_batch_body(
                         content_type,
                         rx.map_err(|e| match e {
@@ -146,21 +146,21 @@ impl FromRequest for BatchRequest {
 ///
 /// This contains a batch response, but since regular responses are a type of batch response it
 /// works for both.
-pub struct Response(pub async_graphql::BatchResponse);
+pub struct GraphQLResponse(pub async_graphql::BatchResponse);
 
-impl From<async_graphql::Response> for Response {
+impl From<async_graphql::Response> for GraphQLResponse {
     fn from(resp: async_graphql::Response) -> Self {
         Self(resp.into())
     }
 }
 
-impl From<async_graphql::BatchResponse> for Response {
+impl From<async_graphql::BatchResponse> for GraphQLResponse {
     fn from(resp: async_graphql::BatchResponse) -> Self {
         Self(resp)
     }
 }
 
-impl Responder for Response {
+impl Responder for GraphQLResponse {
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");
