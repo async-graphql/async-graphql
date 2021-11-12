@@ -8,6 +8,4 @@ mod subscription;
 
 pub use extract::{GraphQLBatchRequest, GraphQLRequest};
 pub use response::GraphQLResponse;
-pub use subscription::{
-    graphql_subscription, graphql_subscription_with_data, SecWebsocketProtocol,
-};
+pub use subscription::{GraphQLProtocol, GraphQLSubscription, GraphQLWebSocket};

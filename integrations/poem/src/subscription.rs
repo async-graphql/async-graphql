@@ -6,9 +6,7 @@ use futures_util::future::{self, Ready};
 use futures_util::{Future, SinkExt, StreamExt};
 use poem::http::StatusCode;
 use poem::web::websocket::{Message, WebSocket, WebSocketStream};
-use poem::{
-    http, Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
-};
+use poem::{http, Endpoint, FromRequest, IntoResponse, Request, RequestBody, Response, Result};
 
 /// A GraphQL protocol extractor.
 ///
@@ -18,7 +16,7 @@ pub struct GraphQLProtocol(WebSocketProtocols);
 
 #[poem::async_trait]
 impl<'a> FromRequest<'a> for GraphQLProtocol {
-    type Error = Error;
+    type Error = StatusCode;
 
     async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, Self::Error> {
         req.headers()
@@ -30,7 +28,7 @@ impl<'a> FromRequest<'a> for GraphQLProtocol {
                     .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
             })
             .map(Self)
-            .ok_or_else(|| Error::new(StatusCode::BAD_REQUEST))
+            .ok_or_else(|| StatusCode::BAD_REQUEST)
     }
 }
 
@@ -97,7 +95,6 @@ where
             .protocols(ALL_WEBSOCKET_PROTOCOLS)
             .on_upgrade(move |stream| GraphQLWebSocket::new(stream, schema, protocol).serve())
             .into_response();
-
         Ok(resp)
     }
 }

@@ -1,7 +1,8 @@
 use axum::body::Body;
+use axum::http;
+use axum::http::header::HeaderName;
+use axum::http::{HeaderValue, Response};
 use axum::response::IntoResponse;
-use headers::HeaderName;
-use http::{HeaderValue, Response};
 
 /// Responder for a GraphQL response.
 ///

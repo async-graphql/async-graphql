@@ -15,12 +15,11 @@ categories = ["network-programming", "asynchronous"]
 async-graphql = { path = "../..", version = "=2.11.2" }
 
 async-trait = "0.1.51"
-axum = { version = "0.3", features = ["ws", "headers"] }
+axum = { version = "0.3.2", features = ["ws", "headers"] }
 bytes = "1.0.1"
-headers = "0.3.4"
-http = "0.2.4"
 http-body = "0.4.2"
 serde_json = "1.0.66"
 serde_urlencoded = "0.7.0"
 tokio-util = { version = "0.6.7", features = ["io", "compat"] }
 futures-util = "0.3.13"
+tower-service = "0.3"
