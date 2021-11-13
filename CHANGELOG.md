@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.3] 2021-11-13
+
+- Implemented CursorType for i32/i64. [#701](https://github.com/async-graphql/async-graphql/pull/701)
+- An error is returned when the number fails to parse. [#704](https://github.com/async-graphql/async-graphql/issues/704)
+- Fix Federation entity union is empty during schema introspection. [#700](https://github.com/async-graphql/async-graphql/issues/700)
+
 ## [2.11.2] 2021-11-11
 
 - Fix the problem that `EmptyMutation` may cause when used in `MergedObject`. [#694](https://github.com/async-graphql/async-graphql/issues/694)
