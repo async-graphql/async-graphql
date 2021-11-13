@@ -480,7 +480,7 @@ impl Registry {
     }
 
     fn create_entity_type(&mut self) {
-        let possible_types = self
+        let possible_types: IndexSet<String> = self
             .types
             .values()
             .filter_map(|ty| match ty {
@@ -503,7 +503,19 @@ impl Registry {
             MetaType::Union {
                 name: "_Entity".to_string(),
                 description: None,
-                union_values: Default::default(),
+                union_values: possible_types
+                    .clone()
+                    .into_iter()
+                    .map(|ty| {
+                        (
+                            ty.clone(),
+                            MetaUnionValue {
+                                name: ty,
+                                visible: None,
+                            },
+                        )
+                    })
+                    .collect(),
                 possible_types,
                 visible: None,
                 rust_typename: "async_graphql::federation::Entity",

@@ -265,7 +265,7 @@ pub async fn test_entity_union() {
     #[Object]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj(&self, id: i32) -> MyObj {
+        async fn find_obj(&self, _id: i32) -> MyObj {
             todo!()
         }
     }
