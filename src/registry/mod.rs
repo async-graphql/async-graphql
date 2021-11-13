@@ -513,7 +513,7 @@ impl Registry {
     }
 
     fn create_entity_type(&mut self) {
-        let possible_types = self
+        let possible_types: IndexSet<String> = self
             .types
             .values()
             .filter_map(|ty| match ty {
