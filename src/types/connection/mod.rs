@@ -8,11 +8,12 @@ mod page_info;
 use std::fmt::Display;
 use std::future::Future;
 
-use crate::{Result, SimpleObject};
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
 pub use page_info::PageInfo;
+
+use crate::{Error, Result, SimpleObject};
 
 /// Empty additional fields
 #[derive(SimpleObject)]
@@ -62,7 +63,7 @@ pub struct EmptyFields;
 ///                 (start..end).into_iter().map(|n|
 ///                     Edge::with_additional_fields(n, n as i32, Diff{ diff: (10000 - n) as i32 })),
 ///             );
-///             Ok(connection)
+///             Ok::<_, Error>(connection)
 ///         }).await
 ///     }
 /// }
@@ -89,7 +90,7 @@ pub struct EmptyFields;
 ///     }));
 /// });
 /// ```
-pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R>(
+pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R, E>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
@@ -100,7 +101,8 @@ where
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
-    R: Future<Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>>>,
+    R: Future<Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>, E>>,
+    E: Into<Error>,
 {
     if first.is_some() && last.is_some() {
         return Err("The \"first\" and \"last\" parameters cannot exist at the same time".into());
@@ -132,5 +134,5 @@ where
         None => None,
     };
 
-    f(after, before, first, last).await
+    f(after, before, first, last).await.map_err(Into::into)
 }
