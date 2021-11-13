@@ -252,3 +252,36 @@ pub async fn test_find_entity_with_context() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_entity_union() {
+    #[derive(SimpleObject)]
+    struct MyObj {
+        a: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[graphql(entity)]
+        async fn find_obj(&self, id: i32) -> MyObj {
+            todo!()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            __type(name: "_Entity") { possibleTypes { name } }
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "__type": {
+                "possibleTypes": [
+                    {"name": "MyObj"},
+                ]
+            }
+        })
+    );
+}
