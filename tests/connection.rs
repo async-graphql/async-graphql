@@ -52,7 +52,7 @@ pub async fn test_connection_additional_fields() {
                             },
                         )
                     }));
-                    Ok(connection)
+                    Ok::<_, Error>(connection)
                 },
             )
             .await
