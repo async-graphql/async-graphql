@@ -106,7 +106,7 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
 /// ```no_run
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::Filter;
+/// use warp::{Filter, ws};
 /// use futures_util::stream::{Stream, StreamExt};
 /// use std::time::Duration;
 ///
