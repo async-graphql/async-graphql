@@ -12,7 +12,7 @@ use poem::{http, Endpoint, FromRequest, IntoResponse, Request, RequestBody, Resp
 ///
 /// It extract GraphQL protocol from `SEC_WEBSOCKET_PROTOCOL` header.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct GraphQLProtocol(WebSocketProtocols);
+pub struct GraphQLProtocol(pub WebSocketProtocols);
 
 #[poem::async_trait]
 impl<'a> FromRequest<'a> for GraphQLProtocol {
