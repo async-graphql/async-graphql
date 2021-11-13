@@ -44,7 +44,25 @@ pub struct GraphQLSubscription<Query, Mutation, Subscription> {
     schema: Schema<Query, Mutation, Subscription>,
 }
 
-impl<Query, Mutation, Subscription> GraphQLSubscription<Query, Mutation, Subscription> {
+impl<Query, Mutation, Subscription> Clone for GraphQLSubscription<Query, Mutation, Subscription>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+{
+    fn clone(&self) -> Self {
+        Self {
+            schema: self.schema.clone(),
+        }
+    }
+}
+
+impl<Query, Mutation, Subscription> GraphQLSubscription<Query, Mutation, Subscription>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+{
     /// Create a GraphQL subscription service.
     pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
         Self { schema }
