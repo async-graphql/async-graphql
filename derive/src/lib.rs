@@ -20,6 +20,7 @@ mod simple_object;
 mod subscription;
 mod union;
 mod utils;
+mod validators;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;

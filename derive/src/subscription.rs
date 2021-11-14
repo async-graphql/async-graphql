@@ -9,9 +9,9 @@ use syn::{
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
-    gen_deprecation, generate_default, generate_guards, generate_validator, get_cfg_attrs,
-    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
-    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    gen_deprecation, generate_default, generate_guards, get_cfg_attrs, get_crate_name,
+    get_param_getter_ident, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -167,14 +167,6 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let default = generate_default(default, default_with)?;
 
-                let validator = match &validator {
-                    Some(meta) => {
-                        let stream = generate_validator(&crate_name, meta)?;
-                        quote!(::std::option::Option::Some(#stream))
-                    }
-                    None => quote!(::std::option::Option::None),
-                };
-
                 let schema_default = default
                     .as_ref()
                     .map(|value| {
@@ -193,7 +185,6 @@ pub fn generate(
                         description: #desc,
                         ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
-                        validator: #validator,
                         visible: #visible,
                         is_secret: #secret,
                     });
@@ -205,12 +196,18 @@ pub fn generate(
                     Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
                     None => quote! { ::std::option::Option::None },
                 };
+                let validators = validator.clone().unwrap_or_default().create_validators(
+                    &crate_name,
+                    quote!(&#ident),
+                    quote!(),
+                );
                 let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
                 get_params.push(quote! {
                     #[allow(non_snake_case)]
                     let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
                     #[allow(non_snake_case)]
                     let #ident: #ty = ctx.param_value(#name, #default)?;
+                    #validators
                 });
             }
 

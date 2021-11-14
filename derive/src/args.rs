@@ -6,6 +6,8 @@ use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
 };
 
+use crate::validators::Validators;
+
 #[derive(FromMeta, Clone)]
 #[darling(default)]
 pub struct CacheControl {
@@ -151,7 +153,7 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub default_with: Option<LitStr>,
     #[darling(default)]
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     #[darling(default)]
     pub flatten: bool,
     #[darling(default)]
@@ -200,7 +202,7 @@ pub struct Argument {
     pub desc: Option<String>,
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
     pub secret: bool,
@@ -350,7 +352,7 @@ pub struct InputObjectField {
     #[darling(default)]
     pub default_with: Option<LitStr>,
     #[darling(default)]
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     #[darling(default)]
     pub flatten: bool,
     #[darling(default)]
@@ -482,7 +484,7 @@ pub struct SubscriptionFieldArgument {
     pub desc: Option<String>,
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     pub visible: Option<Visible>,
     pub secret: bool,
 }

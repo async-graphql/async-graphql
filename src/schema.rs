@@ -283,7 +283,6 @@ where
                     description: Some("Included when true."),
                     ty: "Boolean!".to_string(),
                     default_value: None,
-                    validator: None,
                     visible: None,
                     is_secret: false,
                 });
@@ -306,7 +305,6 @@ where
                     description: Some("Skipped when true."),
                     ty: "Boolean!".to_string(),
                     default_value: None,
-                    validator: None,
                     visible: None,
                     is_secret: false,
                 });

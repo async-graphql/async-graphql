@@ -8,9 +8,7 @@ use crate::parser::types::{
     OperationDefinition, OperationType, Selection, SelectionSet, TypeCondition, VariableDefinition,
 };
 use crate::registry::{self, MetaType, MetaTypeName};
-use crate::{
-    ErrorExtensionValues, InputType, Name, Pos, Positioned, ServerError, ServerResult, Variables,
-};
+use crate::{InputType, Name, Pos, Positioned, ServerError, ServerResult, Variables};
 
 #[doc(hidden)]
 pub struct VisitorContext<'a> {
@@ -39,16 +37,7 @@ impl<'a> VisitorContext<'a> {
     }
 
     pub(crate) fn report_error<T: Into<String>>(&mut self, locations: Vec<Pos>, msg: T) {
-        self.errors.push(RuleError::new(locations, msg, None));
-    }
-
-    pub(crate) fn report_error_with_extensions<T: Into<String>>(
-        &mut self,
-        locations: Vec<Pos>,
-        msg: T,
-        extensions: Option<ErrorExtensionValues>,
-    ) {
-        self.errors.push(RuleError::new(locations, msg, extensions));
+        self.errors.push(RuleError::new(locations, msg));
     }
 
     pub(crate) fn append_errors(&mut self, errors: Vec<RuleError>) {
@@ -809,19 +798,13 @@ fn visit_inline_fragment<'a, V: Visitor<'a>>(
 pub(crate) struct RuleError {
     pub(crate) locations: Vec<Pos>,
     pub(crate) message: String,
-    pub(crate) extensions: Option<ErrorExtensionValues>,
 }
 
 impl RuleError {
-    pub(crate) fn new(
-        locations: Vec<Pos>,
-        msg: impl Into<String>,
-        extensions: Option<ErrorExtensionValues>,
-    ) -> Self {
+    pub(crate) fn new(locations: Vec<Pos>, msg: impl Into<String>) -> Self {
         Self {
             locations,
             message: msg.into(),
-            extensions,
         }
     }
 }
@@ -854,7 +837,7 @@ impl From<RuleError> for ServerError {
             source: None,
             locations: e.locations,
             path: Vec::new(),
-            extensions: e.extensions,
+            extensions: None,
         }
     }
 }

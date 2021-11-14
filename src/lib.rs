@@ -179,6 +179,7 @@ pub mod guard;
 pub mod http;
 pub mod resolver_utils;
 pub mod types;
+#[doc(hidden)]
 pub mod validators;
 
 #[doc(hidden)]

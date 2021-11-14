@@ -3,7 +3,6 @@ mod export_sdl;
 mod stringify_exec_doc;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::sync::Arc;
 
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
@@ -11,7 +10,6 @@ use indexmap::set::IndexSet;
 use crate::parser::types::{
     BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition,
 };
-use crate::validators::InputValueValidator;
 use crate::{
     model, Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
     VisitorContext,
@@ -109,7 +107,6 @@ pub struct MetaInputValue {
     pub description: Option<&'static str>,
     pub ty: String,
     pub default_value: Option<String>,
-    pub validator: Option<Arc<dyn InputValueValidator>>,
     pub visible: Option<MetaVisibleFn>,
     pub is_secret: bool,
 }
@@ -615,7 +612,6 @@ impl Registry {
                                 description: None,
                                 ty: "[_Any!]!".to_string(),
                                 default_value: None,
-                                validator: None,
                                 visible: None,
                                 is_secret: false,
                             },

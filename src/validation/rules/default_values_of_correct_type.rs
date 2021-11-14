@@ -18,7 +18,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
                     "Argument \"{}\" has type \"{}\" and is not nullable, so it can't have a default value",
                     variable_definition.node.name, variable_definition.node.var_type,
                 ));
-            } else if let Some(e) = is_valid_input_value(
+            } else if let Some(reason) = is_valid_input_value(
                 ctx.registry,
                 &variable_definition.node.var_type.to_string(),
                 &value.node,
@@ -27,10 +27,9 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
                     segment: QueryPathSegment::Name(&variable_definition.node.name.node),
                 },
             ) {
-                ctx.report_error_with_extensions(
+                ctx.report_error(
                     vec![variable_definition.pos],
-                    format!("Invalid default value for argument {}", e.message),
-                    e.extensions,
+                    format!("Invalid default value for argument: {}", reason),
                 )
             }
         }

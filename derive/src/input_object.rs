@@ -5,9 +5,7 @@ use syn::ext::IdentExt;
 use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{
-    generate_default, generate_validator, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
-};
+use crate::utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -77,6 +75,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         federation_fields.push((ty, name.clone()));
 
+        let validators = field
+            .validator
+            .clone()
+            .unwrap_or_default()
+            .create_validators(
+                &crate_name,
+                quote!(&#ident),
+                quote!(.map_err(#crate_name::InputValueError::propagate)?),
+            );
+
         if field.flatten {
             flatten_fields.push((ident, ty));
 
@@ -93,6 +101,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = #crate_name::InputType::parse(
                     ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
+                #validators
             });
 
             fields.push(ident);
@@ -105,13 +114,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             continue;
         }
 
-        let validator = match &field.validator {
-            Some(meta) => {
-                let stream = generate_validator(&crate_name, meta)?;
-                quote!(::std::option::Option::Some(#stream))
-            }
-            None => quote!(::std::option::Option::None),
-        };
         let desc = get_rustdoc(&field.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(#s) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -140,12 +142,14 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         ::std::option::Option::None => #default,
                     }
                 };
+                #validators
             });
         } else {
             get_fields.push(quote! {
                 #[allow(non_snake_case)]
                 let #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
+                #validators
             });
         }
 
@@ -164,7 +168,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 description: #desc,
                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,
-                validator: #validator,
                 visible: #visible,
                 is_secret: #secret,
             });
