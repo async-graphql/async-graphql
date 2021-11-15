@@ -1,17 +1,42 @@
 use darling::util::SpannedValue;
 use darling::FromMeta;
 use proc_macro2::TokenStream;
-use quote::quote;
-use syn::{Expr, Result};
+use quote::{quote, ToTokens};
+use syn::{Expr, Lit, Result};
+
+#[derive(Clone)]
+pub enum Number {
+    F64(f64),
+    I64(i64),
+}
+
+impl FromMeta for Number {
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        match value {
+            Lit::Int(n) => Ok(Number::I64(n.base10_parse::<i64>()?)),
+            Lit::Float(n) => Ok(Number::F64(n.base10_parse::<f64>()?)),
+            _ => Err(darling::Error::unexpected_type("number")),
+        }
+    }
+}
+
+impl ToTokens for Number {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Number::F64(n) => tokens.extend(quote!(#n as f64)),
+            Number::I64(n) => tokens.extend(quote!(#n as i64)),
+        }
+    }
+}
 
 #[derive(FromMeta, Default, Clone)]
 pub struct Validators {
     #[darling(default)]
-    multiple_of: Option<f64>,
+    multiple_of: Option<Number>,
     #[darling(default)]
-    maximum: Option<f64>,
+    maximum: Option<Number>,
     #[darling(default)]
-    minimum: Option<f64>,
+    minimum: Option<Number>,
     #[darling(default)]
     max_length: Option<usize>,
     #[darling(default)]
@@ -22,6 +47,8 @@ pub struct Validators {
     min_items: Option<usize>,
     #[darling(default, multiple)]
     custom: Vec<SpannedValue<String>>,
+    #[darling(default)]
+    list: bool,
 }
 
 impl Validators {
@@ -33,6 +60,13 @@ impl Validators {
         map_err: Option<TokenStream>,
     ) -> Result<TokenStream> {
         let mut codes = Vec::new();
+        let mut value = value;
+        let mut container = None;
+
+        if self.list {
+            container = Some(quote!(#value));
+            value = quote!(__item);
+        }
 
         if let Some(n) = &self.multiple_of {
             codes.push(quote! {
@@ -85,6 +119,15 @@ impl Validators {
         }
 
         let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
-        Ok(quote!(#(#codes;)*))
+
+        if let Some(container) = container {
+            Ok(quote! {
+                for __item in #container {
+                    #(#codes;)*
+                }
+            })
+        } else {
+            Ok(quote!(#(#codes;)*))
+        }
     }
 }
