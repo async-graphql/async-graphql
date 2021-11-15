@@ -16,7 +16,9 @@ pub use multiple_of::multiple_of;
 
 use crate::{Context, InputType};
 
+/// Represents a custom input value validator.
 #[async_trait::async_trait]
 pub trait CustomValidator<T: InputType> {
+    /// Check the value is valid.
     async fn check(&self, ctx: &Context<'_>, value: &T) -> Result<(), String>;
 }
