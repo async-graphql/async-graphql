@@ -17,3 +17,15 @@ pub fn min_items<T: Deref<Target = [E]> + InputType, E>(
         .into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_min_items() {
+        assert!(min_items(&vec![1, 2], 3).is_err());
+        assert!(min_items(&vec![1, 2, 3], 3).is_ok());
+        assert!(min_items(&vec![1, 2, 3, 4], 3).is_ok());
+    }
+}

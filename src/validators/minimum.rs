@@ -1,11 +1,14 @@
+use std::fmt::Display;
+
 use num_traits::AsPrimitive;
 
 use crate::{InputType, InputValueError};
 
-pub fn minimum<T: AsPrimitive<f64> + InputType>(
-    value: &T,
-    n: f64,
-) -> Result<(), InputValueError<T>> {
+pub fn minimum<T, N>(value: &T, n: N) -> Result<(), InputValueError<T>>
+where
+    T: AsPrimitive<N> + InputType,
+    N: PartialOrd + Display + Copy + 'static,
+{
     if value.as_() >= n {
         Ok(())
     } else {
@@ -15,5 +18,17 @@ pub fn minimum<T: AsPrimitive<f64> + InputType>(
             n
         )
         .into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_minimum() {
+        assert!(minimum(&99, 100).is_err());
+        assert!(minimum(&100, 100).is_ok());
+        assert!(minimum(&101, 100).is_ok());
     }
 }

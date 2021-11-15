@@ -15,3 +15,15 @@ pub fn min_length<T: AsRef<str> + InputType>(
         .into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_min_length() {
+        assert!(min_length(&"ab".to_string(), 3).is_err());
+        assert!(min_length(&"abc".to_string(), 3).is_ok());
+        assert!(min_length(&"abcd".to_string(), 3).is_ok());
+    }
+}

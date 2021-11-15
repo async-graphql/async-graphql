@@ -1,6 +1,8 @@
+use darling::util::SpannedValue;
 use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::{Expr, Result};
 
 #[derive(FromMeta, Default, Clone)]
 pub struct Validators {
@@ -19,7 +21,7 @@ pub struct Validators {
     #[darling(default)]
     min_items: Option<usize>,
     #[darling(default, multiple)]
-    custom: Vec<String>,
+    custom: Vec<SpannedValue<String>>,
 }
 
 impl Validators {
@@ -27,8 +29,9 @@ impl Validators {
         &self,
         crate_name: &TokenStream,
         value: TokenStream,
+        ty: TokenStream,
         map_err: Option<TokenStream>,
-    ) -> TokenStream {
+    ) -> Result<TokenStream> {
         let mut codes = Vec::new();
 
         if let Some(n) = &self.multiple_of {
@@ -73,7 +76,15 @@ impl Validators {
             });
         }
 
+        for s in &self.custom {
+            let expr: Expr = syn::parse_str(s)?;
+            codes.push(quote! {
+                #crate_name::CustomValidator::check(&(#expr), &ctx, #value).await
+                    .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg))
+            });
+        }
+
         let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
-        quote!(#(#codes;)*)
+        Ok(quote!(#(#codes;)*))
     }
 }

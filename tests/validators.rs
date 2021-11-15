@@ -194,3 +194,68 @@ pub async fn test_validator_on_subscription_field_args() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_custom_validator() {
+    struct MyValidator {
+        expect: i32,
+    }
+
+    impl MyValidator {
+        pub fn new(n: i32) -> Self {
+            MyValidator { expect: n }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl CustomValidator<i32> for MyValidator {
+        async fn check(&self, _ctx: &Context<'_>, value: &i32) -> Result<(), String> {
+            if *value == self.expect {
+                Ok(())
+            } else {
+                Err(format!("expect 100, actual {}", value))
+            }
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(
+            &self,
+            #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
+        ) -> i32 {
+            n
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value(n: 100) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 100 })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value(n: 11) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": expect 100, actual 11"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 12
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+}

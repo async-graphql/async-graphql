@@ -13,3 +13,10 @@ pub use min_items::min_items;
 pub use min_length::min_length;
 pub use minimum::minimum;
 pub use multiple_of::multiple_of;
+
+use crate::{Context, InputType};
+
+#[async_trait::async_trait]
+pub trait CustomValidator<T: InputType> {
+    async fn check(&self, ctx: &Context<'_>, value: &T) -> Result<(), String>;
+}

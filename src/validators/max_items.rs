@@ -17,3 +17,15 @@ pub fn max_items<T: Deref<Target = [E]> + InputType, E>(
         .into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_max_items() {
+        assert!(max_items(&vec![1, 2], 3).is_ok());
+        assert!(max_items(&vec![1, 2, 3], 3).is_ok());
+        assert!(max_items(&vec![1, 2, 3, 4], 3).is_err());
+    }
+}

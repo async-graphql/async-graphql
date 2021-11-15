@@ -1,12 +1,16 @@
-use num_traits::AsPrimitive;
+use std::fmt::Display;
+use std::ops::Rem;
+
+use num_traits::{AsPrimitive, Zero};
 
 use crate::{InputType, InputValueError};
 
-pub fn multiple_of<T: AsPrimitive<f64> + InputType>(
-    value: &T,
-    n: f64,
-) -> Result<(), InputValueError<T>> {
-    if value.as_() % n as f64 == 0.0 {
+pub fn multiple_of<T, N>(value: &T, n: N) -> Result<(), InputValueError<T>>
+where
+    T: AsPrimitive<N> + InputType,
+    N: Rem<Output = N> + Zero + Display + Copy + PartialEq + 'static,
+{
+    if value.as_() % n == N::zero() {
         Ok(())
     } else {
         Err(format!("the value must be a multiple of {}.", n).into())

@@ -15,3 +15,15 @@ pub fn max_length<T: AsRef<str> + InputType>(
         .into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_max_length() {
+        assert!(max_length(&"ab".to_string(), 3).is_ok());
+        assert!(max_length(&"abc".to_string(), 3).is_ok());
+        assert!(max_length(&"abcd".to_string(), 3).is_err());
+    }
+}
