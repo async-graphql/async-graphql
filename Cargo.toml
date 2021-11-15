@@ -17,7 +17,7 @@ default = []
 apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
 unblock = ["blocking"]
-string_number = ["num-traits"]
+string_number = []
 dataloader = ["futures-timer", "futures-channel", "lru"]
 tracing = ["tracinglib", "tracing-futures"]
 decimal = ["rust_decimal"]
@@ -46,6 +46,7 @@ multer = "2.0.0"
 tempfile = "3.2.0"
 bytes = { version = "1.0.1", features = ["serde"] }
 mime = "0.3.15"
+num-traits = "0.2.14"
 
 # Feature optional dependencies
 bson = { version = "2.0.0", optional = true, features = ["chrono-0_4"] }
@@ -64,7 +65,6 @@ rust_decimal = { version = "1.14.3", optional = true }
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
 lru = { version = "0.6.5", optional = true }
-num-traits = { version = "0.2.14", optional = true }
 sha2 = { version = "0.9.3", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.13", optional = true }

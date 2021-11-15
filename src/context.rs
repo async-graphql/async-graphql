@@ -556,18 +556,20 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         &self,
         name: &str,
         default: Option<fn() -> T>,
-    ) -> ServerResult<T> {
+    ) -> ServerResult<(Pos, T)> {
         let value = self.item.node.get_argument(name).cloned();
         if value.is_none() {
             if let Some(default) = default {
-                return Ok(default());
+                return Ok((Pos::default(), default()));
             }
         }
         let (pos, value) = match value {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
             None => (Pos::default(), None),
         };
-        InputType::parse(value).map_err(|e| e.into_server_error(pos))
+        InputType::parse(value)
+            .map(|value| (pos, value))
+            .map_err(|e| e.into_server_error(pos))
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.

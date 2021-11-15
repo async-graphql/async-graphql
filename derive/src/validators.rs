@@ -27,52 +27,53 @@ impl Validators {
         &self,
         crate_name: &TokenStream,
         value: TokenStream,
-        map_err: TokenStream,
+        map_err: Option<TokenStream>,
     ) -> TokenStream {
         let mut codes = Vec::new();
 
         if let Some(n) = &self.multiple_of {
             codes.push(quote! {
-                #crate_name::validators::multiple_of(#value, #n) #map_err
+                #crate_name::validators::multiple_of(#value, #n)
             });
         }
 
         if let Some(n) = &self.maximum {
             codes.push(quote! {
-                #crate_name::validators::maximum(#value, #n) #map_err
+                #crate_name::validators::maximum(#value, #n)
             });
         }
 
         if let Some(n) = &self.minimum {
             codes.push(quote! {
-                #crate_name::validators::minimum(#value, #n) #map_err
+                #crate_name::validators::minimum(#value, #n)
             });
         }
 
         if let Some(n) = &self.max_length {
             codes.push(quote! {
-                #crate_name::validators::max_length(#value, #n) #map_err
+                #crate_name::validators::max_length(#value, #n)
             });
         }
 
         if let Some(n) = &self.min_length {
             codes.push(quote! {
-                #crate_name::validators::min_length(#value, #n) #map_err
+                #crate_name::validators::min_length(#value, #n)
             });
         }
 
         if let Some(n) = &self.max_items {
             codes.push(quote! {
-                #crate_name::validators::max_items(#value, #n) #map_err
+                #crate_name::validators::max_items(#value, #n)
             });
         }
 
         if let Some(n) = &self.min_items {
             codes.push(quote! {
-                #crate_name::validators::min_items(#value, #n) #map_err
+                #crate_name::validators::min_items(#value, #n)
             });
         }
 
+        let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
         quote!(#(#codes;)*)
     }
 }

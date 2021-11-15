@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use crate::{InputType, InputValueError};
 
-pub async fn min_items<T: Deref<Target = [E]> + InputType, E>(
+pub fn min_items<T: Deref<Target = [E]> + InputType, E>(
     value: &T,
     len: usize,
 ) -> Result<(), InputValueError<T>> {

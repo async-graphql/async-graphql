@@ -1,6 +1,6 @@
 use crate::{InputType, InputValueError};
 
-pub async fn min_length<T: AsRef<str> + InputType>(
+pub fn min_length<T: AsRef<str> + InputType>(
     value: &T,
     len: usize,
 ) -> Result<(), InputValueError<T>> {

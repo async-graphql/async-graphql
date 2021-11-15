@@ -1,6 +1,6 @@
 use crate::{InputType, InputValueError};
 
-pub async fn max_length<T: AsRef<str> + InputType>(
+pub fn max_length<T: AsRef<str> + InputType>(
     value: &T,
     len: usize,
 ) -> Result<(), InputValueError<T>> {

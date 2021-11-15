@@ -36,7 +36,7 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 .await
                 .map(Some);
             } else if ctx.item.node.name.node == "__type" {
-                let type_name: String = ctx.param_value("name", None)?;
+                let (_, type_name) = ctx.param_value::<String>("name", None)?;
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                 let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
                 return OutputType::resolve(
@@ -56,7 +56,7 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
 
         if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
             if ctx.item.node.name.node == "_entities" {
-                let representations: Vec<Any> = ctx.param_value("representations", None)?;
+                let (_, representations) = ctx.param_value::<Vec<Any>>("representations", None)?;
                 let res = futures_util::future::try_join_all(representations.iter().map(
                     |item| async move {
                         self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {

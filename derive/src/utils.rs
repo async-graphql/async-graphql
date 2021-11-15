@@ -162,7 +162,9 @@ pub fn generate_guards(
                             let value_str = value.value();
                             if let Some(value_str) = value_str.strip_prefix('@') {
                                 let getter_name = get_param_getter_ident(value_str);
-                                params.push(quote! { #name: #getter_name()? });
+                                params.push(
+                                    quote! { #name: #getter_name().map(|(_, value)| value)? },
+                                );
                             } else {
                                 let expr = syn::parse_str::<Expr>(&value_str)?;
                                 params.push(quote! { #name: (#expr).into() });

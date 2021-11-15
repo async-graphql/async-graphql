@@ -2,7 +2,7 @@ use num_traits::AsPrimitive;
 
 use crate::{InputType, InputValueError};
 
-pub async fn multiple_of<T: AsPrimitive<f64> + InputType>(
+pub fn multiple_of<T: AsPrimitive<f64> + InputType>(
     value: &T,
     n: f64,
 ) -> Result<(), InputValueError<T>> {

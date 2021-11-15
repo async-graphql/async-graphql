@@ -82,7 +82,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .create_validators(
                 &crate_name,
                 quote!(&#ident),
-                quote!(.map_err(#crate_name::InputValueError::propagate)?),
+                Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
             );
 
         if field.flatten {

@@ -230,17 +230,15 @@ pub fn generate(
                 let validators = validator.clone().unwrap_or_default().create_validators(
                     &crate_name,
                     quote!(&#ident),
-                    quote!(),
+                    Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                 );
 
-                // We're generating a new identifier,
-                // so remove the 'r#` prefix if present
                 let param_getter_name = get_param_getter_ident(&ident.ident.unraw().to_string());
                 get_params.push(quote! {
                     #[allow(non_snake_case)]
-                    let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
+                    let #param_getter_name = || { ctx.param_value::<#ty>(#name, #default) };
                     #[allow(non_snake_case)]
-                    let #ident: #ty = #param_getter_name()?;
+                    let (__pos, #ident) = #param_getter_name()?;
                     #validators
                 });
             }
@@ -340,7 +338,7 @@ pub fn generate(
             let resolve_obj = quote! {
                 {
                     let res = self.#field_ident(ctx, #(#use_params),*).await;
-                    res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))?
+                    res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
                 }
             };
 
@@ -359,11 +357,14 @@ pub fn generate(
             resolvers.push(quote! {
                 #(#cfg_attrs)*
                 if ctx.item.node.name.node == #field_name {
-                    #(#get_params)*
-                    #guard
+                    let f = async move {
+                        #(#get_params)*
+                        #guard
+                        #resolve_obj
+                    };
+                    let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
                     let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                    let res = #resolve_obj;
-                    return #crate_name::OutputType::resolve(&res, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
                 }
             });
 

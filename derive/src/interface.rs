@@ -204,7 +204,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 None => quote! { ::std::option::Option::None },
             };
             get_params.push(quote! {
-                let #ident: #ty = ctx.param_value(#name, #get_default)?;
+                let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
             });
 
             let desc = desc

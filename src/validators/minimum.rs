@@ -2,7 +2,7 @@ use num_traits::AsPrimitive;
 
 use crate::{InputType, InputValueError};
 
-pub async fn minimum<T: AsPrimitive<f64> + InputType>(
+pub fn minimum<T: AsPrimitive<f64> + InputType>(
     value: &T,
     n: f64,
 ) -> Result<(), InputValueError<T>> {

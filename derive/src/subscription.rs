@@ -199,14 +199,15 @@ pub fn generate(
                 let validators = validator.clone().unwrap_or_default().create_validators(
                     &crate_name,
                     quote!(&#ident),
-                    quote!(),
+                    Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                 );
-                let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
+
+                let param_getter_name = get_param_getter_ident(&ident.ident.unraw().to_string());
                 get_params.push(quote! {
                     #[allow(non_snake_case)]
-                    let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
+                    let #param_getter_name = || { ctx.param_value::<#ty>(#name, #default) };
                     #[allow(non_snake_case)]
-                    let #ident: #ty = ctx.param_value(#name, #default)?;
+                    let (__pos, #ident) = #param_getter_name()?;
                     #validators
                 });
             }
@@ -274,8 +275,8 @@ pub fn generate(
                                     )
                                 });
                                 parse_args.push(quote! {
-                                        let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
-                                    });
+                                    let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
+                                });
                             }
                         }
                         quote! {
@@ -317,7 +318,7 @@ pub fn generate(
                     .map_err(|err| {
                         ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos)
                             .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
-                    })?
+                    })
             };
 
             let guard = match &field.guard {
@@ -333,13 +334,18 @@ pub fn generate(
             let stream_fn = quote! {
                 let field_name = ::std::clone::Clone::clone(&ctx.item.node.response_key().node);
                 let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
-                #(#get_params)*
-                #guard
+
+                let f = async {
+                    #(#get_params)*
+                    #guard
+                    #create_field_stream
+                };
+                let stream = f.await.map_err(|err| ctx.set_error_path(err))?;
 
                 let pos = ctx.item.pos;
                 let schema_env = ::std::clone::Clone::clone(&ctx.schema_env);
                 let query_env = ::std::clone::Clone::clone(&ctx.query_env);
-                let stream = #crate_name::futures_util::stream::StreamExt::then(#create_field_stream, {
+                let stream = #crate_name::futures_util::stream::StreamExt::then(stream, {
                     let field_name = ::std::clone::Clone::clone(&field_name);
                     move |msg| {
                         let schema_env = ::std::clone::Clone::clone(&schema_env);
