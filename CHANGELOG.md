@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Change the signature of the `connection::query` function to allow the callback to use any type that implements `Into<Error>`.
+- Add `ErrorExtensionValues::unset` method.
+- Use the `SimpleObject` macro and the `InputObject` macro at the same time.
+- Types that are not referenced will be hidden in introspection.
+- Make the API of integrations is more consistent.
+- Remove `async-graphql-tide`.
+- Rework validators.
+- Rework guards.
 
 ## [2.11.3] 2021-11-13
 

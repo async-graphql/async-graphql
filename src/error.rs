@@ -19,6 +19,11 @@ impl ErrorExtensionValues {
     pub fn set(&mut self, name: impl AsRef<str>, value: impl Into<Value>) {
         self.0.insert(name.as_ref().to_string(), value.into());
     }
+
+    /// Unset an extension value.
+    pub fn unset(&mut self, name: impl AsRef<str>) {
+        self.0.remove(name.as_ref());
+    }
 }
 
 /// An error in a GraphQL server.
