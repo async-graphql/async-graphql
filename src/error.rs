@@ -1,6 +1,5 @@
 use std::any::Any;
 use std::collections::BTreeMap;
-use std::error::Error as StdError;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -27,7 +26,7 @@ impl ErrorExtensionValues {
 pub struct ServerError {
     /// An explanatory message of the error.
     pub message: String,
-    /// The source of the error, comes from [`ResolverError<T>`].
+    /// The source of the error.
     #[serde(skip)]
     pub source: Option<Arc<dyn Any + Send + Sync>>,
     /// Where the error occurred.
@@ -82,13 +81,24 @@ impl ServerError {
     /// # Examples
     ///
     /// ```rust
-    /// use std::string::FromUtf8Error;
-    /// use async_graphql::{ResolverError, Error, ServerError, Pos};
+    /// use async_graphql::*;
+    /// use std::io::ErrorKind;
     ///
-    /// let bytes = vec![0, 159];
-    /// let err: Error = String::from_utf8(bytes).map_err(ResolverError::new).unwrap_err().into();
-    /// let server_err: ServerError = err.into_server_error(Pos { line: 1, column: 1 });
-    /// assert!(server_err.source::<FromUtf8Error>().is_some());
+    /// struct Query;
+    ///
+    /// #[Object]
+    /// impl Query {
+    ///     async fn value(&self) -> Result<i32> {
+    ///         Err(Error::new_with_source(std::io::Error::new(ErrorKind::Other, "my error")))
+    ///     }
+    /// }
+    ///
+    /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    ///
+    /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+    /// let err = schema.execute("{ value }").await.into_result().unwrap_err().remove(0);
+    /// assert!(err.source::<std::io::Error>().is_some());
+    /// # });
     /// ```
     pub fn source<T: Any + Send + Sync>(&self) -> Option<&T> {
         self.source.as_ref().map(|err| err.downcast_ref()).flatten()
@@ -209,7 +219,7 @@ pub type InputValueResult<T> = Result<T, InputValueError<T>>;
 pub struct Error {
     /// The error message.
     pub message: String,
-    /// The source of the error, comes from [`ResolverError<T>`].
+    /// The source of the error.
     #[serde(skip)]
     pub source: Option<Arc<dyn Any + Send + Sync>>,
     /// Extensions to the error.
@@ -242,6 +252,16 @@ impl Error {
         }
     }
 
+    /// Create an error with a type that implements `Display`, and it will also set the
+    /// `source` of the error to this value.
+    pub fn new_with_source(source: impl Display + Send + Sync + 'static) -> Self {
+        Self {
+            message: source.to_string(),
+            source: Some(Arc::new(source)),
+            extensions: None,
+        }
+    }
+
     /// Convert the error to a server error.
     #[must_use]
     pub fn into_server_error(self, pos: Pos) -> ServerError {
@@ -260,16 +280,6 @@ impl<T: Display + Send + Sync + 'static> From<T> for Error {
         Self {
             message: e.to_string(),
             source: None,
-            extensions: None,
-        }
-    }
-}
-
-impl From<ResolverError> for Error {
-    fn from(e: ResolverError) -> Self {
-        Self {
-            message: e.message,
-            source: Some(e.error),
             extensions: None,
         }
     }
@@ -388,13 +398,6 @@ impl<E: Display> ErrorExtensions for &E {
     }
 }
 
-impl ErrorExtensions for ResolverError {
-    #[inline]
-    fn extend(self) -> Error {
-        Error::from(self)
-    }
-}
-
 /// Extend a `Result`'s error value with [`ErrorExtensions`](trait.ErrorExtensions.html).
 pub trait ResultExt<T, E>: Sized {
     /// Extend the error value of the result with the callback.
@@ -427,29 +430,5 @@ where
             Err(err) => Err(err.extend()),
             Ok(value) => Ok(value),
         }
-    }
-}
-
-/// A wrapper around a dynamic error type for resolver.
-#[derive(Debug)]
-pub struct ResolverError {
-    message: String,
-    error: Arc<dyn Any + Send + Sync>,
-}
-
-impl<T: StdError + Send + Sync + 'static> From<T> for ResolverError {
-    fn from(err: T) -> Self {
-        Self {
-            message: err.to_string(),
-            error: Arc::new(err),
-        }
-    }
-}
-
-impl ResolverError {
-    /// Create a new failure.
-    #[inline]
-    pub fn new<T: StdError + Send + Sync + 'static>(err: T) -> Self {
-        From::from(err)
     }
 }

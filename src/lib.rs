@@ -211,7 +211,7 @@ pub use base::{
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
-    ParseRequestError, PathSegment, ResolverError, Result, ResultExt, ServerError, ServerResult,
+    ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;
