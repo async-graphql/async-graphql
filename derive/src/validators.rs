@@ -45,6 +45,12 @@ pub struct Validators {
     max_items: Option<usize>,
     #[darling(default)]
     min_items: Option<usize>,
+    #[darling(default)]
+    chars_max_length: Option<usize>,
+    #[darling(default)]
+    chars_min_length: Option<usize>,
+    #[darling(default)]
+    email: bool,
     #[darling(default, multiple)]
     custom: Vec<SpannedValue<String>>,
     #[darling(default)]
@@ -107,6 +113,24 @@ impl Validators {
         if let Some(n) = &self.min_items {
             codes.push(quote! {
                 #crate_name::validators::min_items(#value, #n)
+            });
+        }
+
+        if let Some(n) = &self.chars_max_length {
+            codes.push(quote! {
+                #crate_name::validators::chars_max_length(#value, #n)
+            });
+        }
+
+        if let Some(n) = &self.chars_min_length {
+            codes.push(quote! {
+                #crate_name::validators::chars_min_length(#value, #n)
+            });
+        }
+
+        if self.email {
+            codes.push(quote! {
+                #crate_name::validators::email(#value)
             });
         }
 

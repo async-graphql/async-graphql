@@ -2,6 +2,65 @@ use async_graphql::*;
 use futures_util::{Stream, StreamExt};
 
 #[tokio::test]
+pub async fn test_all_validator() {
+    struct Query;
+
+    #[Object]
+    #[allow(unreachable_code, unused_variables)]
+    impl Query {
+        async fn multiple_of(&self, #[graphql(validator(multiple_of = 10))] n: i32) -> i32 {
+            todo!()
+        }
+
+        async fn maximum(&self, #[graphql(validator(maximum = 10))] n: i32) -> i32 {
+            todo!()
+        }
+
+        async fn minimum(&self, #[graphql(validator(minimum = 10))] n: i32) -> i32 {
+            todo!()
+        }
+
+        async fn max_length(&self, #[graphql(validator(max_length = 10))] n: String) -> i32 {
+            todo!()
+        }
+
+        async fn min_length(&self, #[graphql(validator(min_length = 10))] n: String) -> i32 {
+            todo!()
+        }
+
+        async fn max_items(&self, #[graphql(validator(max_items = 10))] n: Vec<String>) -> i32 {
+            todo!()
+        }
+
+        async fn min_items(&self, #[graphql(validator(min_items = 10))] n: Vec<String>) -> i32 {
+            todo!()
+        }
+
+        async fn chars_max_length(
+            &self,
+            #[graphql(validator(chars_max_length = 10))] n: String,
+        ) -> i32 {
+            todo!()
+        }
+
+        async fn chars_length(
+            &self,
+            #[graphql(validator(chars_min_length = 10))] n: String,
+        ) -> i32 {
+            todo!()
+        }
+
+        async fn email(&self, #[graphql(validator(email))] n: String) -> i32 {
+            todo!()
+        }
+
+        async fn list_email(&self, #[graphql(validator(list, email))] n: Vec<String>) -> i32 {
+            todo!()
+        }
+    }
+}
+
+#[tokio::test]
 pub async fn test_validator_on_object_field_args() {
     struct Query;
 

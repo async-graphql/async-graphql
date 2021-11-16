@@ -9,6 +9,9 @@
 - **min_items=N** the length of the list cannot be less than `N`.
 - **max_length=N** the length of the string cannot be greater than `N`.
 - **min_length=N** the length of the string cannot be less than `N`.
+- **chars_max_length=N** the count of the unicode chars cannot be greater than `N`.
+- **chars_min_length=N** the count of the unicode chars cannot be less than `N`.
+- **email** is valid email.
 
 ```rust
 use async_graphql::*;
