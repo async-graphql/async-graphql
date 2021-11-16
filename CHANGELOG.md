@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Types that are not referenced will be hidden in introspection.
 - Make the API of integrations is more consistent.
 - Remove `async-graphql-tide`.
-- Rework validators.
-- Rework guards.
+- Rework validators. [Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)
+- Rework guards. [Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)
 
 ## [2.11.3] 2021-11-13
 
