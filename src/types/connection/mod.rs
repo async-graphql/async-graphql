@@ -167,12 +167,12 @@ where
 ///                     end_cursor: Some(end.encode_cursor()),
 ///                 },
 ///             };
-///             Ok(connection)
+///             Ok::<_, Error>(connection)
 ///         }).await
 ///     }
 /// }
 ///
-/// #[async_std::main]
+/// #[tokio::main]
 /// async fn main() {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
 ///
@@ -196,7 +196,7 @@ where
 /// }
 ///
 /// ```
-pub async fn query_with<Cursor, T, F, R>(
+pub async fn query_with<Cursor, T, F, R, E>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
@@ -207,7 +207,8 @@ where
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
-    R: Future<Output = Result<T>>,
+    R: Future<Output = Result<T, E>>,
+    E: Into<Error>,
 {
     if first.is_some() && last.is_some() {
         return Err("The \"first\" and \"last\" parameters cannot exist at the same time".into());
