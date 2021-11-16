@@ -13,8 +13,8 @@ use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
     extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
-    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -369,13 +369,9 @@ pub fn generate(
                         Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                     )?;
 
-                    let param_getter_name =
-                        get_param_getter_ident(&ident.ident.unraw().to_string());
                     get_params.push(quote! {
-                         #[allow(non_snake_case)]
-                        let #param_getter_name = || ctx.param_value::<#ty>(#name, #default);
                         #[allow(non_snake_case, unused_variables)]
-                        let (__pos, #ident) = #param_getter_name()?;
+                        let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
                         #validators
                     });
                 }
@@ -479,16 +475,13 @@ pub fn generate(
                     }
                 };
 
+                let guard_map_err = quote! {
+                    .map_err(|err| err.into_server_error(ctx.item.pos))
+                };
                 let guard = match &method_args.guard {
-                    Some(meta_list) => generate_guards(&crate_name, meta_list)?,
+                    Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
                     None => None,
                 };
-
-                let guard = guard.map(|guard| {
-                    quote! {
-                        #guard.check(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?;
-                    }
-                });
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*

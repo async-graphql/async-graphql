@@ -1,5 +1,5 @@
 use darling::ast::{Data, Fields};
-use darling::util::Ignored;
+use darling::util::{Ignored, SpannedValue};
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
 use syn::{
@@ -142,7 +142,7 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub requires: Option<String>,
     #[darling(default)]
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple)]
@@ -258,7 +258,7 @@ pub struct ObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
     #[darling(default, multiple)]
@@ -495,7 +495,7 @@ pub struct SubscriptionField {
     pub skip: bool,
     pub name: Option<String>,
     pub deprecation: Deprecation,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
 }
@@ -693,7 +693,7 @@ pub struct ComplexObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
 }

@@ -2,7 +2,7 @@ use darling::util::SpannedValue;
 use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Expr, Lit, Result};
+use syn::{Error, Expr, Lit, Result};
 
 #[derive(Clone)]
 pub enum Number {
@@ -111,7 +111,8 @@ impl Validators {
         }
 
         for s in &self.custom {
-            let expr: Expr = syn::parse_str(s)?;
+            let expr: Expr =
+                syn::parse_str(s).map_err(|err| Error::new(s.span(), err.to_string()))?;
             codes.push(quote! {
                 #crate_name::CustomValidator::check(&(#expr), &ctx, #value).await
                     .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg))
