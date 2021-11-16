@@ -92,23 +92,23 @@ pub async fn test_failure() {
     #[Object]
     impl Query {
         async fn failure(&self) -> Result<i32> {
-            Err(ResolverError::new(MyError::Error1).into())
+            Err(Error::new_with_source(MyError::Error1).into())
         }
 
         async fn failure2(&self) -> Result<i32> {
-            Err(ResolverError::new(MyError::Error2))?;
+            Err(Error::new_with_source(MyError::Error2))?;
             Ok(1)
         }
 
         async fn failure3(&self) -> Result<i32> {
-            Err(ResolverError::new(MyError::Error1)
+            Err(Error::new_with_source(MyError::Error1)
                 .extend_with(|_, values| values.set("a", 1))
                 .extend_with(|_, values| values.set("b", 2)))?;
             Ok(1)
         }
 
         async fn failure4(&self) -> Result<i32> {
-            Err(ResolverError::new(MyError::Error2))
+            Err(Error::new_with_source(MyError::Error2))
                 .extend_err(|_, values| values.set("a", 1))
                 .extend_err(|_, values| values.set("b", 2))?;
             Ok(1)
@@ -179,7 +179,7 @@ pub async fn test_failure2() {
 
     #[Object]
     impl Query {
-        async fn failure(&self) -> Result<i32, ResolverError> {
+        async fn failure(&self) -> Result<i32, MyError> {
             Err(MyError::Error1)?
         }
     }
