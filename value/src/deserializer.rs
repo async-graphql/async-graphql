@@ -195,7 +195,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
 
     #[inline]
     fn is_human_readable(&self) -> bool {
-        false
+        true
     }
 }
 
