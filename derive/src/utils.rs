@@ -54,11 +54,11 @@ pub fn generate_guards(
     let expr: Expr =
         syn::parse_str(code).map_err(|err| Error::new(code.span(), err.to_string()))?;
     let code = quote! {{
-        use #crate_name::guard::GuardExt;
+        use #crate_name::GuardExt;
         #expr
     }};
     Ok(quote! {
-        #crate_name::guard::Guard::check(&#code, &ctx).await #map_err ?;
+        #crate_name::Guard::check(&#code, &ctx).await #map_err ?;
     })
 }
 

@@ -162,6 +162,7 @@
 
 mod base;
 mod error;
+mod guard;
 mod look_ahead;
 mod model;
 mod request;
@@ -175,7 +176,6 @@ pub mod context;
 #[cfg_attr(docsrs, doc(cfg(feature = "dataloader")))]
 pub mod dataloader;
 pub mod extensions;
-pub mod guard;
 pub mod http;
 pub mod resolver_utils;
 pub mod types;
@@ -213,6 +213,7 @@ pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
+pub use guard::{Guard, GuardExt};
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};

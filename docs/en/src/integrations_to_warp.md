@@ -2,7 +2,7 @@
 
 For `Async-graphql-warp`, two `Filter` integrations are provided: `graphql` and `graphql_subscription`.
 
-The `graphql` filter is used for execution `Query` and `Mutation` requests. It always asks for the POST method and outputs a `async_graphql::Schema` and `async_graphql::Request`.
+The `graphql` filter is used for execution `Query` and `Mutation` requests. It extracts GraphQL request and outputs `async_graphql::Schema` and `async_graphql::Request`.
 You can combine other filters later, or directly call `Schema::execute` to execute the query.
 
 `graphql_subscription` is used to implement WebSocket subscriptions. It outputs `warp::Reply`.

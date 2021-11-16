@@ -86,3 +86,14 @@ impl MyObj {
     }
 }
 ```
+
+## 同时用于输入和输出
+
+```rust
+#[derive(SimpleObject, InputObject)]
+#[graphql(input_name = "MyObjInput")] // 注意: 你必须用input_name属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+```

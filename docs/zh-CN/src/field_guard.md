@@ -1,7 +1,7 @@
 # 字段守卫(Field Guard)
 
-您可以在给`Object`的字段定义`守卫`。 这允许在运行字段的代码逻辑之前添加检查。
-义`守卫`由你预先定义的规则组成。 规则是一种实现`Guard`特质的结构。
+你可以为`Object`, `SimpleObject`, `ComplexObject`和`Subscription`的字段定义`守卫`，它将在调用字段的 Resolver 函数前执行，如果失败则返回一个错误。
+
 ```rust
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
@@ -11,6 +11,12 @@ enum Role {
 
 struct RoleGuard {
     role: Role,
+}
+
+impl RoleGuard {
+    fn new(role: Role) -> Self {
+        Self { role }
+    }
 }
 
 #[async_trait::async_trait]
@@ -25,44 +31,54 @@ impl Guard for RoleGuard {
 }
 ```
 
-一旦定义了规则，就可以在`guard`字段属性中使用它。
-此属性支持4个运算符创建复杂的规则：
-
--`and`：在两个规则之间执行`与`运算。 （如果一个规则返回错误，则`and`运算符将返回错误。如果两个规则均返回错误，则将是第一个返回的错误）。
-
--`or`：在两个规则之间执行`或`运算。 （如果两个规则都返回错误，则返回的错误是第一个）
-
--`chain`：采用一组规则并运行它们，直到返回错误或如果所有规则都通过则返回`Ok`。
-
--`race`：采用一组规则并运行它们，直到其中一个返回`Ok`。
+用`guard`属性使用它：
 
 ```rust
 #[derive(SimpleObject)]
 struct Query {
-    #[graphql(guard(RoleGuard(role = "Role::Admin")))]
-    value: i32,
-    #[graphql(guard(and(
-        RoleGuard(role = "Role::Admin"),
-        UserGuard(username = r#""test""#)
-    )))]
+    /// 只允许Admin访问
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+    value1: i32,
+    /// 允许Admin或者Guest访问
+    #[graphql(guard = "RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))")]
     value2: i32,
-    #[graphql(guard(or(
-        RoleGuard(role = "Role::Admin"),
-        UserGuard(username = r#""test""#)
-    )))]
-    value3: i32,
-    #[graphql(guard(chain(
-        RoleGuard(role = "Role::Admin"),
-        UserGuard(username = r#""test""#),
-        AgeGuard(age = r#"21"#)
-    )))]
-    value4: i32,
-    #[graphql(guard(race(
-        RoleGuard(role = "Role::Admin"),
-        UserGuard(username = r#""test""#),
-        AgeGuard(age = r#"21"#)
-    )))]
-    value5: i32,
 }
 ```
 
+## 从参数中获取值
+
+有时候守卫需要从字段参数中获取值，你需要像下面这样在创建守卫时传递该参数值：
+
+```rust
+struct EqGuard {
+    expect: i32,
+    actual: i32,
+}
+
+impl EqGuard {
+    fn new(expect: i32, actual: i32) -> Self {
+        Self { expect, actual }
+    }
+}
+
+#[async_trait::async_trait]
+impl Guard for EqGuard {
+    async fn check(&self, _ctx: &Context<'_>) -> Result<()> {
+        if self.expect != self.actual {
+            Err("Forbidden".into())
+        } else {
+            Ok(())
+        }
+    }
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[graphql(guard = "EqGuard::new(100, value)")]
+    async fn get(&self, value: i32) -> i32 {
+        value
+    }
+}
+```
