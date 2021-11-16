@@ -12,9 +12,9 @@ use syn::{
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
-    extract_input_args, gen_deprecation, generate_default, generate_guards, generate_validator,
-    get_cfg_attrs, get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
-    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
+    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -210,11 +210,11 @@ pub fn generate(
                     {
                         let mut key_str = Vec::new();
                         #(#get_federation_key)*
-                        registry.add_keys(&<#entity_type as #crate_name::Type>::type_name(), &key_str.join(" "));
+                        registry.add_keys(&<#entity_type as #crate_name::OutputType>::type_name(), &key_str.join(" "));
                     }
                 });
                 create_entity_types.push(
-                    quote! { <#entity_type as #crate_name::Type>::create_type_info(registry); },
+                    quote! { <#entity_type as #crate_name::OutputType>::create_type_info(registry); },
                 );
 
                 let field_ident = &method.sig.ident;
@@ -241,7 +241,7 @@ pub fn generate(
                     args.len(),
                     quote! {
                         #(#cfg_attrs)*
-                        if typename == &<#entity_type as #crate_name::Type>::type_name() {
+                        if typename == &<#entity_type as #crate_name::OutputType>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 let f = async move {
                                     #(#requires_getter)*
@@ -340,22 +340,13 @@ pub fn generate(
                         })
                         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
-                    let validator = match &validator {
-                        Some(meta) => {
-                            let stream = generate_validator(&crate_name, meta)?;
-                            quote!(::std::option::Option::Some(#stream))
-                        }
-                        None => quote!(::std::option::Option::None),
-                    };
-
                     let visible = visible_fn(visible);
                     schema_args.push(quote! {
                         args.insert(#name, #crate_name::registry::MetaInputValue {
                             name: #name,
                             description: #desc,
-                            ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                            ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                             default_value: #schema_default,
-                            validator: #validator,
                             visible: #visible,
                             is_secret: #secret,
                         });
@@ -370,15 +361,18 @@ pub fn generate(
                         }
                         None => quote! { ::std::option::Option::None },
                     };
-                    // We're generating a new identifier,
-                    // so remove the 'r#` prefix if present
-                    let param_getter_name =
-                        get_param_getter_ident(&ident.ident.unraw().to_string());
+
+                    let validators = validator.clone().unwrap_or_default().create_validators(
+                        &crate_name,
+                        quote!(&#ident),
+                        quote!(#ty),
+                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+                    )?;
+
                     get_params.push(quote! {
-                        #[allow(non_snake_case)]
-                        let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
-                        #[allow(non_snake_case)]
-                        let #ident: #ty = #param_getter_name()?;
+                        #[allow(non_snake_case, unused_variables)]
+                        let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
+                        #validators
                     });
                 }
 
@@ -446,7 +440,7 @@ pub fn generate(
                             #(#schema_args)*
                             args
                         },
-                        ty: <#schema_ty as #crate_name::Type>::create_type_info(registry),
+                        ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: #cache_control,
                         external: #external,
@@ -481,16 +475,13 @@ pub fn generate(
                     }
                 };
 
+                let guard_map_err = quote! {
+                    .map_err(|err| err.into_server_error(ctx.item.pos))
+                };
                 let guard = match &method_args.guard {
-                    Some(meta_list) => generate_guards(&crate_name, meta_list)?,
+                    Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
                     None => None,
                 };
-
-                let guard = guard.map(|guard| {
-                    quote! {
-                        #guard.check(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))?;
-                    }
-                });
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
@@ -544,34 +535,6 @@ pub fn generate(
         quote! {
             #item_impl
 
-            #[allow(clippy::all, clippy::pedantic)]
-            impl #impl_generics #crate_name::Type for #self_ty #where_clause {
-                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    ::std::borrow::Cow::Borrowed(#gql_typename)
-                }
-
-                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
-                        description: #desc,
-                        fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            fields
-                        },
-                        cache_control: #cache_control,
-                        extends: #extends,
-                        keys: ::std::option::Option::None,
-                        visible: #visible,
-                        is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
-                    });
-                    #(#create_entity_types)*
-                    #(#add_keys)*
-                    ty
-                }
-            }
-
             #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
             #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
             #[#crate_name::async_trait::async_trait]
@@ -601,6 +564,31 @@ pub fn generate(
             #[allow(clippy::all, clippy::pedantic)]
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
+                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                }
+
+                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        fields: {
+                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_fields)*
+                            fields
+                        },
+                        cache_control: #cache_control,
+                        extends: #extends,
+                        keys: ::std::option::Option::None,
+                        visible: #visible,
+                        is_subscription: false,
+                        rust_typename: ::std::any::type_name::<Self>(),
+                    });
+                    #(#create_entity_types)*
+                    #(#add_keys)*
+                    ty
+                }
+
                 async fn resolve(
                     &self,
                     ctx: &#crate_name::ContextSelectionSet<'_>,
@@ -620,7 +608,7 @@ pub fn generate(
 
             impl #impl_generics #self_ty #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
-                    let ty = registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         fields: {
@@ -676,17 +664,6 @@ pub fn generate(
             let concrete_type = quote! { #ty<#(#params),*> };
 
             codes.push(quote! {
-                #[allow(clippy::all, clippy::pedantic)]
-                impl #crate_name::Type for #concrete_type {
-                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                        ::std::borrow::Cow::Borrowed(#gql_typename)
-                    }
-
-                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry, #gql_typename)
-                    }
-                }
-
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
@@ -700,6 +677,14 @@ pub fn generate(
 
                 #[#crate_name::async_trait::async_trait]
                 impl #crate_name::OutputType for #concrete_type {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        ::std::borrow::Cow::Borrowed(#gql_typename)
+                    }
+
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        Self::__internal_create_type_info(registry, #gql_typename)
+                    }
+
                     async fn resolve(
                         &self,
                         ctx: &#crate_name::ContextSelectionSet<'_>,

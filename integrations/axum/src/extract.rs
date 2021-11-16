@@ -3,12 +3,12 @@ use std::io::ErrorKind;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::http::MultipartOptions;
 use async_graphql::ParseRequestError;
+use axum::http::Method;
 use axum::{
     extract::{BodyStream, FromRequest, RequestParts},
-    BoxError,
+    http, BoxError,
 };
 use bytes::Bytes;
-use http::Method;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Extractor for GraphQL request.
@@ -26,8 +26,9 @@ impl GraphQLRequest {
 pub mod rejection {
     use async_graphql::ParseRequestError;
     use axum::body::Body;
+    use axum::http;
+    use axum::http::StatusCode;
     use axum::response::IntoResponse;
-    use http::StatusCode;
 
     /// Rejection used for [`GraphQLRequest`](GraphQLRequest).
     pub struct GraphQLRejection(pub ParseRequestError);

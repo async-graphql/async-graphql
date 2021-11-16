@@ -5,9 +5,7 @@ use syn::ext::IdentExt;
 use syn::Error;
 
 use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{
-    generate_default, generate_validator, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
-};
+use crate::utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -44,6 +42,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let gql_typename = object_args
         .name
         .clone()
+        .or_else(|| object_args.input_name.clone())
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
@@ -76,6 +75,17 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         federation_fields.push((ty, name.clone()));
 
+        let validators = field
+            .validator
+            .clone()
+            .unwrap_or_default()
+            .create_validators(
+                &crate_name,
+                quote!(&#ident),
+                quote!(ty),
+                Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
+            )?;
+
         if field.flatten {
             flatten_fields.push((ident, ty));
 
@@ -83,7 +93,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 #ty::create_type_info(registry);
                 if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
-                    registry.create_dummy_type::<#ty>() {
+                    registry.create_fake_input_type::<#ty>() {
                     fields.extend(input_fields);
                 }
             });
@@ -92,6 +102,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = #crate_name::InputType::parse(
                     ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
+                #validators
             });
 
             fields.push(ident);
@@ -104,13 +115,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             continue;
         }
 
-        let validator = match &field.validator {
-            Some(meta) => {
-                let stream = generate_validator(&crate_name, meta)?;
-                quote!(::std::option::Option::Some(#stream))
-            }
-            None => quote!(::std::option::Option::None),
-        };
         let desc = get_rustdoc(&field.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(#s) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -139,12 +143,14 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         ::std::option::Option::None => #default,
                     }
                 };
+                #validators
             });
         } else {
             get_fields.push(quote! {
                 #[allow(non_snake_case)]
                 let #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
+                #validators
             });
         }
 
@@ -161,9 +167,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: #name,
                 description: #desc,
-                ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,
-                validator: #validator,
                 visible: #visible,
                 is_secret: #secret,
             });
@@ -200,13 +205,13 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
-            impl #crate_name::Type for #ident {
+            impl #crate_name::InputType for #ident {
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                     ::std::borrow::Cow::Borrowed(#gql_typename)
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         input_fields: {
@@ -218,10 +223,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         rust_typename: ::std::any::type_name::<Self>(),
                     })
                 }
-            }
 
-            #[allow(clippy::all, clippy::pedantic)]
-            impl #crate_name::InputType for #ident {
                 fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                         #(#get_fields)*
@@ -251,7 +253,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
-                    registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         input_fields: {
@@ -292,7 +294,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
-                impl #crate_name::Type for #concrete_type {
+                impl #crate_name::InputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -300,10 +302,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                         Self::__internal_create_type_info(registry, #gql_typename)
                     }
-                }
 
-                #[allow(clippy::all, clippy::pedantic)]
-                impl #crate_name::InputType for #concrete_type {
                     fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                         Self::__internal_parse(value)
                     }

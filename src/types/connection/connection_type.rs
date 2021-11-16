@@ -10,7 +10,7 @@ use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, Result,
-    ServerResult, Type, Value,
+    ServerResult, Value,
 };
 
 /// Connection type
@@ -119,84 +119,6 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
     }
 }
 
-impl<C, T, EC, EE> Type for Connection<C, T, EC, EE>
-where
-    C: CursorType,
-    T: OutputType,
-    EC: ObjectType,
-    EE: ObjectType,
-{
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}Connection", T::type_name()))
-    }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|registry| {
-            EC::create_type_info(registry);
-            let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.remove(EC::type_name().as_ref())
-            {
-                fields
-            } else {
-                unreachable!()
-            };
-
-            registry::MetaType::Object {
-                name: Self::type_name().to_string(),
-                description: None,
-                fields: {
-                    let mut fields = IndexMap::new();
-
-                    fields.insert(
-                        "pageInfo".to_string(),
-                        registry::MetaField {
-                            name: "pageInfo".to_string(),
-                            description: Some("Information to aid in pagination."),
-                            args: Default::default(),
-                            ty: PageInfo::create_type_info(registry),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                        },
-                    );
-
-                    fields.insert(
-                        "edges".to_string(),
-                        registry::MetaField {
-                            name: "edges".to_string(),
-                            description: Some("A list of edges."),
-                            args: Default::default(),
-                            ty: <Option<Vec<Option<Edge<C, T, EE>>>> as Type>::create_type_info(
-                                registry,
-                            ),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                        },
-                    );
-
-                    fields.extend(additional_fields);
-                    fields
-                },
-                cache_control: Default::default(),
-                extends: false,
-                keys: None,
-                visible: None,
-                is_subscription: false,
-                rust_typename: std::any::type_name::<Self>(),
-            }
-        })
-    }
-}
-
 #[async_trait::async_trait]
 impl<C, T, EC, EE> ContainerType for Connection<C, T, EC, EE>
 where
@@ -236,6 +158,76 @@ where
     EC: ObjectType,
     EE: ObjectType,
 {
+    fn type_name() -> Cow<'static, str> {
+        Cow::Owned(format!("{}Connection", T::type_name()))
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        registry.create_output_type::<Self, _>(|registry| {
+            EC::create_type_info(registry);
+            let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
+            registry.types.remove(EC::type_name().as_ref())
+            {
+                fields
+            } else {
+                unreachable!()
+            };
+
+            registry::MetaType::Object {
+                name: Self::type_name().to_string(),
+                description: None,
+                fields: {
+                    let mut fields = IndexMap::new();
+
+                    fields.insert(
+                        "pageInfo".to_string(),
+                        registry::MetaField {
+                            name: "pageInfo".to_string(),
+                            description: Some("Information to aid in pagination."),
+                            args: Default::default(),
+                            ty: PageInfo::create_type_info(registry),
+                            deprecation: Default::default(),
+                            cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
+                            visible: None,
+                            compute_complexity: None,
+                        },
+                    );
+
+                    fields.insert(
+                        "edges".to_string(),
+                        registry::MetaField {
+                            name: "edges".to_string(),
+                            description: Some("A list of edges."),
+                            args: Default::default(),
+                            ty: <Option<Vec<Option<Edge<C, T, EE>>>> as OutputType>::create_type_info(
+                                registry,
+                            ),
+                            deprecation: Default::default(),
+                            cache_control: Default::default(),
+                            external: false,
+                            requires: None,
+                            provides: None,
+                            visible: None,
+                            compute_complexity: None,
+                        },
+                    );
+
+                    fields.extend(additional_fields);
+                    fields
+                },
+                cache_control: Default::default(),
+                extends: false,
+                keys: None,
+                visible: None,
+                is_subscription: false,
+                rust_typename: std::any::type_name::<Self>(),
+            }
+        })
+    }
+
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

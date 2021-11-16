@@ -9,9 +9,9 @@ use syn::{
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
-    gen_deprecation, generate_default, generate_guards, generate_validator, get_cfg_attrs,
-    get_crate_name, get_param_getter_ident, get_rustdoc, get_type_path_and_name,
-    parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    gen_deprecation, generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
+    get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
+    visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -167,14 +167,6 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let default = generate_default(default, default_with)?;
 
-                let validator = match &validator {
-                    Some(meta) => {
-                        let stream = generate_validator(&crate_name, meta)?;
-                        quote!(::std::option::Option::Some(#stream))
-                    }
-                    None => quote!(::std::option::Option::None),
-                };
-
                 let schema_default = default
                     .as_ref()
                     .map(|value| {
@@ -191,9 +183,8 @@ pub fn generate(
                     args.insert(#name, #crate_name::registry::MetaInputValue {
                         name: #name,
                         description: #desc,
-                        ty: <#ty as #crate_name::Type>::create_type_info(registry),
+                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
-                        validator: #validator,
                         visible: #visible,
                         is_secret: #secret,
                     });
@@ -205,12 +196,17 @@ pub fn generate(
                     Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
                     None => quote! { ::std::option::Option::None },
                 };
-                let param_getter_name = get_param_getter_ident(&ident.ident.to_string());
+                let validators = validator.clone().unwrap_or_default().create_validators(
+                    &crate_name,
+                    quote!(&#ident),
+                    quote!(#ty),
+                    Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+                )?;
+
                 get_params.push(quote! {
                     #[allow(non_snake_case)]
-                    let #param_getter_name = || -> #crate_name::ServerResult<#ty> { ctx.param_value(#name, #default) };
-                    #[allow(non_snake_case)]
-                    let #ident: #ty = ctx.param_value(#name, #default)?;
+                    let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
+                    #validators
                 });
             }
 
@@ -277,8 +273,8 @@ pub fn generate(
                                     )
                                 });
                                 parse_args.push(quote! {
-                                        let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
-                                    });
+                                    let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
+                                });
                             }
                         }
                         quote! {
@@ -303,7 +299,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::create_type_info(registry),
+                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: ::std::default::Default::default(),
                     external: false,
@@ -320,29 +316,34 @@ pub fn generate(
                     .map_err(|err| {
                         ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos)
                             .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
-                    })?
+                    })
             };
 
-            let guard = match &field.guard {
-                Some(meta_list) => generate_guards(&crate_name, meta_list)?,
-                None => None,
-            };
-            let guard = guard.map(|guard| quote! {
-                #guard.check(ctx).await.map_err(|err| {
+            let guard_map_err = quote! {
+                .map_err(|err| {
                     err.into_server_error(ctx.item.pos)
                         .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
-                })?;
-            });
+                })
+            };
+            let guard = match &field.guard {
+                Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
+                None => None,
+            };
             let stream_fn = quote! {
                 let field_name = ::std::clone::Clone::clone(&ctx.item.node.response_key().node);
                 let field = ::std::sync::Arc::new(::std::clone::Clone::clone(&ctx.item));
-                #(#get_params)*
-                #guard
+
+                let f = async {
+                    #(#get_params)*
+                    #guard
+                    #create_field_stream
+                };
+                let stream = f.await.map_err(|err| ctx.set_error_path(err))?;
 
                 let pos = ctx.item.pos;
                 let schema_env = ::std::clone::Clone::clone(&ctx.schema_env);
                 let query_env = ::std::clone::Clone::clone(&ctx.query_env);
-                let stream = #crate_name::futures_util::stream::StreamExt::then(#create_field_stream, {
+                let stream = #crate_name::futures_util::stream::StreamExt::then(stream, {
                     let field_name = ::std::clone::Clone::clone(&field_name);
                     move |msg| {
                         let schema_env = ::std::clone::Clone::clone(&schema_env);
@@ -364,7 +365,7 @@ pub fn generate(
                                 let ri = #crate_name::extensions::ResolveInfo {
                                     path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                     parent_type: #gql_typename,
-                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::Type>::qualified_type_name(),
+                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
                                     name: field.node.name.node.as_str(),
                                     alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                 };
@@ -433,18 +434,21 @@ pub fn generate(
         .into());
     }
 
+    let visible = visible_fn(&subscription_args.visible);
+
     let expanded = quote! {
         #item_impl
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generics #crate_name::Type for #self_ty #where_clause {
+        #[allow(unused_braces, unused_variables)]
+        impl #generics #crate_name::SubscriptionType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             #[allow(bare_trait_objects)]
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                registry.create_subscription_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     fields: {
@@ -455,16 +459,12 @@ pub fn generate(
                     cache_control: ::std::default::Default::default(),
                     extends: #extends,
                     keys: ::std::option::Option::None,
-                    visible: ::std::option::Option::None,
+                    visible: #visible,
                     is_subscription: true,
                     rust_typename: ::std::any::type_name::<Self>(),
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[allow(unused_braces, unused_variables)]
-        impl #generics #crate_name::SubscriptionType for #self_ty #where_clause {
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'_>,

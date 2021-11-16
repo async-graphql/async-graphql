@@ -130,7 +130,7 @@ pub async fn test_multiple_unions() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .register_type::<UnionA>() // `UnionA` is not directly referenced, so manual registration is required.
+        .register_output_type::<UnionA>() // `UnionA` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
             unionA {
@@ -214,7 +214,7 @@ pub async fn test_multiple_objects_in_multiple_unions() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .register_type::<UnionB>() // `UnionB` is not directly referenced, so manual registration is required.
+        .register_output_type::<UnionB>() // `UnionB` is not directly referenced, so manual registration is required.
         .finish();
     let query = r#"{
             myObj {

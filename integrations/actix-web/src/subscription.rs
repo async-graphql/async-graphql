@@ -3,75 +3,97 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use actix::{
-    Actor, ActorContext, ActorFuture, ActorStream, AsyncContext, ContextFutureSpawner,
-    StreamHandler, WrapFuture, WrapStream,
+    Actor, ActorContext, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture, WrapStream,
 };
+use actix::{ActorFutureExt, ActorStreamExt};
 use actix_http::error::PayloadError;
-use actix_http::{ws, Error};
+use actix_http::ws;
 use actix_web::web::Bytes;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
-use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use futures_util::future::Ready;
 use futures_util::stream::Stream;
+
+use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
+use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Actor for subscription via websocket
-pub struct WSSubscription<Query, Mutation, Subscription, F> {
+#[derive(thiserror::Error, Debug)]
+#[error("failed to parse graphql protocol")]
+pub struct ParseGraphQLProtocolError;
+
+type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
+
+fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Result<Data>> {
+    futures_util::future::ready(Ok(Data::default()))
+}
+
+/// A builder for websocket subscription actor.
+pub struct GraphQLSubscription<Query, Mutation, Subscription, OnInit> {
     schema: Schema<Query, Mutation, Subscription>,
-    protocol: WebSocketProtocols,
-    last_heartbeat: Instant,
-    messages: Option<async_channel::Sender<Vec<u8>>>,
-    initializer: Option<F>,
-    continuation: Vec<u8>,
+    data: Data,
+    on_connection_init: OnInit,
 }
 
 impl<Query, Mutation, Subscription>
-    WSSubscription<Query, Mutation, Subscription, fn(serde_json::Value) -> Ready<Result<Data>>>
+    GraphQLSubscription<Query, Mutation, Subscription, DefaultOnConnInitType>
 where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    /// Start an actor for subscription connection via websocket.
-    pub fn start<T>(
-        schema: Schema<Query, Mutation, Subscription>,
-        request: &HttpRequest,
-        stream: T,
-    ) -> Result<HttpResponse, Error>
-    where
-        T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
-    {
-        Self::start_with_initializer(schema, request, stream, |_| {
-            futures_util::future::ready(Ok(Default::default()))
-        })
+    /// Create a GraphQL subscription builder.
+    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+        Self {
+            schema,
+            data: Default::default(),
+            on_connection_init: default_on_connection_init,
+        }
     }
 }
 
-impl<Query, Mutation, Subscription, F, R> WSSubscription<Query, Mutation, Subscription, F>
+impl<Query, Mutation, Subscription, OnInit, OnInitFut>
+    GraphQLSubscription<Query, Mutation, Subscription, OnInit>
 where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: Fn(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
+    OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Start an actor for subscription connection via websocket with an initialization function.
-    pub fn start_with_initializer<T>(
-        schema: Schema<Query, Mutation, Subscription>,
-        request: &HttpRequest,
-        stream: T,
-        initializer: F,
-    ) -> Result<HttpResponse, Error>
+    /// Specify the initial subscription context data, usually you can get something from the
+    /// incoming request to create it.
+    pub fn with_data(self, data: Data) -> Self {
+        Self { data, ..self }
+    }
+
+    /// Specify a callback function to be called when the connection is initialized.
+    ///
+    /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
+    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    pub fn on_connection_init<OnConnInit2, Fut>(
+        self,
+        callback: OnConnInit2,
+    ) -> GraphQLSubscription<Query, Mutation, Subscription, OnConnInit2>
     where
-        T: Stream<Item = Result<Bytes, PayloadError>> + 'static,
-        F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        OnConnInit2: Fn(serde_json::Value) -> Fut + Unpin + Send + 'static,
+        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
-        let protocol = match request
+        GraphQLSubscription {
+            schema: self.schema,
+            data: self.data,
+            on_connection_init: callback,
+        }
+    }
+
+    /// Start the subscription actor.
+    pub fn start<S>(self, request: &HttpRequest, stream: S) -> Result<HttpResponse, Error>
+    where
+        S: Stream<Item = Result<Bytes, PayloadError>> + 'static,
+    {
+        let protocol = request
             .headers()
             .get("sec-websocket-protocol")
             .and_then(|value| value.to_str().ok())
@@ -79,29 +101,42 @@ where
                 protocols
                     .split(',')
                     .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
-            }) {
-            Some(protocol) => protocol,
-            None => {
-                // default to the prior standard
-                WebSocketProtocols::SubscriptionsTransportWS
-            }
+            })
+            .ok_or_else(|| actix_web::error::ErrorBadRequest(ParseGraphQLProtocolError))?;
+
+        let actor = GraphQLSubscriptionActor {
+            schema: self.schema,
+            data: Some(self.data),
+            protocol,
+            last_heartbeat: Instant::now(),
+            messages: None,
+            on_connection_init: Some(self.on_connection_init),
+            continuation: Vec::new(),
         };
 
-        actix_web_actors::ws::start_with_protocols(
-            Self {
-                schema,
-                protocol,
-                last_heartbeat: Instant::now(),
-                messages: None,
-                initializer: Some(initializer),
-                continuation: Vec::new(),
-            },
-            &ALL_WEBSOCKET_PROTOCOLS,
-            request,
-            stream,
-        )
+        actix_web_actors::ws::start_with_protocols(actor, &ALL_WEBSOCKET_PROTOCOLS, request, stream)
     }
+}
 
+struct GraphQLSubscriptionActor<Query, Mutation, Subscription, OnInit> {
+    schema: Schema<Query, Mutation, Subscription>,
+    data: Option<Data>,
+    protocol: WebSocketProtocols,
+    last_heartbeat: Instant,
+    messages: Option<async_channel::Sender<Vec<u8>>>,
+    on_connection_init: Option<OnInit>,
+    continuation: Vec<u8>,
+}
+
+impl<Query, Mutation, Subscription, OnInit, OnInitFut>
+    GraphQLSubscriptionActor<Query, Mutation, Subscription, OnInit>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
+    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
+{
     fn send_heartbeats(&self, ctx: &mut WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             if Instant::now().duration_since(act.last_heartbeat) > CLIENT_TIMEOUT {
@@ -112,13 +147,14 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription, F, R> Actor for WSSubscription<Query, Mutation, Subscription, F>
+impl<Query, Mutation, Subscription, OnInit, OnInitFut> Actor
+    for GraphQLSubscriptionActor<Query, Mutation, Subscription, OnInit>
 where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
+    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
 {
     type Context = WebsocketContext<Self>;
 
@@ -127,35 +163,32 @@ where
 
         let (tx, rx) = async_channel::unbounded();
 
-        WebSocket::with_data(
-            self.schema.clone(),
-            rx,
-            self.initializer.take().unwrap(),
-            self.protocol,
-        )
-        .into_actor(self)
-        .map(|response, _act, ctx| match response {
-            WsMessage::Text(text) => ctx.text(text),
-            WsMessage::Close(code, msg) => ctx.close(Some(CloseReason {
-                code: code.into(),
-                description: Some(msg),
-            })),
-        })
-        .finish()
-        .spawn(ctx);
+        WebSocket::new(self.schema.clone(), rx, self.protocol)
+            .connection_data(self.data.take().unwrap())
+            .on_connection_init(self.on_connection_init.take().unwrap())
+            .into_actor(self)
+            .map(|response, _act, ctx| match response {
+                WsMessage::Text(text) => ctx.text(text),
+                WsMessage::Close(code, msg) => ctx.close(Some(CloseReason {
+                    code: code.into(),
+                    description: Some(msg),
+                })),
+            })
+            .finish()
+            .spawn(ctx);
 
         self.messages = Some(tx);
     }
 }
 
-impl<Query, Mutation, Subscription, F, R> StreamHandler<Result<Message, ProtocolError>>
-    for WSSubscription<Query, Mutation, Subscription, F>
+impl<Query, Mutation, Subscription, OnInit, OnInitFut> StreamHandler<Result<Message, ProtocolError>>
+    for GraphQLSubscriptionActor<Query, Mutation, Subscription, OnInit>
 where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Unpin + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
+    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
 {
     fn handle(&mut self, msg: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {
@@ -190,7 +223,7 @@ where
                     Some(std::mem::take(&mut self.continuation))
                 }
             },
-            Message::Text(s) => Some(s.into_bytes()),
+            Message::Text(s) => Some(s.into_bytes().to_vec()),
             Message::Binary(bytes) => Some(bytes.to_vec()),
             Message::Close(_) => {
                 ctx.stop();

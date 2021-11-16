@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-alpha.2] 2021-11-16
+
+- Change the signature of the `connection::query` function to allow the callback to use any type that implements `Into<Error>`.
+- Remove `ResolverError` and use `Error::new_with_source` instead.
+- Add `ErrorExtensionValues::unset` method.
+- Use the `SimpleObject` macro and the `InputObject` macro at the same time.
+- Types that are not referenced will be hidden in introspection.
+- Make the API of integrations is more consistent.
+- Remove `async-graphql-tide`.
+- Rework validators.
+- Rework guards.
+
 ## [2.11.3] 2021-11-13
 
 - Implemented CursorType for i32/i64. [#701](https://github.com/async-graphql/async-graphql/pull/701)

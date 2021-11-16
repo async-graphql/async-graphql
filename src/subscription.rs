@@ -1,12 +1,27 @@
+use std::borrow::Cow;
 use std::pin::Pin;
 
 use futures_util::stream::{Stream, StreamExt};
 
 use crate::parser::types::{Selection, TypeCondition};
-use crate::{Context, ContextSelectionSet, PathSegment, Response, ServerError, ServerResult, Type};
+use crate::registry::Registry;
+use crate::{
+    registry, Context, ContextSelectionSet, PathSegment, Response, ServerError, ServerResult,
+};
 
 /// A GraphQL subscription object
-pub trait SubscriptionType: Type + Send + Sync {
+pub trait SubscriptionType: Send + Sync {
+    /// Type the name.
+    fn type_name() -> Cow<'static, str>;
+
+    /// Qualified typename.
+    fn qualified_type_name() -> String {
+        format!("{}!", Self::type_name())
+    }
+
+    /// Create type information in the registry and return qualified typename.
+    fn create_type_info(registry: &mut registry::Registry) -> String;
+
     /// This function returns true of type `EmptySubscription` only.
     #[doc(hidden)]
     fn is_empty() -> bool {
@@ -90,6 +105,14 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
 }
 
 impl<T: SubscriptionType> SubscriptionType for &T {
+    fn type_name() -> Cow<'static, str> {
+        T::type_name()
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        T::create_type_info(registry)
+    }
+
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,

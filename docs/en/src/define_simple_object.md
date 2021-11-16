@@ -91,3 +91,14 @@ pub struct YetAnotherObject {
 ```
 
 You can pass multiple generic types to `params()`, separated by a comma.
+
+## Used for both input and output
+
+```rust
+#[derive(SimpleObject, InputObject)]
+#[graphql(input_name = "MyObjInput")] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
+struct MyObj {
+    a: i32,
+    b: i32,
+}
+```

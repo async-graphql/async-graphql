@@ -48,19 +48,19 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
     let visible = visible_fn(&object_args.visible);
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::Type for #ident {
+        impl #crate_name::SubscriptionType for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| {
+                registry.create_subscription_type::<Self, _>(|registry| {
                     let mut fields = ::std::default::Default::default();
 
                     if let #crate_name::registry::MetaType::Object {
                         fields: obj_fields,
                         ..
-                    } = registry.create_dummy_type::<#merged_type>() {
+                    } = registry.create_fake_subscription_type::<#merged_type>() {
                         fields = obj_fields;
                     }
 
@@ -77,10 +77,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                     }
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::SubscriptionType for #ident {
             fn create_field_stream<'__life>(
                 &'__life self,
                 ctx: &'__life #crate_name::Context<'__life>

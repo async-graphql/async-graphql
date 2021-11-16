@@ -124,13 +124,13 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #crate_name::Type for #ident {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+        impl #ident {
+            fn __type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| {
+            fn __create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                registry.create_input_type::<Self, _>(|registry| {
                     #crate_name::registry::MetaType::Enum {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
@@ -148,6 +148,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputType for #ident {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                Self::__type_name()
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                Self::__create_type_info(registry)
+            }
+
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 #crate_name::resolver_utils::parse_enum(value.unwrap_or_default())
             }
@@ -159,6 +167,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputType for #ident {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                Self::__type_name()
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                Self::__create_type_info(registry)
+            }
+
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 ::std::result::Result::Ok(#crate_name::resolver_utils::enum_value(*self))
             }

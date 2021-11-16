@@ -3,7 +3,7 @@ use std::pin::Pin;
 
 use futures_util::stream::{self, Stream};
 
-use crate::{registry, Context, Response, ServerError, SubscriptionType, Type};
+use crate::{registry, Context, Response, ServerError, SubscriptionType};
 
 /// Empty subscription
 ///
@@ -11,13 +11,13 @@ use crate::{registry, Context, Response, ServerError, SubscriptionType, Type};
 #[derive(Default, Copy, Clone)]
 pub struct EmptySubscription;
 
-impl Type for EmptySubscription {
+impl SubscriptionType for EmptySubscription {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("EmptyMutation")
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|_| registry::MetaType::Object {
+        registry.create_subscription_type::<Self, _>(|_| registry::MetaType::Object {
             name: "EmptySubscription".to_string(),
             description: None,
             fields: Default::default(),
@@ -29,9 +29,7 @@ impl Type for EmptySubscription {
             rust_typename: std::any::type_name::<Self>(),
         })
     }
-}
 
-impl SubscriptionType for EmptySubscription {
     fn is_empty() -> bool {
         true
     }

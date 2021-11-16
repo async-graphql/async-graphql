@@ -3,10 +3,10 @@ use std::str::FromStr;
 
 use async_graphql::http::{WebSocketProtocols, WsMessage};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures_util::sink::Sink;
-use futures_util::stream::Stream;
+use futures_util::future::Ready;
 use futures_util::{future, StreamExt};
 use warp::filters::ws;
+use warp::ws::WebSocket;
 use warp::{Filter, Rejection, Reply};
 
 /// GraphQL subscription filter
@@ -60,31 +60,15 @@ where
     Mutation: ObjectType + Sync + Send + 'static,
     Subscription: SubscriptionType + Send + Sync + 'static,
 {
-    graphql_subscription_with_data(schema, |_| async { Ok(Default::default()) })
-}
-
-/// GraphQL subscription filter
-///
-/// Specifies that a function converts the init payload to data.
-pub fn graphql_subscription_with_data<Query, Mutation, Subscription, F, R>(
-    schema: Schema<Query, Mutation, Subscription>,
-    initializer: F,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
-where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Clone + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static,
-{
     warp::ws()
         .and(graphql_protocol())
         .map(move |ws: ws::Ws, protocol| {
             let schema = schema.clone();
-            let initializer = initializer.clone();
 
-            let reply = ws.on_upgrade(move |websocket| {
-                graphql_subscription_upgrade_with_data(websocket, protocol, schema, initializer)
+            let reply = ws.on_upgrade(move |socket| {
+                GraphQLWebSocket::new(socket, schema, protocol)
+                    .on_connection_init(default_on_connection_init)
+                    .serve()
             });
 
             warp::reply::with_header(
@@ -109,17 +93,20 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
     })
 }
 
-/// Handle the WebSocket subscription.
-///
-/// If you want to control the WebSocket subscription more finely, you can use this function,
-/// otherwise it is more convenient to use [graphql_subscription].
+type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
+
+fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Result<Data>> {
+    futures_util::future::ready(Ok(Data::default()))
+}
+
+/// A Websocket connection for GraphQL subscription.
 ///
 /// # Examples
 ///
 /// ```no_run
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::Filter;
+/// use warp::{Filter, ws};
 /// use futures_util::stream::{Stream, StreamExt};
 /// use std::time::Duration;
 ///
@@ -150,70 +137,112 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
 ///
 /// tokio::runtime::Runtime::new().unwrap().block_on(async {
 ///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+///
 ///     let filter = warp::ws()
 ///         .and(graphql_protocol())
-///         .map(move |ws: warp::ws::Ws, protocol| {
+///         .map(move |ws: ws::Ws, protocol| {
 ///             let schema = schema.clone();
-///             let reply = ws.on_upgrade( move |websocket| {
-///                 graphql_subscription_upgrade(websocket, protocol, schema)
+///
+///             let reply = ws.on_upgrade(move |socket| {
+///                 GraphQLWebSocket::new(socket, schema, protocol).serve()
 ///             });
+///
 ///             warp::reply::with_header(
-///                reply,
-///                "Sec-WebSocket-Protocol",
-///                protocol.sec_websocket_protocol(),
-///            )
+///                 reply,
+///                 "Sec-WebSocket-Protocol",
+///                 protocol.sec_websocket_protocol(),
+///             )
 ///         });
+///
 ///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// });
 /// ```
-pub async fn graphql_subscription_upgrade<Query, Mutation, Subscription, S>(
-    websocket: S,
+pub struct GraphQLWebSocket<Query, Mutation, Subscription, OnInit> {
+    socket: WebSocket,
     protocol: WebSocketProtocols,
     schema: Schema<Query, Mutation, Subscription>,
-) where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
-    S: Stream<Item = Result<warp::ws::Message, warp::Error>> + Sink<warp::ws::Message>,
-{
-    graphql_subscription_upgrade_with_data(websocket, protocol, schema, |_| async {
-        Ok(Default::default())
-    })
-    .await
+    data: Data,
+    on_init: OnInit,
 }
 
-/// Handle the WebSocket subscription.
-///
-/// Specifies that a function converts the init payload to data.
-pub async fn graphql_subscription_upgrade_with_data<Query, Mutation, Subscription, F, R, S>(
-    websocket: S,
-    protocol: WebSocketProtocols,
-    schema: Schema<Query, Mutation, Subscription>,
-    initializer: F,
-) where
+impl<Query, Mutation, Subscription>
+    GraphQLWebSocket<Query, Mutation, Subscription, DefaultOnConnInitType>
+where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    F: FnOnce(serde_json::Value) -> R + Send + 'static,
-    R: Future<Output = Result<Data>> + Send + 'static,
-    S: Stream<Item = Result<warp::ws::Message, warp::Error>> + Sink<warp::ws::Message>,
 {
-    let (ws_sender, ws_receiver) = websocket.split();
-    let _ = async_graphql::http::WebSocket::with_data(
-        schema,
-        ws_receiver
+    /// Create a [`GraphQLWebSocket`] object.
+    pub fn new(
+        socket: WebSocket,
+        schema: Schema<Query, Mutation, Subscription>,
+        protocol: WebSocketProtocols,
+    ) -> Self {
+        GraphQLWebSocket {
+            socket,
+            protocol,
+            schema,
+            data: Data::default(),
+            on_init: default_on_connection_init,
+        }
+    }
+}
+
+impl<Query, Mutation, Subscription, OnConnInit, OnConnInitFut>
+    GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+    OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Send + Sync + 'static,
+    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+{
+    /// Specify the initial subscription context data, usually you can get something from the
+    /// incoming request to create it.
+    pub fn with_data(self, data: Data) -> Self {
+        Self { data, ..self }
+    }
+
+    /// Specify a callback function to be called when the connection is initialized.
+    ///
+    /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
+    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    pub fn on_connection_init<OnConnInit2, Fut>(
+        self,
+        callback: OnConnInit2,
+    ) -> GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit2>
+    where
+        OnConnInit2: Fn(serde_json::Value) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    {
+        GraphQLWebSocket {
+            socket: self.socket,
+            schema: self.schema,
+            data: self.data,
+            on_init: callback,
+            protocol: self.protocol,
+        }
+    }
+
+    /// Processing subscription requests.
+    pub async fn serve(self) {
+        let (ws_sender, ws_receiver) = self.socket.split();
+
+        let stream = ws_receiver
             .take_while(|msg| future::ready(msg.is_ok()))
             .map(Result::unwrap)
             .filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
-            .map(ws::Message::into_bytes),
-        initializer,
-        protocol,
-    )
-    .map(|msg| match msg {
-        WsMessage::Text(text) => ws::Message::text(text),
-        WsMessage::Close(code, status) => ws::Message::close_with(code, status),
-    })
-    .map(Ok)
-    .forward(ws_sender)
-    .await;
+            .map(ws::Message::into_bytes);
+
+        let _ = async_graphql::http::WebSocket::new(self.schema.clone(), stream, self.protocol)
+            .connection_data(self.data)
+            .on_connection_init(self.on_init)
+            .map(|msg| match msg {
+                WsMessage::Text(text) => ws::Message::text(text),
+                WsMessage::Close(code, status) => ws::Message::close_with(code, status),
+            })
+            .map(Ok)
+            .forward(ws_sender)
+            .await;
+    }
 }

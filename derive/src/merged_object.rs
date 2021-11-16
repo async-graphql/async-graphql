@@ -63,13 +63,26 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
+        #[#crate_name::async_trait::async_trait]
+        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
+            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                #create_merged_obj.resolve_field(ctx).await
+            }
+
+            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) ->  #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+               #create_merged_obj.find_entity(ctx, params).await
+            }
+        }
+
+        #[allow(clippy::all, clippy::pedantic)]
+        #[#crate_name::async_trait::async_trait]
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| {
+                registry.create_output_type::<Self, _>(|registry| {
                     let mut fields = ::std::default::Default::default();
                     let mut cache_control = ::std::default::Default::default();
 
@@ -77,7 +90,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         fields: obj_fields,
                         cache_control: obj_cache_control,
                         ..
-                    } = registry.create_dummy_type::<#merged_type>() {
+                    } = registry.create_fake_output_type::<#merged_type>() {
                         fields = obj_fields;
                         cache_control = obj_cache_control;
                     }
@@ -95,23 +108,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                     }
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                #create_merged_obj.resolve_field(ctx).await
-            }
-
-            async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) ->  #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-               #create_merged_obj.find_entity(ctx, params).await
-            }
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #resolve_container
             }

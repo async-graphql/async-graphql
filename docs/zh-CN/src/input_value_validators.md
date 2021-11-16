@@ -1,56 +1,43 @@
 # 输入值校验器
 
-字段的参数，[输入对象(InputObject)](define_input_object.md)的字段在GraphQL中称之为`Input Value`，如果给出的参数值类型不匹配，查询会报类型不匹配错误。但有时候我们希望给特定类型的值更多的限制，例如我们希望一个参数总是一个格式合法的Email地址，我们可以通过[自定义标量](custom_scalars.md)来解决，但这种类型如果很多，而且我们希望能够进行自由组合，比如一个`String`类型参数，我们希望它既可以是Email地址，也可以是一个手机号码，自定义标量就特别麻烦。`Async-graphql`提供了输入值校验器来解决这个问题。
+`Async-graphql`内置了一些常用的校验器，你可以在对象字段的参数或者`InputObject`的字段上使用它们。
 
-输入值校验器可以通过`and`和`or`操作符自由组合。
-
-下面时一个参数校验器，它校验`String`类型的参数`a`，必须是一个合法Email或者MAC地址：
+- **maximum=N** 指定数字不能大于`N`
+- **minimum=N** 指定数字不能小于`N`
+- **multiple_of=N** 指定数字必须是`N`的倍数
+- **max_items=N** 指定列表的长度不能大于`N`
+- **min_items=N** 指定列表的长度不能小于`N`
+- **max_length=N** 字符串的长度不能大于`N`
+- **min_length=N** 字符串的长度不能小于`N`
+- **chars_max_length=N** 字符串中unicode字符的的数量不能小于`N`
+- **chars_min_length=N** 字符串中unicode字符的的数量不能大于`N`
+- **email** 有效的email
 
 ```rust
 use async_graphql::*;
-use async_graphql::validators::{Email, MAC};
 
 struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[graphql(validator(or(Email, MAC(colon = "false"))))] a: String) {
-    }
-}
-```
-
-下面的例子校验`i32`类型的参数`a`必须大于10，并且小于100，或者等于0：
-
-```rust
-use async_graphql::*;
-use async_graphql::validators::{IntGreaterThan, IntLessThan, IntEqual};
-
-struct Query;
-
-#[Object]
-impl Query {
-    async fn input(#[graphql(validator(
-        or(
-            and(IntGreaterThan(value = "10"), IntLessThan(value = "100")),
-            IntEqual(value = "0")
-        )))] a: String) {
+    /// name参数的长度必须大于等于5，小于等于10
+    async fn input(#[graphql(validator(min_length = 5, max_length = 10))] name: String) {
     }
 }
 ```
 
 ## 校验列表成员
 
-你可以用`list`操作符表示内部的校验器作用于一个列表内的所有成员:
+你可以打开`list`属性表示校验器作用于一个列表内的所有成员:
 
 ```rust
 use async_graphql::*;
-use async_graphql::validators::{Email};
 
 struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[graphql(validator(list(Email)))] emails: Vec<String>) {
+    async fn input(#[graphql(validator(list, max_length = 10))] names: Vec<String>) {
     }
 }
 ```
@@ -58,25 +45,37 @@ impl Query {
 ## 自定义校验器
 
 ```rust
-struct MustBeZero {}
+struct MyValidator {
+    expect: i32,
+}
 
-impl InputValueValidator for MustBeZero {
-    fn is_valid(&self, value: &Value) -> Result<(), String> {
-        if let Value::Int(n) = value {
-            if n.as_i64().unwrap() != 0 {
-                // 校验失败
-                Err(format!(
-                    "the value is {}, but must be zero",
-                    n.as_i64().unwrap(),
-                ))
-            } else {
-                // 校验通过
-                Ok(())
-            }
-        } else {
-            // 类型不匹配，直接返回None，内置校验器会发现这个错误
+impl MyValidator {
+    pub fn new(n: i32) -> Self {
+        MyValidator { expect: n }
+    }
+}
+
+#[async_trait::async_trait]
+impl CustomValidator<i32> for MyValidator {
+    async fn check(&self, _ctx: &Context<'_>, value: &i32) -> Result<(), String> {
+        if *value == self.expect {
             Ok(())
+        } else {
+            Err(format!("expect 100, actual {}", value))
         }
+    }
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    /// n的值必须等于100
+    async fn value(
+        &self,
+        #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
+    ) -> i32 {
+        n
     }
 }
 ```

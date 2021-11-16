@@ -7,7 +7,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
     registry, Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, SimpleObject, Type, Value,
+    ServerResult, SimpleObject, Value,
 };
 
 /// Federation service
@@ -21,7 +21,71 @@ pub(crate) struct QueryRoot<T> {
     pub(crate) inner: T,
 }
 
-impl<T: Type> Type for QueryRoot<T> {
+#[async_trait::async_trait]
+impl<T: ObjectType> ContainerType for QueryRoot<T> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
+        if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
+            if ctx.item.node.name.node == "__schema" {
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
+                return OutputType::resolve(
+                    &__Schema::new(&ctx.schema_env.registry, &visible_types),
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
+            } else if ctx.item.node.name.node == "__type" {
+                let (_, type_name) = ctx.param_value::<String>("name", None)?;
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
+                return OutputType::resolve(
+                    &ctx.schema_env
+                        .registry
+                        .types
+                        .get(&type_name)
+                        .filter(|_| visible_types.contains(type_name.as_str()))
+                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, &visible_types, ty)),
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
+            }
+        }
+
+        if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
+            if ctx.item.node.name.node == "_entities" {
+                let (_, representations) = ctx.param_value::<Vec<Any>>("representations", None)?;
+                let res = futures_util::future::try_join_all(representations.iter().map(
+                    |item| async move {
+                        self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {
+                            ServerError::new("Entity not found.", Some(ctx.item.pos))
+                        })
+                    },
+                ))
+                .await?;
+                return Ok(Some(Value::List(res)));
+            } else if ctx.item.node.name.node == "_service" {
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                return OutputType::resolve(
+                    &Service {
+                        sdl: Some(ctx.schema_env.registry.export_sdl(true)),
+                    },
+                    &ctx_obj,
+                    ctx.item,
+                )
+                .await
+                .map(Some);
+            }
+        }
+
+        self.inner.resolve_field(ctx).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: ObjectType> OutputType for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -65,7 +129,6 @@ impl<T: Type> Type for QueryRoot<T> {
                                     description: None,
                                     ty: "String!".to_string(),
                                     default_value: None,
-                                    validator: None,
                                     visible: None,
                                     is_secret: false,
                                 },
@@ -87,73 +150,7 @@ impl<T: Type> Type for QueryRoot<T> {
 
         root
     }
-}
 
-#[async_trait::async_trait]
-impl<T: ObjectType> ContainerType for QueryRoot<T> {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
-            if ctx.item.node.name.node == "__schema" {
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &__Schema {
-                        registry: &ctx.schema_env.registry,
-                    },
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
-            } else if ctx.item.node.name.node == "__type" {
-                let type_name: String = ctx.param_value("name", None)?;
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &ctx.schema_env
-                        .registry
-                        .types
-                        .get(&type_name)
-                        .filter(|ty| ty.is_visible(ctx))
-                        .map(|ty| __Type::new_simple(&ctx.schema_env.registry, ty)),
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
-            }
-        }
-
-        if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
-            if ctx.item.node.name.node == "_entities" {
-                let representations: Vec<Any> = ctx.param_value("representations", None)?;
-                let res = futures_util::future::try_join_all(representations.iter().map(
-                    |item| async move {
-                        self.inner.find_entity(ctx, &item.0).await?.ok_or_else(|| {
-                            ServerError::new("Entity not found.", Some(ctx.item.pos))
-                        })
-                    },
-                ))
-                .await?;
-                return Ok(Some(Value::List(res)));
-            } else if ctx.item.node.name.node == "_service" {
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return OutputType::resolve(
-                    &Service {
-                        sdl: Some(ctx.schema_env.registry.export_sdl(true)),
-                    },
-                    &ctx_obj,
-                    ctx.item,
-                )
-                .await
-                .map(Some);
-            }
-        }
-
-        self.inner.resolve_field(ctx).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: ObjectType> OutputType for QueryRoot<T> {
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

@@ -4,10 +4,10 @@ use crate::parser::types::Field;
 use crate::resolver_utils::resolve_list;
 use crate::{
     registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, ServerResult, Type, Value,
+    Positioned, ServerResult, Value,
 };
 
-impl<T: Type, const N: usize> Type for [T; N] {
+impl<T: InputType, const N: usize> InputType for [T; N] {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))
     }
@@ -20,9 +20,7 @@ impl<T: Type, const N: usize> Type for [T; N] {
         T::create_type_info(registry);
         Self::qualified_type_name()
     }
-}
 
-impl<T: InputType, const N: usize> InputType for [T; N] {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         if let Some(Value::List(values)) = value {
             let items: Vec<T> = values
@@ -52,6 +50,19 @@ impl<T: InputType, const N: usize> InputType for [T; N] {
 
 #[async_trait::async_trait]
 impl<T: OutputType, const N: usize> OutputType for [T; N] {
+    fn type_name() -> Cow<'static, str> {
+        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+    }
+
+    fn qualified_type_name() -> String {
+        format!("[{}]!", T::qualified_type_name())
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        T::create_type_info(registry);
+        Self::qualified_type_name()
+    }
+
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,

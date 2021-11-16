@@ -1,6 +1,6 @@
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Field;
-use crate::{ContextSelectionSet, OutputType, Positioned, ServerResult, Type, Value};
+use crate::{ContextSelectionSet, OutputType, Positioned, ServerResult, Value};
 
 /// Resolve an list by executing each of the items concurrently.
 pub async fn resolve_list<'a, T: OutputType + 'a>(

@@ -5,8 +5,6 @@ use crate::{Context, Result};
 /// Field guard
 ///
 /// Guard is a pre-condition for a field that is resolved if `Ok(())` is returned, otherwise an error is returned.
-///
-/// This trait is defined through the [`async-trait`](https://crates.io/crates/async-trait) macro.
 #[async_trait::async_trait]
 pub trait Guard {
     /// Check whether the guard will allow access to the field.

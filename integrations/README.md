@@ -43,5 +43,6 @@ they must all internally use the below functions.
 - **Poem**: Complete integration.
 - **Actix-web**: Complete integration.
 - **Rocket**: Missing websocket support (blocked on [support in Rocket itself](https://github.com/SergioBenitez/Rocket/issues/90)).
-- **Tide**: Complete integration.
 - **Warp**: Complete integration.
+- **Axum**: Complete integration.
+- 

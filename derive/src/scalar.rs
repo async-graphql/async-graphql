@@ -39,13 +39,13 @@ pub fn generate(
         #item_impl
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #generic #crate_name::Type for #self_ty #where_clause {
+        impl #generic #crate_name::InputType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
+                registry.create_input_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
@@ -53,10 +53,7 @@ pub fn generate(
                     specified_by_url: #specified_by_url,
                 })
             }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        impl #generic #crate_name::InputType for #self_ty #where_clause {
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                 <#self_ty as #crate_name::ScalarType>::parse(value.unwrap_or_default())
             }
@@ -69,6 +66,20 @@ pub fn generate(
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputType for #self_ty #where_clause {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                ::std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                registry.create_output_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
+                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                    description: #desc,
+                    is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
+                    visible: #visible,
+                    specified_by_url: #specified_by_url,
+                })
+            }
+
             async fn resolve(
                 &self,
                 _: &#crate_name::ContextSelectionSet<'_>,

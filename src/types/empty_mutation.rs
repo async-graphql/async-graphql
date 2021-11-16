@@ -4,7 +4,7 @@ use crate::parser::types::Field;
 use crate::resolver_utils::ContainerType;
 use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, Type, Value,
+    ServerResult, Value,
 };
 
 /// Empty mutation
@@ -31,26 +31,6 @@ use crate::{
 #[derive(Default, Copy, Clone)]
 pub struct EmptyMutation;
 
-impl Type for EmptyMutation {
-    fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("EmptyMutation")
-    }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|_| registry::MetaType::Object {
-            name: "EmptyMutation".to_string(),
-            description: None,
-            fields: Default::default(),
-            cache_control: Default::default(),
-            extends: false,
-            keys: None,
-            visible: None,
-            is_subscription: false,
-            rust_typename: std::any::type_name::<Self>(),
-        })
-    }
-}
-
 #[async_trait::async_trait]
 impl ContainerType for EmptyMutation {
     fn is_empty() -> bool {
@@ -64,6 +44,24 @@ impl ContainerType for EmptyMutation {
 
 #[async_trait::async_trait]
 impl OutputType for EmptyMutation {
+    fn type_name() -> Cow<'static, str> {
+        Cow::Borrowed("EmptyMutation")
+    }
+
+    fn create_type_info(registry: &mut registry::Registry) -> String {
+        registry.create_output_type::<Self, _>(|_| registry::MetaType::Object {
+            name: "EmptyMutation".to_string(),
+            description: None,
+            fields: Default::default(),
+            cache_control: Default::default(),
+            extends: false,
+            keys: None,
+            visible: None,
+            is_subscription: false,
+            rust_typename: std::any::type_name::<Self>(),
+        })
+    }
+
     async fn resolve(
         &self,
         _ctx: &ContextSelectionSet<'_>,

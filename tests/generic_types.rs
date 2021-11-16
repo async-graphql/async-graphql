@@ -258,7 +258,7 @@ pub async fn test_generic_subscription() {
     }
 
     #[Subscription]
-    impl<T: OutputType + Type> MySubscription<T>
+    impl<T: OutputType> MySubscription<T>
     where
         T: Clone + Send + Sync + Unpin,
     {

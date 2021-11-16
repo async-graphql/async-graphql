@@ -1,10 +1,12 @@
 use darling::ast::{Data, Fields};
-use darling::util::Ignored;
+use darling::util::{Ignored, SpannedValue};
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use inflector::Inflector;
 use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
 };
+
+use crate::validators::Validators;
 
 #[derive(FromMeta, Clone)]
 #[darling(default)]
@@ -115,7 +117,7 @@ impl FromMeta for Deprecation {
     }
 }
 
-#[derive(FromField, Clone)]
+#[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
     pub ident: Option<Ident>,
@@ -140,11 +142,22 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub requires: Option<String>,
     #[darling(default)]
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
+    // for InputObject
+    #[darling(default)]
+    pub default: Option<DefaultValue>,
+    #[darling(default)]
+    pub default_with: Option<LitStr>,
+    #[darling(default)]
+    pub validator: Option<Validators>,
+    #[darling(default)]
+    pub flatten: bool,
+    #[darling(default)]
+    pub secret: bool,
 }
 
 #[derive(FromDeriveInput)]
@@ -158,7 +171,7 @@ pub struct SimpleObject {
     #[darling(default)]
     pub internal: bool,
     #[darling(default)]
-    pub dummy: bool,
+    pub fake: bool,
     #[darling(default)]
     pub complex: bool,
     #[darling(default)]
@@ -177,6 +190,9 @@ pub struct SimpleObject {
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
     pub serial: bool,
+    // for InputObject
+    #[darling(default)]
+    pub input_name: Option<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -186,7 +202,7 @@ pub struct Argument {
     pub desc: Option<String>,
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
     pub secret: bool,
@@ -242,7 +258,7 @@ pub struct ObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
     #[darling(default, multiple)]
@@ -319,8 +335,6 @@ pub struct UnionItem {
 
     #[darling(default)]
     pub flatten: bool,
-    #[darling(default)]
-    pub visible: Option<Visible>,
 }
 
 #[derive(FromField)]
@@ -338,7 +352,7 @@ pub struct InputObjectField {
     #[darling(default)]
     pub default_with: Option<LitStr>,
     #[darling(default)]
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     #[darling(default)]
     pub flatten: bool,
     #[darling(default)]
@@ -361,6 +375,8 @@ pub struct InputObject {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub input_name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
@@ -458,6 +474,7 @@ pub struct Subscription {
     pub rename_args: Option<RenameRule>,
     pub use_type_description: bool,
     pub extends: bool,
+    pub visible: Option<Visible>,
 }
 
 #[derive(FromMeta, Default)]
@@ -467,7 +484,7 @@ pub struct SubscriptionFieldArgument {
     pub desc: Option<String>,
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
-    pub validator: Option<Meta>,
+    pub validator: Option<Validators>,
     pub visible: Option<Visible>,
     pub secret: bool,
 }
@@ -478,7 +495,7 @@ pub struct SubscriptionField {
     pub skip: bool,
     pub name: Option<String>,
     pub deprecation: Deprecation,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
 }
@@ -676,7 +693,7 @@ pub struct ComplexObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
-    pub guard: Option<Meta>,
+    pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
 }

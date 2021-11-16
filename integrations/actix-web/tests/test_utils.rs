@@ -3,7 +3,7 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{
     Context, EmptyMutation, EmptySubscription, Object, ObjectType, Schema, SubscriptionType,
 };
-use async_graphql_actix_web::{Request, Response};
+use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use async_mutex::Mutex;
 
 pub async fn gql_playgound() -> HttpResponse {
@@ -69,16 +69,16 @@ pub async fn gql_handle_schema<
     S: SubscriptionType + 'static,
 >(
     schema: web::Data<Schema<Q, M, S>>,
-    req: Request,
-) -> Response {
+    req: GraphQLRequest,
+) -> GraphQLResponse {
     schema.execute(req.into_inner()).await.into()
 }
 
 pub async fn gql_handle_schema_with_header<T: ObjectType + 'static>(
     schema: actix_web::web::Data<Schema<T, EmptyMutation, EmptySubscription>>,
     req: HttpRequest,
-    gql_request: Request,
-) -> Response {
+    gql_request: GraphQLRequest,
+) -> GraphQLResponse {
     let name = req
         .headers()
         .get("Name")

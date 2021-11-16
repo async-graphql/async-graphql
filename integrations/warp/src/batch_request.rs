@@ -8,7 +8,7 @@ use warp::hyper::header::HeaderName;
 use warp::reply::Response as WarpResponse;
 use warp::{Buf, Filter, Rejection, Reply};
 
-use crate::BadRequest;
+use crate::GraphQLBadRequest;
 
 /// GraphQL batch request filter
 ///
@@ -53,7 +53,7 @@ where
                     opts,
                 )
                 .await
-                .map_err(|e| warp::reject::custom(BadRequest(e)))
+                .map_err(|e| warp::reject::custom(GraphQLBadRequest(e)))
             }))
         .unify()
         .map(move |res| (schema.clone(), res))
@@ -61,15 +61,15 @@ where
 
 /// Reply for `async_graphql::BatchRequest`.
 #[derive(Debug)]
-pub struct BatchResponse(pub async_graphql::BatchResponse);
+pub struct GraphQLBatchResponse(pub async_graphql::BatchResponse);
 
-impl From<async_graphql::BatchResponse> for BatchResponse {
+impl From<async_graphql::BatchResponse> for GraphQLBatchResponse {
     fn from(resp: async_graphql::BatchResponse) -> Self {
-        BatchResponse(resp)
+        GraphQLBatchResponse(resp)
     }
 }
 
-impl Reply for BatchResponse {
+impl Reply for GraphQLBatchResponse {
     fn into_response(self) -> WarpResponse {
         let mut resp = warp::reply::with_header(
             warp::reply::json(&self.0),

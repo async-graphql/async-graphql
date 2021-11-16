@@ -1,8 +1,12 @@
+use std::collections::HashSet;
+
 use crate::model::{__InputValue, __Type};
+use crate::registry::is_visible;
 use crate::{registry, Context, Object};
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
+    pub visible_types: &'a HashSet<&'a str>,
     pub field: &'a registry::MetaField,
 }
 
@@ -23,12 +27,10 @@ impl<'a> __Field<'a> {
         self.field
             .args
             .values()
-            .filter(|input_value| match &input_value.visible {
-                Some(f) => f(ctx),
-                None => true,
-            })
+            .filter(|input_value| is_visible(ctx, &input_value.visible))
             .map(|input_value| __InputValue {
                 registry: self.registry,
+                visible_types: self.visible_types,
                 input_value,
             })
             .collect()
@@ -36,7 +38,7 @@ impl<'a> __Field<'a> {
 
     #[graphql(name = "type")]
     async fn ty(&self) -> __Type<'a> {
-        __Type::new(self.registry, &self.field.ty)
+        __Type::new(self.registry, self.visible_types, &self.field.ty)
     }
 
     #[inline]

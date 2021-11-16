@@ -162,6 +162,7 @@
 
 mod base;
 mod error;
+mod guard;
 mod look_ahead;
 mod model;
 mod request;
@@ -175,10 +176,10 @@ pub mod context;
 #[cfg_attr(docsrs, doc(cfg(feature = "dataloader")))]
 pub mod dataloader;
 pub mod extensions;
-pub mod guard;
 pub mod http;
 pub mod resolver_utils;
 pub mod types;
+#[doc(hidden)]
 pub mod validators;
 
 #[doc(hidden)]
@@ -206,12 +207,13 @@ pub use async_graphql_value::{
 };
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType,
-    Type, UnionType,
+    UnionType,
 };
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
-    ParseRequestError, PathSegment, ResolverError, Result, ResultExt, ServerError, ServerResult,
+    ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
+pub use guard::{Guard, GuardExt};
 pub use look_ahead::Lookahead;
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
@@ -220,6 +222,7 @@ pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use validation::{ValidationMode, ValidationResult, VisitorContext};
+pub use validators::CustomValidator;
 
 pub use context::*;
 #[doc(no_inline)]
@@ -860,8 +863,6 @@ pub use async_graphql_derive::Interface;
 /// | Attribute    | description                              | Type     | Optional |
 /// |--------------|------------------------------------------|----------|----------|
 /// | flatten      | Similar to serde (flatten)               | boolean  | Y        |
-/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 ///
 /// # Define a union
 ///
@@ -935,6 +936,8 @@ pub use async_graphql_derive::Union;
 /// | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
 /// | extends       | Add fields to an entity that's defined in another service | bool | Y |
+/// | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
+/// | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
 /// | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html) | bool | Y |
 ///
 /// # Field parameters

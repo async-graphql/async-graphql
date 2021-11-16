@@ -12,9 +12,9 @@ use warp::Reply;
 /// It's a wrapper of `async_graphql::ParseRequestError`. It is also a `Reply` - by default it just
 /// returns a response containing the error message in plain text.
 #[derive(Debug)]
-pub struct BadRequest(pub ParseRequestError);
+pub struct GraphQLBadRequest(pub ParseRequestError);
 
-impl BadRequest {
+impl GraphQLBadRequest {
     /// Get the appropriate status code of the error.
     #[must_use]
     pub fn status(&self) -> StatusCode {
@@ -25,21 +25,21 @@ impl BadRequest {
     }
 }
 
-impl Display for BadRequest {
+impl Display for GraphQLBadRequest {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl Error for BadRequest {
+impl Error for GraphQLBadRequest {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.0)
     }
 }
 
-impl Reject for BadRequest {}
+impl Reject for GraphQLBadRequest {}
 
-impl Reply for BadRequest {
+impl Reply for GraphQLBadRequest {
     fn into_response(self) -> Response<Body> {
         Response::builder()
             .status(self.status())
@@ -48,13 +48,14 @@ impl Reply for BadRequest {
     }
 }
 
-impl From<ParseRequestError> for BadRequest {
+impl From<ParseRequestError> for GraphQLBadRequest {
     fn from(e: ParseRequestError) -> Self {
         Self(e)
     }
 }
-impl From<BadRequest> for ParseRequestError {
-    fn from(e: BadRequest) -> Self {
+
+impl From<GraphQLBadRequest> for ParseRequestError {
+    fn from(e: GraphQLBadRequest) -> Self {
         e.0
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "2.11.3"
+version = "3.0.0-alpha.2"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "A GraphQL server library implemented in Rust"
@@ -17,7 +17,7 @@ default = []
 apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
 unblock = ["blocking"]
-string_number = ["num-traits"]
+string_number = []
 dataloader = ["futures-timer", "futures-channel", "lru"]
 tracing = ["tracinglib", "tracing-futures"]
 decimal = ["rust_decimal"]
@@ -25,9 +25,9 @@ cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "=2.11.3" }
-async-graphql-value = { path = "value", version = "=2.11.3" }
-async-graphql-parser = { path = "parser", version = "=2.11.3" }
+async-graphql-derive = { path = "derive", version = "=3.0.0-alpha.2" }
+async-graphql-value = { path = "value", version = "=3.0.0-alpha.2" }
+async-graphql-parser = { path = "parser", version = "=3.0.0-alpha.2" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
@@ -46,6 +46,7 @@ multer = "2.0.0"
 tempfile = "3.2.0"
 bytes = { version = "1.0.1", features = ["serde"] }
 mime = "0.3.15"
+num-traits = "0.2.14"
 
 # Feature optional dependencies
 bson = { version = "2.0.0", optional = true, features = ["chrono-0_4"] }
@@ -64,7 +65,6 @@ rust_decimal = { version = "1.14.3", optional = true }
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
 lru = { version = "0.6.5", optional = true }
-num-traits = { version = "0.2.14", optional = true }
 sha2 = { version = "0.9.3", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.13", optional = true }
@@ -86,7 +86,6 @@ members = [
     "integrations/poem",
     "integrations/actix-web",
     "integrations/rocket",
-    "integrations/tide",
     "integrations/warp",
     "integrations/axum",
 ]

@@ -1,4 +1,4 @@
-use crate::{InputType, InputValueError, InputValueResult, Name, Type, Value};
+use crate::{InputType, InputValueError, InputValueResult, Name, Value};
 
 /// A variant of an enum.
 pub struct EnumItem<T> {
@@ -9,7 +9,7 @@ pub struct EnumItem<T> {
 }
 
 /// A GraphQL enum.
-pub trait EnumType: Type + Sized + Eq + Send + Copy + Sized + 'static {
+pub trait EnumType: Sized + Eq + Send + Copy + Sized + 'static {
     /// Get a list of possible variants of the enum and their values.
     fn items() -> &'static [EnumItem<Self>];
 }

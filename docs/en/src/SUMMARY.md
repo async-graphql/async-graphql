@@ -31,7 +31,7 @@
     - [How extensions are working](extensions_inner_working.md)
     - [Available extensions](extensions_available.md)
 - [Integrations](integrations.md)
-    - [Tide](integrations_to_tide.md)
+    - [Poem](integrations_to_poem.md)
     - [Warp](integrations_to_warp.md)
     - [Actix-web](integrations_to_actix_web.md)
 - [Advanced topics](advanced_topics.md)

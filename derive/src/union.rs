@@ -33,13 +33,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
     let mut registry_types = Vec::new();
     let mut possible_types = Vec::new();
-    let mut union_values = Vec::new();
     let mut get_introspection_typename = Vec::new();
     let mut collect_all_fields = Vec::new();
 
     for variant in s {
         let enum_name = &variant.ident;
-        let union_visible = visible_fn(&variant.visible);
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
             Style::Tuple => {
@@ -72,15 +70,6 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             }
 
             enum_names.push(enum_name);
-            union_values.push(quote! {
-                union_values.insert(
-                    <#p as #crate_name::Type>::type_name().into_owned(),
-                    #crate_name::registry::MetaUnionValue {
-                        name: <#p as #crate_name::Type>::type_name().into_owned(),
-                        visible: #union_visible,
-                    }
-                );
-            });
 
             struct RemoveLifetime;
             impl VisitMut for RemoveLifetime {
@@ -119,15 +108,15 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 registry_types.push(quote! {
-                    <#p as #crate_name::Type>::create_type_info(registry);
+                    <#p as #crate_name::OutputType>::create_type_info(registry);
                 });
                 possible_types.push(quote! {
-                    possible_types.insert(<#p as #crate_name::Type>::type_name().into_owned());
+                    possible_types.insert(<#p as #crate_name::OutputType>::type_name().into_owned());
                 });
             } else {
                 possible_types.push(quote! {
                     if let #crate_name::registry::MetaType::Union { possible_types: possible_types2, .. } =
-                        registry.create_dummy_type::<#p>() {
+                        registry.create_fake_output_type::<#p>() {
                         possible_types.extend(possible_types2);
                     }
                 });
@@ -135,11 +124,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::type_name()
+                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
                 });
             } else {
                 get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::Type>::introspection_type_name(obj)
+                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::introspection_type_name(obj)
                 });
             }
 
@@ -164,42 +153,6 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #(#type_into_impls)*
 
         #[allow(clippy::all, clippy::pedantic)]
-        impl #impl_generics #crate_name::Type for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-               ::std::borrow::Cow::Borrowed(#gql_typename)
-            }
-
-            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                match self {
-                    #(#get_introspection_typename),*
-                }
-            }
-
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_type::<Self, _>(|registry| {
-                    #(#registry_types)*
-
-                    #crate_name::registry::MetaType::Union {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
-                        description: #desc,
-                        possible_types: {
-                            let mut possible_types = #crate_name::indexmap::IndexSet::new();
-                            #(#possible_types)*
-                            possible_types
-                        },
-                        union_values: {
-                            let mut union_values = #crate_name::indexmap::IndexMap::new();
-                            #(#union_values)*
-                            union_values
-                        },
-                        visible: #visible,
-                        rust_typename: ::std::any::type_name::<Self>(),
-                    }
-                })
-            }
-        }
-
-        #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
 
         impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
@@ -217,6 +170,34 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #[allow(clippy::all, clippy::pedantic)]
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+               ::std::borrow::Cow::Borrowed(#gql_typename)
+            }
+
+            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                match self {
+                    #(#get_introspection_typename),*
+                }
+            }
+
+            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                registry.create_output_type::<Self, _>(|registry| {
+                    #(#registry_types)*
+
+                    #crate_name::registry::MetaType::Union {
+                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        description: #desc,
+                        possible_types: {
+                            let mut possible_types = #crate_name::indexmap::IndexSet::new();
+                            #(#possible_types)*
+                            possible_types
+                        },
+                        visible: #visible,
+                        rust_typename: ::std::any::type_name::<Self>(),
+                    }
+                })
+            }
+
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self).await
             }

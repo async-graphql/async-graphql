@@ -5,7 +5,7 @@ use std::io::Read;
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
 
-use crate::{registry, Context, InputType, InputValueError, InputValueResult, Type, Value};
+use crate::{registry, Context, InputType, InputValueError, InputValueResult, Value};
 
 /// A file upload value.
 pub struct UploadValue {
@@ -100,13 +100,13 @@ impl Upload {
     }
 }
 
-impl Type for Upload {
+impl InputType for Upload {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("Upload")
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_type::<Self, _>(|_| registry::MetaType::Scalar {
+        registry.create_input_type::<Self, _>(|_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
@@ -114,9 +114,7 @@ impl Type for Upload {
             specified_by_url: Some("https://github.com/jaydenseric/graphql-multipart-request-spec"),
         })
     }
-}
 
-impl InputType for Upload {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         const PREFIX: &str = "#__graphql_file__:";
         let value = value.unwrap_or_default();
