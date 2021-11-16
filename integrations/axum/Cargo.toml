@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-axum"
-version = "3.0.0-alpha.0"
+version = "3.0.0-alpha.1"
 authors = ["sunli <scott_s829@163.com>"]
 edition = "2021"
 description = "async-graphql for axum"
@@ -12,7 +12,7 @@ keywords = ["futures", "async", "graphql", "axum"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "3.0.0-alpha.0" }
+async-graphql = { path = "../..", version = "=3.0.0-alpha.1" }
 
 async-trait = "0.1.51"
 axum = { version = "0.3.2", features = ["ws", "headers"] }
