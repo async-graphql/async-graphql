@@ -266,15 +266,20 @@ pub async fn test_custom_validator() {
         }
     }
 
-    #[async_trait::async_trait]
     impl CustomValidator<i32> for MyValidator {
-        async fn check(&self, _ctx: &Context<'_>, value: &i32) -> Result<(), String> {
+        fn check(&self, value: &i32) -> Result<(), String> {
             if *value == self.expect {
                 Ok(())
             } else {
                 Err(format!("expect 100, actual {}", value))
             }
         }
+    }
+
+    #[derive(InputObject)]
+    struct MyInput {
+        #[graphql(validator(custom = "MyValidator::new(100)"))]
+        n: i32,
     }
 
     struct Query;
@@ -286,6 +291,22 @@ pub async fn test_custom_validator() {
             #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
         ) -> i32 {
             n
+        }
+
+        async fn input(&self, input: MyInput) -> i32 {
+            input.n
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn value(
+            &self,
+            #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
+        ) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(vec![n])
         }
     }
 
@@ -314,6 +335,35 @@ pub async fn test_custom_validator() {
                 column: 12
             }],
             path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ input(input: {n: 100} ) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "input": 100 })
+    );
+    assert_eq!(
+        schema
+            .execute("{ input(input: {n: 11} ) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message:
+                r#"Failed to parse "Int": expect 100, actual 11 (occurred while parsing "MyInput")"#
+                    .to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 16
+            }],
+            path: vec![PathSegment::Field("input".to_string())],
             extensions: None
         }]
     );

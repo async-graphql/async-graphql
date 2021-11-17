@@ -138,7 +138,7 @@ impl Validators {
             let expr: Expr =
                 syn::parse_str(s).map_err(|err| Error::new(s.span(), err.to_string()))?;
             codes.push(quote! {
-                #crate_name::CustomValidator::check(&(#expr), &ctx, #value).await
+                #crate_name::CustomValidator::check(&(#expr), #value)
                     .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg))
             });
         }
