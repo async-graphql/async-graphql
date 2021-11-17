@@ -51,6 +51,12 @@ pub struct Validators {
     chars_min_length: Option<usize>,
     #[darling(default)]
     email: bool,
+    #[darling(default)]
+    url: bool,
+    #[darling(default)]
+    ip: bool,
+    #[darling(default)]
+    regex: Option<String>,
     #[darling(default, multiple)]
     custom: Vec<SpannedValue<String>>,
     #[darling(default)]
@@ -131,6 +137,24 @@ impl Validators {
         if self.email {
             codes.push(quote! {
                 #crate_name::validators::email(#value)
+            });
+        }
+
+        if self.url {
+            codes.push(quote! {
+                #crate_name::validators::url(#value)
+            });
+        }
+
+        if self.ip {
+            codes.push(quote! {
+                #crate_name::validators::ip(#value)
+            });
+        }
+
+        if let Some(re) = &self.regex {
+            codes.push(quote! {
+                #crate_name::validators::regex(#value, #re)
             });
         }
 

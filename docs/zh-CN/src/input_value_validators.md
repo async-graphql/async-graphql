@@ -12,6 +12,9 @@
 - **chars_max_length=N** 字符串中unicode字符的的数量不能小于`N`
 - **chars_min_length=N** 字符串中unicode字符的的数量不能大于`N`
 - **email** 有效的email
+- **url** 有效的url
+- **ip** 有效的ip地址
+- **regex=RE** 匹配正则表达式
 
 ```rust
 use async_graphql::*;

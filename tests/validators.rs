@@ -54,6 +54,18 @@ pub async fn test_all_validator() {
             todo!()
         }
 
+        async fn url(&self, #[graphql(validator(url))] n: String) -> i32 {
+            todo!()
+        }
+
+        async fn ip(&self, #[graphql(validator(ip))] n: String) -> i32 {
+            todo!()
+        }
+
+        async fn regex(&self, #[graphql(validator(regex = "^[0-9]+$"))] n: String) -> i32 {
+            todo!()
+        }
+
         async fn list_email(&self, #[graphql(validator(list, email))] n: Vec<String>) -> i32 {
             todo!()
         }
@@ -310,7 +322,7 @@ pub async fn test_custom_validator() {
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
     assert_eq!(
         schema
             .execute("{ value(n: 100) }")
@@ -364,6 +376,38 @@ pub async fn test_custom_validator() {
                 column: 16
             }],
             path: vec![PathSegment::Field("input".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute_stream("subscription { value(n: 100 ) }")
+            .next()
+            .await
+            .unwrap()
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 100 })
+    );
+
+    assert_eq!(
+        schema
+            .execute_stream("subscription { value(n: 11 ) }")
+            .next()
+            .await
+            .unwrap()
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": expect 100, actual 11"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 25
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
             extensions: None
         }]
     );

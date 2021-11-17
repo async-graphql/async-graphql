@@ -10,7 +10,7 @@ pub fn email<T: AsRef<str> + InputType>(value: &T) -> Result<(), InputValueError
     if EMAIL_RE.is_match(value.as_ref()) {
         Ok(())
     } else {
-        Err("invalid email format".into())
+        Err("invalid email".into())
     }
 }
 
