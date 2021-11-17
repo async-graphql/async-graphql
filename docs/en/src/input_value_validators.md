@@ -12,6 +12,9 @@
 - **chars_max_length=N** the count of the unicode chars cannot be greater than `N`.
 - **chars_min_length=N** the count of the unicode chars cannot be less than `N`.
 - **email** is valid email.
+- **url** is valid url.
+- **ip** is valid ip address.
+- **regex=RE** is match for the regex.
 
 ```rust
 use async_graphql::*;

@@ -1,6 +1,7 @@
 mod chars_max_length;
 mod chars_min_length;
 mod email;
+mod ip;
 mod max_items;
 mod max_length;
 mod maximum;
@@ -8,10 +9,15 @@ mod min_items;
 mod min_length;
 mod minimum;
 mod multiple_of;
+mod regex;
+mod url;
 
+pub use self::regex::regex;
+pub use self::url::url;
 pub use chars_max_length::chars_max_length;
 pub use chars_min_length::chars_min_length;
 pub use email::email;
+pub use ip::ip;
 pub use max_items::max_items;
 pub use max_length::max_length;
 pub use maximum::maximum;
