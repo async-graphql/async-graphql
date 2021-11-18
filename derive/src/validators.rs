@@ -72,111 +72,110 @@ impl Validators {
         map_err: Option<TokenStream>,
     ) -> Result<TokenStream> {
         let mut codes = Vec::new();
-        let mut value = value;
-        let mut container = None;
-
-        if self.list {
-            container = Some(quote!(#value));
-            value = quote!(__item);
-        }
 
         if let Some(n) = &self.multiple_of {
             codes.push(quote! {
-                #crate_name::validators::multiple_of(#value, #n)
+                #crate_name::validators::multiple_of(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.maximum {
             codes.push(quote! {
-                #crate_name::validators::maximum(#value, #n)
+                #crate_name::validators::maximum(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.minimum {
             codes.push(quote! {
-                #crate_name::validators::minimum(#value, #n)
+                #crate_name::validators::minimum(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.max_length {
             codes.push(quote! {
-                #crate_name::validators::max_length(#value, #n)
+                #crate_name::validators::max_length(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.min_length {
             codes.push(quote! {
-                #crate_name::validators::min_length(#value, #n)
+                #crate_name::validators::min_length(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.max_items {
             codes.push(quote! {
-                #crate_name::validators::max_items(#value, #n)
+                #crate_name::validators::max_items(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.min_items {
             codes.push(quote! {
-                #crate_name::validators::min_items(#value, #n)
+                #crate_name::validators::min_items(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.chars_max_length {
             codes.push(quote! {
-                #crate_name::validators::chars_max_length(#value, #n)
+                #crate_name::validators::chars_max_length(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.chars_min_length {
             codes.push(quote! {
-                #crate_name::validators::chars_min_length(#value, #n)
+                #crate_name::validators::chars_min_length(__raw_value, #n)
             });
         }
 
         if self.email {
             codes.push(quote! {
-                #crate_name::validators::email(#value)
+                #crate_name::validators::email(__raw_value)
             });
         }
 
         if self.url {
             codes.push(quote! {
-                #crate_name::validators::url(#value)
+                #crate_name::validators::url(__raw_value)
             });
         }
 
         if self.ip {
             codes.push(quote! {
-                #crate_name::validators::ip(#value)
+                #crate_name::validators::ip(__raw_value)
             });
         }
 
         if let Some(re) = &self.regex {
             codes.push(quote! {
-                #crate_name::validators::regex(#value, #re)
+                #crate_name::validators::regex(__raw_value, #re)
             });
         }
 
         for s in &self.custom {
-            let expr: Expr =
+            let __create_custom_validator: Expr =
                 syn::parse_str(s).map_err(|err| Error::new(s.span(), err.to_string()))?;
             codes.push(quote! {
-                #crate_name::CustomValidator::check(&(#expr), #value)
+                #crate_name::CustomValidator::check(&(#__create_custom_validator), __raw_value)
                     .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg))
             });
         }
 
         let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
 
-        if let Some(container) = container {
+        if self.list {
             Ok(quote! {
-                for __item in #container {
-                    #(#codes;)*
+                for __item in #value {
+                    if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
+                        #(#codes;)*
+                    }
                 }
             })
         } else {
-            Ok(quote!(#(#codes;)*))
+            Ok(quote! {
+                if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
+                    #(#codes;)*
+                }
+            })
         }
     }
 }

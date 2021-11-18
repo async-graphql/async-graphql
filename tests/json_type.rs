@@ -22,12 +22,12 @@ pub async fn test_json_scalar() {
             Json(MyData(items))
         }
 
-        async fn data_output(&self) -> OutputJson<&MyDataOutput> {
-            OutputJson(&self.data)
+        async fn data_output(&self) -> Json<&MyDataOutput> {
+            Json(&self.data)
         }
 
-        async fn data_output_clone(&self) -> OutputJson<MyDataOutput> {
-            OutputJson(self.data.clone())
+        async fn data_output_clone(&self) -> Json<MyDataOutput> {
+            Json(self.data.clone())
         }
     }
 

@@ -147,6 +147,8 @@ macro_rules! scalar_internal {
         }
 
         impl $crate::InputType for $ty {
+            type RawValueType = Self;
+
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
             }
@@ -171,6 +173,10 @@ macro_rules! scalar_internal {
 
             fn to_value(&self) -> $crate::Value {
                 <$ty as $crate::ScalarType>::to_value(self)
+            }
+
+            fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                ::std::option::Option::Some(self)
             }
         }
 

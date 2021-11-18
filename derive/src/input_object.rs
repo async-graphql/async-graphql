@@ -206,6 +206,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
             impl #crate_name::InputType for #ident {
+                type RawValueType = Self;
+
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                     ::std::borrow::Cow::Borrowed(#gql_typename)
                 }
@@ -241,6 +243,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
                 fn federation_fields() -> ::std::option::Option<::std::string::String> {
                     #get_federation_fields
+                }
+
+                fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                    ::std::option::Option::Some(self)
                 }
             }
 
@@ -295,6 +301,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #crate_name::InputType for #concrete_type {
+                    type RawValueType = Self;
+
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -313,6 +321,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
                     fn federation_fields() -> ::std::option::Option<::std::string::String> {
                         Self::__internal_federation_fields()
+                    }
+
+                    fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                        ::std::option::Option::Some(self)
                     }
                 }
 

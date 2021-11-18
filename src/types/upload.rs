@@ -101,6 +101,8 @@ impl Upload {
 }
 
 impl InputType for Upload {
+    type RawValueType = Self;
+
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("Upload")
     }
@@ -128,5 +130,9 @@ impl InputType for Upload {
 
     fn to_value(&self) -> Value {
         Value::Null
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        Some(self)
     }
 }

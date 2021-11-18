@@ -82,6 +82,8 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #impl_generics #crate_name::InputType for #ident #ty_generics #where_clause {
+            type RawValueType = #inner_ty;
+
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #type_name
             }
@@ -96,6 +98,10 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
 
             fn to_value(&self) -> #crate_name::Value {
                 <#ident as #crate_name::ScalarType>::to_value(self)
+            }
+
+            fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                self.0.as_raw_value()
             }
         }
 

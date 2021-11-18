@@ -7,6 +7,8 @@ use crate::{
 };
 
 impl<T: InputType> InputType for Option<T> {
+    type RawValueType = T::RawValueType;
+
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -33,6 +35,13 @@ impl<T: InputType> InputType for Option<T> {
         match self {
             Some(value) => value.to_value(),
             None => Value::Null,
+        }
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        match self {
+            Some(value) => value.as_raw_value(),
+            None => None,
         }
     }
 }
