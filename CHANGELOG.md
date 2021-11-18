@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Remove skipped fields from the document before executing the query.
+- Add `isRepeatable` field to `__Directive` - [GraphQL - October 2021]
 
 ## [3.0.4] 2021-11-18
 
