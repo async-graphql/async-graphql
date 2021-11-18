@@ -7,12 +7,14 @@ use async_graphql::futures_util::task::{Context, Poll};
 use async_graphql::http::{WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
 use axum::body::{box_body, BoxBody, HttpBody};
-use axum::extract::ws::{CloseFrame, Message, WebSocket};
+use axum::extract::ws::{CloseFrame, Message};
 use axum::extract::{FromRequest, RequestParts, WebSocketUpgrade};
 use axum::http::{self, Request, Response, StatusCode};
 use axum::response::IntoResponse;
+use axum::Error;
 use futures_util::future::{BoxFuture, Ready};
-use futures_util::{future, SinkExt, StreamExt};
+use futures_util::stream::{SplitSink, SplitStream};
+use futures_util::{future, Sink, SinkExt, Stream, StreamExt};
 use tower_service::Service;
 
 /// A GraphQL protocol extractor.
@@ -116,30 +118,61 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
 }
 
 /// A Websocket connection for GraphQL subscription.
-pub struct GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit> {
+pub struct GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, OnConnInit> {
+    sink: Sink,
+    stream: Stream,
     schema: Schema<Query, Mutation, Subscription>,
-    stream: WebSocket,
     data: Data,
     on_connection_init: OnConnInit,
     protocol: GraphQLProtocol,
 }
 
-impl<Query, Mutation, Subscription>
-    GraphQLWebSocket<Query, Mutation, Subscription, DefaultOnConnInitType>
+impl<S, Query, Mutation, Subscription>
+    GraphQLWebSocket<
+        SplitSink<S, Message>,
+        SplitStream<S>,
+        Query,
+        Mutation,
+        Subscription,
+        DefaultOnConnInitType,
+    >
 where
+    S: Stream<Item = Result<Message, Error>> + Sink<Message>,
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
     /// Create a [`GraphQLWebSocket`] object.
     pub fn new(
-        stream: WebSocket,
+        stream: S,
+        schema: Schema<Query, Mutation, Subscription>,
+        protocol: GraphQLProtocol,
+    ) -> Self {
+        let (sink, stream) = stream.split();
+        GraphQLWebSocket::new_with_pair(sink, stream, schema, protocol)
+    }
+}
+
+impl<Sink, Stream, Query, Mutation, Subscription>
+    GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, DefaultOnConnInitType>
+where
+    Sink: futures_util::sink::Sink<Message>,
+    Stream: futures_util::stream::Stream<Item = Result<Message, Error>>,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+{
+    /// Create a [`GraphQLWebSocket`] object with sink and stream objects.
+    pub fn new_with_pair(
+        sink: Sink,
+        stream: Stream,
         schema: Schema<Query, Mutation, Subscription>,
         protocol: GraphQLProtocol,
     ) -> Self {
         GraphQLWebSocket {
-            schema,
+            sink,
             stream,
+            schema,
             data: Data::default(),
             on_connection_init: default_on_connection_init,
             protocol,
@@ -147,9 +180,11 @@ where
     }
 }
 
-impl<Query, Mutation, Subscription, OnConnInit, OnConnInitFut>
-    GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit>
+impl<Sink, Stream, Query, Mutation, Subscription, OnConnInit, OnConnInitFut>
+    GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, OnConnInit>
 where
+    Sink: futures_util::sink::Sink<Message>,
+    Stream: futures_util::stream::Stream<Item = Result<Message, Error>>,
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
@@ -169,14 +204,15 @@ where
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,
-    ) -> GraphQLWebSocket<Query, Mutation, Subscription, OnConnInit2>
+    ) -> GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, OnConnInit2>
     where
         OnConnInit2: Fn(serde_json::Value) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLWebSocket {
-            schema: self.schema,
+            sink: self.sink,
             stream: self.stream,
+            schema: self.schema,
             data: self.data,
             on_connection_init: callback,
             protocol: self.protocol,
@@ -185,9 +221,8 @@ where
 
     /// Processing subscription requests.
     pub async fn serve(self) {
-        let (mut sink, stream) = self.stream.split();
-
-        let input = stream
+        let input = self
+            .stream
             .take_while(|res| future::ready(res.is_ok()))
             .map(Result::unwrap)
             .filter_map(|msg| {
@@ -199,7 +234,7 @@ where
             })
             .map(Message::into_data);
 
-        let mut stream =
+        let stream =
             async_graphql::http::WebSocket::new(self.schema.clone(), input, self.protocol.0)
                 .connection_data(self.data)
                 .on_connection_init(self.on_connection_init)
@@ -210,6 +245,9 @@ where
                         reason: Cow::from(status),
                     })),
                 });
+
+        let sink = self.sink;
+        futures_util::pin_mut!(stream, sink);
 
         while let Some(item) = stream.next().await {
             let _ = sink.send(item).await;
