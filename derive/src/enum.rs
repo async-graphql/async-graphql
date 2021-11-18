@@ -148,6 +148,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::InputType for #ident {
+            type RawValueType = Self;
+
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 Self::__type_name()
             }
@@ -162,6 +164,10 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
             fn to_value(&self) -> #crate_name::Value {
                 #crate_name::resolver_utils::enum_value(*self)
+            }
+
+            fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                ::std::option::Option::Some(self)
             }
         }
 

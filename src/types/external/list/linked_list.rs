@@ -9,6 +9,8 @@ use crate::{
 };
 
 impl<T: InputType> InputType for LinkedList<T> {
+    type RawValueType = Self;
+
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))
     }
@@ -40,6 +42,10 @@ impl<T: InputType> InputType for LinkedList<T> {
 
     fn to_value(&self) -> Value {
         Value::List(self.iter().map(InputType::to_value).collect())
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        Some(self)
     }
 }
 

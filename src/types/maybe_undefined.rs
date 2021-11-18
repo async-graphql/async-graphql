@@ -175,6 +175,8 @@ impl<T> MaybeUndefined<T> {
 }
 
 impl<T: InputType> InputType for MaybeUndefined<T> {
+    type RawValueType = T::RawValueType;
+
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -202,6 +204,14 @@ impl<T: InputType> InputType for MaybeUndefined<T> {
         match self {
             MaybeUndefined::Value(value) => value.to_value(),
             _ => Value::Null,
+        }
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        if let MaybeUndefined::Value(value) = self {
+            value.as_raw_value()
+        } else {
+            None
         }
     }
 }

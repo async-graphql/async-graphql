@@ -1,5 +1,6 @@
 use async_graphql::*;
 use futures_util::{Stream, StreamExt};
+use std::sync::Arc;
 
 #[tokio::test]
 pub async fn test_all_validator() {
@@ -120,6 +121,8 @@ pub async fn test_validator_on_input_object_field() {
     struct MyInput {
         #[graphql(validator(maximum = 10))]
         a: i32,
+        #[graphql(validator(maximum = 10))]
+        b: Option<i32>,
     }
 
     struct Query;
@@ -127,7 +130,7 @@ pub async fn test_validator_on_input_object_field() {
     #[Object]
     impl Query {
         async fn value(&self, input: MyInput) -> i32 {
-            input.a
+            input.a + input.b.unwrap_or_default()
         }
     }
 
@@ -142,6 +145,17 @@ pub async fn test_validator_on_input_object_field() {
         value!({ "value": 5 })
     );
 
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value(input: {a: 5, b: 7}) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 12 })
+    );
+
     assert_eq!(
         schema
             .execute("{ value(input: {a: 11}) }")
@@ -150,6 +164,25 @@ pub async fn test_validator_on_input_object_field() {
             .unwrap_err(),
         vec![ServerError {
             message: r#"Failed to parse "Int": the value is 11, must be less than or equal to 10 (occurred while parsing "MyInput")"#
+                .to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 16
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value(input: {a: 5, b: 20}) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": the value is 20, must be less than or equal to 10 (occurred while parsing "MyInput")"#
                 .to_string(),
             source: None,
             locations: vec![Pos {
@@ -450,6 +483,124 @@ pub async fn test_list_validator() {
                 column: 12
             }],
             path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_validate_wrapper_types() {
+    #[derive(NewType)]
+    struct Size(i32);
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn a(&self, #[graphql(validator(maximum = 10))] n: Option<i32>) -> i32 {
+            n.unwrap_or_default()
+        }
+
+        async fn b(&self, #[graphql(validator(maximum = 10))] n: Option<Option<i32>>) -> i32 {
+            n.unwrap_or_default().unwrap_or_default()
+        }
+
+        async fn c(&self, #[graphql(validator(maximum = 10))] n: MaybeUndefined<i32>) -> i32 {
+            n.take().unwrap_or_default()
+        }
+
+        async fn d(&self, #[graphql(validator(maximum = 10))] n: Box<i32>) -> i32 {
+            *n
+        }
+
+        async fn e(&self, #[graphql(validator(maximum = 10))] n: Arc<i32>) -> i32 {
+            *n
+        }
+
+        async fn f(&self, #[graphql(validator(maximum = 10))] n: Json<i32>) -> i32 {
+            n.0
+        }
+
+        async fn g(&self, #[graphql(validator(maximum = 10))] n: Option<Json<i32>>) -> i32 {
+            n.map(|n| n.0).unwrap_or_default()
+        }
+
+        async fn h(&self, #[graphql(validator(maximum = 10))] n: Size) -> i32 {
+            n.0
+        }
+
+        async fn i(&self, #[graphql(validator(list, maximum = 10))] n: Vec<i32>) -> i32 {
+            n.into_iter().sum()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let successes = [
+        ("{ a(n: 5) }", value!({ "a": 5 })),
+        ("{ a }", value!({ "a": 0 })),
+        ("{ b(n: 5) }", value!({ "b": 5 })),
+        ("{ b }", value!({ "b": 0 })),
+        ("{ c(n: 5) }", value!({ "c": 5 })),
+        ("{ c(n: null) }", value!({ "c": 0 })),
+        ("{ c }", value!({ "c": 0 })),
+        ("{ d(n: 5) }", value!({ "d": 5 })),
+        ("{ e(n: 5) }", value!({ "e": 5 })),
+        ("{ f(n: 5) }", value!({ "f": 5 })),
+        ("{ g(n: 5) }", value!({ "g": 5 })),
+        ("{ g }", value!({ "g": 0 })),
+        ("{ h(n: 5) }", value!({ "h": 5 })),
+        ("{ i(n: [1, 2, 3]) }", value!({ "i": 6 })),
+    ];
+
+    for (query, res) in successes {
+        assert_eq!(schema.execute(query).await.into_result().unwrap().data, res);
+    }
+
+    assert_eq!(
+        schema
+            .execute("{ a(n:20) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": the value is 20, must be less than or equal to 10"#
+                .to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 7 }],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ b(n:20) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": the value is 20, must be less than or equal to 10"#
+                .to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 7 }],
+            path: vec![PathSegment::Field("b".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ f(n:20) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": the value is 20, must be less than or equal to 10"#
+                .to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 7 }],
+            path: vec![PathSegment::Field("f".to_string())],
             extensions: None
         }]
     );

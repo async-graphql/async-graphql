@@ -17,6 +17,16 @@ pub trait Description {
 
 /// Represents a GraphQL input type.
 pub trait InputType: Send + Sync + Sized {
+    /// The raw type used for validator.
+    ///
+    /// Usually it is `Self`, but the wrapper type is its internal type.
+    ///
+    /// For example:
+    ///
+    /// `i32::RawValueType` is `i32`
+    /// `Option<i32>::RawValueType` is `i32`.
+    type RawValueType;
+
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
 
@@ -39,6 +49,9 @@ pub trait InputType: Send + Sync + Sized {
     fn federation_fields() -> Option<String> {
         None
     }
+
+    /// Returns a reference to the raw value.
+    fn as_raw_value(&self) -> Option<&Self::RawValueType>;
 }
 
 /// Represents a GraphQL output type.
@@ -151,6 +164,8 @@ impl<T: OutputType + ?Sized> OutputType for Box<T> {
 
 #[async_trait::async_trait]
 impl<T: InputType> InputType for Box<T> {
+    type RawValueType = T::RawValueType;
+
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -167,6 +182,10 @@ impl<T: InputType> InputType for Box<T> {
 
     fn to_value(&self) -> ConstValue {
         T::to_value(&self)
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        self.as_ref().as_raw_value()
     }
 }
 
@@ -191,6 +210,8 @@ impl<T: OutputType + ?Sized> OutputType for Arc<T> {
 }
 
 impl<T: InputType> InputType for Arc<T> {
+    type RawValueType = T::RawValueType;
+
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -207,6 +228,10 @@ impl<T: InputType> InputType for Arc<T> {
 
     fn to_value(&self) -> ConstValue {
         T::to_value(&self)
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        self.as_ref().as_raw_value()
     }
 }
 

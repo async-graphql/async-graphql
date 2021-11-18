@@ -40,6 +40,8 @@ pub fn generate(
 
         #[allow(clippy::all, clippy::pedantic)]
         impl #generic #crate_name::InputType for #self_ty #where_clause {
+            type RawValueType = Self;
+
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed(#gql_typename)
             }
@@ -60,6 +62,10 @@ pub fn generate(
 
             fn to_value(&self) -> #crate_name::Value {
                 <#self_ty as #crate_name::ScalarType>::to_value(self)
+            }
+
+            fn as_raw_value(&self) -> ::std::option::Option<&Self::RawValueType> {
+                ::std::option::Option::Some(self)
             }
         }
 
