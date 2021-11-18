@@ -71,6 +71,7 @@ pub fn check_rules(
                 .with(rules::PossibleFragmentSpreads::default())
                 .with(rules::ProvidedNonNullArguments)
                 .with(rules::KnownDirectives::default())
+                .with(rules::DirectivesUnique::default())
                 .with(rules::OverlappingFieldsCanBeMerged)
                 .with(rules::UploadFile)
                 .with(visitors::CacheControlCalculate {

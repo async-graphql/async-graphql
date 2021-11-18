@@ -287,7 +287,8 @@ where
                     is_secret: false,
                 });
                 args
-            }
+            },
+            is_repeatable: false,
         });
 
         registry.add_directive(MetaDirective {
@@ -309,7 +310,8 @@ where
                     is_secret: false,
                 });
                 args
-            }
+            },
+            is_repeatable: false,
         });
 
         // register scalars

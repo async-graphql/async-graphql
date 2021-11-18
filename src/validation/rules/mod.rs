@@ -1,5 +1,6 @@
 mod arguments_of_correct_type;
 mod default_values_of_correct_type;
+mod directives_unique;
 mod fields_on_correct_type;
 mod fragments_on_composite_types;
 mod known_argument_names;
@@ -22,6 +23,7 @@ mod variables_in_allowed_position;
 
 pub use arguments_of_correct_type::ArgumentsOfCorrectType;
 pub use default_values_of_correct_type::DefaultValuesOfCorrectType;
+pub use directives_unique::DirectivesUnique;
 pub use fields_on_correct_type::FieldsOnCorrectType;
 pub use fragments_on_composite_types::FragmentsOnCompositeTypes;
 pub use known_argument_names::KnownArgumentNames;

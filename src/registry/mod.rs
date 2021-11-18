@@ -349,6 +349,7 @@ pub struct MetaDirective {
     pub description: Option<&'static str>,
     pub locations: Vec<model::__DirectiveLocation>,
     pub args: IndexMap<&'static str, MetaInputValue>,
+    pub is_repeatable: bool,
 }
 
 #[derive(Default)]
