@@ -43,9 +43,6 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     streams: &mut Vec<BoxFieldStream<'a>>,
 ) -> ServerResult<()> {
     for selection in &ctx.item.node.items {
-        if ctx.is_skip(selection.node.directives())? {
-            continue;
-        }
         match &selection.node {
             Selection::Field(field) => streams.push(Box::pin({
                 let ctx = ctx.clone();
