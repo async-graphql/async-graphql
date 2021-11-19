@@ -104,8 +104,6 @@ cd examples && cargo run --bin [name]
 * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 * Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 
-**About actix-web-v4**: The beta version is supported in the branch `actix-web-beta` [Related Issue](https://github.com/async-graphql/async-graphql/issues/590)
-
 ## Who's using Async-graphql in production?
 
 - [Vector](https://vector.dev/)

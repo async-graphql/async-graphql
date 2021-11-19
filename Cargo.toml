@@ -88,4 +88,5 @@ members = [
     "integrations/rocket",
     "integrations/warp",
     "integrations/axum",
+    "integrations/tide",
 ]
