@@ -76,3 +76,54 @@ pub async fn test_directive_include() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_custom_directive() {
+    struct Concat {
+        prefix: String,
+        suffix: String,
+    }
+
+    #[async_trait::async_trait]
+    impl CustomDirective for Concat {
+        async fn resolve_field(
+            &self,
+            _ctx: &Context<'_>,
+            resolve: ResolveFut<'_>,
+        ) -> ServerResult<Option<Value>> {
+            resolve.await.map(|value| {
+                value.map(|value| match value {
+                    Value::String(str) => Value::String(self.prefix.clone() + &str + &self.suffix),
+                    _ => value,
+                })
+            })
+        }
+    }
+
+    #[Directive(location = "field")]
+    fn concat(prefix: String, suffix: String) -> impl CustomDirective {
+        Concat { prefix, suffix }
+    }
+
+    struct QueryRoot;
+
+    #[Object]
+    impl QueryRoot {
+        pub async fn value(&self) -> &'static str {
+            "abc"
+        }
+    }
+
+    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+        .directive(concat)
+        .finish();
+    assert_eq!(
+        schema
+            .execute(r#"{ value @concat(prefix: "&", suffix: "*") }"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": "&abc*" })
+    );
+}

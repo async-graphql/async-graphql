@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -6,6 +7,7 @@ use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
 use crate::context::{Data, QueryEnvInner};
+use crate::custom_directive::CustomDirectiveFactory;
 use crate::extensions::{ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
 use crate::parser::types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet};
@@ -31,6 +33,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     complexity: Option<usize>,
     depth: Option<usize>,
     extensions: Vec<Box<dyn ExtensionFactory>>,
+    custom_directives: HashMap<&'static str, Box<dyn CustomDirectiveFactory>>,
 }
 
 impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription> {
@@ -131,6 +134,27 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Register a custom directive.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the directive with the same name is already registered.
+    pub fn directive<T: CustomDirectiveFactory>(mut self, directive: T) -> Self {
+        let name = directive.name();
+        let instance = Box::new(directive);
+
+        instance.register(&mut self.registry);
+
+        if name == "skip"
+            || name == "include"
+            || self.custom_directives.insert(name, instance).is_some()
+        {
+            panic!("Directive `{}` already exists", name);
+        }
+
+        self
+    }
+
     /// Build schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
@@ -149,6 +173,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
             env: SchemaEnv(Arc::new(SchemaEnvInner {
                 registry: self.registry,
                 data: self.data,
+                custom_directives: self.custom_directives,
             })),
         }))
     }
@@ -158,6 +183,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 pub struct SchemaEnvInner {
     pub registry: Registry,
     pub data: Data,
+    pub custom_directives: HashMap<&'static str, Box<dyn CustomDirectiveFactory>>,
 }
 
 #[doc(hidden)]
@@ -244,6 +270,7 @@ where
             complexity: None,
             depth: None,
             extensions: Default::default(),
+            custom_directives: Default::default(),
         }
     }
 
@@ -289,6 +316,7 @@ where
                 args
             },
             is_repeatable: false,
+            visible: None,
         });
 
         registry.add_directive(MetaDirective {
@@ -312,6 +340,7 @@ where
                 args
             },
             is_repeatable: false,
+            visible: None,
         });
 
         // register scalars

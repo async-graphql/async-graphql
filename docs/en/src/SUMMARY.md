@@ -37,4 +37,5 @@
 - [Advanced topics](advanced_topics.md)
     - [Custom scalars](custom_scalars.md)
     - [Optimizing N+1 queries](dataloader.md)
+    - [Custom directive](custom_directive.md)
     - [Apollo Federation](apollo_federation.md)

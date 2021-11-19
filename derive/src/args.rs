@@ -1,3 +1,5 @@
+use std::fmt::{self, Display, Formatter};
+
 use darling::ast::{Data, Fields};
 use darling::util::{Ignored, SpannedValue};
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
@@ -696,4 +698,30 @@ pub struct ComplexObjectField {
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct Directive {
+    pub internal: bool,
+    pub name: Option<String>,
+    pub visible: Option<Visible>,
+    pub repeatable: bool,
+    pub rename_args: Option<RenameRule>,
+    #[darling(multiple, rename = "location")]
+    pub locations: Vec<DirectiveLocation>,
+}
+
+#[derive(Debug, Copy, Clone, FromMeta)]
+#[darling(rename_all = "lowercase")]
+pub enum DirectiveLocation {
+    Field,
+}
+
+impl Display for DirectiveLocation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DirectiveLocation::Field => write!(f, "FIELD"),
+        }
+    }
 }

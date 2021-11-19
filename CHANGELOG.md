@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.6] 2021-11-19
+
+- Custom directives. [Book](https://async-graphql.github.io/async-graphql/en/custom_directive.html)
+
 ## [3.0.5] 2021-11-19
 
 - Remove skipped fields from the document before executing the query.

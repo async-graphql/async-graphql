@@ -261,6 +261,30 @@ pub async fn test_visible_fn() {
 
 #[tokio::test]
 pub async fn test_indirect_hiding_type() {
+    #[derive(Enum, Eq, PartialEq, Copy, Clone)]
+    enum MyEnum1 {
+        A,
+    }
+
+    #[derive(Enum, Eq, PartialEq, Copy, Clone)]
+    enum MyEnum2 {
+        A,
+    }
+
+    struct MyDirective;
+
+    impl CustomDirective for MyDirective {}
+
+    #[Directive(location = "field")]
+    fn my_directive1(_a: MyEnum1) -> impl CustomDirective {
+        MyDirective
+    }
+
+    #[Directive(location = "field", visible = false)]
+    fn my_directive2(_a: MyEnum2) -> impl CustomDirective {
+        MyDirective
+    }
+
     #[derive(SimpleObject)]
     struct MyObj1 {
         a: i32,
@@ -380,7 +404,10 @@ pub async fn test_indirect_hiding_type() {
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .directive(my_directive1)
+        .directive(my_directive2)
+        .finish();
     assert_eq!(
         schema
             .execute(r#"{ __type(name: "MyObj1") { name } }"#)
@@ -524,6 +551,26 @@ pub async fn test_indirect_hiding_type() {
     assert_eq!(
         schema
             .execute(r#"{ __type(name: "MyInputObj5") { name } }"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": null })
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ __type(name: "MyEnum1") { name } }"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "__type": { "name": "MyEnum1" } })
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ __type(name: "MyEnum2") { name } }"#)
             .await
             .into_result()
             .unwrap()
