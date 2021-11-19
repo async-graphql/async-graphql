@@ -96,7 +96,7 @@ impl Query {
 
 ## Selection / LookAhead
 
-Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with `ctx.fields()` which will give you a `SelectionField` which will allow you to navigate accross the fields and subfields.
+Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with `ctx.field()` which will give you a `SelectionField` which will allow you to navigate accross the fields and subfields.
 
 If you want to perform a search accross the query or the subqueries, you do not have to do this by hand with the `SelectionField`, you can use the `ctx.look_ahead()` to perform a selection
 
