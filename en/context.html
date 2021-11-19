@@ -223,7 +223,7 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
-<p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with <code>ctx.fields()</code> which will give you a <code>SelectionField</code> which will allow you to navigate accross the fields and subfields.</p>
+<p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate accross the fields and subfields.</p>
 <p>If you want to perform a search accross the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]

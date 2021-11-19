@@ -222,7 +222,7 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
-<p>有时你想知道子查询中请求了哪些字段用于优化数据处理，则可以使用<code>ctx.fields()</code>读取查询中的字段，它将提供一个<code>SelectionField</code>，允许你在当前字段和子字段之间导航。</p>
+<p>有时你想知道子查询中请求了哪些字段用于优化数据处理，则可以使用<code>ctx.field()</code>读取查询中的字段，它将提供一个<code>SelectionField</code>，允许你在当前字段和子字段之间导航。</p>
 <p>如果要跨查询或子查询执行搜索，则不必使用 <code>SelectionField</code> 手动执行此操作，可以使用 <code>ctx.look_ahead()</code> 来执行选择。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
