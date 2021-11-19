@@ -14,7 +14,7 @@ use serde::Serialize;
 
 use crate::extensions::Extensions;
 use crate::parser::types::{
-    Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
+    Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
 };
 use crate::schema::SchemaEnv;
 use crate::{
@@ -497,42 +497,6 @@ impl<'a, T> ContextBase<'a, T> {
             .node
             .into_const_with(|name| self.var_value(&name, pos))
     }
-
-    #[doc(hidden)]
-    pub fn is_ifdef(&self, directives: &[Positioned<Directive>]) -> bool {
-        directives
-            .iter()
-            .any(|directive| directive.node.name.node == "ifdef")
-    }
-
-    #[doc(hidden)]
-    pub fn is_skip(&self, directives: &[Positioned<Directive>]) -> ServerResult<bool> {
-        for directive in directives {
-            let include = match &*directive.node.name.node {
-                "skip" => false,
-                "include" => true,
-                _ => continue,
-            };
-
-            let condition_input = directive
-                .node
-                .get_argument("if")
-                .ok_or_else(|| ServerError::new(format!(r#"Directive @{} requires argument `if` of type `Boolean!` but it was not provided."#, if include { "include" } else { "skip" }),Some(directive.pos)))?
-                .clone();
-
-            let pos = condition_input.pos;
-            let condition_input = self.resolve_input_value(condition_input)?;
-
-            if include
-                != <bool as InputType>::parse(Some(condition_input))
-                    .map_err(|e| e.into_server_error(pos))?
-            {
-                return Ok(true);
-            }
-        }
-
-        Ok(false)
-    }
 }
 
 impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
@@ -734,17 +698,6 @@ impl<'a> Iterator for SelectionFieldsIter<'a> {
         loop {
             let it = self.iter.last_mut()?;
             let item = it.next();
-            if let Some(item) = item {
-                // ignore any items that are skipped (i.e. @skip/@include)
-                if self
-                    .context
-                    .is_skip(&item.node.directives())
-                    .unwrap_or(false)
-                {
-                    // TODO: should we throw errors here? they will be caught later in execution and it'd cause major backwards compatibility issues
-                    continue;
-                }
-            }
 
             match item {
                 Some(selection) => match &selection.node {

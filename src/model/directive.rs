@@ -103,4 +103,9 @@ impl<'a> __Directive<'a> {
             })
             .collect()
     }
+
+    #[inline]
+    async fn is_repeatable(&self) -> bool {
+        self.directive.is_repeatable
+    }
 }

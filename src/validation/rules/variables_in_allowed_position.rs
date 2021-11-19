@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use async_graphql_value::Value;
+
 use crate::parser::types::{
     ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
 };
@@ -7,7 +9,6 @@ use crate::registry::MetaTypeName;
 use crate::validation::utils::Scope;
 use crate::validation::visitor::{Visitor, VisitorContext};
 use crate::{Name, Pos, Positioned};
-use async_graphql_value::Value;
 
 #[derive(Default)]
 pub struct VariableInAllowedPosition<'a> {

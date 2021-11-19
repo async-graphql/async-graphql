@@ -5,7 +5,6 @@ use indexmap::IndexMap;
 
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
-use crate::registry::MetaType;
 use crate::{Context, ContextSelectionSet, Name, OutputType, ServerError, ServerResult, Value};
 
 /// Represents a GraphQL container object.
@@ -139,10 +138,6 @@ impl<'a> Fields<'a> {
         root: &'a T,
     ) -> ServerResult<()> {
         for selection in &ctx.item.node.items {
-            if ctx.is_skip(&selection.node.directives())? {
-                continue;
-            }
-
             match &selection.node {
                 Selection::Field(field) => {
                     if field.node.name.node == "__typename" {
@@ -155,16 +150,6 @@ impl<'a> Fields<'a> {
                             Ok((field_name, Value::String(typename)))
                         }));
                         continue;
-                    }
-
-                    if ctx.is_ifdef(&field.node.directives) {
-                        if let Some(MetaType::Object { fields, .. }) =
-                            ctx.schema_env.registry.types.get(T::type_name().as_ref())
-                        {
-                            if !fields.contains_key(field.node.name.node.as_str()) {
-                                continue;
-                            }
-                        }
                     }
 
                     self.0.push(Box::pin({

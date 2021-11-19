@@ -8,8 +8,8 @@ use indexmap::map::IndexMap;
 use crate::context::{Data, QueryEnvInner};
 use crate::extensions::{ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
-use crate::parser::parse_query;
-use crate::parser::types::{DocumentOperations, OperationType};
+use crate::parser::types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet};
+use crate::parser::{parse_query, Positioned};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_container, resolve_container_serial};
 use crate::subscription::collect_subscription_streams;
@@ -17,7 +17,7 @@ use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, InputType, ObjectType, OutputType,
-    QueryEnv, Request, Response, ServerError, SubscriptionType, ID,
+    QueryEnv, Request, Response, ServerError, SubscriptionType, Variables, ID,
 };
 
 /// Schema builder
@@ -287,7 +287,8 @@ where
                     is_secret: false,
                 });
                 args
-            }
+            },
+            is_repeatable: false,
         });
 
         registry.add_directive(MetaDirective {
@@ -309,14 +310,8 @@ where
                     is_secret: false,
                 });
                 args
-            }
-        });
-
-        registry.add_directive(MetaDirective {
-            name: "ifdef",
-            description: Some("Directs the executor to query only when the field exists."),
-            locations: vec![__DirectiveLocation::FIELD],
-            args: Default::default(),
+            },
+            is_repeatable: false,
         });
 
         // register scalars
@@ -391,7 +386,7 @@ where
         extensions.attach_query_data(query_data.clone());
 
         let request = extensions.prepare_request(request).await?;
-        let document = {
+        let mut document = {
             let query = &request.query;
             let fut_parse = async { parse_query(&query).map_err(Into::<ServerError>::into) };
             futures_util::pin_mut!(fut_parse);
@@ -454,7 +449,13 @@ where
             }
         };
 
-        let (operation_name, operation) = operation.map_err(|err| vec![err])?;
+        let (operation_name, mut operation) = operation.map_err(|err| vec![err])?;
+
+        // remove skipped fields
+        for fragment in document.fragments.values_mut() {
+            remove_skipped_selection(&mut fragment.node.selection_set.node, &request.variables);
+        }
+        remove_skipped_selection(&mut operation.node.selection_set.node, &request.variables);
 
         let env = QueryEnvInner {
             extensions,
@@ -597,5 +598,53 @@ where
         request: impl Into<Request>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         self.execute_stream_with_session_data(request.into(), Default::default())
+    }
+}
+
+fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variables) {
+    fn is_skipped(directives: &[Positioned<Directive>], variables: &Variables) -> bool {
+        for directive in directives {
+            let include = match &*directive.node.name.node {
+                "skip" => false,
+                "include" => true,
+                _ => continue,
+            };
+
+            if let Some(condition_input) = directive.node.get_argument("if") {
+                let value = condition_input
+                    .node
+                    .clone()
+                    .into_const_with(|name| variables.get(&name).cloned().ok_or(()))
+                    .unwrap_or_default();
+                let value: bool = InputType::parse(Some(value)).unwrap_or_default();
+                if include != value {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    selection_set
+        .items
+        .retain(|selection| !is_skipped(selection.node.directives(), variables));
+
+    for selection in &mut selection_set.items {
+        selection.node.directives_mut().retain(|directive| {
+            directive.node.name.node != "skip" && directive.node.name.node != "include"
+        });
+    }
+
+    for selection in &mut selection_set.items {
+        match &mut selection.node {
+            Selection::Field(field) => {
+                remove_skipped_selection(&mut field.node.selection_set.node, variables);
+            }
+            Selection::FragmentSpread(_) => {}
+            Selection::InlineFragment(inline_fragment) => {
+                remove_skipped_selection(&mut inline_fragment.node.selection_set.node, variables);
+            }
+        }
     }
 }
