@@ -38,16 +38,16 @@ pub async fn test_input_value_custom_error() {
         }
     }
 
-    struct SubscriptionRoot;
+    struct Subscription;
 
     #[Subscription]
-    impl SubscriptionRoot {
+    impl Subscription {
         async fn r#type(&self) -> impl Stream<Item = i32> {
             futures_util::stream::iter(0..10)
         }
     }
 
-    let schema = Schema::new(Query, EmptyMutation, SubscriptionRoot);
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
     let query = r#"
         {
             type(match: 99)

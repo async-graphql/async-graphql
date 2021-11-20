@@ -46,12 +46,12 @@ use warp::{Error, Filter, Rejection, Reply};
 ///     }
 /// }
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-///     let filter = async_graphql_warp::graphql_subscription(schema)
-///         .or(warp::any().map(|| "Hello, World!"));
-///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
-/// });
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+/// let filter = async_graphql_warp::graphql_subscription(schema)
+///     .or(warp::any().map(|| "Hello, World!"));
+/// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// # });
 /// ```
 pub fn graphql_subscription<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
@@ -136,27 +136,27 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
 ///     }
 /// }
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 ///
-///     let filter = warp::ws()
-///         .and(graphql_protocol())
-///         .map(move |ws: ws::Ws, protocol| {
-///             let schema = schema.clone();
+/// let filter = warp::ws()
+///     .and(graphql_protocol())
+///     .map(move |ws: ws::Ws, protocol| {
+///         let schema = schema.clone();
 ///
-///             let reply = ws.on_upgrade(move |socket| {
-///                 GraphQLWebSocket::new(socket, schema, protocol).serve()
-///             });
-///
-///             warp::reply::with_header(
-///                 reply,
-///                 "Sec-WebSocket-Protocol",
-///                 protocol.sec_websocket_protocol(),
-///             )
+///         let reply = ws.on_upgrade(move |socket| {
+///             GraphQLWebSocket::new(socket, schema, protocol).serve()
 ///         });
 ///
-///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
-/// });
+///         warp::reply::with_header(
+///             reply,
+///             "Sec-WebSocket-Protocol",
+///             protocol.sec_websocket_protocol(),
+///         )
+///     });
+///
+/// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// # });
 /// ```
 pub struct GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, OnInit> {
     sink: Sink,

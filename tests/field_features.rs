@@ -14,10 +14,10 @@ pub async fn test_field_features() {
         value_abc: i32,
     }
 
-    struct SubscriptionRoot;
+    struct Subscription;
 
     #[Subscription]
-    impl SubscriptionRoot {
+    impl Subscription {
         async fn values(&self) -> impl Stream<Item = i32> {
             futures_util::stream::once(async move { 10 })
         }
@@ -33,10 +33,10 @@ pub async fn test_field_features() {
         }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
@@ -62,7 +62,7 @@ pub async fn test_field_features() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
     let query = "{ value }";
     assert_eq!(
         schema.execute(query).await.data,
@@ -83,7 +83,7 @@ pub async fn test_field_features() {
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
         vec![ServerError {
-            message: r#"Unknown field "valueAbc" on type "QueryRoot". Did you mean "value"?"#
+            message: r#"Unknown field "valueAbc" on type "Query". Did you mean "value"?"#
                 .to_owned(),
             source: None,
             locations: vec![Pos { column: 3, line: 1 }],
@@ -149,7 +149,7 @@ pub async fn test_field_features() {
             .unwrap()
             .errors,
         vec![ServerError {
-            message: r#"Unknown field "valuesAbc" on type "SubscriptionRoot". Did you mean "values", "valuesBson"?"#.to_owned(),
+            message: r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values", "valuesBson"?"#.to_owned(),
             source: None,
             locations: vec![Pos {
                 column: 16,

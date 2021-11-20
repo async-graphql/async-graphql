@@ -31,14 +31,14 @@ use crate::{graphql_batch_opts, GraphQLBadRequest, GraphQLBatchResponse};
 ///
 /// type MySchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-///     let filter = async_graphql_warp::graphql(schema)
-///         .and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
-///             Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(schema.execute(request).await))
-///         });
-///     warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
-/// });
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+/// let filter = async_graphql_warp::graphql(schema)
+///     .and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
+///         Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(schema.execute(request).await))
+///     });
+/// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+/// # });
 /// ```
 pub fn graphql<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,

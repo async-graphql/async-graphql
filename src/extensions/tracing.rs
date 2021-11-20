@@ -33,9 +33,9 @@ use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variab
 ///     .extension(Tracing)
 ///     .finish();
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     schema.execute(Request::new("{ value }")).await;
-/// });
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// schema.execute(Request::new("{ value }")).await;
+/// # });
 /// ```
 #[cfg_attr(docsrs, doc(cfg(feature = "tracing")))]
 pub struct Tracing;

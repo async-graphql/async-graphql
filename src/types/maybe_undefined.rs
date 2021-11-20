@@ -29,23 +29,23 @@ use crate::{registry, InputType, InputValueError, InputValueResult, Value};
 ///     }
 /// }
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-///     let query = r#"
-///         {
-///             v1:value1(input: 99)
-///             v2:value1(input: null)
-///             v3:value1
-///         }"#;
-///     assert_eq!(
-///         schema.execute(query).await.into_result().unwrap().data,
-///         value!({
-///             "v1": 99,
-///             "v2": 1,
-///             "v3": 2,
-///         })
-///     );
-/// });
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+/// let query = r#"
+///     {
+///         v1:value1(input: 99)
+///         v2:value1(input: null)
+///         v3:value1
+///     }"#;
+/// assert_eq!(
+///     schema.execute(query).await.into_result().unwrap().data,
+///     value!({
+///         "v1": 99,
+///         "v2": 1,
+///         "v3": 2,
+///     })
+/// );
+/// # });
 /// ```
 #[allow(missing_docs)]
 #[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
