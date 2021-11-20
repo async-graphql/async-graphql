@@ -1,3 +1,4 @@
+use futures_util::FutureExt;
 use std::future::Future;
 use std::pin::Pin;
 
@@ -5,7 +6,9 @@ use indexmap::IndexMap;
 
 use crate::extensions::ResolveInfo;
 use crate::parser::types::Selection;
-use crate::{Context, ContextSelectionSet, Name, OutputType, ServerError, ServerResult, Value};
+use crate::{
+    Context, ContextBase, ContextSelectionSet, Name, OutputType, ServerError, ServerResult, Value,
+};
 
 /// Represents a GraphQL container object.
 ///
@@ -152,14 +155,14 @@ impl<'a> Fields<'a> {
                         continue;
                     }
 
-                    self.0.push(Box::pin({
+                    let resolve_fut = Box::pin({
                         let ctx = ctx.clone();
                         async move {
                             let ctx_field = ctx.with_field(field);
                             let field_name = ctx_field.item.node.response_key().node.clone();
                             let extensions = &ctx.query_env.extensions;
 
-                            if extensions.is_empty() {
+                            if extensions.is_empty() && field.node.directives.is_empty() {
                                 Ok((
                                     field_name,
                                     root.resolve_field(&ctx_field).await?.unwrap_or_default(),
@@ -199,17 +202,57 @@ impl<'a> Fields<'a> {
                                 };
 
                                 let resolve_fut = root.resolve_field(&ctx_field);
-                                futures_util::pin_mut!(resolve_fut);
-                                Ok((
-                                    field_name,
-                                    extensions
-                                        .resolve(resolve_info, &mut resolve_fut)
-                                        .await?
-                                        .unwrap_or_default(),
-                                ))
+
+                                if field.node.directives.is_empty() {
+                                    futures_util::pin_mut!(resolve_fut);
+                                    Ok((
+                                        field_name,
+                                        extensions
+                                            .resolve(resolve_info, &mut resolve_fut)
+                                            .await?
+                                            .unwrap_or_default(),
+                                    ))
+                                } else {
+                                    let mut resolve_fut = resolve_fut.boxed();
+
+                                    for directive in &field.node.directives {
+                                        if let Some(directive_factory) = ctx
+                                            .schema_env
+                                            .custom_directives
+                                            .get(directive.node.name.node.as_str())
+                                        {
+                                            let ctx_directive = ContextBase {
+                                                path_node: ctx_field.path_node,
+                                                item: directive,
+                                                schema_env: ctx_field.schema_env,
+                                                query_env: ctx_field.query_env,
+                                            };
+                                            let directive_instance = directive_factory
+                                                .create(&ctx_directive, &directive.node)?;
+                                            resolve_fut = Box::pin({
+                                                let ctx_field = ctx_field.clone();
+                                                async move {
+                                                    directive_instance
+                                                        .resolve_field(&ctx_field, &mut resolve_fut)
+                                                        .await
+                                                }
+                                            });
+                                        }
+                                    }
+
+                                    Ok((
+                                        field_name,
+                                        extensions
+                                            .resolve(resolve_info, &mut resolve_fut)
+                                            .await?
+                                            .unwrap_or_default(),
+                                    ))
+                                }
                             }
                         }
-                    }));
+                    });
+
+                    self.0.push(resolve_fut);
                 }
                 selection => {
                     let (type_condition, selection_set) = match selection {

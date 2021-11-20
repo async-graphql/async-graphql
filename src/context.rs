@@ -14,7 +14,7 @@ use serde::Serialize;
 
 use crate::extensions::Extensions;
 use crate::parser::types::{
-    Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
+    Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
 };
 use crate::schema::SchemaEnv;
 use crate::{
@@ -58,6 +58,9 @@ pub type ContextSelectionSet<'a> = ContextBase<'a, &'a Positioned<SelectionSet>>
 
 /// Context object for resolve field
 pub type Context<'a> = ContextBase<'a, &'a Positioned<Field>>;
+
+/// Context object for execute directive.
+pub type ContextDirective<'a> = ContextBase<'a, &'a Positioned<Directive>>;
 
 /// A segment in the path to the current query.
 ///
@@ -497,6 +500,32 @@ impl<'a, T> ContextBase<'a, T> {
             .node
             .into_const_with(|name| self.var_value(&name, pos))
     }
+
+    #[doc(hidden)]
+    fn get_param_value<Q: InputType>(
+        &self,
+        arguments: &[(Positioned<Name>, Positioned<InputValue>)],
+        name: &str,
+        default: Option<fn() -> Q>,
+    ) -> ServerResult<(Pos, Q)> {
+        let value = arguments
+            .iter()
+            .find(|(n, _)| n.node.as_str() == name)
+            .map(|(_, value)| value)
+            .cloned();
+        if value.is_none() {
+            if let Some(default) = default {
+                return Ok((Pos::default(), default()));
+            }
+        }
+        let (pos, value) = match value {
+            Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
+            None => (Pos::default(), None),
+        };
+        InputType::parse(value)
+            .map(|value| (pos, value))
+            .map_err(|e| e.into_server_error(pos))
+    }
 }
 
 impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
@@ -521,19 +550,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         name: &str,
         default: Option<fn() -> T>,
     ) -> ServerResult<(Pos, T)> {
-        let value = self.item.node.get_argument(name).cloned();
-        if value.is_none() {
-            if let Some(default) = default {
-                return Ok((Pos::default(), default()));
-            }
-        }
-        let (pos, value) = match value {
-            Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
-            None => (Pos::default(), None),
-        };
-        InputType::parse(value)
-            .map(|value| (pos, value))
-            .map_err(|e| e.into_server_error(pos))
+        self.get_param_value(&self.item.node.arguments, name, default)
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.
@@ -615,6 +632,17 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
             field: &self.item.node,
             context: self,
         }
+    }
+}
+
+impl<'a> ContextBase<'a, &'a Positioned<Directive>> {
+    #[doc(hidden)]
+    pub fn param_value<T: InputType>(
+        &self,
+        name: &str,
+        default: Option<fn() -> T>,
+    ) -> ServerResult<(Pos, T)> {
+        self.get_param_value(&self.item.node.arguments, name, default)
     }
 }
 

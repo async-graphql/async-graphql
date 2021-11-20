@@ -36,5 +36,5 @@
 - [高级主题](advanced_topics.md)
     - [自定义标量](custom_scalars.md)
     - [优化查询（解决N+1问题）](dataloader.md)
-    - [自定义扩展](custom_extensions.md)
+    - [自定义指令](custom_directive.md)
     - [Apollo Federation集成](apollo_federation.md)

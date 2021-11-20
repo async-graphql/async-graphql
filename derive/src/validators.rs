@@ -160,6 +160,10 @@ impl Validators {
             });
         }
 
+        if codes.is_empty() {
+            return Ok(quote!());
+        }
+
         let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
 
         if self.list {

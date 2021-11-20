@@ -17,6 +17,7 @@ Comparing Features of Other Rust GraphQL Implementations
 | Dataloading    | 👍            | 👍               |
 | Custom Scalar   | 👍           | 👍               |
 | Custom Error   | 👍            | 👍               |
+| Custom Directive   | 👍            | ⛔               |
 | Extensions     | 👍            | ⛔️               |
 | Cursor Connections  | 👍            | ⛔️               |
 | Query complexity/depth     | 👍            | ⛔️               | 

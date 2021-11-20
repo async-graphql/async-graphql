@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
 
+pub use crate::model::__DirectiveLocation;
 use crate::parser::types::{
     BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition,
 };
@@ -350,6 +351,7 @@ pub struct MetaDirective {
     pub locations: Vec<model::__DirectiveLocation>,
     pub args: IndexMap<&'static str, MetaInputValue>,
     pub is_repeatable: bool,
+    pub visible: Option<MetaVisibleFn>,
 }
 
 #[derive(Default)]
@@ -763,6 +765,12 @@ impl Registry {
             }
         }
 
+        for directive in self.directives.values() {
+            for arg in directive.args.values() {
+                traverse_input_value(&self.types, &mut used_types, arg);
+            }
+        }
+
         for type_name in Some(&self.query_type)
             .into_iter()
             .chain(self.mutation_type.iter())
@@ -882,6 +890,14 @@ impl Registry {
                         }
                     }
                     _ => {}
+                }
+            }
+        }
+
+        for directive in self.directives.values() {
+            if is_visible(ctx, &directive.visible) {
+                for arg in directive.args.values() {
+                    traverse_input_value(ctx, &self.types, &mut visible_types, arg);
                 }
             }
         }
