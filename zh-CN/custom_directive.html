@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>在内省中隐藏内容 - Async-graphql教程</title>
+        <title>自定义指令 - Async-graphql教程</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="Async-graphql使用手册">
@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> 合并对象(MergedObject)</a></li><li class="chapter-item expanded "><a href="derived_fields.html"><strong aria-hidden="true">3.2.4.</strong> 派生字段</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> 字段守卫</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.4.</strong> 游标连接</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.6.</strong> Apollo Tracing支持</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> 查询的深度和复杂度</a></li><li class="chapter-item expanded "><a href="visibility.html" class="active"><strong aria-hidden="true">5.8.</strong> 在内省中隐藏内容</a></li></ol></li><li class="chapter-item expanded "><a href="extensions.html"><strong aria-hidden="true">6.</strong> 扩展</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extensions_inner_working.html"><strong aria-hidden="true">6.1.</strong> 扩展如何工作</a></li><li class="chapter-item expanded "><a href="extensions_available.html"><strong aria-hidden="true">6.2.</strong> 可用的扩展列表</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">7.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_poem.html"><strong aria-hidden="true">7.1.</strong> Poem</a></li><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">7.2.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">7.3.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">8.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">8.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="dataloader.html"><strong aria-hidden="true">8.2.</strong> 优化查询（解决N+1问题）</a></li><li class="chapter-item expanded "><a href="custom_directive.html"><strong aria-hidden="true">8.3.</strong> 自定义指令</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">8.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> 介绍</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> 快速开始</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> 类型系统</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> 简单对象(SimpleObject)</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> 对象(Object)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> 查询上下文(Context)</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> 错误处理</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> 合并对象(MergedObject)</a></li><li class="chapter-item expanded "><a href="derived_fields.html"><strong aria-hidden="true">3.2.4.</strong> 派生字段</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> 枚举(Enum)</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> 接口(Interface)</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> 联合(Union)</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> 输入对象(InputObject)</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.7.</strong> 默认值</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> 定义模式(Schema)</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> 查询和变更</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> 订阅</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> 实用功能</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> 字段守卫</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> 输入值校验器</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> 查询缓存控制</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.4.</strong> 游标连接</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> 错误扩展</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.6.</strong> Apollo Tracing支持</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> 查询的深度和复杂度</a></li><li class="chapter-item expanded "><a href="visibility.html"><strong aria-hidden="true">5.8.</strong> 在内省中隐藏内容</a></li></ol></li><li class="chapter-item expanded "><a href="extensions.html"><strong aria-hidden="true">6.</strong> 扩展</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extensions_inner_working.html"><strong aria-hidden="true">6.1.</strong> 扩展如何工作</a></li><li class="chapter-item expanded "><a href="extensions_available.html"><strong aria-hidden="true">6.2.</strong> 可用的扩展列表</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">7.</strong> 集成到WebServer</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_poem.html"><strong aria-hidden="true">7.1.</strong> Poem</a></li><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">7.2.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">7.3.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">8.</strong> 高级主题</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">8.1.</strong> 自定义标量</a></li><li class="chapter-item expanded "><a href="dataloader.html"><strong aria-hidden="true">8.2.</strong> 优化查询（解决N+1问题）</a></li><li class="chapter-item expanded "><a href="custom_directive.html" class="active"><strong aria-hidden="true">8.3.</strong> 自定义指令</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">8.4.</strong> Apollo Federation集成</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -134,47 +134,42 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="在内省中隐藏内容"><a class="header" href="#在内省中隐藏内容">在内省中隐藏内容</a></h1>
-<p>默认情况下，所有类型，字段在内省中都是可见的。但可能你希望根据不同的用户来隐藏一些信息，避免引起不必要的误会。你可以在类型或者字段上添加<code>visible</code>属性来做到。</p>
+                        <h1 id="自定义指令"><a class="header" href="#自定义指令">自定义指令</a></h1>
+<p><code>Async-graphql</code>可以很方便的自定义指令，这可以扩展GraphQL的行为。</p>
+<p>创建一个自定义指令，需要实现 <code>CustomDirective</code> trait，然后用<code>Directive</code>宏生成一个工厂函数，该函数接收指令的参数并返回指令的实例。</p>
+<p>目前<code>Async-graphql</code>仅支持添加<code>FIELD</code>位置的指令。</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use async_graphql::*;
-
-#[derive(SimpleObject)]
-struct MyObj {
-    // 这个字段将在内省中可见
-    a: i32,
-
-    // 这个字段在内省中总是隐藏
-    #[graphql(visible = false)]
-    b: i32, 
-
-    // 这个字段调用`is_admin`函数，如果函数的返回值为`true`则可见
-    #[graphql(visible = &quot;is_admin&quot;)]
-    c: i32, 
+</span>struct ConcatDirective {
+    value: String,
 }
 
-#[derive(Enum)]
-enum MyEnum {
-    // 这个项目将在内省中可见
-    A,
-
-    // 这个项目在内省中总是隐藏
-    #[graphql(visible = false)]
-    B,
-
-    // 这个项目调用`is_admin`函数，如果函数的返回值为`true`则可见
-    #[graphql(visible = &quot;is_admin&quot;)]
-    C,
+#[async_trait::async_trait]
+impl CustomDirective for ConcatDirective {
+    async fn resolve_field(&amp;self, _ctx: &amp;Context&lt;'_&gt;, resolve: ResolveFut&lt;'_&gt;) -&gt; ServerResult&lt;Option&lt;Value&gt;&gt; {
+        resolve.await.map(|value| {
+            value.map(|value| match value {
+                Value::String(str) =&gt; Value::String(str + &amp;self.value),
+                _ =&gt; value,
+            })
+        })
+    }
 }
 
-struct IsAdmin(bool);
-
-fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
-    ctx.data_unchecked::&lt;IsAdmin&gt;().0
+#[Directive(location = &quot;field&quot;)]
+fn concat(value: String) -&gt; impl CustomDirective {
+    ConcatDirective { value }
 }
-
+<span class="boring">}
+</span></code></pre></pre>
+<p>创建模式时注册指令：</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    .directive(concat)
+    .finish();
 <span class="boring">}
 </span></code></pre></pre>
 
@@ -182,10 +177,10 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="depth_and_complexity.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="dataloader.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="extensions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="apollo_federation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -194,10 +189,10 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="depth_and_complexity.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="dataloader.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="extensions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="apollo_federation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
