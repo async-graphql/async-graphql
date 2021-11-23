@@ -4,7 +4,7 @@ The main goal of `Context` is to acquire global data attached to Schema and also
 
 ## Store Data
 
-Inside the `Context` you can put global data, like environnement variables, db connection pool, whatever you may need in every query.
+Inside the `Context` you can put global data, like environment variables, db connection pool, whatever you may need in every query.
 
 The data must implement `Send` and `Sync`.
 
