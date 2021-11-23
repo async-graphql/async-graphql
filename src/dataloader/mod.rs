@@ -32,29 +32,28 @@
 //!     }
 //! }
 //!
-//! tokio::runtime::Runtime::new().unwrap().block_on(async move {
-//!     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-//!     let query = r#"
-//!         {
-//!             v1: value(n: 1)
-//!             v2: value(n: 2)
-//!             v3: value(n: 3)
-//!             v4: value(n: 4)
-//!             v5: value(n: 5)
-//!         }
-//!     "#;
-//!     let request = Request::new(query).data(DataLoader::new(MyLoader));
-//!     let res = schema.execute(request).await.into_result().unwrap().data;
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+//! let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+//! let query = r#"
+//!     {
+//!         v1: value(n: 1)
+//!         v2: value(n: 2)
+//!         v3: value(n: 3)
+//!         v4: value(n: 4)
+//!         v5: value(n: 5)
+//!     }
+//! "#;
+//! let request = Request::new(query).data(DataLoader::new(MyLoader));
+//! let res = schema.execute(request).await.into_result().unwrap().data;
 //!
-//!     assert_eq!(res, value!({
-//!         "v1": "1",
-//!         "v2": "2",
-//!         "v3": "3",
-//!         "v4": "4",
-//!         "v5": "5",
-//!     }));
-//! });
-//!
+//! assert_eq!(res, value!({
+//!     "v1": "1",
+//!     "v2": "2",
+//!     "v3": "3",
+//!     "v4": "4",
+//!     "v5": "5",
+//! }));
+//! # });
 //! ```
 
 mod cache;

@@ -3,10 +3,10 @@ use std::collections::HashMap;
 
 #[tokio::test]
 pub async fn test_variables() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
         }
@@ -16,7 +16,7 @@ pub async fn test_variables() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = Request::new(
         r#"
             query QueryWithVariables($intVal: Int!, $intListVal: [Int!]!) {
@@ -41,16 +41,16 @@ pub async fn test_variables() {
 
 #[tokio::test]
 pub async fn test_variable_default_value() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn int_val(&self, value: i32) -> i32 {
             value
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema
             .execute(
@@ -70,16 +70,16 @@ pub async fn test_variable_default_value() {
 
 #[tokio::test]
 pub async fn test_variable_no_value() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn int_val(&self, value: Option<i32>) -> i32 {
             value.unwrap_or(10)
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let resp = schema
         .execute(Request::new(
             r#"
@@ -101,16 +101,16 @@ pub async fn test_variable_no_value() {
 
 #[tokio::test]
 pub async fn test_variable_null() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn int_val(&self, value: Option<i32>) -> i32 {
             value.unwrap_or(10)
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = Request::new(
         r#"
             query QueryWithVariables($intVal: Int) {
@@ -137,10 +137,10 @@ pub async fn test_variable_in_input_object() {
         value: i32,
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn test(&self, input: MyInput) -> i32 {
             input.value
         }
@@ -150,16 +150,16 @@ pub async fn test_variable_in_input_object() {
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn test(&self, input: MyInput) -> i32 {
             input.value
         }
     }
 
-    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+    let schema = Schema::new(Query, Mutation, EmptySubscription);
 
     // test query
     {
@@ -228,10 +228,10 @@ pub async fn test_variables_enum() {
         C,
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn value(&self, value: MyEnum) -> i32 {
             match value {
                 MyEnum::A => 1,
@@ -241,7 +241,7 @@ pub async fn test_variables_enum() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = Request::new(
         r#"
             query QueryWithVariables($value1: MyEnum, $value2: MyEnum, $value3: MyEnum) {
@@ -269,16 +269,16 @@ pub async fn test_variables_enum() {
 
 #[tokio::test]
 pub async fn test_variables_json() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn value(&self, value: Json<HashMap<String, i32>>) -> i32 {
             *value.get("a-b").unwrap()
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = Request::new(
         r#"
             query QueryWithVariables($value: JSON) {

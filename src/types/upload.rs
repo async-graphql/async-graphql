@@ -68,10 +68,10 @@ impl UploadValue {
 /// ```
 /// use async_graphql::*;
 ///
-/// struct MutationRoot;
+/// struct Mutation;
 ///
 /// #[Object]
-/// impl MutationRoot {
+/// impl Mutation {
 ///     async fn upload(&self, ctx: &Context<'_>, file: Upload) -> bool {
 ///         println!("upload: filename={}", file.value(ctx).unwrap().filename);
 ///         true
@@ -80,7 +80,8 @@ impl UploadValue {
 ///
 /// ```
 /// # Example Curl Request
-/// Assuming you have defined your MutationRoot like in the example above,
+///
+/// Assuming you have defined your Mutation like in the example above,
 /// you can now upload a file `myFile.txt` with the below curl command:
 ///
 /// ```curl

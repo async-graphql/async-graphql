@@ -3,7 +3,7 @@ use async_graphql::*;
 
 #[tokio::test]
 pub async fn test_connection_additional_fields() {
-    struct QueryRoot;
+    struct Query;
 
     #[derive(SimpleObject)]
     struct ConnectionFields {
@@ -16,7 +16,7 @@ pub async fn test_connection_additional_fields() {
     }
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn numbers(
             &self,
             after: Option<String>,
@@ -59,7 +59,7 @@ pub async fn test_connection_additional_fields() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
     assert_eq!(
         schema

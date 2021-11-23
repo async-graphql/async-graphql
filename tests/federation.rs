@@ -26,7 +26,7 @@ pub async fn test_nested_key() {
         Some("{ a b c { v } }")
     );
 
-    struct QueryRoot;
+    struct Query;
 
     #[derive(SimpleObject)]
     struct MyObj {
@@ -36,7 +36,7 @@ pub async fn test_nested_key() {
     }
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         #[graphql(entity)]
         async fn find_obj(&self, input: MyInputA) -> MyObj {
             MyObj {
@@ -47,7 +47,7 @@ pub async fn test_nested_key() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = r#"{
             _entities(representations: [{__typename: "MyObj", input: {a: 1, b: 2, c: { v: 3 }}}]) {
                 __typename
@@ -117,10 +117,10 @@ pub async fn test_federation() {
         }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         #[graphql(entity)]
         async fn find_user_by_id(&self, id: ID) -> User {
             User { id }
@@ -132,7 +132,7 @@ pub async fn test_federation() {
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let query = r#"{
             _entities(representations: [{__typename: "Product", upc: "B00005N5PF"}]) {
                 __typename
@@ -183,10 +183,10 @@ pub async fn test_find_entity_with_context() {
         value: i32,
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         #[graphql(entity)]
         async fn find_user_by_id(&self, ctx: &Context<'_>, id: ID) -> FieldResult<MyObj> {
             let loader = ctx.data_unchecked::<DataLoader<MyLoader>>();
@@ -198,7 +198,7 @@ pub async fn test_find_entity_with_context() {
         }
     }
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
         .data(DataLoader::new(MyLoader))
         .finish();
     let query = r#"{

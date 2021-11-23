@@ -7,19 +7,19 @@ use tokio::sync::Mutex;
 pub async fn test_root_mutation_execution_order() {
     type List = Arc<Mutex<Vec<i32>>>;
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_secs(1)).await;
             ctx.data_unchecked::<List>().lock().await.push(1);
@@ -34,7 +34,7 @@ pub async fn test_root_mutation_execution_order() {
     }
 
     let list = List::default();
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(list.clone())
         .finish();
     schema.execute("mutation { append1 append2 }").await;
@@ -43,25 +43,25 @@ pub async fn test_root_mutation_execution_order() {
 
 #[tokio::test]
 pub async fn test_mutation_fragment() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn action(&self) -> bool {
             true
         }
     }
 
-    let schema = Schema::new(QueryRoot, MutationRoot, EmptySubscription);
+    let schema = Schema::new(Query, Mutation, EmptySubscription);
     let resp = schema
         .execute(
             r#"
@@ -69,7 +69,7 @@ pub async fn test_mutation_fragment() {
             ... {
                 actionInUnnamedFragment: action
             }
-            ... on MutationRoot {
+            ... on Mutation {
                 actionInNamedFragment: action
             }
         }"#,
@@ -105,26 +105,26 @@ pub async fn test_serial_object() {
         }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn obj(&self) -> MyObj {
             MyObj
         }
     }
 
     let list = List::default();
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(list.clone())
         .finish();
     schema.execute("mutation { obj { append1 append2 } }").await;
@@ -156,26 +156,26 @@ pub async fn test_serial_simple_object() {
         }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn obj(&self) -> MyObj {
             MyObj { value: 10 }
         }
     }
 
     let list = List::default();
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(list.clone())
         .finish();
     schema.execute("mutation { obj { append1 append2 } }").await;
@@ -224,26 +224,26 @@ pub async fn test_serial_merged_object() {
         }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         async fn value(&self) -> i32 {
             10
         }
     }
 
-    struct MutationRoot;
+    struct Mutation;
 
     #[Object]
-    impl MutationRoot {
+    impl Mutation {
         async fn obj(&self) -> MyObj {
             MyObj(MyObj1, MyObj2)
         }
     }
 
     let list = List::default();
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
         .data(list.clone())
         .finish();
     schema

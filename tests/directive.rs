@@ -2,20 +2,20 @@ use async_graphql::*;
 
 #[tokio::test]
 pub async fn test_directive_skip() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn value(&self) -> i32 {
             10
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let data = schema
         .execute(
             r#"
-            fragment A on QueryRoot {
+            fragment A on Query {
                 value5: value @skip(if: true)
                 value6: value @skip(if: false)
             }
@@ -49,16 +49,16 @@ pub async fn test_directive_skip() {
 
 #[tokio::test]
 pub async fn test_directive_include() {
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn value(&self) -> i32 {
             10
         }
     }
 
-    let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let resp = schema
         .execute(
             r#"
@@ -105,16 +105,16 @@ pub async fn test_custom_directive() {
         Concat { prefix, suffix }
     }
 
-    struct QueryRoot;
+    struct Query;
 
     #[Object]
-    impl QueryRoot {
+    impl Query {
         pub async fn value(&self) -> &'static str {
             "abc"
         }
     }
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
         .directive(concat)
         .finish();
     assert_eq!(

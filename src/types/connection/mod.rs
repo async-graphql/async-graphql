@@ -28,7 +28,7 @@ pub struct EmptyFields;
 /// use async_graphql::*;
 /// use async_graphql::connection::*;
 ///
-/// struct QueryRoot;
+/// struct Query;
 ///
 /// struct Numbers;
 ///
@@ -38,7 +38,7 @@ pub struct EmptyFields;
 /// }
 ///
 /// #[Object]
-/// impl QueryRoot {
+/// impl Query {
 ///     async fn numbers(&self,
 ///         after: Option<String>,
 ///         before: Option<String>,
@@ -68,27 +68,27 @@ pub struct EmptyFields;
 ///     }
 /// }
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
-///         "numbers": {
-///             "edges": [
-///                 {"node": 0, "diff": 10000},
-///                 {"node": 1, "diff": 9999},
-///             ]
-///         },
-///     }));
+/// assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
+///     "numbers": {
+///         "edges": [
+///             {"node": 0, "diff": 10000},
+///             {"node": 1, "diff": 9999},
+///         ]
+///     },
+/// }));
 ///
-///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
-///         "numbers": {
-///             "edges": [
-///                 {"node": 9998, "diff": 2},
-///                 {"node": 9999, "diff": 1},
-///             ]
-///         },
-///     }));
-/// });
+/// assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
+///     "numbers": {
+///         "edges": [
+///             {"node": 9998, "diff": 2},
+///             {"node": 9999, "diff": 1},
+///         ]
+///     },
+/// }));
+/// # });
 /// ```
 pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R, E>(
     after: Option<String>,
@@ -131,10 +131,10 @@ where
 ///     page_info: PageInfo,
 /// }
 ///
-/// struct QueryRoot;
+/// struct Query;
 ///
 /// #[Object]
-/// impl QueryRoot {
+/// impl Query {
 ///     async fn numbers(&self,
 ///         after: Option<String>,
 ///         before: Option<String>,
@@ -174,7 +174,7 @@ where
 ///
 /// #[tokio::main]
 /// async fn main() {
-///     let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
+///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 ///
 ///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
 ///         "numbers": {

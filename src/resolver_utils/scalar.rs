@@ -80,18 +80,16 @@ pub trait ScalarType: Sized + Send {
 ///     }
 /// }
 ///
-/// tokio::runtime::Runtime::new().unwrap().block_on(async move {
-///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-///     let res = schema.execute(r#"{ value(input: {a: 10, b: {v1: 1, v2: 2} }) }"#).await.into_result().unwrap().data;
-///     assert_eq!(res, value!({
-///         "value": {
-///             "a": 10,
-///             "b": {"v1": 1, "v2": 2},
-///         }
-///     }));
-/// });
-///
-///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+/// let res = schema.execute(r#"{ value(input: {a: 10, b: {v1: 1, v2: 2} }) }"#).await.into_result().unwrap().data;
+/// assert_eq!(res, value!({
+///     "value": {
+///         "a": 10,
+///         "b": {"v1": 1, "v2": 2},
+///     }
+/// }));
+/// # });
 /// ```
 #[macro_export]
 macro_rules! scalar {
