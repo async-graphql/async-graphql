@@ -358,7 +358,7 @@ impl From<mime::FromStrError> for ParseRequestError {
 /// An error which can be extended into a `Error`.
 pub trait ErrorExtensions: Sized {
     /// Convert the error to a `Error`.
-    fn extend(self) -> Error;
+    fn extend(&self) -> Error;
 
     /// Add extensions to the error, using a callback to make the extensions.
     fn extend_with<C>(self, cb: C) -> Error
@@ -386,15 +386,15 @@ pub trait ErrorExtensions: Sized {
 }
 
 impl ErrorExtensions for Error {
-    fn extend(self) -> Error {
-        self
+    fn extend(&self) -> Error {
+        self.clone()
     }
 }
 
 // implementing for &E instead of E gives the user the possibility to implement for E which does
 // not conflict with this implementation acting as a fallback.
 impl<E: Display> ErrorExtensions for &E {
-    fn extend(self) -> Error {
+    fn extend(&self) -> Error {
         Error {
             message: self.to_string(),
             source: None,
