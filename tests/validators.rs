@@ -605,3 +605,61 @@ pub async fn test_validate_wrapper_types() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_list_both_max_items_and_max_length() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(
+            &self,
+            #[graphql(validator(list, max_length = 3, max_items = 2))] values: Vec<String>,
+        ) -> String {
+            values.into_iter().collect()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute(r#"{ value(values: ["a", "b", "cdef"])}"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[String!]": the value length is 3, must be less than or equal to 2"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 17, line: 1}],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value(values: ["a", "cdef"])}"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 4, must be less than or equal to 3"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 17, line: 1}],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value(values: ["a", "b"])}"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "value": "ab"
+        })
+    );
+}
