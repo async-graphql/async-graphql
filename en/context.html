@@ -137,7 +137,7 @@
                         <h1 id="context"><a class="header" href="#context">Context</a></h1>
 <p>The main goal of <code>Context</code> is to acquire global data attached to Schema and also data related to the actual query being processed.</p>
 <h2 id="store-data"><a class="header" href="#store-data">Store Data</a></h2>
-<p>Inside the <code>Context</code> you can put global data, like environnement variables, db connection pool, whatever you may need in every query.</p>
+<p>Inside the <code>Context</code> you can put global data, like environment variables, db connection pool, whatever you may need in every query.</p>
 <p>The data must implement <code>Send</code> and <code>Sync</code>.</p>
 <p>You can request the data inside a query by just calling <code>ctx.data::&lt;TypeOfYourData&gt;()</code>.</p>
 <p><strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
