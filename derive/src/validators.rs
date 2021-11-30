@@ -164,9 +164,11 @@ impl Validators {
         if !elem_validators.is_empty() {
             if self.list {
                 codes.push(quote! {
-                    for __item in #value {
-                        if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
-                            #(#elem_validators #map_err ?;)*
+                    if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
+                        for __item in value {
+                            if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
+                                #(#elem_validators #map_err ?;)*
+                            }
                         }
                     }
                 });
