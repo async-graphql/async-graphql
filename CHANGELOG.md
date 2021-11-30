@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `#[graphql(validator(list))]` no longer applies to `max_items` and `min_items`.
 - Implement `InputValue`/`OutputValue` for `serde_json::Value`.
+- Add support for `SmolStr` via a feature. [#730](https://github.com/async-graphql/async-graphql/pull/730)
 
 ## [3.0.7] 2021-11-23
 
