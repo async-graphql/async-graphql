@@ -188,10 +188,12 @@ impl Validators {
             if self.list {
                 codes.push(quote! {
                     let __custom_validator = #__create_custom_validator;
-                    for __item in #value {
-                        if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
-                            #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
-                                .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                    if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
+                        for __item in value {
+                            if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
+                                #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
+                                    .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                            }
                         }
                     }
                 });
