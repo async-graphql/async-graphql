@@ -341,6 +341,20 @@ pub async fn test_custom_validator() {
         async fn input(&self, input: MyInput) -> i32 {
             input.n
         }
+
+        async fn value2(
+            &self,
+            #[graphql(validator(list, custom = "MyValidator::new(100)"))] values: Vec<i32>,
+        ) -> i32 {
+            values.into_iter().sum()
+        }
+
+        async fn value3(
+            &self,
+            #[graphql(validator(list, custom = "MyValidator::new(100)"))] values: Option<Vec<i32>>,
+        ) -> i32 {
+            values.into_iter().flatten().sum()
+        }
     }
 
     struct Subscription;
@@ -443,6 +457,54 @@ pub async fn test_custom_validator() {
             path: vec![PathSegment::Field("value".to_string())],
             extensions: None
         }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value2(values: [77, 88] ) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[Int!]": expect 100, actual 77"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 18
+            }],
+            path: vec![PathSegment::Field("value2".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value3(values: [77, 88] ) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[Int!]": expect 100, actual 77"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 18
+            }],
+            path: vec![PathSegment::Field("value3".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value3(values: null ) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "value3": 0
+        })
     );
 }
 
