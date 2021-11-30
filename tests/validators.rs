@@ -618,6 +618,13 @@ pub async fn test_list_both_max_items_and_max_length() {
         ) -> String {
             values.into_iter().collect()
         }
+
+        async fn value2(
+            &self,
+            #[graphql(validator(list, max_length = 3, max_items = 2))] values: Option<Vec<String>>,
+        ) -> String {
+            values.into_iter().flatten().collect()
+        }
     }
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
@@ -660,6 +667,63 @@ pub async fn test_list_both_max_items_and_max_length() {
             .data,
         value!({
             "value": "ab"
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value2(values: ["a", "b", "cdef"])}"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[String!]": the value length is 3, must be less than or equal to 2"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 18, line: 1}],
+            path: vec![PathSegment::Field("value2".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value2(values: ["a", "cdef"])}"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 4, must be less than or equal to 3"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 18, line: 1}],
+            path: vec![PathSegment::Field("value2".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value2(values: ["a", "b", "cdef"])}"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "[String!]": the value length is 3, must be less than or equal to 2"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 18, line: 1}],
+            path: vec![PathSegment::Field("value2".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ value2(values: null)}"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "value2": ""
         })
     );
 }
