@@ -18,7 +18,10 @@ impl ScalarType for f32 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(Number::from_f64(*self as f64).unwrap())
+        match Number::from_f64(*self as f64) {
+            Some(n) => Value::Number(n),
+            None => Value::Null,
+        }
     }
 }
 
@@ -40,6 +43,9 @@ impl ScalarType for f64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(Number::from_f64(*self as f64).unwrap())
+        match Number::from_f64(*self as f64) {
+            Some(n) => Value::Number(n),
+            None => Value::Null,
+        }
     }
 }

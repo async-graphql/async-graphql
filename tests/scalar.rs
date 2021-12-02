@@ -45,3 +45,26 @@ pub async fn test_scalar_macro() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_float_inf() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> f32 {
+            f32::INFINITY
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": null })
+    );
+}
