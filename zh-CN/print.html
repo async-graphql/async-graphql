@@ -1256,9 +1256,8 @@ impl MyValidator {
     }
 }
 
-#[async_trait::async_trait]
 impl CustomValidator&lt;i32&gt; for MyValidator {
-    async fn check(&amp;self, value: &amp;i32) -&gt; Result&lt;(), String&gt; {
+    fn check(&amp;self, value: &amp;i32) -&gt; Result&lt;(), String&gt; {
         if *value == self.expect {
             Ok(())
         } else {
