@@ -71,115 +71,147 @@ impl Validators {
         ty: TokenStream,
         map_err: Option<TokenStream>,
     ) -> Result<TokenStream> {
+        let mut list_validators = Vec::new();
+        let mut elem_validators = Vec::new();
         let mut codes = Vec::new();
 
-        if let Some(n) = &self.multiple_of {
-            codes.push(quote! {
-                #crate_name::validators::multiple_of(__raw_value, #n)
-            });
-        }
-
-        if let Some(n) = &self.maximum {
-            codes.push(quote! {
-                #crate_name::validators::maximum(__raw_value, #n)
-            });
-        }
-
-        if let Some(n) = &self.minimum {
-            codes.push(quote! {
-                #crate_name::validators::minimum(__raw_value, #n)
-            });
-        }
-
-        if let Some(n) = &self.max_length {
-            codes.push(quote! {
-                #crate_name::validators::max_length(__raw_value, #n)
-            });
-        }
-
-        if let Some(n) = &self.min_length {
-            codes.push(quote! {
-                #crate_name::validators::min_length(__raw_value, #n)
-            });
-        }
-
         if let Some(n) = &self.max_items {
-            codes.push(quote! {
+            list_validators.push(quote! {
                 #crate_name::validators::max_items(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.min_items {
-            codes.push(quote! {
+            list_validators.push(quote! {
                 #crate_name::validators::min_items(__raw_value, #n)
             });
         }
 
+        if let Some(n) = &self.multiple_of {
+            elem_validators.push(quote! {
+                #crate_name::validators::multiple_of(__raw_value, #n)
+            });
+        }
+
+        if let Some(n) = &self.maximum {
+            elem_validators.push(quote! {
+                #crate_name::validators::maximum(__raw_value, #n)
+            });
+        }
+
+        if let Some(n) = &self.minimum {
+            elem_validators.push(quote! {
+                #crate_name::validators::minimum(__raw_value, #n)
+            });
+        }
+
+        if let Some(n) = &self.max_length {
+            elem_validators.push(quote! {
+                #crate_name::validators::max_length(__raw_value, #n)
+            });
+        }
+
+        if let Some(n) = &self.min_length {
+            elem_validators.push(quote! {
+                #crate_name::validators::min_length(__raw_value, #n)
+            });
+        }
+
         if let Some(n) = &self.chars_max_length {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::chars_max_length(__raw_value, #n)
             });
         }
 
         if let Some(n) = &self.chars_min_length {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::chars_min_length(__raw_value, #n)
             });
         }
 
         if self.email {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::email(__raw_value)
             });
         }
 
         if self.url {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::url(__raw_value)
             });
         }
 
         if self.ip {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::ip(__raw_value)
             });
         }
 
         if let Some(re) = &self.regex {
-            codes.push(quote! {
+            elem_validators.push(quote! {
                 #crate_name::validators::regex(__raw_value, #re)
             });
+        }
+
+        if !list_validators.is_empty() {
+            codes.push(quote! {
+                if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
+                    #(#list_validators #map_err ?;)*
+                }
+            });
+        }
+
+        if !elem_validators.is_empty() {
+            if self.list {
+                codes.push(quote! {
+                    if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
+                        for __item in value {
+                            if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
+                                #(#elem_validators #map_err ?;)*
+                            }
+                        }
+                    }
+                });
+            } else {
+                codes.push(quote! {
+                    if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
+                        #(#elem_validators #map_err ?;)*
+                    }
+                });
+            }
         }
 
         for s in &self.custom {
             let __create_custom_validator: Expr =
                 syn::parse_str(s).map_err(|err| Error::new(s.span(), err.to_string()))?;
-            codes.push(quote! {
-                #crate_name::CustomValidator::check(&(#__create_custom_validator), __raw_value)
-                    .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg))
-            });
+
+            if self.list {
+                codes.push(quote! {
+                    let __custom_validator = #__create_custom_validator;
+                    if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
+                        for __item in value {
+                            if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
+                                #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
+                                    .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                            }
+                        }
+                    }
+                });
+            } else {
+                codes.push(quote! {
+                    let __custom_validator = #__create_custom_validator;
+                    if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
+                        #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
+                            .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                    }
+                });
+            }
         }
 
         if codes.is_empty() {
             return Ok(quote!());
         }
 
-        let codes = codes.into_iter().map(|s| quote!(#s  #map_err ?));
-
-        if self.list {
-            Ok(quote! {
-                for __item in #value {
-                    if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
-                        #(#codes;)*
-                    }
-                }
-            })
-        } else {
-            Ok(quote! {
-                if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
-                    #(#codes;)*
-                }
-            })
-        }
+        Ok(quote!(#(#codes)*))
     }
 }

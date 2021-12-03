@@ -4,7 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.7] 2021-11-23 
+## [3.0.11] 2021-12-02
+
+- Fix panic on f32-64::INFINITE/f32-64::NEG_INFINITE/f32-64::NAN output. [#735](https://github.com/async-graphql/async-graphql/issues/735)
+
+## [3.0.10] 2021-11-30
+
+- Fix the custom validator cannot work on `Option<Vec<T>>`.
+
+## [3.0.9] 2021-11-30
+
+- Fix the validator cannot work on `Option<Vec<T>>`.
+
+## [3.0.8] 2021-11-30
+
+- `#[graphql(validator(list))]` no longer applies to `max_items` and `min_items`.
+- Implement `InputValue`/`OutputValue` for `serde_json::Value`.
+- Add support for `SmolStr` via a feature. [#730](https://github.com/async-graphql/async-graphql/pull/730)
+
+## [3.0.7] 2021-11-23
 
 - Fix error extensions cause stack overflow. [#719](https://github.com/async-graphql/async-graphql/issues/719)
 

@@ -93,6 +93,61 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
     }
 }
 
+impl InputType for serde_json::Value {
+    type RawValueType = serde_json::Value;
+
+    fn type_name() -> Cow<'static, str> {
+        Cow::Borrowed("JSON")
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        registry.create_output_type::<serde_json::Value, _>(|_| MetaType::Scalar {
+            name: <Self as InputType>::type_name().to_string(),
+            description: None,
+            is_valid: |_| true,
+            visible: None,
+            specified_by_url: None,
+        })
+    }
+
+    fn parse(value: Option<Value>) -> InputValueResult<Self> {
+        Ok(from_value(value.unwrap_or_default())?)
+    }
+
+    fn to_value(&self) -> Value {
+        to_value(&self).unwrap_or_default()
+    }
+
+    fn as_raw_value(&self) -> Option<&Self::RawValueType> {
+        Some(&self)
+    }
+}
+
+#[async_trait::async_trait]
+impl OutputType for serde_json::Value {
+    fn type_name() -> Cow<'static, str> {
+        Cow::Borrowed("JSON")
+    }
+
+    fn create_type_info(registry: &mut Registry) -> String {
+        registry.create_output_type::<serde_json::Value, _>(|_| MetaType::Scalar {
+            name: <Self as OutputType>::type_name().to_string(),
+            description: None,
+            is_valid: |_| true,
+            visible: None,
+            specified_by_url: None,
+        })
+    }
+
+    async fn resolve(
+        &self,
+        _ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        Ok(to_value(&self).ok().unwrap_or_default())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::*;

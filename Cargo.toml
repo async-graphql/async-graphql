@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "3.0.7"
+version = "3.0.11"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "A GraphQL server library implemented in Rust"
@@ -61,6 +61,7 @@ opentelemetry = { version = "0.16.0", optional = true, default-features = false,
 uuid = { version = "0.8.2", optional = true, features = ["v4", "serde"] }
 rust_decimal = { version = "1.14.3", optional = true }
 url = { version = "2.2.1", optional = true }
+smol_str = { version = "0.1.21", optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }

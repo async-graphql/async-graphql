@@ -26,6 +26,8 @@ mod duration;
 mod naive_time;
 #[cfg(feature = "secrecy")]
 mod secrecy;
+#[cfg(feature = "smol_str")]
+mod smol_str;
 #[cfg(feature = "url")]
 mod url;
 #[cfg(feature = "uuid")]
