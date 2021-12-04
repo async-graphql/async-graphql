@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 - Fix possible deadlock in dataloader. [#555](https://github.com/async-graphql/async-graphql/issues/555)
+- Add some helper methods for `BatchRequest`.
+  - BatchRequest::iter
+  - BatchRequest::iter_mut
+  - BatchRequest::variables
+  - BatchRequest::data
+  - BatchRequest::disable_introspection
 
 ## [3.0.11] 2021-12-02
 
