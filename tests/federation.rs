@@ -199,7 +199,7 @@ pub async fn test_find_entity_with_context() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .data(DataLoader::new(MyLoader))
+        .data(DataLoader::new(MyLoader, tokio::spawn))
         .finish();
     let query = r#"{
             _entities(representations: [

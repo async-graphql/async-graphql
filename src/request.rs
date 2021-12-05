@@ -159,6 +159,50 @@ impl BatchRequest {
             Self::Batch(_) => Err(ParseRequestError::UnsupportedBatch),
         }
     }
+
+    /// Returns an iterator over the requests.
+    pub fn iter(&self) -> impl Iterator<Item = &Request> {
+        match self {
+            BatchRequest::Single(request) => {
+                Box::new(std::iter::once(request)) as Box<dyn Iterator<Item = &Request>>
+            }
+            BatchRequest::Batch(requests) => Box::new(requests.iter()),
+        }
+    }
+
+    /// Returns an iterator that allows modifying each request.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Request> {
+        match self {
+            BatchRequest::Single(request) => {
+                Box::new(std::iter::once(request)) as Box<dyn Iterator<Item = &mut Request>>
+            }
+            BatchRequest::Batch(requests) => Box::new(requests.iter_mut()),
+        }
+    }
+
+    /// Specify the variables for each requests.
+    pub fn variables(mut self, variables: Variables) -> Self {
+        for request in self.iter_mut() {
+            request.variables = variables.clone();
+        }
+        self
+    }
+
+    /// Insert some data for  for each requests.
+    pub fn data<D: Any + Clone + Send + Sync>(mut self, data: D) -> Self {
+        for request in self.iter_mut() {
+            request.data.insert(data.clone());
+        }
+        self
+    }
+
+    /// Disable introspection queries for for each requests.
+    pub fn disable_introspection(mut self) -> Self {
+        for request in self.iter_mut() {
+            request.disable_introspection = true;
+        }
+        self
+    }
 }
 
 fn deserialize_non_empty_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
