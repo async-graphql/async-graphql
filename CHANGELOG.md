@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - BatchRequest::variables
   - BatchRequest::data
   - BatchRequest::disable_introspection
+- Fix implicit interfaces not being exposed via the __schema introspection. [#741](https://github.com/async-graphql/async-graphql/pull/741)
 
 ## [3.0.11] 2021-12-02
 
