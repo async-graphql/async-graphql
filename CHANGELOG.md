@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.12] 2021-12-05
+
+- Fix possible deadlock in dataloader. [#555](https://github.com/async-graphql/async-graphql/issues/555)
+- Add some helper methods for `BatchRequest`.
+  - BatchRequest::iter
+  - BatchRequest::iter_mut
+  - BatchRequest::variables
+  - BatchRequest::data
+  - BatchRequest::disable_introspection
+- Fix implicit interfaces not being exposed via the __schema introspection. [#741](https://github.com/async-graphql/async-graphql/pull/741)
+
 ## [3.0.11] 2021-12-02
 
 - Fix panic on f32-64::INFINITE/f32-64::NEG_INFINITE/f32-64::NAN output. [#735](https://github.com/async-graphql/async-graphql/issues/735)
