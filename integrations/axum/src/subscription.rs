@@ -6,7 +6,7 @@ use std::str::FromStr;
 use async_graphql::futures_util::task::{Context, Poll};
 use async_graphql::http::{WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
 use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use axum::body::{box_body, BoxBody, HttpBody};
+use axum::body::{boxed, BoxBody, HttpBody};
 use axum::extract::ws::{CloseFrame, Message};
 use axum::extract::{FromRequest, RequestParts, WebSocketUpgrade};
 use axum::http::{self, Request, Response, StatusCode};
@@ -94,11 +94,11 @@ where
             let mut parts = RequestParts::new(req);
             let protocol = match GraphQLProtocol::from_request(&mut parts).await {
                 Ok(protocol) => protocol,
-                Err(err) => return Ok(err.into_response().map(box_body)),
+                Err(err) => return Ok(err.into_response().map(boxed)),
             };
             let upgrade = match WebSocketUpgrade::from_request(&mut parts).await {
                 Ok(protocol) => protocol,
-                Err(err) => return Ok(err.into_response().map(box_body)),
+                Err(err) => return Ok(err.into_response().map(boxed)),
             };
 
             let schema = schema.clone();
@@ -106,7 +106,7 @@ where
             let resp = upgrade
                 .protocols(ALL_WEBSOCKET_PROTOCOLS)
                 .on_upgrade(move |stream| GraphQLWebSocket::new(stream, schema, protocol).serve());
-            Ok(resp.into_response().map(box_body))
+            Ok(resp.into_response().map(boxed))
         })
     }
 }
