@@ -313,7 +313,7 @@ pub async fn test_subscription_error() {
     #[Object]
     impl Event {
         async fn value(&self) -> Result<i32> {
-            if self.value < 5 {
+            if self.value != 5 {
                 Ok(self.value)
             } else {
                 Err("TestError".into())
@@ -335,12 +335,14 @@ pub async fn test_subscription_error() {
         .execute_stream("subscription { events { value } }")
         .map(|resp| resp.into_result())
         .map_ok(|resp| resp.data);
+
     for i in 0i32..5 {
         assert_eq!(
             value!({ "events": { "value": i } }),
             stream.next().await.unwrap().unwrap()
         );
     }
+
     assert_eq!(
         stream.next().await,
         Some(Err(vec![ServerError {
@@ -358,6 +360,13 @@ pub async fn test_subscription_error() {
         }]))
     );
 
+    for i in 6i32..10 {
+        assert_eq!(
+            value!({ "events": { "value": i } }),
+            stream.next().await.unwrap().unwrap()
+        );
+    }
+
     assert!(stream.next().await.is_none());
 }
 
@@ -373,17 +382,20 @@ pub async fn test_subscription_fieldresult() {
                 .chain(futures_util::stream::once(async move {
                     Err("StreamErr".into())
                 }))
+                .chain(futures_util::stream::iter(5..10).map(Result::Ok))
         }
     }
 
     let schema = Schema::new(Query, EmptyMutation, Subscription);
     let mut stream = schema.execute_stream("subscription { values }");
+
     for i in 0i32..5 {
         assert_eq!(
             Response::new(value!({ "values": i })),
             stream.next().await.unwrap()
         );
     }
+
     assert_eq!(
         Response {
             data: Value::Null,
@@ -403,6 +415,13 @@ pub async fn test_subscription_fieldresult() {
         },
         stream.next().await.unwrap(),
     );
+
+    for i in 5i32..10 {
+        assert_eq!(
+            Response::new(value!({ "values": i })),
+            stream.next().await.unwrap()
+        );
+    }
 
     assert!(stream.next().await.is_none());
 }

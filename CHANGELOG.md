@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.13] 2021-12-06
+
+- No longer assumes that a subscription stream that failed to resolve has ended. [#744](https://github.com/async-graphql/async-graphql/issues/744)
+
 ## [3.0.12] 2021-12-05
 
 - Fix possible deadlock in dataloader. [#555](https://github.com/async-graphql/async-graphql/issues/555)
