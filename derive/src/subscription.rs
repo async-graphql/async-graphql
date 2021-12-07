@@ -391,21 +391,7 @@ pub fn generate(
                         }
                     }
                 });
-                #crate_name::ServerResult::Ok(#crate_name::futures_util::stream::StreamExt::scan(
-                    stream,
-                    false,
-                    |errored, item| {
-                        if *errored {
-                            return #crate_name::futures_util::future::ready(::std::option::Option::None);
-                        }
-                        match &item {
-                            ::std::result::Result::Err(_) => *errored = true,
-                            ::std::result::Result::Ok(resp) if resp.is_err() => *errored = true,
-                            _ => {}
-                        }
-                        #crate_name::futures_util::future::ready(::std::option::Option::Some(item))
-                    },
-                ))
+                #crate_name::ServerResult::Ok(stream)
             };
 
             create_stream.push(quote! {

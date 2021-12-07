@@ -126,6 +126,7 @@ cd examples && cargo run --bin [name]
 - [vimwiki-server](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki-server) Provides graphql server to inspect and manipulate vimwiki files.
 - [Diana](https://github.com/arctic-hen7/diana) Diana is a GraphQL system for Rust that's designed to work as simply as possible out of the box, without sacrificing configuration ability.
 - [cindythink](https://www.cindythink.com/)
+- [sudograph](https://github.com/sudograph/sudograph)
 
 ## Blog Posts
 
