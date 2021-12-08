@@ -25,7 +25,7 @@ impl GraphQLRequest {
 /// Rejection response types.
 pub mod rejection {
     use async_graphql::ParseRequestError;
-    use axum::body::Body;
+    use axum::body::{boxed, Body, BoxBody};
     use axum::http;
     use axum::http::StatusCode;
     use axum::response::IntoResponse;
@@ -34,18 +34,15 @@ pub mod rejection {
     pub struct GraphQLRejection(pub ParseRequestError);
 
     impl IntoResponse for GraphQLRejection {
-        type Body = axum::body::Body;
-        type BodyError = <Self::Body as axum::body::HttpBody>::Error;
-
-        fn into_response(self) -> http::Response<Body> {
+        fn into_response(self) -> http::Response<BoxBody> {
             match self.0 {
                 ParseRequestError::PayloadTooLarge => http::Response::builder()
                     .status(StatusCode::PAYLOAD_TOO_LARGE)
-                    .body(Body::empty())
+                    .body(boxed(Body::empty()))
                     .unwrap(),
                 bad_request => http::Response::builder()
                     .status(StatusCode::BAD_REQUEST)
-                    .body(Body::from(format!("{:?}", bad_request)))
+                    .body(boxed(Body::from(format!("{:?}", bad_request))))
                     .unwrap(),
             }
         }
