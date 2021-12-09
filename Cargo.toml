@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql"
-version = "3.0.13"
+version = "3.0.14"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "A GraphQL server library implemented in Rust"
@@ -32,7 +32,7 @@ async-graphql-parser = { path = "parser", version = "3.0.13" }
 async-stream = "0.3.0"
 async-trait = "0.1.48"
 fnv = "1.0.7"
-futures-util = { version = "0.3.13", default-features = false, features = ["io", "sink"] }
+futures-util = { version = "0.3.18", default-features = false, features = ["io", "sink"] }
 indexmap = "1.6.2"
 once_cell = "1.7.2"
 pin-project-lite = "0.2.6"
