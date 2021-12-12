@@ -114,7 +114,9 @@ where
             continuation: Vec::new(),
         };
 
-        actix_web_actors::ws::start_with_protocols(actor, &ALL_WEBSOCKET_PROTOCOLS, request, stream)
+        actix_web_actors::ws::WsResponseBuilder::new(actor, request, stream)
+            .protocols(&ALL_WEBSOCKET_PROTOCOLS)
+            .start()
     }
 }
 

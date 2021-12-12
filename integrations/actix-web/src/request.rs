@@ -1,3 +1,4 @@
+use actix_http::body::BoxBody;
 use std::future::Future;
 use std::io::{self, ErrorKind};
 use std::pin::Pin;
@@ -153,6 +154,8 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 }
 
 impl Responder for GraphQLResponse {
+    type Body = BoxBody;
+
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
         res.content_type("application/json");

@@ -1,5 +1,5 @@
 use actix_http::Method;
-use actix_web::dev::{AnyBody, Service};
+use actix_web::dev::Service;
 use actix_web::{guard, test, web, web::Data, App};
 use serde_json::json;
 
@@ -21,12 +21,12 @@ async fn test_playground() {
     let req = test::TestRequest::with_uri("/").to_request();
     let response = srv.call(req).await.unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
-    if let AnyBody::Bytes(bytes) = body {
-        assert!(std::str::from_utf8(&bytes).unwrap().contains("graphql"));
-    } else {
-        panic!("response body must be Bytes {:?}", body);
-    }
+    let body = response.into_body();
+    assert!(
+        std::str::from_utf8(&actix_web::body::to_bytes(body).await.unwrap())
+            .unwrap()
+            .contains("graphql")
+    );
 }
 
 #[actix_rt::test]
@@ -55,10 +55,10 @@ async fn test_add() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(json!({"data": {"add": 30}}).to_string().into_bytes().into())
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"add": 30}}).to_string().into_bytes()
     );
 }
 
@@ -89,15 +89,12 @@ async fn test_hello() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"hello": "Hello, world!"}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"hello": "Hello, world!"}})
+            .to_string()
+            .into_bytes()
     );
 }
 
@@ -129,15 +126,12 @@ async fn test_hello_header() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"hello": "Hello, Foo!"}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"hello": "Hello, Foo!"}})
+            .to_string()
+            .into_bytes()
     );
 }
 
@@ -168,15 +162,10 @@ async fn test_count() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"count": 0}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"count": 0}}).to_string().into_bytes()
     );
 
     let response = srv
@@ -189,15 +178,10 @@ async fn test_count() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"addCount": 10}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"addCount": 10}}).to_string().into_bytes(),
     );
 
     let response = srv
@@ -210,15 +194,12 @@ async fn test_count() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"subtractCount": 8}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"subtractCount": 8}})
+            .to_string()
+            .into_bytes()
     );
 
     let response = srv
@@ -231,14 +212,11 @@ async fn test_count() {
         .await
         .unwrap();
     assert!(response.status().is_success());
-    let body = response.response().body();
+    let body = response.into_body();
     assert_eq!(
-        body,
-        &AnyBody::Bytes(
-            json!({"data": {"subtractCount": 6}})
-                .to_string()
-                .into_bytes()
-                .into()
-        )
+        actix_web::body::to_bytes(body).await.unwrap(),
+        json!({"data": {"subtractCount": 6}})
+            .to_string()
+            .into_bytes()
     );
 }
