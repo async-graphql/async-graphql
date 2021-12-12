@@ -206,7 +206,6 @@ impl Loader&lt;u64&gt; for UserNameLoader {
     type Error = Arc&lt;sqlx::Error&gt;;
 
     async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
-        let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
         let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
         Ok(sqlx::query_as(query)
             .fetch(&amp;self.pool)
