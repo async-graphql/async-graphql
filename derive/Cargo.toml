@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-derive"
-version = "3.0.14"
+version = "3.0.15"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "Macros for async-graphql"
