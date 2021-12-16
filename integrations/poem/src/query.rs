@@ -44,9 +44,9 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    type Output = Result<GraphQLBatchResponse>;
+    type Output = GraphQLBatchResponse;
 
-    async fn call(&self, req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> Result<Self::Output> {
         let (req, mut body) = req.split();
         let req = GraphQLBatchRequest::from_request(&req, &mut body).await?;
         Ok(GraphQLBatchResponse(self.schema.execute_batch(req.0).await))

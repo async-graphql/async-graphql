@@ -14,8 +14,8 @@ categories = ["network-programming", "asynchronous"]
 [dependencies]
 async-graphql = { path = "../..", version = "3.0.13" }
 
-poem = { version = "1.0.23", features = ["websocket"] }
-futures-util = { version = "0.3.13", default-features = false }
+poem = { version = "1.2.1", features = ["websocket"] }
+futures-util = { version = "0.3.0", default-features = false }
 serde_json = "1.0.66"
 tokio-util = { version = "0.6.7", features = ["compat"] }
 
