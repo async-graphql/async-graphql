@@ -2,7 +2,7 @@ use async_graphql::http::MultipartOptions;
 use poem::error::BadRequest;
 use poem::http::{header, Method};
 use poem::web::Query;
-use poem::{async_trait, Error, FromRequest, Request, RequestBody, Result};
+use poem::{async_trait, FromRequest, Request, RequestBody, Result};
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// An extractor for GraphQL request.
@@ -42,8 +42,6 @@ pub struct GraphQLRequest(pub async_graphql::Request);
 
 #[async_trait]
 impl<'a> FromRequest<'a> for GraphQLRequest {
-    type Error = Error;
-
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         Ok(GraphQLRequest(
             GraphQLBatchRequest::from_request(req, body)
@@ -60,8 +58,6 @@ pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
 #[async_trait]
 impl<'a> FromRequest<'a> for GraphQLBatchRequest {
-    type Error = Error;
-
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
             let req = Query::from_request(req, body).await?.0;
@@ -78,7 +74,8 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
                     body.take()?.into_async_read().compat(),
                     MultipartOptions::default(),
                 )
-                .await?,
+                .await
+                .map_err(BadRequest)?,
             ))
         }
     }

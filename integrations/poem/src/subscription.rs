@@ -8,7 +8,9 @@ use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::{Future, Sink, SinkExt, Stream, StreamExt};
 use poem::http::StatusCode;
 use poem::web::websocket::{Message, WebSocket};
-use poem::{http, Endpoint, FromRequest, IntoResponse, Request, RequestBody, Response, Result};
+use poem::{
+    http, Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
+};
 
 /// A GraphQL protocol extractor.
 ///
@@ -18,9 +20,7 @@ pub struct GraphQLProtocol(pub WebSocketProtocols);
 
 #[poem::async_trait]
 impl<'a> FromRequest<'a> for GraphQLProtocol {
-    type Error = StatusCode;
-
-    async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self, Self::Error> {
+    async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self> {
         req.headers()
             .get(http::header::SEC_WEBSOCKET_PROTOCOL)
             .and_then(|value| value.to_str().ok())
@@ -30,7 +30,7 @@ impl<'a> FromRequest<'a> for GraphQLProtocol {
                     .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
             })
             .map(Self)
-            .ok_or(StatusCode::BAD_REQUEST)
+            .ok_or_else(|| Error::new_with_status(StatusCode::BAD_REQUEST))
     }
 }
 
@@ -85,9 +85,9 @@ where
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
-    type Output = Result<Response>;
+    type Output = Response;
 
-    async fn call(&self, req: Request) -> Self::Output {
+    async fn call(&self, req: Request) -> Result<Self::Output> {
         let (req, mut body) = req.split();
         let websocket = WebSocket::from_request(&req, &mut body).await?;
         let protocol = GraphQLProtocol::from_request(&req, &mut body).await?;
