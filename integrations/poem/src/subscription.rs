@@ -30,7 +30,7 @@ impl<'a> FromRequest<'a> for GraphQLProtocol {
                     .find_map(|p| WebSocketProtocols::from_str(p.trim()).ok())
             })
             .map(Self)
-            .ok_or_else(|| Error::new_with_status(StatusCode::BAD_REQUEST))
+            .ok_or_else(|| Error::from_status(StatusCode::BAD_REQUEST))
     }
 }
 
