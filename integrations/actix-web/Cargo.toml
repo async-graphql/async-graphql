@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-actix-web"
-version = "3.0.16"
+version = "3.0.17"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "async-graphql for actix-web"
