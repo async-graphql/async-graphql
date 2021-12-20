@@ -70,6 +70,7 @@ sha2 = { version = "0.9.3", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.13", optional = true }
 serde_cbor = { version = "0.11.1", optional = true }
+fast_chemail = "0.9.6"
 
 [dev-dependencies]
 tokio = { version = "1.4.0", features = ["macros", "rt-multi-thread", "sync", "time"] }
