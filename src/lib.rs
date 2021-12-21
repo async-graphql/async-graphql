@@ -156,7 +156,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![allow(clippy::upper_case_acronyms)]
-#![recursion_limit = "256"]
+#![recursion_limit = "1024"]
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
