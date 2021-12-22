@@ -512,7 +512,12 @@ impl Registry {
         })
     }
 
-    fn create_entity_type(&mut self) {
+    /// Each type annotated with @key should be added to the _Entity union.
+    /// If no types are annotated with the key directive, then the _Entity union
+    /// and Query._entities field should be removed from the schema.
+    ///
+    /// [Reference](https://www.apollographql.com/docs/federation/federation-spec/#resolve-requests-for-entities).
+    fn create_entity_type_and_root_field(&mut self) {
         let possible_types: IndexSet<String> = self
             .types
             .values()
@@ -531,16 +536,69 @@ impl Registry {
             })
             .collect();
 
-        self.types.insert(
-            "_Entity".to_string(),
-            MetaType::Union {
-                name: "_Entity".to_string(),
-                description: None,
-                possible_types,
-                visible: None,
-                rust_typename: "async_graphql::federation::Entity",
-            },
-        );
+        if !possible_types.is_empty() {
+            self.types.insert(
+                "_Entity".to_string(),
+                MetaType::Union {
+                    name: "_Entity".to_string(),
+                    description: None,
+                    possible_types,
+                    visible: None,
+                    rust_typename: "async_graphql::federation::Entity",
+                },
+            );
+
+            let query_root = self.types.get_mut(&self.query_type).unwrap();
+            if let MetaType::Object { fields, .. } = query_root {
+                fields.insert(
+                    "_service".to_string(),
+                    MetaField {
+                        name: "_service".to_string(),
+                        description: None,
+                        args: Default::default(),
+                        ty: "_Service!".to_string(),
+                        deprecation: Default::default(),
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
+                    },
+                );
+
+                fields.insert(
+                    "_entities".to_string(),
+                    MetaField {
+                        name: "_entities".to_string(),
+                        description: None,
+                        args: {
+                            let mut args = IndexMap::new();
+                            args.insert(
+                                "representations",
+                                MetaInputValue {
+                                    name: "representations",
+                                    description: None,
+                                    ty: "[_Any!]!".to_string(),
+                                    default_value: None,
+                                    visible: None,
+                                    is_secret: false,
+                                },
+                            );
+                            args
+                        },
+                        ty: "[_Entity]!".to_string(),
+                        deprecation: Default::default(),
+                        cache_control: Default::default(),
+                        external: false,
+                        requires: None,
+                        provides: None,
+                        visible: None,
+                        compute_complexity: None,
+                    },
+                );
+            }
+        }
     }
 
     pub(crate) fn create_federation_types(&mut self) {
@@ -580,58 +638,7 @@ impl Registry {
             },
         );
 
-        self.create_entity_type();
-
-        let query_root = self.types.get_mut(&self.query_type).unwrap();
-        if let MetaType::Object { fields, .. } = query_root {
-            fields.insert(
-                "_service".to_string(),
-                MetaField {
-                    name: "_service".to_string(),
-                    description: None,
-                    args: Default::default(),
-                    ty: "_Service!".to_string(),
-                    deprecation: Default::default(),
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                    visible: None,
-                    compute_complexity: None,
-                },
-            );
-
-            fields.insert(
-                "_entities".to_string(),
-                MetaField {
-                    name: "_entities".to_string(),
-                    description: None,
-                    args: {
-                        let mut args = IndexMap::new();
-                        args.insert(
-                            "representations",
-                            MetaInputValue {
-                                name: "representations",
-                                description: None,
-                                ty: "[_Any!]!".to_string(),
-                                default_value: None,
-                                visible: None,
-                                is_secret: false,
-                            },
-                        );
-                        args
-                    },
-                    ty: "[_Entity]!".to_string(),
-                    deprecation: Default::default(),
-                    cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
-                    visible: None,
-                    compute_complexity: None,
-                },
-            );
-        }
+        self.create_entity_type_and_root_field();
     }
 
     pub fn names(&self) -> Vec<String> {
