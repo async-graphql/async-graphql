@@ -345,3 +345,47 @@ pub async fn test_guard_use_params() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_guard_on_complex_object() {
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct Query {
+        value1: i32,
+    }
+
+    #[ComplexObject]
+    impl Query {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        async fn value2(&self) -> i32 {
+            100
+        }
+    }
+
+    let schema = Schema::new(Query { value1: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value2 }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value2": 100})
+    );
+
+    let query = "{ value2 }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value2".to_owned())],
+            extensions: None,
+        }]
+    );
+}

@@ -348,13 +348,6 @@ pub fn generate(
                 None => None,
             };
 
-            let guard = guard.map(|guard| {
-                quote! {
-                    #guard.check(ctx).await
-                        .map_err(|err| err.into_server_error(ctx.item.pos))?;
-                }
-            });
-
             resolvers.push(quote! {
                 #(#cfg_attrs)*
                 if ctx.item.node.name.node == #field_name {
@@ -391,5 +384,6 @@ pub fn generate(
             }
         }
     };
+
     Ok(expanded.into())
 }
