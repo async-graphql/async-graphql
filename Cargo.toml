@@ -33,6 +33,7 @@ async-stream = "0.3.0"
 async-trait = "0.1.48"
 fnv = "1.0.7"
 futures-util = { version = "0.3.0", default-features = false, features = ["io", "sink"] }
+hashbrown = { version="0.11.2", optional = true }
 indexmap = "1.6.2"
 once_cell = "1.7.2"
 pin-project-lite = "0.2.6"
