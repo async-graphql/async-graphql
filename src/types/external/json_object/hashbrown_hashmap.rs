@@ -12,7 +12,7 @@ use indexmap::IndexMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::registry::{MetaType, Registry};
+use crate::registry::{Registry};
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
