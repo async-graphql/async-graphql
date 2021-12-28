@@ -7,6 +7,7 @@ use async_graphql_parser::types::Field;
 use async_graphql_parser::Positioned;
 use async_graphql_value::{from_value, to_value};
 use hashbrown::HashMap;
+use std::collections::HashMap as StdHashMap;
 use indexmap::IndexMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -26,17 +27,11 @@ impl<K, V> InputType for HashMap<K, V>
     type RawValueType = Self;
 
     fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("JSONObject")
+        <StdHashMap<K, V> as InputType>::type_name()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
-        registry.create_input_type::<Self, _>(|_| MetaType::Scalar {
-            name: <Self as InputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON Object value."),
-            is_valid: |_| true,
-            visible: None,
-            specified_by_url: None,
-        })
+        <StdHashMap<K, V> as InputType>::create_type_info(registry)
     }
 
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
@@ -81,17 +76,11 @@ impl<K, V> OutputType for HashMap<K, V>
         V: Serialize + Send + Sync,
 {
     fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("JSONObject")
+        <StdHashMap<K, V> as OutputType>::type_name()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
-        registry.create_output_type::<Self, _>(|_| MetaType::Scalar {
-            name: <Self as OutputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON Object value."),
-            is_valid: |_| true,
-            visible: None,
-            specified_by_url: None,
-        })
+        <StdHashMap<K, V> as OutputType>::create_type_info(registry)
     }
 
     async fn resolve(

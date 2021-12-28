@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cmp::Eq;
+use std::collections::HashSet as StdHashSet;
 use std::hash::Hash;
 
 use hashbrown::HashSet;
@@ -15,16 +16,15 @@ impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
     type RawValueType = Self;
 
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+        <StdHashSet<T> as InputType>::type_name()
     }
 
     fn qualified_type_name() -> String {
-        format!("[{}]!", T::qualified_type_name())
+        <StdHashSet<T> as InputType>::qualified_type_name()
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
-        Self::qualified_type_name()
+        <StdHashSet<T> as InputType>::create_type_info(registry)
     }
 
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
@@ -54,16 +54,15 @@ impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
 #[async_trait::async_trait]
 impl<T: OutputType + Hash + Eq> OutputType for HashSet<T> {
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+        <StdHashSet<T> as OutputType>::type_name()
     }
 
     fn qualified_type_name() -> String {
-        format!("[{}]!", T::qualified_type_name())
+        <StdHashSet<T> as OutputType>::qualified_type_name()
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
-        Self::qualified_type_name()
+        <StdHashSet<T> as OutputType>::create_type_info(registry)
     }
 
     async fn resolve(
