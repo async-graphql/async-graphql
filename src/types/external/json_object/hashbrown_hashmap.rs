@@ -7,22 +7,22 @@ use async_graphql_parser::types::Field;
 use async_graphql_parser::Positioned;
 use async_graphql_value::{from_value, to_value};
 use hashbrown::HashMap;
-use std::collections::HashMap as StdHashMap;
 use indexmap::IndexMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap as StdHashMap;
 
-use crate::registry::{Registry};
+use crate::registry::Registry;
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
 };
 
 impl<K, V> InputType for HashMap<K, V>
-    where
-        K: ToString + FromStr + Eq + Hash + Send + Sync,
-        K::Err: Display,
-        V: Serialize + DeserializeOwned + Send + Sync,
+where
+    K: ToString + FromStr + Eq + Hash + Send + Sync,
+    K::Err: Display,
+    V: Serialize + DeserializeOwned + Send + Sync,
 {
     type RawValueType = Self;
 
@@ -71,9 +71,9 @@ impl<K, V> InputType for HashMap<K, V>
 
 #[async_trait::async_trait]
 impl<K, V> OutputType for HashMap<K, V>
-    where
-        K: ToString + Eq + Hash + Send + Sync,
-        V: Serialize + Send + Sync,
+where
+    K: ToString + Eq + Hash + Send + Sync,
+    V: Serialize + Send + Sync,
 {
     fn type_name() -> Cow<'static, str> {
         <StdHashMap<K, V> as OutputType>::type_name()
