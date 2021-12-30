@@ -25,6 +25,8 @@ pub use max_length::max_length;
 pub use maximum::maximum;
 pub use min_items::min_items;
 pub use min_length::min_length;
+#[cfg(feature = "password-strength-validator")]
+pub use min_password_strength::min_password_strength;
 pub use minimum::minimum;
 pub use multiple_of::multiple_of;
 
