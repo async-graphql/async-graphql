@@ -23,6 +23,7 @@ tracing = ["tracinglib", "tracing-futures"]
 decimal = ["rust_decimal"]
 cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
+password-strength-validator = ["zxcvbn"]
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "3.0.19" }
@@ -63,6 +64,7 @@ uuid = { version = "0.8.2", optional = true, features = ["v4", "serde"] }
 rust_decimal = { version = "1.14.3", optional = true }
 url = { version = "2.2.1", optional = true }
 smol_str = { version = "0.1.21", optional = true }
+zxcvbn = { version = "2.1.2", optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }

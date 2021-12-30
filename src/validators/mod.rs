@@ -7,6 +7,8 @@ mod max_length;
 mod maximum;
 mod min_items;
 mod min_length;
+#[cfg(feature = "password-strength-validator")]
+mod min_password_strength;
 mod minimum;
 mod multiple_of;
 mod regex;

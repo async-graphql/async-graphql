@@ -34,6 +34,8 @@ pub struct Validators {
     #[darling(default)]
     multiple_of: Option<Number>,
     #[darling(default)]
+    min_password_strength: Option<u8>,
+    #[darling(default)]
     maximum: Option<Number>,
     #[darling(default)]
     minimum: Option<Number>,
@@ -90,6 +92,12 @@ impl Validators {
         if let Some(n) = &self.multiple_of {
             elem_validators.push(quote! {
                 #crate_name::validators::multiple_of(__raw_value, #n)
+            });
+        }
+
+        if let Some(n) = &self.min_password_strength {
+            elem_validators.push(quote! {
+                #crate_name::validators::min_password_strength(__raw_value, #n)
             });
         }
 
