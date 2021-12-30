@@ -66,7 +66,7 @@ smol_str = { version = "0.1.21", optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
-lru = { version = "0.6.5", optional = true }
+lru = { version = "0.7.1", optional = true }
 sha2 = { version = "0.9.3", optional = true }
 futures-timer = { version = "3.0.2", optional = true }
 futures-channel = { version = "0.3.13", optional = true }
