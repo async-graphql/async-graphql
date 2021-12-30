@@ -29,6 +29,7 @@ impl<'a> Lookahead<'a> {
     ///
     /// For example, calling `.field("a")` on `{ a { b } }` will return a lookahead that
     /// represents `{ b }`.
+    #[must_use]
     pub fn field(&self, name: &str) -> Self {
         let mut fields = Vec::new();
         for field in &self.fields {

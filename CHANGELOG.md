@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.19] 2021-12-28
+
+- Add `InputType` / `OutputType` support for `hashbrown` crate.
+- Bump actix-web from `4.0.0-beta.14` to `4.0.0-beta.18`. [#768](https://github.com/async-graphql/async-graphql/pull/768)
+
 ## [3.0.18] 2021-12-26
 
 - Federation's `_Entity` should not be sent if empty as it's in conflict with [GraphQL Union type validation](https://spec.graphql.org/draft/#sec-Unions.Type-Validation) [#765](https://github.com/async-graphql/async-graphql/pull/765).

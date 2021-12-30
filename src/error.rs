@@ -110,6 +110,7 @@ impl ServerError {
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn with_path(self, path: Vec<PathSegment>) -> Self {
         Self { path, ..self }
     }

@@ -59,6 +59,7 @@ impl Request {
     }
 
     /// Specify the operation name of the request.
+    #[must_use]
     pub fn operation_name<T: Into<String>>(self, name: T) -> Self {
         Self {
             operation_name: Some(name.into()),
@@ -67,6 +68,7 @@ impl Request {
     }
 
     /// Specify the variables.
+    #[must_use]
     pub fn variables(self, variables: Variables) -> Self {
         Self { variables, ..self }
     }
@@ -78,6 +80,7 @@ impl Request {
     }
 
     /// Disable introspection queries for this request.
+    #[must_use]
     pub fn disable_introspection(mut self) -> Self {
         self.disable_introspection = true;
         self
