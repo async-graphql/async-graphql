@@ -4,7 +4,7 @@ use std::io::{self, ErrorKind};
 use std::pin::Pin;
 
 use actix_http::error::PayloadError;
-use actix_web::dev::{Payload, PayloadStream};
+use actix_web::dev::Payload;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
 use futures_util::future::{self, FutureExt};
@@ -33,7 +33,7 @@ impl FromRequest for GraphQLRequest {
     type Error = Error;
     type Future = future::Map<<GraphQLBatchRequest as FromRequest>::Future, BatchToRequestMapper>;
 
-    fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
+    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         GraphQLBatchRequest::from_request(req, payload).map(|res| {
             Ok(Self(
                 res?.0
@@ -61,7 +61,7 @@ impl FromRequest for GraphQLBatchRequest {
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<GraphQLBatchRequest>>>>;
 
-    fn from_request(req: &HttpRequest, payload: &mut Payload<PayloadStream>) -> Self::Future {
+    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         let config = req
             .app_data::<MultipartOptions>()
             .cloned()
