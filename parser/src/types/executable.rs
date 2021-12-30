@@ -126,16 +126,13 @@ impl VariableDefinition {
     /// `Value::Null` if it is nullable and `None` otherwise.
     #[must_use]
     pub fn default_value(&self) -> Option<&ConstValue> {
-        self.default_value
-            .as_ref()
-            .map(|value| &value.node)
-            .or_else(|| {
-                if self.var_type.node.nullable {
-                    Some(&ConstValue::Null)
-                } else {
-                    None
-                }
-            })
+        self.default_value.as_ref().map(|value| &value.node).or({
+            if self.var_type.node.nullable {
+                Some(&ConstValue::Null)
+            } else {
+                None
+            }
+        })
     }
 }
 

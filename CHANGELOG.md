@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.19] 2021-12-28
 
 - Add `InputType` / `OutputType` support for `hashbrown` crate.
+- Bump actix-web from `4.0.0-beta.14` to `4.0.0-beta.18`. [#768](https://github.com/async-graphql/async-graphql/pull/768)
 
 ## [3.0.18] 2021-12-26
 
