@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.20] 2022-1-5
+
+- Bump `lru` to `0.7.1`. [#773](https://github.com/async-graphql/async-graphql/pull/773)
+- Align `indexmap` version to `1.6.2`. [#776](https://github.com/async-graphql/async-graphql/pull/776)
+- Bump actix-web from `4.0.0-beta.18` to `4.0.0-beta.19`.
+- Fix the generic `SimpleObject` can't define the lifetimes. [#774](https://github.com/async-graphql/async-graphql/issues/774)
+
 ## [3.0.19] 2021-12-28
 
 - Add `InputType` / `OutputType` support for `hashbrown` crate.
