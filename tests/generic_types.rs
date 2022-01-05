@@ -348,3 +348,71 @@ pub async fn test_concrete_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_concrete_object_with_lifetime() {
+    #[derive(SimpleObject)]
+    #[graphql(concrete(name = "Bar0", params(i32)))]
+    #[graphql(concrete(name = "Bar1", params(i64)))]
+    struct Foo<'a, T>
+    where
+        T: Sync + OutputType + 'a,
+    {
+        data: &'a T,
+    }
+
+    struct Query {
+        value1: i32,
+        value2: i64,
+    }
+
+    #[Object]
+    impl Query {
+        async fn a(&self) -> Foo<'_, i32> {
+            Foo { data: &self.value1 }
+        }
+
+        async fn b(&self) -> Foo<'_, i64> {
+            Foo { data: &self.value2 }
+        }
+
+        async fn static_a(&self) -> Foo<'static, i32> {
+            Foo { data: &100 }
+        }
+
+        async fn static_b(&self) -> Foo<'static, i32> {
+            Foo { data: &200 }
+        }
+    }
+
+    let schema = Schema::new(
+        Query {
+            value1: 88,
+            value2: 99,
+        },
+        EmptyMutation,
+        EmptySubscription,
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{ 
+                a { data } 
+                b { data }
+                staticA { data }
+                staticB { data }
+            }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "a": { "data": 88 },
+            "b": { "data": 99 },
+            "staticA": { "data": 100 },
+            "staticB": { "data": 200 },
+        })
+    );
+}

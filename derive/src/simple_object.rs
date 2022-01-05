@@ -3,7 +3,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use std::str::FromStr;
 use syn::ext::IdentExt;
-use syn::{Error, Ident, Path, Type};
+use syn::visit::Visit;
+use syn::{Error, Ident, LifetimeDef, Path, Type};
 
 use crate::args::{self, RenameRuleExt, RenameTarget, SimpleObjectField};
 use crate::utils::{
@@ -320,6 +321,33 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     } else {
         let mut code = Vec::new();
 
+        #[derive(Default)]
+        struct GetLifetimes<'a> {
+            lifetimes: Vec<&'a LifetimeDef>,
+        }
+
+        impl<'a> Visit<'a> for GetLifetimes<'a> {
+            fn visit_lifetime_def(&mut self, i: &'a LifetimeDef) {
+                self.lifetimes.push(i);
+            }
+        }
+
+        let mut visitor = GetLifetimes::default();
+        visitor.visit_generics(&object_args.generics);
+        let lifetimes = visitor.lifetimes;
+
+        let def_lifetimes = if !lifetimes.is_empty() {
+            Some(quote!(<#(#lifetimes),*>))
+        } else {
+            None
+        };
+
+        let type_lifetimes = if !lifetimes.is_empty() {
+            Some(quote!(#(#lifetimes,)*))
+        } else {
+            None
+        };
+
         code.push(quote! {
             impl #impl_generics #ident #ty_generics #where_clause {
                 #(#getters)*
@@ -357,12 +385,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         for concrete in &object_args.concretes {
             let gql_typename = &concrete.name;
             let params = &concrete.params.0;
-            let concrete_type = quote! { #ident<#(#params),*> };
+            let concrete_type = quote! { #ident<#type_lifetimes #(#params),*> };
 
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
                 #[#crate_name::async_trait::async_trait]
-                impl #crate_name::resolver_utils::ContainerType for #concrete_type {
+                impl #def_lifetimes #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         #complex_resolver
                         self.__internal_resolve_field(ctx).await
@@ -371,7 +399,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
                 #[allow(clippy::all, clippy::pedantic)]
                 #[#crate_name::async_trait::async_trait]
-                impl #crate_name::OutputType for #concrete_type {
+                impl #def_lifetimes #crate_name::OutputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -387,7 +415,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     }
                 }
 
-                impl #crate_name::ObjectType for #concrete_type {}
+                impl #def_lifetimes #crate_name::ObjectType for #concrete_type {}
             };
             code.push(expanded);
         }
