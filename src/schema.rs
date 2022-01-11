@@ -40,6 +40,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Manually register a input type in the schema.
     ///
     /// You can use this function to register schema types that are not directly referenced.
+    #[must_use]
     pub fn register_input_type<T: InputType>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
         self
@@ -48,24 +49,28 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Manually register a output type in the schema.
     ///
     /// You can use this function to register schema types that are not directly referenced.
+    #[must_use]
     pub fn register_output_type<T: OutputType>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
         self
     }
 
     /// Disable introspection queries.
+    #[must_use]
     pub fn disable_introspection(mut self) -> Self {
         self.registry.disable_introspection = true;
         self
     }
 
     /// Set the maximum complexity a query can have. By default, there is no limit.
+    #[must_use]
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
         self.complexity = Some(complexity);
         self
     }
 
     /// Set the maximum depth a query can have. By default, there is no limit.
+    #[must_use]
     pub fn limit_depth(mut self, depth: usize) -> Self {
         self.depth = Some(depth);
         self
@@ -91,24 +96,28 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     ///     .extension(extensions::Logger)
     ///     .finish();
     /// ```
+    #[must_use]
     pub fn extension(mut self, extension: impl ExtensionFactory) -> Self {
         self.extensions.push(Box::new(extension));
         self
     }
 
     /// Add a global data that can be accessed in the `Schema`. You access it with `Context::data`.
+    #[must_use]
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
     }
 
     /// Set the validation mode, default is `ValidationMode::Strict`.
+    #[must_use]
     pub fn validation_mode(mut self, validation_mode: ValidationMode) -> Self {
         self.validation_mode = validation_mode;
         self
     }
 
     /// Enable federation, which is automatically enabled if the Query has least one entity definition.
+    #[must_use]
     pub fn enable_federation(mut self) -> Self {
         self.registry.enable_federation = true;
         self
@@ -117,18 +126,21 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Make the Federation SDL include subscriptions.
     ///
     /// Note: Not included by default, in order to be compatible with Apollo Server.
+    #[must_use]
     pub fn enable_subscription_in_federation(mut self) -> Self {
         self.registry.federation_subscription = true;
         self
     }
 
     /// Override the name of the specified input type.
+    #[must_use]
     pub fn override_input_type_description<T: InputType>(mut self, desc: &'static str) -> Self {
         self.registry.set_description(&*T::type_name(), desc);
         self
     }
 
     /// Override the name of the specified output type.
+    #[must_use]
     pub fn override_output_type_description<T: OutputType>(mut self, desc: &'static str) -> Self {
         self.registry.set_description(&*T::type_name(), desc);
         self
@@ -139,6 +151,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// # Panics
     ///
     /// Panics if the directive with the same name is already registered.
+    #[must_use]
     pub fn directive<T: CustomDirectiveFactory>(mut self, directive: T) -> Self {
         let name = directive.name();
         let instance = Box::new(directive);

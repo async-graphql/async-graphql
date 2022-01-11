@@ -68,6 +68,7 @@ impl<'a> MetaTypeName<'a> {
     }
 
     #[inline]
+    #[must_use]
     pub fn unwrap_non_null(&self) -> Self {
         match self {
             MetaTypeName::NonNull(ty) => MetaTypeName::create(ty),

@@ -530,6 +530,7 @@ impl<'a, T> ContextBase<'a, T> {
 
 impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
     #[doc(hidden)]
+    #[must_use]
     pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
         ContextBase {
             path_node: Some(QueryPathNode {

@@ -74,6 +74,7 @@ impl Request {
     }
 
     /// Insert some data for this request.
+    #[must_use]
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
@@ -184,6 +185,7 @@ impl BatchRequest {
     }
 
     /// Specify the variables for each requests.
+    #[must_use]
     pub fn variables(mut self, variables: Variables) -> Self {
         for request in self.iter_mut() {
             request.variables = variables.clone();
@@ -192,6 +194,7 @@ impl BatchRequest {
     }
 
     /// Insert some data for  for each requests.
+    #[must_use]
     pub fn data<D: Any + Clone + Send + Sync>(mut self, data: D) -> Self {
         for request in self.iter_mut() {
             request.data.insert(data.clone());
@@ -200,6 +203,7 @@ impl BatchRequest {
     }
 
     /// Disable introspection queries for for each requests.
+    #[must_use]
     pub fn disable_introspection(mut self) -> Self {
         for request in self.iter_mut() {
             request.disable_introspection = true;
