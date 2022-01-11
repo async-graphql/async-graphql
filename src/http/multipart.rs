@@ -22,6 +22,7 @@ pub struct MultipartOptions {
 
 impl MultipartOptions {
     /// Set maximum file size.
+    #[must_use]
     pub fn max_file_size(self, size: usize) -> Self {
         MultipartOptions {
             max_file_size: Some(size),
@@ -30,6 +31,7 @@ impl MultipartOptions {
     }
 
     /// Set maximum number of files.
+    #[must_use]
     pub fn max_num_files(self, n: usize) -> Self {
         MultipartOptions {
             max_num_files: Some(n),

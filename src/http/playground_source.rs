@@ -581,12 +581,14 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
     }
 
     /// Set subscription endpoint, for example: `ws://localhost:8000`.
+    #[must_use]
     pub fn subscription_endpoint(mut self, endpoint: &'a str) -> Self {
         self.subscription_endpoint = Some(endpoint);
         self
     }
 
     /// Set HTTP header for per query.
+    #[must_use]
     pub fn with_header(mut self, name: &'a str, value: &'a str) -> Self {
         if let Some(headers) = &mut self.headers {
             headers.insert(name, value);
@@ -607,6 +609,7 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
     ///     .with_setting("setting", false)
     ///     .with_setting("other", Value::Null);
     /// ```
+    #[must_use]
     pub fn with_setting(mut self, name: &'a str, value: impl Into<Value>) -> Self {
         let value = value.into();
 

@@ -205,5 +205,6 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
         impl #impl_generics #crate_name::UnionType for #ident #ty_generics #where_clause {}
     };
+
     Ok(expanded.into())
 }

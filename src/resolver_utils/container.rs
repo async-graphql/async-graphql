@@ -1,6 +1,7 @@
 use futures_util::FutureExt;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use indexmap::IndexMap;
 
@@ -51,13 +52,35 @@ pub trait ContainerType: OutputType {
 }
 
 #[async_trait::async_trait]
-impl<T: ContainerType> ContainerType for &T {
+impl<T: ContainerType + ?Sized> ContainerType for &T {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(*self, ctx).await
     }
 
     async fn find_entity(&self, ctx: &Context<'_>, params: &Value) -> ServerResult<Option<Value>> {
         T::find_entity(*self, ctx, params).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: ContainerType + ?Sized> ContainerType for Arc<T> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
+        T::resolve_field(self, ctx).await
+    }
+
+    async fn find_entity(&self, ctx: &Context<'_>, params: &Value) -> ServerResult<Option<Value>> {
+        T::find_entity(self, ctx, params).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: ContainerType + ?Sized> ContainerType for Box<T> {
+    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
+        T::resolve_field(self, ctx).await
+    }
+
+    async fn find_entity(&self, ctx: &Context<'_>, params: &Value) -> ServerResult<Option<Value>> {
+        T::find_entity(self, ctx, params).await
     }
 }
 

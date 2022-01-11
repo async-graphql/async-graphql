@@ -46,7 +46,7 @@ pub(super) fn block_string_value(raw: &str) -> String {
         .iter()
         .copied()
         .position(line_has_content)
-        .unwrap_or_else(|| lines.len());
+        .unwrap_or(lines.len());
     let ending_lines_start = lines
         .iter()
         .copied()

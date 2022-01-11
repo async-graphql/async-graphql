@@ -226,6 +226,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Specify the delay time for loading data, the default is `1ms`.
+    #[must_use]
     pub fn delay(self, delay: Duration) -> Self {
         Self { delay, ..self }
     }
@@ -233,6 +234,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     /// pub fn Specify the max batch size for loading data, the default is `1000`.
     ///
     /// If the keys waiting to be loaded reach the threshold, they are loaded immediately.
+    #[must_use]
     pub fn max_batch_size(self, max_batch_size: usize) -> Self {
         Self {
             max_batch_size,

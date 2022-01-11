@@ -131,7 +131,13 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
 pub trait ObjectType: ContainerType {}
 
 #[async_trait::async_trait]
-impl<T: ObjectType> ObjectType for &T {}
+impl<T: ObjectType + ?Sized> ObjectType for &T {}
+
+#[async_trait::async_trait]
+impl<T: ObjectType + ?Sized> ObjectType for Box<T> {}
+
+#[async_trait::async_trait]
+impl<T: ObjectType + ?Sized> ObjectType for Arc<T> {}
 
 /// A GraphQL interface.
 pub trait InterfaceType: ContainerType {}

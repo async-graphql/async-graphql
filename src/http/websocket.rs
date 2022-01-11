@@ -138,6 +138,7 @@ where
     /// This data usually comes from HTTP requests.
     /// When the `GQL_CONNECTION_INIT` message is received, this data will be merged with the data
     /// returned by the closure specified by `with_initializer` into the final subscription context data.
+    #[must_use]
     pub fn connection_data(mut self, data: Data) -> Self {
         self.connection_data = Some(data);
         self
@@ -148,6 +149,7 @@ where
     /// This function if present, will be called with the data sent by the client in the
     /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
     /// From that point on the returned data will be accessible to all requests.
+    #[must_use]
     pub fn on_connection_init<F, R>(
         self,
         callback: F,

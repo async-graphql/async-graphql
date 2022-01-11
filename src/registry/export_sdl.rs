@@ -52,7 +52,7 @@ impl Registry {
                 writeln!(
                     sdl,
                     "\t\"\"\"\n\t{}\n\t\"\"\"",
-                    field.description.unwrap().replace("\n", "\n\t")
+                    field.description.unwrap().replace('\n', "\n\t")
                 )
                 .ok();
             }

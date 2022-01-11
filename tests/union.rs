@@ -367,3 +367,55 @@ pub async fn test_union_flatten() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_trait_object_in_union() {
+    pub trait ProductTrait: Send + Sync {
+        fn id(&self) -> &str;
+    }
+
+    #[Object]
+    impl dyn ProductTrait {
+        #[graphql(name = "id")]
+        async fn gql_id(&self, _ctx: &Context<'_>) -> &str {
+            self.id()
+        }
+    }
+
+    struct MyProduct;
+
+    impl ProductTrait for MyProduct {
+        fn id(&self) -> &str {
+            "abc"
+        }
+    }
+
+    #[derive(Union)]
+    pub enum Content {
+        Product(Box<dyn ProductTrait>),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> Content {
+            Content::Product(Box::new(MyProduct))
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value { ... on ProductTrait { id } } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "value": {
+                "id": "abc"
+            }
+        })
+    );
+}
