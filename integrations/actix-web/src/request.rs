@@ -156,17 +156,28 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 impl Responder for GraphQLResponse {
     type Body = BoxBody;
 
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
-        res.content_type("application/json");
         if self.0.is_ok() {
             if let Some(cache_control) = self.0.cache_control().value() {
-                res.append_header(("cache-control", cache_control));
+                res.append_header((http::header::CACHE_CONTROL, cache_control));
             }
         }
         for (name, value) in self.0.http_headers() {
             res.append_header((name, value));
         }
-        res.body(serde_json::to_string(&self.0).unwrap())
+        let accept = req
+            .headers()
+            .get(http::header::ACCEPT)
+            .and_then(|val| val.to_str().ok());
+        // TODO: Error handling
+        // Neither of these branches should potentially panic.
+        if accept == Some("application/cbor") {
+            res.content_type("application/cbor");
+            res.body(serde_cbor::to_vec(&self.0).unwrap())
+        } else {
+            res.content_type("application/json");
+            res.body(serde_json::to_vec(&self.0).unwrap())
+        }
     }
 }
