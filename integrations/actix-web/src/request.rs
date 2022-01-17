@@ -1,6 +1,5 @@
 use actix_http::body::BoxBody;
 use actix_web::error::JsonPayloadError;
-use core::fmt;
 use std::future::Future;
 use std::io::{self, ErrorKind};
 use std::pin::Pin;
@@ -8,9 +7,7 @@ use std::pin::Pin;
 use actix_http::error::PayloadError;
 use actix_web::dev::Payload;
 use actix_web::http::{Method, StatusCode};
-use actix_web::{
-    http, Error, FromRequest, HttpRequest, HttpResponse, Responder, ResponseError, Result,
-};
+use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
 use futures_util::future::{self, FutureExt};
 use futures_util::{StreamExt, TryStreamExt};
 
@@ -157,16 +154,22 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
     }
 }
 
-#[derive(Debug)]
-struct CborSerializeError(serde_cbor::Error);
-impl fmt::Display for CborSerializeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+#[cfg(feature = "cbor")]
+mod cbor {
+    use actix_web::{http::StatusCode, ResponseError};
+    use core::fmt;
+
+    #[derive(Debug)]
+    pub struct Error(pub serde_cbor::Error);
+    impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
     }
-}
-impl ResponseError for CborSerializeError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+    impl ResponseError for Error {
+        fn status_code(&self) -> StatusCode {
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }
 
@@ -187,20 +190,26 @@ impl Responder for GraphQLResponse {
             .headers()
             .get(http::header::ACCEPT)
             .and_then(|val| val.to_str().ok());
-        if accept == Some("application/cbor") {
-            res.content_type("application/cbor");
-            let body = match serde_cbor::to_vec(&self.0) {
-                Ok(body) => body,
-                Err(error) => return HttpResponse::from_error(CborSerializeError(error)),
-            };
-            res.append_header((http::header::CONTENT_LENGTH, body.len()));
-            res.body(body)
-        } else {
-            res.content_type("application/json");
-            res.body(match serde_json::to_vec(&self.0) {
-                Ok(body) => body,
-                Err(error) => return HttpResponse::from_error(JsonPayloadError::Serialize(error)),
-            })
-        }
+        let (ct, body) = match accept {
+            // optional cbor support
+            #[cfg(feature = "cbor")]
+            // this avoids copy-pasting the mime type
+            Some(ct @ "application/cbor") => (
+                ct,
+                match serde_cbor::to_vec(&self.0) {
+                    Ok(body) => body,
+                    Err(e) => return HttpResponse::from_error(cbor::Error(e)),
+                },
+            ),
+            _ => (
+                "application/json",
+                match serde_json::to_vec(&self.0) {
+                    Ok(body) => body,
+                    Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),
+                },
+            ),
+        };
+        res.content_type(ct);
+        res.body(body)
     }
 }
