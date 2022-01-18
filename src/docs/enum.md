@@ -4,23 +4,23 @@ Define a GraphQL enum
 
 # Macro attributes
 
-| Attribute    | description               | Type     | Optional |
-|--------------|---------------------------|----------|----------|
-| name         | Enum name                 | string   | Y        |
-| rename_items | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
-| remote       | Derive a remote enum      | string   | Y        |
-| visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-| visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+| Attribute    | description                                                                                                                                                                      | Type   | Optional |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name         | Enum name                                                                                                                                                                        | string | Y        |
+| rename_items | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE". | string | Y        |
+| remote       | Derive a remote enum                                                                                                                                                             | string | Y        |
+| visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                  | bool   | Y        |
+| visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                          | string | Y        |
 
 # Item attributes
 
-| Attribute   | description               | Type     | Optional |
-|-------------|---------------------------|----------|----------|
-| name        | Item name                 | string   | Y        |
-| deprecation | Item deprecated           | bool     | Y        |
-| deprecation | Item deprecation reason   | string   | Y        |
-| visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-| visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
+| Attribute   | description                                                                                                                                     | Type   | Optional |
+|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name        | Item name                                                                                                                                       | string | Y        |
+| deprecation | Item deprecated                                                                                                                                 | bool   | Y        |
+| deprecation | Item deprecation reason                                                                                                                         | string | Y        |
+| visible     | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
+| visible     | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
 
 # Examples
 

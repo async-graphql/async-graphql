@@ -33,7 +33,7 @@ pub fn generate(
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            let method_args: args::ObjectField =
+            let method_args: args::ComplexObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
             for derived in method_args.derived {
@@ -116,9 +116,44 @@ pub fn generate(
 
     for item in &mut item_impl.items {
         if let ImplItem::Method(method) = item {
-            let method_args: args::ObjectField =
+            let method_args: args::ComplexObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
             if method_args.skip {
+                remove_graphql_attrs(&mut method.attrs);
+                continue;
+            }
+            let cfg_attrs = get_cfg_attrs(&method.attrs);
+
+            if method_args.flatten {
+                let ty = match &method.sig.output {
+                    ReturnType::Type(_, ty) => OutputType::parse(ty)?,
+                    ReturnType::Default => {
+                        return Err(Error::new_spanned(
+                            &method.sig.output,
+                            "Flatten resolver must have a return type",
+                        )
+                        .into())
+                    }
+                };
+                let ty = ty.value_type();
+                let ident = &method.sig.ident;
+
+                schema_fields.push(quote! {
+                    #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::ObjectType);
+                    <#ty>::create_type_info(registry);
+                    if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
+                        registry.create_fake_output_type::<#ty>() {
+                        fields.extend(obj_fields);
+                    }
+                });
+
+                resolvers.push(quote! {
+                    #(#cfg_attrs)*
+                    if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident().await, ctx).await? {
+                        return ::std::result::Result::Ok(std::option::Option::Some(value));
+                    }
+                });
+
                 remove_graphql_attrs(&mut method.attrs);
                 continue;
             }
@@ -151,7 +186,6 @@ pub fn generate(
                     }
                 }
             };
-            let cfg_attrs = get_cfg_attrs(&method.attrs);
 
             let args = extract_input_args(&crate_name, method)?;
             let ty = match &method.sig.output {

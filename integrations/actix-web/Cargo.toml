@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-actix-web"
-version = "3.0.21"
+version = "3.0.22"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "async-graphql for actix-web"
@@ -12,7 +12,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "3.0.21" }
+async-graphql = { path = "../..", version = "3.0.22" }
 
 actix = "0.12.0"
 actix-http = "3.0.0-beta.17"
@@ -24,7 +24,13 @@ serde_json = "1.0.64"
 serde_urlencoded = "0.7.0"
 futures-channel = "0.3.13"
 thiserror = "1.0.30"
+serde_cbor = { version = "0.11.2", optional = true }
+
+[features]
+default = []
+cbor = ["serde_cbor"]
 
 [dev-dependencies]
 actix-rt = "2.2.0"
 async-mutex = "1.4.0"
+serde = { version = "1", features = ["derive"] }

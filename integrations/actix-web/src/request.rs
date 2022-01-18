@@ -1,4 +1,5 @@
 use actix_http::body::BoxBody;
+use actix_web::error::JsonPayloadError;
 use std::future::Future;
 use std::io::{self, ErrorKind};
 use std::pin::Pin;
@@ -153,20 +154,62 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
     }
 }
 
+#[cfg(feature = "cbor")]
+mod cbor {
+    use actix_web::{http::StatusCode, ResponseError};
+    use core::fmt;
+
+    #[derive(Debug)]
+    pub struct Error(pub serde_cbor::Error);
+    impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+    impl ResponseError for Error {
+        fn status_code(&self) -> StatusCode {
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
 impl Responder for GraphQLResponse {
     type Body = BoxBody;
 
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
         let mut res = HttpResponse::build(StatusCode::OK);
-        res.content_type("application/json");
         if self.0.is_ok() {
             if let Some(cache_control) = self.0.cache_control().value() {
-                res.append_header(("cache-control", cache_control));
+                res.append_header((http::header::CACHE_CONTROL, cache_control));
             }
         }
         for (name, value) in self.0.http_headers() {
             res.append_header((name, value));
         }
-        res.body(serde_json::to_string(&self.0).unwrap())
+        let accept = req
+            .headers()
+            .get(http::header::ACCEPT)
+            .and_then(|val| val.to_str().ok());
+        let (ct, body) = match accept {
+            // optional cbor support
+            #[cfg(feature = "cbor")]
+            // this avoids copy-pasting the mime type
+            Some(ct @ "application/cbor") => (
+                ct,
+                match serde_cbor::to_vec(&self.0) {
+                    Ok(body) => body,
+                    Err(e) => return HttpResponse::from_error(cbor::Error(e)),
+                },
+            ),
+            _ => (
+                "application/json",
+                match serde_json::to_vec(&self.0) {
+                    Ok(body) => body,
+                    Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),
+                },
+            ),
+        };
+        res.content_type(ct);
+        res.body(body)
     }
 }
