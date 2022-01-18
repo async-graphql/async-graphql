@@ -258,6 +258,41 @@ pub fn generate(
                 if method.sig.asyncness.is_none() {
                     return Err(Error::new_spanned(&method, "Must be asynchronous").into());
                 }
+                let cfg_attrs = get_cfg_attrs(&method.attrs);
+
+                if method_args.flatten {
+                    let ty = match &method.sig.output {
+                        ReturnType::Type(_, ty) => OutputType::parse(ty)?,
+                        ReturnType::Default => {
+                            return Err(Error::new_spanned(
+                                &method.sig.output,
+                                "Flatten resolver must have a return type",
+                            )
+                            .into())
+                        }
+                    };
+                    let ty = ty.value_type();
+                    let ident = &method.sig.ident;
+
+                    schema_fields.push(quote! {
+                        #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::ObjectType);
+                        <#ty>::create_type_info(registry);
+                        if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
+                            registry.create_fake_output_type::<#ty>() {
+                            fields.extend(obj_fields);
+                        }
+                    });
+
+                    resolvers.push(quote! {
+                        #(#cfg_attrs)*
+                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident().await, ctx).await? {
+                            return ::std::result::Result::Ok(std::option::Option::Some(value));
+                        }
+                    });
+
+                    remove_graphql_attrs(&mut method.attrs);
+                    continue;
+                }
 
                 let field_name = method_args.name.clone().unwrap_or_else(|| {
                     object_args
@@ -287,7 +322,6 @@ pub fn generate(
                         }
                     }
                 };
-                let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 let args = extract_input_args(&crate_name, method)?;
                 let mut schema_args = Vec::new();

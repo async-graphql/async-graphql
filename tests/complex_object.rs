@@ -300,3 +300,131 @@ pub async fn test_complex_object_with_generic_concrete_type() {
         })
     );
 }
+
+#[tokio::test]
+async fn test_flatten() {
+    #[derive(SimpleObject)]
+    struct A {
+        a: i32,
+        b: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct B {
+        #[graphql(skip)]
+        a: A,
+        c: i32,
+    }
+
+    #[ComplexObject]
+    impl B {
+        #[graphql(flatten)]
+        async fn a(&self) -> &A {
+            &self.a
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> B {
+            B {
+                a: A { a: 100, b: 200 },
+                c: 300,
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ __type(name: \"B\") { fields { name } } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "__type": {
+                "fields": [
+                    {"name": "c"},
+                    {"name": "a"},
+                    {"name": "b"}
+                ]
+            }
+        })
+    );
+
+    let query = "{ obj { a b c } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "obj": {
+                "a": 100,
+                "b": 200,
+                "c": 300,
+            }
+        })
+    );
+}
+
+#[tokio::test]
+async fn test_flatten_with_result() {
+    #[derive(SimpleObject)]
+    struct A {
+        a: i32,
+        b: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct B {
+        #[graphql(skip)]
+        a: A,
+        c: i32,
+    }
+
+    #[ComplexObject]
+    impl B {
+        #[graphql(flatten)]
+        async fn a(&self) -> FieldResult<&A> {
+            Ok(&self.a)
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> B {
+            B {
+                a: A { a: 100, b: 200 },
+                c: 300,
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ __type(name: \"B\") { fields { name } } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "__type": {
+                "fields": [
+                    {"name": "c"},
+                    {"name": "a"},
+                    {"name": "b"}
+                ]
+            }
+        })
+    );
+
+    let query = "{ obj { a b c } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "obj": {
+                "a": 100,
+                "b": 200,
+                "c": 300,
+            }
+        })
+    );
+}

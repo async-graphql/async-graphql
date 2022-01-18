@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.22] 2022-1-11
+
+- Add support `flatten` attribute for `SimpleObject`, `ComplexObject` and `Object` macros. [#533](https://github.com/async-graphql/async-graphql/issues/533)
+
 ## [3.0.21] 2022-1-11
 
 - Add `Union` and `Interface` support for trait objects. [#780](https://github.com/async-graphql/async-graphql/issues/780)

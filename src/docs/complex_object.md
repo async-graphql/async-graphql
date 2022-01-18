@@ -10,45 +10,46 @@ some simple fields, and use the `ComplexObject` macro to define some other field
 
 # Macro attributes
 
-| Attribute     | description               | Type     | Optional |
-|---------------|---------------------------|----------|----------|
-| name          | Object name               | string   | Y        |
-| rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
-| rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".| string   | Y        |
+| Attribute     | description                                                                                                                                                                         | Type   | Optional |
+|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name          | Object name                                                                                                                                                                         | string | Y        |
+| rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".    | string | Y        |
+| rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE". | string | Y        |
 
 # Field attributes
 
-| Attribute     | description               | Type     | Optional |
-|---------------|---------------------------|----------|----------|
-| skip          | Skip this field           | bool     | Y        |
-| name          | Field name                | string   | Y        |
-| desc          | Field description         | string   | Y        |
-| deprecation   | Field deprecated          | bool     | Y        |
-| deprecation   | Field deprecation reason  | string   | Y        |
-| cache_control | Field cache control       | [`CacheControl`](struct.CacheControl.html) | Y        |
-| external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field. | bool | Y |
-| provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. | string | Y |
-| requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string | Y |
-| guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*            | string | Y        |
-| visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-| visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
-| complexity    | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                 | bool        | Y        |
-| complexity    | Custom field complexity.                 | string      | Y        |
-| derived       | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                 | object        | Y        |
+| Attribute     | description                                                                                                                                                                                                                              | Type                                       | Optional |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|----------|
+| skip          | Skip this field                                                                                                                                                                                                                          | bool                                       | Y        |
+| name          | Field name                                                                                                                                                                                                                               | string                                     | Y        |
+| desc          | Field description                                                                                                                                                                                                                        | string                                     | Y        |
+| deprecation   | Field deprecated                                                                                                                                                                                                                         | bool                                       | Y        |
+| deprecation   | Field deprecation reason                                                                                                                                                                                                                 | string                                     | Y        |
+| cache_control | Field cache control                                                                                                                                                                                                                      | [`CacheControl`](struct.CacheControl.html) | Y        |
+| external      | Mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field.                                                                                      | bool                                       | Y        |
+| provides      | Annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway.                                                                                                                  | string                                     | Y        |
+| requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string                                     | Y        |
+| guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                                                                                  | string                                     | Y        |
+| visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                                                                          | bool                                       | Y        |
+| visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                                                                                  | string                                     | Y        |
+| complexity    | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                                                                                                              | bool                                       | Y        |
+| complexity    | Custom field complexity.                                                                                                                                                                                                                 | string                                     | Y        |
+| derived       | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                                                                                                                     | object                                     | Y        |
+| flatten       | Similar to serde (flatten)                                                                                                                                                                                                               | boolean                                    | Y        |
 
 # Field argument attributes
 
-| Attribute    | description                              | Type        | Optional |
-|--------------|------------------------------------------|------------ |----------|
-| name         | Argument name                            | string      | Y        |
-| desc         | Argument description                     | string      | Y        |
-| default      | Use `Default::default` for default value | none        | Y        |
-| default      | Argument default value                   | literal     | Y        |
-| default_with | Expression to generate default value     | code string | Y        |
-| validator    | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                   | object | Y        |
-| visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool | Y |
-| visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection. | string | Y |
-| secret       | Mark this field as a secret, it will not output the actual value in the log. | bool | Y |
+| Attribute    | description                                                                                                                                     | Type        | Optional |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-------------|----------|
+| name         | Argument name                                                                                                                                   | string      | Y        |
+| desc         | Argument description                                                                                                                            | string      | Y        |
+| default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
+| default      | Argument default value                                                                                                                          | literal     | Y        |
+| default_with | Expression to generate default value                                                                                                            | code string | Y        |
+| validator    | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object      | Y        |
+| visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool        | Y        |
+| visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
+| secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |
 
 # Examples
 

@@ -265,6 +265,7 @@ pub struct ObjectField {
     pub complexity: Option<ComplexityType>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
+    pub flatten: bool,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -698,6 +699,9 @@ pub struct ComplexObjectField {
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
+    #[darling(multiple)]
+    pub derived: Vec<DerivedField>,
+    pub flatten: bool,
 }
 
 #[derive(FromMeta, Default)]

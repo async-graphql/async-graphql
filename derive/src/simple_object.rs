@@ -153,21 +153,32 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         let visible = visible_fn(&field.visible);
 
-        schema_fields.push(quote! {
-            fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
-                name: ::std::borrow::ToOwned::to_owned(#field_name),
-                description: #field_desc,
-                args: ::std::default::Default::default(),
-                ty: <#ty as #crate_name::OutputType>::create_type_info(registry),
-                deprecation: #field_deprecation,
-                cache_control: #cache_control,
-                external: #external,
-                provides: #provides,
-                requires: #requires,
-                visible: #visible,
-                compute_complexity: ::std::option::Option::None,
+        if !field.flatten {
+            schema_fields.push(quote! {
+                fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
+                    name: ::std::borrow::ToOwned::to_owned(#field_name),
+                    description: #field_desc,
+                    args: ::std::default::Default::default(),
+                    ty: <#ty as #crate_name::OutputType>::create_type_info(registry),
+                    deprecation: #field_deprecation,
+                    cache_control: #cache_control,
+                    external: #external,
+                    provides: #provides,
+                    requires: #requires,
+                    visible: #visible,
+                    compute_complexity: ::std::option::Option::None,
+                });
             });
-        });
+        } else {
+            schema_fields.push(quote! {
+                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::ObjectType);
+                #ty::create_type_info(registry);
+                if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
+                    registry.create_fake_output_type::<#ty>() {
+                    fields.extend(obj_fields);
+                }
+            });
+        }
 
         let guard_map_err = quote! {
             .map_err(|err| err.into_server_error(ctx.item.pos))
@@ -203,27 +214,33 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             false => quote! { #ty },
         };
 
-        getters.push(
-            quote! {
+        if !field.flatten {
+            getters.push(quote! {
                  #[inline]
                  #[allow(missing_docs)]
                  #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
                      ::std::result::Result::Ok(#block)
                  }
-            }
-        );
+            });
 
-        resolvers.push(quote! {
-            if ctx.item.node.name.node == #field_name {
-                let f = async move {
-                    #guard
-                    self.#ident(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))
-                };
-                let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
-            }
-        });
+            resolvers.push(quote! {
+                if ctx.item.node.name.node == #field_name {
+                    let f = async move {
+                        #guard
+                        self.#ident(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))
+                    };
+                    let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+                    let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                }
+            });
+        } else {
+            resolvers.push(quote! {
+                if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident, ctx).await? {
+                    return ::std::result::Result::Ok(std::option::Option::Some(value));
+                }
+            });
+        }
     }
 
     if !object_args.fake && resolvers.is_empty() {
