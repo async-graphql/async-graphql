@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.22] 2022-1-11
 
 - Add support `flatten` attribute for `SimpleObject`, `ComplexObject` and `Object` macros. [#533](https://github.com/async-graphql/async-graphql/issues/533)
+- Actix integration: cbor response support + error handling improvements [#784](https://github.com/async-graphql/async-graphql/pull/784)
 
 ## [3.0.21] 2022-1-11
 
