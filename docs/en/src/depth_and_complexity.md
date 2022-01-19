@@ -112,6 +112,6 @@ impl Query {
 }
 ```
 
-**Note: The complexity calculation is done in the validation phase and not in the execution phase, so you don't have to worry about the query 
-  over-limit causing the execute only part of the query.**
+**Note: The complexity calculation is done in the validation phase and not the execution phase,
+so you don't have to worry about partial execution of over-limit queries.**
 
