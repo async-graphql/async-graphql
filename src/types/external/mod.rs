@@ -28,6 +28,10 @@ mod naive_time;
 mod secrecy;
 #[cfg(feature = "smol_str")]
 mod smol_str;
+#[cfg(feature = "time")]
+mod time_offset_date_time;
+#[cfg(feature = "time")]
+mod time_primitive_date_time;
 #[cfg(feature = "url")]
 mod url;
 #[cfg(feature = "uuid")]
