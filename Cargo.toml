@@ -65,6 +65,7 @@ uuid = { version = "0.8.2", optional = true, features = ["v4", "serde"] }
 rust_decimal = { version = "1.14.3", optional = true }
 url = { version = "2.2.1", optional = true }
 smol_str = { version = "0.1.21", optional = true }
+time = { version = "0.3.5", optional = true, features = ["parsing", "formatting", "macros"] }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
