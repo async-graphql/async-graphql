@@ -75,6 +75,7 @@
 //! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 //! - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 //! - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
+//! - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
 //!
 //! ## Integrations
 //!

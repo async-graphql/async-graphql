@@ -1,4 +1,5 @@
 use async_graphql::*;
+use std::sync::Arc;
 
 #[tokio::test]
 pub async fn test_input_value_custom_error() {
@@ -26,5 +27,31 @@ pub async fn test_input_value_custom_error() {
             path: vec![PathSegment::Field("parseInt".to_owned())],
             extensions: None,
         }],
+    );
+}
+
+#[tokio::test]
+pub async fn test_input_box_str() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn box_str(&self, s: Box<str>) -> String {
+            s.to_string()
+        }
+
+        async fn arc_str(&self, s: Arc<str>) -> String {
+            s.to_string()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{ boxStr(s: "abc") arcStr(s: "def") }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "boxStr": "abc",
+            "arcStr": "def",
+        })
     );
 }

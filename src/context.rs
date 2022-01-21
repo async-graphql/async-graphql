@@ -22,6 +22,28 @@ use crate::{
     ServerResult, UploadValue, Value,
 };
 
+/// Data related functions of the context.
+pub trait DataContext<'a> {
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `Error` if the specified type data does not exist.
+    fn data<D: Any + Send + Sync>(&self) -> Result<&'a D>;
+
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the specified data type does not exist.
+    fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D;
+
+    /// Gets the global data defined in the `Context` or `Schema` or `None` if the specified type data does not exist.
+    fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D>;
+}
+
 /// Schema/Context data.
 ///
 /// This is a type map, allowing you to store anything inside it.
@@ -256,6 +278,20 @@ impl QueryEnv {
             schema_env,
             query_env: self,
         }
+    }
+}
+
+impl<'a, T> DataContext<'a> for ContextBase<'a, T> {
+    fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
+        ContextBase::data::<D>(self)
+    }
+
+    fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
+        ContextBase::data_unchecked::<D>(self)
+    }
+
+    fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
+        ContextBase::data_opt::<D>(self)
     }
 }
 

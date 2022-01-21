@@ -30,8 +30,8 @@ use futures_util::stream::BoxStream;
 
 use crate::parser::types::ExecutableDocument;
 use crate::{
-    Data, Error, QueryPathNode, Request, Response, Result, SchemaEnv, ServerError, ServerResult,
-    ValidationResult, Value, Variables,
+    Data, DataContext, Error, QueryPathNode, Request, Response, Result, SchemaEnv, ServerError,
+    ServerResult, ValidationResult, Value, Variables,
 };
 
 /// Context for extension
@@ -44,6 +44,20 @@ pub struct ExtensionContext<'a> {
 
     #[doc(hidden)]
     pub query_data: Option<&'a Data>,
+}
+
+impl<'a> DataContext<'a> for ExtensionContext<'a> {
+    fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
+        ExtensionContext::data::<D>(self)
+    }
+
+    fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
+        ExtensionContext::data_unchecked::<D>(self)
+    }
+
+    fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
+        ExtensionContext::data_opt::<D>(self)
+    }
 }
 
 impl<'a> ExtensionContext<'a> {
