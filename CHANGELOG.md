@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [3.0.23] 2022-1-19
 
 - Bump hashbrown from `0.11.2` to `0.12.0`.
+- Implement `InputType` for `Box<str>` and `Arc<str>`. [#792](https://github.com/async-graphql/async-graphql/issues/792)
+- Add scalars for the `time` crate's datetime types. [#791](https://github.com/async-graphql/async-graphql/pull/791)
+- Add `DataContext` trait. [#786](https://github.com/async-graphql/async-graphql/pull/786)
 
 ## [3.0.22] 2022-1-11
 
