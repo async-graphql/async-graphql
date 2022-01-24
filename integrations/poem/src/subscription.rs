@@ -183,6 +183,7 @@ where
 {
     /// Specify the initial subscription context data, usually you can get something from the
     /// incoming request to create it.
+    #[must_use]
     pub fn with_data(self, data: Data) -> Self {
         Self { data, ..self }
     }

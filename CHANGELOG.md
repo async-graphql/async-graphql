@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.25] 2022-1-24
+
+- Fix the problem that some integrations overwritten HTTP headers. [#793](https://github.com/async-graphql/async-graphql/issues/793)
+
 # [3.0.24] 2022-1-24
 
 - Remove `'static` bound for `impl From<T> for Error`.

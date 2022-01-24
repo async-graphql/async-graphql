@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
 use http::header::{AsHeaderName, HeaderMap, IntoHeaderName};
+use http::HeaderValue;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 
@@ -242,7 +243,7 @@ pub struct QueryEnvInner {
     pub uploads: Vec<UploadValue>,
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
-    pub http_headers: Mutex<HeaderMap<String>>,
+    pub http_headers: Mutex<HeaderMap>,
     pub disable_introspection: bool,
     pub errors: Mutex<Vec<ServerError>>,
 }
@@ -434,6 +435,7 @@ impl<'a, T> ContextBase<'a, T> {
     /// ```no_run
     /// use async_graphql::*;
     /// use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+    /// use ::http::HeaderValue;
     ///
     /// struct Query;
     ///
@@ -453,7 +455,7 @@ impl<'a, T> ContextBase<'a, T> {
     ///         // one overwrites the previous. If you want multiple headers for the same key, use
     ///         // `append_http_header` for subsequent headers
     ///         let was_in_headers = ctx.insert_http_header("Custom-Header", "Hello World");
-    ///         assert_eq!(was_in_headers, Some("1234".to_string()));
+    ///         assert_eq!(was_in_headers, Some(HeaderValue::from_static("1234")));
     ///
     ///         String::from("Hello world")
     ///     }
@@ -462,13 +464,17 @@ impl<'a, T> ContextBase<'a, T> {
     pub fn insert_http_header(
         &self,
         name: impl IntoHeaderName,
-        value: impl Into<String>,
-    ) -> Option<String> {
-        self.query_env
-            .http_headers
-            .lock()
-            .unwrap()
-            .insert(name, value.into())
+        value: impl TryInto<HeaderValue>,
+    ) -> Option<HeaderValue> {
+        if let Ok(value) = value.try_into() {
+            self.query_env
+                .http_headers
+                .lock()
+                .unwrap()
+                .insert(name, value)
+        } else {
+            None
+        }
     }
 
     /// Sets a HTTP header to response.
@@ -503,12 +509,20 @@ impl<'a, T> ContextBase<'a, T> {
     ///     }
     /// }
     /// ```
-    pub fn append_http_header(&self, name: impl IntoHeaderName, value: impl Into<String>) -> bool {
-        self.query_env
-            .http_headers
-            .lock()
-            .unwrap()
-            .append(name, value.into())
+    pub fn append_http_header(
+        &self,
+        name: impl IntoHeaderName,
+        value: impl TryInto<HeaderValue>,
+    ) -> bool {
+        if let Ok(value) = value.try_into() {
+            self.query_env
+                .http_headers
+                .lock()
+                .unwrap()
+                .append(name, value)
+        } else {
+            false
+        }
     }
 
     fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Value> {

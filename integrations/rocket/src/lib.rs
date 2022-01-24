@@ -112,6 +112,7 @@ impl GraphQLRequest {
     }
 
     /// Insert some data for this request.
+    #[must_use]
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.0.data.insert(data);
         self
@@ -215,8 +216,11 @@ impl<'r> Responder<'r, 'static> for GraphQLResponse {
                 response.set_header(Header::new("cache-control", cache_control));
             }
         }
-        for (name, value) in self.0.http_headers() {
-            response.adjoin_header(Header::new(name.to_string(), value.to_string()));
+
+        for (name, value) in self.0.http_headers_iter() {
+            if let Ok(value) = value.to_str() {
+                response.adjoin_header(Header::new(name.as_str().to_string(), value.to_string()));
+            }
         }
 
         response.set_sized_body(body.len(), Cursor::new(body));

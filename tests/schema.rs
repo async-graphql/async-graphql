@@ -1,3 +1,4 @@
+use ::http::HeaderValue;
 use async_graphql::*;
 
 #[tokio::test]
@@ -37,8 +38,14 @@ pub async fn test_http_headers() {
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     let resp = schema.execute("{ value }").await;
-    assert_eq!(resp.http_headers.get("A").map(|s| &**s), Some("1"));
+    assert_eq!(
+        resp.http_headers.get("A"),
+        Some(&HeaderValue::from_static("1"))
+    );
 
     let resp = schema.execute("{ err }").await;
-    assert_eq!(resp.http_headers.get("A").map(|s| &**s), Some("1"));
+    assert_eq!(
+        resp.http_headers.get("A"),
+        Some(&HeaderValue::from_static("1"))
+    );
 }
