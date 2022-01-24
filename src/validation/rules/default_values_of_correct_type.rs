@@ -16,7 +16,10 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
     ) {
         if let BaseType::Named(vtype_name) = &variable_definition.node.var_type.node.base {
           if !ctx.registry.types.contains_key(vtype_name.as_str()) {
-              ctx.report_error(vec![variable_definition.pos], format!(r#"Unknown type "{}""#, vtype_name));
+              ctx.report_error(
+                vec![variable_definition.pos], 
+                format!(r#"Unknown type "{}""#, vtype_name)
+              );
               return;
           }
         }
