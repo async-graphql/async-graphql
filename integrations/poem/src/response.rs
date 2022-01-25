@@ -1,4 +1,3 @@
-use poem::http::header::HeaderName;
 use poem::web::Json;
 use poem::{IntoResponse, Response};
 
@@ -38,13 +37,7 @@ impl IntoResponse for GraphQLBatchResponse {
             }
         }
 
-        for (name, value) in self.0.http_headers() {
-            if let (Ok(name), Ok(value)) = (TryInto::<HeaderName>::try_into(name), value.try_into())
-            {
-                resp.headers_mut().append(name, value);
-            }
-        }
-
+        resp.headers_mut().extend(self.0.http_headers());
         resp
     }
 }

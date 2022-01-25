@@ -1,6 +1,5 @@
 use axum::body::{boxed, Body, BoxBody};
 use axum::http;
-use axum::http::header::HeaderName;
 use axum::http::{HeaderValue, Response};
 use axum::response::IntoResponse;
 
@@ -38,14 +37,8 @@ impl IntoResponse for GraphQLResponse {
                 }
             }
         }
-        for (name, value) in self.0.http_headers() {
-            if let (Ok(name), Ok(value)) = (
-                HeaderName::try_from(name.as_bytes()),
-                HeaderValue::from_str(value),
-            ) {
-                resp.headers_mut().insert(name, value);
-            }
-        }
+
+        resp.headers_mut().extend(self.0.http_headers());
         resp
     }
 }

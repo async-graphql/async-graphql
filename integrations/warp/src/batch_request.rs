@@ -4,7 +4,6 @@ use std::io::ErrorKind;
 use async_graphql::http::MultipartOptions;
 use async_graphql::{BatchRequest, ObjectType, Schema, SubscriptionType};
 use futures_util::TryStreamExt;
-use warp::hyper::header::HeaderName;
 use warp::reply::Response as WarpResponse;
 use warp::{Buf, Filter, Rejection, Reply};
 
@@ -85,13 +84,8 @@ impl Reply for GraphQLBatchResponse {
                 }
             }
         }
-        for (name, value) in self.0.http_headers() {
-            if let (Ok(name), Ok(value)) = (TryInto::<HeaderName>::try_into(name), value.try_into())
-            {
-                resp.headers_mut().append(name, value);
-            }
-        }
 
+        resp.headers_mut().extend(self.0.http_headers());
         resp
     }
 }

@@ -297,3 +297,61 @@ pub async fn test_variables_json() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_variables_invalid_type() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn int_val(&self, value: Option<i32>) -> i32 {
+            value.unwrap_or(10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = Request::new(
+        r#"
+            query QueryWithVariables($intVal: invalid) {
+                intVal(value: $intVal)
+            }
+        "#,
+    )
+    .variables(Variables::from_value(value!({
+        "intVal": null,
+    })));
+    let resp = schema.execute(query).await;
+    assert_eq!(
+        resp.errors.first().map(|v| v.message.as_str()),
+        Some("Unknown type \"invalid\"")
+    );
+}
+
+#[tokio::test]
+pub async fn test_variables_invalid_type_with_value() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn int_val(&self, value: Option<i32>) -> i32 {
+            value.unwrap_or(10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = Request::new(
+        r#"
+            query QueryWithVariables($intVal: invalid = 2) {
+                intVal(value: $intVal)
+            }
+        "#,
+    )
+    .variables(Variables::from_value(value!({
+        "intVal": null,
+    })));
+    let resp = schema.execute(query).await;
+    assert_eq!(
+        resp.errors.first().map(|v| v.message.as_str()),
+        Some("Unknown type \"invalid\"")
+    );
+}

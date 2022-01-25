@@ -177,15 +177,14 @@ impl Responder for GraphQLResponse {
     type Body = BoxBody;
 
     fn respond_to(self, req: &HttpRequest) -> HttpResponse {
-        let mut res = HttpResponse::build(StatusCode::OK);
+        let mut builder = HttpResponse::build(StatusCode::OK);
+
         if self.0.is_ok() {
             if let Some(cache_control) = self.0.cache_control().value() {
-                res.append_header((http::header::CACHE_CONTROL, cache_control));
+                builder.append_header((http::header::CACHE_CONTROL, cache_control));
             }
         }
-        for (name, value) in self.0.http_headers() {
-            res.append_header((name, value));
-        }
+
         let accept = req
             .headers()
             .get(http::header::ACCEPT)
@@ -209,7 +208,13 @@ impl Responder for GraphQLResponse {
                 },
             ),
         };
-        res.content_type(ct);
-        res.body(body)
+
+        let mut resp = builder.content_type(ct).body(body);
+
+        for (name, value) in self.0.http_headers_iter() {
+            resp.headers_mut().append(name, value);
+        }
+
+        resp
     }
 }
