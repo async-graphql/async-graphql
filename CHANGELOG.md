@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [3.0.25] 2022-1-24
 
-- Fix the problem that some integrations overwritten HTTP headers. [#793](https://github.com/async-graphql/async-graphql/issues/793)
+- Fixed some integrations overwritten HTTP headers. [#793](https://github.com/async-graphql/async-graphql/issues/793)
+- Fixed variable type not checked when given a default value. [#795](https://github.com/async-graphql/async-graphql/pull/795)
 
 # [3.0.24] 2022-1-24
 
