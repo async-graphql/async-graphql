@@ -130,6 +130,11 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub skip: bool,
     #[darling(default)]
+    pub skip_output: bool,
+    // for InputObject
+    #[darling(default)]
+    pub skip_input: bool,
+    #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
     pub deprecation: Deprecation,
@@ -360,6 +365,11 @@ pub struct InputObjectField {
     pub flatten: bool,
     #[darling(default)]
     pub skip: bool,
+    #[darling(default)]
+    pub skip_input: bool,
+    // for SimpleObject
+    #[darling(default)]
+    pub skip_output: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]

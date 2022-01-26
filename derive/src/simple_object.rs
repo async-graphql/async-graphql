@@ -93,7 +93,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     }
 
     for SimpleObjectFieldGenerator { field, derived } in &processed_fields {
-        if field.skip {
+        if field.skip || field.skip_output {
             continue;
         }
 
