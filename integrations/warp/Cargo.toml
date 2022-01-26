@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-warp"
-version = "3.0.25"
+version = "3.0.26"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "async-graphql for warp"
