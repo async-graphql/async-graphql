@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.26] 2022-1-26
+
+- Add `skip_input` attribute to `InputObject` macro, `skip_output` attribute to `SimpleObject` macro.
+
 # [3.0.25] 2022-1-24
 
 - Fixed some integrations overwritten HTTP headers. [#793](https://github.com/async-graphql/async-graphql/issues/793)

@@ -406,3 +406,76 @@ pub async fn test_both_input_output() {
     assert_eq!(<MyObject as InputType>::type_name(), "MyObjectInput");
     assert_eq!(<MyObject as OutputType>::type_name(), "MyObject");
 }
+
+#[tokio::test]
+pub async fn test_skip_input() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjectInput")]
+    #[allow(dead_code)]
+    struct MyObject {
+        a: i32,
+        #[graphql(skip_input)]
+        b: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: { a: 1 }) { a b } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 1,
+                "b": 0,
+            }
+        })
+    );
+}
+
+#[tokio::test]
+pub async fn test_skip_output() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjectInput")]
+    #[allow(dead_code)]
+    struct MyObject {
+        a: i32,
+        #[graphql(skip_output)]
+        b: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: { a: 1, b: 2 }) { a } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 1,
+            }
+        })
+    );
+}
