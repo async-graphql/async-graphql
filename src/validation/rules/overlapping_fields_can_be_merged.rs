@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::parser::types::{Field, Selection, SelectionSet};
 use crate::validation::visitor::{Visitor, VisitorContext};
@@ -15,6 +15,7 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
     ) {
         let mut find_conflicts = FindConflicts {
             outputs: Default::default(),
+            visited: Default::default(),
             ctx,
         };
         find_conflicts.find(selection_set);
@@ -23,6 +24,7 @@ impl<'a> Visitor<'a> for OverlappingFieldsCanBeMerged {
 
 struct FindConflicts<'a, 'ctx> {
     outputs: HashMap<&'a str, &'a Positioned<Field>>,
+    visited: HashSet<&'a str>,
     ctx: &'a mut VisitorContext<'ctx>,
 }
 
@@ -46,6 +48,13 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
                     if let Some(fragment) =
                         self.ctx.fragment(&fragment_spread.node.fragment_name.node)
                     {
+                        if !self
+                            .visited
+                            .insert(fragment_spread.node.fragment_name.node.as_str())
+                        {
+                            // To avoid recursing itself, this error is detected by the `NoFragmentCycles` validator.
+                            continue;
+                        }
                         self.find(&fragment.node.selection_set);
                     }
                 }
