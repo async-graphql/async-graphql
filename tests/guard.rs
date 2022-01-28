@@ -389,3 +389,17 @@ pub async fn test_guard_on_complex_object() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_fails_on_optional() {
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        value: Option<i32>,
+    }
+
+    let schema = Schema::new(Query { value: Some(10) }, EmptyMutation, EmptySubscription);
+    let query = "{ value }";
+    let res = schema.execute(Request::new(query).data(Role::Guest)).await;
+    assert_eq!(res.data, value!({ "value": null }));
+}
