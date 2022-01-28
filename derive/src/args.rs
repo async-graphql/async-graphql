@@ -182,6 +182,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub complex: bool,
     #[darling(default)]
+    pub complex_output: bool,
+    #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
@@ -384,6 +386,9 @@ pub struct InputObject {
     pub attrs: Vec<Attribute>,
     pub data: Data<Ignored, InputObjectField>,
 
+    // for SimpleObject
+    #[darling(default)]
+    pub complex_output: bool,
     #[darling(default)]
     pub internal: bool,
     #[darling(default)]

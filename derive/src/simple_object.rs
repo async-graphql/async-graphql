@@ -267,7 +267,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let mut concat_complex_fields = quote!();
     let mut complex_resolver = quote!();
 
-    if object_args.complex {
+    if object_args.complex || object_args.complex_output {
         concat_complex_fields = quote! {
             fields.extend(<Self as #crate_name::ComplexObject>::fields(registry));
         };
