@@ -55,3 +55,29 @@ pub async fn test_input_box_str() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_input_boxed_array() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn box_arr(&self, arr: Box<[Box<str>]>) -> Box<[Box<str>]> {
+            arr
+        }
+
+        async fn arc_arr(&self) -> Arc<[u8]> {
+            Arc::<[u8]>::from([1, 2, 3].as_ref())
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{ boxArr(arr: ["a","b","c"]) arcArr }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "boxArr": ["a","b","c"],
+            "arcArr": [1,2,3],
+        })
+    );
+}
