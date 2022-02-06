@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-rocket"
-version = "3.0.28"
+version = "3.0.29"
 authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
 edition = "2021"
 description = "async-graphql for Rocket.rs"
