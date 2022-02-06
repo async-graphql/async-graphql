@@ -396,6 +396,9 @@ pub struct InputObject {
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    // for SimpleObject
+    #[darling(default)]
+    pub complex: bool,
 }
 
 #[derive(FromMeta)]
