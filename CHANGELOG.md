@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.29] 2022-2-6
+
+- Pass context to resolvers with flatten attribute. [#813](https://github.com/async-graphql/async-graphql/pull/813)
+- Add support for using both `ComplexObject` and `InputObject`.
+- Bump `Actix-web` from `4.0.0-beta.19` to `4.0.0-rc.2`.
+
 # [3.0.28] 2022-1-30
 
 - Implement `InputType` and `OutputType` for `Box<[T]>` and `Arc<[T]>`. [#805](https://github.com/async-graphql/async-graphql/issues/805)
