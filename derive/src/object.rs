@@ -261,6 +261,9 @@ pub fn generate(
                 let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 if method_args.flatten {
+                    // Only used to inject the context placeholder if required.
+                    extract_input_args(&crate_name, method)?;
+
                     let ty = match &method.sig.output {
                         ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                         ReturnType::Default => {
@@ -285,7 +288,7 @@ pub fn generate(
 
                     resolvers.push(quote! {
                         #(#cfg_attrs)*
-                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident().await, ctx).await? {
+                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
                             return ::std::result::Result::Ok(std::option::Option::Some(value));
                         }
                     });
