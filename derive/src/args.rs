@@ -372,6 +372,8 @@ pub struct InputObjectField {
     pub skip: bool,
     #[darling(default)]
     pub skip_input: bool,
+    #[darling(default)]
+    pub process_with: Option<String>,
     // for SimpleObject
     #[darling(default)]
     pub skip_output: bool,

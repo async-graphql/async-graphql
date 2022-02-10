@@ -75,6 +75,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         federation_fields.push((ty, name.clone()));
 
+        let process_with = match field.process_with.as_ref() {
+            Some(fn_path) => {
+                let fn_path: syn::ExprPath = syn::parse_str(&fn_path)?;
+                quote! {
+                    #fn_path(&mut #ident);
+                }
+            }
+            None => Default::default(),
+        };
+
         let validators = field
             .validator
             .clone()
@@ -99,9 +109,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
 
             get_fields.push(quote! {
-                let #ident: #ty = #crate_name::InputType::parse(
+                #[allow(unused_mut)]
+                let mut #ident: #ty = #crate_name::InputType::parse(
                     ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
+                #process_with
                 #validators
             });
 
@@ -137,8 +149,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = {
                     match obj.get(#name) {
                         ::std::option::Option::Some(value) => {
-                            #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
-                                .map_err(#crate_name::InputValueError::propagate)?
+                            #[allow(unused_mut)]
+                            let mut #ident = #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
+                                .map_err(#crate_name::InputValueError::propagate)?;
+                            #process_with
+                            #ident
+
                         },
                         ::std::option::Option::None => #default,
                     }
@@ -147,9 +163,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
         } else {
             get_fields.push(quote! {
-                #[allow(non_snake_case)]
-                let #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
+                #[allow(non_snake_case, unused_mut)]
+                let mut #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
+                #process_with
                 #validators
             });
         }
