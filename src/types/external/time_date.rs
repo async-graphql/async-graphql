@@ -3,12 +3,6 @@ use time::{format_description::FormatItem, macros::format_description, Date};
 
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
-/// A local datetime without timezone offset.
-///
-/// The input/output is a string in ISO 8601 format without timezone, including
-/// subseconds. E.g. "2022-01-12T07:30:19.12345".
-
-#[Scalar(internal, name = "Date")]
 /// ISO 8601 calendar date without timezone.
 /// Format: %Y-%m-%d
 ///
@@ -16,6 +10,7 @@ const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]
 ///
 /// * `1994-11-13`
 /// * `2000-02-24`
+#[Scalar(internal, name = "Date")]
 impl ScalarType for Date {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
@@ -41,7 +36,7 @@ mod tests {
     fn test_date_to_value() {
         let cases = [
             (date!(1994 - 11 - 13), "1994-11-13"),
-            (date!(2000 - 00 - 24), "2000-00-24"),
+            (date!(2000 - 01 - 24), "2000-01-24"),
         ];
         for (value, expected) in cases {
             let value = value.to_value();
@@ -60,8 +55,8 @@ mod tests {
     #[test]
     fn test_date_parse() {
         let cases = [
-            (date!(1994 - 11 - 13), "1994-11-13"),
-            (date!(2000 - 00 - 24), "2000-00-24"),
+            ("1994-11-13", date!(1994 - 11 - 13)),
+            ("2000-01-24", date!(2000 - 01 - 24)),
         ];
         for (value, expected) in cases {
             let value = Value::String(value.to_string());
