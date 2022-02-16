@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-tide"
-version = "3.0.29"
+version = "3.0.30"
 authors = ["vkill <vkill.net@gmail.com>", "sunli <scott_s829@163.com>"]
 edition = "2021"
 description = "async-graphql for tide"
