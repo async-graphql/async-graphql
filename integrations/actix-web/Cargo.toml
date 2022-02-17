@@ -15,9 +15,9 @@ categories = ["network-programming", "asynchronous"]
 async-graphql = { path = "../..", version = "3.0.30" }
 
 actix = "0.12.0"
-actix-http = "3.0.0-rc.1"
-actix-web = { version = "4.0.0-rc.2", default-features = false }
-actix-web-actors = "4.0.0-beta.11"
+actix-http = "3.0.0-rc.2"
+actix-web = { version = "4.0.0-rc.3", default-features = false }
+actix-web-actors = "4.0.0-beta.12"
 async-channel = "1.6.1"
 futures-util = { version = "0.3.0", default-features = false }
 serde_json = "1.0.64"

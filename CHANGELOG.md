@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [3.0.31] 2022-02-17
 
 - Add `OneOfObject` macro to support for oneof input object.
+- Bump actix-web from `4.0.0-rc.2` to `4.0.0-rc.3`.
 
 # [3.0.30] 2022-2-15
 
