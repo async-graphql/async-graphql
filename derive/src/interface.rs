@@ -5,12 +5,13 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::visit_mut::VisitMut;
-use syn::{visit_mut, Error, Lifetime, Type};
+use syn::{Error, Type};
 
 use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
     gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+    RemoveLifetime,
 };
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
@@ -74,14 +75,6 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 return Err(
                     Error::new_spanned(ty, "This type already used in another variant").into(),
                 );
-            }
-
-            struct RemoveLifetime;
-            impl VisitMut for RemoveLifetime {
-                fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
-                    i.ident = Ident::new("_", Span::call_site());
-                    visit_mut::visit_lifetime_mut(self, i);
-                }
             }
 
             let mut assert_ty = p.clone();

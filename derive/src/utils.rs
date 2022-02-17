@@ -6,9 +6,10 @@ use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::visit::Visit;
+use syn::visit_mut::VisitMut;
 use syn::{
-    Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lit, LitStr, Meta, Pat,
-    PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
+    visit_mut, Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lifetime, Lit,
+    LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
 };
 use thiserror::Error;
 
@@ -306,4 +307,13 @@ pub fn extract_input_args(
     }
 
     Ok(args)
+}
+
+pub struct RemoveLifetime;
+
+impl VisitMut for RemoveLifetime {
+    fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
+        i.ident = Ident::new("_", Span::call_site());
+        visit_mut::visit_lifetime_mut(self, i);
+    }
 }

@@ -1,13 +1,12 @@
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
 use quote::quote;
 use std::collections::HashSet;
 use syn::visit_mut::VisitMut;
-use syn::{visit_mut, Error, Lifetime, Type};
+use syn::{Error, Type};
 
 use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult, RemoveLifetime};
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
@@ -70,14 +69,6 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             }
 
             enum_names.push(enum_name);
-
-            struct RemoveLifetime;
-            impl VisitMut for RemoveLifetime {
-                fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
-                    i.ident = Ident::new("_", Span::call_site());
-                    visit_mut::visit_lifetime_mut(self, i);
-                }
-            }
 
             let mut assert_ty = p.clone();
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
