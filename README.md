@@ -81,6 +81,7 @@ This crate offers the following features, all of which are not activated by defa
 - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
 - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
+- `unstable_oneof`: Enable the `OneofObject` macro to define the oneof input object.
 
 ## Apollo Studio
 

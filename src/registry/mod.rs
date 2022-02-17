@@ -228,6 +228,7 @@ pub enum MetaType {
         input_fields: IndexMap<String, MetaInputValue>,
         visible: Option<MetaVisibleFn>,
         rust_typename: &'static str,
+        oneof: bool,
     },
 }
 

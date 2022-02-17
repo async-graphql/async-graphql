@@ -228,4 +228,13 @@ impl<'a> __Type<'a> {
             None
         }
     }
+
+    #[cfg(feature = "unstable_oneof")]
+    async fn one_of(&self) -> Option<bool> {
+        if let TypeDetail::Named(registry::MetaType::InputObject { oneof, .. }) = &self.detail {
+            Some(*oneof)
+        } else {
+            None
+        }
+    }
 }

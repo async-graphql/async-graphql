@@ -202,12 +202,18 @@ impl Registry {
                 name,
                 input_fields,
                 description,
+                #[cfg(feature = "unstable_oneof")]
+                oneof,
                 ..
             } => {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "input {} ", name).ok();
+                #[cfg(feature = "unstable_oneof")]
+                if *oneof {
+                    write!(sdl, "@oneof ").ok();
+                }
                 writeln!(sdl, "{{").ok();
                 for field in input_fields.values() {
                     if let Some(description) = field.description {
