@@ -53,7 +53,7 @@ fast_chemail = "0.9.6"
 
 # Feature optional dependencies
 bson = { version = "2.0.0", optional = true, features = ["chrono-0_4"] }
-chrono = { version = "0.4.19", optional = true }
+chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
 chrono-tz = { version = "0.5.3", optional = true }
 hashbrown = { version = "0.12.0", optional = true }
 iso8601-duration = { version = "0.1.0", optional = true }
