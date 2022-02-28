@@ -17,7 +17,7 @@ enum ArgsType<'a> {
 
 #[derive(Default)]
 pub struct KnownArgumentNames<'a> {
-    current_args: Option<(&'a IndexMap<&'static str, MetaInputValue>, ArgsType<'a>)>,
+    current_args: Option<(&'a IndexMap<String, MetaInputValue>, ArgsType<'a>)>,
 }
 
 impl<'a> KnownArgumentNames<'a> {
@@ -26,7 +26,7 @@ impl<'a> KnownArgumentNames<'a> {
             " Did you mean",
             self.current_args
                 .iter()
-                .map(|(args, _)| args.iter().map(|arg| *arg.0))
+                .map(|(args, _)| args.iter().map(|arg| arg.0.as_str()))
                 .flatten(),
             name,
         )

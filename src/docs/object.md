@@ -39,6 +39,7 @@ All methods are converted to camelCase.
 | complexity    | Custom field complexity.                                                                                                                                                                                                                 | string                                     | Y        |
 | derived       | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                                                                                                                     | object                                     | Y        |
 | flatten       | Similar to serde (flatten)                                                                                                                                                                                                               | boolean                                    | Y        |
+| oneof         | Oneof field                                                                                                                                                                                                                              | bool                                       | Y        |
 
 # Field argument attributes
 
