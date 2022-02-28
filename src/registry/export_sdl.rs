@@ -69,6 +69,10 @@ impl Registry {
                 write!(sdl, "\t{}: {}", field.name, field.ty).ok();
             }
 
+            if field.oneof {
+                write!(sdl, " @oneof").ok();
+            }
+
             if federation {
                 if field.external {
                     write!(sdl, " @external").ok();
@@ -202,7 +206,6 @@ impl Registry {
                 name,
                 input_fields,
                 description,
-                #[cfg(feature = "unstable_oneof")]
                 oneof,
                 ..
             } => {
@@ -210,7 +213,6 @@ impl Registry {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "input {} ", name).ok();
-                #[cfg(feature = "unstable_oneof")]
                 if *oneof {
                     write!(sdl, "@oneof ").ok();
                 }

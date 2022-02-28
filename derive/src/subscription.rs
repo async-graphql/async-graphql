@@ -1,17 +1,14 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::ext::IdentExt;
-use syn::{
-    Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Type, TypeImplTrait, TypeParamBound,
-    TypeReference,
-};
+use syn::{Block, Error, ImplItem, ItemImpl, ReturnType, Type, TypeImplTrait, TypeParamBound};
 
 use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
 use crate::output_type::OutputType;
 use crate::utils::{
-    gen_deprecation, generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
-    get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
-    visible_fn, GeneratorResult,
+    extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
+    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
 };
 
 pub fn generate(
@@ -48,7 +45,7 @@ pub fn generate(
                 continue;
             }
 
-            let ident = &method.sig.ident;
+            let ident = method.sig.ident.clone();
             let field_name = field.name.clone().unwrap_or_else(|| {
                 subscription_args
                     .rename_fields
@@ -68,6 +65,120 @@ pub fn generate(
                 .into());
             }
 
+            let mut schema_args = Vec::new();
+            let mut use_params = Vec::new();
+            let mut get_params = Vec::new();
+            let mut is_oneof_field = false;
+            let mut args =
+                extract_input_args::<args::SubscriptionFieldArgument>(&crate_name, method)?;
+
+            if field.oneof {
+                is_oneof_field = true;
+
+                if args.len() != 1 {
+                    return Err(Error::new_spanned(
+                        &method,
+                        "The `oneof` field requires exactly one argument.",
+                    )
+                    .into());
+                }
+                let (ident, ty, argument) = args.pop().unwrap();
+
+                schema_args.push(quote! {
+                        #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::OneofObjectType);
+                        if let #crate_name::registry::MetaType::InputObject { input_fields, .. } = registry.create_fake_input_type::<#ty>() {
+                            args.extend(input_fields);
+                        }
+                    });
+                use_params.push(quote! { #ident });
+
+                let validators = argument
+                    .validator
+                    .clone()
+                    .unwrap_or_default()
+                    .create_validators(
+                        &crate_name,
+                        quote!(&#ident),
+                        quote!(#ty),
+                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+                    )?;
+                get_params.push(quote! {
+                    #[allow(non_snake_case, unused_variables)]
+                    let (__pos, #ident) = ctx.oneof_param_value::<#ty>()?;
+                    #validators
+                });
+            } else {
+                for (
+                    ident,
+                    ty,
+                    args::SubscriptionFieldArgument {
+                        name,
+                        desc,
+                        default,
+                        default_with,
+                        validator,
+                        visible: arg_visible,
+                        secret,
+                    },
+                ) in &args
+                {
+                    let name = name.clone().unwrap_or_else(|| {
+                        subscription_args
+                            .rename_args
+                            .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
+                    });
+                    let desc = desc
+                        .as_ref()
+                        .map(|s| quote! {::std::option::Option::Some(#s)})
+                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+                    let default = generate_default(default, default_with)?;
+
+                    let schema_default = default
+                        .as_ref()
+                        .map(|value| {
+                            quote! {
+                                ::std::option::Option::Some(::std::string::ToString::to_string(
+                                    &<#ty as #crate_name::InputType>::to_value(&#value)
+                                ))
+                            }
+                        })
+                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+
+                    let visible = visible_fn(arg_visible);
+                    schema_args.push(quote! {
+                    args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
+                            name: #name,
+                            description: #desc,
+                            ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                            default_value: #schema_default,
+                            visible: #visible,
+                            is_secret: #secret,
+                        });
+                    });
+
+                    use_params.push(quote! { #ident });
+
+                    let default = match default {
+                        Some(default) => {
+                            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+                        }
+                        None => quote! { ::std::option::Option::None },
+                    };
+                    let validators = validator.clone().unwrap_or_default().create_validators(
+                        &crate_name,
+                        quote!(&#ident),
+                        quote!(#ty),
+                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+                    )?;
+
+                    get_params.push(quote! {
+                        #[allow(non_snake_case)]
+                        let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
+                        #validators
+                    });
+                }
+            }
+
             let ty = match &method.sig.output {
                 ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                 ReturnType::Default => {
@@ -78,138 +189,6 @@ pub fn generate(
                     .into())
                 }
             };
-
-            let mut create_ctx = true;
-            let mut args = Vec::new();
-
-            for (idx, arg) in method.sig.inputs.iter_mut().enumerate() {
-                if let FnArg::Receiver(receiver) = arg {
-                    if idx != 0 {
-                        return Err(Error::new_spanned(
-                            receiver,
-                            "The self receiver must be the first parameter.",
-                        )
-                        .into());
-                    }
-                } else if let FnArg::Typed(pat) = arg {
-                    if idx == 0 {
-                        return Err(Error::new_spanned(
-                            pat,
-                            "The self receiver must be the first parameter.",
-                        )
-                        .into());
-                    }
-
-                    match (&*pat.pat, &*pat.ty) {
-                        (Pat::Ident(arg_ident), Type::Path(arg_ty)) => {
-                            args.push((
-                                arg_ident.clone(),
-                                arg_ty.clone(),
-                                parse_graphql_attrs::<args::SubscriptionFieldArgument>(&pat.attrs)?
-                                    .unwrap_or_default(),
-                            ));
-                            remove_graphql_attrs(&mut pat.attrs);
-                        }
-                        (arg, Type::Reference(TypeReference { elem, .. })) => {
-                            if let Type::Path(path) = elem.as_ref() {
-                                if idx != 1 || path.path.segments.last().unwrap().ident != "Context"
-                                {
-                                    return Err(Error::new_spanned(
-                                        arg,
-                                        "Only types that implement `InputType` can be used as input arguments.",
-                                    )
-                                    .into());
-                                } else {
-                                    create_ctx = false;
-                                }
-                            }
-                        }
-                        _ => {
-                            return Err(Error::new_spanned(arg, "Incorrect argument type").into());
-                        }
-                    }
-                } else {
-                    return Err(Error::new_spanned(arg, "Incorrect argument type").into());
-                }
-            }
-
-            if create_ctx {
-                let arg = syn::parse2::<FnArg>(quote! { _: &#crate_name::Context<'_> }).unwrap();
-                method.sig.inputs.insert(1, arg);
-            }
-
-            let mut schema_args = Vec::new();
-            let mut use_params = Vec::new();
-            let mut get_params = Vec::new();
-
-            for (
-                ident,
-                ty,
-                args::SubscriptionFieldArgument {
-                    name,
-                    desc,
-                    default,
-                    default_with,
-                    validator,
-                    visible: arg_visible,
-                    secret,
-                },
-            ) in &args
-            {
-                let name = name.clone().unwrap_or_else(|| {
-                    subscription_args
-                        .rename_args
-                        .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
-                });
-                let desc = desc
-                    .as_ref()
-                    .map(|s| quote! {::std::option::Option::Some(#s)})
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let default = generate_default(default, default_with)?;
-
-                let schema_default = default
-                    .as_ref()
-                    .map(|value| {
-                        quote! {
-                            ::std::option::Option::Some(::std::string::ToString::to_string(
-                                &<#ty as #crate_name::InputType>::to_value(&#value)
-                            ))
-                        }
-                    })
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
-
-                let visible = visible_fn(arg_visible);
-                schema_args.push(quote! {
-                    args.insert(#name, #crate_name::registry::MetaInputValue {
-                        name: #name,
-                        description: #desc,
-                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                        default_value: #schema_default,
-                        visible: #visible,
-                        is_secret: #secret,
-                    });
-                });
-
-                use_params.push(quote! { #ident });
-
-                let default = match default {
-                    Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
-                    None => quote! { ::std::option::Option::None },
-                };
-                let validators = validator.clone().unwrap_or_default().create_validators(
-                    &crate_name,
-                    quote!(&#ident),
-                    quote!(#ty),
-                    Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-                )?;
-
-                get_params.push(quote! {
-                    #[allow(non_snake_case)]
-                    let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
-                    #validators
-                });
-            }
-
             let res_ty = ty.value_type();
             let stream_ty = if let Type::ImplTrait(TypeImplTrait { bounds, .. }) = &res_ty {
                 let mut r = None;
@@ -307,6 +286,7 @@ pub fn generate(
                     provides: ::std::option::Option::None,
                     visible: #visible,
                     compute_complexity: #complexity,
+                    oneof: #is_oneof_field,
                 });
             });
 
