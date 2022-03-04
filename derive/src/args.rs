@@ -271,6 +271,7 @@ pub struct ObjectField {
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -401,7 +402,6 @@ pub struct InputObject {
     pub complex: bool,
 }
 
-#[cfg(feature = "unstable_oneof")]
 #[derive(FromVariant)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct OneofObjectField {
@@ -419,7 +419,6 @@ pub struct OneofObjectField {
     pub secret: bool,
 }
 
-#[cfg(feature = "unstable_oneof")]
 #[derive(FromDeriveInput)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct OneofObject {
@@ -459,7 +458,7 @@ pub struct InterfaceFieldArgument {
 
 #[derive(FromMeta)]
 pub struct InterfaceField {
-    pub name: String,
+    pub name: SpannedValue<String>,
     #[darling(rename = "type")]
     pub ty: LitStr,
     #[darling(default)]
@@ -478,6 +477,8 @@ pub struct InterfaceField {
     pub requires: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub oneof: bool,
 }
 
 #[derive(FromVariant)]
@@ -553,6 +554,7 @@ pub struct SubscriptionField {
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
+    pub oneof: bool,
 }
 
 #[derive(FromField)]
@@ -754,6 +756,7 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default)]

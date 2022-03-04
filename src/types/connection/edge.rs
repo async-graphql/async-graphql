@@ -101,6 +101,7 @@ where
                             provides: None,
                             visible: None,
                             compute_complexity: None,
+                            oneof: false,
                         },
                     );
 
@@ -118,6 +119,7 @@ where
                             provides: None,
                             visible: None,
                             compute_complexity: None,
+                            oneof: false,
                         },
                     );
 

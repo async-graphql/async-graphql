@@ -473,3 +473,118 @@ pub async fn test_issue_330() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_oneof() {
+    #[derive(OneofObject)]
+    enum TestArg {
+        A(i32),
+        B(String),
+    }
+
+    struct A;
+
+    #[Object]
+    impl A {
+        async fn test(&self, arg: TestArg) -> String {
+            match arg {
+                TestArg::A(a) => format!("A:a:{}", a),
+                TestArg::B(b) => format!("A:b:{}", b),
+            }
+        }
+    }
+
+    struct B;
+
+    #[Object]
+    impl B {
+        async fn test(&self, arg: TestArg) -> String {
+            match arg {
+                TestArg::A(a) => format!("B:a:{}", a),
+                TestArg::B(b) => format!("B:b:{}", b),
+            }
+        }
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(
+        name = "test",
+        type = "String",
+        oneof,
+        arg(name = "arg", type = "TestArg")
+    ))]
+    enum Obj {
+        A(A),
+        B(B),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn a(&self) -> Obj {
+            A.into()
+        }
+
+        async fn b(&self) -> Obj {
+            B.into()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ a { test(a: 10) } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "a": {
+                "test": "A:a:10"
+            }
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ a { test(b: \"abc\") } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "a": {
+                "test": "A:b:abc"
+            }
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ b { test(a: 10) } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "b": {
+                "test": "B:a:10"
+            }
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ b { test(b: \"def\") } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "b": {
+                "test": "B:b:def"
+            }
+        })
+    );
+}

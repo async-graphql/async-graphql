@@ -76,7 +76,6 @@
 //! - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 //! - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
 //! - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
-//! - `unstable_oneof`: Enable the `OneofObject` macro to define the oneof input object.
 //!
 //! ## Integrations
 //!
@@ -214,8 +213,8 @@ pub use async_graphql_value::{
     SerializerError, Variables,
 };
 pub use base::{
-    ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType,
-    UnionType,
+    ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,
+    OneofObjectType, OutputType, UnionType,
 };
 pub use custom_directive::{CustomDirective, CustomDirectiveFactory};
 pub use error::{
@@ -267,8 +266,6 @@ pub use async_graphql_derive::MergedSubscription;
 pub use async_graphql_derive::NewType;
 #[doc = include_str!("docs/object.md")]
 pub use async_graphql_derive::Object;
-#[cfg(feature = "unstable_oneof")]
-#[cfg_attr(docsrs, doc(cfg(feature = "unstable_oneof")))]
 #[doc = include_str!("docs/oneof_object.md")]
 pub use async_graphql_derive::OneofObject;
 #[doc = include_str!("docs/scalar.md")]

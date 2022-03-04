@@ -15,7 +15,6 @@ mod merged_object;
 mod merged_subscription;
 mod newtype;
 mod object;
-#[cfg(feature = "unstable_oneof")]
 mod oneof_object;
 mod output_type;
 mod scalar;
@@ -220,8 +219,6 @@ pub fn Directive(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[cfg(feature = "unstable_oneof")]
-#[cfg_attr(docsrs, doc(cfg(feature = "unstable_oneof")))]
 #[proc_macro_derive(OneofObject, attributes(graphql))]
 pub fn derive_oneof_object(input: TokenStream) -> TokenStream {
     let object_args =

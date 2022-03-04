@@ -112,6 +112,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
+                        oneof: false,
                     },
                 );
 
@@ -123,7 +124,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         args: {
                             let mut args = IndexMap::new();
                             args.insert(
-                                "name",
+                                "name".to_string(),
                                 registry::MetaInputValue {
                                     name: "name",
                                     description: None,
@@ -143,6 +144,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
+                        oneof: false,
                     },
                 );
             }

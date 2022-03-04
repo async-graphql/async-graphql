@@ -19,8 +19,8 @@ use crate::parser::types::{
 };
 use crate::schema::SchemaEnv;
 use crate::{
-    Error, InputType, Lookahead, Name, PathSegment, Pos, Positioned, Result, ServerError,
-    ServerResult, UploadValue, Value,
+    Error, InputType, Lookahead, Name, OneofObjectType, PathSegment, Pos, Positioned, Result,
+    ServerError, ServerResult, UploadValue, Value,
 };
 
 /// Data related functions of the context.
@@ -602,6 +602,22 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         default: Option<fn() -> T>,
     ) -> ServerResult<(Pos, T)> {
         self.get_param_value(&self.item.node.arguments, name, default)
+    }
+
+    #[doc(hidden)]
+    pub fn oneof_param_value<T: OneofObjectType>(&self) -> ServerResult<(Pos, T)> {
+        use indexmap::IndexMap;
+
+        let mut map = IndexMap::new();
+
+        for (name, value) in &self.item.node.arguments {
+            let value = self.resolve_input_value(value.clone())?;
+            map.insert(name.node.clone(), value);
+        }
+
+        InputType::parse(Some(Value::Object(map)))
+            .map(|value| (self.item.pos, value))
+            .map_err(|e| e.into_server_error(self.item.pos))
     }
 
     /// Creates a uniform interface to inspect the forthcoming selections.

@@ -11,7 +11,7 @@ use crate::{Name, Positioned, QueryPathSegment};
 
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
-    current_args: Option<&'a IndexMap<&'static str, MetaInputValue>>,
+    current_args: Option<&'a IndexMap<String, MetaInputValue>>,
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
@@ -979,6 +979,84 @@ mod tests {
           dog @include(if: "yes") {
             name @skip(if: ENUM)
           }
+        }
+        "#,
+        );
+    }
+
+    #[test]
+    fn oneof() {
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofArg(arg: {a: 10})
+        }
+        "#,
+        );
+
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofArg(arg: {b: "abc"})
+        }
+        "#,
+        );
+
+        expect_fails_rule!(
+            factory,
+            r#"
+        {
+            oneofArg(arg: {a: 10, b: "abc"})
+        }
+        "#,
+        );
+    }
+
+    #[test]
+    fn oneof_opt() {
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofOpt(arg: {a: 10})
+        }
+        "#,
+        );
+
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofOpt(arg: {b: "abc"})
+        }
+        "#,
+        );
+
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofOpt
+        }
+        "#,
+        );
+
+        expect_passes_rule!(
+            factory,
+            r#"
+        {
+            oneofOpt(arg: null)
+        }
+        "#,
+        );
+
+        expect_fails_rule!(
+            factory,
+            r#"
+        {
+            oneofOpt(arg: {a: 10, b: "abc"})
         }
         "#,
         );

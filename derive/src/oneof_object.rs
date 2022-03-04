@@ -148,7 +148,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(mut obj)) = value {
                         #(#parse_item)*
-                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(async_graphql::Value::Object(obj)))
+                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(#crate_name::Value::Object(obj)))
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }
@@ -170,6 +170,9 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     ::std::option::Option::Some(self)
                 }
             }
+
+            impl #crate_name::InputObjectType for #ident {}
+            impl #crate_name::OneofObjectType for #ident {}
         }
     } else {
         let mut code = Vec::new();
@@ -195,7 +198,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 fn __internal_parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> where Self: #crate_name::InputType {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(mut obj)) = value {
                         #(#parse_item)*
-                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(async_graphql::Value::Object(obj)))
+                        ::std::result::Result::Err(#crate_name::InputValueError::expected_type(#crate_name::Value::Object(obj)))
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }
@@ -247,6 +250,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 }
 
                 impl #crate_name::InputObjectType for #concrete_type {}
+                impl #crate_name::OneofObjectType for #concrete_type {}
             };
             code.push(expanded);
         }
