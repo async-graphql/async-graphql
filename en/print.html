@@ -295,7 +295,7 @@ struct MyObj {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object"><a class="header" href="#object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
-<p>The resolvers is used to get the value of the field. For example, you can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::Result</code> to return an error if it occurs. The error message will then be sent to query result.</p>
+<p>The resolver is used to get the value of the field. For example, you can query a database and return the result. <strong>The return type of the function is the type of the field.</strong> You can also return a <code>async_graphql::Result</code> to return an error if it occurs. The error message will then be sent as query result.</p>
 <p>You may need access to global data in your query, for example a database connection pool.
 When creating your <code>Schema</code>, you can use <code>SchemaBuilder::data</code> to configure the global data, and <code>Context::data</code> to configure <code>Context</code> data.
 The following <code>value_from_db</code> function shows how to retrieve a database connection from <code>Context</code>.</p>
@@ -1401,7 +1401,7 @@ impl Query {
             let mut connection = Connection::new(start &gt; 0, end &lt; 10000);
             connection.append(
                 (start..end).into_iter().map(|n|
-                    Ok(Edge::new_with_additional_fields(n, n as i32, EmptyFields)),
+                    Ok(Edge::with_additional_fields(n, n as i32, EmptyFields)),
             ))?;
             Ok(connection)
         })
@@ -2042,7 +2042,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <div style="break-before: page; page-break-before: always;"></div><h1 id="custom-scalars"><a class="header" href="#custom-scalars">Custom scalars</a></h1>
 <p>In <code>Async-graphql</code> most common scalar types are built in, but you can also create your own scalar types.</p>
 <p>Using <code>async-graphql::Scalar</code>, you can add support for a scalar when you implement it. You only need to implement parsing and output functions.</p>
-<p>The following example defines a 64-bit integer scalar where its input and output are strings. (Note: <code>Async-graphql</code> already supports 64-bit integers and uses strings as input and output.)</p>
+<p>The following example defines a 64-bit integer scalar where its input and output are strings.</p>
 <pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
