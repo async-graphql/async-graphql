@@ -318,7 +318,7 @@ where
             ],
             args: {
                 let mut args = IndexMap::new();
-                args.insert("if", MetaInputValue {
+                args.insert("if".to_string(), MetaInputValue {
                     name: "if",
                     description: Some("Included when true."),
                     ty: "Boolean!".to_string(),
@@ -342,7 +342,7 @@ where
             ],
             args: {
                 let mut args = IndexMap::new();
-                args.insert("if", MetaInputValue {
+                args.insert("if".to_string(), MetaInputValue {
                     name: "if",
                     description: Some("Skipped when true."),
                     ty: "Boolean!".to_string(),

@@ -120,9 +120,17 @@ pub fn is_valid_input_value(
                 registry::MetaType::InputObject {
                     input_fields,
                     name: object_name,
+                    oneof,
                     ..
                 } => match value {
                     ConstValue::Object(values) => {
+                        if *oneof && values.len() != 1 {
+                            return Some(valid_error(
+                                &path_node,
+                                "Oneof input objects requires have exactly one field".to_string(),
+                            ));
+                        }
+
                         let mut input_names =
                             values.keys().map(AsRef::as_ref).collect::<HashSet<_>>();
 

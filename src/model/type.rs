@@ -228,4 +228,12 @@ impl<'a> __Type<'a> {
             None
         }
     }
+
+    async fn one_of(&self) -> Option<bool> {
+        if let TypeDetail::Named(registry::MetaType::InputObject { oneof, .. }) = &self.detail {
+            Some(*oneof)
+        } else {
+            None
+        }
+    }
 }

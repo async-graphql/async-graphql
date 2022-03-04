@@ -6,13 +6,14 @@ use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::visit::Visit;
+use syn::visit_mut::VisitMut;
 use syn::{
-    Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lit, LitStr, Meta, Pat,
-    PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
+    visit_mut, Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lifetime, Lit,
+    LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
 };
 use thiserror::Error;
 
-use crate::args::{self, Argument, Deprecation, Visible};
+use crate::args::{self, Deprecation, Visible};
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -141,7 +142,9 @@ pub fn get_cfg_attrs(attrs: &[Attribute]) -> Vec<Attribute> {
         .collect()
 }
 
-pub fn parse_graphql_attrs<T: FromMeta>(attrs: &[Attribute]) -> GeneratorResult<Option<T>> {
+pub fn parse_graphql_attrs<T: FromMeta + Default>(
+    attrs: &[Attribute],
+) -> GeneratorResult<Option<T>> {
     for attr in attrs {
         if attr.path.is_ident("graphql") {
             let meta = attr.parse_meta()?;
@@ -237,10 +240,10 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
     }
 }
 
-pub fn extract_input_args(
+pub fn extract_input_args<T: FromMeta + Default>(
     crate_name: &proc_macro2::TokenStream,
     method: &mut ImplItemMethod,
-) -> GeneratorResult<Vec<(PatIdent, Type, Argument)>> {
+) -> GeneratorResult<Vec<(PatIdent, Type, T)>> {
     let mut args = Vec::new();
     let mut create_ctx = true;
 
@@ -277,8 +280,7 @@ pub fn extract_input_args(
                             args.push((
                                 arg_ident.clone(),
                                 pat.ty.as_ref().clone(),
-                                parse_graphql_attrs::<args::Argument>(&pat.attrs)?
-                                    .unwrap_or_default(),
+                                parse_graphql_attrs::<T>(&pat.attrs)?.unwrap_or_default(),
                             ));
                         } else {
                             create_ctx = false;
@@ -289,7 +291,7 @@ pub fn extract_input_args(
                     args.push((
                         arg_ident.clone(),
                         ty.clone(),
-                        parse_graphql_attrs::<args::Argument>(&pat.attrs)?.unwrap_or_default(),
+                        parse_graphql_attrs::<T>(&pat.attrs)?.unwrap_or_default(),
                     ));
                     remove_graphql_attrs(&mut pat.attrs);
                 }
@@ -306,4 +308,13 @@ pub fn extract_input_args(
     }
 
     Ok(args)
+}
+
+pub struct RemoveLifetime;
+
+impl VisitMut for RemoveLifetime {
+    fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
+        i.ident = Ident::new("_", Span::call_site());
+        visit_mut::visit_lifetime_mut(self, i);
+    }
 }

@@ -157,7 +157,7 @@ impl Deprecation {
 pub struct MetaField {
     pub name: String,
     pub description: Option<&'static str>,
-    pub args: IndexMap<&'static str, MetaInputValue>,
+    pub args: IndexMap<String, MetaInputValue>,
     pub ty: String,
     pub deprecation: Deprecation,
     pub cache_control: CacheControl,
@@ -166,6 +166,7 @@ pub struct MetaField {
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
     pub compute_complexity: Option<ComplexityType>,
+    pub oneof: bool,
 }
 
 #[derive(Clone)]
@@ -228,6 +229,7 @@ pub enum MetaType {
         input_fields: IndexMap<String, MetaInputValue>,
         visible: Option<MetaVisibleFn>,
         rust_typename: &'static str,
+        oneof: bool,
     },
 }
 
@@ -350,7 +352,7 @@ pub struct MetaDirective {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub locations: Vec<model::__DirectiveLocation>,
-    pub args: IndexMap<&'static str, MetaInputValue>,
+    pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
 }
@@ -565,6 +567,7 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
+                        oneof: false,
                     },
                 );
 
@@ -576,7 +579,7 @@ impl Registry {
                         args: {
                             let mut args = IndexMap::new();
                             args.insert(
-                                "representations",
+                                "representations".to_string(),
                                 MetaInputValue {
                                     name: "representations",
                                     description: None,
@@ -596,6 +599,7 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
+                        oneof: false,
                     },
                 );
             }
@@ -626,6 +630,7 @@ impl Registry {
                             provides: None,
                             visible: None,
                             compute_complexity: None,
+                            oneof: false,
                         },
                     );
                     fields

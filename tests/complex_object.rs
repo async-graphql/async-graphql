@@ -366,6 +366,70 @@ async fn test_flatten() {
 }
 
 #[tokio::test]
+async fn test_flatten_with_context() {
+    #[derive(SimpleObject)]
+    struct A {
+        a: i32,
+        b: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct B {
+        #[graphql(skip)]
+        a: A,
+        c: i32,
+    }
+
+    #[ComplexObject]
+    impl B {
+        #[graphql(flatten)]
+        async fn a(&self, _ctx: &Context<'_>) -> &A {
+            &self.a
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> B {
+            B {
+                a: A { a: 100, b: 200 },
+                c: 300,
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ __type(name: \"B\") { fields { name } } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "__type": {
+                "fields": [
+                    {"name": "c"},
+                    {"name": "a"},
+                    {"name": "b"}
+                ]
+            }
+        })
+    );
+
+    let query = "{ obj { a b c } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "obj": {
+                "a": 100,
+                "b": 200,
+                "c": 300,
+            }
+        })
+    );
+}
+
+#[tokio::test]
 async fn test_flatten_with_result() {
     #[derive(SimpleObject)]
     struct A {
@@ -424,6 +488,90 @@ async fn test_flatten_with_result() {
                 "a": 100,
                 "b": 200,
                 "c": 300,
+            }
+        })
+    );
+}
+
+#[tokio::test]
+async fn test_oneof_field() {
+    #[derive(OneofObject)]
+    enum TestArg {
+        A(i32),
+        B(String),
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct Query {
+        a: i32,
+    }
+
+    #[ComplexObject]
+    impl Query {
+        #[graphql(oneof)]
+        async fn test(&self, arg: TestArg) -> String {
+            match arg {
+                TestArg::A(a) => format!("a:{}", a),
+                TestArg::B(b) => format!("b:{}", b),
+            }
+        }
+    }
+
+    let schema = Schema::new(Query { a: 10 }, EmptyMutation, EmptySubscription);
+    let query = "{ test(a: 10) }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "test": "a:10"
+        })
+    );
+
+    let query = r#"{ test(b: "abc") }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "test": "b:abc"
+        })
+    );
+
+    let query = r#"{
+        __type(name: "Query") {
+            fields {
+                name
+                args {
+                    name
+                    type {
+                        kind
+                        name
+                    }
+                }
+            }
+        }
+    }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "__type": {
+                "fields": [{
+                    "name": "a",
+                    "args": []
+                }, {
+                    "name": "test",
+                    "args": [{
+                        "name": "a",
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "Int"
+                        }
+                    }, {
+                        "name": "b",
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String"
+                        }
+                    }]
+                }]
             }
         })
     );

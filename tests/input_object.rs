@@ -479,3 +479,45 @@ pub async fn test_skip_output() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_complex_output() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjectInput")]
+    #[graphql(complex)]
+    #[allow(dead_code)]
+    struct MyObject {
+        a: i32,
+    }
+
+    #[ComplexObject]
+    impl MyObject {
+        async fn double(&self) -> i32 {
+            self.a * 2
+        }
+    }
+
+    struct Query;
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: { a: 1 }) { a, double } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 1,
+                "double": 2,
+            }
+        })
+    );
+}

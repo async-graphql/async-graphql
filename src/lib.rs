@@ -213,8 +213,8 @@ pub use async_graphql_value::{
     SerializerError, Variables,
 };
 pub use base::{
-    ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType, OutputType,
-    UnionType,
+    ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,
+    OneofObjectType, OutputType, UnionType,
 };
 pub use custom_directive::{CustomDirective, CustomDirectiveFactory};
 pub use error::{
@@ -266,6 +266,8 @@ pub use async_graphql_derive::MergedSubscription;
 pub use async_graphql_derive::NewType;
 #[doc = include_str!("docs/object.md")]
 pub use async_graphql_derive::Object;
+#[doc = include_str!("docs/oneof_object.md")]
+pub use async_graphql_derive::OneofObject;
 #[doc = include_str!("docs/scalar.md")]
 pub use async_graphql_derive::Scalar;
 #[doc = include_str!("docs/simple_object.md")]

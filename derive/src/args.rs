@@ -271,6 +271,7 @@ pub struct ObjectField {
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -396,6 +397,46 @@ pub struct InputObject {
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    // for SimpleObject
+    #[darling(default)]
+    pub complex: bool,
+}
+
+#[derive(FromVariant)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct OneofObjectField {
+    pub ident: Ident,
+    pub attrs: Vec<Attribute>,
+    pub fields: Fields<syn::Type>,
+
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub validator: Option<Validators>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
+    #[darling(default)]
+    pub secret: bool,
+}
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(graphql), forward_attrs(doc))]
+pub struct OneofObject {
+    pub ident: Ident,
+    pub generics: Generics,
+    pub attrs: Vec<Attribute>,
+    pub data: Data<OneofObjectField, Ignored>,
+
+    #[darling(default)]
+    pub internal: bool,
+    #[darling(default)]
+    pub name: Option<String>,
+    #[darling(default)]
+    pub rename_fields: Option<RenameRule>,
+    #[darling(default)]
+    pub visible: Option<Visible>,
+    #[darling(default, multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
 }
 
 #[derive(FromMeta)]
@@ -417,7 +458,7 @@ pub struct InterfaceFieldArgument {
 
 #[derive(FromMeta)]
 pub struct InterfaceField {
-    pub name: String,
+    pub name: SpannedValue<String>,
     #[darling(rename = "type")]
     pub ty: LitStr,
     #[darling(default)]
@@ -436,6 +477,8 @@ pub struct InterfaceField {
     pub requires: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub oneof: bool,
 }
 
 #[derive(FromVariant)]
@@ -511,6 +554,7 @@ pub struct SubscriptionField {
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
+    pub oneof: bool,
 }
 
 #[derive(FromField)]
@@ -712,6 +756,7 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default)]

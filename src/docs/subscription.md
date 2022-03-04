@@ -32,6 +32,7 @@ The filter function should be synchronous.
 | complexity  | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                     | bool   | Y        |
 | complexity  | Custom field complexity.                                                                                                                        | string | Y        |
 | secret      | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool   | Y        |
+| oneof       | Oneof field                                                                                                                                     | bool   | Y        |
 
 # Field argument attributes
 

@@ -5,12 +5,13 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::visit_mut::VisitMut;
-use syn::{visit_mut, Error, Lifetime, Type};
+use syn::{Error, Type};
 
 use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
 use crate::output_type::OutputType;
 use crate::utils::{
     gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+    RemoveLifetime,
 };
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
@@ -76,14 +77,6 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 );
             }
 
-            struct RemoveLifetime;
-            impl VisitMut for RemoveLifetime {
-                fn visit_lifetime_mut(&mut self, i: &mut Lifetime) {
-                    i.ident = Ident::new("_", Span::call_site());
-                    visit_mut::visit_lifetime_mut(self, i);
-                }
-            }
-
             let mut assert_ty = p.clone();
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
@@ -143,8 +136,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         provides,
         requires,
         visible,
+        oneof,
     } in &interface_args.fields
     {
+        let name_span = name.span();
         let (name, method_name) = if let Some(method) = method {
             (name.to_string(), Ident::new(method, Span::call_site()))
         } else {
@@ -152,7 +147,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             (
                 interface_args
                     .rename_fields
-                    .rename(name, RenameTarget::Field),
+                    .rename(name.as_ref(), RenameTarget::Field),
                 method_name,
             )
         };
@@ -177,61 +172,93 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
         use_params.push(quote! { ctx });
 
-        for InterfaceFieldArgument {
-            name,
-            desc,
-            ty,
-            default,
-            default_with,
-            visible,
-            secret,
-        } in args
-        {
+        let mut is_oneof_field = false;
+
+        if *oneof {
+            is_oneof_field = true;
+
+            if args.len() != 1 {
+                return Err(
+                    Error::new(name_span, "The `oneof` field requires one parameter.").into(),
+                );
+            }
+
+            let InterfaceFieldArgument { name, ty, .. } = &args[0];
             let ident = Ident::new(name, Span::call_site());
-            let name = interface_args
-                .rename_args
-                .rename(name, RenameTarget::Argument);
             let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
                 Ok(ty) => ty,
                 Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
             };
+
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
-
-            let default = generate_default(default, default_with)?;
-            let get_default = match &default {
-                Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
-                None => quote! { ::std::option::Option::None },
-            };
             get_params.push(quote! {
-                let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
+                #[allow(non_snake_case, unused_variables)]
+                let (_, #ident) = ctx.oneof_param_value::<#ty>()?;
             });
-
-            let desc = desc
-                .as_ref()
-                .map(|s| quote! {::std::option::Option::Some(#s)})
-                .unwrap_or_else(|| quote! {::std::option::Option::None});
-            let schema_default = default
-                .as_ref()
-                .map(|value| {
-                    quote! {
-                        ::std::option::Option::Some(::std::string::ToString::to_string(
-                            &<#ty as #crate_name::InputType>::to_value(&#value)
-                        ))
-                    }
-                })
-                .unwrap_or_else(|| quote! {::std::option::Option::None});
-            let visible = visible_fn(visible);
             schema_args.push(quote! {
-                args.insert(#name, #crate_name::registry::MetaInputValue {
-                    name: #name,
-                    description: #desc,
-                    ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                    default_value: #schema_default,
-                    visible: #visible,
-                    is_secret: #secret,
-                });
+                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::OneofObjectType);
+                if let #crate_name::registry::MetaType::InputObject { input_fields, .. } = registry.create_fake_input_type::<#ty>() {
+                    args.extend(input_fields);
+                }
             });
+        } else {
+            for InterfaceFieldArgument {
+                name,
+                desc,
+                ty,
+                default,
+                default_with,
+                visible,
+                secret,
+            } in args
+            {
+                let ident = Ident::new(name, Span::call_site());
+                let name = interface_args
+                    .rename_args
+                    .rename(name, RenameTarget::Argument);
+                let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
+                    Ok(ty) => ty,
+                    Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
+                };
+                decl_params.push(quote! { #ident: #ty });
+                use_params.push(quote! { #ident });
+
+                let default = generate_default(default, default_with)?;
+                let get_default = match &default {
+                    Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
+                    None => quote! { ::std::option::Option::None },
+                };
+                get_params.push(quote! {
+                    let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
+                });
+
+                let desc = desc
+                    .as_ref()
+                    .map(|s| quote! {::std::option::Option::Some(#s)})
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let schema_default = default
+                    .as_ref()
+                    .map(|value| {
+                        quote! {
+                            ::std::option::Option::Some(::std::string::ToString::to_string(
+                                &<#ty as #crate_name::InputType>::to_value(&#value)
+                            ))
+                        }
+                    })
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let visible = visible_fn(visible);
+                schema_args.push(quote! {
+                    args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
+                        name: #name,
+                        description: #desc,
+                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                        default_value: #schema_default,
+                        visible: #visible,
+                        is_secret: #secret,
+                    });
+                });
+            }
         }
 
         for enum_name in &enum_names {
@@ -282,6 +309,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 requires: #requires,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
+                oneof: #is_oneof_field,
             });
         });
 
