@@ -1,7 +1,8 @@
-use crate::validation::visitor::{RuleError, Visitor};
-use crate::VisitorContext;
 use async_graphql_parser::types::Field;
 use async_graphql_parser::Positioned;
+
+use crate::validation::visitor::{RuleError, Visitor};
+use crate::{Value, VisitorContext};
 
 pub struct OneofFieldsHaveExactlyOneArgument;
 
@@ -12,11 +13,32 @@ impl<'a> Visitor<'a> for OneofFieldsHaveExactlyOneArgument {
                 .fields()
                 .and_then(|fields| fields.get(field.node.name.node.as_str()))
             {
-                if field_def.oneof && field.node.arguments.len() != 1 {
-                    ctx.errors.push(RuleError::new(
-                        vec![field.pos],
-                        "Oneof fields requires have exactly one argument".to_string(),
-                    ));
+                if field_def.oneof {
+                    if field.node.arguments.len() != 1 {
+                        ctx.errors.push(RuleError::new(
+                            vec![field.pos],
+                            "Oneof fields requires have exactly one argument".to_string(),
+                        ));
+                        return;
+                    }
+
+                    let value = field.node.arguments[0]
+                        .1
+                        .node
+                        .clone()
+                        .into_const_with(|var_name| {
+                            ctx.variables
+                                .and_then(|variables| variables.get(&var_name))
+                                .map(Clone::clone)
+                                .ok_or(())
+                        })
+                        .ok();
+                    if let Some(Value::Null) = value {
+                        ctx.errors.push(RuleError::new(
+                            vec![field.pos],
+                            "Oneof Fields require that exactly one argument must be supplied and that argument must not be null".to_string(),
+                        ));
+                    }
                 }
             }
         }
@@ -59,6 +81,18 @@ mod tests {
             r#"
           query Foo {
             oneofField
+          }
+        "#,
+        );
+    }
+
+    #[test]
+    fn oneof_arguments_not_be_null() {
+        expect_fails_rule!(
+            factory,
+            r#"
+          query Foo {
+            oneofField(a: null)
           }
         "#,
         );

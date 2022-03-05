@@ -6,6 +6,17 @@ impl Registry {
     pub fn export_sdl(&self, federation: bool) -> String {
         let mut sdl = String::new();
 
+        let has_oneof = self.types.values().any(|ty| match ty {
+            MetaType::InputObject { oneof: true, .. } => true,
+            MetaType::Object { fields, .. } => fields.values().any(|field| field.oneof),
+            _ => false,
+        });
+
+        if has_oneof {
+            sdl.write_str("directive @oneOf on INPUT_OBJECT | FIELD_DEFINITION\n\n")
+                .ok();
+        }
+
         for ty in self.types.values() {
             if ty.name().starts_with("__") {
                 continue;

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.34] 2022-3-5
+
+- Export `@oneOf` directive to SDL when Oneof type is defined. [#766](https://github.com/async-graphql/async-graphql/issues/766)
+
 # [3.0.33] 2022-3-4
 
 - Add support for oneof field on object. [#766](https://github.com/async-graphql/async-graphql/issues/766)
