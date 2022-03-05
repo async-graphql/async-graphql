@@ -124,11 +124,22 @@ pub fn is_valid_input_value(
                     ..
                 } => match value {
                     ConstValue::Object(values) => {
-                        if *oneof && values.len() != 1 {
-                            return Some(valid_error(
-                                &path_node,
-                                "Oneof input objects requires have exactly one field".to_string(),
-                            ));
+                        if *oneof {
+                            if values.len() != 1 {
+                                return Some(valid_error(
+                                    &path_node,
+                                    "Oneof input objects requires have exactly one field"
+                                        .to_string(),
+                                ));
+                            }
+
+                            if let ConstValue::Null = values[0] {
+                                return Some(valid_error(
+                                    &path_node,
+                                    "Oneof Input Objects require that exactly one field must be supplied and that field must not be null"
+                                        .to_string(),
+                                ));
+                            }
                         }
 
                         let mut input_names =

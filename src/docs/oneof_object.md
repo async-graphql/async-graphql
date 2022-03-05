@@ -35,7 +35,6 @@ struct Query;
 
 #[Object]
 impl Query {
-    /// value
     async fn value(&self, input: MyInputObject) -> String {
         match input {
             MyInputObject::A(value) => format!("a:{}", value),
