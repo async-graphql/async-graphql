@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 use std::str::FromStr;
 
 use async_graphql_parser::types::Field;
@@ -17,11 +17,12 @@ use crate::{
     ServerResult, Value,
 };
 
-impl<K, V> InputType for HashMap<K, V>
+impl<K, V, S> InputType for HashMap<K, V, S>
 where
     K: ToString + FromStr + Eq + Hash + Send + Sync,
     K::Err: Display,
     V: Serialize + DeserializeOwned + Send + Sync,
+    S: Default + BuildHasher + Send + Sync,
 {
     type RawValueType = Self;
 
@@ -75,10 +76,11 @@ where
 }
 
 #[async_trait::async_trait]
-impl<K, V> OutputType for HashMap<K, V>
+impl<K, V, S> OutputType for HashMap<K, V, S>
 where
     K: ToString + Eq + Hash + Send + Sync,
     V: Serialize + Send + Sync,
+    S: Send + Sync,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSONObject")
