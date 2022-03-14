@@ -200,6 +200,8 @@ pub struct SimpleObject {
     // for InputObject
     #[darling(default)]
     pub input_name: Option<String>,
+    #[darling(default)]
+    pub guard: Option<SpannedValue<String>>,
 }
 
 #[derive(FromMeta, Default)]
@@ -229,6 +231,8 @@ pub struct Object {
     pub serial: bool,
     #[darling(multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    #[darling(default)]
+    pub guard: Option<SpannedValue<String>>,
 }
 
 pub enum ComplexityType {
@@ -531,6 +535,8 @@ pub struct Subscription {
     pub use_type_description: bool,
     pub extends: bool,
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub guard: Option<SpannedValue<String>>,
 }
 
 #[derive(FromMeta, Default)]
@@ -559,7 +565,6 @@ pub struct SubscriptionField {
 
 #[derive(FromField)]
 pub struct MergedObjectField {
-    pub ident: Option<Ident>,
     pub ty: Type,
 }
 
@@ -587,7 +592,6 @@ pub struct MergedObject {
 
 #[derive(FromField)]
 pub struct MergedSubscriptionField {
-    pub ident: Option<Ident>,
     pub ty: Type,
 }
 
@@ -738,6 +742,7 @@ pub struct ComplexObject {
     pub name: Option<String>,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
+    pub guard: Option<SpannedValue<String>>,
 }
 
 #[derive(FromMeta, Default)]

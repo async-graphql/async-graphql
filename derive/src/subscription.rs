@@ -305,7 +305,7 @@ pub fn generate(
                         .with_path(::std::vec![#crate_name::PathSegment::Field(::std::borrow::ToOwned::to_owned(&*field_name))])
                 })
             };
-            let guard = match &field.guard {
+            let guard = match field.guard.as_ref().or(subscription_args.guard.as_ref()) {
                 Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
                 None => None,
             };

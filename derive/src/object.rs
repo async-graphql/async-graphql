@@ -562,7 +562,7 @@ pub fn generate(
                 let guard_map_err = quote! {
                     .map_err(|err| err.into_server_error(ctx.item.pos))
                 };
-                let guard = match &method_args.guard {
+                let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
                     Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
                     None => None,
                 };
