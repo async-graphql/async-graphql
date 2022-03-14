@@ -289,7 +289,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     #crate_name::Value::Object(map)
                 }
 
-                fn __internal_federation_fields() -> ::std::option::Option<::std::string::String> {
+                fn __internal_federation_fields() -> ::std::option::Option<::std::string::String> where Self: #crate_name::InputType {
                     #get_federation_fields
                 }
             }
@@ -336,5 +336,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
         quote!(#(#code)*)
     };
+
     Ok(expanded.into())
 }
