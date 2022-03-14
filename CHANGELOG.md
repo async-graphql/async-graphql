@@ -4,13 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [3.0.36] 2022-3-11
-
-- Add support `group` attribute to Object/SimpleObject/ComplexObject/Subscription macros. [#838](https://github.com/async-graphql/async-graphql/issues/838)
-
-# [3.0.35] 2022-3-11
+# [3.0.35] 2022-3-14
 
 - Make `HashMap` more generics for `InputOutput` and `OutputType`.
+- Add support `group` attribute to Object/SimpleObject/ComplexObject/Subscription macros. [#838](https://github.com/async-graphql/async-graphql/issues/838)
+- Fixed recursive generic input objects failing to compile. [#859](https://github.com/async-graphql/async-graphql/issues/859)
+- Add `ErrorExtensionValues::get` method. [#855](https://github.com/async-graphql/async-graphql/issues/855)
 
 # [3.0.34] 2022-3-5
 
