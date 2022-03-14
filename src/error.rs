@@ -24,6 +24,11 @@ impl ErrorExtensionValues {
     pub fn unset(&mut self, name: impl AsRef<str>) {
         self.0.remove(name.as_ref());
     }
+
+    /// Get an extension value.
+    pub fn get(&self, name: impl AsRef<str>) -> Option<&Value> {
+        self.0.get(name.as_ref())
+    }
 }
 
 /// An error in a GraphQL server.
