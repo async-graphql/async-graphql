@@ -6,6 +6,17 @@ impl Registry {
     pub fn export_sdl(&self, federation: bool) -> String {
         let mut sdl = String::new();
 
+        let has_oneof = self.types.values().any(|ty| match ty {
+            MetaType::InputObject { oneof: true, .. } => true,
+            MetaType::Object { fields, .. } => fields.values().any(|field| field.oneof),
+            _ => false,
+        });
+
+        if has_oneof {
+            sdl.write_str("directive @oneOf on INPUT_OBJECT | FIELD_DEFINITION\n\n")
+                .ok();
+        }
+
         for ty in self.types.values() {
             if ty.name().starts_with("__") {
                 continue;
@@ -67,6 +78,10 @@ impl Registry {
                 write!(sdl, "): {}", field.ty).ok();
             } else {
                 write!(sdl, "\t{}: {}", field.name, field.ty).ok();
+            }
+
+            if field.oneof {
+                write!(sdl, " @oneof").ok();
             }
 
             if federation {
@@ -202,7 +217,6 @@ impl Registry {
                 name,
                 input_fields,
                 description,
-                #[cfg(feature = "unstable_oneof")]
                 oneof,
                 ..
             } => {
@@ -210,7 +224,6 @@ impl Registry {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
                 write!(sdl, "input {} ", name).ok();
-                #[cfg(feature = "unstable_oneof")]
                 if *oneof {
                     write!(sdl, "@oneof ").ok();
                 }

@@ -16,6 +16,7 @@ Similar to `Object`, but defined on a structure that automatically generates get
 | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                                                 | string                                     | Y        |
 | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented. *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html#generic-simpleobjects) | ConcreteType                               | Y        |
 | serial        | Resolve each field sequentially.                                                                                                                                                                        | bool                                       | Y        |
+| guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                                                 | string                                     | Y        |
 
 # Field attributes
 

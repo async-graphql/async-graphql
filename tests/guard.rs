@@ -347,7 +347,202 @@ pub async fn test_guard_use_params() {
 }
 
 #[tokio::test]
+pub async fn test_guard_on_simple_object() {
+    #[derive(SimpleObject)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+    struct Query {
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 100 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value": 100})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_guard_on_simple_object_field() {
+    #[derive(SimpleObject)]
+    #[graphql]
+    struct Query {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 100 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value": 100})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_guard_on_object() {
+    struct Query;
+
+    #[Object(guard = "RoleGuard::new(Role::Admin)")]
+    impl Query {
+        async fn value(&self) -> i32 {
+            100
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value": 100})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_guard_on_object_field() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        async fn value(&self) -> i32 {
+            100
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value": 100})
+    );
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[tokio::test]
 pub async fn test_guard_on_complex_object() {
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct Query {
+        value1: i32,
+    }
+
+    #[ComplexObject(guard = "RoleGuard::new(Role::Admin)")]
+    impl Query {
+        async fn value2(&self) -> i32 {
+            100
+        }
+    }
+
+    let schema = Schema::new(Query { value1: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value2 }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value2": 100})
+    );
+
+    let query = "{ value2 }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value2".to_owned())],
+            extensions: None,
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_guard_on_complex_object_field() {
     #[derive(SimpleObject)]
     #[graphql(complex)]
     struct Query {

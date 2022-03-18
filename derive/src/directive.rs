@@ -82,7 +82,7 @@ pub fn generate(
         let visible = visible_fn(&visible);
 
         schema_args.push(quote! {
-            args.insert(#name, #crate_name::registry::MetaInputValue {
+            args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: #name,
                 description: #desc,
                 ty: <#arg_ty as #crate_name::InputType>::create_type_info(registry),

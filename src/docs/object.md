@@ -18,6 +18,7 @@ All methods are converted to camelCase.
 | visible              | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                             | string                                     | Y        |
 | serial               | Resolve each field sequentially.                                                                                                                                                    | bool                                       | Y        |
 | concretes            | Specify how the concrete type of the generic SimpleObject should be implemented.                                                                                                    | ConcreteType                               | Y        |
+| guard                | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                             | string                                     | Y        |
 
 # Field attributes
 
@@ -39,6 +40,7 @@ All methods are converted to camelCase.
 | complexity    | Custom field complexity.                                                                                                                                                                                                                 | string                                     | Y        |
 | derived       | Generate derived fields *[See also the Book](https://async-graphql.github.io/async-graphql/en/derived_fields.html).*                                                                                                                     | object                                     | Y        |
 | flatten       | Similar to serde (flatten)                                                                                                                                                                                                               | boolean                                    | Y        |
+| oneof         | Oneof field                                                                                                                                                                                                                              | bool                                       | Y        |
 
 # Field argument attributes
 
@@ -187,5 +189,40 @@ assert_eq!(res, value!({
         { "name": "b" },
     ]
 }));
+# });
+```
+
+# Oneof field
+
+```rust
+use async_graphql::*;
+
+#[derive(OneofObject)]
+enum MyInputObject {
+    A(i32),
+    B(String),
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    #[graphql(oneof)]
+    async fn value(&self, input: MyInputObject) -> String {
+        match input {
+            MyInputObject::A(value) => format!("a:{}", value),
+            MyInputObject::B(value) => format!("b:{}", value),
+        }
+    }
+}
+
+# tokio::runtime::Runtime::new().unwrap().block_on(async move {
+let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+let res = schema.execute(r#"
+{
+    value1: value(a:100)
+    value2: value(b:"abc")
+}"#).await.into_result().unwrap().data;
+assert_eq!(res, value!({ "value1": "a:100", "value2": "b:abc" }));
 # });
 ```

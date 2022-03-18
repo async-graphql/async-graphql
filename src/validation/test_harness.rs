@@ -288,6 +288,13 @@ impl ComplicatedArgs {
     }
 }
 
+#[derive(OneofObject)]
+#[graphql(internal)]
+enum OneofArg {
+    A(i32),
+    B(String),
+}
+
 pub struct Query;
 
 #[Object(internal)]
@@ -333,6 +340,19 @@ impl Query {
     }
 
     async fn complicated_args(&self) -> Option<ComplicatedArgs> {
+        unimplemented!()
+    }
+
+    async fn oneof_arg(&self, arg: OneofArg) -> String {
+        unimplemented!()
+    }
+
+    async fn oneof_opt(&self, arg: Option<OneofArg>) -> String {
+        unimplemented!()
+    }
+
+    #[graphql(oneof)]
+    async fn oneof_field(&self, arg: OneofArg) -> String {
         unimplemented!()
     }
 }

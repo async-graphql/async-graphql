@@ -167,6 +167,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     requires: #requires,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
+                    oneof: false,
                 });
             });
         } else {
@@ -183,7 +184,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let guard_map_err = quote! {
             .map_err(|err| err.into_server_error(ctx.item.pos))
         };
-        let guard = match &field.guard {
+        let guard = match field.guard.as_ref().or(object_args.guard.as_ref()) {
             Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
             None => None,
         };
