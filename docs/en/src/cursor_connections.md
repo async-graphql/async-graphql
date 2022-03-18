@@ -6,7 +6,7 @@ Defining a cursor connection in `async-graphql` is very simple, you just call th
 
 ```rust
 use async_graphql::*;
-use async_graphql::connection::*;
+use async_graphql::types::connection::*;
 
 struct Query;
 

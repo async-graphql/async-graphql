@@ -26,7 +26,7 @@ pub struct EmptyFields;
 ///
 /// ```rust
 /// use async_graphql::*;
-/// use async_graphql::connection::*;
+/// use async_graphql::types::connection::*;
 ///
 /// struct Query;
 ///
@@ -116,7 +116,7 @@ where
 ///
 /// ```rust
 /// use async_graphql::*;
-/// use async_graphql::connection::*;
+/// use async_graphql::types::connection::*;
 ///
 /// #[derive(SimpleObject)]
 /// struct MyEdge {
