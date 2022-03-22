@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.36] 2022-3-22
+
+- Generate `@deprecated` to SDL. [#874](https://github.com/async-graphql/async-graphql/issues/874)
+- Expose `Connection::edges`. [#871](https://github.com/async-graphql/async-graphql/issues/871)
+
 # [3.0.35] 2022-3-14
 
 - Make `HashMap` more generics for `InputOutput` and `OutputType`.
