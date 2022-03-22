@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::registry::{MetaField, MetaInputValue, MetaType, Registry};
+use crate::registry::{Deprecation, MetaField, MetaInputValue, MetaType, Registry};
 
 impl Registry {
     pub fn export_sdl(&self, federation: bool) -> String {
@@ -83,6 +83,8 @@ impl Registry {
             if field.oneof {
                 write!(sdl, " @oneof").ok();
             }
+
+            write_deprecated(sdl, &field.deprecation);
 
             if federation {
                 if field.external {
@@ -209,7 +211,9 @@ impl Registry {
                 write!(sdl, "enum {} ", name).ok();
                 writeln!(sdl, "{{").ok();
                 for value in enum_values.values() {
-                    writeln!(sdl, "\t{}", value.name).ok();
+                    write!(sdl, "\t{}", value.name).ok();
+                    write_deprecated(sdl, &value.deprecation);
+                    writeln!(sdl).ok();
                 }
                 writeln!(sdl, "}}").ok();
             }
@@ -280,5 +284,53 @@ fn export_input_value(input_value: &MetaInputValue) -> String {
         )
     } else {
         format!("{}: {}", input_value.name, input_value.ty)
+    }
+}
+
+fn write_deprecated(sdl: &mut String, deprecation: &Deprecation) {
+    if let Deprecation::Deprecated { reason } = deprecation {
+        let _ = match reason {
+            Some(reason) => write!(sdl, " @deprecated(reason: \"{}\")", escape_string(reason)).ok(),
+            None => write!(sdl, " @deprecated").ok(),
+        };
+    }
+}
+
+fn escape_string(s: &str) -> String {
+    let mut res = String::new();
+
+    for c in s.chars() {
+        let ec = match c {
+            '\\' => Some("\\\\"),
+            '\x08' => Some("\\b"),
+            '\x0c' => Some("\\f"),
+            '\n' => Some("\\n"),
+            '\r' => Some("\\r"),
+            '\t' => Some("\\t"),
+            _ => None,
+        };
+        match ec {
+            Some(ec) => {
+                res.write_str(ec).ok();
+            }
+            None => {
+                res.write_char(c).ok();
+            }
+        }
+    }
+
+    res
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_escape_string() {
+        assert_eq!(
+            escape_string("1\\\x08d\x0c3\n4\r5\t6"),
+            "1\\\\\\bd\\f3\\n4\\r5\\t6"
+        );
     }
 }

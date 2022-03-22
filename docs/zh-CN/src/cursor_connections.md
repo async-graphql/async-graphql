@@ -8,7 +8,7 @@ Relay定义了一套游标连接规范，以提供一致性的分页查询方式
 
 ```rust
 use async_graphql::*;
-use async_graphql::connection::*;
+use async_graphql::types::connection::*;
 
 struct Query;
 

@@ -18,7 +18,7 @@ use crate::{
 /// Connection is the result of a query for `connection::query`.
 pub struct Connection<C, T, EC = EmptyFields, EE = EmptyFields> {
     /// All edges of the current page.
-    edges: Vec<Edge<C, T, EE>>,
+    pub edges: Vec<Edge<C, T, EE>>,
     additional_fields: EC,
     has_previous_page: bool,
     has_next_page: bool,
