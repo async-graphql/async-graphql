@@ -13,7 +13,7 @@ categories = ["network-programming", "asynchronous"]
 readme = "README.md"
 
 [features]
-default = []
+default = ["disallow-name-conflict"]
 apollo_tracing = ["chrono"]
 apollo_persisted_queries = ["lru", "sha2"]
 unblock = ["blocking"]
@@ -24,6 +24,7 @@ decimal = ["rust_decimal"]
 cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
 password-strength-validator = ["zxcvbn"]
+disallow-name-conflict = []
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "3.0.36" }

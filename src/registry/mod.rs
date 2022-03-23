@@ -408,10 +408,12 @@ impl Registry {
             Some(ty) => {
                 if let Some(prev_typename) = ty.rust_typename() {
                     if prev_typename != "__fake_type__" && rust_typename != prev_typename {
-                        panic!(
-                            "`{}` and `{}` have the same GraphQL name `{}`",
-                            prev_typename, rust_typename, name,
-                        );
+                        if cfg!(feature = "disallow-name-conflict") {
+                            panic!(
+                                "`{}` and `{}` have the same GraphQL name `{}`",
+                                prev_typename, rust_typename, name,
+                            );
+                        }
                     }
                 }
             }
