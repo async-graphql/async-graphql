@@ -172,7 +172,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_output_type::<Self, _>(|registry| {
+                registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Union, |registry| {
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Union {

@@ -4,6 +4,7 @@ use indexmap::map::IndexMap;
 
 use crate::connection::EmptyFields;
 use crate::parser::types::Field;
+use crate::registry::MetaTypeId;
 use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::types::connection::CursorType;
 use crate::{
@@ -72,7 +73,7 @@ where
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_output_type::<Self, _>(|registry| {
+        registry.create_output_type::<Self, _>(MetaTypeId::Object, |registry| {
             let additional_fields = if let registry::MetaType::Object { fields, .. } =
                 registry.create_fake_output_type::<E>()
             {

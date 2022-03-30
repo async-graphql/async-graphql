@@ -407,6 +407,31 @@ pub async fn test_both_input_output() {
     assert_eq!(<MyObject as OutputType>::type_name(), "MyObject");
 }
 
+#[test]
+#[should_panic]
+pub fn test_both_input_output_with_same_name() {
+    #[derive(SimpleObject, InputObject)]
+    #[allow(dead_code)]
+    struct MyObject {
+        #[graphql(default = 10)]
+        a: i32,
+        b: bool,
+        #[graphql(skip)]
+        c: String,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    Schema::new(Query, EmptyMutation, EmptySubscription);
+}
+
 #[tokio::test]
 pub async fn test_skip_input() {
     #[derive(SimpleObject, InputObject)]
