@@ -3,6 +3,7 @@ mod export_sdl;
 mod stringify_exec_doc;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::fmt::{self, Display, Formatter};
 
 use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
@@ -179,6 +180,29 @@ pub struct MetaEnumValue {
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum MetaTypeId {
+    Scalar,
+    Object,
+    Interface,
+    Union,
+    Enum,
+    InputObject,
+}
+
+impl Display for MetaTypeId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            MetaTypeId::Scalar => "Scalar",
+            MetaTypeId::Object => "Object",
+            MetaTypeId::Interface => "Interface",
+            MetaTypeId::Union => "Union",
+            MetaTypeId::Enum => "Enum",
+            MetaTypeId::InputObject => "InputObject",
+        })
+    }
+}
+
 #[derive(Clone)]
 pub enum MetaType {
     Scalar {
@@ -234,6 +258,18 @@ pub enum MetaType {
 }
 
 impl MetaType {
+    #[inline]
+    pub fn type_id(&self) -> MetaTypeId {
+        match self {
+            MetaType::Scalar { .. } => MetaTypeId::Scalar,
+            MetaType::Object { .. } => MetaTypeId::Object,
+            MetaType::Interface { .. } => MetaTypeId::Interface,
+            MetaType::Union { .. } => MetaTypeId::Union,
+            MetaType::Enum { .. } => MetaTypeId::Enum,
+            MetaType::InputObject { .. } => MetaTypeId::InputObject,
+        }
+    }
+
     #[inline]
     pub fn field_by_name(&self, name: &str) -> Option<&MetaField> {
         self.fields().and_then(|fields| fields.get(name))
@@ -371,30 +407,45 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn create_input_type<T: InputType + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
-        &mut self,
-        mut f: F,
-    ) -> String {
-        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+    pub fn create_input_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
+    where
+        T: InputType + ?Sized,
+        F: FnMut(&mut Registry) -> MetaType,
+    {
+        self.create_type(
+            &mut f,
+            &*T::type_name(),
+            std::any::type_name::<T>(),
+            type_id,
+        );
         T::qualified_type_name()
     }
 
-    pub fn create_output_type<T: OutputType + ?Sized, F: FnMut(&mut Registry) -> MetaType>(
-        &mut self,
-        mut f: F,
-    ) -> String {
-        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+    pub fn create_output_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
+    where
+        T: OutputType + ?Sized,
+        F: FnMut(&mut Registry) -> MetaType,
+    {
+        self.create_type(
+            &mut f,
+            &*T::type_name(),
+            std::any::type_name::<T>(),
+            type_id,
+        );
         T::qualified_type_name()
     }
 
-    pub fn create_subscription_type<
+    pub fn create_subscription_type<T, F>(&mut self, mut f: F) -> String
+    where
         T: SubscriptionType + ?Sized,
         F: FnMut(&mut Registry) -> MetaType,
-    >(
-        &mut self,
-        mut f: F,
-    ) -> String {
-        self.create_type(&mut f, &*T::type_name(), std::any::type_name::<T>());
+    {
+        self.create_type(
+            &mut f,
+            &*T::type_name(),
+            std::any::type_name::<T>(),
+            MetaTypeId::Object,
+        );
         T::qualified_type_name()
     }
 
@@ -403,14 +454,28 @@ impl Registry {
         f: &mut F,
         name: &str,
         rust_typename: &str,
+        type_id: MetaTypeId,
     ) {
         match self.types.get(name) {
             Some(ty) => {
                 if let Some(prev_typename) = ty.rust_typename() {
-                    if prev_typename != "__fake_type__" && rust_typename != prev_typename {
+                    if prev_typename == "__fake_type__" {
+                        return;
+                    }
+
+                    if rust_typename != prev_typename {
                         panic!(
                             "`{}` and `{}` have the same GraphQL name `{}`",
                             prev_typename, rust_typename, name,
+                        );
+                    }
+
+                    if ty.type_id() != type_id {
+                        panic!(
+                            "Register `{}` as `{}`, but it is already registered as `{}`",
+                            name,
+                            type_id,
+                            ty.type_id()
                         );
                     }
                 }

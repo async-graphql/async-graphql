@@ -131,7 +131,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         input_fields: {
@@ -181,7 +181,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
-                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         input_fields: {

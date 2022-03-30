@@ -5,6 +5,7 @@ use std::io::Read;
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
 
+use crate::registry::MetaTypeId;
 use crate::{registry, Context, InputType, InputValueError, InputValueResult, Value};
 
 /// A file upload value.
@@ -109,7 +110,7 @@ impl InputType for Upload {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_input_type::<Self, _>(|_| registry::MetaType::Scalar {
+        registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),

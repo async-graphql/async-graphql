@@ -47,7 +47,7 @@ pub fn generate(
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_input_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
+                registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
@@ -77,7 +77,7 @@ pub fn generate(
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_output_type::<#self_ty, _>(|_| #crate_name::registry::MetaType::Scalar {
+                registry.create_output_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),

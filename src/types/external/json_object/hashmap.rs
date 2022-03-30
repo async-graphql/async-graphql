@@ -11,7 +11,7 @@ use indexmap::IndexMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::registry::{MetaType, Registry};
+use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
@@ -31,7 +31,7 @@ where
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
-        registry.create_input_type::<Self, _>(|_| MetaType::Scalar {
+        registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value."),
             is_valid: |_| true,
@@ -87,7 +87,7 @@ where
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
-        registry.create_output_type::<Self, _>(|_| MetaType::Scalar {
+        registry.create_output_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as OutputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value."),
             is_valid: |_| true,

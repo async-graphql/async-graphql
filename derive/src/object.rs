@@ -653,7 +653,7 @@ pub fn generate(
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         fields: {
@@ -692,7 +692,7 @@ pub fn generate(
 
             impl #impl_generics #self_ty #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
-                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         fields: {
