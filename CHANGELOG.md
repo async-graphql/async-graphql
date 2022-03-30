@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.37] 2022-3-30
+
+- Panics when the same Rust type has the same name. [#880](https://github.com/async-graphql/async-graphql/issues/880)
+
 # [3.0.36] 2022-3-22
 
 - Generate `@deprecated` to SDL. [#874](https://github.com/async-graphql/async-graphql/issues/874)
