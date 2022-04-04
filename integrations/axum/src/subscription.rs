@@ -29,7 +29,7 @@ impl<B: Send> FromRequest<B> for GraphQLProtocol {
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         req.headers()
-            .and_then(|headers| headers.get(http::header::SEC_WEBSOCKET_PROTOCOL))
+            .get(http::header::SEC_WEBSOCKET_PROTOCOL)
             .and_then(|value| value.to_str().ok())
             .and_then(|protocols| {
                 protocols
