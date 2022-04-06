@@ -77,7 +77,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         let process_with = match field.process_with.as_ref() {
             Some(fn_path) => {
-                let fn_path: syn::ExprPath = syn::parse_str(&fn_path)?;
+                let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
                 quote! {
                     #fn_path(&mut #ident);
                 }

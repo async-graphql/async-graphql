@@ -154,6 +154,8 @@ pub struct SimpleObjectField {
     pub visible: Option<Visible>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
+    #[darling(default)]
+    pub process_with: Option<String>,
     // for InputObject
     #[darling(default)]
     pub default: Option<DefaultValue>,
@@ -212,6 +214,8 @@ pub struct Argument {
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
     pub validator: Option<Validators>,
+    #[darling(default)]
+    pub process_with: Option<String>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
     pub secret: bool,
@@ -549,6 +553,8 @@ pub struct SubscriptionFieldArgument {
     pub default: Option<DefaultValue>,
     pub default_with: Option<LitStr>,
     pub validator: Option<Validators>,
+    #[darling(default)]
+    pub process_with: Option<String>,
     pub visible: Option<Visible>,
     pub secret: bool,
 }

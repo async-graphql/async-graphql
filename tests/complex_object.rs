@@ -2,6 +2,45 @@ use async_graphql::*;
 use core::marker::PhantomData;
 
 #[tokio::test]
+async fn test_complex_object_process_with_method_field() {
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyObj {
+        a: i32,
+    }
+
+    #[ComplexObject]
+    impl MyObj {
+        async fn test(
+            &self,
+            #[graphql(process_with = "str::make_ascii_uppercase")] processed_complex_arg: String,
+        ) -> String {
+            processed_complex_arg
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> MyObj {
+            MyObj { a: 10 }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ obj { test(processedComplexArg: \"smol\") } }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "obj": {
+                "test": "SMOL"
+            }
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_complex_object() {
     #[derive(SimpleObject)]
     #[graphql(complex)]

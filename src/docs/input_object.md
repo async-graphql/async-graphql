@@ -24,8 +24,7 @@ Define a GraphQL input object
 | flatten      | Similar to serde (flatten)                                                                                                                      | boolean     | Y        |
 | skip         | Skip this field, use `Default::default` to get a default value for this field.                                                                  | bool        | Y        |
 | skip_input   | Skip this field, similar to `skip`, but avoids conflicts when this macro is used with `SimpleObject`.                                           | bool        | Y        |
-| process_with | Upon successful parsing, invokes specified function. Its signature must be `fn(&mut T)`.
-                    | code path   | Y        |
+| process_with | Upon successful parsing, invokes specified function. Its signature must be `fn(&mut T)`.                                                        | code path   | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool        | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
 | secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |
