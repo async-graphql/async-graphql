@@ -25,3 +25,12 @@ impl Query {
     }
 }
 ```
+
+#### Errors in subscriptions
+
+Errors can be returned from subscription resolvers as well, using a return type of the form:
+```rust
+async fn my_subscription_resolver(&self) -> impl Stream<Item = Result<MyItem, MyError>> { ... }
+```
+
+Note however that the `MyError` struct must have `Clone` implemented, due to the restrictions placed by the `Subscription` macro. One way to accomplish this is by creating a custom error type, with `#[derive(Clone)]`, as [seen here](https://github.com/async-graphql/async-graphql/issues/845#issuecomment-1090933464).
