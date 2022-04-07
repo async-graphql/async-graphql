@@ -119,6 +119,30 @@ async fn test_flatten_with_context() {
 }
 
 #[tokio::test]
+async fn test_object_process_with_field() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(
+            &self,
+            #[graphql(process_with = "str::make_ascii_uppercase")] processed_arg: String,
+        ) -> String {
+            processed_arg
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ test(processedArg: \"smol\") }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "test": "SMOL"
+        })
+    );
+}
+
+#[tokio::test]
 async fn test_oneof_field() {
     #[derive(OneofObject)]
     enum TestArg {
