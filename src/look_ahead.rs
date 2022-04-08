@@ -33,12 +33,7 @@ impl<'a> Lookahead<'a> {
     pub fn field(&self, name: &str) -> Self {
         let mut fields = Vec::new();
         for field in &self.fields {
-            filter(
-                &mut fields,
-                self.fragments,
-                &field.selection_set.node,
-                name,
-            )
+            filter(&mut fields, self.fragments, &field.selection_set.node, name)
         }
 
         Self {
@@ -115,20 +110,12 @@ fn filter<'a>(
                     fields.push(&field.node)
                 }
             }
-            Selection::InlineFragment(fragment) => filter(
-                fields,
-                fragments,
-                &fragment.node.selection_set.node,
-                name,
-            ),
+            Selection::InlineFragment(fragment) => {
+                filter(fields, fragments, &fragment.node.selection_set.node, name)
+            }
             Selection::FragmentSpread(spread) => {
                 if let Some(fragment) = fragments.get(&spread.node.fragment_name.node) {
-                    filter(
-                        fields,
-                        fragments,
-                        &fragment.node.selection_set.node,
-                        name,
-                    )
+                    filter(fields, fragments, &fragment.node.selection_set.node, name)
                 }
             }
         }
