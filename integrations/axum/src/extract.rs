@@ -106,7 +106,7 @@ where
         } else {
             let content_type = req
                 .headers()
-                .and_then(|headers| headers.get(http::header::CONTENT_TYPE))
+                .get(http::header::CONTENT_TYPE)
                 .and_then(|value| value.to_str().ok())
                 .map(ToString::to_string);
             let body_stream = BodyStream::from_request(req)

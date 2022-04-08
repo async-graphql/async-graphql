@@ -38,7 +38,6 @@ impl<'a> Lookahead<'a> {
                 self.fragments,
                 &field.selection_set.node,
                 name,
-                self.context,
             )
         }
 
@@ -108,7 +107,6 @@ fn filter<'a>(
     fragments: &'a HashMap<Name, Positioned<FragmentDefinition>>,
     selection_set: &'a SelectionSet,
     name: &str,
-    context: &'a Context<'a>,
 ) {
     for item in &selection_set.items {
         match &item.node {
@@ -122,7 +120,6 @@ fn filter<'a>(
                 fragments,
                 &fragment.node.selection_set.node,
                 name,
-                context,
             ),
             Selection::FragmentSpread(spread) => {
                 if let Some(fragment) = fragments.get(&spread.node.fragment_name.node) {
@@ -131,7 +128,6 @@ fn filter<'a>(
                         fragments,
                         &fragment.node.selection_set.node,
                         name,
-                        context,
                     )
                 }
             }
