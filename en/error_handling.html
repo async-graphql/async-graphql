@@ -162,6 +162,15 @@ impl Query {
 }
 <span class="boring">}
 </span></code></pre></pre>
+<h4 id="errors-in-subscriptions"><a class="header" href="#errors-in-subscriptions">Errors in subscriptions</a></h4>
+<p>Errors can be returned from subscription resolvers as well, using a return type of the form:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>async fn my_subscription_resolver(&amp;self) -&gt; impl Stream&lt;Item = Result&lt;MyItem, MyError&gt;&gt; { ... }
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note however that the <code>MyError</code> struct must have <code>Clone</code> implemented, due to the restrictions placed by the <code>Subscription</code> macro. One way to accomplish this is by creating a custom error type, with <code>#[derive(Clone)]</code>, as <a href="https://github.com/async-graphql/async-graphql/issues/845#issuecomment-1090933464">seen here</a>.</p>
 
                     </main>
 
