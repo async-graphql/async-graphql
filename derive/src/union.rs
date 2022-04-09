@@ -60,9 +60,14 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             }
         };
 
-        if let Type::Path(p) = &ty {
+        let mut ty = ty;
+        while let Type::Group(group) = ty {
+            ty = &*group.elem;
+        }
+
+        if matches!(ty, Type::Path(_) | Type::Macro(_)) {
             // This validates that the field type wasn't already used
-            if !enum_items.insert(p) {
+            if !enum_items.insert(ty) {
                 return Err(
                     Error::new_spanned(&ty, "This type already used in another variant").into(),
                 );
@@ -70,16 +75,16 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             enum_names.push(enum_name);
 
-            let mut assert_ty = p.clone();
-            RemoveLifetime.visit_type_path_mut(&mut assert_ty);
+            let mut assert_ty = ty.clone();
+            RemoveLifetime.visit_type_mut(&mut assert_ty);
 
             if !variant.flatten {
                 type_into_impls.push(quote! {
                     #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
 
                     #[allow(clippy::all, clippy::pedantic)]
-                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
-                        fn from(obj: #p) -> Self {
+                    impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
+                        fn from(obj: #ty) -> Self {
                             #ident::#enum_name(obj)
                         }
                     }
@@ -89,8 +94,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                     #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::UnionType);
 
                     #[allow(clippy::all, clippy::pedantic)]
-                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
-                        fn from(obj: #p) -> Self {
+                    impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
+                        fn from(obj: #ty) -> Self {
                             #ident::#enum_name(obj)
                         }
                     }
@@ -99,15 +104,15 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 registry_types.push(quote! {
-                    <#p as #crate_name::OutputType>::create_type_info(registry);
+                    <#ty as #crate_name::OutputType>::create_type_info(registry);
                 });
                 possible_types.push(quote! {
-                    possible_types.insert(<#p as #crate_name::OutputType>::type_name().into_owned());
+                    possible_types.insert(<#ty as #crate_name::OutputType>::type_name().into_owned());
                 });
             } else {
                 possible_types.push(quote! {
                     if let #crate_name::registry::MetaType::Union { possible_types: possible_types2, .. } =
-                        registry.create_fake_output_type::<#p>() {
+                        registry.create_fake_output_type::<#ty>() {
                         possible_types.extend(possible_types2);
                     }
                 });
@@ -115,11 +120,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
+                    #ident::#enum_name(obj) => <#ty as #crate_name::OutputType>::type_name()
                 });
             } else {
                 get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::introspection_type_name(obj)
+                    #ident::#enum_name(obj) => <#ty as #crate_name::OutputType>::introspection_type_name(obj)
                 });
             }
 

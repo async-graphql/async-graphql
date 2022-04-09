@@ -172,6 +172,32 @@ impl<T> MaybeUndefined<T> {
             MaybeUndefined::Undefined => MaybeUndefined::Undefined,
         }
     }
+
+    /// Update `value` if the `MaybeUndefined<T>` is not undefined.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use async_graphql::MaybeUndefined;
+    ///
+    /// let mut value = None;
+    ///
+    /// MaybeUndefined::Value(10i32).update_to(&mut value);
+    /// assert_eq!(value, Some(10));
+    ///
+    /// MaybeUndefined::Undefined.update_to(&mut value);
+    /// assert_eq!(value, Some(10));
+    ///
+    /// MaybeUndefined::Null.update_to(&mut value);
+    /// assert_eq!(value, None);
+    /// ```
+    pub fn update_to(self, value: &mut Option<T>) {
+        match self {
+            MaybeUndefined::Value(new) => *value = Some(new),
+            MaybeUndefined::Null => *value = None,
+            MaybeUndefined::Undefined => {}
+        };
+    }
 }
 
 impl<T: InputType> InputType for MaybeUndefined<T> {

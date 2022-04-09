@@ -419,3 +419,24 @@ pub async fn test_trait_object_in_union() {
         })
     );
 }
+
+macro_rules! generate_union {
+    ($name:ident, $variant_ty:ty) => {
+        #[derive(Union)]
+        pub enum $name {
+            Val($variant_ty),
+        }
+    };
+}
+
+#[test]
+pub fn test_macro_generated_union() {
+    #[derive(SimpleObject)]
+    pub struct IntObj {
+        pub val: i32,
+    }
+
+    generate_union!(MyEnum, IntObj);
+
+    let _ = MyEnum::Val(IntObj { val: 1 });
+}
