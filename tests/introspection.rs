@@ -1272,3 +1272,109 @@ pub async fn test_disable_introspection() {
         value!({ "__type": null })
     );
 }
+
+#[tokio::test]
+pub async fn test_introspection_only() {
+    let schema = Schema::build(Query, Mutation, EmptySubscription)
+        .introspection_only()
+        .finish();
+
+    // Test whether introspection works.
+    let query = r#"
+        {
+            __type(name: "Mutation") {
+                name
+                kind
+                description
+                fields {
+                    description
+                    name
+                    type { kind name }
+                    args { name }
+                }
+            }
+        }
+    "#;
+    let res_json = value!({
+        "__type": {
+            "name": "Mutation",
+            "kind": "OBJECT",
+            "description": "Global mutation",
+            "fields": [
+              {
+                "description": "simple_mutation description\nline2\nline3",
+                "name": "simpleMutation",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null
+                },
+                "args": [
+                  {
+                    "name": "input"
+                  }
+                ]
+              }
+            ]
+        }
+    });
+    let res = schema.execute(query).await.into_result().unwrap().data;
+    assert_eq!(res, res_json);
+
+    // Test whether introspection works.
+    let query = r#"
+        {
+            __type(name: "Query") {
+                name
+                kind
+                description
+                fields {
+                    description
+                    name
+                    type { kind name }
+                    args { name }
+                }
+            }
+        }
+    "#;
+    let res_json = value!({
+      "__type": {
+        "name": "Query",
+        "kind": "OBJECT",
+        "description": "Global query",
+        "fields": [
+          {
+            "description": "Get a simple object",
+            "name": "simpleObject",
+            "type": { "kind": "NON_NULL", "name": null },
+            "args": []
+          }
+        ]
+      }
+    });
+    let res = schema.execute(query).await.into_result().unwrap().data;
+    assert_eq!(res, res_json);
+
+    // Queries shouldn't work in introspection only mode.
+    let query = r#"
+        {
+            simpleObject {
+                a
+            }
+        }
+    "#;
+    let res_json = value!({ "simpleObject": null });
+    let res = schema.execute(query).await.into_result().unwrap().data;
+    assert_eq!(res, res_json);
+
+    // Mutations shouldn't work in introspection only mode.
+    let query = r#"
+        mutation {
+            simpleMutation(input: { a: "" }) {
+                a
+            }
+        }
+    "#;
+    let res_json = value!({ "simpleMutation": null });
+    let res = schema.execute(query).await.into_result().unwrap().data;
+    assert_eq!(res, res_json);
+}
