@@ -365,6 +365,7 @@ impl std::str::FromStr for Protocols {
 /// A websocket message received from the client
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)] //Request is at fault
 pub enum ClientMessage {
     /// A new connection
     ConnectionInit {

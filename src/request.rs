@@ -4,7 +4,9 @@ use std::fmt::{self, Debug, Formatter};
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{Data, ParseRequestError, UploadValue, Value, Variables};
+use crate::parser::parse_query;
+use crate::parser::types::ExecutableDocument;
+use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables};
 
 /// GraphQL request.
 ///
@@ -42,6 +44,9 @@ pub struct Request {
     /// Disable introspection queries for this request.
     #[serde(skip)]
     pub disable_introspection: bool,
+
+    #[serde(skip)]
+    pub(crate) parsed_query: Option<ExecutableDocument>,
 }
 
 impl Request {
@@ -55,6 +60,7 @@ impl Request {
             data: Data::default(),
             extensions: Default::default(),
             disable_introspection: false,
+            parsed_query: None,
         }
     }
 
@@ -85,6 +91,24 @@ impl Request {
     pub fn disable_introspection(mut self) -> Self {
         self.disable_introspection = true;
         self
+    }
+
+    #[inline]
+    /// Performs parsing of query ahead of execution.
+    ///
+    /// This effectively allows to inspect query information, before passing request to schema for
+    /// execution as long as query is valid.
+    pub fn parsed_query(&mut self) -> Result<&ExecutableDocument, ServerError> {
+        if self.parsed_query.is_none() {
+            match parse_query(&self.query) {
+                Ok(parsed) => self.parsed_query = Some(parsed),
+                Err(error) => return Err(error.into()),
+            }
+        }
+
+        //forbid_unsafe effectively bans optimize away else branch here so use unwrap
+        //but this unwrap never panics
+        Ok(self.parsed_query.as_ref().unwrap())
     }
 
     /// Set a variable to an upload value.
@@ -141,6 +165,7 @@ impl Debug for Request {
 /// **Reference:** <https://www.apollographql.com/blog/batching-client-graphql-queries-a685f5bcd41b/>
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)] //Request is at fault
 pub enum BatchRequest {
     /// Single query
     Single(Request),

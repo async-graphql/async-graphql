@@ -1,3 +1,6 @@
+use core::future::Future;
+use core::pin::Pin;
+use core::task;
 use std::any::Any;
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -10,7 +13,9 @@ use crate::context::{Data, QueryEnvInner};
 use crate::custom_directive::CustomDirectiveFactory;
 use crate::extensions::{ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
-use crate::parser::types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet};
+use crate::parser::types::{
+    Directive, DocumentOperations, ExecutableDocument, OperationType, Selection, SelectionSet,
+};
 use crate::parser::{parse_query, Positioned};
 use crate::registry::{MetaDirective, MetaInputValue, Registry};
 use crate::resolver_utils::{resolve_container, resolve_container_serial};
@@ -21,6 +26,26 @@ use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, InputType, ObjectType, OutputType,
     QueryEnv, Request, Response, ServerError, SubscriptionType, Variables, ID,
 };
+
+pub struct ParseQueryFut<'a> {
+    query: &'a str,
+    parsed: Option<ExecutableDocument>,
+}
+
+impl<'a> Future for ParseQueryFut<'a> {
+    type Output = Result<ExecutableDocument, ServerError>;
+
+    #[inline(always)]
+    fn poll(self: Pin<&mut Self>, _: &mut task::Context<'_>) -> task::Poll<Self::Output> {
+        let this = Pin::into_inner(self);
+        let result = match this.parsed.take() {
+            Some(document) => Ok(document),
+            None => parse_query(this.query).map_err(Into::into),
+        };
+
+        task::Poll::Ready(result)
+    }
+}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -427,10 +452,13 @@ where
         let query_data = Arc::new(std::mem::take(&mut request.data));
         extensions.attach_query_data(query_data.clone());
 
-        let request = extensions.prepare_request(request).await?;
+        let mut request = extensions.prepare_request(request).await?;
         let mut document = {
             let query = &request.query;
-            let fut_parse = async { parse_query(&query).map_err(Into::<ServerError>::into) };
+            let fut_parse = ParseQueryFut {
+                query,
+                parsed: request.parsed_query.take(),
+            };
             futures_util::pin_mut!(fut_parse);
             extensions
                 .parse_query(&query, &request.variables, &mut fut_parse)
