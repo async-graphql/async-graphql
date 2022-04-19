@@ -1,16 +1,14 @@
 use std::borrow::Cow;
 
-use crate::parser::types::Field;
-use crate::registry::MetaTypeId;
-use crate::resolver_utils::ContainerType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, Value,
+    parser::types::Field, registry, registry::MetaTypeId, resolver_utils::ContainerType, Context,
+    ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError, ServerResult, Value,
 };
 
 /// Empty mutation
 ///
-/// Only the parameters used to construct the Schema, representing an unconfigured mutation.
+/// Only the parameters used to construct the Schema, representing an
+/// unconfigured mutation.
 ///
 /// # Examples
 ///

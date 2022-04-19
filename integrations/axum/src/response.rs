@@ -1,12 +1,14 @@
-use axum::body::{boxed, Body, BoxBody};
-use axum::http;
-use axum::http::{HeaderValue, Response};
-use axum::response::IntoResponse;
+use axum::{
+    body::{boxed, Body, BoxBody},
+    http,
+    http::{HeaderValue, Response},
+    response::IntoResponse,
+};
 
 /// Responder for a GraphQL response.
 ///
-/// This contains a batch response, but since regular responses are a type of batch response it
-/// works for both.
+/// This contains a batch response, but since regular responses are a type of
+/// batch response it works for both.
 pub struct GraphQLResponse(pub async_graphql::BatchResponse);
 
 impl From<async_graphql::Response> for GraphQLResponse {

@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-use std::io::{self, Seek, SeekFrom, Write};
-use std::pin::Pin;
-use std::task::{Context, Poll};
+use std::{
+    collections::HashMap,
+    io::{self, Seek, SeekFrom, Write},
+    pin::Pin,
+    task::{Context, Poll},
+};
 
-use futures_util::io::AsyncRead;
-use futures_util::stream::Stream;
+use futures_util::{io::AsyncRead, stream::Stream};
 use multer::{Constraints, Multipart, SizeLimit};
 use pin_project_lite::pin_project;
 
@@ -90,8 +91,9 @@ pub(super) async fn receive_batch_multipart(
                     // Note: we actually differ here from the inoffical spec for this:
                     // (https://github.com/jaydenseric/graphql-multipart-request-spec#multipart-form-field-structure)
                     // It says: "map: A JSON encoded map of where files occurred in the operations.
-                    // For each file, the key is the file multipart form field name and the value is an array of operations paths."
-                    // However, I think, that since we accept CBOR as operation, which is valid, we should also accept it
+                    // For each file, the key is the file multipart form field name and the value is
+                    // an array of operations paths." However, I think, that
+                    // since we accept CBOR as operation, which is valid, we should also accept it
                     // as the mapping for the files.
                     #[cfg(feature = "cbor")]
                     (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {

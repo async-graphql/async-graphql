@@ -1,7 +1,9 @@
-use crate::parser::types::{Directive, Field};
-use crate::registry::MetaTypeName;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{
+    parser::types::{Directive, Field},
+    registry::MetaTypeName,
+    validation::visitor::{Visitor, VisitorContext},
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct ProvidedNonNullArguments;

@@ -1,20 +1,21 @@
+use std::{iter::FromIterator, str::FromStr};
+
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
-use std::iter::FromIterator;
-use std::str::FromStr;
-use syn::ext::IdentExt;
 use syn::{
-    punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Token, Type,
-    TypeReference,
+    ext::IdentExt, punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat,
+    ReturnType, Token, Type, TypeReference,
 };
 
-use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
-use crate::output_type::OutputType;
-use crate::utils::{
-    extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+use crate::{
+    args::{self, ComplexityType, RenameRuleExt, RenameTarget},
+    output_type::OutputType,
+    utils::{
+        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
+        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    },
 };
 
 pub fn generate(

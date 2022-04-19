@@ -626,8 +626,9 @@ impl<'a> GraphQLPlaygroundConfig<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use indexmap::IndexMap;
+
+    use super::*;
 
     #[test]
     fn test_with_setting_can_use_any_json_value() {

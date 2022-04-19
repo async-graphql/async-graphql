@@ -1,5 +1,7 @@
-use async_graphql::registry::{MetaType, Registry};
-use async_graphql::*;
+use async_graphql::{
+    registry::{MetaType, Registry},
+    *,
+};
 
 #[tokio::test]
 async fn test_oneof_object() {

@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
-use futures_util::stream::BoxStream;
-use futures_util::TryFutureExt;
+use futures_util::{stream::BoxStream, TryFutureExt};
 use tracing_futures::Instrument;
 use tracinglib::{span, Level};
 
-use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
-    NextResolve, NextSubscribe, NextValidation, ResolveInfo,
+use crate::{
+    extensions::{
+        Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
+        NextResolve, NextSubscribe, NextValidation, ResolveInfo,
+    },
+    parser::types::ExecutableDocument,
+    Response, ServerError, ServerResult, ValidationResult, Value, Variables,
 };
-use crate::parser::types::ExecutableDocument;
-use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variables};
 
 /// Tracing extension
 ///
@@ -21,8 +22,7 @@ use crate::{Response, ServerError, ServerResult, ValidationResult, Value, Variab
 /// # Examples
 ///
 /// ```no_run
-/// use async_graphql::*;
-/// use async_graphql::extensions::Tracing;
+/// use async_graphql::{extensions::Tracing, *};
 ///
 /// #[derive(SimpleObject)]
 /// struct Query {

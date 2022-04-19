@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use time::{format_description::FormatItem, macros::format_description, PrimitiveDateTime};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 const PRIMITIVE_DATE_TIME_FORMAT: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]");
@@ -27,8 +28,9 @@ impl ScalarType for PrimitiveDateTime {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ScalarType, Value};
     use time::{macros::datetime, PrimitiveDateTime};
+
+    use crate::{ScalarType, Value};
 
     #[test]
     fn test_primitive_date_time_to_value() {

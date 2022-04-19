@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// A datetime with timezone offset.
 ///
@@ -31,8 +32,9 @@ impl ScalarType for OffsetDateTime {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ScalarType, Value};
     use time::{macros::datetime, OffsetDateTime};
+
+    use crate::{ScalarType, Value};
 
     #[test]
     fn test_offset_date_time_to_value() {

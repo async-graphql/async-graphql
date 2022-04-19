@@ -1,6 +1,7 @@
+use pest::iterators::{Pair, Pairs};
+
 use super::Rule;
 use crate::Result;
-use pest::iterators::{Pair, Pairs};
 
 pub(super) fn next_if_rule<'a>(pairs: &mut Pairs<'a, Rule>, rule: Rule) -> Option<Pair<'a, Rule>> {
     if pairs.peek().map_or(false, |pair| pair.as_rule() == rule) {

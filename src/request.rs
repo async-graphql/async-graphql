@@ -1,18 +1,22 @@
-use std::any::Any;
-use std::collections::HashMap;
-use std::fmt::{self, Debug, Formatter};
+use std::{
+    any::Any,
+    collections::HashMap,
+    fmt::{self, Debug, Formatter},
+};
 
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::parser::parse_query;
-use crate::parser::types::ExecutableDocument;
-use crate::schema::IntrospectionMode;
-use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables};
+use crate::{
+    parser::{parse_query, types::ExecutableDocument},
+    schema::IntrospectionMode,
+    Data, ParseRequestError, ServerError, UploadValue, Value, Variables,
+};
 
 /// GraphQL request.
 ///
-/// This can be deserialized from a structure of the query string, the operation name and the
-/// variables. The names are all in `camelCase` (e.g. `operationName`).
+/// This can be deserialized from a structure of the query string, the operation
+/// name and the variables. The names are all in `camelCase` (e.g.
+/// `operationName`).
 #[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,14 +49,16 @@ pub struct Request {
 
     /// Disable introspection queries for this request.
     /// This option has priority over `introspection_mode` when set to true.
-    /// `introspection_mode` has priority when `disable_introspection` set to `false`.
+    /// `introspection_mode` has priority when `disable_introspection` set to
+    /// `false`.
     #[serde(skip)]
     pub disable_introspection: bool,
 
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,
 
-    /// Sets the introspection mode for this request (defaults to [IntrospectionMode::Enabled]).
+    /// Sets the introspection mode for this request (defaults to
+    /// [IntrospectionMode::Enabled]).
     #[serde(skip)]
     pub introspection_mode: IntrospectionMode,
 }
@@ -114,8 +120,8 @@ impl Request {
     #[inline]
     /// Performs parsing of query ahead of execution.
     ///
-    /// This effectively allows to inspect query information, before passing request to schema for
-    /// execution as long as query is valid.
+    /// This effectively allows to inspect query information, before passing
+    /// request to schema for execution as long as query is valid.
     pub fn parsed_query(&mut self) -> Result<&ExecutableDocument, ServerError> {
         if self.parsed_query.is_none() {
             match parse_query(&self.query) {
@@ -124,17 +130,17 @@ impl Request {
             }
         }
 
-        //forbid_unsafe effectively bans optimize away else branch here so use unwrap
-        //but this unwrap never panics
+        // forbid_unsafe effectively bans optimize away else branch here so use unwrap
+        // but this unwrap never panics
         Ok(self.parsed_query.as_ref().unwrap())
     }
 
     /// Set a variable to an upload value.
     ///
-    /// `var_path` is a dot-separated path to the item that begins with `variables`, for example
-    /// `variables.files.2.content` is equivalent to the Rust code
-    /// `request.variables["files"][2]["content"]`. If no variable exists at the path this function
-    /// won't do anything.
+    /// `var_path` is a dot-separated path to the item that begins with
+    /// `variables`, for example `variables.files.2.content` is equivalent
+    /// to the Rust code `request.variables["files"][2]["content"]`. If no
+    /// variable exists at the path this function won't do anything.
     pub fn set_upload(&mut self, var_path: &str, upload: UploadValue) {
         fn variable_path<'a>(variables: &'a mut Variables, path: &str) -> Option<&'a mut Value> {
             let mut parts = path.strip_prefix("variables.")?.split('.');
@@ -178,12 +184,13 @@ impl Debug for Request {
     }
 }
 
-/// Batch support for GraphQL requests, which is either a single query, or an array of queries
+/// Batch support for GraphQL requests, which is either a single query, or an
+/// array of queries
 ///
 /// **Reference:** <https://www.apollographql.com/blog/batching-client-graphql-queries-a685f5bcd41b/>
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-#[allow(clippy::large_enum_variant)] //Request is at fault
+#[allow(clippy::large_enum_variant)] // Request is at fault
 pub enum BatchRequest {
     /// Single query
     Single(Request),
@@ -198,8 +205,8 @@ impl BatchRequest {
     ///
     /// # Errors
     ///
-    /// Fails if the batch request is a list of requests with a message saying that batch requests
-    /// aren't supported.
+    /// Fails if the batch request is a list of requests with a message saying
+    /// that batch requests aren't supported.
     pub fn into_single(self) -> Result<Request, ParseRequestError> {
         match self {
             Self::Single(req) => Ok(req),

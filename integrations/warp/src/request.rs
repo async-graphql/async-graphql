@@ -1,24 +1,25 @@
-use async_graphql::http::MultipartOptions;
-use async_graphql::{BatchRequest, ObjectType, Request, Schema, SubscriptionType};
-use warp::reply::Response as WarpResponse;
-use warp::{Filter, Rejection, Reply};
+use async_graphql::{
+    http::MultipartOptions, BatchRequest, ObjectType, Request, Schema, SubscriptionType,
+};
+use warp::{reply::Response as WarpResponse, Filter, Rejection, Reply};
 
 use crate::{graphql_batch_opts, GraphQLBadRequest, GraphQLBatchResponse};
 
 /// GraphQL request filter
 ///
-/// It outputs a tuple containing the `async_graphql::Schema` and `async_graphql::Request`.
+/// It outputs a tuple containing the `async_graphql::Schema` and
+/// `async_graphql::Request`.
 ///
 /// # Examples
 ///
 /// *[Full Example](<https://github.com/async-graphql/examples/blob/master/warp/starwars/src/main.rs>)*
 ///
 /// ```no_run
+/// use std::convert::Infallible;
 ///
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
 /// use warp::Filter;
-/// use std::convert::Infallible;
 ///
 /// struct QueryRoot;
 ///
@@ -33,10 +34,13 @@ use crate::{graphql_batch_opts, GraphQLBadRequest, GraphQLBatchResponse};
 ///
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async {
 /// let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
-/// let filter = async_graphql_warp::graphql(schema)
-///     .and_then(|(schema, request): (MySchema, async_graphql::Request)| async move {
-///         Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(schema.execute(request).await))
-///     });
+/// let filter = async_graphql_warp::graphql(schema).and_then(
+///     |(schema, request): (MySchema, async_graphql::Request)| async move {
+///         Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(
+///             schema.execute(request).await,
+///         ))
+///     },
+/// );
 /// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// # });
 /// ```
@@ -57,7 +61,8 @@ where
     graphql_opts(schema, Default::default())
 }
 
-/// Similar to graphql, but you can set the options `async_graphql::MultipartOptions`.
+/// Similar to graphql, but you can set the options
+/// `async_graphql::MultipartOptions`.
 pub fn graphql_opts<Query, Mutation, Subscription>(
     schema: Schema<Query, Mutation, Subscription>,
     opts: MultipartOptions,

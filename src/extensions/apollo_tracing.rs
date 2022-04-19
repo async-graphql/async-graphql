@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use futures_util::lock::Mutex;
-use serde::ser::SerializeMap;
-use serde::{Serialize, Serializer};
+use serde::{ser::SerializeMap, Serialize, Serializer};
 
-use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextResolve, ResolveInfo,
+use crate::{
+    extensions::{
+        Extension, ExtensionContext, ExtensionFactory, NextExecute, NextResolve, ResolveInfo,
+    },
+    value, Response, ServerResult, Value,
 };
-use crate::{value, Response, ServerResult, Value};
 
 struct ResolveState {
     path: Vec<String>,
@@ -38,10 +39,11 @@ impl Serialize for ResolveState {
 
 /// Apollo tracing extension for performance tracing
 ///
-/// Apollo Tracing works by including data in the extensions field of the GraphQL response, which is
-/// reserved by the GraphQL spec for extra information that a server wants to return. That way, you
-/// have access to performance traces alongside the data returned by your query.
-/// It's already supported by `Apollo Engine`, and we're excited to see what other kinds of
+/// Apollo Tracing works by including data in the extensions field of the
+/// GraphQL response, which is reserved by the GraphQL spec for extra
+/// information that a server wants to return. That way, you have access to
+/// performance traces alongside the data returned by your query. It's already
+/// supported by `Apollo Engine`, and we're excited to see what other kinds of
 /// integrations people can build on top of this format.
 #[cfg_attr(docsrs, doc(cfg(feature = "apollo_tracing")))]
 pub struct ApolloTracing;

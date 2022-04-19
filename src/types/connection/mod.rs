@@ -5,26 +5,57 @@ mod cursor;
 mod edge;
 mod page_info;
 
-use std::fmt::Display;
-use std::future::Future;
+use std::{fmt::Display, future::Future};
 
 pub use connection_type::Connection;
 pub use cursor::CursorType;
 pub use edge::Edge;
 pub use page_info::PageInfo;
 
-use crate::{Error, Result, SimpleObject};
+use crate::{Error, ObjectType, OutputType, Result, SimpleObject};
 
 /// Empty additional fields
 #[derive(SimpleObject)]
 #[graphql(internal, fake)]
 pub struct EmptyFields;
 
+/// Used to specify the edge name.
+pub trait EdgeNameType: Send + Sync {
+    /// Returns the edge type name.
+    fn type_name<T: OutputType>() -> String;
+}
+
+/// Name the edge type by default with the default format.
+pub struct DefaultEdgeName;
+
+impl EdgeNameType for DefaultEdgeName {
+    fn type_name<T: OutputType>() -> String {
+        format!("{}Edge", T::type_name())
+    }
+}
+
+/// Used to specify the connection name.
+pub trait ConnectionNameType: Send + Sync {
+    /// Returns the connection type name.
+    fn type_name<T: OutputType>() -> String;
+}
+
+/// Name the connection type by default with the default format.
+pub struct DefaultConnectionName;
+
+impl ConnectionNameType for DefaultConnectionName {
+    fn type_name<T: OutputType>() -> String {
+        format!("{}Connection", T::type_name())
+    }
+}
+
 /// Parses the parameters and executes the query.
 ///
 /// # Examples
 ///
 /// ```rust
+/// use std::borrow::Cow;
+///
 /// use async_graphql::*;
 /// use async_graphql::types::connection::*;
 ///
@@ -44,7 +75,7 @@ pub struct EmptyFields;
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> Result<Connection<usize, i32, EmptyFields, Diff>> {
+///     ) -> Result<Connection<DefaultConnectionName, DefaultEdgeName, usize, i32, EmptyFields, Diff>> {
 ///         query(after, before, first, last, |after, before, first, last| async move {
 ///             let mut start = after.map(|after| after + 1).unwrap_or(0);
 ///             let mut end = before.unwrap_or(10000);
@@ -59,7 +90,7 @@ pub struct EmptyFields;
 ///                 };
 ///             }
 ///             let mut connection = Connection::new(start > 0, end < 10000);
-///             connection.append(
+///             connection.edges.extend(
 ///                 (start..end).into_iter().map(|n|
 ///                     Edge::with_additional_fields(n, n as i32, Diff{ diff: (10000 - n) as i32 })),
 ///             );
@@ -90,31 +121,108 @@ pub struct EmptyFields;
 /// }));
 /// # });
 /// ```
-pub async fn query<Cursor, Node, ConnectionFields, EdgeFields, F, R, E>(
+///
+/// # Custom connection and edge type names
+///
+/// ```
+/// use async_graphql::{connection::*, *};
+///
+/// #[derive(SimpleObject)]
+/// struct MyObj {
+///     a: i32,
+///     b: String,
+/// }
+///
+/// // Use to custom connection name
+/// struct MyConnectionName;
+///
+/// impl ConnectionNameType for MyConnectionName {
+///     fn type_name<T: OutputType>() -> String {
+///         "MyConnection".to_string()
+///     }
+/// }
+///
+/// // Use to custom edge name
+/// struct MyEdgeName;
+///
+/// impl EdgeNameType for MyEdgeName {
+///     fn type_name<T: OutputType>() -> String {
+///         "MyEdge".to_string()
+///     }
+/// }
+///
+/// struct Query;
+///
+/// #[Object]
+/// impl Query {
+///     async fn numbers(
+///         &self,
+///         after: Option<String>,
+///         before: Option<String>,
+///         first: Option<i32>,
+///         last: Option<i32>,
+///     ) -> Connection<MyConnectionName, MyEdgeName, usize, MyObj> {
+///         let mut connection = Connection::new(false, false);
+///         connection.edges.push(Edge::new(1, MyObj { a: 100, b: "abc".to_string() }));
+///         connection
+///     }
+/// }
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+///
+/// let query = r#"{
+///     numbers(first: 2) {
+///         __typename
+///         edges { __typename node { a b } }
+///     }
+/// }"#;
+/// let data = schema.execute(query).await.into_result().unwrap().data;
+/// assert_eq!(data, value!({
+///     "numbers": {
+///         "__typename": "MyConnection",
+///         "edges": [
+///             {"__typename": "MyEdge", "node": { "a": 100, "b": "abc" }},
+///         ]
+///     },
+/// }));
+/// # });
+/// ```
+pub async fn query<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields, F, R, E>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
     last: Option<i32>,
     f: F,
-) -> Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>>
+) -> Result<Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>>
 where
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
-    R: Future<Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields>, E>>,
+    R: Future<
+        Output = Result<Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>, E>,
+    >,
     E: Into<Error>,
 {
     query_with(after, before, first, last, f).await
 }
 
-/// Parses the parameters and executes the query and return a custom `Connection` type.
+/// Parses the parameters and executes the query and return a custom
+/// `Connection` type.
 ///
-/// `Connection<T>` and `Edge<T>` have certain limitations. For example, you cannot customize
-/// the name of the type, so you can use this function to execute the query and return a customized `Connection` type.
+/// `Connection<T>` and `Edge<T>` have certain limitations. For example, you
+/// cannot customize the name of the type, so you can use this function to
+/// execute the query and return a customized `Connection` type.
 ///
 /// # Examples
 ///
 /// ```rust
+///
 /// use async_graphql::*;
 /// use async_graphql::types::connection::*;
 ///
@@ -172,29 +280,27 @@ where
 ///     }
 /// }
 ///
-/// #[tokio::main]
-/// async fn main() {
-///     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 ///
-///     assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
-///         "numbers": {
-///             "edges": [
-///                 {"node": 0, "diff": 10000},
-///                 {"node": 1, "diff": 9999},
-///             ]
-///         },
-///     }));
+/// assert_eq!(schema.execute("{ numbers(first: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
+///     "numbers": {
+///         "edges": [
+///             {"node": 0, "diff": 10000},
+///             {"node": 1, "diff": 9999},
+///         ]
+///     },
+/// }));
 ///
-///     assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
-///         "numbers": {
-///             "edges": [
-///                 {"node": 9998, "diff": 2},
-///                 {"node": 9999, "diff": 1},
-///             ]
-///         },
-///     }));
-/// }
-///
+/// assert_eq!(schema.execute("{ numbers(last: 2) { edges { node diff } } }").await.into_result().unwrap().data, value!({
+///     "numbers": {
+///         "edges": [
+///             {"node": 9998, "diff": 2},
+///             {"node": 9999, "diff": 1},
+///         ]
+///     },
+/// }));
+/// # });
 /// ```
 pub async fn query_with<Cursor, T, F, R, E>(
     after: Option<String>,

@@ -2,14 +2,20 @@
 //!
 //! This module's structure mirrors `types`.
 
-use crate::pos::{PositionCalculator, Positioned};
-use crate::types::*;
-use crate::{Error, Result};
-use pest::iterators::{Pair, Pairs};
-use pest::Parser;
-use pest_derive::Parser;
 use std::collections::hash_map::{self, HashMap};
+
+use pest::{
+    iterators::{Pair, Pairs},
+    Parser,
+};
+use pest_derive::Parser;
 use utils::*;
+
+use crate::{
+    pos::{PositionCalculator, Positioned},
+    types::*,
+    Error, Result,
+};
 
 mod executable;
 mod service;

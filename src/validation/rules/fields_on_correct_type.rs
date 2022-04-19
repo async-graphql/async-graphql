@@ -1,7 +1,12 @@
-use crate::parser::types::Field;
-use crate::validation::suggestion::make_suggestion;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{registry, Positioned};
+use crate::{
+    parser::types::Field,
+    registry,
+    validation::{
+        suggestion::make_suggestion,
+        visitor::{Visitor, VisitorContext},
+    },
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct FieldsOnCorrectType;

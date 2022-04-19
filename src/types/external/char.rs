@@ -1,7 +1,8 @@
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// The `Char` scalar type represents a unicode char.
-/// The input and output values are a string, and there can only be one unicode character in this string.
+/// The input and output values are a string, and there can only be one unicode
+/// character in this string.
 #[Scalar(internal)]
 impl ScalarType for char {
     fn parse(value: Value) -> InputValueResult<Self> {

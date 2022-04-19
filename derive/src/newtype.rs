@@ -3,8 +3,10 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::Error;
 
-use crate::args::{self, NewTypeName, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::{
+    args::{self, NewTypeName, RenameTarget},
+    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+};
 
 pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(newtype_args.internal);

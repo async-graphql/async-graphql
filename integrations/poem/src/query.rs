@@ -8,9 +8,9 @@ use crate::{GraphQLBatchRequest, GraphQLBatchResponse};
 /// # Example
 ///
 /// ```
-/// use poem::{Route, post};
-/// use async_graphql_poem::GraphQL;
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
+/// use async_graphql_poem::GraphQL;
+/// use poem::{post, Route};
 ///
 /// struct Query;
 ///

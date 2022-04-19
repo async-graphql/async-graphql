@@ -1,10 +1,14 @@
 use async_graphql_parser::types::BaseType;
 
-use crate::context::QueryPathNode;
-use crate::parser::types::VariableDefinition;
-use crate::validation::utils::is_valid_input_value;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Positioned, QueryPathSegment};
+use crate::{
+    context::QueryPathNode,
+    parser::types::VariableDefinition,
+    validation::{
+        utils::is_valid_input_value,
+        visitor::{Visitor, VisitorContext},
+    },
+    Positioned, QueryPathSegment,
+};
 
 pub struct DefaultValuesOfCorrectType;
 

@@ -2,12 +2,17 @@ use std::collections::{HashMap, HashSet};
 
 use async_graphql_value::Value;
 
-use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
+use crate::{
+    parser::types::{
+        ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
+        VariableDefinition,
+    },
+    validation::{
+        utils::{referenced_variables, Scope},
+        visitor::{Visitor, VisitorContext},
+    },
+    Name, Pos, Positioned,
 };
-use crate::validation::utils::{referenced_variables, Scope};
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Name, Pos, Positioned};
 
 #[derive(Default)]
 pub struct NoUnusedVariables<'a> {

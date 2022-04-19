@@ -2,14 +2,13 @@ use std::borrow::Cow;
 
 use indexmap::map::IndexMap;
 
-use crate::parser::types::Field;
-use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
     model::{__Schema, __Type},
+    parser::types::Field,
+    registry,
+    resolver_utils::{resolve_container, ContainerType},
     schema::IntrospectionMode,
-};
-use crate::{
-    registry, Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
+    Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
     ServerResult, SimpleObject, Value,
 };
 

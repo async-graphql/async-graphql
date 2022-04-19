@@ -1,8 +1,9 @@
-use async_graphql_parser::types::Field;
-use async_graphql_parser::Positioned;
+use async_graphql_parser::{types::Field, Positioned};
 
-use crate::validation::visitor::{RuleError, Visitor};
-use crate::{Value, VisitorContext};
+use crate::{
+    validation::visitor::{RuleError, Visitor},
+    Value, VisitorContext,
+};
 
 pub struct OneofFieldsHaveExactlyOneArgument;
 

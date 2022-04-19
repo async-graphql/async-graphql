@@ -2,23 +2,22 @@ mod cache_control;
 mod export_sdl;
 mod stringify_exec_doc;
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt::{self, Display, Formatter};
-
-use indexmap::map::IndexMap;
-use indexmap::set::IndexSet;
-
-pub use crate::model::__DirectiveLocation;
-use crate::{
-    model, Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
-    VisitorContext,
-};
-use crate::{
-    parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
-    schema::IntrospectionMode,
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    fmt::{self, Display, Formatter},
 };
 
 pub use cache_control::CacheControl;
+use indexmap::{map::IndexMap, set::IndexSet};
+
+pub use crate::model::__DirectiveLocation;
+use crate::{
+    model,
+    parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
+    schema::IntrospectionMode,
+    Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
+    VisitorContext,
+};
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
     type_name
@@ -482,7 +481,8 @@ impl Registry {
                 }
             }
             None => {
-                // Inserting a fake type before calling the function allows recursive types to exist.
+                // Inserting a fake type before calling the function allows recursive types to
+                // exist.
                 self.types.insert(
                     name.to_string(),
                     MetaType::Object {

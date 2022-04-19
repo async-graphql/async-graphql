@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 
-use http::header::{HeaderMap, HeaderName};
-use http::HeaderValue;
+use http::{
+    header::{HeaderMap, HeaderName},
+    HeaderValue,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};
@@ -87,8 +89,8 @@ impl Response {
         !self.is_ok()
     }
 
-    /// Extract the error from the response. Only if the `error` field is empty will this return
-    /// `Ok`.
+    /// Extract the error from the response. Only if the `error` field is empty
+    /// will this return `Ok`.
     #[inline]
     pub fn into_result(self) -> Result<Self, Vec<ServerError>> {
         if self.is_err() {

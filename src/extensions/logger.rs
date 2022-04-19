@@ -1,11 +1,10 @@
-use std::fmt::Write;
-use std::sync::Arc;
+use std::{fmt::Write, sync::Arc};
 
-use crate::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery,
+use crate::{
+    extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery},
+    parser::types::{ExecutableDocument, OperationType, Selection},
+    PathSegment, Response, ServerResult, Variables,
 };
-use crate::parser::types::{ExecutableDocument, OperationType, Selection};
-use crate::{PathSegment, Response, ServerResult, Variables};
 
 /// Logger extension
 #[cfg_attr(docsrs, doc(cfg(feature = "log")))]

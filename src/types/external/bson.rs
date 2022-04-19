@@ -1,9 +1,8 @@
-use bson::{oid::ObjectId, Bson, Document};
-
 #[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
 #[cfg(feature = "bson-uuid")]
 use bson::Uuid;
+use bson::{oid::ObjectId, Bson, Document};
 #[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
 

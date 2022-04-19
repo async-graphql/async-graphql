@@ -1,15 +1,18 @@
 //! WebSocket transport for subscription
 
-use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::{Context, Poll};
+use std::{
+    collections::HashMap,
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
+};
 
-use futures_util::future::Ready;
-use futures_util::stream::Stream;
-use futures_util::FutureExt;
-use futures_util::{future::BoxFuture, StreamExt};
+use futures_util::{
+    future::{BoxFuture, Ready},
+    stream::Stream,
+    FutureExt, StreamExt,
+};
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +32,8 @@ pub enum WsMessage {
 }
 
 impl WsMessage {
-    /// Returns the contained [WsMessage::Text] value, consuming the `self` value.
+    /// Returns the contained [WsMessage::Text] value, consuming the `self`
+    /// value.
     ///
     /// Because this function may panic, its use is generally discouraged.
     ///
@@ -43,7 +47,8 @@ impl WsMessage {
         }
     }
 
-    /// Returns the contained [WsMessage::Close] value, consuming the `self` value.
+    /// Returns the contained [WsMessage::Close] value, consuming the `self`
+    /// value.
     ///
     /// Because this function may panic, its use is generally discouraged.
     ///
@@ -136,8 +141,9 @@ where
     /// Specify a connection data.
     ///
     /// This data usually comes from HTTP requests.
-    /// When the `GQL_CONNECTION_INIT` message is received, this data will be merged with the data
-    /// returned by the closure specified by `with_initializer` into the final subscription context data.
+    /// When the `GQL_CONNECTION_INIT` message is received, this data will be
+    /// merged with the data returned by the closure specified by
+    /// `with_initializer` into the final subscription context data.
     #[must_use]
     pub fn connection_data(mut self, data: Data) -> Self {
         self.connection_data = Some(data);
@@ -146,8 +152,8 @@ where
 
     /// Specify a connection initialize callback function.
     ///
-    /// This function if present, will be called with the data sent by the client in the
-    /// [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
+    /// This function if present, will be called with the data sent by the
+    /// client in the [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
     /// From that point on the returned data will be accessible to all requests.
     #[must_use]
     pub fn on_connection_init<F, R>(
@@ -365,7 +371,7 @@ impl std::str::FromStr for Protocols {
 /// A websocket message received from the client
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
-#[allow(clippy::large_enum_variant)] //Request is at fault
+#[allow(clippy::large_enum_variant)] // Request is at fault
 pub enum ClientMessage {
     /// A new connection
     ConnectionInit {
@@ -377,8 +383,8 @@ pub enum ClientMessage {
     Start {
         /// Message ID
         id: String,
-        /// The GraphQL Request - this can be modified by protocol implementors to add files
-        /// uploads.
+        /// The GraphQL Request - this can be modified by protocol implementors
+        /// to add files uploads.
         payload: Request,
     },
     /// The end of a Websocket subscription
@@ -389,7 +395,8 @@ pub enum ClientMessage {
     },
     /// Connection terminated by the client
     ConnectionTerminate,
-    /// Useful for detecting failed connections, displaying latency metrics or other types of network probing.
+    /// Useful for detecting failed connections, displaying latency metrics or
+    /// other types of network probing.
     ///
     /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping
     Ping {

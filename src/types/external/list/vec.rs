@@ -1,10 +1,8 @@
 use std::borrow::Cow;
 
-use crate::parser::types::Field;
-use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, Result, ServerResult, Value,
+    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
+    InputValueError, InputValueResult, OutputType, Positioned, Result, ServerResult, Value,
 };
 
 impl<T: InputType> InputType for Vec<T> {
