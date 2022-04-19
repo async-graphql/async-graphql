@@ -6,6 +6,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::parser::parse_query;
 use crate::parser::types::ExecutableDocument;
+use crate::schema::IntrospectionMode;
 use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables};
 
 /// GraphQL request.
@@ -15,6 +16,7 @@ use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables}
 #[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct Request {
     /// The query source of the request.
     #[serde(default)]
@@ -43,11 +45,17 @@ pub struct Request {
     pub extensions: HashMap<String, Value>,
 
     /// Disable introspection queries for this request.
+    /// This option has priority over `introspection_mode` when set to true.
+    /// `introspection_mode` has priority when `disable_introspection` set to `false`.
     #[serde(skip)]
     pub disable_introspection: bool,
 
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,
+
+    /// Sets the introspection mode for this request (defaults to [IntrospectionMode::Enabled]).
+    #[serde(skip)]
+    pub introspection_mode: IntrospectionMode,
 }
 
 impl Request {
@@ -62,6 +70,7 @@ impl Request {
             extensions: Default::default(),
             disable_introspection: false,
             parsed_query: None,
+            introspection_mode: IntrospectionMode::Enabled,
         }
     }
 
@@ -91,6 +100,15 @@ impl Request {
     #[must_use]
     pub fn disable_introspection(mut self) -> Self {
         self.disable_introspection = true;
+        self.introspection_mode = IntrospectionMode::Disabled;
+        self
+    }
+
+    /// Only allow introspection queries for this request.
+    #[must_use]
+    pub fn only_introspection(mut self) -> Self {
+        self.disable_introspection = false;
+        self.introspection_mode = IntrospectionMode::IntrospectionOnly;
         self
     }
 
@@ -233,6 +251,17 @@ impl BatchRequest {
     pub fn disable_introspection(mut self) -> Self {
         for request in self.iter_mut() {
             request.disable_introspection = true;
+            request.introspection_mode = IntrospectionMode::Disabled;
+        }
+        self
+    }
+
+    /// Only allow introspection queries for each request.
+    #[must_use]
+    pub fn introspection_only(mut self) -> Self {
+        for request in self.iter_mut() {
+            request.disable_introspection = false;
+            request.introspection_mode = IntrospectionMode::IntrospectionOnly;
         }
         self
     }
