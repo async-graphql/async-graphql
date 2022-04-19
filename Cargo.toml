@@ -24,6 +24,7 @@ decimal = ["rust_decimal"]
 cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
 password-strength-validator = ["zxcvbn"]
+tokio-rw-lock = ["tokio"]
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "3.0.38" }
@@ -66,6 +67,7 @@ rust_decimal = { version = "1.14.3", optional = true }
 url = { version = "2.2.1", optional = true }
 smol_str = { version = "0.1.21", optional = true }
 time = { version = "0.3.5", optional = true, features = ["parsing", "formatting", "macros"] }
+tokio = { version = "1.17.0", features = ["sync"], optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.0.2", optional = true }
