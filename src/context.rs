@@ -13,11 +13,11 @@ use http::HeaderValue;
 use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
 
-use crate::extensions::Extensions;
 use crate::parser::types::{
     Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
 };
 use crate::schema::SchemaEnv;
+use crate::{extensions::Extensions, schema::IntrospectionMode};
 use crate::{
     Error, InputType, Lookahead, Name, OneofObjectType, PathSegment, Pos, Positioned, Result,
     ServerError, ServerResult, UploadValue, Value,
@@ -244,7 +244,7 @@ pub struct QueryEnvInner {
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
     pub http_headers: Mutex<HeaderMap>,
-    pub disable_introspection: bool,
+    pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
 }
 

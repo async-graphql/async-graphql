@@ -9,12 +9,13 @@ use indexmap::map::IndexMap;
 use indexmap::set::IndexSet;
 
 pub use crate::model::__DirectiveLocation;
-use crate::parser::types::{
-    BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition,
-};
 use crate::{
     model, Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
     VisitorContext,
+};
+use crate::{
+    parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
+    schema::IntrospectionMode,
 };
 
 pub use cache_control::CacheControl;
@@ -401,7 +402,7 @@ pub struct Registry {
     pub query_type: String,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
-    pub disable_introspection: bool,
+    pub introspection_mode: IntrospectionMode,
     pub enable_federation: bool,
     pub federation_subscription: bool,
 }
