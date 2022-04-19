@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.0] 2022-4-19
+
+- Add `#[non_exhaustive]` attribute to Request/Response types.
+- Introduce ability to pre-parse Request's query. [#891](https://github.com/async-graphql/async-graphql/pull/891)
+
 # [3.0.38] 2022-4-8
 
 - Update Axum integration to Axum 0.5.1 [#883](https://github.com/async-graphql/async-graphql/pull/883)

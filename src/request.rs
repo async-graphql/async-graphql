@@ -12,6 +12,7 @@ use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables}
 ///
 /// This can be deserialized from a structure of the query string, the operation name and the
 /// variables. The names are all in `camelCase` (e.g. `operationName`).
+#[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Request {
