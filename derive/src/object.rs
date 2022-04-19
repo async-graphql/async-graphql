@@ -189,7 +189,7 @@ pub fn generate(
                     if is_key {
                         get_federation_key.push(quote! {
                             if let Some(fields) = <#ty as #crate_name::InputType>::federation_fields() {
-                                key_str.push(format!("{} {}", #name, fields));                                
+                                key_str.push(format!("{} {}", #name, fields));
                             } else {
                                 key_str.push(#name.to_string());
                             }
@@ -360,6 +360,17 @@ pub fn generate(
                     });
                     use_params.push(quote! { #ident });
 
+                    let param_ident = &ident.ident;
+                    let process_with = match argument.process_with.as_ref() {
+                        Some(fn_path) => {
+                            let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                            quote! {
+                                #fn_path(&mut #param_ident);
+                            }
+                        }
+                        None => Default::default(),
+                    };
+
                     let validators = argument
                         .validator
                         .clone()
@@ -370,10 +381,15 @@ pub fn generate(
                             quote!(#ty),
                             Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                         )?;
+                    let mut non_mut_ident = ident.clone();
+                    non_mut_ident.mutability = None;
                     get_params.push(quote! {
-                        #[allow(non_snake_case, unused_variables)]
-                        let (__pos, #ident) = ctx.oneof_param_value::<#ty>()?;
+                        #[allow(non_snake_case, unused_variables, unused_mut)]
+                        let (__pos, mut #non_mut_ident) = ctx.oneof_param_value::<#ty>()?;
+                        #process_with
                         #validators
+                        #[allow(non_snake_case, unused_variables)]
+                        let #ident = #non_mut_ident;
                     });
                 } else {
                     for (
@@ -384,6 +400,7 @@ pub fn generate(
                             desc,
                             default,
                             default_with,
+                            process_with,
                             validator,
                             visible,
                             secret,
@@ -434,6 +451,16 @@ pub fn generate(
                             None => quote! { ::std::option::Option::None },
                         };
 
+                        let process_with = match process_with.as_ref() {
+                            Some(fn_path) => {
+                                let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                                quote! {
+                                    #fn_path(&mut #param_ident);
+                                }
+                            }
+                            None => Default::default(),
+                        };
+
                         let validators = validator.clone().unwrap_or_default().create_validators(
                             &crate_name,
                             quote!(&#ident),
@@ -441,10 +468,15 @@ pub fn generate(
                             Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                         )?;
 
+                        let mut non_mut_ident = ident.clone();
+                        non_mut_ident.mutability = None;
                         get_params.push(quote! {
-                            #[allow(non_snake_case, unused_variables)]
-                            let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
+                            #[allow(non_snake_case, unused_variables, unused_mut)]
+                            let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+                            #process_with
                             #validators
+                            #[allow(non_snake_case, unused_variables)]
+                            let #ident = #non_mut_ident;
                         });
                     }
                 }
@@ -653,7 +685,7 @@ pub fn generate(
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         fields: {
@@ -692,7 +724,7 @@ pub fn generate(
 
             impl #impl_generics #self_ty #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
-                    let ty = registry.create_output_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
+                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         fields: {

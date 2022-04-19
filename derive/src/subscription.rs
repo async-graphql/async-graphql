@@ -92,6 +92,17 @@ pub fn generate(
                     });
                 use_params.push(quote! { #ident });
 
+                let param_ident = &ident.ident;
+                let process_with = match argument.process_with.as_ref() {
+                    Some(fn_path) => {
+                        let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                        quote! {
+                            #fn_path(&mut #param_ident);
+                        }
+                    }
+                    None => Default::default(),
+                };
+
                 let validators = argument
                     .validator
                     .clone()
@@ -102,10 +113,15 @@ pub fn generate(
                         quote!(#ty),
                         Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                     )?;
+                let mut non_mut_ident = ident.clone();
+                non_mut_ident.mutability = None;
                 get_params.push(quote! {
-                    #[allow(non_snake_case, unused_variables)]
-                    let (__pos, #ident) = ctx.oneof_param_value::<#ty>()?;
+                    #[allow(non_snake_case, unused_variables, unused_mut)]
+                    let (__pos, mut #non_mut_ident) = ctx.oneof_param_value::<#ty>()?;
+                    #process_with
                     #validators
+                    #[allow(non_snake_case, unused_variables)]
+                    let #ident = #non_mut_ident;
                 });
             } else {
                 for (
@@ -117,6 +133,7 @@ pub fn generate(
                         default,
                         default_with,
                         validator,
+                        process_with,
                         visible: arg_visible,
                         secret,
                     },
@@ -164,6 +181,18 @@ pub fn generate(
                         }
                         None => quote! { ::std::option::Option::None },
                     };
+
+                    let param_ident = &ident.ident;
+                    let process_with = match process_with.as_ref() {
+                        Some(fn_path) => {
+                            let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                            quote! {
+                                #fn_path(&mut #param_ident);
+                            }
+                        }
+                        None => Default::default(),
+                    };
+
                     let validators = validator.clone().unwrap_or_default().create_validators(
                         &crate_name,
                         quote!(&#ident),
@@ -171,10 +200,15 @@ pub fn generate(
                         Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
                     )?;
 
+                    let mut non_mut_ident = ident.clone();
+                    non_mut_ident.mutability = None;
                     get_params.push(quote! {
-                        #[allow(non_snake_case)]
-                        let (__pos, #ident) = ctx.param_value::<#ty>(#name, #default)?;
+                        #[allow(non_snake_case, unused_mut)]
+                        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+                        #process_with
                         #validators
+                        #[allow(non_snake_case)]
+                        let #ident = #non_mut_ident;
                     });
                 }
             }

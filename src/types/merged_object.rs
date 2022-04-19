@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 
 use crate::futures_util::Stream;
 use crate::parser::types::Field;
-use crate::registry::{MetaType, Registry};
+use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
     CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,
     ServerResult, SimpleObject, SubscriptionType, Value,
@@ -48,7 +48,7 @@ where
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
-        registry.create_output_type::<Self, _>(|registry| {
+        registry.create_output_type::<Self, _>(MetaTypeId::Object, |registry| {
             let mut fields = IndexMap::new();
             let mut cc = CacheControl::default();
 

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.38] 2022-4-8
+
+- Update Axum integration to Axum 0.5.1 [#883](https://github.com/async-graphql/async-graphql/pull/883)
+- Support macro type in enum variant. [#884](https://github.com/async-graphql/async-graphql/pull/884)
+- Introduce process_with for input object [#817](https://github.com/async-graphql/async-graphql/pull/817)
+- Add `MaybeUndefined::update_to` method. [#881](https://github.com/async-graphql/async-graphql/issues/881)
+
+# [3.0.37] 2022-3-30
+
+- Panics when the same Rust type has the same name. [#880](https://github.com/async-graphql/async-graphql/issues/880)
+
 # [3.0.36] 2022-3-22
 
 - Generate `@deprecated` to SDL. [#874](https://github.com/async-graphql/async-graphql/issues/874)

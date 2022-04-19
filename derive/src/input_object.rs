@@ -75,6 +75,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         federation_fields.push((ty, name.clone()));
 
+        let process_with = match field.process_with.as_ref() {
+            Some(fn_path) => {
+                let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                quote! {
+                    #fn_path(&mut #ident);
+                }
+            }
+            None => Default::default(),
+        };
+
         let validators = field
             .validator
             .clone()
@@ -99,9 +109,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
 
             get_fields.push(quote! {
-                let #ident: #ty = #crate_name::InputType::parse(
+                #[allow(unused_mut)]
+                let mut #ident: #ty = #crate_name::InputType::parse(
                     ::std::option::Option::Some(#crate_name::Value::Object(::std::clone::Clone::clone(&obj)))
                 ).map_err(#crate_name::InputValueError::propagate)?;
+                #process_with
                 #validators
             });
 
@@ -137,8 +149,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 let #ident: #ty = {
                     match obj.get(#name) {
                         ::std::option::Option::Some(value) => {
-                            #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
-                                .map_err(#crate_name::InputValueError::propagate)?
+                            #[allow(unused_mut)]
+                            let mut #ident = #crate_name::InputType::parse(::std::option::Option::Some(::std::clone::Clone::clone(&value)))
+                                .map_err(#crate_name::InputValueError::propagate)?;
+                            #process_with
+                            #ident
+
                         },
                         ::std::option::Option::None => #default,
                     }
@@ -147,9 +163,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             });
         } else {
             get_fields.push(quote! {
-                #[allow(non_snake_case)]
-                let #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
+                #[allow(non_snake_case, unused_mut)]
+                let mut #ident: #ty = #crate_name::InputType::parse(obj.get(#name).cloned())
                     .map_err(#crate_name::InputValueError::propagate)?;
+                #process_with
                 #validators
             });
         }
@@ -213,7 +230,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(#gql_typename),
                         description: #desc,
                         input_fields: {
@@ -260,7 +277,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
                 fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
-                    registry.create_input_type::<Self, _>(|registry| #crate_name::registry::MetaType::InputObject {
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
                         input_fields: {

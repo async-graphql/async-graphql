@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use crate::parser::types::Field;
+use crate::registry::MetaTypeId;
 use crate::resolver_utils::ContainerType;
 use crate::{
     registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
@@ -49,7 +50,7 @@ impl OutputType for EmptyMutation {
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_output_type::<Self, _>(|_| registry::MetaType::Object {
+        registry.create_output_type::<Self, _>(MetaTypeId::Object, |_| registry::MetaType::Object {
             name: "EmptyMutation".to_string(),
             description: None,
             fields: Default::default(),

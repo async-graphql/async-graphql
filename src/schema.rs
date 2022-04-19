@@ -6,7 +6,6 @@ use std::sync::Arc;
 use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
-use crate::context::{Data, QueryEnvInner};
 use crate::custom_directive::CustomDirectiveFactory;
 use crate::extensions::{ExtensionFactory, Extensions};
 use crate::model::__DirectiveLocation;
@@ -18,9 +17,27 @@ use crate::subscription::collect_subscription_streams;
 use crate::types::QueryRoot;
 use crate::validation::{check_rules, ValidationMode};
 use crate::{
+    context::{Data, QueryEnvInner},
+    EmptyMutation, EmptySubscription,
+};
+use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, InputType, ObjectType, OutputType,
     QueryEnv, Request, Response, ServerError, SubscriptionType, Variables, ID,
 };
+
+/// Introspection mode
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum IntrospectionMode {
+    IntrospectionOnly,
+    Enabled,
+    Disabled,
+}
+
+impl Default for IntrospectionMode {
+    fn default() -> Self {
+        IntrospectionMode::Enabled
+    }
+}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -58,7 +75,14 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Disable introspection queries.
     #[must_use]
     pub fn disable_introspection(mut self) -> Self {
-        self.registry.disable_introspection = true;
+        self.registry.introspection_mode = IntrospectionMode::Disabled;
+        self
+    }
+
+    /// Only process introspection queries, everything else is processed as an error.
+    #[must_use]
+    pub fn introspection_only(mut self) -> Self {
+        self.registry.introspection_mode = IntrospectionMode::IntrospectionOnly;
         self
     }
 
@@ -303,7 +327,7 @@ where
             } else {
                 Some(Subscription::type_name().to_string())
             },
-            disable_introspection: false,
+            introspection_mode: IntrospectionMode::Enabled,
             enable_federation: false,
             federation_subscription: false,
         };
@@ -427,13 +451,19 @@ where
         let query_data = Arc::new(std::mem::take(&mut request.data));
         extensions.attach_query_data(query_data.clone());
 
-        let request = extensions.prepare_request(request).await?;
+        let mut request = extensions.prepare_request(request).await?;
         let mut document = {
             let query = &request.query;
-            let fut_parse = async { parse_query(&query).map_err(Into::<ServerError>::into) };
+            let parsed_doc = request.parsed_query.take();
+            let fut_parse = async move {
+                match parsed_doc {
+                    Some(parsed_doc) => Ok(parsed_doc),
+                    None => parse_query(query).map_err(Into::into),
+                }
+            };
             futures_util::pin_mut!(fut_parse);
             extensions
-                .parse_query(&query, &request.variables, &mut fut_parse)
+                .parse_query(query, &request.variables, &mut fut_parse)
                 .await?
         };
 
@@ -509,7 +539,11 @@ where
             session_data,
             ctx_data: query_data,
             http_headers: Default::default(),
-            disable_introspection: request.disable_introspection,
+            introspection_mode: if request.disable_introspection {
+                IntrospectionMode::Disabled
+            } else {
+                request.introspection_mode
+            },
             errors: Default::default(),
         };
         Ok((QueryEnv::new(env), validation_result.cache_control))
@@ -526,7 +560,15 @@ where
 
         let res = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
-            OperationType::Mutation => resolve_container_serial(&ctx, &self.mutation).await,
+            OperationType::Mutation => {
+                if self.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
+                    || env.introspection_mode == IntrospectionMode::IntrospectionOnly
+                {
+                    resolve_container_serial(&ctx, &EmptyMutation).await
+                } else {
+                    resolve_container_serial(&ctx, &self.mutation).await
+                }
+            }
             OperationType::Subscription => Err(ServerError::new(
                 "Subscriptions are not supported on this transport.",
                 None,
@@ -621,7 +663,15 @@ where
                 );
 
                 let mut streams = Vec::new();
-                if let Err(err) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                let collect_result = if schema.env.registry.introspection_mode
+                    == IntrospectionMode::IntrospectionOnly
+                    || env.introspection_mode == IntrospectionMode::IntrospectionOnly
+                {
+                    collect_subscription_streams(&ctx, &EmptySubscription, &mut streams)
+                } else {
+                    collect_subscription_streams(&ctx, &schema.subscription, &mut streams)
+                };
+                if let Err(err) = collect_result {
                     yield Response::from_errors(vec![err]);
                 }
 

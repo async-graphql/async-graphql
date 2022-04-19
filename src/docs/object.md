@@ -56,6 +56,7 @@ All methods are converted to camelCase.
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
 | secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |
 | key          | Is entity key(for Federation)                                                                                                                   | bool        | Y        |
+| process_with | Upon successful parsing, invokes specified function. Its signature must be `fn(&mut T)`.                                                        | code path   | Y        |
 
 # Derived argument attributes
 

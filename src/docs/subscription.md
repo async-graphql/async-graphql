@@ -47,6 +47,7 @@ The filter function should be synchronous.
 | validator    | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object      | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool        | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
+| process_with | Upon successful parsing, invokes specified function. Its signature must be `fn(&mut T)`.                                                        | code path   | Y        |
 
 # Examples
 

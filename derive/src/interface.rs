@@ -374,7 +374,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_output_type::<Self, _>(|registry| {
+                registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Interface, |registry| {
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Interface {

@@ -407,6 +407,31 @@ pub async fn test_both_input_output() {
     assert_eq!(<MyObject as OutputType>::type_name(), "MyObject");
 }
 
+#[test]
+#[should_panic]
+pub fn test_both_input_output_with_same_name() {
+    #[derive(SimpleObject, InputObject)]
+    #[allow(dead_code)]
+    struct MyObject {
+        #[graphql(default = 10)]
+        a: i32,
+        b: bool,
+        #[graphql(skip)]
+        c: String,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject) -> MyObject {
+            input
+        }
+    }
+
+    Schema::new(Query, EmptyMutation, EmptySubscription);
+}
+
 #[tokio::test]
 pub async fn test_skip_input() {
     #[derive(SimpleObject, InputObject)]
@@ -517,6 +542,91 @@ pub async fn test_complex_output() {
             "obj": {
                 "a": 1,
                 "double": 2,
+            }
+        })
+    );
+}
+
+#[tokio::test]
+pub async fn test_input_object_process_with() {
+    mod processor {
+        pub fn string(input: &mut String) {
+            while let Some(ch) = input.pop() {
+                if !ch.is_whitespace() {
+                    input.push(ch);
+                    break;
+                }
+            }
+        }
+    }
+    #[derive(InputObject)]
+    struct MyInput {
+        //processor does nothing on default value
+        #[graphql(default = "  ", process_with = "processor::string")]
+        a: String,
+
+        #[graphql(process_with = "processor::string")]
+        b: String,
+    }
+
+    struct MyOutput {
+        a: String,
+        b: String,
+    }
+
+    #[Object]
+    impl MyOutput {
+        async fn a(&self) -> &String {
+            &self.a
+        }
+
+        async fn b(&self) -> &String {
+            &self.b
+        }
+    }
+
+    struct Root;
+
+    #[Object]
+    impl Root {
+        async fn a(&self, input: MyInput) -> MyOutput {
+            MyOutput {
+                a: input.a,
+                b: input.b,
+            }
+        }
+    }
+
+    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            a(input:{b: "test b   "}) {
+                a b
+            }
+        }"#
+    .to_owned();
+    assert_eq!(
+        schema.execute(&query).await.data,
+        value!({
+            "a": {
+                "a": "  ",
+                "b": "test b",
+            }
+        })
+    );
+
+    let schema = Schema::new(Root, EmptyMutation, EmptySubscription);
+    let query = r#"{
+            a(input:{a: "test a ", b: "test"}) {
+                a b
+            }
+        }"#
+    .to_owned();
+    assert_eq!(
+        schema.execute(&query).await.data,
+        value!({
+            "a": {
+                "a": "test a",
+                "b": "test",
             }
         })
     );
