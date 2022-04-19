@@ -16,7 +16,6 @@ use crate::{Data, ParseRequestError, ServerError, UploadValue, Value, Variables}
 #[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[non_exhaustive]
 pub struct Request {
     /// The query source of the request.
     #[serde(default)]
