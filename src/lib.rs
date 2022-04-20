@@ -237,7 +237,6 @@ pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 #[doc(hidden)]
 pub use static_assertions;
-#[doc(hidden)]
 pub use subscription::SubscriptionType;
 pub use types::*;
 pub use validation::{ValidationMode, ValidationResult, VisitorContext};
