@@ -408,37 +408,31 @@ mod tests {
 
     #[test]
     fn test_as_opt_ref() {
-        let mut value: MaybeUndefined<String>;
-        let mut r: Option<Option<&String>>;
-
-        value = MaybeUndefined::Undefined;
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Undefined;
+        let r = value.as_opt_ref();
         assert_eq!(r, None);
 
-        value = MaybeUndefined::Null;
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Null;
+        let r = value.as_opt_ref();
         assert_eq!(r, Some(None));
 
-        value = MaybeUndefined::Value("abc".to_string());
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Value("abc".to_string());
+        let r = value.as_opt_ref();
         assert_eq!(r, Some(Some(&"abc".to_string())));
     }
 
     #[test]
     fn test_as_opt_deref() {
-        let mut value: MaybeUndefined<String>;
-        let mut r: Option<Option<&str>>;
-
-        value = MaybeUndefined::Undefined;
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Undefined;
+        let r = value.as_opt_deref();
         assert_eq!(r, None);
 
-        value = MaybeUndefined::Null;
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Null;
+        let r = value.as_opt_deref();
         assert_eq!(r, Some(None));
 
-        value = MaybeUndefined::Value("abc".to_string());
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Value("abc".to_string());
+        let r = value.as_opt_deref();
         assert_eq!(r, Some(Some("abc")));
     }
 

@@ -76,6 +76,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             }
         }
 
+        #[allow(clippy::from_over_into)]
         impl #impl_generics ::std::convert::Into<#inner_ty> for #ident #ty_generics #where_clause {
             fn into(self) -> #inner_ty {
                 self.0
