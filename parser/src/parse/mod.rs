@@ -7,20 +7,19 @@ use crate::types::*;
 use crate::{Error, Result};
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
-use pest_derive::Parser;
 use std::collections::hash_map::{self, HashMap};
 use utils::*;
 
 mod executable;
+mod generated;
 mod service;
 mod utils;
 
 use async_graphql_value::{ConstValue, Name, Number, Value};
 pub use executable::parse_query;
+use generated::Rule;
 pub use service::parse_schema;
 
-#[derive(Parser)]
-#[grammar = "graphql.pest"]
 struct GraphQLParser;
 
 fn parse_operation_type(
