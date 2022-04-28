@@ -26,7 +26,7 @@ struct GraphQLParser;
     .parse::<proc_macro2::TokenStream>()
     .unwrap();
 
-    let tokens = pest_generator::derive_parser(input.into(), true);
+    let tokens = pest_generator::derive_parser(input, true);
     let current =
         String::from_utf8(fs::read("./src/parse/generated.rs").unwrap_or_default()).unwrap();
 
