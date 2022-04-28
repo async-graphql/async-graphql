@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [4.0.0] 2022-4-19
 
+- Implement the `ConnectionNameType` and `EdgeNameType` traits to specify GraphQL type names for `Connection` and `Edge`, which can be automatically generated using `DefaultConnectionName` and `DefaultEdgeName`.
 - Add `#[non_exhaustive]` attribute to Request/Response types.
 - Introduce ability to pre-parse Request's query. [#891](https://github.com/async-graphql/async-graphql/pull/891)
 - Add `introspection-only` mode. [#894](https://github.com/async-graphql/async-graphql/pull/894)
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move the pest parser code generation step into a test. [#901](https://github.com/async-graphql/async-graphql/pull/901)
 - Update `log` to version `0.4.16`. [#903](https://github.com/async-graphql/async-graphql/pull/903)
 - Added impl of `CursorType` for floats [#897](https://github.com/async-graphql/async-graphql/pull/897)
+- 
 
 # [3.0.38] 2022-4-8
 
