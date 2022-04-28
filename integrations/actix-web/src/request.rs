@@ -1,22 +1,27 @@
-use actix_http::body::BoxBody;
-use actix_web::error::JsonPayloadError;
-use std::future::Future;
-use std::io::{self, ErrorKind};
-use std::pin::Pin;
+use std::{
+    future::Future,
+    io::{self, ErrorKind},
+    pin::Pin,
+};
 
-use actix_http::error::PayloadError;
-use actix_web::dev::Payload;
-use actix_web::http::{Method, StatusCode};
-use actix_web::{http, Error, FromRequest, HttpRequest, HttpResponse, Responder, Result};
-use futures_util::future::{self, FutureExt};
-use futures_util::{StreamExt, TryStreamExt};
-
-use async_graphql::http::MultipartOptions;
-use async_graphql::ParseRequestError;
+use actix_http::{body::BoxBody, error::PayloadError};
+use actix_web::{
+    dev::Payload,
+    error::JsonPayloadError,
+    http,
+    http::{Method, StatusCode},
+    Error, FromRequest, HttpRequest, HttpResponse, Responder, Result,
+};
+use async_graphql::{http::MultipartOptions, ParseRequestError};
+use futures_util::{
+    future::{self, FutureExt},
+    StreamExt, TryStreamExt,
+};
 
 /// Extractor for GraphQL request.
 ///
-/// `async_graphql::http::MultipartOptions` allows to configure extraction process.
+/// `async_graphql::http::MultipartOptions` allows to configure extraction
+/// process.
 pub struct GraphQLRequest(pub async_graphql::Request);
 
 impl GraphQLRequest {
@@ -47,7 +52,8 @@ impl FromRequest for GraphQLRequest {
 
 /// Extractor for GraphQL batch request.
 ///
-/// `async_graphql::http::MultipartOptions` allows to configure extraction process.
+/// `async_graphql::http::MultipartOptions` allows to configure extraction
+/// process.
 pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
 impl GraphQLBatchRequest {
@@ -138,8 +144,8 @@ impl FromRequest for GraphQLBatchRequest {
 
 /// Responder for a GraphQL response.
 ///
-/// This contains a batch response, but since regular responses are a type of batch response it
-/// works for both.
+/// This contains a batch response, but since regular responses are a type of
+/// batch response it works for both.
 pub struct GraphQLResponse(pub async_graphql::BatchResponse);
 
 impl From<async_graphql::Response> for GraphQLResponse {
@@ -156,8 +162,9 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 
 #[cfg(feature = "cbor")]
 mod cbor {
-    use actix_web::{http::StatusCode, ResponseError};
     use core::fmt;
+
+    use actix_web::{http::StatusCode, ResponseError};
 
     #[derive(Debug)]
     pub struct Error(pub serde_cbor::Error);

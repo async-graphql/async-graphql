@@ -1,6 +1,9 @@
+use std::{
+    cmp::Ordering,
+    collections::{BTreeSet, HashSet, LinkedList, VecDeque},
+};
+
 use async_graphql::*;
-use std::cmp::Ordering;
-use std::collections::{BTreeSet, HashSet, LinkedList, VecDeque};
 
 #[tokio::test]
 pub async fn test_list_type() {

@@ -1,7 +1,8 @@
 //! Service-related GraphQL types.
 
-use super::*;
 use async_graphql_value::Name;
+
+use super::*;
 
 /// A GraphQL file or request string defining a GraphQL service.
 ///
@@ -52,7 +53,8 @@ pub struct SchemaDefinition {
 pub struct TypeDefinition {
     /// Whether the type is an extension of another type.
     pub extend: bool,
-    /// The description of the type, if present. This is never present on an extension type.
+    /// The description of the type, if present. This is never present on an
+    /// extension type.
     pub description: Option<Positioned<String>>,
     /// The name of the type.
     pub name: Positioned<Name>,
@@ -195,11 +197,14 @@ pub struct DirectiveDefinition {
 /// [Reference](https://spec.graphql.org/October2021/#DirectiveLocation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DirectiveLocation {
-    /// A [query](enum.OperationType.html#variant.Query) [operation](struct.OperationDefinition.html).
+    /// A [query](enum.OperationType.html#variant.Query)
+    /// [operation](struct.OperationDefinition.html).
     Query,
-    /// A [mutation](enum.OperationType.html#variant.Mutation) [operation](struct.OperationDefinition.html).
+    /// A [mutation](enum.OperationType.html#variant.Mutation)
+    /// [operation](struct.OperationDefinition.html).
     Mutation,
-    /// A [subscription](enum.OperationType.html#variant.Subscription) [operation](struct.OperationDefinition.html).
+    /// A [subscription](enum.OperationType.html#variant.Subscription)
+    /// [operation](struct.OperationDefinition.html).
     Subscription,
     /// A [field](struct.Field.html).
     Field,
@@ -217,8 +222,8 @@ pub enum DirectiveLocation {
     Object,
     /// A [field definition](struct.FieldDefinition.html).
     FieldDefinition,
-    /// An [input value definition](struct.InputFieldDefinition.html) as the arguments of a field
-    /// but not an input object.
+    /// An [input value definition](struct.InputFieldDefinition.html) as the
+    /// arguments of a field but not an input object.
     ArgumentDefinition,
     /// An [interface](struct.InterfaceType.html).
     Interface,
@@ -230,8 +235,8 @@ pub enum DirectiveLocation {
     EnumValue,
     /// An [input object](struct.InputObjectType.html).
     InputObject,
-    /// An [input value definition](struct.InputValueDefinition.html) on an input object but not a
-    /// field.
+    /// An [input value definition](struct.InputValueDefinition.html) on an
+    /// input object but not a field.
     InputFieldDefinition,
     /// An [variable definition](struct.VariableDefinition.html).
     VariableDefinition,

@@ -1,7 +1,7 @@
-use crate::extensions::ResolveFut;
-use crate::parser::types::Directive;
-use crate::registry::Registry;
-use crate::{Context, ContextDirective, ServerResult, Value};
+use crate::{
+    extensions::ResolveFut, parser::types::Directive, registry::Registry, Context,
+    ContextDirective, ServerResult, Value,
+};
 
 #[doc(hidden)]
 pub trait CustomDirectiveFactory: Send + Sync + 'static {

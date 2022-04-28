@@ -1,12 +1,11 @@
-use std::borrow::Cow;
-use std::fs::File;
-use std::io::Read;
+use std::{borrow::Cow, fs::File, io::Read};
 
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
 
-use crate::registry::MetaTypeId;
-use crate::{registry, Context, InputType, InputValueError, InputValueResult, Value};
+use crate::{
+    registry, registry::MetaTypeId, Context, InputType, InputValueError, InputValueResult, Value,
+};
 
 /// A file upload value.
 pub struct UploadValue {
@@ -19,8 +18,8 @@ pub struct UploadValue {
 }
 
 impl UploadValue {
-    /// Attempt to clone the upload value. This type's `Clone` implementation simply calls this and
-    /// panics on failure.
+    /// Attempt to clone the upload value. This type's `Clone` implementation
+    /// simply calls this and panics on failure.
     ///
     /// # Errors
     ///
@@ -59,8 +58,8 @@ impl UploadValue {
 ///
 ///
 /// Graphql supports file uploads via `multipart/form-data`.
-/// Enable this feature by accepting an argument of type `Upload` (single file) or
-/// `Vec<Upload>` (multiple files) in your mutation like in the example blow.
+/// Enable this feature by accepting an argument of type `Upload` (single file)
+/// or `Vec<Upload>` (multiple files) in your mutation like in the example blow.
 ///
 ///
 /// # Example
@@ -78,7 +77,6 @@ impl UploadValue {
 ///         true
 ///     }
 /// }
-///
 /// ```
 /// # Example Curl Request
 ///

@@ -396,24 +396,19 @@ pub async fn test_subscription_fieldresult() {
         );
     }
 
+    let resp = stream.next().await.unwrap();
     assert_eq!(
-        Response {
-            data: Value::Null,
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![ServerError {
-                message: "StreamErr".to_string(),
-                source: None,
-                locations: vec![Pos {
-                    line: 1,
-                    column: 16
-                }],
-                path: vec![PathSegment::Field("values".to_owned())],
-                extensions: None,
+        resp.errors,
+        vec![ServerError {
+            message: "StreamErr".to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 16
             }],
-            http_headers: Default::default()
-        },
-        stream.next().await.unwrap(),
+            path: vec![PathSegment::Field("values".to_owned())],
+            extensions: None,
+        }]
     );
 
     for i in 5i32..10 {

@@ -1,5 +1,4 @@
-use poem::web::Json;
-use poem::{IntoResponse, Response};
+use poem::{web::Json, IntoResponse, Response};
 
 /// Response for `async_graphql::Request`.
 pub struct GraphQLResponse(pub async_graphql::Response);

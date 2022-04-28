@@ -2,11 +2,13 @@ use std::fmt::{Error, Result as FmtResult, Write};
 
 use async_graphql_value::ConstValue;
 
-use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, OperationType, Selection, SelectionSet,
+use crate::{
+    parser::types::{
+        ExecutableDocument, FragmentDefinition, OperationType, Selection, SelectionSet,
+    },
+    registry::{MetaInputValue, MetaType, MetaTypeName, Registry},
+    Variables,
 };
-use crate::registry::{MetaInputValue, MetaType, MetaTypeName, Registry};
-use crate::Variables;
 
 impl Registry {
     pub(crate) fn stringify_exec_doc(
@@ -219,8 +221,7 @@ impl Registry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::parse_query;
-    use crate::*;
+    use crate::{parser::parse_query, *};
 
     #[test]
     fn test_stringify() {

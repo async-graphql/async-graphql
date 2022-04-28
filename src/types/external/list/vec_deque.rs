@@ -1,11 +1,8 @@
-use std::borrow::Cow;
-use std::collections::VecDeque;
+use std::{borrow::Cow, collections::VecDeque};
 
-use crate::parser::types::Field;
-use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, ServerResult, Value,
+    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
+    InputValueError, InputValueResult, OutputType, Positioned, ServerResult, Value,
 };
 
 impl<T: InputType> InputType for VecDeque<T> {

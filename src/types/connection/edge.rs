@@ -1,155 +1,104 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 
-use indexmap::map::IndexMap;
-
-use crate::connection::EmptyFields;
-use crate::parser::types::Field;
-use crate::registry::MetaTypeId;
-use crate::resolver_utils::{resolve_container, ContainerType};
-use crate::types::connection::CursorType;
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerResult, Value,
+    connection::EmptyFields,
+    types::connection::{CursorType, EdgeNameType},
+    InputValueError, InputValueResult, ObjectType, OutputType, Scalar, ScalarType, SimpleObject,
+    TypeName, Value,
 };
 
-/// The edge type output by the data source
-pub struct Edge<C, T, E> {
-    pub(crate) cursor: C,
-    pub(crate) node: T,
-    pub(crate) additional_fields: E,
+pub(crate) struct CursorScalar<T: CursorType>(pub(crate) T);
+
+#[Scalar(internal, name = "String")]
+impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        match value {
+            Value::String(s) => T::decode_cursor(&s)
+                .map(Self)
+                .map_err(InputValueError::custom),
+            _ => Err(InputValueError::expected_type(value)),
+        }
+    }
+
+    fn is_valid(value: &Value) -> bool {
+        matches!(value, Value::String(_))
+    }
+
+    fn to_value(&self) -> Value {
+        Value::String(self.0.encode_cursor())
+    }
 }
 
-impl<C, T, E> Edge<C, T, E> {
+/// An edge in a connection.
+#[derive(SimpleObject)]
+#[graphql(internal, name_type)]
+pub struct Edge<Name, Cursor, Node, EdgeFields>
+where
+    Name: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    EdgeFields: ObjectType,
+{
+    #[graphql(skip)]
+    _mark: PhantomData<Name>,
+    /// A cursor for use in pagination
+    pub(crate) cursor: CursorScalar<Cursor>,
+    /// "The item at the end of the edge
+    pub(crate) node: Node,
+    #[graphql(flatten)]
+    pub(crate) additional_fields: EdgeFields,
+}
+
+impl<Name, Cursor, Node, EdgeFields> TypeName for Edge<Name, Cursor, Node, EdgeFields>
+where
+    Name: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    EdgeFields: ObjectType,
+{
+    #[inline]
+    fn type_name() -> Cow<'static, str> {
+        Name::type_name::<Node>().into()
+    }
+}
+
+impl<Name, Cursor, Node, EdgeFields> Edge<Name, Cursor, Node, EdgeFields>
+where
+    Name: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    EdgeFields: ObjectType,
+{
     /// Create a new edge, it can have some additional fields.
-    pub fn with_additional_fields(cursor: C, node: T, additional_fields: E) -> Self {
+    #[inline]
+    pub fn with_additional_fields(
+        cursor: Cursor,
+        node: Node,
+        additional_fields: EdgeFields,
+    ) -> Self {
         Self {
-            cursor,
+            _mark: PhantomData,
+            cursor: CursorScalar(cursor),
             node,
             additional_fields,
         }
     }
 }
 
-impl<C: CursorType, T> Edge<C, T, EmptyFields> {
+impl<Name, Cursor, Node> Edge<Name, Cursor, Node, EmptyFields>
+where
+    Name: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+{
     /// Create a new edge.
-    pub fn new(cursor: C, node: T) -> Self {
+    #[inline]
+    pub fn new(cursor: Cursor, node: Node) -> Self {
         Self {
-            cursor,
+            _mark: PhantomData,
+            cursor: CursorScalar(cursor),
             node,
             additional_fields: EmptyFields,
         }
     }
-}
-
-#[async_trait::async_trait]
-impl<C, T, E> ContainerType for Edge<C, T, E>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    E: ObjectType,
-{
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if ctx.item.node.name.node == "node" {
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&self.node, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
-        } else if ctx.item.node.name.node == "cursor" {
-            return Ok(Some(Value::String(self.cursor.encode_cursor())));
-        }
-
-        self.additional_fields.resolve_field(ctx).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<C, T, E> OutputType for Edge<C, T, E>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    E: ObjectType,
-{
-    fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}Edge", T::type_name()))
-    }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_output_type::<Self, _>(MetaTypeId::Object, |registry| {
-            let additional_fields = if let registry::MetaType::Object { fields, .. } =
-                registry.create_fake_output_type::<E>()
-            {
-                fields
-            } else {
-                unreachable!()
-            };
-
-            registry::MetaType::Object {
-                name: Self::type_name().to_string(),
-                description: Some("An edge in a connection."),
-                fields: {
-                    let mut fields = IndexMap::new();
-
-                    fields.insert(
-                        "node".to_string(),
-                        registry::MetaField {
-                            name: "node".to_string(),
-                            description: Some("The item at the end of the edge"),
-                            args: Default::default(),
-                            ty: T::create_type_info(registry),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                            oneof: false,
-                        },
-                    );
-
-                    fields.insert(
-                        "cursor".to_string(),
-                        registry::MetaField {
-                            name: "cursor".to_string(),
-                            description: Some("A cursor for use in pagination"),
-                            args: Default::default(),
-                            ty: String::create_type_info(registry),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                            oneof: false,
-                        },
-                    );
-
-                    fields.extend(additional_fields);
-                    fields
-                },
-                cache_control: Default::default(),
-                extends: false,
-                keys: None,
-                visible: None,
-                is_subscription: false,
-                rust_typename: std::any::type_name::<Self>(),
-            }
-        })
-    }
-
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        _field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        resolve_container(ctx, self).await
-    }
-}
-
-impl<C, T, E> ObjectType for Edge<C, T, E>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    E: ObjectType,
-{
 }

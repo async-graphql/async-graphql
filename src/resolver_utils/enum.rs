@@ -38,7 +38,8 @@ pub fn parse_enum<T: EnumType + InputType>(value: Value) -> InputValueResult<T> 
 
 /// Convert the enum value into a GraphQL value.
 ///
-/// This can be used to implement `InputType::to_value` or `OutputType::resolve`.
+/// This can be used to implement `InputType::to_value` or
+/// `OutputType::resolve`.
 pub fn enum_value<T: EnumType>(value: T) -> Value {
     let item = T::items().iter().find(|item| item.value == value).unwrap();
     Value::Enum(Name::new(item.name))

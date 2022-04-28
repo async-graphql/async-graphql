@@ -1,5 +1,4 @@
-use async_graphql::connection::*;
-use async_graphql::*;
+use async_graphql::{connection::*, *};
 
 #[tokio::test]
 pub async fn test_connection_additional_fields() {
@@ -23,7 +22,9 @@ pub async fn test_connection_additional_fields() {
             before: Option<String>,
             first: Option<i32>,
             last: Option<i32>,
-        ) -> Result<Connection<usize, i32, ConnectionFields, Diff>> {
+        ) -> Result<
+            Connection<DefaultConnectionName, DefaultEdgeName, usize, i32, ConnectionFields, Diff>,
+        > {
             connection::query(
                 after,
                 before,
@@ -43,7 +44,7 @@ pub async fn test_connection_additional_fields() {
                         end < 10000,
                         ConnectionFields { total_count: 10000 },
                     );
-                    connection.append((start..end).map(|n| {
+                    connection.edges.extend((start..end).map(|n| {
                         Edge::with_additional_fields(
                             n,
                             n as i32,
@@ -63,15 +64,18 @@ pub async fn test_connection_additional_fields() {
 
     assert_eq!(
         schema
-            .execute("{ numbers(first: 2) { totalCount edges { node diff } } }")
+            .execute(
+                "{ numbers(first: 2) { __typename totalCount edges { __typename node diff } } }"
+            )
             .await
             .data,
         value!({
             "numbers": {
+                "__typename": "IntConnection",
                 "totalCount": 10000,
                 "edges": [
-                    {"node": 0, "diff": 10000},
-                    {"node": 1, "diff": 9999},
+                    {"__typename": "IntEdge", "node": 0, "diff": 10000},
+                    {"__typename": "IntEdge", "node": 1, "diff": 9999},
                 ]
             },
         })

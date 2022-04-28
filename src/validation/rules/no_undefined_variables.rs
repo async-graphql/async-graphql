@@ -1,12 +1,18 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition, VariableDefinition,
-};
-use crate::validation::utils::{referenced_variables, Scope};
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Name, Pos, Positioned};
 use async_graphql_value::Value;
+
+use crate::{
+    parser::types::{
+        ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
+        VariableDefinition,
+    },
+    validation::{
+        utils::{referenced_variables, Scope},
+        visitor::{Visitor, VisitorContext},
+    },
+    Name, Pos, Positioned,
+};
 
 #[derive(Default)]
 pub struct NoUndefinedVariables<'a> {

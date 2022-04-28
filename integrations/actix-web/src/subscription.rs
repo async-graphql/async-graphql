@@ -1,21 +1,21 @@
-use std::future::Future;
-use std::str::FromStr;
-use std::time::{Duration, Instant};
+use std::{
+    future::Future,
+    str::FromStr,
+    time::{Duration, Instant},
+};
 
 use actix::{
-    Actor, ActorContext, AsyncContext, ContextFutureSpawner, StreamHandler, WrapFuture, WrapStream,
+    Actor, ActorContext, ActorFutureExt, ActorStreamExt, AsyncContext, ContextFutureSpawner,
+    StreamHandler, WrapFuture, WrapStream,
 };
-use actix::{ActorFutureExt, ActorStreamExt};
-use actix_http::error::PayloadError;
-use actix_http::ws;
-use actix_web::web::Bytes;
-use actix_web::{Error, HttpRequest, HttpResponse};
+use actix_http::{error::PayloadError, ws};
+use actix_web::{web::Bytes, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
-use futures_util::future::Ready;
-use futures_util::stream::Stream;
-
-use async_graphql::http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
+use async_graphql::{
+    http::{WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
+    Data, ObjectType, Result, Schema, SubscriptionType,
+};
+use futures_util::{future::Ready, stream::Stream};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -63,17 +63,19 @@ where
     OnInit: Fn(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
     OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Specify the initial subscription context data, usually you can get something from the
-    /// incoming request to create it.
+    /// Specify the initial subscription context data, usually you can get
+    /// something from the incoming request to create it.
     #[must_use]
     pub fn with_data(self, data: Data) -> Self {
         Self { data, ..self }
     }
 
-    /// Specify a callback function to be called when the connection is initialized.
+    /// Specify a callback function to be called when the connection is
+    /// initialized.
     ///
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
-    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    /// The data returned by this callback function will be merged with the data
+    /// specified by [`with_data`].
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,

@@ -1,6 +1,8 @@
-use std::collections::BTreeMap;
-use std::fmt::{self, Display, Formatter};
-use std::ops::{Deref, DerefMut};
+use std::{
+    collections::BTreeMap,
+    fmt::{self, Display, Formatter},
+    ops::{Deref, DerefMut},
+};
 
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -43,8 +45,8 @@ impl Variables {
 
     /// Get the values from a JSON value.
     ///
-    /// If the value is not a map or the keys of a map are not valid GraphQL names, then no
-    /// variables will be returned.
+    /// If the value is not a map or the keys of a map are not valid GraphQL
+    /// names, then no variables will be returned.
     #[must_use]
     pub fn from_json(value: serde_json::Value) -> Self {
         ConstValue::from_json(value)

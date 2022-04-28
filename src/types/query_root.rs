@@ -2,11 +2,13 @@ use std::borrow::Cow;
 
 use indexmap::map::IndexMap;
 
-use crate::model::{__Schema, __Type};
-use crate::parser::types::Field;
-use crate::resolver_utils::{resolve_container, ContainerType};
 use crate::{
-    registry, Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
+    model::{__Schema, __Type},
+    parser::types::Field,
+    registry,
+    resolver_utils::{resolve_container, ContainerType},
+    schema::IntrospectionMode,
+    Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
     ServerResult, SimpleObject, Value,
 };
 
@@ -24,7 +26,13 @@ pub(crate) struct QueryRoot<T> {
 #[async_trait::async_trait]
 impl<T: ObjectType> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if !ctx.schema_env.registry.disable_introspection && !ctx.query_env.disable_introspection {
+        if matches!(
+            ctx.schema_env.registry.introspection_mode,
+            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
+        ) && matches!(
+            ctx.query_env.introspection_mode,
+            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly,
+        ) {
             if ctx.item.node.name.node == "__schema" {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                 let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
@@ -52,6 +60,12 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 .await
                 .map(Some);
             }
+        }
+
+        if ctx.schema_env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
+            || ctx.query_env.introspection_mode == IntrospectionMode::IntrospectionOnly
+        {
+            return Ok(None);
         }
 
         if ctx.schema_env.registry.enable_federation || ctx.schema_env.registry.has_entities() {
@@ -93,7 +107,10 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
     fn create_type_info(registry: &mut registry::Registry) -> String {
         let root = T::create_type_info(registry);
 
-        if !registry.disable_introspection {
+        if matches!(
+            registry.introspection_mode,
+            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
+        ) {
             let schema_type = __Schema::create_type_info(registry);
             if let Some(registry::MetaType::Object { fields, .. }) =
                 registry.types.get_mut(T::type_name().as_ref())

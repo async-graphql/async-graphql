@@ -226,8 +226,9 @@ macro_rules! value_expect_expr_comma {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ConstValue, Name};
     use indexmap::IndexMap;
+
+    use crate::{ConstValue, Name};
 
     #[test]
     fn test_macro() {

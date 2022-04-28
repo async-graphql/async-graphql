@@ -1,12 +1,14 @@
+use std::collections::HashSet;
+
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
-use std::collections::HashSet;
-use syn::visit_mut::VisitMut;
-use syn::{Error, Type};
+use syn::{visit_mut::VisitMut, Error, Type};
 
-use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult, RemoveLifetime};
+use crate::{
+    args::{self, RenameTarget},
+    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult, RemoveLifetime},
+};
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);

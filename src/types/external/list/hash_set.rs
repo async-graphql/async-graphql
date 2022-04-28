@@ -1,13 +1,8 @@
-use std::borrow::Cow;
-use std::cmp::Eq;
-use std::collections::HashSet;
-use std::hash::Hash;
+use std::{borrow::Cow, cmp::Eq, collections::HashSet, hash::Hash};
 
-use crate::parser::types::Field;
-use crate::resolver_utils::resolve_list;
 use crate::{
-    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, Result, ServerResult, Value,
+    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
+    InputValueError, InputValueResult, OutputType, Positioned, Result, ServerResult, Value,
 };
 
 impl<T: InputType + Hash + Eq> InputType for HashSet<T> {

@@ -318,11 +318,11 @@ pub async fn test_concrete_object() {
     #[Object]
     impl Query {
         async fn a(&self) -> GbObject<i32, i64> {
-            GbObject { 0: 10, 1: 20 }
+            GbObject(10, 20)
         }
 
         async fn b(&self) -> GbObject<f32, f64> {
-            GbObject { 0: 88.0, 1: 99.0 }
+            GbObject(88.0, 99.0)
         }
     }
 

@@ -1,21 +1,16 @@
-use std::borrow::Cow;
-use std::fmt::Display;
-use std::hash::Hash;
-use std::str::FromStr;
+use std::{
+    borrow::Cow, collections::HashMap as StdHashMap, fmt::Display, hash::Hash, str::FromStr,
+};
 
-use async_graphql_parser::types::Field;
-use async_graphql_parser::Positioned;
+use async_graphql_parser::{types::Field, Positioned};
 use async_graphql_value::{from_value, to_value};
 use hashbrown::HashMap;
 use indexmap::IndexMap;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::collections::HashMap as StdHashMap;
+use serde::{de::DeserializeOwned, Serialize};
 
-use crate::registry::Registry;
 use crate::{
-    ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
-    ServerResult, Value,
+    registry::Registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, Name,
+    OutputType, ServerResult, Value,
 };
 
 impl<K, V> InputType for HashMap<K, V>

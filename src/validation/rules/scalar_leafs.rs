@@ -1,6 +1,8 @@
-use crate::parser::types::Field;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{
+    parser::types::Field,
+    validation::visitor::{Visitor, VisitorContext},
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct ScalarLeafs;

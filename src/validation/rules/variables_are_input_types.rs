@@ -1,6 +1,8 @@
-use crate::parser::types::VariableDefinition;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{
+    parser::types::VariableDefinition,
+    validation::visitor::{Visitor, VisitorContext},
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct VariablesAreInputTypes;

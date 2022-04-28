@@ -1,15 +1,13 @@
 use std::collections::HashSet;
 
-use darling::util::SpannedValue;
-use darling::FromMeta;
+use darling::{util::SpannedValue, FromMeta};
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
-use syn::visit::Visit;
-use syn::visit_mut::VisitMut;
 use syn::{
-    visit_mut, Attribute, Error, Expr, ExprPath, FnArg, Ident, ImplItemMethod, Lifetime, Lit,
-    LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference,
+    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprPath, FnArg, Ident,
+    ImplItemMethod, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
+    TypeReference,
 };
 use thiserror::Error;
 

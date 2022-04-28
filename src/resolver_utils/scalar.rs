@@ -33,7 +33,8 @@ pub trait ScalarType: Sized + Send {
 
     /// Checks for a valid scalar value.
     ///
-    /// Implementing this function can find incorrect input values during the verification phase, which can improve performance.
+    /// Implementing this function can find incorrect input values during the
+    /// verification phase, which can improve performance.
     fn is_valid(_value: &Value) -> bool {
         true
     }
@@ -44,8 +45,11 @@ pub trait ScalarType: Sized + Send {
 
 /// Define a scalar
 ///
-/// If your type implemented `serde::Serialize` and `serde::Deserialize`, then you can use this macro to define a scalar more simply.
-/// It helps you implement the `ScalarType::parse` and `ScalarType::to_value` functions by calling the [from_value](fn.from_value.html) and [to_value](fn.to_value.html) functions.
+/// If your type implemented `serde::Serialize` and `serde::Deserialize`, then
+/// you can use this macro to define a scalar more simply. It helps you
+/// implement the `ScalarType::parse` and `ScalarType::to_value` functions by
+/// calling the [from_value](fn.from_value.html) and
+/// [to_value](fn.to_value.html) functions.
 ///
 /// # Examples
 ///

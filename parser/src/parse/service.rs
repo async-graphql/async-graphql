@@ -398,8 +398,9 @@ fn parse_input_value_definition(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
+    use super::*;
 
     #[test]
     fn test_parser() {

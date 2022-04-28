@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::parser::types::{Field, Selection, SelectionSet};
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{
+    parser::types::{Field, Selection, SelectionSet},
+    validation::visitor::{Visitor, VisitorContext},
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct OverlappingFieldsCanBeMerged;
@@ -52,7 +54,8 @@ impl<'a, 'ctx> FindConflicts<'a, 'ctx> {
                             .visited
                             .insert(fragment_spread.node.fragment_name.node.as_str())
                         {
-                            // To avoid recursing itself, this error is detected by the `NoFragmentCycles` validator.
+                            // To avoid recursing itself, this error is detected by the
+                            // `NoFragmentCycles` validator.
                             continue;
                         }
                         self.find(&fragment.node.selection_set);

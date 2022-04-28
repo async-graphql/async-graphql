@@ -2,12 +2,11 @@
 #![no_implicit_prelude]
 
 // TODO: remove this: https://github.com/dtolnay/async-trait/issues/132
+use ::async_graphql::{self, InputValueResult, ScalarType, Value};
+use ::serde::{Deserialize, Serialize};
 use ::std::boxed::Box;
 // TODO: remove this: https://github.com/nvzqz/static-assertions-rs/issues/37
 use ::std::marker::Sized;
-
-use ::async_graphql::{self, InputValueResult, ScalarType, Value};
-use ::serde::{Deserialize, Serialize};
 
 struct MyObject;
 #[async_graphql::Object]

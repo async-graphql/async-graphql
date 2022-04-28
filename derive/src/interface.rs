@@ -4,14 +4,15 @@ use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::visit_mut::VisitMut;
-use syn::{Error, Type};
+use syn::{visit_mut::VisitMut, Error, Type};
 
-use crate::args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget};
-use crate::output_type::OutputType;
-use crate::utils::{
-    gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
-    RemoveLifetime,
+use crate::{
+    args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget},
+    output_type::OutputType,
+    utils::{
+        gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult, RemoveLifetime,
+    },
 };
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {

@@ -26,8 +26,7 @@ mod validators;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
-use syn::parse_macro_input;
-use syn::{AttributeArgs, DeriveInput, ItemFn, ItemImpl};
+use syn::{parse_macro_input, AttributeArgs, DeriveInput, ItemFn, ItemImpl};
 
 #[proc_macro_attribute]
 #[allow(non_snake_case)]

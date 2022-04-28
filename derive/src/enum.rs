@@ -1,11 +1,12 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::ext::IdentExt;
-use syn::Error;
+use syn::{ext::IdentExt, Error};
 
-use crate::args::{self, RenameRuleExt, RenameTarget};
-use crate::utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::{
+    args::{self, RenameRuleExt, RenameTarget},
+    utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+};
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);

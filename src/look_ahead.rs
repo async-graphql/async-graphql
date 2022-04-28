@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
-use crate::parser::types::{Field, FragmentDefinition, Selection, SelectionSet};
-use crate::Context;
-use crate::{Name, Positioned, SelectionField};
+use crate::{
+    parser::types::{Field, FragmentDefinition, Selection, SelectionSet},
+    Context, Name, Positioned, SelectionField,
+};
 
 /// A selection performed by a query.
 pub struct Lookahead<'a> {
@@ -24,11 +25,11 @@ impl<'a> Lookahead<'a> {
         }
     }
 
-    /// Get the field of the selection set with the specified name. This will ignore
-    /// aliases.
+    /// Get the field of the selection set with the specified name. This will
+    /// ignore aliases.
     ///
-    /// For example, calling `.field("a")` on `{ a { b } }` will return a lookahead that
-    /// represents `{ b }`.
+    /// For example, calling `.field("a")` on `{ a { b } }` will return a
+    /// lookahead that represents `{ b }`.
     #[must_use]
     pub fn field(&self, name: &str) -> Self {
         let mut fields = Vec::new();
@@ -49,9 +50,11 @@ impl<'a> Lookahead<'a> {
         !self.fields.is_empty()
     }
 
-    /// Get the `SelectionField`s for each of the fields covered by this `Lookahead`.
+    /// Get the `SelectionField`s for each of the fields covered by this
+    /// `Lookahead`.
     ///
-    /// There will be multiple fields in situations where the same field is queried twice.
+    /// There will be multiple fields in situations where the same field is
+    /// queried twice.
     pub fn selection_fields(&self) -> Vec<SelectionField<'a>> {
         self.fields
             .iter()
@@ -75,7 +78,8 @@ impl<'a> From<SelectionField<'a>> for Lookahead<'a> {
 }
 
 /// Convert a slice of `SelectionField`s to a `Lookahead`.
-/// Assumes all `SelectionField`s are from the same query and thus have the same fragments.
+/// Assumes all `SelectionField`s are from the same query and thus have the same
+/// fragments.
 ///
 /// Fails if either no `SelectionField`s were provided.
 impl<'a> TryFrom<&[SelectionField<'a>]> for Lookahead<'a> {

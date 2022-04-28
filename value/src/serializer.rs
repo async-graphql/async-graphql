@@ -1,9 +1,10 @@
-use std::error::Error;
-use std::fmt;
+use std::{error::Error, fmt};
 
 use indexmap::IndexMap;
-use serde::ser::{self, Impossible};
-use serde::Serialize;
+use serde::{
+    ser::{self, Impossible},
+    Serialize,
+};
 
 use crate::{ConstValue, Name, Number};
 
@@ -31,7 +32,8 @@ impl ser::Error for SerializerError {
     }
 }
 
-/// Convert a `T` into `ConstValue` which is an enum that can represent any valid GraphQL data.
+/// Convert a `T` into `ConstValue` which is an enum that can represent any
+/// valid GraphQL data.
 #[inline]
 pub fn to_value<T: ser::Serialize>(value: T) -> Result<ConstValue, SerializerError> {
     value.serialize(Serializer)

@@ -1,8 +1,9 @@
-use std::borrow::Cow;
-use std::collections::hash_map::RandomState;
-use std::collections::HashMap;
-use std::hash::{BuildHasher, Hash};
-use std::marker::PhantomData;
+use std::{
+    borrow::Cow,
+    collections::{hash_map::RandomState, HashMap},
+    hash::{BuildHasher, Hash},
+    marker::PhantomData,
+};
 
 /// Factory for creating cache storage.
 pub trait CacheFactory: Send + Sync + 'static {
@@ -23,10 +24,12 @@ pub trait CacheStorage: Send + Sync + 'static {
     /// The value type of the record.
     type Value: Send + Sync + Clone + 'static;
 
-    /// Returns a reference to the value of the key in the cache or None if it is not present in the cache.
+    /// Returns a reference to the value of the key in the cache or None if it
+    /// is not present in the cache.
     fn get(&mut self, key: &Self::Key) -> Option<&Self::Value>;
 
-    /// Puts a key-value pair into the cache. If the key already exists in the cache, then it updates the key's value.
+    /// Puts a key-value pair into the cache. If the key already exists in the
+    /// cache, then it updates the key's value.
     fn insert(&mut self, key: Cow<'_, Self::Key>, val: Cow<'_, Self::Value>);
 
     /// Removes the value corresponding to the key from the cache.

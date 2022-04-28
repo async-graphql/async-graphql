@@ -1,6 +1,9 @@
-use crate::validation::visitor::{VisitMode, Visitor, VisitorContext};
-use crate::Positioned;
 use async_graphql_parser::types::Field;
+
+use crate::{
+    validation::visitor::{VisitMode, Visitor, VisitorContext},
+    Positioned,
+};
 
 pub struct DepthCalculate<'a> {
     max_depth: &'a mut usize,
@@ -34,9 +37,11 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::parse_query;
-    use crate::validation::{visit, VisitorContext};
-    use crate::{EmptyMutation, EmptySubscription, Object, Schema};
+    use crate::{
+        parser::parse_query,
+        validation::{visit, VisitorContext},
+        EmptyMutation, EmptySubscription, Object, Schema,
+    };
 
     struct Query;
 

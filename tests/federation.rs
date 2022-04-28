@@ -1,10 +1,11 @@
 #![allow(unreachable_code)]
 
-use std::collections::HashMap;
-use std::convert::Infallible;
+use std::{collections::HashMap, convert::Infallible};
 
-use async_graphql::dataloader::{DataLoader, Loader};
-use async_graphql::*;
+use async_graphql::{
+    dataloader::{DataLoader, Loader},
+    *,
+};
 
 #[tokio::test]
 pub async fn test_nested_key() {

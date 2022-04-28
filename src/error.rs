@@ -1,8 +1,10 @@
-use std::any::Any;
-use std::collections::BTreeMap;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::marker::PhantomData;
-use std::sync::Arc;
+use std::{
+    any::Any,
+    collections::BTreeMap,
+    fmt::{self, Debug, Display, Formatter},
+    marker::PhantomData,
+    sync::Arc,
+};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -91,22 +93,31 @@ impl ServerError {
     /// # Examples
     ///
     /// ```rust
-    /// use async_graphql::*;
     /// use std::io::ErrorKind;
+    ///
+    /// use async_graphql::*;
     ///
     /// struct Query;
     ///
     /// #[Object]
     /// impl Query {
     ///     async fn value(&self) -> Result<i32> {
-    ///         Err(Error::new_with_source(std::io::Error::new(ErrorKind::Other, "my error")))
+    ///         Err(Error::new_with_source(std::io::Error::new(
+    ///             ErrorKind::Other,
+    ///             "my error",
+    ///         )))
     ///     }
     /// }
     ///
     /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     ///
     /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
-    /// let err = schema.execute("{ value }").await.into_result().unwrap_err().remove(0);
+    /// let err = schema
+    ///     .execute("{ value }")
+    ///     .await
+    ///     .into_result()
+    ///     .unwrap_err()
+    ///     .remove(0);
     /// assert!(err.source::<std::io::Error>().is_some());
     /// # });
     /// ```
@@ -147,8 +158,8 @@ impl From<parser::Error> for ServerError {
 
 /// A segment of path to a resolver.
 ///
-/// This is like [`QueryPathSegment`](enum.QueryPathSegment.html), but owned and used as a part of
-/// errors instead of during execution.
+/// This is like [`QueryPathSegment`](enum.QueryPathSegment.html), but owned and
+/// used as a part of errors instead of during execution.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PathSegment {
@@ -163,7 +174,8 @@ pub type ServerResult<T> = std::result::Result<T, ServerError>;
 
 /// An error parsing an input value.
 ///
-/// This type is generic over T as it uses T's type name when converting to a regular error.
+/// This type is generic over T as it uses T's type name when converting to a
+/// regular error.
 #[derive(Debug)]
 pub struct InputValueError<T> {
     message: String,
@@ -190,8 +202,8 @@ impl<T: InputType> InputValueError<T> {
 
     /// A custom error message.
     ///
-    /// Any type that implements `Display` is automatically converted to this if you use the `?`
-    /// operator.
+    /// Any type that implements `Display` is automatically converted to this if
+    /// you use the `?` operator.
     #[must_use]
     pub fn custom(msg: impl Display) -> Self {
         Self::new(format!(r#"Failed to parse "{}": {}"#, T::type_name(), msg))
@@ -263,8 +275,8 @@ impl Error {
         }
     }
 
-    /// Create an error with a type that implements `Display`, and it will also set the
-    /// `source` of the error to this value.
+    /// Create an error with a type that implements `Display`, and it will also
+    /// set the `source` of the error to this value.
     pub fn new_with_source(source: impl Display + Send + Sync + 'static) -> Self {
         Self {
             message: source.to_string(),
@@ -339,7 +351,8 @@ pub enum ParseRequestError {
     #[error("Payload too large")]
     PayloadTooLarge,
 
-    /// The request is a batch request, but the server does not support batch requests.
+    /// The request is a batch request, but the server does not support batch
+    /// requests.
     #[error("Batch requests are not supported")]
     UnsupportedBatch,
 }
@@ -397,8 +410,8 @@ impl ErrorExtensions for Error {
     }
 }
 
-// implementing for &E instead of E gives the user the possibility to implement for E which does
-// not conflict with this implementation acting as a fallback.
+// implementing for &E instead of E gives the user the possibility to implement
+// for E which does not conflict with this implementation acting as a fallback.
 impl<E: Display> ErrorExtensions for &E {
     fn extend(&self) -> Error {
         Error {
@@ -409,7 +422,8 @@ impl<E: Display> ErrorExtensions for &E {
     }
 }
 
-/// Extend a `Result`'s error value with [`ErrorExtensions`](trait.ErrorExtensions.html).
+/// Extend a `Result`'s error value with
+/// [`ErrorExtensions`](trait.ErrorExtensions.html).
 pub trait ResultExt<T, E>: Sized {
     /// Extend the error value of the result with the callback.
     fn extend_err<C>(self, cb: C) -> Result<T>
@@ -420,8 +434,8 @@ pub trait ResultExt<T, E>: Sized {
     fn extend(self) -> Result<T>;
 }
 
-// This is implemented on E and not &E which means it cannot be used on foreign types.
-// (see example).
+// This is implemented on E and not &E which means it cannot be used on foreign
+// types. (see example).
 impl<T, E> ResultExt<T, E> for std::result::Result<T, E>
 where
     E: ErrorExtensions + Send + Sync + 'static,

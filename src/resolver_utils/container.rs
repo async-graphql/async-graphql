@@ -1,21 +1,17 @@
-use futures_util::FutureExt;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
+use std::{future::Future, pin::Pin, sync::Arc};
 
+use futures_util::FutureExt;
 use indexmap::IndexMap;
 
-use crate::extensions::ResolveInfo;
-use crate::parser::types::Selection;
 use crate::{
-    Context, ContextBase, ContextSelectionSet, Error, Name, OutputType, ServerError, ServerResult,
-    Value,
+    extensions::ResolveInfo, parser::types::Selection, Context, ContextBase, ContextSelectionSet,
+    Error, Name, OutputType, ServerError, ServerResult, Value,
 };
 
 /// Represents a GraphQL container object.
 ///
-/// This helper trait allows the type to call `resolve_container` on itself in its
-/// `OutputType::resolve` implementation.
+/// This helper trait allows the type to call `resolve_container` on itself in
+/// its `OutputType::resolve` implementation.
 #[async_trait::async_trait]
 pub trait ContainerType: OutputType {
     /// This function returns true of type `EmptyMutation` only.
@@ -24,15 +20,17 @@ pub trait ContainerType: OutputType {
         false
     }
 
-    /// Resolves a field value and outputs it as a json value `async_graphql::Value`.
+    /// Resolves a field value and outputs it as a json value
+    /// `async_graphql::Value`.
     ///
     /// If the field was not found returns None.
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>>;
 
-    /// Collect all the fields of the container that are queried in the selection set.
+    /// Collect all the fields of the container that are queried in the
+    /// selection set.
     ///
-    /// Objects do not have to override this, but interfaces and unions must call it on their
-    /// internal type.
+    /// Objects do not have to override this, but interfaces and unions must
+    /// call it on their internal type.
     fn collect_all_fields<'a>(
         &'a self,
         ctx: &ContextSelectionSet<'a>,
@@ -175,7 +173,8 @@ type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 
 impl<'a> Fields<'a> {
-    /// Add another set of fields to this set of fields using the given container.
+    /// Add another set of fields to this set of fields using the given
+    /// container.
     pub fn add_set<T: ContainerType + ?Sized>(
         &mut self,
         ctx: &ContextSelectionSet<'a>,

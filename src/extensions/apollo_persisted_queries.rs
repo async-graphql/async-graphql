@@ -6,8 +6,10 @@ use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::extensions::{Extension, ExtensionContext, ExtensionFactory, NextPrepareRequest};
-use crate::{from_value, Request, ServerError, ServerResult};
+use crate::{
+    extensions::{Extension, ExtensionContext, ExtensionFactory, NextPrepareRequest},
+    from_value, Request, ServerError, ServerResult,
+};
 
 #[derive(Deserialize)]
 struct PersistedQuery {

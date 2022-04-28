@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::ops::Deref;
+use std::{borrow::Cow, ops::Deref};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -80,7 +79,8 @@ impl<T> MaybeUndefined<T> {
         matches!(self, MaybeUndefined::Value(_))
     }
 
-    /// Borrow the value, returns `None` if the the `MaybeUndefined<T>` is `undefined` or `null`, otherwise returns `Some(T)`.
+    /// Borrow the value, returns `None` if the the `MaybeUndefined<T>` is
+    /// `undefined` or `null`, otherwise returns `Some(T)`.
     #[inline]
     pub const fn value(&self) -> Option<&T> {
         match self {
@@ -134,7 +134,8 @@ impl<T> MaybeUndefined<T> {
         }
     }
 
-    /// Returns `true` if the `MaybeUndefined<T>` contains the given nullable value.
+    /// Returns `true` if the `MaybeUndefined<T>` contains the given nullable
+    /// value.
     #[inline]
     pub fn contains<U>(&self, x: &Option<U>) -> bool
     where
@@ -147,7 +148,8 @@ impl<T> MaybeUndefined<T> {
         }
     }
 
-    /// Maps a `MaybeUndefined<T>` to `MaybeUndefined<U>` by applying a function to the contained nullable value
+    /// Maps a `MaybeUndefined<T>` to `MaybeUndefined<U>` by applying a function
+    /// to the contained nullable value
     #[inline]
     pub fn map<U, F: FnOnce(Option<T>) -> Option<U>>(self, f: F) -> MaybeUndefined<U> {
         match self {
@@ -163,7 +165,8 @@ impl<T> MaybeUndefined<T> {
         }
     }
 
-    /// Maps a `MaybeUndefined<T>` to `MaybeUndefined<U>` by applying a function to the contained value
+    /// Maps a `MaybeUndefined<T>` to `MaybeUndefined<U>` by applying a function
+    /// to the contained value
     #[inline]
     pub fn map_value<U, F: FnOnce(T) -> U>(self, f: F) -> MaybeUndefined<U> {
         match self {
@@ -243,11 +246,14 @@ impl<T: InputType> InputType for MaybeUndefined<T> {
 }
 
 impl<T, E> MaybeUndefined<Result<T, E>> {
-    /// Transposes a `MaybeUndefined` of a [`Result`] into a [`Result`] of a `MaybeUndefined`.
+    /// Transposes a `MaybeUndefined` of a [`Result`] into a [`Result`] of a
+    /// `MaybeUndefined`.
     ///
-    /// [`MaybeUndefined::Undefined`] will be mapped to [`Ok`]`(`[`MaybeUndefined::Undefined`]`)`.
-    /// [`MaybeUndefined::Null`] will be mapped to [`Ok`]`(`[`MaybeUndefined::Null`]`)`.
-    /// [`MaybeUndefined::Value`]`(`[`Ok`]`(_))` and [`MaybeUndefined::Value`]`(`[`Err`]`(_))` will be mapped to
+    /// [`MaybeUndefined::Undefined`] will be mapped to
+    /// [`Ok`]`(`[`MaybeUndefined::Undefined`]`)`. [`MaybeUndefined::Null`]
+    /// will be mapped to [`Ok`]`(`[`MaybeUndefined::Null`]`)`.
+    /// [`MaybeUndefined::Value`]`(`[`Ok`]`(_))` and
+    /// [`MaybeUndefined::Value`]`(`[`Err`]`(_))` will be mapped to
     /// [`Ok`]`(`[`MaybeUndefined::Value`]`(_))` and [`Err`]`(_)`.
     #[inline]
     pub fn transpose(self) -> Result<MaybeUndefined<T>, E> {
@@ -306,8 +312,9 @@ impl<T> From<Option<Option<T>>> for MaybeUndefined<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
     use serde::{Deserialize, Serialize};
+
+    use crate::*;
 
     #[test]
     fn test_maybe_undefined_type() {
@@ -401,37 +408,31 @@ mod tests {
 
     #[test]
     fn test_as_opt_ref() {
-        let mut value: MaybeUndefined<String>;
-        let mut r: Option<Option<&String>>;
-
-        value = MaybeUndefined::Undefined;
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Undefined;
+        let r = value.as_opt_ref();
         assert_eq!(r, None);
 
-        value = MaybeUndefined::Null;
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Null;
+        let r = value.as_opt_ref();
         assert_eq!(r, Some(None));
 
-        value = MaybeUndefined::Value("abc".to_string());
-        r = value.as_opt_ref();
+        let value = MaybeUndefined::<String>::Value("abc".to_string());
+        let r = value.as_opt_ref();
         assert_eq!(r, Some(Some(&"abc".to_string())));
     }
 
     #[test]
     fn test_as_opt_deref() {
-        let mut value: MaybeUndefined<String>;
-        let mut r: Option<Option<&str>>;
-
-        value = MaybeUndefined::Undefined;
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Undefined;
+        let r = value.as_opt_deref();
         assert_eq!(r, None);
 
-        value = MaybeUndefined::Null;
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Null;
+        let r = value.as_opt_deref();
         assert_eq!(r, Some(None));
 
-        value = MaybeUndefined::Value("abc".to_string());
-        r = value.as_opt_deref();
+        let value = MaybeUndefined::<String>::Value("abc".to_string());
+        let r = value.as_opt_deref();
         assert_eq!(r, Some(Some("abc")));
     }
 
