@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move the pest parser code generation step into a test. [#901](https://github.com/async-graphql/async-graphql/pull/901)
 - Update `log` to version `0.4.16`. [#903](https://github.com/async-graphql/async-graphql/pull/903)
 - Added impl of `CursorType` for floats [#897](https://github.com/async-graphql/async-graphql/pull/897)
-- 
+- Implement `OutputType` for `tokio::sync::RwLock` and `tokio::sync::Mutex`. [#896](https://github.com/async-graphql/async-graphql/pull/896)
 
 # [3.0.38] 2022-4-8
 
