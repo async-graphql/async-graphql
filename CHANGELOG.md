@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `bson-uuid` feature to implement `ScalarType` for `bson::Uuid`. [#875](https://github.com/async-graphql/async-graphql/pull/875)
 - Bump `regex` crate from `1.4.5` to `1.5.5`. [#862](https://github.com/async-graphql/async-graphql/pull/862)
 - Bump `chrono-tz` crate from `0.5.3` to `0.6.1`. [#831](https://github.com/async-graphql/async-graphql/pull/831)
+- Move the pest parser code generation step into a test. [#901](https://github.com/async-graphql/async-graphql/pull/901)
+- Update `log` to version `0.4.16`. [#903](https://github.com/async-graphql/async-graphql/pull/903)
+- Added impl of `CursorType` for floats [#897](https://github.com/async-graphql/async-graphql/pull/897)
 
 # [3.0.38] 2022-4-8
 

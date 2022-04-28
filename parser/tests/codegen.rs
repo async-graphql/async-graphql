@@ -18,13 +18,11 @@ use super::GraphQLParser;
 
 #[test]
 fn generated_code_is_fresh() {
-    let input = format!(
-        r###"
+    let input = r###"
 #[derive(Parser)]
 #[grammar = r#"graphql.pest"#]
 struct GraphQLParser;
-"###,
-    )
+"###
     .parse::<proc_macro2::TokenStream>()
     .unwrap();
 

@@ -2,11 +2,12 @@
 //!
 //! This module's structure mirrors `types`.
 
+use std::collections::{hash_map, HashMap};
+
 use pest::{
     iterators::{Pair, Pairs},
     Parser,
 };
-use pest_derive::Parser;
 use utils::*;
 
 use crate::{
@@ -16,6 +17,7 @@ use crate::{
 };
 
 mod executable;
+#[allow(clippy::redundant_static_lifetimes)]
 mod generated;
 mod service;
 mod utils;

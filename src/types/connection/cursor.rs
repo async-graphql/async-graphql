@@ -1,6 +1,8 @@
-use std::convert::Infallible;
-use std::fmt::Display;
-use std::num::{ParseFloatError, ParseIntError};
+use std::{
+    convert::Infallible,
+    fmt::Display,
+    num::{ParseFloatError, ParseIntError},
+};
 
 use crate::ID;
 
