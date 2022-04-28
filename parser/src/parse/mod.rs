@@ -2,8 +2,6 @@
 //!
 //! This module's structure mirrors `types`.
 
-use std::collections::hash_map::{self, HashMap};
-
 use pest::{
     iterators::{Pair, Pairs},
     Parser,
@@ -18,15 +16,15 @@ use crate::{
 };
 
 mod executable;
+mod generated;
 mod service;
 mod utils;
 
 use async_graphql_value::{ConstValue, Name, Number, Value};
 pub use executable::parse_query;
+use generated::Rule;
 pub use service::parse_schema;
 
-#[derive(Parser)]
-#[grammar = "graphql.pest"]
 struct GraphQLParser;
 
 fn parse_operation_type(
