@@ -1,17 +1,12 @@
-use std::borrow::Cow;
-use std::collections::BTreeMap;
-use std::fmt::Display;
-use std::str::FromStr;
+use std::{borrow::Cow, collections::BTreeMap, fmt::Display, str::FromStr};
 
-use async_graphql_parser::types::Field;
-use async_graphql_parser::Positioned;
+use async_graphql_parser::{types::Field, Positioned};
 use async_graphql_value::{from_value, to_value};
 use indexmap::IndexMap;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 
-use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
+    registry::{MetaType, MetaTypeId, Registry},
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
 };

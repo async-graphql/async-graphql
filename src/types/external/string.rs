@@ -1,13 +1,14 @@
 use std::borrow::Cow;
 
-use crate::parser::types::Field;
-use crate::registry::Registry;
 use crate::{
-    registry, ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
-    Positioned, Scalar, ScalarType, ServerResult, Value,
+    parser::types::Field, registry, registry::Registry, ContextSelectionSet, InputType,
+    InputValueError, InputValueResult, OutputType, Positioned, Scalar, ScalarType, ServerResult,
+    Value,
 };
 
-/// The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+/// The `String` scalar type represents textual data, represented as UTF-8
+/// character sequences. The String type is most often used by GraphQL to
+/// represent free-form human-readable text.
 #[Scalar(internal)]
 impl ScalarType for String {
     fn parse(value: Value) -> InputValueResult<Self> {

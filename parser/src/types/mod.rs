@@ -1,21 +1,25 @@
 //! GraphQL types.
 //!
-//! The two root types are [`ExecutableDocument`](struct.ExecutableDocument.html) and
-//! [`ServiceDocument`](struct.ServiceDocument.html), representing an executable GraphQL query and a
-//! GraphQL service respectively.
+//! The two root types are
+//! [`ExecutableDocument`](struct.ExecutableDocument.html) and
+//! [`ServiceDocument`](struct.ServiceDocument.html), representing an executable
+//! GraphQL query and a GraphQL service respectively.
 //!
 //! This follows the [June 2018 edition of the GraphQL spec](https://spec.graphql.org/October2021/).
 
 mod executable;
 mod service;
 
-use crate::pos::Positioned;
-use async_graphql_value::{ConstValue, Name, Value};
-use std::collections::{hash_map, HashMap};
-use std::fmt::{self, Display, Formatter, Write};
+use std::{
+    collections::{hash_map, HashMap},
+    fmt::{self, Display, Formatter, Write},
+};
 
+use async_graphql_value::{ConstValue, Name, Value};
 pub use executable::*;
 pub use service::*;
+
+use crate::pos::Positioned;
 
 /// The type of an operation; `query`, `mutation` or `subscription`.
 ///
@@ -82,8 +86,8 @@ impl Display for Type {
     }
 }
 
-/// A GraphQL base type, for example `String` or `[String!]`. This does not include whether the
-/// type is nullable; for that see [Type](struct.Type.html).
+/// A GraphQL base type, for example `String` or `[String!]`. This does not
+/// include whether the type is nullable; for that see [Type](struct.Type.html).
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BaseType {
     /// A named type, such as `String`.
@@ -101,9 +105,10 @@ impl Display for BaseType {
     }
 }
 
-/// A const GraphQL directive, such as `@deprecated(reason: "Use the other field)`. This differs
-/// from [`Directive`](struct.Directive.html) in that it uses [`ConstValue`](enum.ConstValue.html)
-/// instead of [`Value`](enum.Value.html).
+/// A const GraphQL directive, such as `@deprecated(reason: "Use the other
+/// field)`. This differs from [`Directive`](struct.Directive.html) in that it
+/// uses [`ConstValue`](enum.ConstValue.html) instead of
+/// [`Value`](enum.Value.html).
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Directive).
 #[derive(Debug, Clone)]

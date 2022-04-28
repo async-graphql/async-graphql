@@ -1,5 +1,6 @@
-use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 use time::{format_description::FormatItem, macros::format_description, Date};
+
+use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
@@ -29,8 +30,9 @@ impl ScalarType for Date {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ScalarType, Value};
     use time::{macros::date, Date};
+
+    use crate::{ScalarType, Value};
 
     #[test]
     fn test_date_to_value() {

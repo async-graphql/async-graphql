@@ -1,5 +1,6 @@
-use crate::{InputType, InputValueError};
 use zxcvbn::{zxcvbn, ZxcvbnError};
+
+use crate::{InputType, InputValueError};
 
 pub fn min_password_strength<T: AsRef<str> + InputType>(
     value: &T,

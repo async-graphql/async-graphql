@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 use std::fmt::Display;
-use std::num::ParseIntError;
+use std::num::{ParseFloatError, ParseIntError};
 
 use crate::ID;
 
@@ -72,6 +72,30 @@ impl CursorType for ID {
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         Ok(s.to_string().into())
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl CursorType for f64 {
+    type Error = ParseFloatError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl CursorType for f32 {
+    type Error = ParseFloatError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
     }
 
     fn encode_cursor(&self) -> String {

@@ -1,12 +1,11 @@
-use std::borrow::Cow;
-use std::pin::Pin;
+use std::{borrow::Cow, pin::Pin};
 
 use indexmap::IndexMap;
 
-use crate::futures_util::Stream;
-use crate::parser::types::Field;
-use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
+    futures_util::Stream,
+    parser::types::Field,
+    registry::{MetaType, MetaTypeId, Registry},
     CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,
     ServerResult, SimpleObject, SubscriptionType, Value,
 };

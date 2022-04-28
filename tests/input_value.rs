@@ -1,5 +1,6 @@
-use async_graphql::*;
 use std::sync::Arc;
+
+use async_graphql::*;
 
 #[tokio::test]
 pub async fn test_input_value_custom_error() {

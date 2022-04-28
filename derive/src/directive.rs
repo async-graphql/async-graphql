@@ -1,13 +1,14 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::ext::IdentExt;
-use syn::{Error, FnArg, ItemFn, Pat};
+use syn::{ext::IdentExt, Error, FnArg, ItemFn, Pat};
 
-use crate::args;
-use crate::args::{Argument, RenameRuleExt, RenameTarget};
-use crate::utils::{
-    generate_default, get_crate_name, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
-    visible_fn, GeneratorResult,
+use crate::{
+    args,
+    args::{Argument, RenameRuleExt, RenameTarget},
+    utils::{
+        generate_default, get_crate_name, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
+        visible_fn, GeneratorResult,
+    },
 };
 
 pub fn generate(

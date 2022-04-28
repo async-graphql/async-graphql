@@ -1,5 +1,4 @@
-use darling::util::SpannedValue;
-use darling::FromMeta;
+use darling::{util::SpannedValue, FromMeta};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{Error, Expr, Lit, Result};

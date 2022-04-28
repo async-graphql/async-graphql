@@ -561,7 +561,7 @@ pub async fn test_input_object_process_with() {
     }
     #[derive(InputObject)]
     struct MyInput {
-        //processor does nothing on default value
+        // processor does nothing on default value
         #[graphql(default = "  ", process_with = "processor::string")]
         a: String,
 

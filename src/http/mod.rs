@@ -5,15 +5,14 @@ mod multipart;
 mod playground_source;
 mod websocket;
 
+use futures_util::io::{AsyncRead, AsyncReadExt};
 pub use graphiql_source::graphiql_source;
+use mime;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 pub use websocket::{
     ClientMessage, Protocols as WebSocketProtocols, WebSocket, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
 };
-
-use futures_util::io::{AsyncRead, AsyncReadExt};
-use mime;
 
 use crate::{BatchRequest, ParseRequestError, Request};
 
@@ -62,7 +61,8 @@ pub async fn receive_batch_body(
 }
 
 /// Recieves a GraphQL query which is either cbor or json but NOT multipart
-/// This method is only to avoid recursive calls with [``receive_batch_body``] and [``multipart::receive_batch_multipart``]
+/// This method is only to avoid recursive calls with [``receive_batch_body``]
+/// and [``multipart::receive_batch_multipart``]
 pub(super) async fn receive_batch_body_no_multipart(
     content_type: &mime::Mime,
     body: impl AsyncRead + Send,

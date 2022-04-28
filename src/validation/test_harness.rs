@@ -4,10 +4,12 @@
 
 use once_cell::sync::Lazy;
 
-use crate::futures_util::Stream;
-use crate::parser::types::ExecutableDocument;
-use crate::validation::visitor::{visit, RuleError, Visitor, VisitorContext};
-use crate::*;
+use crate::{
+    futures_util::Stream,
+    parser::types::ExecutableDocument,
+    validation::visitor::{visit, RuleError, Visitor, VisitorContext},
+    *,
+};
 
 #[derive(InputObject)]
 #[graphql(internal)]

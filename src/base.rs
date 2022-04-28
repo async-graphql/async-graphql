@@ -1,11 +1,10 @@
-use std::borrow::Cow;
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
 use async_graphql_value::ConstValue;
 
-use crate::parser::types::Field;
-use crate::registry::{self, Registry};
 use crate::{
+    parser::types::Field,
+    registry::{self, Registry},
     ContainerType, Context, ContextSelectionSet, Error, InputValueError, InputValueResult,
     Positioned, Result, ServerResult, Value,
 };
@@ -13,6 +12,12 @@ use crate::{
 #[doc(hidden)]
 pub trait Description {
     fn description() -> &'static str;
+}
+
+/// Used to specify the GraphQL Type name.
+pub trait TypeName: Send + Sync {
+    /// Returns a GraphQL type name.
+    fn type_name() -> Cow<'static, str>;
 }
 
 /// Represents a GraphQL input type.
@@ -67,7 +72,8 @@ pub trait OutputType: Send + Sync {
 
     /// Introspection type name
     ///
-    /// Is the return value of field `__typename`, the interface and union should return the current type, and the others return `Type::type_name`.
+    /// Is the return value of field `__typename`, the interface and union
+    /// should return the current type, and the others return `Type::type_name`.
     fn introspection_type_name(&self) -> Cow<'static, str> {
         Self::type_name()
     }

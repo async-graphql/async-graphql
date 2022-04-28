@@ -1,20 +1,21 @@
+use std::{iter::FromIterator, str::FromStr};
+
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
-use std::iter::FromIterator;
-use std::str::FromStr;
-use syn::ext::IdentExt;
 use syn::{
-    punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Token, Type,
-    TypeReference,
+    ext::IdentExt, punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat,
+    ReturnType, Token, Type, TypeReference,
 };
 
-use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget};
-use crate::output_type::OutputType;
-use crate::utils::{
-    extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+use crate::{
+    args::{self, ComplexityType, RenameRuleExt, RenameTarget},
+    output_type::OutputType,
+    utils::{
+        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
+        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    },
 };
 
 pub fn generate(
@@ -25,10 +26,18 @@ pub fn generate(
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
-    let gql_typename = object_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+    let gql_typename = if !object_args.name_type {
+        object_args
+            .name
+            .as_ref()
+            .map(|name| quote!(::std::borrow::Cow::Borrowed(#name)))
+            .unwrap_or_else(|| {
+                let name = RenameTarget::Type.rename(self_name.clone());
+                quote!(::std::borrow::Cow::Borrowed(#name))
+            })
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = if object_args.use_type_description {
         quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
@@ -286,7 +295,6 @@ pub fn generate(
                     let ident = &method.sig.ident;
 
                     schema_fields.push(quote! {
-                        #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::ObjectType);
                         <#ty>::create_type_info(registry);
                         if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                             registry.create_fake_output_type::<#ty>() {
@@ -681,12 +689,12 @@ pub fn generate(
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                    #gql_typename
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                     let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

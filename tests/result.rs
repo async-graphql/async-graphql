@@ -22,36 +22,35 @@ pub async fn test_fieldresult() {
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
+    let resp = schema.execute("{ error1:optError error2:optError }").await;
     assert_eq!(
-        schema.execute("{ error1:optError error2:optError }").await,
-        Response {
-            data: value!({
-                "error1": null,
-                "error2": null,
-            }),
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![
-                ServerError {
-                    message: "TestError".to_string(),
-                    source: None,
-                    locations: vec![Pos { line: 1, column: 3 }],
-                    path: vec![PathSegment::Field("error1".to_owned())],
-                    extensions: None,
-                },
-                ServerError {
-                    message: "TestError".to_string(),
-                    source: None,
-                    locations: vec![Pos {
-                        line: 1,
-                        column: 19,
-                    }],
-                    path: vec![PathSegment::Field("error2".to_owned())],
-                    extensions: None,
-                },
-            ],
-            http_headers: Default::default(),
-        }
+        resp.data,
+        value!({
+            "error1": null,
+            "error2": null,
+        })
+    );
+    assert_eq!(
+        resp.errors,
+        vec![
+            ServerError {
+                message: "TestError".to_string(),
+                source: None,
+                locations: vec![Pos { line: 1, column: 3 }],
+                path: vec![PathSegment::Field("error1".to_owned())],
+                extensions: None,
+            },
+            ServerError {
+                message: "TestError".to_string(),
+                source: None,
+                locations: vec![Pos {
+                    line: 1,
+                    column: 19,
+                }],
+                path: vec![PathSegment::Field("error2".to_owned())],
+                extensions: None,
+            },
+        ]
     );
 
     assert_eq!(
@@ -183,110 +182,99 @@ pub async fn test_error_propagation() {
     }
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let resp = schema.execute("{ parent { child { name } } }").await;
 
     assert_eq!(
-        schema.execute("{ parent { child { name } } }").await,
-        Response {
-            data: Value::Null,
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![ServerError {
-                message: "myerror".to_string(),
-                source: None,
-                locations: vec![Pos {
-                    line: 1,
-                    column: 20,
-                }],
-                path: vec![
-                    PathSegment::Field("parent".to_owned()),
-                    PathSegment::Field("child".to_owned()),
-                    PathSegment::Field("name".to_owned()),
-                ],
-                extensions: None,
+        resp.errors,
+        vec![ServerError {
+            message: "myerror".to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 20,
             }],
-            http_headers: Default::default(),
-        }
+            path: vec![
+                PathSegment::Field("parent".to_owned()),
+                PathSegment::Field("child".to_owned()),
+                PathSegment::Field("name".to_owned()),
+            ],
+            extensions: None,
+        }]
     );
 
+    let resp = schema.execute("{ parent { childOpt { name } } }").await;
     assert_eq!(
-        schema.execute("{ parent { childOpt { name } } }").await,
-        Response {
-            data: value!({
-                "parent": {
-                    "childOpt": null,
+        resp.data,
+        value!({
+            "parent": {
+                "childOpt": null,
+            }
+        })
+    );
+    assert_eq!(
+        resp.errors,
+        vec![ServerError {
+            message: "myerror".to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 23,
+            }],
+            path: vec![
+                PathSegment::Field("parent".to_owned()),
+                PathSegment::Field("childOpt".to_owned()),
+                PathSegment::Field("name".to_owned()),
+            ],
+            extensions: None,
+        }]
+    );
+
+    let resp = schema.execute("{ parentOpt { child { name } } }").await;
+    assert_eq!(resp.data, value!({ "parentOpt": null }));
+    assert_eq!(
+        resp.errors,
+        vec![ServerError {
+            message: "myerror".to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 23,
+            }],
+            path: vec![
+                PathSegment::Field("parentOpt".to_owned()),
+                PathSegment::Field("child".to_owned()),
+                PathSegment::Field("name".to_owned()),
+            ],
+            extensions: None,
+        }]
+    );
+
+    let resp = schema.execute("{ parentOpt { child { nameOpt } } }").await;
+    assert_eq!(
+        resp.data,
+        value!({
+            "parentOpt": {
+                "child": {
+                    "nameOpt": null,
                 }
-            }),
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![ServerError {
-                message: "myerror".to_string(),
-                source: None,
-                locations: vec![Pos {
-                    line: 1,
-                    column: 23,
-                }],
-                path: vec![
-                    PathSegment::Field("parent".to_owned()),
-                    PathSegment::Field("childOpt".to_owned()),
-                    PathSegment::Field("name".to_owned()),
-                ],
-                extensions: None,
-            }],
-            http_headers: Default::default(),
-        }
+            },
+        })
     );
-
     assert_eq!(
-        schema.execute("{ parentOpt { child { name } } }").await,
-        Response {
-            data: value!({ "parentOpt": null }),
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![ServerError {
-                message: "myerror".to_string(),
-                source: None,
-                locations: vec![Pos {
-                    line: 1,
-                    column: 23,
-                }],
-                path: vec![
-                    PathSegment::Field("parentOpt".to_owned()),
-                    PathSegment::Field("child".to_owned()),
-                    PathSegment::Field("name".to_owned()),
-                ],
-                extensions: None,
+        resp.errors,
+        vec![ServerError {
+            message: "myerror".to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 23,
             }],
-            http_headers: Default::default(),
-        }
-    );
-
-    assert_eq!(
-        schema.execute("{ parentOpt { child { nameOpt } } }").await,
-        Response {
-            data: value!({
-                "parentOpt": {
-                    "child": {
-                        "nameOpt": null,
-                    }
-                },
-            }),
-            extensions: Default::default(),
-            cache_control: Default::default(),
-            errors: vec![ServerError {
-                message: "myerror".to_string(),
-                source: None,
-                locations: vec![Pos {
-                    line: 1,
-                    column: 23,
-                }],
-                path: vec![
-                    PathSegment::Field("parentOpt".to_owned()),
-                    PathSegment::Field("child".to_owned()),
-                    PathSegment::Field("nameOpt".to_owned()),
-                ],
-                extensions: None,
-            }],
-            http_headers: Default::default(),
-        }
+            path: vec![
+                PathSegment::Field("parentOpt".to_owned()),
+                PathSegment::Field("child".to_owned()),
+                PathSegment::Field("nameOpt".to_owned()),
+            ],
+            extensions: None,
+        }]
     );
 }

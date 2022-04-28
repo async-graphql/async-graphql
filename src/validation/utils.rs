@@ -2,8 +2,7 @@ use std::collections::HashSet;
 
 use async_graphql_value::{ConstValue, Value};
 
-use crate::context::QueryPathNode;
-use crate::{registry, QueryPathSegment};
+use crate::{context::QueryPathNode, registry, QueryPathSegment};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Scope<'a> {

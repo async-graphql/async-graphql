@@ -1,15 +1,12 @@
-use std::future::Future;
-use std::str::FromStr;
+use std::{future::Future, str::FromStr};
 
-use async_graphql::http::{
-    WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
+use async_graphql::{
+    http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
+    Data, ObjectType, Result, Schema, SubscriptionType,
 };
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures_util::future::Ready;
-use futures_util::{future, StreamExt};
+use futures_util::{future, future::Ready, StreamExt};
 use tide::Endpoint;
-use tide_websockets::tungstenite::protocol::CloseFrame;
-use tide_websockets::Message;
+use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 
 /// A GraphQL subscription endpoint builder.
 #[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
@@ -49,10 +46,12 @@ where
     OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Clone + Send + Sync + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Specify a callback function to be called when the connection is initialized.
+    /// Specify a callback function to be called when the connection is
+    /// initialized.
     ///
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
-    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    /// The data returned by this callback function will be merged with the data
+    /// specified by [`with_data`].
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,

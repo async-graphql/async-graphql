@@ -1,5 +1,7 @@
-use std::num::ParseIntError;
-use std::ops::{Deref, DerefMut};
+use std::{
+    num::ParseIntError,
+    ops::{Deref, DerefMut},
+};
 
 #[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
@@ -9,7 +11,8 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// ID scalar
 ///
-/// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is a string.
+/// The input is a `&str`, `String`, `usize` or `uuid::UUID`, and the output is
+/// a string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct ID(pub String);

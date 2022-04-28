@@ -1,23 +1,31 @@
 use async_graphql::http::MultipartOptions;
-use poem::error::BadRequest;
-use poem::http::{header, Method};
-use poem::web::Query;
-use poem::{async_trait, FromRequest, Request, RequestBody, Result};
+use poem::{
+    async_trait,
+    error::BadRequest,
+    http::{header, Method},
+    web::Query,
+    FromRequest, Request, RequestBody, Result,
+};
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// An extractor for GraphQL request.
 ///
-/// You can just use the extractor as in the example below, but I would recommend using
-/// the [`GraphQL`](crate::GraphQL) endpoint because it is easier to integrate.
+/// You can just use the extractor as in the example below, but I would
+/// recommend using the [`GraphQL`](crate::GraphQL) endpoint because it is
+/// easier to integrate.
 ///
 /// # Example
 ///
 /// ```
-/// use poem::{handler, Route, post, EndpointExt};
-/// use poem::web::{Json, Data};
-/// use poem::middleware::AddData;
-/// use async_graphql_poem::GraphQLRequest;
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
+/// use async_graphql_poem::GraphQLRequest;
+/// use poem::{
+///     handler,
+///     middleware::AddData,
+///     post,
+///     web::{Data, Json},
+///     EndpointExt, Route,
+/// };
 ///
 /// struct Query;
 ///

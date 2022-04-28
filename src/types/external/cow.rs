@@ -29,8 +29,9 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::*;
     use std::borrow::Cow;
+
+    use crate::*;
 
     #[tokio::test]
     async fn test_cow_type() {

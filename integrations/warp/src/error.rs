@@ -1,16 +1,21 @@
-use std::error::Error;
-use std::fmt::{self, Display, Formatter};
+use std::{
+    error::Error,
+    fmt::{self, Display, Formatter},
+};
 
 use async_graphql::ParseRequestError;
-use warp::http::{Response, StatusCode};
-use warp::hyper::Body;
-use warp::reject::Reject;
-use warp::Reply;
+use warp::{
+    http::{Response, StatusCode},
+    hyper::Body,
+    reject::Reject,
+    Reply,
+};
 
 /// Bad request error.
 ///
-/// It's a wrapper of `async_graphql::ParseRequestError`. It is also a `Reply` - by default it just
-/// returns a response containing the error message in plain text.
+/// It's a wrapper of `async_graphql::ParseRequestError`. It is also a `Reply` -
+/// by default it just returns a response containing the error message in plain
+/// text.
 #[derive(Debug)]
 pub struct GraphQLBadRequest(pub ParseRequestError);
 

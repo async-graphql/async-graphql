@@ -1,8 +1,11 @@
 use std::collections::HashSet;
 
-use crate::model::{__InputValue, __Type};
-use crate::registry::is_visible;
-use crate::{registry, Context, Object};
+use crate::{
+    model::{__InputValue, __Type},
+    registry,
+    registry::is_visible,
+    Context, Object,
+};
 
 pub struct __Field<'a> {
     pub registry: &'a registry::Registry,
@@ -10,7 +13,8 @@ pub struct __Field<'a> {
     pub field: &'a registry::MetaField,
 }
 
-/// Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.
+/// Object and Interface types are described by a list of Fields, each of which
+/// has a name, potentially a list of arguments, and a return type.
 #[Object(internal, name = "__Field")]
 impl<'a> __Field<'a> {
     #[inline]

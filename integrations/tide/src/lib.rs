@@ -11,19 +11,19 @@
 #[cfg(feature = "websocket")]
 mod subscription;
 
-use async_graphql::http::MultipartOptions;
-use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
-use tide::utils::async_trait;
+use async_graphql::{
+    http::MultipartOptions, ObjectType, ParseRequestError, Schema, SubscriptionType,
+};
+#[cfg(feature = "websocket")]
+pub use subscription::GraphQLSubscription;
 use tide::{
     http::{
         headers::{self, HeaderValue},
         Method,
     },
+    utils::async_trait,
     Body, Request, Response, StatusCode,
 };
-
-#[cfg(feature = "websocket")]
-pub use subscription::GraphQLSubscription;
 
 /// Create a new GraphQL endpoint with the schema.
 ///
@@ -106,7 +106,8 @@ pub async fn receive_request<State: Clone + Send + Sync + 'static>(
     receive_request_opts(request, Default::default()).await
 }
 
-/// Convert a Tide request to a GraphQL request with options on how to receive multipart.
+/// Convert a Tide request to a GraphQL request with options on how to receive
+/// multipart.
 pub async fn receive_request_opts<State: Clone + Send + Sync + 'static>(
     request: Request<State>,
     opts: MultipartOptions,
@@ -124,7 +125,8 @@ pub async fn receive_batch_request<State: Clone + Send + Sync + 'static>(
     receive_batch_request_opts(request, Default::default()).await
 }
 
-/// Convert a Tide request to a GraphQL batch request with options on how to receive multipart.
+/// Convert a Tide request to a GraphQL batch request with options on how to
+/// receive multipart.
 pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
     mut request: Request<State>,
     opts: MultipartOptions,

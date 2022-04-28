@@ -1,5 +1,4 @@
-use std::fmt::Display;
-use std::ops::Rem;
+use std::{fmt::Display, ops::Rem};
 
 use num_traits::{AsPrimitive, Zero};
 

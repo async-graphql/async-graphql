@@ -1,5 +1,6 @@
-use super::*;
 use async_graphql_value::Name;
+
+use super::*;
 
 /// Parse a GraphQL query document.
 ///
@@ -399,8 +400,9 @@ fn parse_type_condition(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
+    use super::*;
 
     #[test]
     fn test_parser() {

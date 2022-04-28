@@ -1,14 +1,15 @@
+use std::str::FromStr;
+
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use std::str::FromStr;
-use syn::ext::IdentExt;
-use syn::visit::Visit;
-use syn::{Error, Ident, LifetimeDef, Path, Type};
+use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeDef, Path, Type};
 
-use crate::args::{self, RenameRuleExt, RenameTarget, SimpleObjectField};
-use crate::utils::{
-    gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+use crate::{
+    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
+    utils::{
+        gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+    },
 };
 
 #[derive(Debug)]
@@ -29,10 +30,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let ident = &object_args.ident;
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
-    let gql_typename = object_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !object_args.name_type {
+        object_args
+            .name
+            .as_ref()
+            .map(|name| quote!(::std::borrow::Cow::Borrowed(#name)))
+            .unwrap_or_else(|| {
+                let name = RenameTarget::Type.rename(ident.to_string());
+                quote!(::std::borrow::Cow::Borrowed(#name))
+            })
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -172,7 +181,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             });
         } else {
             schema_fields.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::ObjectType);
                 #ty::create_type_info(registry);
                 if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                     registry.create_fake_output_type::<#ty>() {
@@ -307,12 +315,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             #[#crate_name::async_trait::async_trait]
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                    #gql_typename
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                     registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

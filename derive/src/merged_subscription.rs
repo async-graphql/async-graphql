@@ -4,8 +4,10 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::{Error, LitInt};
 
-use crate::args::{self, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::{
+    args::{self, RenameTarget},
+    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+};
 
 pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);

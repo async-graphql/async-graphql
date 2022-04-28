@@ -43,7 +43,8 @@
 //! * Rustfmt friendly (Procedural Macro)
 //! * Custom scalars
 //! * Minimal overhead
-//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
+//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide,
+//!   warp, rocket ...)
 //! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions
@@ -56,20 +57,27 @@
 //!
 //! ## Crate features
 //!
-//! This crate offers the following features, all of which are not activated by default:
+//! This crate offers the following features, all of which are not activated by
+//! default:
 //!
-//! - `apollo_tracing`: Enable the [Apollo tracing extension](extensions/struct.ApolloTracing.html).
-//! - `apollo_persisted_queries`: Enable the [Apollo persisted queries extension](extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).
+//! - `apollo_tracing`: Enable the [Apollo tracing
+//!   extension](extensions/struct.ApolloTracing.html).
+//! - `apollo_persisted_queries`: Enable the [Apollo persisted queries
+//!   extension](extensions/apollo_persisted_queries/struct.
+//!   ApolloPersistedQueries.html).
 //! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
 //! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
-//! - `opentelemetry`: Enable the [OpenTelemetry extension](extensions/struct.OpenTelemetry.html).
-//! - `unblock`: Support [asynchronous reader for Upload](types/struct.Upload.html)
+//! - `opentelemetry`: Enable the [OpenTelemetry
+//!   extension](extensions/struct.OpenTelemetry.html).
+//! - `unblock`: Support [asynchronous reader for
+//!   Upload](types/struct.Upload.html)
 //! - `bson`: Integrate with the [`bson` crate](https://crates.io/crates/bson).
 //! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
-//! - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
+//! - `string_number`: Enable the
+//!   [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 //! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
 //! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
@@ -125,7 +133,6 @@
 //! ```
 //!
 //! Now a HTML report is available at `benchmark/target/criterion/report`.
-//!
 
 #![deny(clippy::all)]
 // #![deny(clippy::pedantic)]
@@ -192,58 +199,55 @@ pub mod validators;
 #[doc(hidden)]
 pub mod registry;
 
-#[doc(hidden)]
-pub use async_stream;
-#[doc(hidden)]
-pub use async_trait;
-#[doc(hidden)]
-pub use context::ContextSelectionSet;
-#[doc(hidden)]
-pub use futures_util;
-#[doc(hidden)]
-pub use indexmap;
-#[doc(hidden)]
-pub use static_assertions;
-#[doc(hidden)]
-pub use subscription::SubscriptionType;
-
 pub use async_graphql_parser as parser;
 pub use async_graphql_value::{
     from_value, to_value, value, ConstValue as Value, DeserializerError, Name, Number,
     SerializerError, Variables,
 };
+#[doc(hidden)]
+pub use async_stream;
+#[doc(hidden)]
+pub use async_trait;
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,
-    OneofObjectType, OutputType, UnionType,
+    OneofObjectType, OutputType, TypeName, UnionType,
 };
+#[doc(hidden)]
+pub use context::ContextSelectionSet;
+pub use context::*;
 pub use custom_directive::{CustomDirective, CustomDirectiveFactory};
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
 pub use extensions::ResolveFut;
+#[doc(hidden)]
+pub use futures_util;
 pub use guard::{Guard, GuardExt};
+#[doc(hidden)]
+pub use indexmap;
 pub use look_ahead::Lookahead;
+#[doc(no_inline)]
+pub use parser::{Pos, Positioned};
 pub use registry::CacheControl;
 pub use request::{BatchRequest, Request};
 #[doc(no_inline)]
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
+#[doc(hidden)]
+pub use static_assertions;
+pub use subscription::SubscriptionType;
+pub use types::*;
 pub use validation::{ValidationMode, ValidationResult, VisitorContext};
 pub use validators::CustomValidator;
 
-pub use context::*;
-#[doc(no_inline)]
-pub use parser::{Pos, Positioned};
-pub use types::*;
-
-/// An alias of [async_graphql::Error](struct.Error.html). Present for backward compatibility
-/// reasons.
+/// An alias of [async_graphql::Error](struct.Error.html). Present for backward
+/// compatibility reasons.
 pub type FieldError = Error;
 
-/// An alias of [async_graphql::Result](type.Result.html). Present for backward compatibility
-/// reasons.
+/// An alias of [async_graphql::Result](type.Result.html). Present for backward
+/// compatibility reasons.
 pub type FieldResult<T> = Result<T>;
 
 #[doc = include_str!("docs/complex_object.md")]

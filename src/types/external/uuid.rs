@@ -7,9 +7,9 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
     name = "UUID",
     specified_by_url = "http://tools.ietf.org/html/rfc4122"
 )]
-/// A UUID is a unique 128-bit number, stored as 16 octets. UUIDs are parsed as Strings
-/// within GraphQL. UUIDs are used to assign unique identifiers to entities without requiring a central
-/// allocating authority.
+/// A UUID is a unique 128-bit number, stored as 16 octets. UUIDs are parsed as
+/// Strings within GraphQL. UUIDs are used to assign unique identifiers to
+/// entities without requiring a central allocating authority.
 ///
 /// # References
 ///

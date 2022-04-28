@@ -58,20 +58,23 @@
 
 mod cache;
 
-use std::any::{Any, TypeId};
-use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::{
+    any::{Any, TypeId},
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+    hash::Hash,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    time::Duration,
+};
 
+pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
 use fnv::FnvHashMap;
 use futures_channel::oneshot;
 use futures_timer::Delay;
 use futures_util::future::BoxFuture;
-
-pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
 
 #[allow(clippy::type_complexity)]
 struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
@@ -231,9 +234,11 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         Self { delay, ..self }
     }
 
-    /// pub fn Specify the max batch size for loading data, the default is `1000`.
+    /// pub fn Specify the max batch size for loading data, the default is
+    /// `1000`.
     ///
-    /// If the keys waiting to be loaded reach the threshold, they are loaded immediately.
+    /// If the keys waiting to be loaded reach the threshold, they are loaded
+    /// immediately.
     #[must_use]
     pub fn max_batch_size(self, max_batch_size: usize) -> Self {
         Self {
@@ -387,7 +392,8 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
     /// Feed some data into the cache.
     ///
-    /// **NOTE: If the cache type is [NoCache], this function will not take effect. **
+    /// **NOTE: If the cache type is [NoCache], this function will not take
+    /// effect. **
     pub async fn feed_many<K, I>(&self, values: I)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -410,7 +416,8 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
     /// Feed some data into the cache.
     ///
-    /// **NOTE: If the cache type is [NoCache], this function will not take effect. **
+    /// **NOTE: If the cache type is [NoCache], this function will not take
+    /// effect. **
     pub async fn feed_one<K>(&self, key: K, value: T::Value)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -421,7 +428,8 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
     /// Clears the cache.
     ///
-    /// **NOTE: If the cache type is [NoCache], this function will not take effect. **
+    /// **NOTE: If the cache type is [NoCache], this function will not take
+    /// effect. **
     pub fn clear<K>(&self)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -440,9 +448,11 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use fnv::FnvBuildHasher;
     use std::sync::Arc;
+
+    use fnv::FnvBuildHasher;
+
+    use super::*;
 
     struct MyLoader;
 

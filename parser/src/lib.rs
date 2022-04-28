@@ -9,15 +9,15 @@
 #![allow(clippy::needless_question_mark)]
 #![forbid(unsafe_code)]
 
-use crate::types::OperationType;
-use async_graphql_value::Name;
-use pest::error::LineColLocation;
-use pest::RuleType;
-use serde::{Serialize, Serializer};
 use std::fmt::{self, Display, Formatter};
 
+use async_graphql_value::Name;
 pub use parse::{parse_query, parse_schema};
+use pest::{error::LineColLocation, RuleType};
 pub use pos::{Pos, Positioned};
+use serde::{Serialize, Serializer};
+
+use crate::types::OperationType;
 
 pub mod types;
 

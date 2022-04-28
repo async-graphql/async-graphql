@@ -1,8 +1,10 @@
 use std::fmt::{self, Display, Formatter};
 
-use darling::ast::{Data, Fields};
-use darling::util::{Ignored, SpannedValue};
-use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
+use darling::{
+    ast::{Data, Fields},
+    util::{Ignored, SpannedValue},
+    FromDeriveInput, FromField, FromMeta, FromVariant,
+};
 use inflector::Inflector;
 use syn::{
     Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, NestedMeta, Path, Type, Visibility,
@@ -186,6 +188,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub rename_args: Option<RenameRule>,
@@ -226,6 +230,7 @@ pub struct Argument {
 pub struct Object {
     pub internal: bool,
     pub name: Option<String>,
+    pub name_type: bool,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub cache_control: CacheControl,
