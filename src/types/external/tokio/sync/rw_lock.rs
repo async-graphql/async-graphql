@@ -1,13 +1,12 @@
-use tokio::sync::RwLock;
 use std::borrow::Cow;
 
 use async_graphql_parser::types::Field;
+use tokio::sync::RwLock;
 
 use crate::{registry, ContextSelectionSet, OutputType, Positioned, ServerResult, Value};
 
 #[async_trait::async_trait]
-impl<T: OutputType> OutputType for RwLock<T>
-{
+impl<T: OutputType> OutputType for RwLock<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
