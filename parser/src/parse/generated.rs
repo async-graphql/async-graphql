@@ -3,9 +3,6 @@
 #![allow(unused_attributes)]
 use super::GraphQLParser;
 
-#[allow(non_upper_case_globals)]
-const _PEST_GRAMMAR_GraphQLParser: &'static str =
-    include_str!("/Users/sunli/work/async-graphql/parser/src/graphql.pest");
 #[allow(dead_code, non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Rule {
