@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::pin::Pin;
+use std::{borrow::Cow, pin::Pin};
 
 use futures_util::stream::{self, Stream};
 
@@ -7,7 +6,8 @@ use crate::{registry, Context, Response, ServerError, SubscriptionType};
 
 /// Empty subscription
 ///
-/// Only the parameters used to construct the Schema, representing an unconfigured subscription.
+/// Only the parameters used to construct the Schema, representing an
+/// unconfigured subscription.
 #[derive(Default, Copy, Clone)]
 pub struct EmptySubscription;
 

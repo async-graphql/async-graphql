@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.0] 2022-4-19
+
+- Implement the `ConnectionNameType` and `EdgeNameType` traits to specify GraphQL type names for `Connection` and `Edge`, which can be automatically generated using `DefaultConnectionName` and `DefaultEdgeName`.
+- Add `#[non_exhaustive]` attribute to Request/Response types.
+- Introduce ability to pre-parse Request's query. [#891](https://github.com/async-graphql/async-graphql/pull/891)
+- Add `introspection-only` mode. [#894](https://github.com/async-graphql/async-graphql/pull/894)
+- Add `bson-uuid` feature to implement `ScalarType` for `bson::Uuid`. [#875](https://github.com/async-graphql/async-graphql/pull/875)
+- Bump `regex` crate from `1.4.5` to `1.5.5`. [#862](https://github.com/async-graphql/async-graphql/pull/862)
+- Bump `chrono-tz` crate from `0.5.3` to `0.6.1`. [#831](https://github.com/async-graphql/async-graphql/pull/831)
+- Move the pest parser code generation step into a test. [#901](https://github.com/async-graphql/async-graphql/pull/901)
+- Update `log` to version `0.4.16`. [#903](https://github.com/async-graphql/async-graphql/pull/903)
+- Added impl of `CursorType` for floats [#897](https://github.com/async-graphql/async-graphql/pull/897)
+- Implement `OutputType` for `tokio::sync::RwLock` and `tokio::sync::Mutex`. [#896](https://github.com/async-graphql/async-graphql/pull/896)
+
 # [3.0.38] 2022-4-8
 
 - Update Axum integration to Axum 0.5.1 [#883](https://github.com/async-graphql/async-graphql/pull/883)

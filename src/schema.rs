@@ -1,26 +1,41 @@
-use std::any::Any;
-use std::collections::HashMap;
-use std::ops::Deref;
-use std::sync::Arc;
+use std::{any::Any, collections::HashMap, ops::Deref, sync::Arc};
 
 use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
 
-use crate::context::{Data, QueryEnvInner};
-use crate::custom_directive::CustomDirectiveFactory;
-use crate::extensions::{ExtensionFactory, Extensions};
-use crate::model::__DirectiveLocation;
-use crate::parser::types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet};
-use crate::parser::{parse_query, Positioned};
-use crate::registry::{MetaDirective, MetaInputValue, Registry};
-use crate::resolver_utils::{resolve_container, resolve_container_serial};
-use crate::subscription::collect_subscription_streams;
-use crate::types::QueryRoot;
-use crate::validation::{check_rules, ValidationMode};
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, InputType, ObjectType, OutputType,
-    QueryEnv, Request, Response, ServerError, SubscriptionType, Variables, ID,
+    context::{Data, QueryEnvInner},
+    custom_directive::CustomDirectiveFactory,
+    extensions::{ExtensionFactory, Extensions},
+    model::__DirectiveLocation,
+    parser::{
+        parse_query,
+        types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet},
+        Positioned,
+    },
+    registry::{MetaDirective, MetaInputValue, Registry},
+    resolver_utils::{resolve_container, resolve_container_serial},
+    subscription::collect_subscription_streams,
+    types::QueryRoot,
+    validation::{check_rules, ValidationMode},
+    BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
+    InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError, SubscriptionType,
+    Variables, ID,
 };
+
+/// Introspection mode
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum IntrospectionMode {
+    IntrospectionOnly,
+    Enabled,
+    Disabled,
+}
+
+impl Default for IntrospectionMode {
+    fn default() -> Self {
+        IntrospectionMode::Enabled
+    }
+}
 
 /// Schema builder
 pub struct SchemaBuilder<Query, Mutation, Subscription> {
@@ -39,7 +54,8 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
 impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription> {
     /// Manually register a input type in the schema.
     ///
-    /// You can use this function to register schema types that are not directly referenced.
+    /// You can use this function to register schema types that are not directly
+    /// referenced.
     #[must_use]
     pub fn register_input_type<T: InputType>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
@@ -48,7 +64,8 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 
     /// Manually register a output type in the schema.
     ///
-    /// You can use this function to register schema types that are not directly referenced.
+    /// You can use this function to register schema types that are not directly
+    /// referenced.
     #[must_use]
     pub fn register_output_type<T: OutputType>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
@@ -58,11 +75,20 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Disable introspection queries.
     #[must_use]
     pub fn disable_introspection(mut self) -> Self {
-        self.registry.disable_introspection = true;
+        self.registry.introspection_mode = IntrospectionMode::Disabled;
         self
     }
 
-    /// Set the maximum complexity a query can have. By default, there is no limit.
+    /// Only process introspection queries, everything else is processed as an
+    /// error.
+    #[must_use]
+    pub fn introspection_only(mut self) -> Self {
+        self.registry.introspection_mode = IntrospectionMode::IntrospectionOnly;
+        self
+    }
+
+    /// Set the maximum complexity a query can have. By default, there is no
+    /// limit.
     #[must_use]
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
         self.complexity = Some(complexity);
@@ -92,7 +118,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     ///     }
     /// }
     ///
-    /// let schema = Schema::build(Query, EmptyMutation,EmptySubscription)
+    /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     ///     .extension(extensions::Logger)
     ///     .finish();
     /// ```
@@ -102,7 +128,8 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Add a global data that can be accessed in the `Schema`. You access it with `Context::data`.
+    /// Add a global data that can be accessed in the `Schema`. You access it
+    /// with `Context::data`.
     #[must_use]
     pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
         self.data.insert(data);
@@ -116,7 +143,8 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Enable federation, which is automatically enabled if the Query has least one entity definition.
+    /// Enable federation, which is automatically enabled if the Query has least
+    /// one entity definition.
     #[must_use]
     pub fn enable_federation(mut self) -> Self {
         self.registry.enable_federation = true;
@@ -125,7 +153,8 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 
     /// Make the Federation SDL include subscriptions.
     ///
-    /// Note: Not included by default, in order to be compatible with Apollo Server.
+    /// Note: Not included by default, in order to be compatible with Apollo
+    /// Server.
     #[must_use]
     pub fn enable_subscription_in_federation(mut self) -> Self {
         self.registry.federation_subscription = true;
@@ -303,7 +332,7 @@ where
             } else {
                 Some(Subscription::type_name().to_string())
             },
-            disable_introspection: false,
+            introspection_mode: IntrospectionMode::Enabled,
             enable_federation: false,
             federation_subscription: false,
         };
@@ -402,9 +431,10 @@ where
 
     /// Get all names in this schema
     ///
-    /// Maybe you want to serialize a custom binary protocol. In order to minimize message size, a dictionary
-    /// is usually used to compress type names, field names, directive names, and parameter names. This function gets all the names,
-    /// so you can create this dictionary.
+    /// Maybe you want to serialize a custom binary protocol. In order to
+    /// minimize message size, a dictionary is usually used to compress type
+    /// names, field names, directive names, and parameter names. This function
+    /// gets all the names, so you can create this dictionary.
     pub fn names(&self) -> Vec<String> {
         self.0.env.registry.names()
     }
@@ -427,13 +457,19 @@ where
         let query_data = Arc::new(std::mem::take(&mut request.data));
         extensions.attach_query_data(query_data.clone());
 
-        let request = extensions.prepare_request(request).await?;
+        let mut request = extensions.prepare_request(request).await?;
         let mut document = {
             let query = &request.query;
-            let fut_parse = async { parse_query(&query).map_err(Into::<ServerError>::into) };
+            let parsed_doc = request.parsed_query.take();
+            let fut_parse = async move {
+                match parsed_doc {
+                    Some(parsed_doc) => Ok(parsed_doc),
+                    None => parse_query(query).map_err(Into::into),
+                }
+            };
             futures_util::pin_mut!(fut_parse);
             extensions
-                .parse_query(&query, &request.variables, &mut fut_parse)
+                .parse_query(query, &request.variables, &mut fut_parse)
                 .await?
         };
 
@@ -509,7 +545,11 @@ where
             session_data,
             ctx_data: query_data,
             http_headers: Default::default(),
-            disable_introspection: request.disable_introspection,
+            introspection_mode: if request.disable_introspection {
+                IntrospectionMode::Disabled
+            } else {
+                request.introspection_mode
+            },
             errors: Default::default(),
         };
         Ok((QueryEnv::new(env), validation_result.cache_control))
@@ -526,7 +566,15 @@ where
 
         let res = match &env.operation.node.ty {
             OperationType::Query => resolve_container(&ctx, &self.query).await,
-            OperationType::Mutation => resolve_container_serial(&ctx, &self.mutation).await,
+            OperationType::Mutation => {
+                if self.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
+                    || env.introspection_mode == IntrospectionMode::IntrospectionOnly
+                {
+                    resolve_container_serial(&ctx, &EmptyMutation).await
+                } else {
+                    resolve_container_serial(&ctx, &self.mutation).await
+                }
+            }
             OperationType::Subscription => Err(ServerError::new(
                 "Subscriptions are not supported on this transport.",
                 None,
@@ -621,7 +669,15 @@ where
                 );
 
                 let mut streams = Vec::new();
-                if let Err(err) = collect_subscription_streams(&ctx, &schema.subscription, &mut streams) {
+                let collect_result = if schema.env.registry.introspection_mode
+                    == IntrospectionMode::IntrospectionOnly
+                    || env.introspection_mode == IntrospectionMode::IntrospectionOnly
+                {
+                    collect_subscription_streams(&ctx, &EmptySubscription, &mut streams)
+                } else {
+                    collect_subscription_streams(&ctx, &schema.subscription, &mut streams)
+                };
+                if let Err(err) = collect_result {
                     yield Response::from_errors(vec![err]);
                 }
 

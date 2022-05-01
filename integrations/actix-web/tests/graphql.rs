@@ -1,9 +1,7 @@
 use actix_http::Method;
-use actix_web::dev::Service;
-use actix_web::{guard, test, web, web::Data, App};
-use serde_json::json;
-
+use actix_web::{dev::Service, guard, test, web, web::Data, App};
 use async_graphql::*;
+use serde_json::json;
 use test_utils::*;
 
 mod test_utils;

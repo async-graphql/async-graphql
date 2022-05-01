@@ -1,10 +1,12 @@
-use crate::model::__DirectiveLocation;
-use crate::parser::types::{
-    Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
-    OperationType,
+use crate::{
+    model::__DirectiveLocation,
+    parser::types::{
+        Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
+        OperationType,
+    },
+    validation::visitor::{Visitor, VisitorContext},
+    Name, Positioned,
 };
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Name, Positioned};
 
 #[derive(Default)]
 pub struct KnownDirectives {

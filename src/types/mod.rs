@@ -23,8 +23,7 @@ pub use id::ID;
 pub use json::Json;
 pub use maybe_undefined::MaybeUndefined;
 pub use merged_object::{MergedObject, MergedObjectTail};
+pub(crate) use query_root::QueryRoot;
 #[cfg(feature = "string_number")]
 pub use string_number::StringNumber;
 pub use upload::{Upload, UploadValue};
-
-pub(crate) use query_root::QueryRoot;

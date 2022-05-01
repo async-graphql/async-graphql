@@ -9,21 +9,21 @@ mod serializer;
 mod value_serde;
 mod variables;
 
-use std::borrow::{Borrow, Cow};
-use std::fmt::{self, Display, Formatter, Write};
-use std::ops::Deref;
-use std::sync::Arc;
+use std::{
+    borrow::{Borrow, Cow},
+    fmt::{self, Display, Formatter, Write},
+    ops::Deref,
+    sync::Arc,
+};
 
 use bytes::Bytes;
-use indexmap::IndexMap;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
 pub use deserializer::{from_value, DeserializerError};
 #[doc(hidden)]
 pub use indexmap;
+use indexmap::IndexMap;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use serde_json::Number;
 pub use serializer::{to_value, SerializerError};
-
 pub use variables::Variables;
 
 /// A GraphQL name.
@@ -118,8 +118,9 @@ impl<'de> Deserialize<'de> for Name {
 
 /// A resolved GraphQL value, for example `1` or `"Hello World!"`.
 ///
-/// It can be serialized and deserialized. Enums will be converted to strings. Attempting to
-/// serialize `Upload` will fail, and `Enum` and `Upload` cannot be deserialized.
+/// It can be serialized and deserialized. Enums will be converted to strings.
+/// Attempting to serialize `Upload` will fail, and `Enum` and `Upload` cannot
+/// be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
 #[derive(Clone, Debug, Eq)]
@@ -282,7 +283,8 @@ impl ConstValue {
         }
     }
 
-    /// Attempt to convert the value into JSON. This is equivalent to the `TryFrom` implementation.
+    /// Attempt to convert the value into JSON. This is equivalent to the
+    /// `TryFrom` implementation.
     ///
     /// # Errors
     ///
@@ -291,7 +293,8 @@ impl ConstValue {
         self.try_into()
     }
 
-    /// Attempt to convert JSON into a value. This is equivalent to the `TryFrom` implementation.
+    /// Attempt to convert JSON into a value. This is equivalent to the
+    /// `TryFrom` implementation.
     ///
     /// # Errors
     ///
@@ -340,9 +343,9 @@ impl TryFrom<ConstValue> for serde_json::Value {
 /// A GraphQL value, for example `1`, `$name` or `"Hello World!"`. This is
 /// [`ConstValue`](enum.ConstValue.html) with variables.
 ///
-/// It can be serialized and deserialized. Enums will be converted to strings. Attempting to
-/// serialize `Upload` or `Variable` will fail, and `Enum`, `Upload` and `Variable` cannot be
-/// deserialized.
+/// It can be serialized and deserialized. Enums will be converted to strings.
+/// Attempting to serialize `Upload` or `Variable` will fail, and `Enum`,
+/// `Upload` and `Variable` cannot be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -368,7 +371,8 @@ pub enum Value {
 }
 
 impl Value {
-    /// Attempt to convert the value into a const value by using a function to get a variable.
+    /// Attempt to convert the value into a const value by using a function to
+    /// get a variable.
     pub fn into_const_with<E>(
         self,
         mut f: impl FnMut(Name) -> Result<ConstValue, E>,
@@ -410,7 +414,8 @@ impl Value {
         self.into_const_with(|_| Err(())).ok()
     }
 
-    /// Attempt to convert the value into JSON. This is equivalent to the `TryFrom` implementation.
+    /// Attempt to convert the value into JSON. This is equivalent to the
+    /// `TryFrom` implementation.
     ///
     /// # Errors
     ///
@@ -419,7 +424,8 @@ impl Value {
         self.try_into()
     }
 
-    /// Attempt to convert JSON into a value. This is equivalent to the `TryFrom` implementation.
+    /// Attempt to convert JSON into a value. This is equivalent to the
+    /// `TryFrom` implementation.
     ///
     /// # Errors
     ///

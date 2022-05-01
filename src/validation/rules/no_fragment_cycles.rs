@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread};
-use crate::validation::visitor::{RuleError, Visitor, VisitorContext};
-use crate::{Name, Pos, Positioned};
+use crate::{
+    parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread},
+    validation::visitor::{RuleError, Visitor, VisitorContext},
+    Name, Pos, Positioned,
+};
 
 struct CycleDetector<'a> {
     visited: HashSet<&'a str>,

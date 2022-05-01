@@ -1,14 +1,18 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::ext::IdentExt;
-use syn::{Block, Error, ImplItem, ItemImpl, ReturnType, Type, TypeImplTrait, TypeParamBound};
+use syn::{
+    ext::IdentExt, Block, Error, ImplItem, ItemImpl, ReturnType, Type, TypeImplTrait,
+    TypeParamBound,
+};
 
-use crate::args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField};
-use crate::output_type::OutputType;
-use crate::utils::{
-    extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-    get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-    parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+use crate::{
+    args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField},
+    output_type::OutputType,
+    utils::{
+        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
+        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
+        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+    },
 };
 
 pub fn generate(

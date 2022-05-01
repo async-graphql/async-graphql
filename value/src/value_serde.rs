@@ -1,9 +1,11 @@
 use std::fmt::{self, Formatter};
 
 use indexmap::IndexMap;
-use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
-use serde::ser::Error as SerError;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de::{Error as DeError, MapAccess, SeqAccess, Visitor},
+    ser::Error as SerError,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 use crate::{ConstValue, Number, Value};
 

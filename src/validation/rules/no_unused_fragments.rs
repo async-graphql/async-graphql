@@ -1,11 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::parser::types::{
-    ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
+use crate::{
+    parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition},
+    validation::{
+        utils::Scope,
+        visitor::{Visitor, VisitorContext},
+    },
+    Name, Pos, Positioned,
 };
-use crate::validation::utils::Scope;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::{Name, Pos, Positioned};
 
 #[derive(Default)]
 pub struct NoUnusedFragments<'a> {

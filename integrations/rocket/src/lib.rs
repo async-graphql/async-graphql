@@ -1,10 +1,11 @@
 //! Async-graphql integration with Rocket.
 //!
-//! Note: This integrates with the unreleased version 0.5 of Rocket, and so breaking changes in
-//! both this library and Rocket are to be expected.
+//! Note: This integrates with the unreleased version 0.5 of Rocket, and so
+//! breaking changes in both this library and Rocket are to be expected.
 //!
-//! To configure options for sending and receiving multipart requests, add your instance of
-//! `MultipartOptions` to the state managed by Rocket (`.manage(your_multipart_options)`).
+//! To configure options for sending and receiving multipart requests, add your
+//! instance of `MultipartOptions` to the state managed by Rocket
+//! (`.manage(your_multipart_options)`).
 //!
 //! **[Full Example](<https://github.com/async-graphql/examples/blob/master/rocket/starwars/src/main.rs>)**
 
@@ -14,8 +15,9 @@
 use core::any::Any;
 use std::io::Cursor;
 
-use async_graphql::http::MultipartOptions;
-use async_graphql::{ObjectType, ParseRequestError, Schema, SubscriptionType};
+use async_graphql::{
+    http::MultipartOptions, ObjectType, ParseRequestError, Schema, SubscriptionType,
+};
 use rocket::{
     data::{self, Data, FromData, ToByteUnit},
     form::FromForm,
@@ -185,11 +187,11 @@ impl<'r> FromData<'r> for GraphQLRequest {
     }
 }
 
-/// Wrapper around `async-graphql::Response` that is a Rocket responder so it can be returned from
-/// a routing function in Rocket.
+/// Wrapper around `async-graphql::Response` that is a Rocket responder so it
+/// can be returned from a routing function in Rocket.
 ///
-/// It contains a `BatchResponse` but since a response is a type of batch response it works for
-/// both.
+/// It contains a `BatchResponse` but since a response is a type of batch
+/// response it works for both.
 #[derive(Debug)]
 pub struct GraphQLResponse(pub async_graphql::BatchResponse);
 

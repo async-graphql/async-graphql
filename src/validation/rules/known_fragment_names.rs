@@ -1,6 +1,8 @@
-use crate::parser::types::FragmentSpread;
-use crate::validation::visitor::{Visitor, VisitorContext};
-use crate::Positioned;
+use crate::{
+    parser::types::FragmentSpread,
+    validation::visitor::{Visitor, VisitorContext},
+    Positioned,
+};
 
 #[derive(Default)]
 pub struct KnownFragmentNames;

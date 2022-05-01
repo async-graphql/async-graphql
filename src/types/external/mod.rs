@@ -11,6 +11,7 @@ mod list;
 mod non_zero_integers;
 mod optional;
 mod string;
+mod tokio;
 
 #[cfg(feature = "bson")]
 mod bson;

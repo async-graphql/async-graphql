@@ -1,12 +1,15 @@
+use std::collections::HashSet;
+
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
-use std::collections::HashSet;
 use syn::{Error, Type};
 
-use crate::args;
-use crate::args::{RenameRuleExt, RenameTarget};
-use crate::utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult};
+use crate::{
+    args,
+    args::{RenameRuleExt, RenameTarget},
+    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+};
 
 pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);

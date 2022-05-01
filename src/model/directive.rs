@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use crate::model::__InputValue;
-use crate::{registry, Enum, Object};
+use crate::{model::__InputValue, registry, Enum, Object};
 
-/// A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.
+/// A Directive can be adjacent to many parts of the GraphQL language, a
+/// __DirectiveLocation describes one such possible adjacencies.
 #[derive(Debug, Enum, Copy, Clone, Eq, PartialEq)]
 #[graphql(internal, name = "__DirectiveLocation")]
 #[allow(non_camel_case_types)]
@@ -72,9 +72,13 @@ pub struct __Directive<'a> {
     pub directive: &'a registry::MetaDirective,
 }
 
-/// A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
+/// A Directive provides a way to describe alternate runtime execution and type
+/// validation behavior in a GraphQL document.
 ///
-/// In some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.
+/// In some cases, you need to provide options to alter GraphQL's execution
+/// behavior in ways field arguments will not suffice, such as conditionally
+/// including or skipping a field. Directives provide this by describing
+/// additional information to the executor.
 #[Object(internal, name = "__Directive")]
 impl<'a> __Directive<'a> {
     #[inline]

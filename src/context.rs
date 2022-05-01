@@ -1,24 +1,30 @@
 //! Query context.
 
-use std::any::{Any, TypeId};
-use std::collections::HashMap;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::ops::Deref;
-use std::sync::{Arc, Mutex};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+    fmt::{self, Debug, Display, Formatter},
+    ops::Deref,
+    sync::{Arc, Mutex},
+};
 
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
-use http::header::{AsHeaderName, HeaderMap, IntoHeaderName};
-use http::HeaderValue;
-use serde::ser::{SerializeSeq, Serializer};
-use serde::Serialize;
-
-use crate::extensions::Extensions;
-use crate::parser::types::{
-    Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
+use http::{
+    header::{AsHeaderName, HeaderMap, IntoHeaderName},
+    HeaderValue,
 };
-use crate::schema::SchemaEnv;
+use serde::{
+    ser::{SerializeSeq, Serializer},
+    Serialize,
+};
+
 use crate::{
+    extensions::Extensions,
+    parser::types::{
+        Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
+    },
+    schema::{IntrospectionMode, SchemaEnv},
     Error, InputType, Lookahead, Name, OneofObjectType, PathSegment, Pos, Positioned, Result,
     ServerError, ServerResult, UploadValue, Value,
 };
@@ -27,7 +33,8 @@ use crate::{
 pub trait DataContext<'a> {
     /// Gets the global data defined in the `Context` or `Schema`.
     ///
-    /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
+    /// If both `Schema` and `Query` have the same data type, the data in the
+    /// `Query` is obtained.
     ///
     /// # Errors
     ///
@@ -41,7 +48,8 @@ pub trait DataContext<'a> {
     /// It will panic if the specified data type does not exist.
     fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D;
 
-    /// Gets the global data defined in the `Context` or `Schema` or `None` if the specified type data does not exist.
+    /// Gets the global data defined in the `Context` or `Schema` or `None` if
+    /// the specified type data does not exist.
     fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D>;
 }
 
@@ -87,8 +95,8 @@ pub type ContextDirective<'a> = ContextBase<'a, &'a Positioned<Directive>>;
 
 /// A segment in the path to the current query.
 ///
-/// This is a borrowed form of [`PathSegment`](enum.PathSegment.html) used during execution instead
-/// of passed back when errors occur.
+/// This is a borrowed form of [`PathSegment`](enum.PathSegment.html) used
+/// during execution instead of passed back when errors occur.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(untagged)]
 pub enum QueryPathSegment<'a> {
@@ -138,7 +146,8 @@ impl<'a> Display for QueryPathNode<'a> {
 impl<'a> QueryPathNode<'a> {
     /// Get the current field name.
     ///
-    /// This traverses all the parents of the node until it finds one that is a field name.
+    /// This traverses all the parents of the node until it finds one that is a
+    /// field name.
     pub fn field_name(&self) -> &str {
         std::iter::once(self)
             .chain(self.parents())
@@ -192,12 +201,14 @@ impl<'a> QueryPathNode<'a> {
     }
 }
 
-/// An iterator over the parents of a [`QueryPathNode`](struct.QueryPathNode.html).
+/// An iterator over the parents of a
+/// [`QueryPathNode`](struct.QueryPathNode.html).
 #[derive(Debug, Clone)]
 pub struct Parents<'a>(&'a QueryPathNode<'a>);
 
 impl<'a> Parents<'a> {
-    /// Get the current query path node, which the next call to `next` will get the parents of.
+    /// Get the current query path node, which the next call to `next` will get
+    /// the parents of.
     #[must_use]
     pub fn current(&self) -> &'a QueryPathNode<'a> {
         self.0
@@ -244,7 +255,7 @@ pub struct QueryEnvInner {
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
     pub http_headers: Mutex<HeaderMap>,
-    pub disable_introspection: bool,
+    pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
 }
 
@@ -344,14 +355,16 @@ impl<'a, T> ContextBase<'a, T> {
 
     /// Report a resolver error.
     ///
-    /// When implementing `OutputType`, if an error occurs, call this function to report this error and return `Value::Null`.
+    /// When implementing `OutputType`, if an error occurs, call this function
+    /// to report this error and return `Value::Null`.
     pub fn add_error(&self, error: ServerError) {
         self.query_env.errors.lock().unwrap().push(error);
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
     ///
-    /// If both `Schema` and `Query` have the same data type, the data in the `Query` is obtained.
+    /// If both `Schema` and `Query` have the same data type, the data in the
+    /// `Query` is obtained.
     ///
     /// # Errors
     ///
@@ -375,7 +388,8 @@ impl<'a, T> ContextBase<'a, T> {
             .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
     }
 
-    /// Gets the global data defined in the `Context` or `Schema` or `None` if the specified type data does not exist.
+    /// Gets the global data defined in the `Context` or `Schema` or `None` if
+    /// the specified type data does not exist.
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
         self.query_env
             .ctx_data
@@ -391,15 +405,14 @@ impl<'a, T> ContextBase<'a, T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use async_graphql::*;
     /// use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+    /// use async_graphql::*;
     ///
     /// struct Query;
     ///
     /// #[Object]
     /// impl Query {
     ///     async fn greet(&self, ctx: &Context<'_>) -> String {
-    ///
     ///         let header_exists = ctx.http_header_contains("Access-Control-Allow-Origin");
     ///         assert!(!header_exists);
     ///
@@ -422,27 +435,27 @@ impl<'a, T> ContextBase<'a, T> {
 
     /// Sets a HTTP header to response.
     ///
-    /// If the header was not currently set on the response, then `None` is returned.
+    /// If the header was not currently set on the response, then `None` is
+    /// returned.
     ///
-    /// If the response already contained this header then the new value is associated with this key
-    /// and __all the previous values are removed__, however only a the first previous
-    /// value is returned.
+    /// If the response already contained this header then the new value is
+    /// associated with this key and __all the previous values are
+    /// removed__, however only a the first previous value is returned.
     ///
-    /// See [`http::HeaderMap`] for more details on the underlying implementation
+    /// See [`http::HeaderMap`] for more details on the underlying
+    /// implementation
     ///
     /// # Examples
     ///
     /// ```no_run
+    /// use ::http::{header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue};
     /// use async_graphql::*;
-    /// use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
-    /// use ::http::HeaderValue;
     ///
     /// struct Query;
     ///
     /// #[Object]
     /// impl Query {
     ///     async fn greet(&self, ctx: &Context<'_>) -> String {
-    ///
     ///         // Headers can be inserted using the `http` constants
     ///         let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
     ///         assert_eq!(was_in_headers, None);
@@ -479,19 +492,22 @@ impl<'a, T> ContextBase<'a, T> {
 
     /// Sets a HTTP header to response.
     ///
-    /// If the header was not currently set on the response, then `false` is returned.
+    /// If the header was not currently set on the response, then `false` is
+    /// returned.
     ///
-    /// If the response did have this header then the new value is appended to the end of the
-    /// list of values currently associated with the key, however the key is not updated
-    /// _(which is important for types that can be `==` without being identical)_.
+    /// If the response did have this header then the new value is appended to
+    /// the end of the list of values currently associated with the key,
+    /// however the key is not updated _(which is important for types that
+    /// can be `==` without being identical)_.
     ///
-    /// See [`http::HeaderMap`] for more details on the underlying implementation
+    /// See [`http::HeaderMap`] for more details on the underlying
+    /// implementation
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use async_graphql::*;
     /// use ::http::header::SET_COOKIE;
+    /// use async_graphql::*;
     ///
     /// struct Query;
     ///
@@ -679,7 +695,11 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// #[Object]
     /// impl Query {
     ///     async fn obj(&self, ctx: &Context<'_>) -> MyObj {
-    ///         let fields = ctx.field().selection_set().map(|field| field.name()).collect::<Vec<_>>();
+    ///         let fields = ctx
+    ///             .field()
+    ///             .selection_set()
+    ///             .map(|field| field.name())
+    ///             .collect::<Vec<_>>();
     ///         assert_eq!(fields, vec!["a", "b", "c"]);
     ///         MyObj { a: 1, b: 2, c: 3 }
     ///     }
@@ -689,9 +709,11 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     /// assert!(schema.execute("{ obj { a b c }}").await.is_ok());
     /// assert!(schema.execute("{ obj { a ... { b c } }}").await.is_ok());
-    /// assert!(schema.execute("{ obj { a ... BC }} fragment BC on MyObj { b c }").await.is_ok());
+    /// assert!(schema
+    ///     .execute("{ obj { a ... BC }} fragment BC on MyObj { b c }")
+    ///     .await
+    ///     .is_ok());
     /// # });
-    ///
     /// ```
     pub fn field(&self) -> SelectionField {
         SelectionField {

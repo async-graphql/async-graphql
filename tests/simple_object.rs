@@ -64,7 +64,8 @@ async fn recursive_fragment_definition() {
 
     struct Query;
 
-    // this setup is actually completely irrelevant we just need to be able ot execute a query
+    // this setup is actually completely irrelevant we just need to be able ot
+    // execute a query
     #[Object]
     impl Query {
         async fn obj(&self) -> Hello {
@@ -88,7 +89,8 @@ async fn recursive_fragment_definition_nested() {
 
     struct Query;
 
-    // this setup is actually completely irrelevant we just need to be able ot execute a query
+    // this setup is actually completely irrelevant we just need to be able ot
+    // execute a query
     #[Object]
     impl Query {
         async fn obj(&self) -> Hello {

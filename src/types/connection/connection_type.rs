@@ -1,34 +1,56 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 
-use futures_util::stream::{Stream, StreamExt, TryStreamExt};
-use indexmap::map::IndexMap;
-
-use crate::connection::edge::Edge;
-use crate::connection::page_info::PageInfo;
-use crate::parser::types::Field;
-use crate::registry::MetaTypeId;
-use crate::resolver_utils::{resolve_container, ContainerType};
-use crate::types::connection::{CursorType, EmptyFields};
 use crate::{
-    registry, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, Result,
-    ServerResult, Value,
+    connection::{edge::Edge, ConnectionNameType, EdgeNameType, PageInfo},
+    types::connection::{CursorType, EmptyFields},
+    Object, ObjectType, OutputType, TypeName,
 };
 
 /// Connection type
 ///
 /// Connection is the result of a query for `connection::query`.
-pub struct Connection<C, T, EC = EmptyFields, EE = EmptyFields> {
+pub struct Connection<
+    Name,
+    EdgeName,
+    Cursor,
+    Node,
+    ConnectionFields = EmptyFields,
+    EdgeFields = EmptyFields,
+> where
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
+{
+    _mark1: PhantomData<Name>,
+    _mark2: PhantomData<EdgeName>,
     /// All edges of the current page.
-    pub edges: Vec<Edge<C, T, EE>>,
-    additional_fields: EC,
-    has_previous_page: bool,
-    has_next_page: bool,
+    pub edges: Vec<Edge<EdgeName, Cursor, Node, EdgeFields>>,
+    /// Additional fields for connection object.
+    pub additional_fields: ConnectionFields,
+    /// If `true` means has previous page.
+    pub has_previous_page: bool,
+    /// If `false` means has next page.
+    pub has_next_page: bool,
 }
 
-impl<C, T, EE> Connection<C, T, EmptyFields, EE> {
+impl<Name, EdgeName, Cursor, Node, EdgeFields>
+    Connection<Name, EdgeName, Cursor, Node, EmptyFields, EdgeFields>
+where
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    EdgeFields: ObjectType,
+{
     /// Create a new connection.
+    #[inline]
     pub fn new(has_previous_page: bool, has_next_page: bool) -> Self {
         Connection {
+            _mark1: PhantomData,
+            _mark2: PhantomData,
             additional_fields: EmptyFields,
             has_previous_page,
             has_next_page,
@@ -37,14 +59,26 @@ impl<C, T, EE> Connection<C, T, EmptyFields, EE> {
     }
 }
 
-impl<C, T, EC, EE> Connection<C, T, EC, EE> {
+impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+    Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+where
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
+{
     /// Create a new connection, it can have some additional fields.
+    #[inline]
     pub fn with_additional_fields(
         has_previous_page: bool,
         has_next_page: bool,
-        additional_fields: EC,
+        additional_fields: ConnectionFields,
     ) -> Self {
         Connection {
+            _mark1: PhantomData,
+            _mark2: PhantomData,
             additional_fields,
             has_previous_page,
             has_next_page,
@@ -53,198 +87,52 @@ impl<C, T, EC, EE> Connection<C, T, EC, EE> {
     }
 }
 
-impl<C, T, EC, EE> Connection<C, T, EC, EE> {
-    /// Convert the edge type and return a new `Connection`.
-    pub fn map<T2, EE2, F>(self, mut f: F) -> Connection<C, T2, EC, EE2>
-    where
-        F: FnMut(Edge<C, T, EE>) -> Edge<C, T2, EE2>,
-    {
-        let mut new_edges = Vec::with_capacity(self.edges.len());
-        for edge in self.edges {
-            new_edges.push(f(edge));
-        }
-        Connection {
-            edges: new_edges,
-            additional_fields: self.additional_fields,
+#[Object(internal, name_type)]
+impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+    Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+where
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
+{
+    /// Information to aid in pagination.
+    async fn page_info(&self) -> PageInfo {
+        PageInfo {
             has_previous_page: self.has_previous_page,
             has_next_page: self.has_next_page,
+            start_cursor: self.edges.first().map(|edge| edge.cursor.0.encode_cursor()),
+            end_cursor: self.edges.last().map(|edge| edge.cursor.0.encode_cursor()),
         }
     }
 
-    /// Convert the node type and return a new `Connection`.
-    pub fn map_node<T2, F>(self, mut f: F) -> Connection<C, T2, EC, EE>
-    where
-        F: FnMut(T) -> T2,
-    {
-        self.map(|edge| Edge {
-            cursor: edge.cursor,
-            node: f(edge.node),
-            additional_fields: edge.additional_fields,
-        })
+    /// A list of edges.
+    #[inline]
+    async fn edges(&self) -> &[Edge<EdgeName, Cursor, Node, EdgeFields>] {
+        &self.edges
     }
 
-    /// Append edges with `IntoIterator<Item = Edge<C, T, EE>>`
-    pub fn append<I>(&mut self, iter: I)
-    where
-        I: IntoIterator<Item = Edge<C, T, EE>>,
-    {
-        self.edges.extend(iter);
-    }
-
-    /// Append edges with `IntoIterator<Item = Result<Edge<C, T, EE>, E>>`
-    pub fn try_append<I, E>(&mut self, iter: I) -> Result<(), E>
-    where
-        I: IntoIterator<Item = Result<Edge<C, T, EE>, E>>,
-    {
-        for edge in iter {
-            self.edges.push(edge?);
-        }
-        Ok(())
-    }
-
-    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>>>`
-    pub async fn append_stream<S>(&mut self, stream: S)
-    where
-        S: Stream<Item = Edge<C, T, EE>> + Unpin,
-    {
-        self.edges.extend(stream.collect::<Vec<_>>().await);
-    }
-
-    /// Append edges with `Stream<Item = Result<Edge<C, T, EE>, E>>`
-    pub async fn try_append_stream<S, E>(&mut self, stream: S) -> Result<(), E>
-    where
-        S: Stream<Item = Result<Edge<C, T, EE>, E>> + Unpin,
-    {
-        self.edges.extend(stream.try_collect::<Vec<_>>().await?);
-        Ok(())
+    #[graphql(flatten)]
+    #[inline]
+    async fn additional_fields(&self) -> &ConnectionFields {
+        &self.additional_fields
     }
 }
 
-#[async_trait::async_trait]
-impl<C, T, EC, EE> ContainerType for Connection<C, T, EC, EE>
+impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields> TypeName
+    for Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
 where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    EC: ObjectType,
-    EE: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
 {
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
-        if ctx.item.node.name.node == "pageInfo" {
-            let page_info = PageInfo {
-                has_previous_page: self.has_previous_page,
-                has_next_page: self.has_next_page,
-                start_cursor: self.edges.first().map(|edge| edge.cursor.encode_cursor()),
-                end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
-            };
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&page_info, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
-        } else if ctx.item.node.name.node == "edges" {
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return OutputType::resolve(&self.edges, &ctx_obj, ctx.item)
-                .await
-                .map(Some);
-        }
-
-        self.additional_fields.resolve_field(ctx).await
-    }
-}
-
-#[async_trait::async_trait]
-impl<C, T, EC, EE> OutputType for Connection<C, T, EC, EE>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    EC: ObjectType,
-    EE: ObjectType,
-{
+    #[inline]
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("{}Connection", T::type_name()))
+        Name::type_name::<Node>().into()
     }
-
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        registry.create_output_type::<Self, _>(MetaTypeId::Object,|registry| {
-            EC::create_type_info(registry);
-            let additional_fields = if let Some(registry::MetaType::Object { fields, .. }) =
-            registry.types.remove(EC::type_name().as_ref())
-            {
-                fields
-            } else {
-                unreachable!()
-            };
-
-            registry::MetaType::Object {
-                name: Self::type_name().to_string(),
-                description: None,
-                fields: {
-                    let mut fields = IndexMap::new();
-
-                    fields.insert(
-                        "pageInfo".to_string(),
-                        registry::MetaField {
-                            name: "pageInfo".to_string(),
-                            description: Some("Information to aid in pagination."),
-                            args: Default::default(),
-                            ty: PageInfo::create_type_info(registry),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                            oneof: false,
-                        },
-                    );
-
-                    fields.insert(
-                        "edges".to_string(),
-                        registry::MetaField {
-                            name: "edges".to_string(),
-                            description: Some("A list of edges."),
-                            args: Default::default(),
-                            ty: <Option<Vec<Option<Edge<C, T, EE>>>> as OutputType>::create_type_info(
-                                registry,
-                            ),
-                            deprecation: Default::default(),
-                            cache_control: Default::default(),
-                            external: false,
-                            requires: None,
-                            provides: None,
-                            visible: None,
-                            compute_complexity: None,
-                            oneof: false,
-                        },
-                    );
-
-                    fields.extend(additional_fields);
-                    fields
-                },
-                cache_control: Default::default(),
-                extends: false,
-                keys: None,
-                visible: None,
-                is_subscription: false,
-                rust_typename: std::any::type_name::<Self>(),
-            }
-        })
-    }
-
-    async fn resolve(
-        &self,
-        ctx: &ContextSelectionSet<'_>,
-        _field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        resolve_container(ctx, self).await
-    }
-}
-
-impl<C, T, EC, EE> ObjectType for Connection<C, T, EC, EE>
-where
-    C: CursorType + Send + Sync,
-    T: OutputType,
-    EC: ObjectType,
-    EE: ObjectType,
-{
 }

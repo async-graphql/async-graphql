@@ -1,5 +1,4 @@
-use std::net::IpAddr;
-use std::str::FromStr;
+use std::{net::IpAddr, str::FromStr};
 
 use crate::{InputType, InputValueError};
 

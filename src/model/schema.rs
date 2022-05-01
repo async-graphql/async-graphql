@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
-use crate::model::{__Directive, __Type};
-use crate::{registry, Object};
+use crate::{
+    model::{__Directive, __Type},
+    registry, Object,
+};
 
 pub struct __Schema<'a> {
     registry: &'a registry::Registry,
@@ -17,7 +19,9 @@ impl<'a> __Schema<'a> {
     }
 }
 
-/// A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
+/// A GraphQL Schema defines the capabilities of a GraphQL server. It exposes
+/// all available types and directives on the server, as well as the entry
+/// points for query, mutation, and subscription operations.
 #[Object(internal, name = "__Schema")]
 impl<'a> __Schema<'a> {
     /// A list of all types supported by this server.
@@ -51,7 +55,8 @@ impl<'a> __Schema<'a> {
         )
     }
 
-    /// If this server supports mutation, the type that mutation operations will be rooted at.
+    /// If this server supports mutation, the type that mutation operations will
+    /// be rooted at.
     #[inline]
     async fn mutation_type(&self) -> Option<__Type<'a>> {
         self.registry.mutation_type.as_ref().and_then(|ty| {
@@ -67,7 +72,8 @@ impl<'a> __Schema<'a> {
         })
     }
 
-    /// If this server support subscription, the type that subscription operations will be rooted at.
+    /// If this server support subscription, the type that subscription
+    /// operations will be rooted at.
     #[inline]
     async fn subscription_type(&self) -> Option<__Type<'a>> {
         self.registry.subscription_type.as_ref().and_then(|ty| {

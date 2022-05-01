@@ -1,20 +1,26 @@
-use std::borrow::Cow;
-use std::convert::Infallible;
-use std::future::Future;
-use std::str::FromStr;
+use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr};
 
-use async_graphql::futures_util::task::{Context, Poll};
-use async_graphql::http::{WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use axum::body::{boxed, BoxBody, HttpBody};
-use axum::extract::ws::{CloseFrame, Message};
-use axum::extract::{FromRequest, RequestParts, WebSocketUpgrade};
-use axum::http::{self, Request, Response, StatusCode};
-use axum::response::IntoResponse;
-use axum::Error;
-use futures_util::future::{BoxFuture, Ready};
-use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::{future, Sink, SinkExt, Stream, StreamExt};
+use async_graphql::{
+    futures_util::task::{Context, Poll},
+    http::{WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
+    Data, ObjectType, Result, Schema, SubscriptionType,
+};
+use axum::{
+    body::{boxed, BoxBody, HttpBody},
+    extract::{
+        ws::{CloseFrame, Message},
+        FromRequest, RequestParts, WebSocketUpgrade,
+    },
+    http::{self, Request, Response, StatusCode},
+    response::IntoResponse,
+    Error,
+};
+use futures_util::{
+    future,
+    future::{BoxFuture, Ready},
+    stream::{SplitSink, SplitStream},
+    Sink, SinkExt, Stream, StreamExt,
+};
 use tower_service::Service;
 
 /// A GraphQL protocol extractor.
@@ -191,17 +197,19 @@ where
     OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Send + Sync + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Specify the initial subscription context data, usually you can get something from the
-    /// incoming request to create it.
+    /// Specify the initial subscription context data, usually you can get
+    /// something from the incoming request to create it.
     #[must_use]
     pub fn with_data(self, data: Data) -> Self {
         Self { data, ..self }
     }
 
-    /// Specify a callback function to be called when the connection is initialized.
+    /// Specify a callback function to be called when the connection is
+    /// initialized.
     ///
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
-    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    /// The data returned by this callback function will be merged with the data
+    /// specified by [`with_data`].
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,

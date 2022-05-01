@@ -7,10 +7,12 @@ pub enum __TypeKind {
     /// Indicates this type is a scalar.
     Scalar,
 
-    /// Indicates this type is an object. `fields` and `interfaces` are valid fields.
+    /// Indicates this type is an object. `fields` and `interfaces` are valid
+    /// fields.
     Object,
 
-    /// Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.
+    /// Indicates this type is an interface. `fields` and `possibleTypes` are
+    /// valid fields.
     Interface,
 
     /// Indicates this type is a union. `possibleTypes` is a valid field.

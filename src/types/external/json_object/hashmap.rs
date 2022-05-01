@@ -1,18 +1,18 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::fmt::Display;
-use std::hash::{BuildHasher, Hash};
-use std::str::FromStr;
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    fmt::Display,
+    hash::{BuildHasher, Hash},
+    str::FromStr,
+};
 
-use async_graphql_parser::types::Field;
-use async_graphql_parser::Positioned;
+use async_graphql_parser::{types::Field, Positioned};
 use async_graphql_value::{from_value, to_value};
 use indexmap::IndexMap;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 
-use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
+    registry::{MetaType, MetaTypeId, Registry},
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
 };

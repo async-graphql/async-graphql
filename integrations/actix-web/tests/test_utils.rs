@@ -1,6 +1,6 @@
 use actix_web::{web, HttpRequest, HttpResponse};
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{
+    http::{playground_source, GraphQLPlaygroundConfig},
     Context, EmptyMutation, EmptySubscription, Object, ObjectType, Schema, SubscriptionType,
 };
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};

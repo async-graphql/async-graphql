@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use async_graphql::extensions::{
-    Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextPrepareRequest,
-    NextRequest, NextResolve, NextSubscribe, NextValidation, ResolveInfo,
+use async_graphql::{
+    extensions::{
+        Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery,
+        NextPrepareRequest, NextRequest, NextResolve, NextSubscribe, NextValidation, ResolveInfo,
+    },
+    futures_util::stream::BoxStream,
+    parser::types::ExecutableDocument,
+    *,
 };
-use async_graphql::futures_util::stream::BoxStream;
-use async_graphql::parser::types::ExecutableDocument;
-use async_graphql::*;
 use async_graphql_value::ConstValue;
-use futures_util::lock::Mutex;
-use futures_util::stream::Stream;
-use futures_util::StreamExt;
+use futures_util::{lock::Mutex, stream::Stream, StreamExt};
 
 #[tokio::test]
 pub async fn test_extension_ctx() {

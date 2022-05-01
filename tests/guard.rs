@@ -1,5 +1,4 @@
-use async_graphql::Guard;
-use async_graphql::*;
+use async_graphql::{Guard, *};
 use futures_util::stream::{Stream, StreamExt};
 
 #[derive(Eq, PartialEq, Copy, Clone)]

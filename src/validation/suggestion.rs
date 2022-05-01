@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 fn levenshtein_distance(s1: &str, s2: &str) -> usize {
     let mut column: Vec<_> = (0..=s1.len()).collect();

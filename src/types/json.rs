@@ -1,19 +1,22 @@
-use std::borrow::Cow;
-use std::ops::{Deref, DerefMut};
+use std::{
+    borrow::Cow,
+    ops::{Deref, DerefMut},
+};
 
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::parser::types::Field;
-use crate::registry::{MetaType, MetaTypeId, Registry};
 use crate::{
-    from_value, to_value, ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned,
+    from_value,
+    parser::types::Field,
+    registry::{MetaType, MetaTypeId, Registry},
+    to_value, ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned,
     ServerResult, Value,
 };
 
 /// A scalar that can represent any JSON value.
 ///
-/// If the inner type cannot be serialized as JSON (e.g. it has non-string keys) it will be `null`.
+/// If the inner type cannot be serialized as JSON (e.g. it has non-string keys)
+/// it will be `null`.
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash, Default)]
 #[serde(transparent)]
 pub struct Json<T>(pub T);
@@ -154,9 +157,11 @@ impl OutputType for serde_json::Value {
 
 #[cfg(test)]
 mod test {
-    use crate::*;
-    use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
+
+    use serde::{Deserialize, Serialize};
+
+    use crate::*;
 
     #[tokio::test]
     async fn test_json_type() {

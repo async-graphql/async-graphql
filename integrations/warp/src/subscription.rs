@@ -1,25 +1,28 @@
-use std::future::Future;
-use std::str::FromStr;
+use std::{future::Future, str::FromStr};
 
-use async_graphql::http::{WebSocketProtocols, WsMessage};
-use async_graphql::{Data, ObjectType, Result, Schema, SubscriptionType};
-use futures_util::future::Ready;
-use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::{future, Sink, Stream, StreamExt};
-use warp::filters::ws;
-use warp::ws::Message;
-use warp::{Error, Filter, Rejection, Reply};
+use async_graphql::{
+    http::{WebSocketProtocols, WsMessage},
+    Data, ObjectType, Result, Schema, SubscriptionType,
+};
+use futures_util::{
+    future,
+    future::Ready,
+    stream::{SplitSink, SplitStream},
+    Sink, Stream, StreamExt,
+};
+use warp::{filters::ws, ws::Message, Error, Filter, Rejection, Reply};
 
 /// GraphQL subscription filter
 ///
 /// # Examples
 ///
 /// ```no_run
+/// use std::time::Duration;
+///
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::Filter;
 /// use futures_util::stream::{Stream, StreamExt};
-/// use std::time::Duration;
+/// use warp::Filter;
 ///
 /// struct QueryRoot;
 ///
@@ -48,8 +51,8 @@ use warp::{Error, Filter, Rejection, Reply};
 ///
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async {
 /// let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
-/// let filter = async_graphql_warp::graphql_subscription(schema)
-///     .or(warp::any().map(|| "Hello, World!"));
+/// let filter =
+///     async_graphql_warp::graphql_subscription(schema).or(warp::any().map(|| "Hello, World!"));
 /// warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 /// # });
 /// ```
@@ -80,7 +83,8 @@ where
         })
 }
 
-/// Create a `Filter` that parse [WebSocketProtocols] from `sec-websocket-protocol` header.
+/// Create a `Filter` that parse [WebSocketProtocols] from
+/// `sec-websocket-protocol` header.
 pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error = Rejection> + Clone
 {
     warp::header::optional::<String>("sec-websocket-protocol").map(|protocols: Option<String>| {
@@ -105,11 +109,12 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
 /// # Examples
 ///
 /// ```no_run
+/// use std::time::Duration;
+///
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
-/// use warp::{Filter, ws};
 /// use futures_util::stream::{Stream, StreamExt};
-/// use std::time::Duration;
+/// use warp::{ws, Filter};
 ///
 /// struct QueryRoot;
 ///
@@ -144,9 +149,8 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
 ///     .map(move |ws: ws::Ws, protocol| {
 ///         let schema = schema.clone();
 ///
-///         let reply = ws.on_upgrade(move |socket| {
-///             GraphQLWebSocket::new(socket, schema, protocol).serve()
-///         });
+///         let reply = ws
+///             .on_upgrade(move |socket| GraphQLWebSocket::new(socket, schema, protocol).serve());
 ///
 ///         warp::reply::with_header(
 ///             reply,
@@ -231,17 +235,19 @@ where
     OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Send + Sync + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
-    /// Specify the initial subscription context data, usually you can get something from the
-    /// incoming request to create it.
+    /// Specify the initial subscription context data, usually you can get
+    /// something from the incoming request to create it.
     #[must_use]
     pub fn with_data(self, data: Data) -> Self {
         Self { data, ..self }
     }
 
-    /// Specify a callback function to be called when the connection is initialized.
+    /// Specify a callback function to be called when the connection is
+    /// initialized.
     ///
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
-    /// The data returned by this callback function will be merged with the data specified by [`with_data`].
+    /// The data returned by this callback function will be merged with the data
+    /// specified by [`with_data`].
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,
