@@ -47,13 +47,6 @@ pub struct Request {
     #[serde(default)]
     pub extensions: HashMap<String, Value>,
 
-    /// Disable introspection queries for this request.
-    /// This option has priority over `introspection_mode` when set to true.
-    /// `introspection_mode` has priority when `disable_introspection` set to
-    /// `false`.
-    #[serde(skip)]
-    pub disable_introspection: bool,
-
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,
 
@@ -73,7 +66,6 @@ impl Request {
             uploads: Vec::default(),
             data: Data::default(),
             extensions: Default::default(),
-            disable_introspection: false,
             parsed_query: None,
             introspection_mode: IntrospectionMode::Enabled,
         }
@@ -104,7 +96,6 @@ impl Request {
     /// Disable introspection queries for this request.
     #[must_use]
     pub fn disable_introspection(mut self) -> Self {
-        self.disable_introspection = true;
         self.introspection_mode = IntrospectionMode::Disabled;
         self
     }
@@ -112,7 +103,6 @@ impl Request {
     /// Only allow introspection queries for this request.
     #[must_use]
     pub fn only_introspection(mut self) -> Self {
-        self.disable_introspection = false;
         self.introspection_mode = IntrospectionMode::IntrospectionOnly;
         self
     }
@@ -252,11 +242,10 @@ impl BatchRequest {
         self
     }
 
-    /// Disable introspection queries for for each requests.
+    /// Disable introspection queries for each request.
     #[must_use]
     pub fn disable_introspection(mut self) -> Self {
         for request in self.iter_mut() {
-            request.disable_introspection = true;
             request.introspection_mode = IntrospectionMode::Disabled;
         }
         self
@@ -266,7 +255,6 @@ impl BatchRequest {
     #[must_use]
     pub fn introspection_only(mut self) -> Self {
         for request in self.iter_mut() {
-            request.disable_introspection = false;
             request.introspection_mode = IntrospectionMode::IntrospectionOnly;
         }
         self
