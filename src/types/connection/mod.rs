@@ -75,7 +75,7 @@ impl ConnectionNameType for DefaultConnectionName {
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>
-///     ) -> Result<Connection<DefaultConnectionName, DefaultEdgeName, usize, i32, EmptyFields, Diff>> {
+///     ) -> Result<Connection<usize, i32, EmptyFields, Diff>> {
 ///         query(after, before, first, last, |after, before, first, last| async move {
 ///             let mut start = after.map(|after| after + 1).unwrap_or(0);
 ///             let mut end = before.unwrap_or(10000);
@@ -161,7 +161,7 @@ impl ConnectionNameType for DefaultConnectionName {
 ///         before: Option<String>,
 ///         first: Option<i32>,
 ///         last: Option<i32>,
-///     ) -> Connection<MyConnectionName, MyEdgeName, usize, MyObj> {
+///     ) -> Connection<usize, MyObj, EmptyFields, EmptyFields, MyConnectionName, MyEdgeName> {
 ///         let mut connection = Connection::new(false, false);
 ///         connection.edges.push(Edge::new(1, MyObj { a: 100, b: "abc".to_string() }));
 ///         connection

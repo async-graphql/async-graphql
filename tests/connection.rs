@@ -22,9 +22,7 @@ pub async fn test_connection_additional_fields() {
             before: Option<String>,
             first: Option<i32>,
             last: Option<i32>,
-        ) -> Result<
-            Connection<DefaultConnectionName, DefaultEdgeName, usize, i32, ConnectionFields, Diff>,
-        > {
+        ) -> Result<Connection<usize, i32, ConnectionFields, Diff>> {
             connection::query(
                 after,
                 before,
