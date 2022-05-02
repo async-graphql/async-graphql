@@ -1,7 +1,10 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
-    connection::{edge::Edge, ConnectionNameType, EdgeNameType, PageInfo},
+    connection::{
+        edge::Edge, ConnectionNameType, DefaultConnectionName, DefaultEdgeName, EdgeNameType,
+        PageInfo,
+    },
     types::connection::{CursorType, EmptyFields},
     Object, ObjectType, OutputType, TypeName,
 };
@@ -10,24 +13,24 @@ use crate::{
 ///
 /// Connection is the result of a query for `connection::query`.
 pub struct Connection<
-    Name,
-    EdgeName,
     Cursor,
     Node,
     ConnectionFields = EmptyFields,
     EdgeFields = EmptyFields,
+    Name = DefaultConnectionName,
+    EdgeName = DefaultEdgeName,
 > where
-    Name: ConnectionNameType,
-    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
 {
     _mark1: PhantomData<Name>,
     _mark2: PhantomData<EdgeName>,
     /// All edges of the current page.
-    pub edges: Vec<Edge<EdgeName, Cursor, Node, EdgeFields>>,
+    pub edges: Vec<Edge<Cursor, Node, EdgeFields, EdgeName>>,
     /// Additional fields for connection object.
     pub additional_fields: ConnectionFields,
     /// If `true` means has previous page.
@@ -36,14 +39,14 @@ pub struct Connection<
     pub has_next_page: bool,
 }
 
-impl<Name, EdgeName, Cursor, Node, EdgeFields>
-    Connection<Name, EdgeName, Cursor, Node, EmptyFields, EdgeFields>
+impl<Cursor, Node, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, EmptyFields, EdgeFields, Name, EdgeName>
 where
-    Name: ConnectionNameType,
-    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
 {
     /// Create a new connection.
     #[inline]
@@ -59,15 +62,15 @@ where
     }
 }
 
-impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
-    Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Name: ConnectionNameType,
-    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
 {
     /// Create a new connection, it can have some additional fields.
     #[inline]
@@ -88,15 +91,15 @@ where
 }
 
 #[Object(internal, name_type)]
-impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
-    Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Name: ConnectionNameType,
-    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
 {
     /// Information to aid in pagination.
     async fn page_info(&self) -> PageInfo {
@@ -110,7 +113,7 @@ where
 
     /// A list of edges.
     #[inline]
-    async fn edges(&self) -> &[Edge<EdgeName, Cursor, Node, EdgeFields>] {
+    async fn edges(&self) -> &[Edge<Cursor, Node, EdgeFields, EdgeName>] {
         &self.edges
     }
 
@@ -121,15 +124,15 @@ where
     }
 }
 
-impl<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields> TypeName
-    for Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>
+impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName> TypeName
+    for Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Name: ConnectionNameType,
-    EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
 {
     #[inline]
     fn type_name() -> Cow<'static, str> {

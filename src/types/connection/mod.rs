@@ -194,7 +194,7 @@ pub async fn query<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields, F
     first: Option<i32>,
     last: Option<i32>,
     f: F,
-) -> Result<Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>>
+) -> Result<Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>>
 where
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
@@ -205,7 +205,7 @@ where
     EdgeFields: ObjectType,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
     R: Future<
-        Output = Result<Connection<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields>, E>,
+        Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>, E>,
     >,
     E: Into<Error>,
 {
