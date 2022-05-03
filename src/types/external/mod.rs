@@ -11,6 +11,8 @@ mod list;
 mod non_zero_integers;
 mod optional;
 mod string;
+
+#[cfg(feature = "tokio-sync")]
 mod tokio;
 
 #[cfg(feature = "bson")]
@@ -37,5 +39,5 @@ mod time_offset_date_time;
 mod time_primitive_date_time;
 #[cfg(feature = "url")]
 mod url;
-#[cfg(feature = "uuid")]
+#[cfg(any(feature = "uuid", feature = "uuid08"))]
 mod uuid;

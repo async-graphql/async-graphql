@@ -1,4 +1,7 @@
+#[cfg(feature = "uuid")]
 use uuid::Uuid;
+#[cfg(feature = "uuid08")]
+use uuid08::Uuid;
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 

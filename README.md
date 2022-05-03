@@ -73,6 +73,7 @@ This crate offers the following features, all of which are not activated by defa
 - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
+- `uuid08`: Integrate with the [`uuid 0.8` crate](https://crates.io/crates/uuid/0.8.2).
 - `string_number`: Enable the [StringNumber](types/struct.StringNumber.html).
 - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
@@ -81,6 +82,7 @@ This crate offers the following features, all of which are not activated by defa
 - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
 - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
+- `tokio-sync` Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html).
 
 ## Apollo Studio
 
