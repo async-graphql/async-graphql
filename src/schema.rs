@@ -545,11 +545,7 @@ where
             session_data,
             ctx_data: query_data,
             http_headers: Default::default(),
-            introspection_mode: if request.disable_introspection {
-                IntrospectionMode::Disabled
-            } else {
-                request.introspection_mode
-            },
+            introspection_mode: request.introspection_mode,
             errors: Default::default(),
         };
         Ok((QueryEnv::new(env), validation_result.cache_control))
