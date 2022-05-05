@@ -8,6 +8,7 @@ use std::{
 };
 
 pub use cache_control::CacheControl;
+pub use export_sdl::SDLExportOptions;
 use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::__DirectiveLocation;
