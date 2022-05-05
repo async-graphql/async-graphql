@@ -39,5 +39,7 @@ mod time_offset_date_time;
 mod time_primitive_date_time;
 #[cfg(feature = "url")]
 mod url;
-#[cfg(any(feature = "uuid", feature = "uuid08"))]
+#[cfg(feature = "uuid")]
 mod uuid;
+#[cfg(feature = "uuid08")]
+mod uuid08;

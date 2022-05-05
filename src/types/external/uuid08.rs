@@ -1,4 +1,4 @@
-use uuid::Uuid;
+use uuid08::Uuid;
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
