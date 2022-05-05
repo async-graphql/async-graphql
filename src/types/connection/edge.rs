@@ -1,7 +1,7 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
-    connection::EmptyFields,
+    connection::{DefaultEdgeName, EmptyFields},
     types::connection::{CursorType, EdgeNameType},
     InputValueError, InputValueResult, ObjectType, OutputType, Scalar, ScalarType, SimpleObject,
     TypeName, Value,
@@ -32,12 +32,12 @@ impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
 /// An edge in a connection.
 #[derive(SimpleObject)]
 #[graphql(internal, name_type)]
-pub struct Edge<Name, Cursor, Node, EdgeFields>
+pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
-    Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     EdgeFields: ObjectType,
+    Name: EdgeNameType,
 {
     #[graphql(skip)]
     _mark: PhantomData<Name>,
@@ -49,12 +49,12 @@ where
     pub(crate) additional_fields: EdgeFields,
 }
 
-impl<Name, Cursor, Node, EdgeFields> TypeName for Edge<Name, Cursor, Node, EdgeFields>
+impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
 where
-    Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     EdgeFields: ObjectType,
+    Name: EdgeNameType,
 {
     #[inline]
     fn type_name() -> Cow<'static, str> {
@@ -62,7 +62,7 @@ where
     }
 }
 
-impl<Name, Cursor, Node, EdgeFields> Edge<Name, Cursor, Node, EdgeFields>
+impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
@@ -85,11 +85,11 @@ where
     }
 }
 
-impl<Name, Cursor, Node> Edge<Name, Cursor, Node, EmptyFields>
+impl<Cursor, Node, Name> Edge<Cursor, Node, EmptyFields, Name>
 where
-    Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
+    Name: EdgeNameType,
 {
     /// Create a new edge.
     #[inline]
