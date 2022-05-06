@@ -69,7 +69,11 @@ pub fn is_valid_input_value(
                 return None;
             }
 
-            match registry.types.get(type_name).unwrap() {
+            match registry
+                .types
+                .get(type_name)
+                .unwrap_or_else(|| panic!("Type `{}` not defined", type_name))
+            {
                 registry::MetaType::Scalar { is_valid, .. } => {
                     if is_valid(&value) {
                         None
