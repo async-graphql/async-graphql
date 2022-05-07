@@ -72,101 +72,47 @@ pub fn generate(
             let mut schema_args = Vec::new();
             let mut use_params = Vec::new();
             let mut get_params = Vec::new();
-            let mut is_oneof_field = false;
-            let mut args =
-                extract_input_args::<args::SubscriptionFieldArgument>(&crate_name, method)?;
+            let args = extract_input_args::<args::SubscriptionFieldArgument>(&crate_name, method)?;
 
-            if field.oneof {
-                is_oneof_field = true;
-
-                if args.len() != 1 {
-                    return Err(Error::new_spanned(
-                        &method,
-                        "The `oneof` field requires exactly one argument.",
-                    )
-                    .into());
-                }
-                let (ident, ty, argument) = args.pop().unwrap();
-
-                schema_args.push(quote! {
-                        #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::OneofObjectType);
-                        if let #crate_name::registry::MetaType::InputObject { input_fields, .. } = registry.create_fake_input_type::<#ty>() {
-                            args.extend(input_fields);
-                        }
-                    });
-                use_params.push(quote! { #ident });
-
-                let param_ident = &ident.ident;
-                let process_with = match argument.process_with.as_ref() {
-                    Some(fn_path) => {
-                        let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                        quote! {
-                            #fn_path(&mut #param_ident);
-                        }
-                    }
-                    None => Default::default(),
-                };
-
-                let validators = argument
-                    .validator
-                    .clone()
-                    .unwrap_or_default()
-                    .create_validators(
-                        &crate_name,
-                        quote!(&#ident),
-                        quote!(#ty),
-                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-                    )?;
-                let mut non_mut_ident = ident.clone();
-                non_mut_ident.mutability = None;
-                get_params.push(quote! {
-                    #[allow(non_snake_case, unused_variables, unused_mut)]
-                    let (__pos, mut #non_mut_ident) = ctx.oneof_param_value::<#ty>()?;
-                    #process_with
-                    #validators
-                    #[allow(non_snake_case, unused_variables)]
-                    let #ident = #non_mut_ident;
+            for (
+                ident,
+                ty,
+                args::SubscriptionFieldArgument {
+                    name,
+                    desc,
+                    default,
+                    default_with,
+                    validator,
+                    process_with,
+                    visible: arg_visible,
+                    secret,
+                },
+            ) in &args
+            {
+                let name = name.clone().unwrap_or_else(|| {
+                    subscription_args
+                        .rename_args
+                        .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
                 });
-            } else {
-                for (
-                    ident,
-                    ty,
-                    args::SubscriptionFieldArgument {
-                        name,
-                        desc,
-                        default,
-                        default_with,
-                        validator,
-                        process_with,
-                        visible: arg_visible,
-                        secret,
-                    },
-                ) in &args
-                {
-                    let name = name.clone().unwrap_or_else(|| {
-                        subscription_args
-                            .rename_args
-                            .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
-                    });
-                    let desc = desc
-                        .as_ref()
-                        .map(|s| quote! {::std::option::Option::Some(#s)})
-                        .unwrap_or_else(|| quote! {::std::option::Option::None});
-                    let default = generate_default(default, default_with)?;
+                let desc = desc
+                    .as_ref()
+                    .map(|s| quote! {::std::option::Option::Some(#s)})
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let default = generate_default(default, default_with)?;
 
-                    let schema_default = default
-                        .as_ref()
-                        .map(|value| {
-                            quote! {
-                                ::std::option::Option::Some(::std::string::ToString::to_string(
-                                    &<#ty as #crate_name::InputType>::to_value(&#value)
-                                ))
-                            }
-                        })
-                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let schema_default = default
+                    .as_ref()
+                    .map(|value| {
+                        quote! {
+                            ::std::option::Option::Some(::std::string::ToString::to_string(
+                                &<#ty as #crate_name::InputType>::to_value(&#value)
+                            ))
+                        }
+                    })
+                    .unwrap_or_else(|| quote! {::std::option::Option::None});
 
-                    let visible = visible_fn(arg_visible);
-                    schema_args.push(quote! {
+                let visible = visible_fn(arg_visible);
+                schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                             name: #name,
                             description: #desc,
@@ -177,44 +123,43 @@ pub fn generate(
                         });
                     });
 
-                    use_params.push(quote! { #ident });
+                use_params.push(quote! { #ident });
 
-                    let default = match default {
-                        Some(default) => {
-                            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+                let default = match default {
+                    Some(default) => {
+                        quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+                    }
+                    None => quote! { ::std::option::Option::None },
+                };
+
+                let param_ident = &ident.ident;
+                let process_with = match process_with.as_ref() {
+                    Some(fn_path) => {
+                        let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
+                        quote! {
+                            #fn_path(&mut #param_ident);
                         }
-                        None => quote! { ::std::option::Option::None },
-                    };
+                    }
+                    None => Default::default(),
+                };
 
-                    let param_ident = &ident.ident;
-                    let process_with = match process_with.as_ref() {
-                        Some(fn_path) => {
-                            let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                            quote! {
-                                #fn_path(&mut #param_ident);
-                            }
-                        }
-                        None => Default::default(),
-                    };
+                let validators = validator.clone().unwrap_or_default().create_validators(
+                    &crate_name,
+                    quote!(&#ident),
+                    quote!(#ty),
+                    Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+                )?;
 
-                    let validators = validator.clone().unwrap_or_default().create_validators(
-                        &crate_name,
-                        quote!(&#ident),
-                        quote!(#ty),
-                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-                    )?;
-
-                    let mut non_mut_ident = ident.clone();
-                    non_mut_ident.mutability = None;
-                    get_params.push(quote! {
-                        #[allow(non_snake_case, unused_mut)]
-                        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
-                        #process_with
-                        #validators
-                        #[allow(non_snake_case)]
-                        let #ident = #non_mut_ident;
-                    });
-                }
+                let mut non_mut_ident = ident.clone();
+                non_mut_ident.mutability = None;
+                get_params.push(quote! {
+                    #[allow(non_snake_case, unused_mut)]
+                    let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+                    #process_with
+                    #validators
+                    #[allow(non_snake_case)]
+                    let #ident = #non_mut_ident;
+                });
             }
 
             let ty = match &method.sig.output {
@@ -324,7 +269,6 @@ pub fn generate(
                     provides: ::std::option::Option::None,
                     visible: #visible,
                     compute_complexity: #complexity,
-                    oneof: #is_oneof_field,
                 });
             });
 

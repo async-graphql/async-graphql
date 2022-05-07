@@ -133,7 +133,6 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
 
@@ -165,7 +164,6 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
             }

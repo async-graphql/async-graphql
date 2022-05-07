@@ -54,8 +54,4 @@ impl<'a> __Field<'a> {
     async fn deprecation_reason(&self) -> Option<&str> {
         self.field.deprecation.reason()
     }
-
-    async fn one_of(&self) -> bool {
-        self.field.oneof
-    }
 }

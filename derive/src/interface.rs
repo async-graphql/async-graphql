@@ -137,10 +137,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         provides,
         requires,
         visible,
-        oneof,
     } in &interface_args.fields
     {
-        let name_span = name.span();
         let (name, method_name) = if let Some(method) = method {
             (name.to_string(), Ident::new(method, Span::call_site()))
         } else {
@@ -173,83 +171,52 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
         use_params.push(quote! { ctx });
 
-        let mut is_oneof_field = false;
-
-        if *oneof {
-            is_oneof_field = true;
-
-            if args.len() != 1 {
-                return Err(
-                    Error::new(name_span, "The `oneof` field requires one parameter.").into(),
-                );
-            }
-
-            let InterfaceFieldArgument { name, ty, .. } = &args[0];
+        for InterfaceFieldArgument {
+            name,
+            desc,
+            ty,
+            default,
+            default_with,
+            visible,
+            secret,
+        } in args
+        {
             let ident = Ident::new(name, Span::call_site());
+            let name = interface_args
+                .rename_args
+                .rename(name, RenameTarget::Argument);
             let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
                 Ok(ty) => ty,
                 Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
             };
-
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
+
+            let default = generate_default(default, default_with)?;
+            let get_default = match &default {
+                Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
+                None => quote! { ::std::option::Option::None },
+            };
             get_params.push(quote! {
-                #[allow(non_snake_case, unused_variables)]
-                let (_, #ident) = ctx.oneof_param_value::<#ty>()?;
+                let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
             });
+
+            let desc = desc
+                .as_ref()
+                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
+            let schema_default = default
+                .as_ref()
+                .map(|value| {
+                    quote! {
+                        ::std::option::Option::Some(::std::string::ToString::to_string(
+                            &<#ty as #crate_name::InputType>::to_value(&#value)
+                        ))
+                    }
+                })
+                .unwrap_or_else(|| quote! {::std::option::Option::None});
+            let visible = visible_fn(visible);
             schema_args.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::OneofObjectType);
-                if let #crate_name::registry::MetaType::InputObject { input_fields, .. } = registry.create_fake_input_type::<#ty>() {
-                    args.extend(input_fields);
-                }
-            });
-        } else {
-            for InterfaceFieldArgument {
-                name,
-                desc,
-                ty,
-                default,
-                default_with,
-                visible,
-                secret,
-            } in args
-            {
-                let ident = Ident::new(name, Span::call_site());
-                let name = interface_args
-                    .rename_args
-                    .rename(name, RenameTarget::Argument);
-                let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
-                    Ok(ty) => ty,
-                    Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
-                };
-                decl_params.push(quote! { #ident: #ty });
-                use_params.push(quote! { #ident });
-
-                let default = generate_default(default, default_with)?;
-                let get_default = match &default {
-                    Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
-                    None => quote! { ::std::option::Option::None },
-                };
-                get_params.push(quote! {
-                    let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
-                });
-
-                let desc = desc
-                    .as_ref()
-                    .map(|s| quote! {::std::option::Option::Some(#s)})
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let schema_default = default
-                    .as_ref()
-                    .map(|value| {
-                        quote! {
-                            ::std::option::Option::Some(::std::string::ToString::to_string(
-                                &<#ty as #crate_name::InputType>::to_value(&#value)
-                            ))
-                        }
-                    })
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
-                let visible = visible_fn(visible);
-                schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                         name: #name,
                         description: #desc,
@@ -259,7 +226,6 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         is_secret: #secret,
                     });
                 });
-            }
         }
 
         for enum_name in &enum_names {
@@ -310,7 +276,6 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 requires: #requires,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
-                oneof: #is_oneof_field,
             });
         });
 

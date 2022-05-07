@@ -352,11 +352,6 @@ impl Query {
     async fn oneof_opt(&self, arg: Option<OneofArg>) -> String {
         unimplemented!()
     }
-
-    #[graphql(oneof)]
-    async fn oneof_field(&self, arg: OneofArg) -> String {
-        unimplemented!()
-    }
 }
 
 pub struct Mutation;

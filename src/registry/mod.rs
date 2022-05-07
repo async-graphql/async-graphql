@@ -13,7 +13,6 @@ use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::__DirectiveLocation;
 use crate::{
-    model,
     parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
     schema::IntrospectionMode,
     Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
@@ -168,7 +167,6 @@ pub struct MetaField {
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
     pub compute_complexity: Option<ComplexityType>,
-    pub oneof: bool,
 }
 
 #[derive(Clone)]
@@ -634,7 +632,6 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
 
@@ -666,7 +663,6 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
             }
@@ -697,7 +693,6 @@ impl Registry {
                             provides: None,
                             visible: None,
                             compute_complexity: None,
-                            oneof: false,
                         },
                     );
                     fields

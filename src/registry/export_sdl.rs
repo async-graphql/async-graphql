@@ -66,15 +66,13 @@ impl Registry {
     pub(crate) fn export_sdl(&self, options: SDLExportOptions) -> String {
         let mut sdl = String::new();
 
-        let has_oneof = self.types.values().any(|ty| match ty {
-            MetaType::InputObject { oneof: true, .. } => true,
-            MetaType::Object { fields, .. } => fields.values().any(|field| field.oneof),
-            _ => false,
-        });
+        let has_oneof = self
+            .types
+            .values()
+            .any(|ty| matches!(ty, MetaType::InputObject { oneof: true, .. }));
 
         if has_oneof {
-            sdl.write_str("directive @oneOf on INPUT_OBJECT | FIELD_DEFINITION\n\n")
-                .ok();
+            sdl.write_str("directive @oneOf on INPUT_OBJECT\n\n").ok();
         }
 
         for ty in self.types.values() {
@@ -152,10 +150,6 @@ impl Registry {
                 write!(sdl, "): {}", field.ty).ok();
             } else {
                 write!(sdl, "\t{}: {}", field.name, field.ty).ok();
-            }
-
-            if field.oneof {
-                write!(sdl, " @oneof").ok();
             }
 
             write_deprecated(sdl, &field.deprecation);

@@ -30,7 +30,6 @@ Define a GraphQL interface
 | requires    | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string                 | Y        |
 | visible     | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                                                                          | bool                   | Y        |
 | visible     | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                                                                                  | string                 | Y        |
-| oneof       | Oneof field                                                                                                                                                                                                                              | bool                   | Y        |
 
 # Field argument attributes
 
