@@ -263,3 +263,53 @@ async fn test_oneof_object_validation() {
         r#"Failed to parse "Int": the value is 20, must be less than or equal to 10 (occurred while parsing "MyOneofObj")"#
     );
 }
+
+#[tokio::test]
+async fn test_oneof_object_vec() {
+    use async_graphql::*;
+
+    #[derive(SimpleObject)]
+    pub struct User {
+        name: String,
+    }
+
+    #[derive(OneofObject)]
+    pub enum UserBy {
+        Email(String),
+        RegistrationNumber(i64),
+    }
+
+    pub struct Query;
+
+    #[Object]
+    impl Query {
+        async fn search_users(&self, by: Vec<UserBy>) -> Vec<String> {
+            by.into_iter()
+                .map(|user| match user {
+                    UserBy::Email(email) => email,
+                    UserBy::RegistrationNumber(id) => format!("{}", id),
+                })
+                .collect()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"
+    {
+        searchUsers(by: [
+            { email: "a@a.com" },
+            { registrationNumber: 100 },
+            { registrationNumber: 200 },
+        ])
+    }
+    "#;
+    let data = schema.execute(query).await.into_result().unwrap().data;
+    assert_eq!(
+        data,
+        value!({
+            "searchUsers": [
+                "a@a.com", "100", "200"
+            ]
+        })
+    );
+}
