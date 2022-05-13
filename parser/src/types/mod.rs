@@ -17,6 +17,7 @@ use std::{
 
 use async_graphql_value::{ConstValue, Name, Value};
 pub use executable::*;
+use serde::{Deserialize, Serialize};
 pub use service::*;
 
 use crate::pos::Positioned;
@@ -24,7 +25,7 @@ use crate::pos::Positioned;
 /// The type of an operation; `query`, `mutation` or `subscription`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#OperationType).
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
 pub enum OperationType {
     /// A query.
     Query,
@@ -47,7 +48,7 @@ impl Display for OperationType {
 /// A GraphQL type, for example `String` or `[String!]!`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Type).
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Type {
     /// The base type.
     pub base: BaseType,
@@ -88,7 +89,7 @@ impl Display for Type {
 
 /// A GraphQL base type, for example `String` or `[String!]`. This does not
 /// include whether the type is nullable; for that see [Type](struct.Type.html).
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum BaseType {
     /// A named type, such as `String`.
     Named(Name),
@@ -146,7 +147,7 @@ impl ConstDirective {
 /// A GraphQL directive, such as `@deprecated(reason: "Use the other field")`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Directive).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Directive {
     /// The name of the directive.
     pub name: Positioned<Name>,

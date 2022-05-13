@@ -1,13 +1,14 @@
 //! Executable document-related GraphQL types.
 
 use async_graphql_value::{ConstValue, Name, Value};
+use serde::{Deserialize, Serialize};
 
 use super::*;
 
 /// An executable GraphQL file or request string.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#ExecutableDocument).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutableDocument {
     /// The operations of the document.
     pub operations: DocumentOperations,
@@ -18,7 +19,7 @@ pub struct ExecutableDocument {
 /// The operations of a GraphQL document.
 ///
 /// There is either one anonymous operation or many named operations.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DocumentOperations {
     /// The document contains a single anonymous operation.
     Single(Positioned<OperationDefinition>),
@@ -96,7 +97,7 @@ enum OperationsIterInner<'a> {
 /// $content) { id } }`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#OperationDefinition).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OperationDefinition {
     /// The type of operation.
     pub ty: OperationType,
@@ -112,7 +113,7 @@ pub struct OperationDefinition {
 /// `$name:String!`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#VariableDefinition).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariableDefinition {
     /// The name of the variable, without the preceding `$`.
     pub name: Positioned<Name>,
@@ -142,7 +143,7 @@ impl VariableDefinition {
 /// A set of fields to be selected, for example `{ name age }`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#SelectionSet).
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SelectionSet {
     /// The fields to be selected.
     pub items: Vec<Positioned<Selection>>,
@@ -152,7 +153,7 @@ pub struct SelectionSet {
 /// inline fragment.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Selection).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Selection {
     /// Select a single field, such as `name` or `weightKilos: weight(unit:
     /// KILOGRAMS)`.
@@ -188,7 +189,7 @@ impl Selection {
 /// weight(unit: KILOGRAMS)`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#Field).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Field {
     /// The optional field alias.
     pub alias: Option<Positioned<Name>>,
@@ -224,7 +225,7 @@ impl Field {
 /// A fragment selector, such as `... userFields`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#FragmentSpread).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FragmentSpread {
     /// The name of the fragment being selected.
     pub fragment_name: Positioned<Name>,
@@ -235,7 +236,7 @@ pub struct FragmentSpread {
 /// An inline fragment selector, such as `... on User { name }`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#InlineFragment).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InlineFragment {
     /// The type condition.
     pub type_condition: Option<Positioned<TypeCondition>>,
@@ -249,7 +250,7 @@ pub struct InlineFragment {
 /// age }`.
 ///
 /// [Reference](https://spec.graphql.org/October2021/#FragmentDefinition).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FragmentDefinition {
     /// The type this fragment operates on.
     pub type_condition: Positioned<TypeCondition>,
@@ -262,7 +263,7 @@ pub struct FragmentDefinition {
 /// A type a fragment can apply to (`on` followed by the type).
 ///
 /// [Reference](https://spec.graphql.org/October2021/#TypeCondition).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeCondition {
     /// The type this fragment applies to.
     pub on: Positioned<Name>,

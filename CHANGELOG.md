@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement `OutputType` for `tokio::sync::RwLock` and `tokio::sync::Mutex`. [#896](https://github.com/async-graphql/async-graphql/pull/896)
 - Bump [`uuid`](https://crates.io/crates/uuid) to `1.0.0`. [#907](https://github.com/async-graphql/async-graphql/pull/907/files)
 - Add some options for exporting SDL. [#877](https://github.com/async-graphql/async-graphql/issues/877)
+- Cache parsed `ExecuteDocument` in APQ. [#919](https://github.com/async-graphql/async-graphql/issues/919)
 
 # [3.0.38] 2022-4-8
 
