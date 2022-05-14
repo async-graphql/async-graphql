@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
@@ -31,7 +29,6 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
         }
     };
 
-    let mut enum_items = HashSet::new();
     let mut enum_names = Vec::new();
     let mut schema_fields = Vec::new();
     let mut parse_item = Vec::new();
@@ -70,14 +67,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             }
         };
 
-        if let Type::Path(p) = ty {
-            // This validates that the field type wasn't already used
-            if !enum_items.insert(p) {
-                return Err(
-                    Error::new_spanned(ty, "This type already used in another variant").into(),
-                );
-            }
-
+        if let Type::Path(_) = ty {
             enum_names.push(enum_name);
 
             let secret = variant.secret;

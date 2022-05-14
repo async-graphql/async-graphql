@@ -313,3 +313,33 @@ async fn test_oneof_object_vec() {
         })
     );
 }
+
+#[tokio::test]
+async fn test_issue_923() {
+    #[derive(OneofObject)]
+    enum Filter {
+        Any(Vec<String>),
+        All(Vec<String>),
+    }
+
+    pub struct Query;
+
+    #[Object]
+    impl Query {
+        async fn query(&self, filter: Filter) -> bool {
+            match filter {
+                Filter::Any(values) => assert_eq!(values, vec!["a".to_string(), "b".to_string()]),
+                Filter::All(values) => assert_eq!(values, vec!["c".to_string(), "d".to_string()]),
+            }
+            true
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let query = r#"{ query(filter: {any: ["a", "b"]}) }"#;
+    schema.execute(query).await.into_result().unwrap();
+
+    let query = r#"{ query(filter: {all: ["c", "d"]}) }"#;
+    schema.execute(query).await.into_result().unwrap();
+}
