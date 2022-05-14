@@ -1,29 +1,29 @@
 [package]
-name = "async-graphql-warp"
-version = "4.0.0-alpha.1"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
-edition = "2021"
-description = "async-graphql for warp"
-license = "MIT/Apache-2.0"
-documentation = "https://docs.rs/async-graphql-warp/"
-homepage = "https://github.com/async-graphql/async-graphql"
-repository = "https://github.com/async-graphql/async-graphql"
-keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
+description = "async-graphql for warp"
+documentation = "https://docs.rs/async-graphql-warp/"
+edition = "2021"
+homepage = "https://github.com/async-graphql/async-graphql"
+keywords = ["futures", "async", "graphql"]
+license = "MIT/Apache-2.0"
+name = "async-graphql-warp"
+repository = "https://github.com/async-graphql/async-graphql"
+version = "4.0.0-alpha.2"
 
 [dependencies]
-async-graphql = { path = "../..", version = "4.0.0-alpha.1" }
+async-graphql = { path = "../..", version = "4.0.0-alpha.2" }
 
-warp = { version = "0.3.0", default-features = false, features = ["websocket"] }
 futures-util = { version = "0.3.0", default-features = false, features = [
-    "sink",
+  "sink",
 ] }
 serde_json = "1.0.64"
+warp = { version = "0.3.0", default-features = false, features = ["websocket"] }
 
 [dev-dependencies]
-tokio = { version = "1.4.0", default-features = false, features = [
-    "macros",
-    "rt-multi-thread",
-    "time",
-] }
 async-stream = "0.3.0"
+tokio = { version = "1.4.0", default-features = false, features = [
+  "macros",
+  "rt-multi-thread",
+  "time",
+] }
