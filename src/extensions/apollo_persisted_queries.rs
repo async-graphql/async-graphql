@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use async_graphql_parser::types::ExecutableDocument;
 use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -22,15 +23,15 @@ struct PersistedQuery {
 #[async_trait::async_trait]
 pub trait CacheStorage: Send + Sync + Clone + 'static {
     /// Load the query by `key`.
-    async fn get(&self, key: String) -> Option<String>;
+    async fn get(&self, key: String) -> Option<ExecutableDocument>;
 
     /// Save the query by `key`.
-    async fn set(&self, key: String, query: String);
+    async fn set(&self, key: String, query: ExecutableDocument);
 }
 
 /// Memory-based LRU cache.
 #[derive(Clone)]
-pub struct LruCacheStorage(Arc<Mutex<lru::LruCache<String, String>>>);
+pub struct LruCacheStorage(Arc<Mutex<lru::LruCache<String, ExecutableDocument>>>);
 
 impl LruCacheStorage {
     /// Creates a new LRU Cache that holds at most `cap` items.
@@ -41,12 +42,12 @@ impl LruCacheStorage {
 
 #[async_trait::async_trait]
 impl CacheStorage for LruCacheStorage {
-    async fn get(&self, key: String) -> Option<String> {
+    async fn get(&self, key: String) -> Option<ExecutableDocument> {
         let mut cache = self.0.lock().await;
         cache.get(&key).cloned()
     }
 
-    async fn set(&self, key: String, query: String) {
+    async fn set(&self, key: String, query: ExecutableDocument) {
         let mut cache = self.0.lock().await;
         cache.put(key, query);
     }
@@ -96,8 +97,11 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
             }
 
             if request.query.is_empty() {
-                if let Some(query) = self.storage.get(persisted_query.sha256_hash).await {
-                    Ok(Request { query, ..request })
+                if let Some(doc) = self.storage.get(persisted_query.sha256_hash).await {
+                    Ok(Request {
+                        parsed_query: Some(doc),
+                        ..request
+                    })
                 } else {
                     Err(ServerError::new("PersistedQueryNotFound", None))
                 }
@@ -107,8 +111,13 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
                 if persisted_query.sha256_hash != sha256_hash {
                     Err(ServerError::new("provided sha does not match query", None))
                 } else {
-                    self.storage.set(sha256_hash, request.query.clone()).await;
-                    Ok(request)
+                    let doc = async_graphql_parser::parse_query(&request.query)?;
+                    self.storage.set(sha256_hash, doc.clone()).await;
+                    Ok(Request {
+                        query: String::new(),
+                        parsed_query: Some(doc),
+                        ..request
+                    })
                 }
             }
         } else {

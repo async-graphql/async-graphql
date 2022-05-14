@@ -284,7 +284,6 @@ pub struct ObjectField {
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
-    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -492,8 +491,6 @@ pub struct InterfaceField {
     pub requires: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
-    #[darling(default)]
-    pub oneof: bool,
 }
 
 #[derive(FromVariant)]
@@ -573,7 +570,6 @@ pub struct SubscriptionField {
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
-    pub oneof: bool,
 }
 
 #[derive(FromField)]
@@ -774,7 +770,6 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
-    pub oneof: bool,
 }
 
 #[derive(FromMeta, Default)]

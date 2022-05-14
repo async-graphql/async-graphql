@@ -5,7 +5,7 @@ use indexmap::map::IndexMap;
 use crate::{
     model::{__Schema, __Type},
     parser::types::Field,
-    registry,
+    registry::{self, SDLExportOptions},
     resolver_utils::{resolve_container, ContainerType},
     schema::IntrospectionMode,
     Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
@@ -84,7 +84,11 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
                 return OutputType::resolve(
                     &Service {
-                        sdl: Some(ctx.schema_env.registry.export_sdl(true)),
+                        sdl: Some(
+                            ctx.schema_env
+                                .registry
+                                .export_sdl(SDLExportOptions::new().federation()),
+                        ),
                     },
                     &ctx_obj,
                     ctx.item,
@@ -129,7 +133,6 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
 
@@ -161,7 +164,6 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
             }

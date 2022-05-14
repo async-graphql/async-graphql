@@ -41,7 +41,7 @@ impl From<(usize, usize)> for Pos {
 }
 
 /// An AST node that stores its original position.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct Positioned<T: ?Sized> {
     /// The position of the node.
     pub pos: Pos,

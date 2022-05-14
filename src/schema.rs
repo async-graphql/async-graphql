@@ -13,7 +13,7 @@ use crate::{
         types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet},
         Positioned,
     },
-    registry::{MetaDirective, MetaInputValue, Registry},
+    registry::{MetaDirective, MetaInputValue, Registry, SDLExportOptions},
     resolver_utils::{resolve_container, resolve_container_serial},
     subscription::collect_subscription_streams,
     types::QueryRoot,
@@ -421,12 +421,12 @@ where
 
     /// Returns SDL(Schema Definition Language) of this schema.
     pub fn sdl(&self) -> String {
-        self.0.env.registry.export_sdl(false)
+        self.0.env.registry.export_sdl(Default::default())
     }
 
-    /// Returns Federation SDL(Schema Definition Language) of this schema.
-    pub fn federation_sdl(&self) -> String {
-        self.0.env.registry.export_sdl(true)
+    /// Returns SDL(Schema Definition Language) of this schema with options.
+    pub fn sdl_with_options(&self, options: SDLExportOptions) -> String {
+        self.0.env.registry.export_sdl(options)
     }
 
     /// Get all names in this schema

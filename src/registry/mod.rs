@@ -8,11 +8,11 @@ use std::{
 };
 
 pub use cache_control::CacheControl;
+pub use export_sdl::SDLExportOptions;
 use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::__DirectiveLocation;
 use crate::{
-    model,
     parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
     schema::IntrospectionMode,
     Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
@@ -32,8 +32,8 @@ pub enum MetaTypeName<'a> {
     Named(&'a str),
 }
 
-impl<'a> std::fmt::Display for MetaTypeName<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'a> Display for MetaTypeName<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             MetaTypeName::Named(name) => write!(f, "{}", name),
             MetaTypeName::NonNull(name) => write!(f, "{}!", name),
@@ -167,7 +167,6 @@ pub struct MetaField {
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
     pub compute_complexity: Option<ComplexityType>,
-    pub oneof: bool,
 }
 
 #[derive(Clone)]
@@ -387,7 +386,7 @@ impl MetaType {
 pub struct MetaDirective {
     pub name: &'static str,
     pub description: Option<&'static str>,
-    pub locations: Vec<model::__DirectiveLocation>,
+    pub locations: Vec<__DirectiveLocation>,
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
@@ -633,7 +632,6 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
 
@@ -665,7 +663,6 @@ impl Registry {
                         provides: None,
                         visible: None,
                         compute_complexity: None,
-                        oneof: false,
                     },
                 );
             }
@@ -696,7 +693,6 @@ impl Registry {
                             provides: None,
                             visible: None,
                             compute_complexity: None,
-                            oneof: false,
                         },
                     );
                     fields

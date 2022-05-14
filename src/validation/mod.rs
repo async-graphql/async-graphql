@@ -74,7 +74,6 @@ pub fn check_rules(
                 .with(rules::KnownDirectives::default())
                 .with(rules::DirectivesUnique::default())
                 .with(rules::OverlappingFieldsCanBeMerged)
-                .with(rules::OneofFieldsHaveExactlyOneArgument)
                 .with(rules::UploadFile)
                 .with(visitors::CacheControlCalculate {
                     cache_control: &mut cache_control,

@@ -2,19 +2,77 @@ use std::fmt::Write;
 
 use crate::registry::{Deprecation, MetaField, MetaInputValue, MetaType, Registry};
 
+const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID"];
+const FEDERATION_SCALARS: &[&str] = &["Any"];
+
+/// Options for SDL export
+#[derive(Debug, Copy, Clone, Default)]
+pub struct SDLExportOptions {
+    sorted_fields: bool,
+    sorted_arguments: bool,
+    sorted_enum_values: bool,
+    federation: bool,
+}
+
+impl SDLExportOptions {
+    /// Create a `SDLExportOptions`
+    #[inline]
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Export sorted fields
+    #[inline]
+    #[must_use]
+    pub fn sorted_fields(self) -> Self {
+        Self {
+            sorted_fields: true,
+            ..self
+        }
+    }
+
+    /// Export sorted field arguments
+    #[inline]
+    #[must_use]
+    pub fn sorted_arguments(self) -> Self {
+        Self {
+            sorted_arguments: true,
+            ..self
+        }
+    }
+
+    /// Export sorted enum items
+    #[inline]
+    #[must_use]
+    pub fn sorted_enum_items(self) -> Self {
+        Self {
+            sorted_enum_values: true,
+            ..self
+        }
+    }
+
+    /// Export as Federation SDL(Schema Definition Language)
+    #[inline]
+    #[must_use]
+    pub fn federation(self) -> Self {
+        Self {
+            federation: true,
+            ..self
+        }
+    }
+}
+
 impl Registry {
-    pub fn export_sdl(&self, federation: bool) -> String {
+    pub(crate) fn export_sdl(&self, options: SDLExportOptions) -> String {
         let mut sdl = String::new();
 
-        let has_oneof = self.types.values().any(|ty| match ty {
-            MetaType::InputObject { oneof: true, .. } => true,
-            MetaType::Object { fields, .. } => fields.values().any(|field| field.oneof),
-            _ => false,
-        });
+        let has_oneof = self
+            .types
+            .values()
+            .any(|ty| matches!(ty, MetaType::InputObject { oneof: true, .. }));
 
         if has_oneof {
-            sdl.write_str("directive @oneOf on INPUT_OBJECT | FIELD_DEFINITION\n\n")
-                .ok();
+            sdl.write_str("directive @oneOf on INPUT_OBJECT\n\n").ok();
         }
 
         for ty in self.types.values() {
@@ -22,17 +80,18 @@ impl Registry {
                 continue;
             }
 
-            if federation {
+            if options.federation {
                 const FEDERATION_TYPES: &[&str] = &["_Any", "_Entity", "_Service"];
                 if FEDERATION_TYPES.contains(&ty.name()) {
                     continue;
                 }
             }
 
-            self.export_type(ty, &mut sdl, federation);
+            self.export_type(ty, &mut sdl, &options);
+            writeln!(sdl).ok();
         }
 
-        if !federation {
+        if !options.federation {
             writeln!(sdl, "schema {{").ok();
             writeln!(sdl, "\tquery: {}", self.query_type).ok();
             if let Some(mutation_type) = self.mutation_type.as_deref() {
@@ -50,11 +109,17 @@ impl Registry {
     fn export_fields<'a, I: Iterator<Item = &'a MetaField>>(
         sdl: &mut String,
         it: I,
-        federation: bool,
+        options: &SDLExportOptions,
     ) {
-        for field in it {
+        let mut fields = it.collect::<Vec<_>>();
+
+        if options.sorted_fields {
+            fields.sort_by(|a, b| a.name.cmp(&b.name));
+        }
+
+        for field in fields {
             if field.name.starts_with("__")
-                || (federation && matches!(&*field.name, "_service" | "_entities"))
+                || (options.federation && matches!(&*field.name, "_service" | "_entities"))
             {
                 continue;
             }
@@ -67,9 +132,16 @@ impl Registry {
                 )
                 .ok();
             }
+
             if !field.args.is_empty() {
                 write!(sdl, "\t{}(", field.name).ok();
-                for (i, arg) in field.args.values().enumerate() {
+
+                let mut args = field.args.values().collect::<Vec<_>>();
+                if options.sorted_arguments {
+                    args.sort_by(|a, b| a.name.cmp(b.name));
+                }
+
+                for (i, arg) in args.into_iter().enumerate() {
                     if i != 0 {
                         sdl.push_str(", ");
                     }
@@ -80,13 +152,9 @@ impl Registry {
                 write!(sdl, "\t{}: {}", field.name, field.ty).ok();
             }
 
-            if field.oneof {
-                write!(sdl, " @oneof").ok();
-            }
-
             write_deprecated(sdl, &field.deprecation);
 
-            if federation {
+            if options.federation {
                 if field.external {
                     write!(sdl, " @external").ok();
                 }
@@ -102,15 +170,13 @@ impl Registry {
         }
     }
 
-    fn export_type(&self, ty: &MetaType, sdl: &mut String, federation: bool) {
+    fn export_type(&self, ty: &MetaType, sdl: &mut String, options: &SDLExportOptions) {
         match ty {
             MetaType::Scalar {
                 name, description, ..
             } => {
-                const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID"];
-                const FEDERATION_SCALARS: &[&str] = &["Any"];
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
-                if federation && FEDERATION_SCALARS.contains(&name.as_str()) {
+                if options.federation && FEDERATION_SCALARS.contains(&name.as_str()) {
                     export_scalar = false;
                 }
                 if export_scalar {
@@ -129,23 +195,25 @@ impl Registry {
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
-                    && federation
+                    && options.federation
                     && !self.federation_subscription
                 {
                     return;
                 }
 
-                if name.as_str() == self.query_type && federation {
+                if name.as_str() == self.query_type && options.federation {
                     let mut field_count = 0;
                     for field in fields.values() {
                         if field.name.starts_with("__")
-                            || (federation && matches!(&*field.name, "_service" | "_entities"))
+                            || (options.federation
+                                && matches!(&*field.name, "_service" | "_entities"))
                         {
                             continue;
                         }
                         field_count += 1;
                     }
                     if field_count == 0 {
+                        // is empty query root type
                         return;
                     }
                 }
@@ -153,13 +221,15 @@ impl Registry {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
-                if federation && *extends {
+
+                if options.federation && *extends {
                     write!(sdl, "extend ").ok();
                 }
+
                 write!(sdl, "type {} ", name).ok();
                 self.write_implements(sdl, name);
 
-                if federation {
+                if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
                             write!(sdl, "@key(fields: \"{}\") ", key).ok();
@@ -168,7 +238,7 @@ impl Registry {
                 }
 
                 writeln!(sdl, "{{").ok();
-                Self::export_fields(sdl, fields.values(), federation);
+                Self::export_fields(sdl, fields.values(), options);
                 writeln!(sdl, "}}").ok();
             }
             MetaType::Interface {
@@ -182,11 +252,13 @@ impl Registry {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
-                if federation && *extends {
+
+                if options.federation && *extends {
                     write!(sdl, "extend ").ok();
                 }
                 write!(sdl, "interface {} ", name).ok();
-                if federation {
+
+                if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
                             write!(sdl, "@key(fields: \"{}\") ", key).ok();
@@ -196,7 +268,7 @@ impl Registry {
                 self.write_implements(sdl, name);
 
                 writeln!(sdl, "{{").ok();
-                Self::export_fields(sdl, fields.values(), federation);
+                Self::export_fields(sdl, fields.values(), options);
                 writeln!(sdl, "}}").ok();
             }
             MetaType::Enum {
@@ -208,13 +280,21 @@ impl Registry {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
+
                 write!(sdl, "enum {} ", name).ok();
                 writeln!(sdl, "{{").ok();
-                for value in enum_values.values() {
+
+                let mut values = enum_values.values().collect::<Vec<_>>();
+                if options.sorted_enum_values {
+                    values.sort_by(|a, b| a.name.cmp(&b.name));
+                }
+
+                for value in values {
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
                     writeln!(sdl).ok();
                 }
+
                 writeln!(sdl, "}}").ok();
             }
             MetaType::InputObject {
@@ -227,17 +307,26 @@ impl Registry {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
+
                 write!(sdl, "input {} ", name).ok();
+
                 if *oneof {
                     write!(sdl, "@oneof ").ok();
                 }
                 writeln!(sdl, "{{").ok();
-                for field in input_fields.values() {
+
+                let mut fields = input_fields.values().collect::<Vec<_>>();
+                if options.sorted_fields {
+                    fields.sort_by(|a, b| a.name.cmp(b.name));
+                }
+
+                for field in fields {
                     if let Some(description) = field.description {
                         writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
                     }
                     writeln!(sdl, "\t{}", export_input_value(&field)).ok();
                 }
+
                 writeln!(sdl, "}}").ok();
             }
             MetaType::Union {
@@ -249,6 +338,7 @@ impl Registry {
                 if description.is_some() {
                     writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
                 }
+
                 write!(sdl, "union {} =", name).ok();
                 for ty in possible_types {
                     write!(sdl, " | {}", ty).ok();

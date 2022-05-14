@@ -70,9 +70,11 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         if matches!(ty, Type::Path(_) | Type::Macro(_)) {
             // This validates that the field type wasn't already used
             if !enum_items.insert(ty) {
-                return Err(
-                    Error::new_spanned(&ty, "This type already used in another variant").into(),
-                );
+                return Err(Error::new_spanned(
+                    &ty,
+                    "This type is already used in another variant",
+                )
+                .into());
             }
 
             enum_names.push(enum_name);
