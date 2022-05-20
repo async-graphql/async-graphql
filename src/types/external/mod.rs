@@ -23,6 +23,8 @@ mod chrono_tz;
 mod datetime;
 #[cfg(feature = "decimal")]
 mod decimal;
+#[cfg(feature = "bigdecimal")]
+mod big_decimal;
 #[cfg(feature = "chrono-duration")]
 mod duration;
 #[cfg(feature = "chrono")]
