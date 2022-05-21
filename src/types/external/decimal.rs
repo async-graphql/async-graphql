@@ -15,12 +15,12 @@ impl ScalarType for Decimal {
                 }
 
                 if let Some(f) = n.as_i64() {
-                    return Ok(Decimal::from(f)); 
+                    return Ok(Decimal::from(f));
                 }
 
                 // unwrap safe here, because we have check the other possibility
                 Ok(Decimal::from(n.as_u64().unwrap()))
-            },
+            }
             _ => Err(InputValueError::expected_type(value)),
         }
     }

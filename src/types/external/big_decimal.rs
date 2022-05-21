@@ -14,12 +14,12 @@ impl ScalarType for BigDecimal {
                 }
 
                 if let Some(f) = n.as_i64() {
-                    return Ok(BigDecimal::from(f)); 
+                    return Ok(BigDecimal::from(f));
                 }
 
                 // unwrap safe here, because we have check the other possibility
                 Ok(BigDecimal::from(n.as_u64().unwrap()))
-            },
+            }
             Value::String(s) => Ok(BigDecimal::from_str(s)?),
             _ => Err(InputValueError::expected_type(value)),
         }
