@@ -403,6 +403,7 @@ pub struct Registry {
     pub introspection_mode: IntrospectionMode,
     pub enable_federation: bool,
     pub federation_subscription: bool,
+    pub ignore_name_conflicts: HashSet<String>,
 }
 
 impl Registry {
@@ -462,7 +463,8 @@ impl Registry {
                         return;
                     }
 
-                    if rust_typename != prev_typename {
+                    if rust_typename != prev_typename && !self.ignore_name_conflicts.contains(name)
+                    {
                         panic!(
                             "`{}` and `{}` have the same GraphQL name `{}`",
                             prev_typename, rust_typename, name,

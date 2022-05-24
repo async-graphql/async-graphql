@@ -141,3 +141,55 @@ async fn test_object_process_with_field() {
         })
     );
 }
+
+#[tokio::test]
+async fn ignore_name_conflicts() {
+    #[derive(SimpleObject)]
+    #[graphql(name = "MyObj")]
+    struct MyObj {
+        name: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(name = "MyObj")]
+    struct MyObjRef<'a> {
+        name: &'a str,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj_owned(&self) -> MyObj {
+            MyObj {
+                name: "a".to_string(),
+            }
+        }
+
+        async fn obj_ref(&self) -> MyObjRef<'_> {
+            MyObjRef { name: "b" }
+        }
+    }
+
+    let schema = Schema::build_with_ignore_name_conflicts(
+        Query,
+        EmptyMutation,
+        EmptySubscription,
+        ["MyObj"],
+    )
+    .finish();
+
+    let query = r#"
+    {
+        objOwned { name }
+        objRef { name }
+    }
+    "#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "objOwned": { "name": "a" },
+            "objRef": { "name": "b" },
+        })
+    );
+}
