@@ -1,4 +1,9 @@
-use std::{any::Any, collections::HashMap, ops::Deref, sync::Arc};
+use std::{
+    any::Any,
+    collections::{HashMap, HashSet},
+    ops::Deref,
+    sync::Arc,
+};
 
 use futures_util::stream::{self, Stream, StreamExt};
 use indexmap::map::IndexMap;
@@ -302,12 +307,32 @@ where
         mutation: Mutation,
         subscription: Subscription,
     ) -> SchemaBuilder<Query, Mutation, Subscription> {
+        Self::build_with_ignore_name_conflicts(query, mutation, subscription, [] as [&str; 0])
+    }
+
+    /// Create a schema builder and specifies a list to ignore type conflict
+    /// detection.
+    ///
+    /// NOTE: It is not recommended to use it unless you know what it does.
+    #[must_use]
+    pub fn build_with_ignore_name_conflicts<I, T>(
+        query: Query,
+        mutation: Mutation,
+        subscription: Subscription,
+        ignore_name_conflicts: I,
+    ) -> SchemaBuilder<Query, Mutation, Subscription>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<String>,
+    {
         SchemaBuilder {
             validation_mode: ValidationMode::Strict,
             query: QueryRoot { inner: query },
             mutation,
             subscription,
-            registry: Self::create_registry(),
+            registry: Self::create_registry(
+                ignore_name_conflicts.into_iter().map(Into::into).collect(),
+            ),
             data: Default::default(),
             complexity: None,
             depth: None,
@@ -316,7 +341,7 @@ where
         }
     }
 
-    pub(crate) fn create_registry() -> Registry {
+    pub(crate) fn create_registry(ignore_name_conflicts: HashSet<String>) -> Registry {
         let mut registry = Registry {
             types: Default::default(),
             directives: Default::default(),
@@ -335,6 +360,7 @@ where
             introspection_mode: IntrospectionMode::Enabled,
             enable_federation: false,
             federation_subscription: false,
+            ignore_name_conflicts,
         };
 
         registry.add_directive(MetaDirective {

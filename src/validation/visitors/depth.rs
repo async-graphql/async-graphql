@@ -76,7 +76,8 @@ mod tests {
     }
 
     fn check_depth(query: &str, expect_depth: usize) {
-        let registry = Schema::<Query, EmptyMutation, EmptySubscription>::create_registry();
+        let registry =
+            Schema::<Query, EmptyMutation, EmptySubscription>::create_registry(Default::default());
         let doc = parse_query(query).unwrap();
         let mut ctx = VisitorContext::new(&registry, &doc, None);
         let mut depth = 0;
