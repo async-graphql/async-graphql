@@ -233,7 +233,7 @@ pub use indexmap;
 pub use look_ahead::Lookahead;
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
-pub use registry::CacheControl;
+pub use registry::{CacheControl, SDLExportOptions};
 pub use request::{BatchRequest, Request};
 #[doc(no_inline)]
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
