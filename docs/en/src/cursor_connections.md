@@ -32,7 +32,7 @@ impl Query {
                 };
             }
             let mut connection = Connection::new(start > 0, end < 10000);
-            connection.append(
+            connection.edges.extend(
                 (start..end).into_iter().map(|n|
                     Ok(Edge::with_additional_fields(n, n as i32, EmptyFields)),
             ))?;
