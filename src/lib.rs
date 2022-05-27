@@ -238,7 +238,7 @@ pub use request::{BatchRequest, Request};
 #[doc(no_inline)]
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
-pub use schema::{Schema, SchemaBuilder, SchemaEnv};
+pub use schema::{IntrospectionMode, Schema, SchemaBuilder, SchemaEnv};
 #[doc(hidden)]
 pub use static_assertions;
 pub use subscription::SubscriptionType;
