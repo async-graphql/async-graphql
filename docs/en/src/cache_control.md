@@ -15,17 +15,23 @@ when querying multiple resolvers, the results of all cache control parameters wi
 We can use `QueryResponse` to get a merged cache control result from a query result, and call `CacheControl::value` to get the corresponding HTTP header.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
 #[Object(cache_control(max_age = 60))]
 impl Query {
     #[graphql(cache_control(max_age = 30))]
     async fn value1(&self) -> i32 {
+        1
     }
 
     #[graphql(cache_control(private))]
     async fn value2(&self) -> i32 {
+        2
     }
 
     async fn value3(&self) -> i32 {
+        3
     }
 }
 ```
@@ -46,4 +52,3 @@ The following are different queries corresponding to different cache control res
 # max_age=60
 { value3 }
 ```
-

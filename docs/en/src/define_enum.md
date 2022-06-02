@@ -5,6 +5,7 @@ It's easy to define an `Enum`, here we have an example:
 **Async-graphql will automatically change the name of each item to GraphQL's CONSTANT_CASE convention. You can use `name` to rename.**
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 /// One of the films in the Star Wars Trilogy
@@ -30,6 +31,8 @@ expose remote enumeration types to GraphQL. In order to provide an `Enum` type, 
 enum that has parity with the existing, remote enum type.
 
 ```rust
+# extern crate async_graphql;
+# mod remote_crate { pub enum RemoteEnum { A, B, C } }
 use async_graphql::*;
 
 /// Provides parity with a remote enum type
@@ -55,6 +58,9 @@ impl From<remote_crate::RemoteEnum> for LocalEnum {
 The process is tedious and requires multiple steps to keep the local and remote enums in sync. `Async_graphql` provides a handy feature to generate the `From<remote_crate::RemoteEnum> for LocalEnum` as well as an opposite direction of `From<LocalEnum> for remote_crate::RemoteEnum` via an additional attribute after deriving `Enum`:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# mod remote_crate { pub enum RemoteEnum { A, B, C } }
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 #[graphql(remote = "remote_crate::RemoteEnum")]
 enum LocalEnum {

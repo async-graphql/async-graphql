@@ -15,17 +15,23 @@
 我们可以从查询结果`QueryResponse`中获取缓存控制合并结果，并且调用`CacheControl::value`来获取对应的HTTP头。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
 #[Object(cache_control(max_age = 60))]
 impl Query {
     #[graphql(cache_control(max_age = 30))]
     async fn value1(&self) -> i32 {
+        1
     }
 
     #[graphql(cache_control(private))]
     async fn value2(&self) -> i32 {
+        2
     }
 
     async fn value3(&self) -> i32 {
+        3
     }
 }
 ```

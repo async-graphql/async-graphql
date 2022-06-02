@@ -17,6 +17,7 @@
 - **regex=RE** 匹配正则表达式
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -24,7 +25,8 @@ struct Query;
 #[Object]
 impl Query {
     /// name参数的长度必须大于等于5，小于等于10
-    async fn input(#[graphql(validator(min_length = 5, max_length = 10))] name: String) {
+    async fn input(&self, #[graphql(validator(min_length = 5, max_length = 10))] name: String) -> Result<i32> {
+#        todo!()    
     }
 }
 ```
@@ -34,13 +36,15 @@ impl Query {
 你可以打开`list`属性表示校验器作用于一个列表内的所有成员:
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[graphql(validator(list, max_length = 10))] names: Vec<String>) {
+    async fn input(&self, #[graphql(validator(list, max_length = 10))] names: Vec<String>) -> Result<i32> {
+#        todo!()
     }
 }
 ```
@@ -48,6 +52,8 @@ impl Query {
 ## 自定义校验器
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct MyValidator {
     expect: i32,
 }

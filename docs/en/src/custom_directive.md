@@ -8,6 +8,8 @@ generate a factory function that receives the parameters of the directive and re
 Currently `Async-graphql` only supports directive located at `FIELD`.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct ConcatDirective {
     value: String,
 }
@@ -33,6 +35,18 @@ fn concat(value: String) -> impl CustomDirective {
 Register the directive when building the schema:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query { async fn verison(&self) -> &str { "1.0" } }
+# struct ConcatDirective { value: String, }
+# #[async_trait::async_trait]
+# impl CustomDirective for ConcatDirective {
+#   async fn resolve_field(&self, _ctx: &Context<'_>, resolve: ResolveFut<'_>) -> ServerResult<Option<Value>> { todo!() }
+# }
+# #[Directive(location = "field")]
+# fn concat(value: String) -> impl CustomDirective { ConcatDirective { value } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)
     .finish();

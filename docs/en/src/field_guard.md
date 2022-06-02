@@ -3,6 +3,8 @@
 You can define a `guard` for the fields of `Object`, `SimpleObject`, `ComplexObject` and `Subscription`, it will be executed before calling the resolver function, and an error will be returned if it fails.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
     Admin,
@@ -34,6 +36,14 @@ impl Guard for RoleGuard {
 Use it with the `guard` attribute:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(Eq, PartialEq, Copy, Clone)]
+# enum Role { Admin, Guest, }
+# struct RoleGuard { role: Role, }
+# impl RoleGuard { fn new(role: Role) -> Self { Self { role } } }
+# #[async_trait::async_trait]
+# impl Guard for RoleGuard { async fn check(&self, ctx: &Context<'_>) -> Result<()> { todo!() } }
 #[derive(SimpleObject)]
 struct Query {
     /// Only allow Admin
@@ -50,6 +60,8 @@ struct Query {
 Sometimes guards need to use field parameters, you need to pass the parameter value when creating the guard like this:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct EqGuard {
     expect: i32,
     actual: i32,

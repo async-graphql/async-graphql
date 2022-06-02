@@ -5,6 +5,7 @@
 下面的例子定义了一个名称为MyObject的对象，包含字段`a`和`b`，`c`由于标记为`#[graphql(skip)]`，所以不会映射到GraphQL。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -27,6 +28,12 @@ struct MyObject {
 在下面的示例中，创建了两种`SimpleObject`类型：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct SomeType { a: i32 }
+# #[derive(SimpleObject)]
+# struct SomeOtherType { a: i32 }
 #[derive(SimpleObject)]
 #[graphql(concrete(name = "SomeName", params(SomeType)))]
 #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
@@ -55,6 +62,19 @@ type SomeOtherName {
 在其它`Object`中使用具体的泛型类型：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct SomeType { a: i32 }
+# #[derive(SimpleObject)]
+# struct SomeOtherType { a: i32 }
+# #[derive(SimpleObject)]
+# #[graphql(concrete(name = "SomeName", params(SomeType)))]
+# #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+# pub struct SomeGenericObject<T: OutputType> {
+#     field1: Option<T>,
+#     field2: String,
+# }
 #[derive(SimpleObject)]
 pub struct YetAnotherObject {
     a: SomeGenericObject<SomeType>,
@@ -72,6 +92,8 @@ pub struct YetAnotherObject {
 一些简单的字段，并使用`ComplexObject`宏来定义其他一些需要计算的字段。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(SimpleObject)]
 #[graphql(complex)] // 注意: 如果你希望ComplexObject宏生效，complex属性是必须的
 struct MyObj {
@@ -90,6 +112,8 @@ impl MyObj {
 ## 同时用于输入和输出
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(SimpleObject, InputObject)]
 #[graphql(input_name = "MyObjInput")] // 注意: 你必须用input_name属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
 struct MyObj {

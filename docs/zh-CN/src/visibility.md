@@ -3,6 +3,7 @@
 默认情况下，所有类型，字段在内省中都是可见的。但可能你希望根据不同的用户来隐藏一些信息，避免引起不必要的误会。你可以在类型或者字段上添加`visible`属性来做到。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -19,7 +20,7 @@ struct MyObj {
     c: i32, 
 }
 
-#[derive(Enum)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum MyEnum {
     // 这个项目将在内省中可见
     A,

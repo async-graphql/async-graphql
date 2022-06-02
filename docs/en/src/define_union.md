@@ -6,6 +6,7 @@ The implementation is quite similar for `Async-graphql`; from `Async-graphql`'s 
 The following example modified the definition of `Interface` a little bit and removed fields.
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Circle {
@@ -54,6 +55,7 @@ into the parent union. This is done by applying `#[graphql(flatten)]` on each
 member we want to flatten.
 
 ```rust
+# extern crate async_graphql;
 #[derive(async_graphql::Union)]
 pub enum TopLevelUnion {
     A(A),
@@ -65,6 +67,7 @@ pub enum TopLevelUnion {
 
 #[derive(async_graphql::SimpleObject)]
 pub struct A {
+    a: i32,
     // ...
 }
 
@@ -76,11 +79,13 @@ pub enum B {
 
 #[derive(async_graphql::SimpleObject)]
 pub struct C {
+    c: i32,
     // ...
 }
 
 #[derive(async_graphql::SimpleObject)]
 pub struct D {
+    d: i32,
     // ...
 }
 ```
@@ -88,6 +93,13 @@ pub struct D {
 The above example transforms the top-level union into this equivalent:
 
 ```rust
+# extern crate async_graphql;
+# #[derive(async_graphql::SimpleObject)]
+# struct A { a: i32 }
+# #[derive(async_graphql::SimpleObject)]
+# struct C { c: i32 }
+# #[derive(async_graphql::SimpleObject)]
+# struct D { d: i32 }
 #[derive(async_graphql::Union)]
 pub enum TopLevelUnion {
     A(A),

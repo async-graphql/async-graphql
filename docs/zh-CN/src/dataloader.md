@@ -12,7 +12,7 @@ query { todos { users { name } } }
 
 实现`User`的resolver代码如下：
 
-```rust
+```rust,ignore
 struct User {
     id: u64,
 }
@@ -63,7 +63,7 @@ SELECT name FROM user WHERE id = $1
 
 下面是使用`DataLoader`来优化查询请求的例子：
 
-```rust
+```rust,ignore
 use async_graphql::*;
 use async_graphql::dataloader::*;
 use itertools::Itertools;
@@ -113,7 +113,7 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 
 你可以为同一个`Loader`实现多种数据类型，就像下面这样：
 
-```rust
+```rust,ignore
 struct PostgresLoader {
     pool: sqlx::Pool<Postgres>,
 }

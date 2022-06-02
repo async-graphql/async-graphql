@@ -15,6 +15,7 @@
 下面的例子展示了如何从`Context`中借用数据。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -35,7 +36,17 @@ impl Query {
 你可以在创建`Schema`时将数据放入上下文中，这对于不会更改的数据非常有用，例如连接池。
 
 ```rust
-  let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(Default,SimpleObject)]
+# struct Query { version: i32}
+# struct EnvStruct;
+# let env_struct = EnvStruct;
+# struct S3Object;
+# let s3_storage = S3Object;
+# struct DBConnection;
+# let db_core = DBConnection;
+let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
     .data(env_struct)
     .data(s3_storage)
     .data(db_core)
@@ -49,22 +60,31 @@ impl Query {
 一个使用`warp`的小例子：
 
 ```rust
+# extern crate async_graphql;
+# extern crate async_graphql_warp;
+# extern crate warp;
+# use async_graphql::*;
+# use warp::{Filter, Reply};
+# use std::convert::Infallible;
+# #[derive(Default, SimpleObject)]
+# struct Query { name: String }
+# struct AuthInfo { pub token: Option<String> }
+# let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+# let schema_filter = async_graphql_warp::graphql(schema);
 let graphql_post = warp::post()
   .and(warp::path("graphql"))
+  .and(warp::header::optional("Authorization"))
   .and(schema_filter)
-  .and(a_warp_filter)
-  ...
-  .and_then( |schema: (Schema<Query, Mutation, Subscriptions>, async_graphql::Request), arg2: ArgType2 ...| async move {
-    let (schema, request) = schema;
-    let your_auth_data = auth_function_from_headers(headers).await?;
+  .and_then( |auth: Option<String>, (schema, mut request): (Schema<Query, EmptyMutation, EmptySubscription>, async_graphql::Request)| async move {
+    // Do something to get auth data from the header
+    let your_auth_data = AuthInfo { token: auth };
     let response = schema
       .execute(
         request
          .data(your_auth_data)
-         .data(something_else)
       ).await;
       
-    Ok(async_graphql_warp::Response::from(response))
+    Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(response))
   });
 ```
 
@@ -73,6 +93,11 @@ let graphql_post = warp::post()
 使用`Context`你还可以插入或添加HTTP头。
 
 ```rust
+# extern crate async_graphql;
+# extern crate http;
+# use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+# use async_graphql::*;
+# struct Query;
 #[Object]
 impl Query {
     async fn greet(&self, ctx: &Context<'_>) -> String {
@@ -99,6 +124,7 @@ impl Query {
 如果要跨查询或子查询执行搜索，则不必使用 `SelectionField` 手动执行此操作，可以使用 `ctx.look_ahead()` 来执行选择。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 #[derive(SimpleObject)]

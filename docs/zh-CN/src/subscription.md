@@ -5,6 +5,12 @@
 下面的例子订阅一个整数流，它每秒产生一个整数，参数`step`指定了整数的步长，默认为1。
 
 ```rust
+# extern crate async_graphql;
+# use std::time::Duration;
+# use async_graphql::futures_util::stream::Stream;
+# use async_graphql::futures_util::StreamExt;
+# extern crate tokio_stream;
+# extern crate tokio;
 use async_graphql::*;
 
 struct Subscription;

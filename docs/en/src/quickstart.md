@@ -19,6 +19,7 @@ The Schema of a GraphQL contains a required Query, an optional Mutation, and an 
 Here is a simple example where we provide just one query that returns the sum of `a` and `b`.
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -37,13 +38,23 @@ impl Query {
 In our example, there is only a Query without a Mutation or Subscription, so we create the Schema with `EmptyMutation` and `EmptySubscription`, and then call `Schema::execute` to execute the Query.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#
+# struct Query;
+# #[Object]
+# impl Query {
+#   async fn version(&self) -> &str { "1.0" }    
+# }
+# async fn other() {
 let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute("{ add(a: 10, b: 20) }").await;
+# }
 ```
 
 ## Output the query results as JSON
 
-```rust
+```rust,ignore
 let json = serde_json::to_string(&res);
 ```
 

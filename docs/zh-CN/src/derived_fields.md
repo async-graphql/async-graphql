@@ -5,12 +5,16 @@
 在以下例子中，你已经有一个`duration_rfc2822`字段输出`RFC2822`格式的时间格式，然后复用它派生一个新的`date_rfc3339`字段。
 
 ```rust
-struct DateRFC3339(chrono::DateTime);
-struct DateRFC2822(chrono::DateTime);
+# extern crate chrono;
+# use chrono::Utc;
+# extern crate async_graphql;
+# use async_graphql::*;
+struct DateRFC3339(chrono::DateTime<Utc>);
+struct DateRFC2822(chrono::DateTime<Utc>);
 
 #[Scalar]
 impl ScalarType for DateRFC3339 {
-  fn parse(value: Value) -> InputValueResult { ... } 
+  fn parse(value: Value) -> InputValueResult<Self> { todo!() } 
 
   fn to_value(&self) -> Value {
     Value::String(self.0.to_rfc3339())
@@ -19,7 +23,7 @@ impl ScalarType for DateRFC3339 {
 
 #[Scalar]
 impl ScalarType for DateRFC2822 {
-  fn parse(value: Value) -> InputValueResult { ... } 
+  fn parse(value: Value) -> InputValueResult<Self> { todo!() } 
 
   fn to_value(&self) -> Value {
     Value::String(self.0.to_rfc2822())
@@ -56,7 +60,7 @@ type Query {
 
 因为 [孤儿规则](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits)，以下代码无法通过编译：
 
-```
+```rust,ignore
 impl From<Vec<U>> for Vec<T> {
   ...
 }
@@ -69,6 +73,10 @@ impl From<Vec<U>> for Vec<T> {
 ### Example
 
 ```rust
+# extern crate serde;
+# use serde::{Serialize, Deserialize};
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(Serialize, Deserialize, Clone)]
 struct ValueDerived(String);
 
