@@ -78,6 +78,29 @@ jobs:
       - name: Check with clippy
         run: cargo clippy --all
 
+  book_examples:
+    name: Test book examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install mdBook
+        uses: peaceiris/actions-mdbook@v1
+      - name: Build with all features
+        run: cargo build --workspace --all-features
+      - name: Run book tests for en language
+        run: mdbook test -L target/debug/deps ./docs/en
+      - name: Run book tests for zh-CN language
+        run: mdbook test -L target/debug/deps ./docs/zh-CN
+      - name: Clean
+        run: cargo clean
+
   examples:
     name: Build examples - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

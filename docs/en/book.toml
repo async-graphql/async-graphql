@@ -4,3 +4,6 @@ description = "Async-graphql Book"
 src = "src"
 language = "en"
 title = "Async-graphql Book"
+
+[rust]
+edition = "2021"
