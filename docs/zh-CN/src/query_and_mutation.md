@@ -5,7 +5,10 @@
 查询根对象是一个GraphQL对象，定义类似其它对象。查询对象的所有字段Resolver函数是并发执行的。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct User { a: i32 }
 
 struct Query;
 
@@ -13,6 +16,7 @@ struct Query;
 impl Query {
     async fn user(&self, username: String) -> Result<Option<User>> {
         // 在数据库中查找用户
+#        todo!()
     }
 }
 
@@ -25,6 +29,7 @@ impl Query {
 下面的变更根对象提供用户注册和登录操作：
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Mutation;
@@ -33,11 +38,12 @@ struct Mutation;
 impl Mutation {
     async fn signup(&self, username: String, password: String) -> Result<bool> {
         // 用户注册
+#        todo!()
     }
 
     async fn login(&self, username: String, password: String) -> Result<String> {
         // 用户登录并生成token
+#        todo!()
     }
 }
 ```
-

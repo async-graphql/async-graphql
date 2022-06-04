@@ -15,9 +15,15 @@ the error message exposed by `std::fmt::Display`. However, `Error` actually prov
 A resolver looks like this:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32, Error> {
     Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
 }
+# }
 ```
 
 may then return a response like this:
@@ -47,12 +53,18 @@ The easiest way to provide extensions to any error is by calling `extend_with` o
 This will on the fly convert any error into a `Error` with the given extension.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
 use std::num::ParseIntError;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
 }
+# }
 ```
 
 ### Implementing ErrorExtensions for custom errors.
@@ -60,10 +72,10 @@ If you find yourself attaching extensions to your errors all over the place you 
 implementing the trait on your custom error type directly.
 
 ```rust
-#[macro_use]
-extern crate thiserror;
-
-#[derive(Debug, Error)]
+# extern crate async_graphql;
+# extern crate thiserror;
+# use async_graphql::*;
+#[derive(Debug, thiserror::Error)]
 pub enum MyError {
     #[error("Could not find resource")]
     NotFound,
@@ -81,7 +93,7 @@ impl ErrorExtensions for MyError {
         Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
               MyError::NotFound => e.set("code", "NOT_FOUND"),
-              MyError::ServerError(reason) => e.set("reason", reason),
+              MyError::ServerError(reason) => e.set("reason", reason.clone()),
               MyError::ErrorWithoutExtensions => {}
           })
     }
@@ -92,11 +104,29 @@ This way you only need to call `extend` on your error to deliver the error messa
 Or further extend your error through `extend_with`.
 
 ```rust
+# extern crate async_graphql;
+# extern crate thiserror;
+# use async_graphql::*;
+# #[derive(Debug, thiserror::Error)]
+# pub enum MyError {
+#     #[error("Could not find resource")]
+#     NotFound,
+# 
+#     #[error("ServerError")]
+#     ServerError(String),
+# 
+#     #[error("No Extensions")]
+#     ErrorWithoutExtensions,
+# }
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions_result(&self) -> Result<i32> {
     // Err(MyError::NotFound.extend())
     // OR
     Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
+# }
 ```
 
 ```json
@@ -118,13 +148,19 @@ async fn parse_with_extensions_result(&self) -> Result<i32> {
 ## ResultExt
 This trait enables you to call `extend_err` directly on results. So the above code becomes less verbose.
 
-```rust
+```rust,ignore
+# // @todo figure out why this example does not compile!
+# extern crate async_graphql;
 use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .extend_err(|_, e| e.set("code", 404))?)
 }
+# }
 ```
 ### Chained extensions
 Since `ErrorExtensions` and `ResultExt` are implemented for any type `&E where E: std::fmt::Display`
@@ -132,7 +168,11 @@ we can chain the extension together.
 
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
     match "234a".parse() {
         Ok(n) => Ok(n),
@@ -143,6 +183,7 @@ async fn parse_with_extensions(&self) -> Result<i32> {
             .extend_with(|_, e| e.set("code", 500))),
     }
 }
+# }
 ```
 Expected response:
 
@@ -187,4 +228,3 @@ async fn parse_with_extensions_result(&self) -> Result<i32> {
       .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }
 ```
-

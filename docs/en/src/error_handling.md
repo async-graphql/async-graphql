@@ -2,7 +2,7 @@
 
 Resolve can return a `Result`, which has the following definition:
 
-```rust
+```rust,ignore
 type Result<T> = std::result::Result<T, Error>;
 ```
 
@@ -12,6 +12,8 @@ The following example shows how to parse an input string to an integer. When par
 See the [Error Extensions](error_extensions.md) section of this book for more details.
 
 ```rust
+# extern crate async_graphql;
+# use std::num::ParseIntError;
 use async_graphql::*;
 
 struct Query;
@@ -21,7 +23,7 @@ impl Query {
     async fn parse_with_extensions(&self, input: String) -> Result<i32> {
         Ok("234a"
             .parse()
-            .map_err(|err: ParseIntError| err.extend_with(|_| json!({"code": 400})))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set("code", 400)))?)
     }
 }
 ```
@@ -29,7 +31,7 @@ impl Query {
 #### Errors in subscriptions
 
 Errors can be returned from subscription resolvers as well, using a return type of the form:
-```rust
+```rust,ignore
 async fn my_subscription_resolver(&self) -> impl Stream<Item = Result<MyItem, MyError>> { ... }
 ```
 

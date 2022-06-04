@@ -19,6 +19,7 @@ Async-graphql实现了常用数据类型到GraphQL类型的映射，例如`i32`,
 下面是一个简单的例子，我们只提供一个查询，返回`a`和`b`的和。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -38,13 +39,23 @@ impl Query {
 在我们这个例子里面，只有Query，没有Mutation和Subscription，所以我们用`EmptyMutation`和`EmptySubscription`来创建Schema，然后调用`Schema::execute`来执行查询。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#
+# struct Query;
+# #[Object]
+# impl Query {
+#   async fn version(&self) -> &str { "1.0" }    
+# }
+# async fn other() {
 let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute("{ add(a: 10, b: 20) }").await;
+# }
 ```
 
 ## 把查询结果输出为JSON
 
-```rust
+```rust,ignore
 let json = serde_json::to_string(&res);
 ```
 

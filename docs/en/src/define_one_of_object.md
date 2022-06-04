@@ -6,6 +6,9 @@ It is especially useful when you want a user to be able to choose between severa
 This feature is still an [RFC](https://github.com/graphql/graphql-spec/pull/825) and therefore not yet officially part of the GraphQL spec, but `Async-graphql` already supports it!
 
 ```rust
+# extern crate async_graphql;
+# #[derive(SimpleObject)]
+# struct User { a: i32 }
 use async_graphql::*;
 
 #[derive(OneofObject)]
@@ -29,6 +32,7 @@ struct Query {}
 impl Query {
     async fn search_users(&self, by: Vec<UserBy>) -> Vec<User> {
         // ... Searches and returns a list of users ...
+#         todo!()
     }
 }
 ```

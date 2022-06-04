@@ -6,6 +6,7 @@ If you don't require automatic mapping of fields, see [Object](define_complex_ob
 The example below defines an object `MyObject` which includes the fields `a` and `b`. `c` will be not mapped to GraphQL as it is labelled as `#[graphql(skip)]`
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -32,6 +33,8 @@ the non-calculated fields, where as the `ComplexObject` macro let's you write us
 Resolvers added to `ComplexObject` adhere to the same rules as resolvers of [Object](define_complex_object.html).
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(SimpleObject)]
 #[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
 struct MyObj {
@@ -55,6 +58,12 @@ and specify how its concrete types should be implemented.
 In the following example, two `SimpleObject` types are created:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct SomeType { a: i32 }
+# #[derive(SimpleObject)]
+# struct SomeOtherType { a: i32 }
 #[derive(SimpleObject)]
 #[graphql(concrete(name = "SomeName", params(SomeType)))]
 #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
@@ -83,6 +92,19 @@ type SomeOtherName {
 In your resolver method or field of another object, use as a normal generic type:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct SomeType { a: i32 }
+# #[derive(SimpleObject)]
+# struct SomeOtherType { a: i32 }
+# #[derive(SimpleObject)]
+# #[graphql(concrete(name = "SomeName", params(SomeType)))]
+# #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+# pub struct SomeGenericObject<T: OutputType> {
+#     field1: Option<T>,
+#     field2: String,
+# }
 #[derive(SimpleObject)]
 pub struct YetAnotherObject {
     a: SomeGenericObject<SomeType>,
@@ -95,6 +117,8 @@ You can pass multiple generic types to `params()`, separated by a comma.
 ## Used for both input and output
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(SimpleObject, InputObject)]
 #[graphql(input_name = "MyObjInput")] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
 struct MyObj {

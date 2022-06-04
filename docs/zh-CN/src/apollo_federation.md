@@ -15,23 +15,27 @@
 ## 实体查找函数
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct User { id: ID }
 struct Query;
 
 #[Object]
 impl Query {
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id(&self, id: ID) -> User {
-        User { ... }
+        User { id }
     }
 
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id_with_username(&self, #[graphql(key)] id: ID, username: String) -> User {
-        User { ... }
+        User { id }
     }
 
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id_and_username(&self, id: ID, username: String) -> User {
-        User { ... }
+        User { id }
     }
 }
 ```
@@ -59,6 +63,10 @@ impl Query {
 下面的例子中`User`对象的主键是`key { a b }`。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# struct User { id: i32 }
 #[derive(InputObject)]
 struct NestedKey {
   a: i32,
@@ -69,9 +77,9 @@ struct Query;
 
 #[Object]
 impl Query {
-  #[entity]
+  #[graphql(entity)]
   async fn find_user_by_key(&self, key: NestedKey) -> User {
-    User { ... }
+    User { id: key.a }
   }
 }
 ```

@@ -5,6 +5,7 @@
 下面把接口定义的例子做一个小小的修改，去掉字段的定义。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Circle {
@@ -49,6 +50,7 @@ enum Shape {
 GraphQL的有个限制是`Union`类型内不能包含其它联合类型。 所有成员必须为`Object`。 
 位置支持嵌套`Union`，我们可以用`#graphql(flatten)`，是它们合并到上级`Union`类型。
 ```rust
+# extern crate async_graphql;
 #[derive(async_graphql::Union)]
 pub enum TopLevelUnion {
     A(A),
@@ -60,6 +62,7 @@ pub enum TopLevelUnion {
 
 #[derive(async_graphql::SimpleObject)]
 pub struct A {
+    a: i32,
     // ...
 }
 
@@ -71,11 +74,13 @@ pub enum B {
 
 #[derive(async_graphql::SimpleObject)]
 pub struct C {
+    c: i32,
     // ...
 }
 
 #[derive(async_graphql::SimpleObject)]
 pub struct D {
+    d: i32,
     // ...
 }
 ```
@@ -83,6 +88,13 @@ pub struct D {
 上面的示例将顶级`Union`转换为以下等效形式：
 
 ```rust
+# extern crate async_graphql;
+# #[derive(async_graphql::SimpleObject)]
+# struct A { a: i32 }
+# #[derive(async_graphql::SimpleObject)]
+# struct C { c: i32 }
+# #[derive(async_graphql::SimpleObject)]
+# struct D { d: i32 }
 #[derive(async_graphql::Union)]
 pub enum TopLevelUnion {
     A(A),

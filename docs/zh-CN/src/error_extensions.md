@@ -17,9 +17,15 @@
 Resolver函数类似这样：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32, Error> {
     Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
 }
+# }
 ```
 
 然后可以返回如下响应：
@@ -49,12 +55,18 @@ async fn parse_with_extensions(&self) -> Result<i32, Error> {
 这将把任何错误转换为具有给定扩展信息的`Error`。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
 use std::num::ParseIntError;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
 }
+# }
 ```
 
 ### 为自定义错误实现ErrorExtensions
@@ -63,10 +75,10 @@ async fn parse_with_extensions(&self) -> Result<i32> {
 
 
 ```rust
-#[macro_use]
-extern crate thiserror;
-
-#[derive(Debug, Error)]
+# extern crate async_graphql;
+# extern crate thiserror;
+# use async_graphql::*;
+#[derive(Debug, thiserror::Error)]
 pub enum MyError {
     #[error("Could not find resource")]
     NotFound,
@@ -84,7 +96,7 @@ impl ErrorExtensions for MyError {
         Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
               MyError::NotFound => e.set("code", "NOT_FOUND"),
-              MyError::ServerError(reason) => e.set("reason", reason),
+              MyError::ServerError(reason) => e.set("reason", reason.clone()),
               MyError::ErrorWithoutExtensions => {}
           })
     }
@@ -94,11 +106,29 @@ impl ErrorExtensions for MyError {
 您只需要对错误调用`extend`即可将错误与其提供的扩展信息一起传递，或者通过`extend_with`进一步扩展错误信息。
 
 ```rust
+# extern crate async_graphql;
+# extern crate thiserror;
+# use async_graphql::*;
+# #[derive(Debug, thiserror::Error)]
+# pub enum MyError {
+#     #[error("Could not find resource")]
+#     NotFound,
+# 
+#     #[error("ServerError")]
+#     ServerError(String),
+# 
+#     #[error("No Extensions")]
+#     ErrorWithoutExtensions,
+# }
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions_result(&self) -> Result<i32> {
     // Err(MyError::NotFound.extend())
     // OR
     Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
+# }
 ```
 
 ```json
@@ -120,13 +150,19 @@ async fn parse_with_extensions_result(&self) -> Result<i32> {
 ## ResultExt
 这个特质使您可以直接在结果上调用`extend_err`。因此上面的代码不再那么冗长。
 
-```rust
+```rust,ignore
+# // @todo figure out why this example does not compile!
+# extern crate async_graphql;
 use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
      Ok("234a"
          .parse()
          .extend_err(|_, e| e.set("code", 404))?)
 }
+# }
 ```
 
 ### 链式调用
@@ -134,7 +170,11 @@ async fn parse_with_extensions(&self) -> Result<i32> {
 由于对所有`&E where E: std::fmt::Display`实现了`ErrorExtensions`和`ResultsExt`，我们可以将扩展链接在一起。
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query {
 async fn parse_with_extensions(&self) -> Result<i32> {
     match "234a".parse() {
         Ok(n) => Ok(n),
@@ -145,6 +185,7 @@ async fn parse_with_extensions(&self) -> Result<i32> {
             .extend_with(|_, e| e.set("code", 500))),
     }
 }
+# }
 ```
 
 响应：
@@ -191,4 +232,3 @@ async fn parse_with_extensions_result(&self) -> Result<i32> {
       .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }
 ```
-

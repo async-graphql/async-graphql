@@ -3,6 +3,13 @@
 ## 请求例子
 
 ```rust
+# extern crate async_graphql_poem;
+# extern crate async_graphql;
+# extern crate poem;
+# use async_graphql::*;
+# #[derive(Default, SimpleObject)]
+# struct Query { a: i32 }
+# let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
 use poem::Route;
 use async_graphql_poem::GraphQL;
 
@@ -13,7 +20,14 @@ let app = Route::new()
 ## 订阅例子
 
 ```rust
-use poem::Route;
+# extern crate async_graphql_poem;
+# extern crate async_graphql;
+# extern crate poem;
+# use async_graphql::*;
+# #[derive(Default, SimpleObject)]
+# struct Query { a: i32 }
+# let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+use poem::{get, Route};
 use async_graphql_poem::GraphQLSubscription;
 
 let app = Route::new()

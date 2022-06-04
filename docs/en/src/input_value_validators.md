@@ -17,6 +17,7 @@
 - **regex=RE** is match for the regex.
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -24,7 +25,8 @@ struct Query;
 #[Object]
 impl Query {
     /// The length of the name must be greater than or equal to 5 and less than or equal to 10.
-    async fn input(#[graphql(validator(min_length = 5, max_length = 10))] name: String) {
+    async fn input(&self, #[graphql(validator(min_length = 5, max_length = 10))] name: String) -> Result<i32> {
+#         todo!()
     }
 }
 ```
@@ -34,13 +36,15 @@ impl Query {
 You can enable the `list` attribute, and the validator will check all members in list:
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[graphql(validator(list, max_length = 10))] names: Vec<String>) {
+    async fn input(&self, #[graphql(validator(list, max_length = 10))] names: Vec<String>) -> Result<i32> {
+#        todo!()
     }
 }
 ```
@@ -48,6 +52,8 @@ impl Query {
 ## Custom validator
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct MyValidator {
     expect: i32,
 }

@@ -10,7 +10,7 @@ Across every step, you'll have the `ExtensionContext` supplied with data about y
 
 For those who don't know, let's dig deeper into what is a middleware:
 
-```rust
+```rust,ignore
 async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>) -> MiddlewareResult {
   // Logic to your middleware.
 
@@ -38,21 +38,35 @@ First, when we receive a request, if it's not a subscription, the first function
 Default implementation for `request`:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     next.run(ctx).await
 }
+# }
 ```
 
 Depending on where you put your logic code, it'll be executed at the beginning or at the ending of the query being processed.
 
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     // The code here will be run before the prepare_request is executed.
     let result = next.run(ctx).await;
     // The code after the completion of this future will be after the processing, just before sending the result to the user.
     result
 }
+# }
 ```
 
 ### prepare_request
@@ -60,6 +74,13 @@ async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Re
 Just after the `request`, we will have the `prepare_request` lifecycle, which will be hooked. 
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn prepare_request(
     &self,
     ctx: &ExtensionContext<'_>,
@@ -71,6 +92,7 @@ async fn prepare_request(
     // The code here will be run just after the prepare_request
     result
 }
+# }
 ```
 
 ### parse_query
@@ -78,6 +100,13 @@ async fn prepare_request(
 The `parse_query` will create a GraphQL `ExecutableDocument` on your query, it'll check if the query is valid for the GraphQL Spec. Usually the implemented spec in `async-graphql` tends to be the last stable one (October2021).
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# use async_graphql::parser::types::ExecutableDocument;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at parse query.
 async fn parse_query(
     &self,
@@ -90,6 +119,7 @@ async fn parse_query(
 ) -> ServerResult<ExecutableDocument> {
     next.run(ctx, query, variables).await
 }
+# }
 ```
 
 ### validation
@@ -97,6 +127,12 @@ async fn parse_query(
 The `validation` step will check (depending on your `validation_mode`) rules the query should abide to and give the client data about why the query is not valid.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at validation query.
 async fn validation(
   &self,
@@ -105,6 +141,7 @@ async fn validation(
 ) -> Result<ValidationResult, Vec<ServerError>> {
   next.run(ctx).await
 }
+# }
 ```
 
 ### execute
@@ -112,6 +149,12 @@ async fn validation(
 The `execution` step is a huge one, it'll start the execution of the query by calling each resolver concurrently for a `Query` and serially for a `Mutation`.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at execute query.
 async fn execute(
     &self,
@@ -124,6 +167,7 @@ async fn execute(
     // After resolving the whole query
     result
 }
+# }
 ````
 
 ### resolve
@@ -131,6 +175,12 @@ async fn execute(
 The `resolve` step is launched for each field.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware { 
 /// Called at resolve field.
 async fn resolve(
     &self,
@@ -143,6 +193,7 @@ async fn resolve(
     // Logic after resolving the field
     result
 }
+# }
 ```
 
 ### subscribe
@@ -150,6 +201,13 @@ async fn resolve(
 The `subscribe` lifecycle has the same behavior as the `request` but for a `Subscritpion`.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# use futures_util::stream::BoxStream;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at subscribe request.
 fn subscribe<'s>(
     &self,
@@ -159,4 +217,5 @@ fn subscribe<'s>(
 ) -> BoxStream<'s, Response> {
     next.run(ctx, stream)
 }
+# }
 ``` 

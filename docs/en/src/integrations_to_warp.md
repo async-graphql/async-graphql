@@ -10,6 +10,16 @@ You can combine other filters later, or directly call `Schema::execute` to execu
 ## Request example
 
 ```rust
+# extern crate async_graphql_warp;
+# extern crate async_graphql;
+# extern crate warp;
+# use async_graphql::*;
+# use std::convert::Infallible;
+# use warp::Filter;
+# struct QueryRoot;
+# #[Object]
+# impl QueryRoot { async fn version(&self) -> &str { "1.0" } }
+# async fn other() {
 type MySchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
 
 let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
@@ -18,20 +28,39 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
     let resp = schema.execute(request).await;
 
     // Return result
-    Ok::<_, Infallible>(async_graphql_warp::Response::from(resp))
+    Ok::<_, Infallible>(async_graphql_warp::GraphQLResponse::from(resp))
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+# }
 ```
 
 ## Subscription example
 
 ```rust
+# extern crate async_graphql_warp;
+# extern crate async_graphql;
+# extern crate warp;
+# use async_graphql::*;
+# use futures_util::stream::{Stream, StreamExt};
+# use std::convert::Infallible;
+# use warp::Filter;
+# struct SubscriptionRoot;
+# #[Subscription]
+# impl SubscriptionRoot {
+#   async fn tick(&self) -> impl Stream<Item = i32> {
+#     futures_util::stream::iter(0..10)
+#   }
+# }
+# struct QueryRoot;
+# #[Object]
+# impl QueryRoot { async fn version(&self) -> &str { "1.0" } }
+# async fn other() {
 let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
+# }
 ```
 
 ## More examples
 
 [https://github.com/async-graphql/examples/tree/master/warp](https://github.com/async-graphql/examples/tree/master/warp)
-
