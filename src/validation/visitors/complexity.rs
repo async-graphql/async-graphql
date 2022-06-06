@@ -63,18 +63,16 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
                             *self.complexity_stack.last_mut().unwrap() += n;
                         }
                         ComplexityType::Fn(f) => {
-                            if MetaTypeName::create(&meta_field.ty).is_list() {
-                                match f(
-                                    ctx,
-                                    self.variable_definition.unwrap(),
-                                    &field.node,
-                                    children_complex,
-                                ) {
-                                    Ok(n) => {
-                                        *self.complexity_stack.last_mut().unwrap() += n;
-                                    }
-                                    Err(err) => ctx.report_error(vec![field.pos], err.to_string()),
+                            match f(
+                                ctx,
+                                self.variable_definition.unwrap(),
+                                &field.node,
+                                children_complex,
+                            ) {
+                                Ok(n) => {
+                                    *self.complexity_stack.last_mut().unwrap() += n;
                                 }
+                                Err(err) => ctx.report_error(vec![field.pos], err.to_string()),
                             }
                         }
                     }
@@ -128,6 +126,11 @@ mod tests {
         }
 
         async fn obj(&self) -> MyObj {
+            todo!()
+        }
+
+        #[graphql(complexity = "5 * child_complexity")]
+        async fn obj2(&self) -> MyObj {
             todo!()
         }
 
@@ -408,6 +411,14 @@ mod tests {
             }
         }"#,
             20,
+        );
+
+        check_complex(
+            r#"
+            query {
+                obj2 { a b }
+            }"#,
+            10,
         );
     }
 }
