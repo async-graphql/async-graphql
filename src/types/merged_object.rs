@@ -3,7 +3,7 @@ use std::{borrow::Cow, pin::Pin};
 use indexmap::IndexMap;
 
 use crate::{
-    futures_util::Stream,
+    futures_util::stream::Stream,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
     CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,

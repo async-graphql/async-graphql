@@ -5,7 +5,7 @@
 use once_cell::sync::Lazy;
 
 use crate::{
-    futures_util::Stream,
+    futures_util::stream::Stream,
     parser::types::ExecutableDocument,
     validation::visitor::{visit, RuleError, Visitor, VisitorContext},
     *,
