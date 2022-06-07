@@ -18,7 +18,7 @@ proc-macro = true
 async-graphql-parser = { path = "../parser", version = "4.0.1" }
 
 Inflector = "0.11.4"
-darling = "0.13.0"
+darling = "0.14.0"
 proc-macro-crate = "1.0.0"
 proc-macro2 = "1.0.24"
 quote = "1.0.9"
