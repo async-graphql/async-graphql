@@ -13,7 +13,10 @@ use bytes::Bytes;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Extractor for GraphQL request.
-pub struct GraphQLRequest<R = rejection::GraphQLRejection>(pub async_graphql::Request, PhantomData<R>);
+pub struct GraphQLRequest<R = rejection::GraphQLRejection>(
+    pub async_graphql::Request,
+    PhantomData<R>,
+);
 
 impl<R> GraphQLRequest<R> {
     /// Unwraps the value to `async_graphql::Request`.
