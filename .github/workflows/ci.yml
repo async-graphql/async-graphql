@@ -36,7 +36,7 @@ jobs:
       - name: Clean
         run: cargo clean
 
-  tests_min_cmopat:
+  tests_min_compat:
     name: Run min rust version tests - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
