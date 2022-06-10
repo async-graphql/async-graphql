@@ -7,6 +7,7 @@
 下面的例子定义一个64位整数标量，但它的输入输出都是字符串。 (`Async-graphql`已经内置了对64位整数的支持，正是采用字符串作为输入输出)
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 
@@ -36,6 +37,11 @@ impl ScalarType for StringNumber {
 如果你的类型实现了`serde :: Serialize`和`serde :: Deserialize`，那么可以使用此宏更简单地定义标量。
 
 ```rust
+# extern crate async_graphql;
+# extern crate serde;
+# use async_graphql::*;
+# use serde::{Serialize, Deserialize};
+# use std::collections::HashMap;
 #[derive(Serialize, Deserialize)]
 struct MyValue {
     a: i32,

@@ -12,7 +12,7 @@ query { todos { users { name } } }
 
 and `User` resolver is like this:
 
-```rust
+```rust,ignore
 struct User {
     id: u64,
 }
@@ -65,7 +65,7 @@ We need to group queries and exclude duplicate queries. `Dataloader` can do this
 
 The following is an example of using `DataLoader` to optimize queries::
 
-```rust
+```rust,ignore
 use async_graphql::*;
 use async_graphql::dataloader::*;
 use itertools::Itertools;
@@ -115,7 +115,9 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 
 You can implement multiple data types for the same `Loader`, like this:
 
-```rust
+```rust,ignore
+# extern crate async_graphql;
+# use async_graphql::*;
 struct PostgresLoader {
     pool: sqlx::Pool<Postgres>,
 }

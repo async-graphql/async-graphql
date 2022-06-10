@@ -5,6 +5,12 @@ The definition of the subscription root object is slightly different from other 
 The following example subscribes to an integer stream, which generates one integer per second. The parameter `step` specifies the integer step size with a default of 1.
 
 ```rust
+# extern crate async_graphql;
+# use std::time::Duration;
+# use async_graphql::futures_util::stream::Stream;
+# use async_graphql::futures_util::StreamExt;
+# extern crate tokio_stream;
+# extern crate tokio;
 use async_graphql::*;
 
 struct Subscription;

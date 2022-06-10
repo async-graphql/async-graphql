@@ -5,6 +5,7 @@ Relay's cursor connection specification is designed to provide a consistent meth
 Defining a cursor connection in `async-graphql` is very simple, you just call the `connection::query` function and query data in the closure.
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 use async_graphql::types::connection::*;
 
@@ -32,12 +33,12 @@ impl Query {
                 };
             }
             let mut connection = Connection::new(start > 0, end < 10000);
-            connection.append(
+            connection.edges.extend(
                 (start..end).into_iter().map(|n|
-                    Ok(Edge::with_additional_fields(n, n as i32, EmptyFields)),
-            ))?;
-            Ok(connection)
-        })
+                    Edge::with_additional_fields(n, n as i32, EmptyFields)
+            ));
+            Ok::<_, async_graphql::Error>(connection)
+        }).await
     }
 }
 

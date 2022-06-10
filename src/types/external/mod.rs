@@ -15,6 +15,8 @@ mod string;
 #[cfg(feature = "tokio-sync")]
 mod tokio;
 
+#[cfg(feature = "bigdecimal")]
+mod big_decimal;
 #[cfg(feature = "bson")]
 mod bson;
 #[cfg(feature = "chrono-tz")]

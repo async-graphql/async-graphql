@@ -58,6 +58,11 @@ You can limit the depth when creating `Schema`. If the query exceeds this limit,
 message `Query is nested too deep` will be returned.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query { async fn version(&self) -> &str { "1.0" } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_depth(5) // Limit the maximum depth to 5
     .finish();
@@ -82,6 +87,11 @@ You can limit the complexity when creating the `Schema`. If the query exceeds th
 and `Query is too complex` will be returned.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query { async fn version(&self) -> &str { "1.0" } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_complexity(5) // Limit the maximum complexity to 5
     .finish();
@@ -96,6 +106,8 @@ In the following code, the complexity of the `value` field is `5`. The complexit
 used to calculate the complexity of the `values` field, and the type of the return value must be `usize`.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct Query;
 
 #[Object]
@@ -114,4 +126,3 @@ impl Query {
 
 **Note: The complexity calculation is done in the validation phase and not the execution phase,
 so you don't have to worry about partial execution of over-limit queries.**
-

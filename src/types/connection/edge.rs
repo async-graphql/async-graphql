@@ -43,8 +43,8 @@ where
     _mark: PhantomData<Name>,
     /// A cursor for use in pagination
     pub(crate) cursor: CursorScalar<Cursor>,
-    /// "The item at the end of the edge
-    pub(crate) node: Node,
+    /// The item at the end of the edge
+    pub node: Node,
     #[graphql(flatten)]
     pub(crate) additional_fields: EdgeFields,
 }

@@ -5,6 +5,9 @@
 你也通过可选的`#[graphql]`属性来给字段添加描述，重命名。
 
 ```rust
+# extern crate async_graphql;
+# #[derive(SimpleObject)]
+# struct User { a: i32 }
 use async_graphql::*;
 
 #[derive(InputObject)]
@@ -20,6 +23,7 @@ impl Mutation {
     async fn users_at_location(&self, coordinate: Coordinate, radius: f64) -> Vec<User> {
         // 将坐标写入数据库
         // ...
+#       todo!()
     }
 }
 ```
@@ -31,6 +35,12 @@ impl Mutation {
 在下面的示例中，创建了两种`InputObject`类型：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(InputObject)]
+# struct SomeType { a: i32 }
+# #[derive(InputObject)]
+# struct SomeOtherType { a: i32 }
 #[derive(InputObject)]
 #[graphql(concrete(name = "SomeName", params(SomeType)))]
 #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
@@ -59,6 +69,19 @@ input SomeOtherName {
 在其它`InputObject`中使用具体的泛型类型：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(InputObject)]
+# struct SomeType { a: i32 }
+# #[derive(InputObject)]
+# struct SomeOtherType { a: i32 }
+# #[derive(InputObject)]
+# #[graphql(concrete(name = "SomeName", params(SomeType)))]
+# #[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+# pub struct SomeGenericInput<T: InputType> {
+#     field1: Option<T>,
+#     field2: String
+# }
 #[derive(InputObject)]
 pub struct YetAnotherInput {
     a: SomeGenericInput<SomeType>,

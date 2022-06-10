@@ -8,7 +8,7 @@
 
 让我们了解什么是中间件:
 
-```rust
+```rust,ignore
 async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>) -> MiddlewareResult {
   // 你的中间件代码
 
@@ -34,21 +34,35 @@ async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>)
 Default implementation for `request`:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     next.run(ctx).await
 }
+# }
 ```
 
 根据你放置逻辑代码的位置，它将在正在查询执行的开头或结尾执行。
 
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     // 此处的代码将在执行 prepare_request 之前运行。
     let result = next.run(ctx).await;
     // 此处的代码将在把结果发送给客户端之前执行
     result
 }
+# }
 ```
 
 ### 准备查询
@@ -56,6 +70,13 @@ async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Re
 在 `request` 之后，将调用`prepare_request`，你可以在此处对请求做一些转换。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 async fn prepare_request(
     &self,
     ctx: &ExtensionContext<'_>,
@@ -67,6 +88,7 @@ async fn prepare_request(
     // 此处的代码在 prepare_request 之后执行
     result
 }
+# }
 ```
 
 ### 解析查询
@@ -74,6 +96,13 @@ async fn prepare_request(
 `parse_query` 将解析查询语句并生成 GraphQL `ExecutableDocument`，并且检查查询是否遵循 GraphQL 规范。 通常，`async-graphql` 遵循最后一个稳定的规范（October2021）。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# use async_graphql::parser::types::ExecutableDocument;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at parse query.
 async fn parse_query(
     &self,
@@ -86,6 +115,7 @@ async fn parse_query(
 ) -> ServerResult<ExecutableDocument> {
     next.run(ctx, query, variables).await
 }
+# }
 ```
 
 ### 校验
@@ -93,6 +123,12 @@ async fn parse_query(
 `validation` 步骤将执行查询校验（取决于你指定的 `validation_mode`），并向客户端提供有关查询无效的原因。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at validation query.
 async fn validation(
   &self,
@@ -101,6 +137,7 @@ async fn validation(
 ) -> Result<ValidationResult, Vec<ServerError>> {
   next.run(ctx).await
 }
+# }
 ```
 
 ### 执行
@@ -108,6 +145,12 @@ async fn validation(
 `execution` 步骤是一个很大的步骤，它将并发执行`Query`，或者顺序执行`Mutation`。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at execute query.
 async fn execute(
     &self,
@@ -120,6 +163,7 @@ async fn execute(
     // 此处的代码在执行完整查询之后执行
     result
 }
+# }
 ````
 
 ### resolve
@@ -127,6 +171,12 @@ async fn execute(
 为每个字段执行`resolve`.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware { 
 /// Called at resolve field.
 async fn resolve(
     &self,
@@ -139,6 +189,7 @@ async fn resolve(
     // resolve字段之后
     result
 }
+# }
 ```
 
 ### 订阅
@@ -146,6 +197,13 @@ async fn resolve(
 `subscribe`的行为和`request`很像，只是专门用于订阅查询。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# use async_graphql::extensions::*;
+# use futures_util::stream::BoxStream;
+# struct MyMiddleware;
+# #[async_trait::async_trait]
+# impl Extension for MyMiddleware {
 /// Called at subscribe request.
 fn subscribe<'s>(
     &self,
@@ -155,4 +213,5 @@ fn subscribe<'s>(
 ) -> BoxStream<'s, Response> {
     next.run(ctx, stream)
 }
+# }
 ``` 

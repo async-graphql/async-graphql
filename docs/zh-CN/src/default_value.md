@@ -5,6 +5,7 @@
 ## 对象字段参数
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -16,26 +17,35 @@ fn my_default() -> i32 {
 #[Object]
 impl Query {
     // value参数的默认值为0，它会调用i32::default()
-    fn test1(&self, #[graphql(default)] value: i32) {}
+    async fn test1(&self, #[graphql(default)] value: i32) -> i32 { todo!() }
 
     // value参数的默认值为10
-    fn test2(&self, #[graphql(default = 10)] value: i32) {}
+    async fn test2(&self, #[graphql(default = 10)] value: i32) -> i32 { todo!() }
 
     // value参数的默认值使用my_default函数的返回结果，值为30
-    fn test3(&self, #[graphql(default_with = "my_default()")] value: i32) {}
+    async fn test3(&self, #[graphql(default_with = "my_default()")] value: i32) -> i32 { todo!() }
 }
 ```
 
 ## 接口字段参数
 
 ```rust
+# extern crate async_graphql;
+# fn my_default() -> i32 { 5 }
+# struct MyObj;
+# #[Object]
+# impl MyObj {
+#    async fn test1(&self, value: i32) -> i32 { todo!() }
+#    async fn test2(&self, value: i32) -> i32 { todo!() }
+#    async fn test3(&self, value: i32) -> i32 { todo!() }
+# }
 use async_graphql::*;
 
 #[derive(Interface)]
 #[graphql(
-    field(name = "test1", arg(name = "value", default)),
-    field(name = "test2", arg(name = "value", default = 10)),
-    field(name = "test3", arg(name = "value", default_with = "my_default()")),
+    field(name = "test1", type = "i32", arg(name = "value", type = "i32", default)),
+    field(name = "test2", type = "i32", arg(name = "value", type = "i32", default = 10)),
+    field(name = "test3", type = "i32", arg(name = "value", type = "i32", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -45,6 +55,8 @@ enum MyInterface {
 ## 输入对象(InputObject)
 
 ```rust
+# extern crate async_graphql;
+# fn my_default() -> i32 { 5 }
 use async_graphql::*;
 
 #[derive(InputObject)]

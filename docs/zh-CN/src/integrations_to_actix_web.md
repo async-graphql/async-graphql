@@ -9,8 +9,17 @@
 你需要把Schema传入`actix_web::App`作为全局数据。
 
 ```rust
+# extern crate async_graphql_actix_web;
+# extern crate async_graphql;
+# extern crate actix_web;
+# use async_graphql::*;
+# #[derive(Default,SimpleObject)]
+# struct Query { a: i32 }
+# let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 async fn index(
-    schema: web::Data<Schema>,
+    schema: web::Data<Schema<Query, EmptyMutation, EmptySubscription>>,
     request: GraphQLRequest,
 ) -> web::Json<GraphQLResponse> {
     web::Json(schema.execute(request.into_inner()).await.into())
@@ -20,11 +29,20 @@ async fn index(
 ## 订阅例子
 
 ```rust
+# extern crate async_graphql_actix_web;
+# extern crate async_graphql;
+# extern crate actix_web;
+# use async_graphql::*;
+# #[derive(Default,SimpleObject)]
+# struct Query { a: i32 }
+# let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::GraphQLSubscription;
 async fn index_ws(
-    schema: web::Data<Schema>,
+    schema: web::Data<Schema<Query, EmptyMutation, EmptySubscription>>,
     req: HttpRequest,
     payload: web::Payload,
-) -> Result<HttpResponse> {
+) -> actix_web::Result<HttpResponse> {
     GraphQLSubscription::new(Schema::clone(&*schema)).start(&req, payload)
 }
 ```

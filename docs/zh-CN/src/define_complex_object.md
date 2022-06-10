@@ -9,6 +9,16 @@ Resolver函数用于计算字段的值，你可以执行一个数据库查询，
 在查询数据库时，你可能需要一个数据库连接池对象，这个对象是个全局的，你可以在创建Schema的时候，用`SchemaBuilder::data`函数设置`Schema`数据, 用`Context::data`函数设置`Context`数据。下面的`value_from_db`字段展示了如何从`Context`中获取一个数据库连接。
 
 ```rust
+# extern crate async_graphql;
+# struct Data { pub name: String }
+# struct DbConn {}
+# impl DbConn {
+#   fn query_something(&self, id: i64) -> std::result::Result<Data, String> { Ok(Data {name:"".into()})}
+# }
+# struct DbPool {}
+# impl DbPool {
+#   fn take(&self) -> DbConn { DbConn {} }    
+# }
 use async_graphql::*;
 
 struct MyObject {

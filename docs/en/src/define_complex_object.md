@@ -11,6 +11,16 @@ When creating your `Schema`, you can use `SchemaBuilder::data` to configure the 
 The following `value_from_db` function shows how to retrieve a database connection from `Context`.
 
 ```rust
+# extern crate async_graphql;
+# struct Data { pub name: String }
+# struct DbConn {}
+# impl DbConn {
+#   fn query_something(&self, id: i64) -> std::result::Result<Data, String> { Ok(Data {name:"".into()})}
+# }
+# struct DbPool {}
+# impl DbPool {
+#   fn take(&self) -> DbConn { DbConn {} }    
+# }
 use async_graphql::*;
 
 struct MyObject {

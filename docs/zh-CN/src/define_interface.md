@@ -12,6 +12,7 @@
 
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Circle {
@@ -72,6 +73,8 @@ enum Shape {
 即使`MyObject`实现了`MyInterface`，但由于`Schema`中并没有引用`MyInterface`，类型注册表中将不会存在`MyInterface`类型的信息。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(Interface)]
 #[graphql(
     field(name = "name", type = "String"),
@@ -100,7 +103,18 @@ type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 你需要在构造Schema时手工注册`MyInterface`类型：
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(Interface)]
+# #[graphql(field(name = "name", type = "String"))]
+# enum MyInterface { MyObject(MyObject) }
+# #[derive(SimpleObject)]
+# struct MyObject { name: String, }
+# struct Query;
+# #[Object]
+# impl Query { async fn version(&self) -> &str { "1.0" } }
+
 Schema::build(Query, EmptyMutation, EmptySubscription)
-    .register_type::<MyInterface>()
+    .register_output_type::<MyInterface>()
     .finish();
 ```

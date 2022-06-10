@@ -31,8 +31,11 @@ use crate::{
 /// Introspection mode
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IntrospectionMode {
+    /// Introspection only
     IntrospectionOnly,
+    /// Enables introspection
     Enabled,
+    /// Disables introspection
     Disabled,
 }
 

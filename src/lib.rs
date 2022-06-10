@@ -82,6 +82,7 @@
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
 //! - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
 //! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
+//! - `bigdecimal`: Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal).
 //! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
 //! - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 //! - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
@@ -233,12 +234,12 @@ pub use indexmap;
 pub use look_ahead::Lookahead;
 #[doc(no_inline)]
 pub use parser::{Pos, Positioned};
-pub use registry::CacheControl;
+pub use registry::{CacheControl, SDLExportOptions};
 pub use request::{BatchRequest, Request};
 #[doc(no_inline)]
 pub use resolver_utils::{ContainerType, EnumType, ScalarType};
 pub use response::{BatchResponse, Response};
-pub use schema::{Schema, SchemaBuilder, SchemaEnv};
+pub use schema::{IntrospectionMode, Schema, SchemaBuilder, SchemaEnv};
 #[doc(hidden)]
 pub use static_assertions;
 pub use subscription::SubscriptionType;

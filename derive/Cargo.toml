@@ -9,16 +9,16 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT/Apache-2.0"
 name = "async-graphql-derive"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "4.0.1"
+version = "4.0.2"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-async-graphql-parser = { path = "../parser", version = "4.0.1" }
+async-graphql-parser = { path = "../parser", version = "4.0.2" }
 
 Inflector = "0.11.4"
-darling = "0.13.0"
+darling = "0.14.0"
 proc-macro-crate = "1.0.0"
 proc-macro2 = "1.0.24"
 quote = "1.0.9"

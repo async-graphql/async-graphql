@@ -7,6 +7,7 @@ Relay定义了一套游标连接规范，以提供一致性的分页查询方式
 下面是一个简单的获取连续整数的数据源：
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 use async_graphql::types::connection::*;
 
@@ -34,12 +35,13 @@ impl Query {
                 };
             }
             let mut connection = Connection::new(start > 0, end < 10000);
-            connection.append(
+            connection.edges.extend(
                 (start..end).into_iter().map(|n|
-                    Ok(Edge::new_with_additional_fields(n, n as i32, EmptyFields)),
-            ))?;
-            Ok(connection)
-        })
+                    Edge::with_additional_fields(n, n as i32, EmptyFields)
+            ));
+            Ok::<_, async_graphql::Error>(connection)
+        }).await
     }
 }
+
 ```

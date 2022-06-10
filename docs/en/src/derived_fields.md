@@ -5,12 +5,16 @@ Sometimes two fields have the same query logic, but the output type is different
 In the following example, you already have a `duration_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `date_rfc3339` field.
 
 ```rust
-struct DateRFC3339(chrono::DateTime);
-struct DateRFC2822(chrono::DateTime);
+# extern crate chrono;
+# use chrono::Utc;
+# extern crate async_graphql;
+# use async_graphql::*;
+struct DateRFC3339(chrono::DateTime<Utc>);
+struct DateRFC2822(chrono::DateTime<Utc>);
 
 #[Scalar]
 impl ScalarType for DateRFC3339 {
-  fn parse(value: Value) -> InputValueResult { ... } 
+  fn parse(value: Value) -> InputValueResult<Self> { todo!() } 
 
   fn to_value(&self) -> Value {
     Value::String(self.0.to_rfc3339())
@@ -19,7 +23,7 @@ impl ScalarType for DateRFC3339 {
 
 #[Scalar]
 impl ScalarType for DateRFC2822 {
-  fn parse(value: Value) -> InputValueResult { ... } 
+  fn parse(value: Value) -> InputValueResult<Self> { todo!() } 
 
   fn to_value(&self) -> Value {
     Value::String(self.0.to_rfc2822())
@@ -57,7 +61,7 @@ type Query {
 A derived field won't be able to manage everythings easily: Rust's [orphan rule](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits) requires that either the
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:
 
-```
+```rust,ignore
 impl From<Vec<U>> for Vec<T> {
   ...
 }
@@ -70,6 +74,10 @@ We included a `with` parameter to help you define a function to call instead of 
 ### Example
 
 ```rust
+# extern crate serde;
+# use serde::{Serialize, Deserialize};
+# extern crate async_graphql;
+# use async_graphql::*;
 #[derive(Serialize, Deserialize, Clone)]
 struct ValueDerived(String);
 

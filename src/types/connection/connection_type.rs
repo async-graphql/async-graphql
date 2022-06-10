@@ -35,7 +35,7 @@ pub struct Connection<
     pub additional_fields: ConnectionFields,
     /// If `true` means has previous page.
     pub has_previous_page: bool,
-    /// If `false` means has next page.
+    /// If `true` means has next page.
     pub has_next_page: bool,
 }
 

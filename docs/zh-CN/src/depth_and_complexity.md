@@ -53,6 +53,11 @@ type Post {
 在创建`Schema`的时候可以限制深度，如果查询语句超过这个限制，则会出错并且返回`Query is nested too deep.`消息。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query { async fn version(&self) -> &str { "1.0" } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_depth(5) // 限制最大深度为5
     .finish();
@@ -75,6 +80,11 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 在创建`Schema`的时候可以限制复杂度，如果查询语句超过这个限制，则会出错并且返回`Query is too complex.`。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# struct Query;
+# #[Object]
+# impl Query { async fn version(&self) -> &str { "1.0" } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_complexity(5) // 限制最大深度为5
     .finish();
@@ -87,6 +97,8 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 `count`是字段的参数，这个表达式用于计算`values`字段的复杂度，并且返回值的类型必须是`usize`。
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 struct Query;
 
 #[Object]

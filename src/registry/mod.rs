@@ -606,6 +606,25 @@ impl Registry {
             })
             .collect();
 
+        if let MetaType::Object { fields, .. } = self.types.get_mut(&self.query_type).unwrap() {
+            fields.insert(
+                "_service".to_string(),
+                MetaField {
+                    name: "_service".to_string(),
+                    description: None,
+                    args: Default::default(),
+                    ty: "_Service!".to_string(),
+                    deprecation: Default::default(),
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                    visible: None,
+                    compute_complexity: None,
+                },
+            );
+        }
+
         if !possible_types.is_empty() {
             self.types.insert(
                 "_Entity".to_string(),
@@ -618,25 +637,7 @@ impl Registry {
                 },
             );
 
-            let query_root = self.types.get_mut(&self.query_type).unwrap();
-            if let MetaType::Object { fields, .. } = query_root {
-                fields.insert(
-                    "_service".to_string(),
-                    MetaField {
-                        name: "_service".to_string(),
-                        description: None,
-                        args: Default::default(),
-                        ty: "_Service!".to_string(),
-                        deprecation: Default::default(),
-                        cache_control: Default::default(),
-                        external: false,
-                        requires: None,
-                        provides: None,
-                        visible: None,
-                        compute_complexity: None,
-                    },
-                );
-
+            if let MetaType::Object { fields, .. } = self.types.get_mut(&self.query_type).unwrap() {
                 fields.insert(
                     "_entities".to_string(),
                     MetaField {

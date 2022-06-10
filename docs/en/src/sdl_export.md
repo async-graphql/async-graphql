@@ -4,6 +4,7 @@ You can export your schema in Schema Definition Language (SDL) by using the `Sch
 
 
 ```rust
+# extern crate async_graphql;
 use async_graphql::*;
 
 struct Query;
@@ -15,11 +16,8 @@ impl Query {
     }
 }
 
-#[tokio::main]
-async fn main() {
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     
-    // Print the schema in SDL format
-    println!("{}", &schema.sdl());
-}
+// Print the schema in SDL format
+println!("{}", &schema.sdl());
 ```
