@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [4.0.2] 2022-5-30
+# [4.0.2] 2022-6-10
 
-- Expose Edge::node to allow better testing. [#933](https://github.com/async-graphql/async-graphql/pull/933)
+- Expose `Edge::node` to allow better testing. [#933](https://github.com/async-graphql/async-graphql/pull/933)
 - Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal). [#926](https://github.com/async-graphql/async-graphql/pull/926)
+- Improve the examples in the book. [#940](https://github.com/async-graphql/async-graphql/pull/940)
+- Fixed [#941](https://github.com/async-graphql/async-graphql/issues/941)
+- Fixed [#848](https://github.com/async-graphql/async-graphql/issues/848)
+- Bump `darling` from `0.13.0` to `0.14.0` [#939](https://github.com/async-graphql/async-graphql/pull/939)
+- Fixed [#9461](https://github.com/async-graphql/async-graphql/issues/946)
 
 # [4.0.1] 2022-5-24
 
