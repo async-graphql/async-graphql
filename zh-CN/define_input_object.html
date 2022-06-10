@@ -137,9 +137,12 @@
                         <h1 id="输入对象inputobject"><a class="header" href="#输入对象inputobject">输入对象(InputObject)</a></h1>
 <p>你可以定义一个对象作为参数类型，GraphQL称之为<code>Input Object</code>，输入对象的定义方式和<a href="define_simple_object.html">简单对象</a>很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。</p>
 <p>你也通过可选的<code>#[graphql]</code>属性来给字段添加描述，重命名。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct User { a: i32 }
 </span>use async_graphql::*;
 
 #[derive(InputObject)]
@@ -155,16 +158,23 @@ impl Mutation {
     async fn users_at_location(&amp;self, coordinate: Coordinate, radius: f64) -&gt; Vec&lt;User&gt; {
         // 将坐标写入数据库
         // ...
-    }
+<span class="boring">      todo!()
+</span>    }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="泛型"><a class="header" href="#泛型">泛型</a></h2>
 <p>如果你希望其它类型能够重用<code>InputObject</code>，则可以定义泛型的<code>InputObject</code>，并指定具体的类型。</p>
 <p>在下面的示例中，创建了两种<code>InputObject</code>类型：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(InputObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(InputObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(InputObject)]
 #[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
 #[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
@@ -187,9 +197,22 @@ input SomeOtherName {
 }
 </code></pre>
 <p>在其它<code>InputObject</code>中使用具体的泛型类型：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(InputObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(InputObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
+</span><span class="boring">#[derive(InputObject)]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">pub struct SomeGenericInput&lt;T: InputType&gt; {
+</span><span class="boring">    field1: Option&lt;T&gt;,
+</span><span class="boring">    field2: String
+</span><span class="boring">}
 </span>#[derive(InputObject)]
 pub struct YetAnotherInput {
     a: SomeGenericInput&lt;SomeType&gt;,

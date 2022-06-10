@@ -138,9 +138,10 @@
 <p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object.
 If you don't require automatic mapping of fields, see <a href="define_complex_object.html">Object</a>.</p>
 <p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[graphql(skip)]</code></p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -162,9 +163,11 @@ fields are calculated. In this case, the <a href="define_complex_object.html">Ob
 <p>The <code>ComplexObject</code> macro works in conjuction with the <code>SimpleObject</code> macro. The <code>SimpleObject</code> derive macro defines
 the non-calculated fields, where as the <code>ComplexObject</code> macro let's you write user-defined resolvers for the calculated fields.</p>
 <p>Resolvers added to <code>ComplexObject</code> adhere to the same rules as resolvers of <a href="define_complex_object.html">Object</a>.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
 #[graphql(complex)] // NOTE: If you want the `ComplexObject` macro to take effect, this `complex` attribute is required.
 struct MyObj {
@@ -184,9 +187,15 @@ impl MyObj {
 <p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
 and specify how its concrete types should be implemented.</p>
 <p>In the following example, two <code>SimpleObject</code> types are created:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(SimpleObject)]
 #[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
 #[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
@@ -209,9 +218,22 @@ type SomeOtherName {
 }
 </code></pre>
 <p>In your resolver method or field of another object, use as a normal generic type:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
+</span><span class="boring">    field1: Option&lt;T&gt;,
+</span><span class="boring">    field2: String,
+</span><span class="boring">}
 </span>#[derive(SimpleObject)]
 pub struct YetAnotherObject {
     a: SomeGenericObject&lt;SomeType&gt;,
@@ -221,9 +243,11 @@ pub struct YetAnotherObject {
 </span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h2 id="used-for-both-input-and-output"><a class="header" href="#used-for-both-input-and-output">Used for both input and output</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject, InputObject)]
 #[graphql(input_name = &quot;MyObjInput&quot;)] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
 struct MyObj {

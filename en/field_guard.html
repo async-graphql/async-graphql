@@ -136,9 +136,11 @@
                     <main>
                         <h1 id="field-guard"><a class="header" href="#field-guard">Field Guard</a></h1>
 <p>You can define a <code>guard</code> for the fields of <code>Object</code>, <code>SimpleObject</code>, <code>ComplexObject</code> and <code>Subscription</code>, it will be executed before calling the resolver function, and an error will be returned if it fails.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(Eq, PartialEq, Copy, Clone)]
 enum Role {
     Admin,
@@ -168,9 +170,17 @@ impl Guard for RoleGuard {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Use it with the <code>guard</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Eq, PartialEq, Copy, Clone)]
+</span><span class="boring">enum Role { Admin, Guest, }
+</span><span class="boring">struct RoleGuard { role: Role, }
+</span><span class="boring">impl RoleGuard { fn new(role: Role) -&gt; Self { Self { role } } }
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Guard for RoleGuard { async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; { todo!() } }
 </span>#[derive(SimpleObject)]
 struct Query {
     /// Only allow Admin
@@ -184,9 +194,11 @@ struct Query {
 </span></code></pre></pre>
 <h2 id="use-parameter-value"><a class="header" href="#use-parameter-value">Use parameter value</a></h2>
 <p>Sometimes guards need to use field parameters, you need to pass the parameter value when creating the guard like this:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>struct EqGuard {
     expect: i32,
     actual: i32,

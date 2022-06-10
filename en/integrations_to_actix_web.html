@@ -137,12 +137,21 @@
                         <h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
 <h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
 <p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data. </p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn index(
+</span><span class="boring">extern crate async_graphql_actix_web;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate actix_web;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { a: i32 }
+</span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+</span>use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+async fn index(
     // Schema now accessible here
-    schema: web::Data&lt;Schema&gt;,
+    schema: web::Data&lt;Schema&lt;Query, EmptyMutation, EmptySubscription&gt;&gt;,
     request: GraphQLRequest,
 ) -&gt; web::Json&lt;GraphQLResponse&gt; {
     web::Json(schema.execute(request.into_inner()).await.into())
@@ -150,14 +159,23 @@
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn index_ws(
-    schema: web::Data&lt;Schema&gt;,
+</span><span class="boring">extern crate async_graphql_actix_web;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate actix_web;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { a: i32 }
+</span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+</span>use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::GraphQLSubscription;
+async fn index_ws(
+    schema: web::Data&lt;Schema&lt;Query, EmptyMutation, EmptySubscription&gt;&gt;,
     req: HttpRequest,
     payload: web::Payload,
-) -&gt; Result&lt;HttpResponse&gt; {
+) -&gt; actix_web::Result&lt;HttpResponse&gt; {
     GraphQLSubscription::new(Schema::clone(&amp;*schema)).start(&amp;req, payload)
 }
 <span class="boring">}

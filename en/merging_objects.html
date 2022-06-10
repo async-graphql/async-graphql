@@ -136,10 +136,7 @@
                     <main>
                         <h1 id="merging-objects"><a class="header" href="#merging-objects">Merging Objects</a></h1>
 <p>Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[Object]
+<pre><code class="language-rust ignore does_not_compile">#[Object]
 impl Query {
     async fn users(&amp;self) -&gt; Vec&lt;User&gt; {
         todo!()
@@ -152,14 +149,19 @@ impl Query {
         todo!()
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
 <p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
 <p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct User { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct Movie { a: i32 }
 </span>#[derive(Default)]
 struct UserQuery;
 
@@ -197,16 +199,21 @@ let schema = Schema::new(
 <p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use futures_util::stream::{Stream};
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { a: i32 }
 </span>#[derive(Default)]
 struct Subscription1;
 
 #[Subscription]
 impl Subscription1 {
     async fn events1(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
-        futures::stream::iter(0..10)
+        futures_util::stream::iter(0..10)
     }
 }
 
@@ -216,7 +223,7 @@ struct Subscription2;
 #[Subscription]
 impl Subscription2 {
     async fn events2(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
-        futures::stream::iter(10..20)
+        futures_util::stream::iter(10..20)
     }
 }
 

@@ -137,15 +137,19 @@
                         <h1 id="派生字段"><a class="header" href="#派生字段">派生字段</a></h1>
 <p>有时两个字段有一样的查询逻辑，仅仅是输出的类型不同，在 <code>async-graphql</code> 中，你可以为它创建派生字段。</p>
 <p>在以下例子中，你已经有一个<code>duration_rfc2822</code>字段输出<code>RFC2822</code>格式的时间格式，然后复用它派生一个新的<code>date_rfc3339</code>字段。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct DateRFC3339(chrono::DateTime);
-struct DateRFC2822(chrono::DateTime);
+</span><span class="boring">extern crate chrono;
+</span><span class="boring">use chrono::Utc;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>struct DateRFC3339(chrono::DateTime&lt;Utc&gt;);
+struct DateRFC2822(chrono::DateTime&lt;Utc&gt;);
 
 #[Scalar]
 impl ScalarType for DateRFC3339 {
-  fn parse(value: Value) -&gt; InputValueResult { ... } 
+  fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; { todo!() } 
 
   fn to_value(&amp;self) -&gt; Value {
     Value::String(self.0.to_rfc3339())
@@ -154,7 +158,7 @@ impl ScalarType for DateRFC3339 {
 
 #[Scalar]
 impl ScalarType for DateRFC2822 {
-  fn parse(value: Value) -&gt; InputValueResult { ... } 
+  fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; { todo!() } 
 
   fn to_value(&amp;self) -&gt; Value {
     Value::String(self.0.to_rfc2822())
@@ -186,7 +190,7 @@ impl Query {
 </code></pre>
 <h2 id="包装类型"><a class="header" href="#包装类型">包装类型</a></h2>
 <p>因为 <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">孤儿规则</a>，以下代码无法通过编译：</p>
-<pre><code>impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
+<pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
 }
 </code></pre>
@@ -194,9 +198,13 @@ impl Query {
 但是当你为 <code>T</code> 实现了 <code>From&lt;U&gt;</code> 后，你可以为 <code>Vec&lt;T&gt;</code> 实现 <code>From&lt;Vec&lt;U&gt;&gt;</code>，为 <code>Option&lt;T&gt;</code> 实现 <code>From&lt;Option&lt;U&gt;&gt;</code>.
 使用 <code>with</code> 参数来定义一个转换函数，而不是用 <code>Into::into</code>。</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate serde;
+</span><span class="boring">use serde::{Serialize, Deserialize};
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(Serialize, Deserialize, Clone)]
 struct ValueDerived(String);
 

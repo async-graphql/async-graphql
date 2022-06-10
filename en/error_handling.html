@@ -136,18 +136,16 @@
                     <main>
                         <h1 id="error-handling"><a class="header" href="#error-handling">Error handling</a></h1>
 <p>Resolve can return a <code>Result</code>, which has the following definition:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
-<span class="boring">}
-</span></code></pre></pre>
+<pre><code class="language-rust ignore">type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
+</code></pre>
 <p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>Error</code> and you can extend the error message.</p>
 <p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
 See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use std::num::ParseIntError;
 </span>use async_graphql::*;
 
 struct Query;
@@ -157,19 +155,15 @@ impl Query {
     async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
         Ok(&quot;234a&quot;
             .parse()
-            .map_err(|err: ParseIntError| err.extend_with(|_| json!({&quot;code&quot;: 400})))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set(&quot;code&quot;, 400)))?)
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h4 id="errors-in-subscriptions"><a class="header" href="#errors-in-subscriptions">Errors in subscriptions</a></h4>
 <p>Errors can be returned from subscription resolvers as well, using a return type of the form:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>async fn my_subscription_resolver(&amp;self) -&gt; impl Stream&lt;Item = Result&lt;MyItem, MyError&gt;&gt; { ... }
-<span class="boring">}
-</span></code></pre></pre>
+<pre><code class="language-rust ignore">async fn my_subscription_resolver(&amp;self) -&gt; impl Stream&lt;Item = Result&lt;MyItem, MyError&gt;&gt; { ... }
+</code></pre>
 <p>Note however that the <code>MyError</code> struct must have <code>Clone</code> implemented, due to the restrictions placed by the <code>Subscription</code> macro. One way to accomplish this is by creating a custom error type, with <code>#[derive(Clone)]</code>, as <a href="https://github.com/async-graphql/async-graphql/issues/845#issuecomment-1090933464">seen here</a>.</p>
 
                     </main>

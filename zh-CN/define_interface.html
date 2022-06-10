@@ -143,9 +143,10 @@
 <li>当<code>name</code>和<code>method</code>属性同时存在时，<code>name</code>是GraphQL接口字段名，而<code>method</code>是Resolver函数名。</li>
 <li>当只有<code>name</code>存在时, 转换为驼峰命名后的<code>name</code>是GraphQL接口字段名，而<code>name</code>是Resolver函数名。</li>
 </ul>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Circle {
@@ -203,9 +204,11 @@ enum Shape {
 <h2 id="手工注册接口类型"><a class="header" href="#手工注册接口类型">手工注册接口类型</a></h2>
 <p><code>Async-graphql</code>在初始化阶段从<code>Schema</code>开始遍历并注册所有被直接或者间接引用的类型，如果某个接口没有被引用到，那么它将不会存在于注册表中，就像下面的例子，
 即使<code>MyObject</code>实现了<code>MyInterface</code>，但由于<code>Schema</code>中并没有引用<code>MyInterface</code>，类型注册表中将不会存在<code>MyInterface</code>类型的信息。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(Interface)]
 #[graphql(
     field(name = &quot;name&quot;, type = &quot;String&quot;),
@@ -232,11 +235,22 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 <span class="boring">}
 </span></code></pre></pre>
 <p>你需要在构造Schema时手工注册<code>MyInterface</code>类型：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>Schema::build(Query, EmptyMutation, EmptySubscription)
-    .register_type::&lt;MyInterface&gt;()
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Interface)]
+</span><span class="boring">#[graphql(field(name = &quot;name&quot;, type = &quot;String&quot;))]
+</span><span class="boring">enum MyInterface { MyObject(MyObject) }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct MyObject { name: String, }
+</span><span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span>
+Schema::build(Query, EmptyMutation, EmptySubscription)
+    .register_output_type::&lt;MyInterface&gt;()
     .finish();
 <span class="boring">}
 </span></code></pre></pre>

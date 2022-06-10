@@ -137,15 +137,19 @@
                         <h1 id="derived-fields"><a class="header" href="#derived-fields">Derived fields</a></h1>
 <p>Sometimes two fields have the same query logic, but the output type is different. In <code>async-graphql</code>, you can create a derived field for it.</p>
 <p>In the following example, you already have a <code>duration_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>struct DateRFC3339(chrono::DateTime);
-struct DateRFC2822(chrono::DateTime);
+</span><span class="boring">extern crate chrono;
+</span><span class="boring">use chrono::Utc;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>struct DateRFC3339(chrono::DateTime&lt;Utc&gt;);
+struct DateRFC2822(chrono::DateTime&lt;Utc&gt;);
 
 #[Scalar]
 impl ScalarType for DateRFC3339 {
-  fn parse(value: Value) -&gt; InputValueResult { ... } 
+  fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; { todo!() } 
 
   fn to_value(&amp;self) -&gt; Value {
     Value::String(self.0.to_rfc3339())
@@ -154,7 +158,7 @@ impl ScalarType for DateRFC3339 {
 
 #[Scalar]
 impl ScalarType for DateRFC2822 {
-  fn parse(value: Value) -&gt; InputValueResult { ... } 
+  fn parse(value: Value) -&gt; InputValueResult&lt;Self&gt; { todo!() } 
 
   fn to_value(&amp;self) -&gt; Value {
     Value::String(self.0.to_rfc2822())
@@ -187,16 +191,20 @@ impl Query {
 <h2 id="wrapper-types"><a class="header" href="#wrapper-types">Wrapper types</a></h2>
 <p>A derived field won't be able to manage everythings easily: Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:</p>
-<pre><code>impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
+<pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
 }
 </code></pre>
 <p>So you wouldn't be able to generate derived fields for existing wrapper type structures like <code>Vec</code> or <code>Option</code>. But when you implement a <code>From&lt;U&gt; for T</code> you should be able to derived a <code>From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt;</code> and a <code>From&lt;Option&lt;U&gt;&gt; for Option&lt;T&gt;</code>.
 We included a <code>with</code> parameter to help you define a function to call instead of using the <code>Into</code> trait implementation between wrapper structures.</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate serde;
+</span><span class="boring">use serde::{Serialize, Deserialize};
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(Serialize, Deserialize, Clone)]
 struct ValueDerived(String);
 

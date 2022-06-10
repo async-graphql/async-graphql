@@ -152,26 +152,30 @@
 </li>
 </ul>
 <h2 id="entity-lookup-function"><a class="header" href="#entity-lookup-function">Entity lookup function</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct User { id: ID }
 </span>struct Query;
 
 #[Object]
 impl Query {
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id(&amp;self, id: ID) -&gt; User {
-        User { ... }
+        User { id }
     }
 
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id_with_username(&amp;self, #[graphql(key)] id: ID, username: String) -&gt; User {
-        User { ... }
+        User { id }
     }
 
-    #[entity]
+    #[graphql(entity)]
     async fn find_user_by_id_and_username(&amp;self, id: ID, username: String) -&gt; User {
-        User { ... }
+        User { id }
     }
 }
 <span class="boring">}
@@ -195,9 +199,13 @@ impl Query {
 <h2 id="defining-a-compound-primary-key"><a class="header" href="#defining-a-compound-primary-key">Defining a compound primary key</a></h2>
 <p>A single primary key can consist of multiple fields, and even nested fields, you can use <code>InputObject</code> to implements a nested primary key.</p>
 <p>In the following example, the primary key of the <code>User</code> object is <code>key { a b }</code>.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct User { id: i32 }
 </span>#[derive(InputObject)]
 struct NestedKey {
   a: i32,
@@ -208,9 +216,9 @@ struct Query;
 
 #[Object]
 impl Query {
-  #[entity]
+  #[graphql(entity)]
   async fn find_user_by_key(&amp;self, key: NestedKey) -&gt; User {
-    User { ... }
+    User { id: key.a }
   }
 }
 <span class="boring">}

@@ -142,20 +142,26 @@
 <p>你可以用<code>max_age</code>参数来控制缓存时长（单位是秒），也可以用<code>public</code>和<code>private</code>来控制缓存的作用域，当你不指定时，作用域默认是<code>public</code>。</p>
 <p><code>Async-graphql</code>查询时会合并所有缓存控制指令的结果，<code>max_age</code>取最小值。如果任何对象或者字段的作用域为<code>private</code>，则其结果的作用域为<code>private</code>，否则为<code>public</code>。</p>
 <p>我们可以从查询结果<code>QueryResponse</code>中获取缓存控制合并结果，并且调用<code>CacheControl::value</code>来获取对应的HTTP头。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">struct Query;
 </span>#[Object(cache_control(max_age = 60))]
 impl Query {
     #[graphql(cache_control(max_age = 30))]
     async fn value1(&amp;self) -&gt; i32 {
+        1
     }
 
     #[graphql(cache_control(private))]
     async fn value2(&amp;self) -&gt; i32 {
+        2
     }
 
     async fn value3(&amp;self) -&gt; i32 {
+        3
     }
 }
 <span class="boring">}

@@ -137,18 +137,22 @@
                         <h1 id="query-and-mutation"><a class="header" href="#query-and-mutation">Query and Mutation</a></h1>
 <h2 id="query-root-object"><a class="header" href="#query-root-object">Query root object</a></h2>
 <p>The query root object is a GraphQL object with a definition similar to other objects. Resolver functions for all fields of the query object are executed concurrently.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
-
+<span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct User { a: i32 }
+</span>
 struct Query;
 
 #[Object]
 impl Query {
     async fn user(&amp;self, username: String) -&gt; Result&lt;Option&lt;User&gt;&gt; {
         // Look up users from the database
-    }
+<span class="boring">       todo!()
+</span>    }
 }
 
 <span class="boring">}
@@ -156,9 +160,10 @@ impl Query {
 <h2 id="mutation-root-object"><a class="header" href="#mutation-root-object">Mutation root object</a></h2>
 <p>The mutation root object is also a GraphQL object, but it executes sequentially. One mutation following from another will only be executed only after the first mutation is completed.</p>
 <p>The following mutation root object provides an example of user registration and login:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Mutation;
@@ -167,11 +172,13 @@ struct Mutation;
 impl Mutation {
     async fn signup(&amp;self, username: String, password: String) -&gt; Result&lt;bool&gt; {
         // User signup
-    }
+<span class="boring">       todo!()
+</span>}
 
     async fn login(&amp;self, username: String, password: String) -&gt; Result&lt;String&gt; {
         // User login (generate token)
-    }
+<span class="boring">       todo!()
+</span>    }
 }
 <span class="boring">}
 </span></code></pre></pre>

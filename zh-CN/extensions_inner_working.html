@@ -139,10 +139,7 @@
 <p><code>Extensions</code> 很像来自其他框架的中间件，使用它们时要小心：当你使用扩展时<strong>它对每个 GraphQL 请求生效</strong>。</p>
 <h2 id="一句话解释什么是中间件"><a class="header" href="#一句话解释什么是中间件">一句话解释什么是中间件</a></h2>
 <p>让我们了解什么是中间件:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>async fn middleware(&amp;self, ctx: &amp;ExtensionContext&lt;'_&gt;, next: NextMiddleware&lt;'_&gt;) -&gt; MiddlewareResult {
+<pre><code class="language-rust ignore">async fn middleware(&amp;self, ctx: &amp;ExtensionContext&lt;'_&gt;, next: NextMiddleware&lt;'_&gt;) -&gt; MiddlewareResult {
   // 你的中间件代码
 
   /*
@@ -150,8 +147,7 @@
    */
   next.run(ctx).await
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
 <p>如你所见，<code>middleware</code> 只是在末尾调用 next 函数的函数。但我们也可以在开头使用 <code>next.run</code> 来实现中间件。 这就是它变得棘手的地方：根据你放置逻辑的位置以及<code>next.run</code>调用的位置，你的逻辑将不会具有相同的执行顺序。</p>
 <p>根据你代码，你需要在 <code>next.run</code> 调用之前或之后处理它。 如果你需要更多关于中间件的信息，网上有很多。</p>
 <h2 id="查询的处理"><a class="header" href="#查询的处理">查询的处理</a></h2>
@@ -159,18 +155,31 @@
 <h3 id="请求"><a class="header" href="#请求">请求</a></h3>
 <p>首先，当我们收到一个请求时，如果它不是订阅，第一个被调用的函数将是 <code>request</code>，它在传入请求时调用，并输出结果给客户端。</p>
 <p>Default implementation for <code>request</code>:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>async fn request(&amp;self, ctx: &amp;ExtensionContext&lt;'_&gt;, next: NextRequest&lt;'_&gt;) -&gt; Response {
     next.run(ctx).await
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <p>根据你放置逻辑代码的位置，它将在正在查询执行的开头或结尾执行。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>async fn request(&amp;self, ctx: &amp;ExtensionContext&lt;'_&gt;, next: NextRequest&lt;'_&gt;) -&gt; Response {
     // 此处的代码将在执行 prepare_request 之前运行。
     let result = next.run(ctx).await;
@@ -178,12 +187,20 @@
     result
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="准备查询"><a class="header" href="#准备查询">准备查询</a></h3>
 <p>在 <code>request</code> 之后，将调用<code>prepare_request</code>，你可以在此处对请求做一些转换。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>async fn prepare_request(
     &amp;self,
     ctx: &amp;ExtensionContext&lt;'_&gt;,
@@ -196,12 +213,20 @@
     result
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="解析查询"><a class="header" href="#解析查询">解析查询</a></h3>
 <p><code>parse_query</code> 将解析查询语句并生成 GraphQL <code>ExecutableDocument</code>，并且检查查询是否遵循 GraphQL 规范。 通常，<code>async-graphql</code> 遵循最后一个稳定的规范（October2021）。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">use async_graphql::parser::types::ExecutableDocument;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>/// Called at parse query.
 async fn parse_query(
     &amp;self,
@@ -215,12 +240,19 @@ async fn parse_query(
     next.run(ctx, query, variables).await
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="校验"><a class="header" href="#校验">校验</a></h3>
 <p><code>validation</code> 步骤将执行查询校验（取决于你指定的 <code>validation_mode</code>），并向客户端提供有关查询无效的原因。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>/// Called at validation query.
 async fn validation(
   &amp;self,
@@ -230,12 +262,19 @@ async fn validation(
   next.run(ctx).await
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="执行"><a class="header" href="#执行">执行</a></h3>
 <p><code>execution</code> 步骤是一个很大的步骤，它将并发执行<code>Query</code>，或者顺序执行<code>Mutation</code>。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>/// Called at execute query.
 async fn execute(
     &amp;self,
@@ -249,12 +288,19 @@ async fn execute(
     result
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="resolve"><a class="header" href="#resolve">resolve</a></h3>
 <p>为每个字段执行<code>resolve</code>.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware { 
 </span>/// Called at resolve field.
 async fn resolve(
     &amp;self,
@@ -268,12 +314,20 @@ async fn resolve(
     result
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="订阅"><a class="header" href="#订阅">订阅</a></h3>
 <p><code>subscribe</code>的行为和<code>request</code>很像，只是专门用于订阅查询。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use async_graphql::extensions::*;
+</span><span class="boring">use futures_util::stream::BoxStream;
+</span><span class="boring">struct MyMiddleware;
+</span><span class="boring">#[async_trait::async_trait]
+</span><span class="boring">impl Extension for MyMiddleware {
 </span>/// Called at subscribe request.
 fn subscribe&lt;'s&gt;(
     &amp;self,
@@ -284,6 +338,7 @@ fn subscribe&lt;'s&gt;(
     next.run(ctx, stream)
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 
                     </main>

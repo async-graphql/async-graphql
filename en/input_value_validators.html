@@ -151,9 +151,10 @@
 <li><strong>ip</strong> is valid ip address.</li>
 <li><strong>regex=RE</strong> is match for the regex.</li>
 </ul>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Query;
@@ -161,31 +162,36 @@ struct Query;
 #[Object]
 impl Query {
     /// The length of the name must be greater than or equal to 5 and less than or equal to 10.
-    async fn input(#[graphql(validator(min_length = 5, max_length = 10))] name: String) {
-    }
+    async fn input(&amp;self, #[graphql(validator(min_length = 5, max_length = 10))] name: String) -&gt; Result&lt;i32&gt; {
+<span class="boring">        todo!()
+</span>    }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="check-every-member-of-the-list"><a class="header" href="#check-every-member-of-the-list">Check every member of the list</a></h2>
 <p>You can enable the <code>list</code> attribute, and the validator will check all members in list:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Query;
 
 #[Object]
 impl Query {
-    async fn input(#[graphql(validator(list, max_length = 10))] names: Vec&lt;String&gt;) {
-    }
+    async fn input(&amp;self, #[graphql(validator(list, max_length = 10))] names: Vec&lt;String&gt;) -&gt; Result&lt;i32&gt; {
+<span class="boring">       todo!()
+</span>    }
 }
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="custom-validator"><a class="header" href="#custom-validator">Custom validator</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>struct MyValidator {
     expect: i32,
 }

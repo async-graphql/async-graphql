@@ -139,11 +139,20 @@
 <p><code>GraphQLSubscription</code>用于创建一个支持Web Socket订阅的Actor。</p>
 <h2 id="请求例子"><a class="header" href="#请求例子">请求例子</a></h2>
 <p>你需要把Schema传入<code>actix_web::App</code>作为全局数据。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn index(
-    schema: web::Data&lt;Schema&gt;,
+</span><span class="boring">extern crate async_graphql_actix_web;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate actix_web;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { a: i32 }
+</span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+</span>use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+async fn index(
+    schema: web::Data&lt;Schema&lt;Query, EmptyMutation, EmptySubscription&gt;&gt;,
     request: GraphQLRequest,
 ) -&gt; web::Json&lt;GraphQLResponse&gt; {
     web::Json(schema.execute(request.into_inner()).await.into())
@@ -151,14 +160,23 @@
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="订阅例子"><a class="header" href="#订阅例子">订阅例子</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>async fn index_ws(
-    schema: web::Data&lt;Schema&gt;,
+</span><span class="boring">extern crate async_graphql_actix_web;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate actix_web;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { a: i32 }
+</span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+</span>use actix_web::{web, HttpRequest, HttpResponse};
+use async_graphql_actix_web::GraphQLSubscription;
+async fn index_ws(
+    schema: web::Data&lt;Schema&lt;Query, EmptyMutation, EmptySubscription&gt;&gt;,
     req: HttpRequest,
     payload: web::Payload,
-) -&gt; Result&lt;HttpResponse&gt; {
+) -&gt; actix_web::Result&lt;HttpResponse&gt; {
     GraphQLSubscription::new(Schema::clone(&amp;*schema)).start(&amp;req, payload)
 }
 <span class="boring">}

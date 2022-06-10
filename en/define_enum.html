@@ -137,9 +137,10 @@
                         <h1 id="enum"><a class="header" href="#enum">Enum</a></h1>
 <p>It's easy to define an <code>Enum</code>, here we have an example:</p>
 <p><strong>Async-graphql will automatically change the name of each item to GraphQL's CONSTANT_CASE convention. You can use <code>name</code> to rename.</strong></p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 /// One of the films in the Star Wars Trilogy
@@ -162,9 +163,11 @@ pub enum Episode {
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
 expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new 
 enum that has parity with the existing, remote enum type.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
 </span>use async_graphql::*;
 
 /// Provides parity with a remote enum type
@@ -188,9 +191,12 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
 <span class="boring">}
 </span></code></pre></pre>
 <p>The process is tedious and requires multiple steps to keep the local and remote enums in sync. <code>Async_graphql</code> provides a handy feature to generate the <code>From&lt;remote_crate::RemoteEnum&gt; for LocalEnum</code> as well as an opposite direction of <code>From&lt;LocalEnum&gt; for remote_crate::RemoteEnum</code> via an additional attribute after deriving <code>Enum</code>:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
 </span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 #[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
 enum LocalEnum {

@@ -136,9 +136,10 @@
                     <main>
                         <h1 id="在内省中隐藏内容"><a class="header" href="#在内省中隐藏内容">在内省中隐藏内容</a></h1>
 <p>默认情况下，所有类型，字段在内省中都是可见的。但可能你希望根据不同的用户来隐藏一些信息，避免引起不必要的误会。你可以在类型或者字段上添加<code>visible</code>属性来做到。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -155,7 +156,7 @@ struct MyObj {
     c: i32, 
 }
 
-#[derive(Enum)]
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum MyEnum {
     // 这个项目将在内省中可见
     A,

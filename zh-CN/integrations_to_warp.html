@@ -139,9 +139,19 @@
 <p><code>graphql</code>用于执行<code>Query</code>和<code>Mutation</code>请求，它提取GraphQL请求，然后输出一个包含<code>async_graphql::Schema</code>和<code>async_graphql::Request</code>元组，你可以在之后组合其它Filter，或者直接调用<code>Schema::execute</code>执行查询。</p>
 <p><code>graphql_subscription</code>用于实现基于Web Socket的订阅，它输出<code>warp::Reply</code>。</p>
 <h2 id="请求例子"><a class="header" href="#请求例子">请求例子</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql_warp;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate warp;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use std::convert::Infallible;
+</span><span class="boring">use warp::Filter;
+</span><span class="boring">struct QueryRoot;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">async fn other() {
 </span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
 
 let schema = Schema::new(QueryRoot, EmptyMutation, EmptySubscription);
@@ -150,19 +160,39 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
     let resp = schema.execute(request).await;
 
     // 返回结果
-    Ok::&lt;_, Infallible&gt;(async_graphql_warp::Response::from(resp))
+    Ok::&lt;_, Infallible&gt;(async_graphql_warp::GraphQLResponse::from(resp))
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h2 id="订阅例子"><a class="header" href="#订阅例子">订阅例子</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql_warp;
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate warp;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use futures_util::stream::{Stream, StreamExt};
+</span><span class="boring">use std::convert::Infallible;
+</span><span class="boring">use warp::Filter;
+</span><span class="boring">struct SubscriptionRoot;
+</span><span class="boring">#[Subscription]
+</span><span class="boring">impl SubscriptionRoot {
+</span><span class="boring">  async fn tick(&amp;self) -&gt; impl Stream&lt;Item = i32&gt; {
+</span><span class="boring">    futures_util::stream::iter(0..10)
+</span><span class="boring">  }
+</span><span class="boring">}
+</span><span class="boring">struct QueryRoot;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">async fn other() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h2 id="更多例子"><a class="header" href="#更多例子">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>

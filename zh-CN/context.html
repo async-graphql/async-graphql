@@ -142,9 +142,10 @@
 <p>你可以通过调用<code>ctx.data::&lt;TypeOfYourData&gt;()</code>来获取查询中的数据。</p>
 <p><strong>主意：如果Resolver函数的返回值是从<code>Context</code>中借用的，则需要明确说明参数的生命周期。</strong></p>
 <p>下面的例子展示了如何从<code>Context</code>中借用数据。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Query;
@@ -162,10 +163,20 @@ impl Query {
 </span></code></pre></pre>
 <h3 id="schema数据"><a class="header" href="#schema数据">Schema数据</a></h3>
 <p>你可以在创建<code>Schema</code>时将数据放入上下文中，这对于不会更改的数据非常有用，例如连接池。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>  let schema = Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Default,SimpleObject)]
+</span><span class="boring">struct Query { version: i32}
+</span><span class="boring">struct EnvStruct;
+</span><span class="boring">let env_struct = EnvStruct;
+</span><span class="boring">struct S3Object;
+</span><span class="boring">let s3_storage = S3Object;
+</span><span class="boring">struct DBConnection;
+</span><span class="boring">let db_core = DBConnection;
+</span>let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
     .data(env_struct)
     .data(s3_storage)
     .data(db_core)
@@ -175,33 +186,47 @@ impl Query {
 <h3 id="请求数据"><a class="header" href="#请求数据">请求数据</a></h3>
 <p>你可以在执行请求时将数据放入上下文中，它对于身份验证数据很有用。</p>
 <p>一个使用<code>warp</code>的小例子：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate async_graphql_warp;
+</span><span class="boring">extern crate warp;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use warp::{Filter, Reply};
+</span><span class="boring">use std::convert::Infallible;
+</span><span class="boring">#[derive(Default, SimpleObject)]
+</span><span class="boring">struct Query { name: String }
+</span><span class="boring">struct AuthInfo { pub token: Option&lt;String&gt; }
+</span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
+</span><span class="boring">let schema_filter = async_graphql_warp::graphql(schema);
 </span>let graphql_post = warp::post()
   .and(warp::path(&quot;graphql&quot;))
+  .and(warp::header::optional(&quot;Authorization&quot;))
   .and(schema_filter)
-  .and(a_warp_filter)
-  ...
-  .and_then( |schema: (Schema&lt;Query, Mutation, Subscriptions&gt;, async_graphql::Request), arg2: ArgType2 ...| async move {
-    let (schema, request) = schema;
-    let your_auth_data = auth_function_from_headers(headers).await?;
+  .and_then( |auth: Option&lt;String&gt;, (schema, mut request): (Schema&lt;Query, EmptyMutation, EmptySubscription&gt;, async_graphql::Request)| async move {
+    // Do something to get auth data from the header
+    let your_auth_data = AuthInfo { token: auth };
     let response = schema
       .execute(
         request
          .data(your_auth_data)
-         .data(something_else)
       ).await;
       
-    Ok(async_graphql_warp::Response::from(response))
+    Ok::&lt;_, Infallible&gt;(async_graphql_warp::GraphQLResponse::from(response))
   });
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="http头"><a class="header" href="#http头">HTTP头</a></h2>
 <p>使用<code>Context</code>你还可以插入或添加HTTP头。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate http;
+</span><span class="boring">use ::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">struct Query;
 </span>#[Object]
 impl Query {
     async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
@@ -224,9 +249,10 @@ impl Query {
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
 <p>有时你想知道子查询中请求了哪些字段用于优化数据处理，则可以使用<code>ctx.field()</code>读取查询中的字段，它将提供一个<code>SelectionField</code>，允许你在当前字段和子字段之间导航。</p>
 <p>如果要跨查询或子查询执行搜索，则不必使用 <code>SelectionField</code> 手动执行此操作，可以使用 <code>ctx.look_ahead()</code> 来执行选择。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 #[derive(SimpleObject)]

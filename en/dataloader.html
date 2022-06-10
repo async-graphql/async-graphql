@@ -141,10 +141,7 @@
 <pre><code class="language-graphql">query { todos { users { name } } }
 </code></pre>
 <p>and <code>User</code> resolver is like this:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>struct User {
+<pre><code class="language-rust ignore">struct User {
     id: u64,
 }
 
@@ -159,8 +156,7 @@ impl User {
         Ok(name)
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
 <p>The query executor will call the <code>Todos</code> resolver which does a <code>select * from todo and return N todos</code>. Then for each 
 of the todos, concurrently, call the <code>User</code> resolver, <code>SELECT from USER where id = todo.user_id</code>.</p>
 <p>eg：</p>
@@ -188,10 +184,7 @@ need to optimize these codes!</p>
 <p>We need to group queries and exclude duplicate queries. <code>Dataloader</code> can do this.
 <a href="https://github.com/facebook/dataloader">facebook</a> gives a request-scope batch and caching solution.</p>
 <p>The following is an example of using <code>DataLoader</code> to optimize queries::</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use async_graphql::*;
+<pre><code class="language-rust ignore">use async_graphql::*;
 use async_graphql::dataloader::*;
 use itertools::Itertools;
 use std::sync::Arc;
@@ -227,17 +220,15 @@ impl User {
         name.ok_or_else(|| &quot;Not found&quot;.into())
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
 <p>In the end, only two SQLs are needed to query the results we want!</p>
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 </code></pre>
 <h2 id="implement-multiple-data-types"><a class="header" href="#implement-multiple-data-types">Implement multiple data types</a></h2>
 <p>You can implement multiple data types for the same <code>Loader</code>, like this:</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
+<pre><code class="language-rust ignore"><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>struct PostgresLoader {
     pool: sqlx::Pool&lt;Postgres&gt;,
 }
@@ -261,8 +252,7 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
         // Load todos from database
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+</code></pre>
 
                     </main>
 

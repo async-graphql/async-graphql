@@ -146,9 +146,10 @@ If you need e.g. a snake_cased GraphQL field name, you can use both the <code>na
 <li>When <code>name</code> and <code>method</code> exist together, <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
 <li>When only <code>name</code> exists, <code>name.to_camel_case()</code> is the GraphQL field name and the <code>name</code> is the resolver function name.</li>
 </ul>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 struct Circle {
@@ -207,9 +208,11 @@ enum Shape {
 <p><code>Async-graphql</code> traverses and registers all directly or indirectly referenced types from <code>Schema</code> in the initialization phase.
 If an interface is not referenced, it will not exist in the registry, as in the following example , even if <code>MyObject</code> implements <code>MyInterface</code>,
 because <code>MyInterface</code> is not referenced in <code>Schema</code>, the <code>MyInterface</code> type will not exist in the registry.</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(Interface)]
 #[graphql(
     field(name = &quot;name&quot;, type = &quot;String&quot;),
@@ -236,11 +239,22 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 <span class="boring">}
 </span></code></pre></pre>
 <p>You need to manually register the <code>MyInterface</code> type when constructing the <code>Schema</code>:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>Schema::build(Query, EmptyMutation, EmptySubscription)
-    .register_type::&lt;MyInterface&gt;()
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Interface)]
+</span><span class="boring">#[graphql(field(name = &quot;name&quot;, type = &quot;String&quot;))]
+</span><span class="boring">enum MyInterface { MyObject(MyObject) }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct MyObject { name: String, }
+</span><span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span>
+Schema::build(Query, EmptyMutation, EmptySubscription)
+    .register_output_type::&lt;MyInterface&gt;()
     .finish();
 <span class="boring">}
 </span></code></pre></pre>

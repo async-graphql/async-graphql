@@ -139,9 +139,19 @@
 <p><strong>一个Resolver函数必须是异步的，它的第一个参数必须是<code>&amp;self</code>，第二个参数是可选的<code>Context</code>，接下来是字段的参数。</strong></p>
 <p>Resolver函数用于计算字段的值，你可以执行一个数据库查询，并返回查询结果。<strong>函数的返回值是字段的类型</strong>，你也可以返回一个<code>async_graphql::Result</code>类型，这样能够返回一个错误，这个错误信息将输出到查询结果中。</p>
 <p>在查询数据库时，你可能需要一个数据库连接池对象，这个对象是个全局的，你可以在创建Schema的时候，用<code>SchemaBuilder::data</code>函数设置<code>Schema</code>数据, 用<code>Context::data</code>函数设置<code>Context</code>数据。下面的<code>value_from_db</code>字段展示了如何从<code>Context</code>中获取一个数据库连接。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">struct Data { pub name: String }
+</span><span class="boring">struct DbConn {}
+</span><span class="boring">impl DbConn {
+</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:&quot;&quot;.into()})}
+</span><span class="boring">}
+</span><span class="boring">struct DbPool {}
+</span><span class="boring">impl DbPool {
+</span><span class="boring">  fn take(&amp;self) -&gt; DbConn { DbConn {} }    
+</span><span class="boring">}
 </span>use async_graphql::*;
 
 struct MyObject {

@@ -143,9 +143,11 @@
 <p><em>Available in the repository</em></p>
 <p>To improve network performance for large queries, you can enable this Persisted Queries extension. With this extension enabled, each unique query is associated to a unique identifier, so clients can send this identifier instead of the corresponding query string to reduce requests sizes.</p>
 <p>This extension doesn't force you to use some cache strategy, you can choose the caching strategy you want, you'll just have to implement the <code>CacheStorage</code> trait:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[async_trait::async_trait]
 pub trait CacheStorage: Send + Sync + Clone + 'static {
     /// Load the query by `key`.

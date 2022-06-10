@@ -146,13 +146,19 @@
 <p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
 由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
     Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <p>然后可以返回如下响应：</p>
 <pre><code class="language-json">{
@@ -173,26 +179,32 @@
 两个方便特性，可将您的错误转换为适当的<code>Error</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
 这将把任何错误转换为具有给定扩展信息的<code>Error</code>。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">struct Query;
 </span>use std::num::ParseIntError;
-async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
+<span class="boring">#[Object]
+</span><span class="boring">impl Query {
+</span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
          .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <h3 id="为自定义错误实现errorextensions"><a class="header" href="#为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
 <p>你也可以给自己的错误类型实现<code>ErrorExtensions</code>:</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[macro_use]
-extern crate thiserror;
-
-#[derive(Debug, Error)]
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate thiserror;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(Debug, thiserror::Error)]
 pub enum MyError {
     #[error(&quot;Could not find resource&quot;)]
     NotFound,
@@ -210,7 +222,7 @@ impl ErrorExtensions for MyError {
         Error::new(format!(&quot;{}&quot;, self)).extend_with(|err, e| 
             match self {
               MyError::NotFound =&gt; e.set(&quot;code&quot;, &quot;NOT_FOUND&quot;),
-              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason),
+              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason.clone()),
               MyError::ErrorWithoutExtensions =&gt; {}
           })
     }
@@ -218,15 +230,33 @@ impl ErrorExtensions for MyError {
 <span class="boring">}
 </span></code></pre></pre>
 <p>您只需要对错误调用<code>extend</code>即可将错误与其提供的扩展信息一起传递，或者通过<code>extend_with</code>进一步扩展错误信息。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">extern crate thiserror;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(Debug, thiserror::Error)]
+</span><span class="boring">pub enum MyError {
+</span><span class="boring">    #[error(&quot;Could not find resource&quot;)]
+</span><span class="boring">    NotFound,
+</span><span class="boring">
+</span><span class="boring">    #[error(&quot;ServerError&quot;)]
+</span><span class="boring">    ServerError(String),
+</span><span class="boring">
+</span><span class="boring">    #[error(&quot;No Extensions&quot;)]
+</span><span class="boring">    ErrorWithoutExtensions,
+</span><span class="boring">}
+</span><span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
     Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <pre><code class="language-json">{
   &quot;errors&quot;: [
@@ -244,24 +274,30 @@ impl ErrorExtensions for MyError {
 </code></pre>
 <h2 id="resultext"><a class="header" href="#resultext">ResultExt</a></h2>
 <p>这个特质使您可以直接在结果上调用<code>extend_err</code>。因此上面的代码不再那么冗长。</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
+<pre><code class="language-rust ignore"><span class="boring">// @todo figure out why this example does not compile!
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
-async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
+<span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query {
+</span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
      Ok(&quot;234a&quot;
          .parse()
          .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
 }
 <span class="boring">}
-</span></code></pre></pre>
+</span></code></pre>
 <h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
 <p>由于对所有<code>&amp;E where E: std::fmt::Display</code>实现了<code>ErrorExtensions</code>和<code>ResultsExt</code>，我们可以将扩展链接在一起。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
-async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
+<span class="boring">struct Query;
+</span><span class="boring">#[Object]
+</span><span class="boring">impl Query {
+</span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
     match &quot;234a&quot;.parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
@@ -272,6 +308,7 @@ async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
     }
 }
 <span class="boring">}
+</span><span class="boring">}
 </span></code></pre></pre>
 <p>响应：</p>
 <pre><code class="language-json">{

@@ -137,9 +137,10 @@
                         <h1 id="简单对象simpleobject"><a class="header" href="#简单对象simpleobject">简单对象(SimpleObject)</a></h1>
 <p>简单对象是把Rust结构的所有字段都直接映射到GraphQL对象，不支持定义单独的Resolver函数。</p>
 <p>下面的例子定义了一个名称为MyObject的对象，包含字段<code>a</code>和<code>b</code>，<code>c</code>由于标记为<code>#[graphql(skip)]</code>，所以不会映射到GraphQL。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
 
 #[derive(SimpleObject)]
@@ -158,9 +159,15 @@ struct MyObject {
 <h2 id="泛型"><a class="header" href="#泛型">泛型</a></h2>
 <p>如果你希望其它类型能够重用<code>SimpleObject</code>，则可以定义泛型的<code>SimpleObject</code>，并指定具体的类型。</p>
 <p>在下面的示例中，创建了两种<code>SimpleObject</code>类型：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(SimpleObject)]
 #[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
 #[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
@@ -183,9 +190,22 @@ type SomeOtherName {
 }
 </code></pre>
 <p>在其它<code>Object</code>中使用具体的泛型类型：</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
+</span><span class="boring">    field1: Option&lt;T&gt;,
+</span><span class="boring">    field2: String,
+</span><span class="boring">}
 </span>#[derive(SimpleObject)]
 pub struct YetAnotherObject {
     a: SomeGenericObject&lt;SomeType&gt;,
@@ -198,9 +218,11 @@ pub struct YetAnotherObject {
 <p>有时GraphQL对象的大多数字段仅返回结构成员的值，但是少数字段需要计算。 通常我们使用<code>Object</code>宏来定义这样一个GraphQL对象。</p>
 <p>用<code>ComplexObject</code>宏可以更漂亮的完成这件事，我们可以使用<code>SimpleObject</code>宏来定义
 一些简单的字段，并使用<code>ComplexObject</code>宏来定义其他一些需要计算的字段。</p>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
 #[graphql(complex)] // 注意: 如果你希望ComplexObject宏生效，complex属性是必须的
 struct MyObj {
@@ -217,9 +239,11 @@ impl MyObj {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="同时用于输入和输出"><a class="header" href="#同时用于输入和输出">同时用于输入和输出</a></h2>
-<pre><pre class="playground"><code class="language-rust">
+<pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject, InputObject)]
 #[graphql(input_name = &quot;MyObjInput&quot;)] // 注意: 你必须用input_name属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
 struct MyObj {
