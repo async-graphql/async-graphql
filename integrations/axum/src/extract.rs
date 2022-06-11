@@ -1,19 +1,23 @@
-use std::io::ErrorKind;
+use std::{io::ErrorKind, marker::PhantomData};
 
 use async_graphql::{futures_util::TryStreamExt, http::MultipartOptions, ParseRequestError};
 use axum::{
     extract::{BodyStream, FromRequest, RequestParts},
     http,
     http::Method,
+    response::IntoResponse,
     BoxError,
 };
 use bytes::Bytes;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Extractor for GraphQL request.
-pub struct GraphQLRequest(pub async_graphql::Request);
+pub struct GraphQLRequest<R = rejection::GraphQLRejection>(
+    pub async_graphql::Request,
+    PhantomData<R>,
+);
 
-impl GraphQLRequest {
+impl<R> GraphQLRequest<R> {
     /// Unwraps the value to `async_graphql::Request`.
     #[must_use]
     pub fn into_inner(self) -> async_graphql::Request {
@@ -57,28 +61,33 @@ pub mod rejection {
 }
 
 #[async_trait::async_trait]
-impl<B> FromRequest<B> for GraphQLRequest
+impl<B, R> FromRequest<B> for GraphQLRequest<R>
 where
     B: http_body::Body + Unpin + Send + Sync + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
+    R: IntoResponse + From<ParseRequestError>,
 {
-    type Rejection = rejection::GraphQLRejection;
+    type Rejection = R;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         Ok(GraphQLRequest(
-            GraphQLBatchRequest::from_request(req)
+            GraphQLBatchRequest::<R>::from_request(req)
                 .await?
                 .0
                 .into_single()?,
+            PhantomData,
         ))
     }
 }
 
 /// Extractor for GraphQL batch request.
-pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
+pub struct GraphQLBatchRequest<R = rejection::GraphQLRejection>(
+    pub async_graphql::BatchRequest,
+    PhantomData<R>,
+);
 
-impl GraphQLBatchRequest {
+impl<R> GraphQLBatchRequest<R> {
     /// Unwraps the value to `async_graphql::BatchRequest`.
     #[must_use]
     pub fn into_inner(self) -> async_graphql::BatchRequest {
@@ -87,13 +96,14 @@ impl GraphQLBatchRequest {
 }
 
 #[async_trait::async_trait]
-impl<B> FromRequest<B> for GraphQLBatchRequest
+impl<B, R> FromRequest<B> for GraphQLBatchRequest<R>
 where
     B: http_body::Body + Unpin + Send + Sync + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
+    R: IntoResponse + From<ParseRequestError>,
 {
-    type Rejection = rejection::GraphQLRejection;
+    type Rejection = R;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         if let (&Method::GET, uri) = (req.method(), req.uri()) {
@@ -103,7 +113,7 @@ where
                     format!("failed to parse graphql request from uri query: {}", err),
                 ))
             });
-            Ok(Self(async_graphql::BatchRequest::Single(res?)))
+            Ok(Self(async_graphql::BatchRequest::Single(res?), PhantomData))
         } else {
             let content_type = req
                 .headers()
@@ -127,6 +137,7 @@ where
                     MultipartOptions::default(),
                 )
                 .await?,
+                PhantomData,
             ))
         }
     }
