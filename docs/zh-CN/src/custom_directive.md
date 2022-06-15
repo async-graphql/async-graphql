@@ -38,7 +38,7 @@ fn concat(value: String) -> impl CustomDirective {
 # use async_graphql::*;
 # struct Query;
 # #[Object]
-# impl Query { async fn verison(&self) -> &str { "1.0" } }
+# impl Query { async fn version(&self) -> &str { "1.0" } }
 # struct ConcatDirective { value: String, }
 # #[async_trait::async_trait]
 # impl CustomDirective for ConcatDirective {
