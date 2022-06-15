@@ -58,7 +58,7 @@ type Query {
 
 ## Wrapper types
 
-A derived field won't be able to manage everythings easily: Rust's [orphan rule](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits) requires that either the
+A derived field won't be able to manage everything easily: Rust's [orphan rule](https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits) requires that either the
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:
 
 ```rust,ignore

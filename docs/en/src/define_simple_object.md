@@ -27,7 +27,7 @@ struct MyObject {
 Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
 fields are calculated. In this case, the [Object](define_complex_object.html) macro cannot be used unless you hand-write all the resolvers.
 
-The `ComplexObject` macro works in conjuction with the `SimpleObject` macro. The `SimpleObject` derive macro defines
+The `ComplexObject` macro works in conjunction with the `SimpleObject` macro. The `SimpleObject` derive macro defines
 the non-calculated fields, where as the `ComplexObject` macro let's you write user-defined resolvers for the calculated fields.
 
 Resolvers added to `ComplexObject` adhere to the same rules as resolvers of [Object](define_complex_object.html).
