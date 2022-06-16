@@ -12,7 +12,7 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "4.0.2"
 
 [dependencies]
-async-graphql = { path = "../..", version = "4.0.2" }
+async-graphql = { path = "../..", version = "4.0.2", default-features = false }
 
 futures-util = { version = "0.3.0", default-features = false, features = [
   "sink",

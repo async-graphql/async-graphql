@@ -16,7 +16,7 @@ default = ["websocket"]
 websocket = ["tide-websockets"]
 
 [dependencies]
-async-graphql = { path = "../..", version = "4.0.2" }
+async-graphql = { path = "../..", version = "4.0.2", default-features = false }
 
 async-trait = "0.1.48"
 futures-util = "0.3.0"
