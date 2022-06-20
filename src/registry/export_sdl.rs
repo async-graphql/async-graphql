@@ -380,6 +380,7 @@ fn export_description(
 ) {
     if options.prefer_single_line_descriptions && !description.contains('\n') {
         let tab = if top_level { "" } else { "\t" };
+        let description = description.replace('"', r#"\""#);
         writeln!(sdl, "{}\"{}\"", tab, description).ok();
     } else {
         if top_level {
