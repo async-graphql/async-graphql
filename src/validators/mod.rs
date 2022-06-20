@@ -1,5 +1,6 @@
 mod chars_max_length;
 mod chars_min_length;
+#[cfg(feature = "email-validator")]
 mod email;
 mod ip;
 mod max_items;
@@ -16,6 +17,7 @@ mod url;
 
 pub use chars_max_length::chars_max_length;
 pub use chars_min_length::chars_min_length;
+#[cfg(feature = "email-validator")]
 pub use email::email;
 pub use ip::ip;
 pub use max_items::max_items;

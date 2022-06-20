@@ -34,7 +34,7 @@
 * [Docs](https://docs.rs/async-graphql)
 * [GitHub repository](https://github.com/async-graphql/async-graphql)
 * [Cargo package](https://crates.io/crates/async-graphql)
-* Minimum supported Rust version: 1.56.1 or later
+* Minimum supported Rust version: 1.57.0 or later
 
 ## Safety
 
@@ -84,6 +84,7 @@ This crate offers the following features, all of which are not activated by defa
 - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
 - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
 - `tokio-sync` Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html).
+- `fast_chemail`: Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).
 
 ## Apollo Studio
 

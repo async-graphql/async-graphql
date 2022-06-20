@@ -60,7 +60,7 @@ pub async fn receive_batch_body(
     }
 }
 
-/// Recieves a GraphQL query which is either cbor or json but NOT multipart
+/// Receives a GraphQL query which is either cbor or json but NOT multipart
 /// This method is only to avoid recursive calls with [``receive_batch_body``]
 /// and [``multipart::receive_batch_multipart``]
 pub(super) async fn receive_batch_body_no_multipart(

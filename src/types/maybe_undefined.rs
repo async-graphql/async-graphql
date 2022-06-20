@@ -509,7 +509,7 @@ mod tests {
         value = MaybeUndefined::Value(Ok(5));
         assert_eq!(value.transpose(), Ok(MaybeUndefined::Value(5)));
 
-        value = MaybeUndefined::Value(Err("eror"));
-        assert_eq!(value.transpose(), Err("eror"));
+        value = MaybeUndefined::Value(Err("error"));
+        assert_eq!(value.transpose(), Err("error"));
     }
 }

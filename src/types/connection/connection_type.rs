@@ -117,6 +117,11 @@ where
         &self.edges
     }
 
+    /// A list of nodes.
+    async fn nodes(&self) -> Vec<&Node> {
+        self.edges.iter().map(|e| &e.node).collect()
+    }
+
     #[graphql(flatten)]
     #[inline]
     async fn additional_fields(&self) -> &ConnectionFields {
