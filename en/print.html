@@ -227,7 +227,7 @@ struct MyObject {
 <h2 id="user-defined-resolvers"><a class="header" href="#user-defined-resolvers">User-defined resolvers</a></h2>
 <p>Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
 fields are calculated. In this case, the <a href="define_complex_object.html">Object</a> macro cannot be used unless you hand-write all the resolvers.</p>
-<p>The <code>ComplexObject</code> macro works in conjuction with the <code>SimpleObject</code> macro. The <code>SimpleObject</code> derive macro defines
+<p>The <code>ComplexObject</code> macro works in conjunction with the <code>SimpleObject</code> macro. The <code>SimpleObject</code> derive macro defines
 the non-calculated fields, where as the <code>ComplexObject</code> macro let's you write user-defined resolvers for the calculated fields.</p>
 <p>Resolvers added to <code>ComplexObject</code> adhere to the same rules as resolvers of <a href="define_complex_object.html">Object</a>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021">
@@ -480,8 +480,8 @@ impl Query {
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
-<p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields accross the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate accross the fields and subfields.</p>
-<p>If you want to perform a search accross the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
+<p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields across the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate across the fields and subfields.</p>
+<p>If you want to perform a search across the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
 <pre><pre class="playground"><code class="language-rust edition2021">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -707,7 +707,7 @@ impl Query {
 }
 </code></pre>
 <h2 id="wrapper-types"><a class="header" href="#wrapper-types">Wrapper types</a></h2>
-<p>A derived field won't be able to manage everythings easily: Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
+<p>A derived field won't be able to manage everything easily: Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:</p>
 <pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
@@ -2658,7 +2658,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn verison(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
 </span><span class="boring">struct ConcatDirective { value: String, }
 </span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl CustomDirective for ConcatDirective {

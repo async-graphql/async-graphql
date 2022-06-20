@@ -174,7 +174,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn verison(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
 </span><span class="boring">struct ConcatDirective { value: String, }
 </span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl CustomDirective for ConcatDirective {

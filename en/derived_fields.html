@@ -189,7 +189,7 @@ impl Query {
 }
 </code></pre>
 <h2 id="wrapper-types"><a class="header" href="#wrapper-types">Wrapper types</a></h2>
-<p>A derived field won't be able to manage everythings easily: Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
+<p>A derived field won't be able to manage everything easily: Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:</p>
 <pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
