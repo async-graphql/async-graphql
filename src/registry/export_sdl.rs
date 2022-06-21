@@ -340,8 +340,12 @@ impl Registry {
                 }
 
                 write!(sdl, "union {} =", name).ok();
-                for ty in possible_types {
-                    write!(sdl, " | {}", ty).ok();
+                for (idx, ty) in possible_types.iter().enumerate() {
+                    if idx == 0 {
+                        write!(sdl, " {}", ty).ok();
+                    } else {
+                        write!(sdl, " | {}", ty).ok();
+                    }
                 }
                 writeln!(sdl).ok();
             }
