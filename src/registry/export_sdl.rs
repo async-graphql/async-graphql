@@ -386,13 +386,11 @@ fn export_description(
         let tab = if top_level { "" } else { "\t" };
         let description = description.replace('"', r#"\""#);
         writeln!(sdl, "{}\"{}\"", tab, description).ok();
+    } else if top_level {
+        writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description).ok();
     } else {
-        if top_level {
-            writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description).ok();
-        } else {
-            let description = description.replace('\n', "\n\t");
-            writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
-        }
+        let description = description.replace('\n', "\n\t");
+        writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
     }
 }
 
