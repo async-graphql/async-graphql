@@ -12,6 +12,7 @@ pub struct SDLExportOptions {
     sorted_arguments: bool,
     sorted_enum_values: bool,
     federation: bool,
+    prefer_single_line_descriptions: bool,
 }
 
 impl SDLExportOptions {
@@ -57,6 +58,16 @@ impl SDLExportOptions {
     pub fn federation(self) -> Self {
         Self {
             federation: true,
+            ..self
+        }
+    }
+
+    /// When possible, write one-line instead of three-line descriptions
+    #[inline]
+    #[must_use]
+    pub fn prefer_single_line_descriptions(self) -> Self {
+        Self {
+            prefer_single_line_descriptions: true,
             ..self
         }
     }
@@ -124,13 +135,8 @@ impl Registry {
                 continue;
             }
 
-            if field.description.is_some() {
-                writeln!(
-                    sdl,
-                    "\t\"\"\"\n\t{}\n\t\"\"\"",
-                    field.description.unwrap().replace('\n', "\n\t")
-                )
-                .ok();
+            if let Some(description) = field.description {
+                export_description(sdl, options, false, description);
             }
 
             if !field.args.is_empty() {
@@ -180,8 +186,8 @@ impl Registry {
                     export_scalar = false;
                 }
                 if export_scalar {
-                    if description.is_some() {
-                        writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                    if let Some(description) = description {
+                        export_description(sdl, options, true, description);
                     }
                     writeln!(sdl, "scalar {}", name).ok();
                 }
@@ -218,8 +224,8 @@ impl Registry {
                     }
                 }
 
-                if description.is_some() {
-                    writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                if let Some(description) = description {
+                    export_description(sdl, options, true, description);
                 }
 
                 if options.federation && *extends {
@@ -249,8 +255,8 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() {
-                    writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                if let Some(description) = description {
+                    export_description(sdl, options, true, description);
                 }
 
                 if options.federation && *extends {
@@ -277,8 +283,8 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() {
-                    writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                if let Some(description) = description {
+                    export_description(sdl, options, true, description);
                 }
 
                 write!(sdl, "enum {} ", name).ok();
@@ -304,8 +310,8 @@ impl Registry {
                 oneof,
                 ..
             } => {
-                if description.is_some() {
-                    writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                if let Some(description) = description {
+                    export_description(sdl, options, true, description);
                 }
 
                 write!(sdl, "input {} ", name).ok();
@@ -322,7 +328,7 @@ impl Registry {
 
                 for field in fields {
                     if let Some(description) = field.description {
-                        writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
+                        export_description(sdl, options, false, description);
                     }
                     writeln!(sdl, "\t{}", export_input_value(&field)).ok();
                 }
@@ -335,13 +341,17 @@ impl Registry {
                 description,
                 ..
             } => {
-                if description.is_some() {
-                    writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description.unwrap()).ok();
+                if let Some(description) = description {
+                    export_description(sdl, options, true, description);
                 }
 
                 write!(sdl, "union {} =", name).ok();
-                for ty in possible_types {
-                    write!(sdl, " | {}", ty).ok();
+                for (idx, ty) in possible_types.iter().enumerate() {
+                    if idx == 0 {
+                        write!(sdl, " {}", ty).ok();
+                    } else {
+                        write!(sdl, " | {}", ty).ok();
+                    }
                 }
                 writeln!(sdl).ok();
             }
@@ -363,6 +373,24 @@ impl Registry {
                 .ok();
             }
         }
+    }
+}
+
+fn export_description(
+    sdl: &mut String,
+    options: &SDLExportOptions,
+    top_level: bool,
+    description: &str,
+) {
+    if options.prefer_single_line_descriptions && !description.contains('\n') {
+        let tab = if top_level { "" } else { "\t" };
+        let description = description.replace('"', r#"\""#);
+        writeln!(sdl, "{}\"{}\"", tab, description).ok();
+    } else if top_level {
+        writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description).ok();
+    } else {
+        let description = description.replace('\n', "\n\t");
+        writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
     }
 }
 
