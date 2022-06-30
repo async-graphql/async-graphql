@@ -137,13 +137,11 @@ async fn test_hello_header() {
 async fn test_count() {
     let srv = test::init_service(
         App::new()
-            .app_data(
-                Data::new(
-                    Schema::build(CountQueryRoot, CountMutation, EmptySubscription)
-                        .data(Count::default())
-                        .finish(),
-                ),
-            )
+            .app_data(Data::new(
+                Schema::build(CountQueryRoot, CountMutation, EmptySubscription)
+                    .data(Count::default())
+                    .finish(),
+            ))
             .service(
                 web::resource("/")
                     .guard(guard::Post())
