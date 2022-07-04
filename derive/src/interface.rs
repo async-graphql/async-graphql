@@ -250,6 +250,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let schema_ty = oty.value_type();
 
         methods.push(quote! {
+            #[#crate_name::fix_hidden_lifetime_bug::fix_hidden_lifetime_bug(
+                crate = #crate_name::fix_hidden_lifetime_bug,
+            )] // See #900
             #[inline]
             pub async fn #method_name<'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
                 match self {

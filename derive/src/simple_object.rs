@@ -226,6 +226,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             getters.push(quote! {
                  #[inline]
                  #[allow(missing_docs)]
+                 #[#crate_name::fix_hidden_lifetime_bug::fix_hidden_lifetime_bug(
+                     crate = #crate_name::fix_hidden_lifetime_bug,
+                 )] // See #900
                  #vis async fn #ident(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
                      ::std::result::Result::Ok(#block)
                  }

@@ -214,6 +214,8 @@ pub use async_graphql_value::{
 pub use async_stream;
 #[doc(hidden)]
 pub use async_trait;
+#[doc(hidden)]
+pub use ::fix_hidden_lifetime_bug;
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,
     OneofObjectType, OutputType, TypeName, UnionType,
