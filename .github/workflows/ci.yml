@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
+          - { rust: nightly-2022-06-29, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -78,11 +78,11 @@ jobs:
           submodules: true
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt
       - name: Check format
-        run: cargo +nightly fmt --all -- --check
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
 
   clippy:
     name: Run clippy - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
@@ -135,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
+          - { rust: nightly-2022-06-29, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -144,11 +144,11 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: ${{ matrix.rust }}
           override: true
           components: clippy, rustfmt
       - name: Check examples format
-        run: cargo +nightly fmt --all -- --check
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
         working-directory: ./examples
 
       - uses: actions-rs/toolchain@v1
