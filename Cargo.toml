@@ -50,7 +50,7 @@ pin-project-lite = "0.2.6"
 regex = "1.5.5"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
-static_assertions = "1.1.0"
+static_assertions = { git = "https://github.com/nvzqz/static-assertions-rs", rev = "a867e97a1b3c2e0c76b7a154abdf4e422b78e5f2" }
 tempfile = "3.2.0"
 thiserror = "1.0.24"
 

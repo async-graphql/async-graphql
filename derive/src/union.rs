@@ -13,6 +13,7 @@ use crate::{
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
     let ident = &union_args.ident;
+    let type_params = union_args.generics.type_params().collect::<Vec<_>>();
     let (impl_generics, ty_generics, where_clause) = union_args.generics.split_for_impl();
     let s = match &union_args.data {
         Data::Enum(s) => s,
@@ -84,7 +85,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
+                    #crate_name::static_assertions::assert_impl!(for(#(#type_params),*) #assert_ty: #crate_name::ObjectType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
@@ -95,7 +96,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 });
             } else {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::UnionType);
+                    #crate_name::static_assertions::assert_impl!(for(#(#type_params),*) #assert_ty: #crate_name::UnionType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
