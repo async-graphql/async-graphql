@@ -63,7 +63,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
     }
 
     fn to_value(&self) -> Value {
-        to_value(&self.0).unwrap_or_default()
+        Value::String(serde_json::to_string(&self.0).unwrap_or_default())
     }
 
     fn as_raw_value(&self) -> Option<&Self::RawValueType> {
@@ -120,7 +120,7 @@ impl InputType for serde_json::Value {
     }
 
     fn to_value(&self) -> Value {
-        to_value(&self).unwrap_or_default()
+        Value::String(self.to_string())
     }
 
     fn as_raw_value(&self) -> Option<&Self::RawValueType> {

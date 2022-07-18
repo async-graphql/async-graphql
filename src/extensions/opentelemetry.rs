@@ -83,14 +83,13 @@ where
         next: NextSubscribe<'_>,
     ) -> BoxStream<'s, Response> {
         Box::pin(
-            next.run(ctx, stream).with_context(
-                OpenTelemetryContext::current_with_span(
+            next.run(ctx, stream)
+                .with_context(OpenTelemetryContext::current_with_span(
                     self.tracer
                         .span_builder("subscribe")
                         .with_kind(SpanKind::Server)
                         .start(&*self.tracer),
-                ),
-            ),
+                )),
         )
     }
 

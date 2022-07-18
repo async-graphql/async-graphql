@@ -12,6 +12,16 @@ pub trait Guard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()>;
 }
 
+#[async_trait::async_trait]
+impl<T> Guard for T
+where
+    T: Fn(&Context<'_>) -> Result<()> + Send + Sync + 'static,
+{
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
+        self(ctx)
+    }
+}
+
 /// An extension trait for `Guard`.
 pub trait GuardExt: Guard + Sized {
     /// Perform `and` operator on two rules

@@ -46,7 +46,7 @@ Logger is a simple extension allowing you to add some logging feature to `async-
 ## OpenTelemetry
 *Available in the repository*
 
-OpenTelemetry is an extension providing an integration with the [opentelemetry crate](https://crates.io/crates/opentelemetry) to allow your application to capture distributed traces and metrics from `async-grraphql`.
+OpenTelemetry is an extension providing an integration with the [opentelemetry crate](https://crates.io/crates/opentelemetry) to allow your application to capture distributed traces and metrics from `async-graphql`.
 
 ## Tracing
 *Available in the repository*

@@ -583,3 +583,46 @@ pub async fn test_guard_on_complex_object_field() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_guard_with_fn() {
+    fn is_admin(ctx: &Context<'_>) -> Result<()> {
+        if ctx.data_opt::<Role>() == Some(&Role::Admin) {
+            Ok(())
+        } else {
+            Err("Forbidden".into())
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard = "is_admin")]
+        value: i32,
+    }
+
+    let schema = Schema::new(Query { value: 10 }, EmptyMutation, EmptySubscription);
+
+    let query = "{ value }";
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Admin))
+            .await
+            .data,
+        value!({"value": 10})
+    );
+
+    assert_eq!(
+        schema
+            .execute(Request::new(query).data(Role::Guest))
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: "Forbidden".to_string(),
+            source: None,
+            locations: vec![Pos { line: 1, column: 3 }],
+            path: vec![PathSegment::Field("value".to_owned())],
+            extensions: None,
+        }]
+    );
+}

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.5] 2022-07-18
+
+- Fix serializing of JSON default values [#969](https://github.com/async-graphql/async-graphql/issues/969)
+- Bump `rocket-0.5.0-rc.1` to `rocket-0.5.0-rc.2` for `async-graphql-rocket` [#968](https://github.com/async-graphql/async-graphql/pull/968)
+- Implement `Default` for `StringNumber` [#980](https://github.com/async-graphql/async-graphql/issues/980)
+- Implement `Guard` for `Fn`
+- Fix impossible to specify both `name` and `input_name` [#987](https://github.com/async-graphql/async-graphql/issues/987)
+
+
 # [4.0.4] 2022-6-25
 
 - Bump Actix-web from `4.0.1` to `4.1.0`

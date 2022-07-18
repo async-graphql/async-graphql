@@ -11,6 +11,13 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 #[cfg_attr(docsrs, doc(cfg(feature = "string_number")))]
 pub struct StringNumber<T: Num + Display>(pub T);
 
+impl<T: Num + Display + Default> Default for StringNumber<T> {
+    #[inline]
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
 #[Scalar(internal)]
 impl<T: Num + Display + Send + Sync> ScalarType for StringNumber<T>
 where
