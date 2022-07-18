@@ -137,8 +137,7 @@
                         <h1 id="派生字段"><a class="header" href="#派生字段">派生字段</a></h1>
 <p>有时两个字段有一样的查询逻辑，仅仅是输出的类型不同，在 <code>async-graphql</code> 中，你可以为它创建派生字段。</p>
 <p>在以下例子中，你已经有一个<code>duration_rfc2822</code>字段输出<code>RFC2822</code>格式的时间格式，然后复用它派生一个新的<code>date_rfc3339</code>字段。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate chrono;
 </span><span class="boring">use chrono::Utc;
@@ -198,8 +197,7 @@ impl Query {
 但是当你为 <code>T</code> 实现了 <code>From&lt;U&gt;</code> 后，你可以为 <code>Vec&lt;T&gt;</code> 实现 <code>From&lt;Vec&lt;U&gt;&gt;</code>，为 <code>Option&lt;T&gt;</code> 实现 <code>From&lt;Option&lt;U&gt;&gt;</code>.
 使用 <code>with</code> 参数来定义一个转换函数，而不是用 <code>Into::into</code>。</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate serde;
 </span><span class="boring">use serde::{Serialize, Deserialize};

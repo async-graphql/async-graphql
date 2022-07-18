@@ -143,8 +143,7 @@
 <p><em>Available in the repository</em></p>
 <p>要提高大型查询的性能，你可以启用此扩展，每个查询语句都将与一个唯一ID相关联，因此客户端可以直接发送此ID查询以减少请求的大小。</p>
 <p>这个扩展不会强迫你使用一些缓存策略，你可以选择你想要的缓存策略，你只需要实现 <code>CacheStorage</code> trait：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

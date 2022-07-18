@@ -136,8 +136,7 @@
                     <main>
                         <h1 id="字段守卫field-guard"><a class="header" href="#字段守卫field-guard">字段守卫(Field Guard)</a></h1>
 <p>你可以为<code>Object</code>, <code>SimpleObject</code>, <code>ComplexObject</code>和<code>Subscription</code>的字段定义<code>守卫</code>，它将在调用字段的 Resolver 函数前执行，如果失败则返回一个错误。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -170,8 +169,7 @@ impl Guard for RoleGuard {
 <span class="boring">}
 </span></code></pre></pre>
 <p>用<code>guard</code>属性使用它：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -194,8 +192,7 @@ struct Query {
 </span></code></pre></pre>
 <h2 id="从参数中获取值"><a class="header" href="#从参数中获取值">从参数中获取值</a></h2>
 <p>有时候守卫需要从字段参数中获取值，你需要像下面这样在创建守卫时传递该参数值：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

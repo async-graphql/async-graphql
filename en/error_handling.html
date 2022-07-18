@@ -141,8 +141,7 @@
 <p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>Error</code> and you can extend the error message.</p>
 <p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
 See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use std::num::ParseIntError;

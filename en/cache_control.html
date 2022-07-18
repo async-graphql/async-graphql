@@ -142,8 +142,7 @@
 <p>You can use <code>max_age</code> parameters to control the age of the cache (in seconds), and you can also use <code>public</code> and <code>private</code> to control the scope of the cache. When you do not specify it, the scope will default to <code>public</code>.</p>
 <p>when querying multiple resolvers, the results of all cache control parameters will be combined and the <code>max_age</code> minimum value will be taken. If the scope of any object or field is <code>private</code>, the result will be <code>private</code>.</p>
 <p>We can use <code>QueryResponse</code> to get a merged cache control result from a query result, and call <code>CacheControl::value</code> to get the corresponding HTTP header.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

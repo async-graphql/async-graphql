@@ -143,8 +143,7 @@
 <p><em>Available in the repository</em></p>
 <p>To improve network performance for large queries, you can enable this Persisted Queries extension. With this extension enabled, each unique query is associated to a unique identifier, so clients can send this identifier instead of the corresponding query string to reduce requests sizes.</p>
 <p>This extension doesn't force you to use some cache strategy, you can choose the caching strategy you want, you'll just have to implement the <code>CacheStorage</code> trait:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -169,7 +168,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 <p>Logger is a simple extension allowing you to add some logging feature to <code>async-graphql</code>. It's also a good example to learn how to create your own extension. </p>
 <h2 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h2>
 <p><em>Available in the repository</em></p>
-<p>OpenTelemetry is an extension providing an integration with the <a href="https://crates.io/crates/opentelemetry">opentelemetry crate</a> to allow your application to capture distributed traces and metrics from <code>async-grraphql</code>.</p>
+<p>OpenTelemetry is an extension providing an integration with the <a href="https://crates.io/crates/opentelemetry">opentelemetry crate</a> to allow your application to capture distributed traces and metrics from <code>async-graphql</code>.</p>
 <h2 id="tracing"><a class="header" href="#tracing">Tracing</a></h2>
 <p><em>Available in the repository</em></p>
 <p>Tracing is a simple extension allowing you to add some tracing feature to <code>async-graphql</code>. A little like the <code>Logger</code> extension. </p>

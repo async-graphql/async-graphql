@@ -140,8 +140,7 @@
 You can combine other filters later, or directly call <code>Schema::execute</code> to execute the query.</p>
 <p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
 <h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_warp;
 </span><span class="boring">extern crate async_graphql;
@@ -168,8 +167,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">}
 </span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_warp;
 </span><span class="boring">extern crate async_graphql;

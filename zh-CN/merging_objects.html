@@ -153,8 +153,7 @@ impl MyObject {
 </code></pre>
 <p>用 <code>#[derive(MergedObject)]</code> 宏允许你合并多个独立的Object为一个.</p>
 <p><strong>提示:</strong> 每个<code>#[Object]</code>需要一个唯一的名称，即使在一个<code>MergedObject</code>内，所以确保每个对象有单独的名称。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -198,8 +197,7 @@ let schema = Schema::new(
 <h1 id="合并订阅"><a class="header" href="#合并订阅">合并订阅</a></h1>
 <p>和<code>MergedObject</code>一样，你可以派生<code>MergedSubscription</code>来合并单独的<code>＃[Subscription]</code>块。</p>
 <p>像合并对象一样，每个订阅块都需要一个唯一的名称。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

@@ -142,8 +142,7 @@
 <p>You can request the data inside a query by just calling <code>ctx.data::&lt;TypeOfYourData&gt;()</code>.</p>
 <p><strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -164,8 +163,7 @@ impl Query {
 <h3 id="schema-data"><a class="header" href="#schema-data">Schema data</a></h3>
 <p>You can put data inside the context at the creation of the schema, it's useful for data that do not change, like a connection pool.</p>
 <p>An instance of how it would be written inside an application:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -187,8 +185,7 @@ impl Query {
 <h3 id="request-data"><a class="header" href="#request-data">Request data</a></h3>
 <p>You can put data inside the context at the execution of the request, it's useful for authentication data for instance.</p>
 <p>A little example with a <code>warp</code> route:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate async_graphql_warp;
@@ -220,8 +217,7 @@ impl Query {
 </span></code></pre></pre>
 <h2 id="headers"><a class="header" href="#headers">Headers</a></h2>
 <p>With the Context you can also insert and appends headers.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate http;
@@ -250,8 +246,7 @@ impl Query {
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
 <p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields across the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate across the fields and subfields.</p>
 <p>If you want to perform a search across the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;

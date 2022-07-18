@@ -140,8 +140,7 @@
 </code></pre>
 <p>任何错误都能够被转换为<code>Error</code>，并且你还能扩展标准的错误信息。</p>
 <p>下面是一个例子，解析一个输入的字符串到整数，当解析失败时返回错误，并且附加额外的错误信息。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use std::num::ParseIntError;

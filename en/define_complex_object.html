@@ -141,8 +141,7 @@
 <p>You may need access to global data in your query, for example a database connection pool.
 When creating your <code>Schema</code>, you can use <code>SchemaBuilder::data</code> to configure the global data, and <code>Context::data</code> to configure <code>Context</code> data.
 The following <code>value_from_db</code> function shows how to retrieve a database connection from <code>Context</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">struct Data { pub name: String }

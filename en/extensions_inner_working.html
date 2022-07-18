@@ -157,8 +157,7 @@
 <h3 id="request"><a class="header" href="#request">request</a></h3>
 <p>First, when we receive a request, if it's not a subscription, the first function to be called will be <code>request</code>, it's the first step, it's the function called at the incoming request, and it's also the function which will output the response to the user.</p>
 <p>Default implementation for <code>request</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -173,8 +172,7 @@
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>Depending on where you put your logic code, it'll be executed at the beginning or at the ending of the query being processed.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -193,8 +191,7 @@
 </span></code></pre></pre>
 <h3 id="prepare_request"><a class="header" href="#prepare_request">prepare_request</a></h3>
 <p>Just after the <code>request</code>, we will have the <code>prepare_request</code> lifecycle, which will be hooked. </p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -219,8 +216,7 @@
 </span></code></pre></pre>
 <h3 id="parse_query"><a class="header" href="#parse_query">parse_query</a></h3>
 <p>The <code>parse_query</code> will create a GraphQL <code>ExecutableDocument</code> on your query, it'll check if the query is valid for the GraphQL Spec. Usually the implemented spec in <code>async-graphql</code> tends to be the last stable one (October2021).</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -246,8 +242,7 @@ async fn parse_query(
 </span></code></pre></pre>
 <h3 id="validation"><a class="header" href="#validation">validation</a></h3>
 <p>The <code>validation</code> step will check (depending on your <code>validation_mode</code>) rules the query should abide to and give the client data about why the query is not valid.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -268,8 +263,7 @@ async fn validation(
 </span></code></pre></pre>
 <h3 id="execute"><a class="header" href="#execute">execute</a></h3>
 <p>The <code>execution</code> step is a huge one, it'll start the execution of the query by calling each resolver concurrently for a <code>Query</code> and serially for a <code>Mutation</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -294,8 +288,7 @@ async fn execute(
 </span></code></pre></pre>
 <h3 id="resolve"><a class="header" href="#resolve">resolve</a></h3>
 <p>The <code>resolve</code> step is launched for each field.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -320,8 +313,7 @@ async fn resolve(
 </span></code></pre></pre>
 <h3 id="subscribe"><a class="header" href="#subscribe">subscribe</a></h3>
 <p>The <code>subscribe</code> lifecycle has the same behavior as the <code>request</code> but for a <code>Subscritpion</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

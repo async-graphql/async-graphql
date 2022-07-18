@@ -139,8 +139,7 @@
 <p>The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
 <code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
 <p>You can add optional <code>#[graphql]</code> attributes to add descriptions or rename the field.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">#[derive(SimpleObject)]
@@ -169,8 +168,7 @@ impl Mutation {
 <p>If you want to reuse an <code>InputObject</code> for other types, you can define a generic InputObject
 and specify how its concrete types should be implemented.</p>
 <p>In the following example, two <code>InputObject</code> types are created:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -200,8 +198,7 @@ input SomeOtherName {
 }
 </code></pre>
 <p>In your resolver method or field of another input object, use as a normal generic type:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

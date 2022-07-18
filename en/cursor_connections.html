@@ -137,8 +137,7 @@
                         <h1 id="cursor-connections"><a class="header" href="#cursor-connections">Cursor connections</a></h1>
 <p>Relay's cursor connection specification is designed to provide a consistent method for query paging. For more details on the specification see the <a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
 <p>Defining a cursor connection in <code>async-graphql</code> is very simple, you just call the <code>connection::query</code> function and query data in the closure.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;

@@ -148,8 +148,7 @@ its contents.</p>
 <p>In <code>async-graphql</code> all user-facing errors are cast to the <code>Error</code> type which by default provides
 the error message exposed by <code>std::fmt::Display</code>. However, <code>Error</code> actually provides an additional information that can extend the error.</p>
 <p>A resolver looks like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -182,8 +181,7 @@ two convenience traits for casting your errors to the appropriate <code>Error</c
 extensions.</p>
 <p>The easiest way to provide extensions to any error is by calling <code>extend_with</code> on the error.
 This will on the fly convert any error into a <code>Error</code> with the given extension.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -202,8 +200,7 @@ This will on the fly convert any error into a <code>Error</code> with the given 
 <h3 id="implementing-errorextensions-for-custom-errors"><a class="header" href="#implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
 <p>If you find yourself attaching extensions to your errors all over the place you might want to consider
 implementing the trait on your custom error type directly.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -235,8 +232,7 @@ impl ErrorExtensions for MyError {
 </span></code></pre></pre>
 <p>This way you only need to call <code>extend</code> on your error to deliver the error message alongside the provided extensions.
 Or further extend your error through <code>extend_with</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -295,8 +291,7 @@ Or further extend your error through <code>extend_with</code>.</p>
 <h3 id="chained-extensions"><a class="header" href="#chained-extensions">Chained extensions</a></h3>
 <p>Since <code>ErrorExtensions</code> and <code>ResultExt</code> are implemented for any type <code>&amp;E where E: std::fmt::Display</code>
 we can chain the extension together.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;

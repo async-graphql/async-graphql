@@ -146,8 +146,7 @@
 <p>在<code>Async-graphql</code>中，所有面向用户的错误都强制转换为<code>Error</code>类型，默认情况下会提供
 由<code>std:::fmt::Display</code>暴露的错误消息。但是，<code>Error</code>实际上提供了一个额外的可以扩展错误的信息。</p>
 <p>Resolver函数类似这样：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -179,8 +178,7 @@
 两个方便特性，可将您的错误转换为适当的<code>Error</code>扩展。</p>
 <p>扩展任何错误的最简单方法是对错误调用<code>extend_with</code>。
 这将把任何错误转换为具有给定扩展信息的<code>Error</code>。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -198,8 +196,7 @@
 </span></code></pre></pre>
 <h3 id="为自定义错误实现errorextensions"><a class="header" href="#为自定义错误实现errorextensions">为自定义错误实现ErrorExtensions</a></h3>
 <p>你也可以给自己的错误类型实现<code>ErrorExtensions</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -230,8 +227,7 @@ impl ErrorExtensions for MyError {
 <span class="boring">}
 </span></code></pre></pre>
 <p>您只需要对错误调用<code>extend</code>即可将错误与其提供的扩展信息一起传递，或者通过<code>extend_with</code>进一步扩展错误信息。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -289,8 +285,7 @@ impl ErrorExtensions for MyError {
 </span></code></pre>
 <h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
 <p>由于对所有<code>&amp;E where E: std::fmt::Display</code>实现了<code>ErrorExtensions</code>和<code>ResultsExt</code>，我们可以将扩展链接在一起。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;

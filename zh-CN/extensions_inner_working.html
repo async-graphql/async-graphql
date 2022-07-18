@@ -155,8 +155,7 @@
 <h3 id="请求"><a class="header" href="#请求">请求</a></h3>
 <p>首先，当我们收到一个请求时，如果它不是订阅，第一个被调用的函数将是 <code>request</code>，它在传入请求时调用，并输出结果给客户端。</p>
 <p>Default implementation for <code>request</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -171,8 +170,7 @@
 </span><span class="boring">}
 </span></code></pre></pre>
 <p>根据你放置逻辑代码的位置，它将在正在查询执行的开头或结尾执行。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -191,8 +189,7 @@
 </span></code></pre></pre>
 <h3 id="准备查询"><a class="header" href="#准备查询">准备查询</a></h3>
 <p>在 <code>request</code> 之后，将调用<code>prepare_request</code>，你可以在此处对请求做一些转换。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -217,8 +214,7 @@
 </span></code></pre></pre>
 <h3 id="解析查询"><a class="header" href="#解析查询">解析查询</a></h3>
 <p><code>parse_query</code> 将解析查询语句并生成 GraphQL <code>ExecutableDocument</code>，并且检查查询是否遵循 GraphQL 规范。 通常，<code>async-graphql</code> 遵循最后一个稳定的规范（October2021）。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -244,8 +240,7 @@ async fn parse_query(
 </span></code></pre></pre>
 <h3 id="校验"><a class="header" href="#校验">校验</a></h3>
 <p><code>validation</code> 步骤将执行查询校验（取决于你指定的 <code>validation_mode</code>），并向客户端提供有关查询无效的原因。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -266,8 +261,7 @@ async fn validation(
 </span></code></pre></pre>
 <h3 id="执行"><a class="header" href="#执行">执行</a></h3>
 <p><code>execution</code> 步骤是一个很大的步骤，它将并发执行<code>Query</code>，或者顺序执行<code>Mutation</code>。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -292,8 +286,7 @@ async fn execute(
 </span></code></pre></pre>
 <h3 id="resolve"><a class="header" href="#resolve">resolve</a></h3>
 <p>为每个字段执行<code>resolve</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -318,8 +311,7 @@ async fn resolve(
 </span></code></pre></pre>
 <h3 id="订阅"><a class="header" href="#订阅">订阅</a></h3>
 <p><code>subscribe</code>的行为和<code>request</code>很像，只是专门用于订阅查询。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

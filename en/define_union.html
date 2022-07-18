@@ -138,8 +138,7 @@
 <p>The definition of a <code>Union</code> is similar to an <code>Interface</code>, <strong>but with no fields allowed.</strong>.
 The implementation is quite similar for <code>Async-graphql</code>; from <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -187,8 +186,7 @@ other union types. All members must be <code>Object</code>. To support nested
 unions, we can &quot;flatten&quot; members that are unions, bringing their members up
 into the parent union. This is done by applying <code>#[graphql(flatten)]</code> on each
 member we want to flatten.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>#[derive(async_graphql::Union)]
@@ -226,8 +224,7 @@ pub struct D {
 <span class="boring">}
 </span></code></pre></pre>
 <p>The above example transforms the top-level union into this equivalent:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">#[derive(async_graphql::SimpleObject)]

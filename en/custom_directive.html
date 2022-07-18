@@ -139,8 +139,7 @@
 <p>To create a custom directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to 
 generate a factory function that receives the parameters of the directive and returns an instance of the directive.</p>
 <p>Currently <code>Async-graphql</code> only supports directive located at <code>FIELD</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -167,8 +166,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Register the directive when building the schema:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

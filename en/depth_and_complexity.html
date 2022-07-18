@@ -178,8 +178,7 @@ a way to prevent such queries.</p>
 </code></pre>
 <p>You can limit the depth when creating <code>Schema</code>. If the query exceeds this limit, an error will occur and the 
 message <code>Query is nested too deep</code> will be returned.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -204,8 +203,7 @@ query with a complexity of <code>6</code>.</p>
 </code></pre>
 <p>You can limit the complexity when creating the <code>Schema</code>. If the query exceeds this limit, an error will occur 
 and <code>Query is too complex</code> will be returned.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -222,8 +220,7 @@ and <code>Query is too complex</code> will be returned.</p>
 <p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>, 
 <code>child_complexity</code> is a special variable that represents the complexity of the subquery, and <code>count</code> is the parameter of the field,
 used to calculate the complexity of the <code>values</code> field, and the type of the return value must be <code>usize</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

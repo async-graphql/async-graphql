@@ -138,8 +138,7 @@
 <p><code>Async-graphql</code>可以很方便的自定义指令，这可以扩展GraphQL的行为。</p>
 <p>创建一个自定义指令，需要实现 <code>CustomDirective</code> trait，然后用<code>Directive</code>宏生成一个工厂函数，该函数接收指令的参数并返回指令的实例。</p>
 <p>目前<code>Async-graphql</code>仅支持添加<code>FIELD</code>位置的指令。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -166,8 +165,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 <span class="boring">}
 </span></code></pre></pre>
 <p>创建模式时注册指令：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

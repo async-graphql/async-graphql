@@ -152,8 +152,7 @@
 </li>
 </ul>
 <h2 id="实体查找函数"><a class="header" href="#实体查找函数">实体查找函数</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -199,8 +198,7 @@ impl Query {
 <h2 id="定义复合主键"><a class="header" href="#定义复合主键">定义复合主键</a></h2>
 <p>一个主键可以包含多个字段，什么包含嵌套字段，你可以用<code>InputObject</code>来实现一个嵌套字段的Key类型。</p>
 <p>下面的例子中<code>User</code>对象的主键是<code>key { a b }</code>。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;

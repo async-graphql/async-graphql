@@ -137,8 +137,7 @@
                         <h1 id="query-and-mutation"><a class="header" href="#query-and-mutation">Query and Mutation</a></h1>
 <h2 id="query-root-object"><a class="header" href="#query-root-object">Query root object</a></h2>
 <p>The query root object is a GraphQL object with a definition similar to other objects. Resolver functions for all fields of the query object are executed concurrently.</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -160,8 +159,7 @@ impl Query {
 <h2 id="mutation-root-object"><a class="header" href="#mutation-root-object">Mutation root object</a></h2>
 <p>The mutation root object is also a GraphQL object, but it executes sequentially. One mutation following from another will only be executed only after the first mutation is completed.</p>
 <p>The following mutation root object provides an example of user registration and login:</p>
-<pre><pre class="playground"><code class="language-rust edition2021">
-<span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
