@@ -41,9 +41,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     }
 
     let gql_typename = object_args
-        .name
+        .input_name
         .clone()
-        .or_else(|| object_args.input_name.clone())
+        .or_else(|| object_args.name.clone())
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
     let desc = get_rustdoc(&object_args.attrs)?
