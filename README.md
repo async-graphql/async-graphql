@@ -123,6 +123,7 @@ cd examples && cargo run --bin [name]
 - [Zenly](https://zen.ly/)
 - [Brevz](https://brevz.io/)
 - [thorndyke](https://www.thorndyke.ai/)
+- [My Data My Consent](https://mydatamyconsent.com/)
 
 ## Community Showcase
 
