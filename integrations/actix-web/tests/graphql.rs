@@ -300,12 +300,13 @@ async fn test_compression() {
             .await
             .unwrap();
 
-        assert!(response.status().is_success());
+        assert!(response.status().is_success(), "using {:?}", encoding);
         let body = response.into_body();
 
         assert_eq!(
             actix_web::body::to_bytes(body).await.unwrap(),
-            json!({"data": {"add": 30}}).to_string().into_bytes()
+            json!({"data": {"add": 30}}).to_string().into_bytes(),
+            "using {:?}", encoding
         );
     }
 }

@@ -248,6 +248,7 @@ async fn compression() -> Result<()> {
     for &encoding in ContentEncoding::ALL {
         let resp = client
             .post(&format!("http://{}", listen_addr))
+            .header("Content-Type", "application/json")
             .header("Content-Encoding", encoding.header())
             .body(compress_query(
                 r#"{"query":"{ add(a: 10, b: 20) }"}"#,
@@ -256,11 +257,11 @@ async fn compression() -> Result<()> {
             .send()
             .await?;
 
-        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(resp.status(), StatusCode::OK, "using {:?}", encoding);
         let string = resp.text().await?;
         println!("via post {}", string);
 
-        assert_eq!(string, json!({"data": {"add": 30}}).to_string());
+        assert_eq!(string, json!({"data": {"add": 30}}).to_string(), "using {:?}", encoding);
     }
 
     Ok(())
