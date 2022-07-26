@@ -135,12 +135,18 @@ pub async fn receive_batch_request_opts<State: Clone + Send + Sync + 'static>(
         request.query::<async_graphql::Request>().map(Into::into)
     } else if request.method() == Method::Post {
         let body = request.take_body();
+
         let content_type = request
             .header(headers::CONTENT_TYPE)
             .and_then(|values| values.get(0))
             .map(HeaderValue::as_str);
 
-        async_graphql::http::receive_batch_body(content_type, body, opts)
+        let content_encoding = request
+            .header(headers::CONTENT_ENCODING)
+            .and_then(|values| values.get(0))
+            .map(HeaderValue::as_str);
+
+        async_graphql::http::receive_batch_body(content_type, content_encoding, body, opts)
             .await
             .map_err(|e| {
                 tide::Error::new(

@@ -26,6 +26,7 @@ string_number = []
 tokio-sync = ["tokio"]
 tracing = ["tracinglib", "tracing-futures"]
 unblock = ["blocking"]
+compression = ["brotli", "flate2", "zstd"]
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "4.0.6" }
@@ -98,6 +99,11 @@ lru = { version = "0.7.1", optional = true }
 serde_cbor = { version = "0.11.1", optional = true }
 sha2 = { version = "0.10.2", optional = true }
 zxcvbn = { version = "2.1.2", optional = true }
+
+# compress feature
+brotli = { version = "3.3.4", optional = true }
+flate2 = { version = "1.0.24", optional = true }
+zstd = { version = "0.11.2", optional = true }
 
 [dev-dependencies]
 futures-channel = "0.3.13"
