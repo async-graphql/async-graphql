@@ -219,7 +219,6 @@ async fn upload() -> Result<()> {
     Ok(())
 }
 
-
 #[async_std::test]
 async fn compression() -> Result<()> {
     let listen_addr = "127.0.0.1:8081";
@@ -250,14 +249,17 @@ async fn compression() -> Result<()> {
         let resp = client
             .post(&format!("http://{}", listen_addr))
             .header("Content-Encoding", encoding.header())
-            .body(compress_query(r#"{"query":"{ add(a: 10, b: 20) }"}"#, encoding))
+            .body(compress_query(
+                r#"{"query":"{ add(a: 10, b: 20) }"}"#,
+                encoding,
+            ))
             .send()
             .await?;
-    
+
         assert_eq!(resp.status(), StatusCode::OK);
         let string = resp.text().await?;
         println!("via post {}", string);
-    
+
         assert_eq!(string, json!({"data": {"add": 30}}).to_string());
     }
 

@@ -1,4 +1,4 @@
-use std::{time::Duration, io::Write};
+use std::{io::Write, time::Duration};
 
 use reqwest::Client;
 
@@ -15,7 +15,7 @@ pub enum ContentEncoding {
     Gzip,
     Deflate,
     Br,
-    Zstd
+    Zstd,
 }
 
 impl ContentEncoding {
@@ -40,22 +40,25 @@ impl ContentEncoding {
 pub fn compress_query(data: impl AsRef<str>, algo: ContentEncoding) -> Vec<u8> {
     match algo {
         ContentEncoding::Gzip => {
-            let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+            let mut encoder =
+                flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
             encoder.write_all(data.as_ref().as_bytes()).unwrap();
             encoder.finish().unwrap()
-        },
+        }
         ContentEncoding::Deflate => {
-            let mut encoder = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+            let mut encoder =
+                flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
             encoder.write_all(data.as_ref().as_bytes()).unwrap();
             encoder.finish().unwrap()
-        },
+        }
         ContentEncoding::Br => {
             let mut buff = Vec::new();
-            let mut encoder = brotli::CompressorWriter::with_params(&mut buff, 4096, &Default::default());
+            let mut encoder =
+                brotli::CompressorWriter::with_params(&mut buff, 4096, &Default::default());
             encoder.write_all(data.as_ref().as_bytes()).unwrap();
             encoder.flush().unwrap();
             encoder.into_inner().to_vec()
-        },
+        }
         ContentEncoding::Zstd => {
             let mut buff = Vec::new();
             let mut encoder = zstd::stream::Encoder::new(&mut buff, 9).unwrap();
