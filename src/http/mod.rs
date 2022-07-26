@@ -62,6 +62,7 @@ pub async fn receive_batch_body(
         Some("gzip") => Some(ContentEncoding::Gzip),
         Some("deflate") => Some(ContentEncoding::Deflate),
         Some("br") => Some(ContentEncoding::Br),
+        Some("zstd") => Some(ContentEncoding::Zstd),
         _ => None,
     };
 

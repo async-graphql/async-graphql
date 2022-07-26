@@ -5,6 +5,9 @@ use std::io::Read;
 use async_graphql::*;
 use reqwest::{header, StatusCode};
 use serde_json::json;
+use test_utils::ContentEncoding;
+
+use crate::test_utils::compress_query;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -212,6 +215,51 @@ async fn upload() -> Result<()> {
         json!({"data": {"singleUpload": {"filename": "test.txt", "mimeType": "text/plain"}}})
             .to_string()
     );
+
+    Ok(())
+}
+
+
+#[async_std::test]
+async fn compression() -> Result<()> {
+    let listen_addr = "127.0.0.1:8081";
+
+    async_std::task::spawn(async move {
+        struct QueryRoot;
+        #[Object]
+        impl QueryRoot {
+            /// Returns the sum of a and b
+            async fn add(&self, a: i32, b: i32) -> i32 {
+                a + b
+            }
+        }
+
+        let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
+
+        let mut app = tide::new();
+        let endpoint = async_graphql_tide::graphql(schema);
+        app.at("/").post(endpoint.clone()).get(endpoint);
+        app.listen(listen_addr).await
+    });
+
+    test_utils::wait_server_ready().await;
+
+    let client = test_utils::client();
+
+    for &encoding in ContentEncoding::ALL {
+        let resp = client
+            .post(&format!("http://{}", listen_addr))
+            .header("Content-Encoding", encoding.header())
+            .body(compress_query(r#"{"query":"{ add(a: 10, b: 20) }"}"#, encoding))
+            .send()
+            .await?;
+    
+        assert_eq!(resp.status(), StatusCode::OK);
+        let string = resp.text().await?;
+        println!("via post {}", string);
+    
+        assert_eq!(string, json!({"data": {"add": 30}}).to_string());
+    }
 
     Ok(())
 }

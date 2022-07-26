@@ -266,3 +266,46 @@ async fn test_cbor() {
         }
     );
 }
+
+#[actix_rt::test]
+async fn test_compression() {
+    let srv = test::init_service(
+        App::new()
+            .app_data(Data::new(Schema::new(
+                AddQueryRoot,
+                EmptyMutation,
+                EmptySubscription,
+            )))
+            .service(
+                web::resource("/")
+                    .guard(guard::Post())
+                    .to(gql_handle_schema::<AddQueryRoot, EmptyMutation, EmptySubscription>),
+            ),
+    )
+    .await;
+
+    for &encoding in ContentEncoding::ALL {
+        let response = srv
+            .call(
+                test::TestRequest::with_uri("/")
+                    .method(Method::POST)
+                    .set_payload(compress_query(
+                        r#"{"query":"{ add(a: 10, b: 20) }"}"#,
+                        encoding,
+                    ))
+                    .insert_header((actix_http::header::ACCEPT, "application/json"))
+                    .insert_header((actix_web::http::header::CONTENT_ENCODING, encoding.header()))
+                    .to_request(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.status().is_success());
+        let body = response.into_body();
+
+        assert_eq!(
+            actix_web::body::to_bytes(body).await.unwrap(),
+            json!({"data": {"add": 30}}).to_string().into_bytes()
+        );
+    }
+}
