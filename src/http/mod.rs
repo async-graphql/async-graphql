@@ -188,6 +188,7 @@ fn handle_content_encoding(
     content_encoding: Option<ContentEncoding>,
 ) -> Result<Vec<u8>, ParseRequestError> {
     use std::io::prelude::*;
+
     use flate2::read::{GzDecoder, ZlibDecoder};
 
     match content_encoding {

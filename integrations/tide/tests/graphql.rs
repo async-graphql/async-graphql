@@ -261,7 +261,12 @@ async fn compression() -> Result<()> {
         let string = resp.text().await?;
         println!("via post {}", string);
 
-        assert_eq!(string, json!({"data": {"add": 30}}).to_string(), "using {:?}", encoding);
+        assert_eq!(
+            string,
+            json!({"data": {"add": 30}}).to_string(),
+            "using {:?}",
+            encoding
+        );
     }
 
     Ok(())
