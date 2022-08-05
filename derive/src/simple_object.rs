@@ -180,7 +180,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             });
         } else {
             schema_fields.push(quote! {
-                #ty::create_type_info(registry);
+                <#ty as #crate_name::OutputType>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                     registry.create_fake_output_type::<#ty>() {
                     fields.extend(obj_fields);
