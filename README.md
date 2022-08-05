@@ -137,6 +137,8 @@ cd examples && cargo run --bin [name]
 
 ## Blog Posts
 
+- [Async GraphQL with Rust](https://formidable.com/blog/2022/async-graphql-with-rust-1/)
+
 - [GraphQL in Rust](https://romankudryashov.com/blog/2020/12/graphql-rust/)
 
 - [How to implement a Rust micro-service using Rocket, GraphQL, PostgreSQL](https://lionkeng.medium.com/how-to-implement-a-rust-micro-service-using-rocket-graphql-postgresql-a3f455f2ae8b)
