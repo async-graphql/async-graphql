@@ -94,3 +94,16 @@ pub struct YetAnotherInput {
 ```
 
 You can pass multiple generic types to `params()`, separated by a comma.
+
+## Redacting sensitive data
+
+If any part of your input is considered sensitive and you wish to redact it, you can mark it with `secret` directive. For example:
+
+```rust
+#[derive(InputObject)]
+pub struct CredentialsInput {
+    username: String,
+    #[graphql(secret)]
+    password: String,
+}
+```
