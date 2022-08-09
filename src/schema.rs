@@ -114,9 +114,9 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Set the maximum recursive depth a query can have. (default: 256)
+    /// Set the maximum recursive depth a query can have. (default: 32)
     ///
-    /// If the value is too large, stack overflow may occur, usually `256` is
+    /// If the value is too large, stack overflow may occur, usually `32` is
     /// enough.
     #[must_use]
     pub fn limit_recursive_depth(mut self, depth: usize) -> Self {
@@ -355,7 +355,7 @@ where
             data: Default::default(),
             complexity: None,
             depth: None,
-            recursive_depth: 256,
+            recursive_depth: 32,
             extensions: Default::default(),
             custom_directives: Default::default(),
         }
