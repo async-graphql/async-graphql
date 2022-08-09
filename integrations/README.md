@@ -44,5 +44,4 @@ they must all internally use the below functions.
 - **Actix-web**: Complete integration.
 - **Rocket**: Missing websocket support (blocked on [support in Rocket itself](https://github.com/SergioBenitez/Rocket/issues/90)).
 - **Warp**: Complete integration.
-- **Axum**: Complete integration.
-- 
+- **Axum**: Complete integration. 
