@@ -75,6 +75,10 @@ use fnv::FnvHashMap;
 use futures_channel::oneshot;
 use futures_timer::Delay;
 use futures_util::future::BoxFuture;
+#[cfg(feature = "tracing")]
+use tracinglib as tracing;
+#[cfg(feature = "tracing")]
+use tracing::{instrument, info_span, Instrument};
 
 #[allow(clippy::type_complexity)]
 struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
@@ -128,6 +132,7 @@ struct DataLoaderInner<T> {
 }
 
 impl<T> DataLoaderInner<T> {
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     async fn do_load<K>(&self, disable_cache: bool, (keys, senders): KeysAndSender<K, T>)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -275,6 +280,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Use this `DataLoader` load a data.
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn load_one<K>(&self, key: K) -> Result<Option<T::Value>, T::Error>
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -285,6 +291,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Use this `DataLoader` to load some data.
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn load_many<K, I>(&self, keys: I) -> Result<HashMap<K, T::Value>, T::Error>
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -357,16 +364,17 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
             Action::ImmediateLoad(keys) => {
                 let inner = self.inner.clone();
                 let disable_cache = self.disable_cache.load(Ordering::SeqCst);
-                (self.spawner)(Box::pin(
-                    async move { inner.do_load(disable_cache, keys).await },
-                ));
+                let task = async move { inner.do_load(disable_cache, keys).await };
+                #[cfg(feature = "tracing")]
+                let task = task.instrument(info_span!("immediate_load"));
+                (self.spawner)(Box::pin(task));
             }
             Action::StartFetch => {
                 let inner = self.inner.clone();
                 let disable_cache = self.disable_cache.load(Ordering::SeqCst);
                 let delay = self.delay;
 
-                (self.spawner)(Box::pin(async move {
+                let task = async move {
                     Delay::new(delay).await;
 
                     let keys = {
@@ -382,7 +390,10 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                     if !keys.0.is_empty() {
                         inner.do_load(disable_cache, keys).await
                     }
-                }))
+                };
+                #[cfg(feature = "tracing")]
+                let task = task.instrument(info_span!("start_fetch"));
+                (self.spawner)(Box::pin(task))
             }
             Action::Delay => {}
         }
@@ -394,6 +405,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     ///
     /// **NOTE: If the cache type is [NoCache], this function will not take
     /// effect. **
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn feed_many<K, I>(&self, values: I)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -418,6 +430,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     ///
     /// **NOTE: If the cache type is [NoCache], this function will not take
     /// effect. **
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn feed_one<K>(&self, key: K, value: T::Value)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
@@ -430,6 +443,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     ///
     /// **NOTE: If the cache type is [NoCache], this function will not take
     /// effect. **
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub fn clear<K>(&self)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
