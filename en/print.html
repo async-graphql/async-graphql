@@ -1115,6 +1115,20 @@ pub struct YetAnotherInput {
 <span class="boring">}
 </span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
+<h2 id="redacting-sensitive-data"><a class="header" href="#redacting-sensitive-data">Redacting sensitive data</a></h2>
+<p>If any part of your input is considered sensitive and you wish to redact it, you can mark it with <code>secret</code> directive. For example:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(InputObject)]
+pub struct CredentialsInput {
+    username: String,
+    #[graphql(secret)]
+    password: String,
+}
+<span class="boring">}
+</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="oneofobject"><a class="header" href="#oneofobject">OneofObject</a></h1>
 <p>A <code>OneofObject</code> is a special type of <code>InputObject</code>, in which only one of its fields must be set and is not-null.
 It is especially useful when you want a user to be able to choose between several potential input types.</p>
