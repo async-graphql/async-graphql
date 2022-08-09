@@ -21,9 +21,7 @@ macro_rules! recursion_depth {
 pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
     let mut pc = PositionCalculator::new(input.as_ref());
 
-    eprintln!("1");
     let pairs = GraphQLParser::parse(Rule::executable_document, input.as_ref())?;
-    eprintln!("2");
     let items = parse_definition_items(exactly_one(pairs), &mut pc)?;
 
     let mut operations = None;
