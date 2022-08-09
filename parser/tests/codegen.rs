@@ -3,11 +3,7 @@
 //!
 //! To avoid that, let's just dump generated code to string into this
 //! repository, and add a test that checks that the code is fresh.
-use std::{
-    fs,
-    io::Write,
-    process::{Command, Stdio},
-};
+use std::fs;
 
 const PREAMBLE: &str = "\
 //! This is @generated code, do not edit by hand.
@@ -47,21 +43,8 @@ struct GraphQLParser;
 }
 
 fn reformat(code: &str) -> String {
-    let mut cmd = Command::new("rustfmt")
-        .args(&["--config", "tab_spaces=2"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-
-    cmd.stdin
-        .take()
-        .unwrap()
-        .write_all(code.as_bytes())
-        .unwrap();
-    let output = cmd.wait_with_output().unwrap();
-    assert!(output.status.success());
-    String::from_utf8(output.stdout).unwrap()
+    let syntax_tree = syn::parse_str(code).unwrap();
+    prettyplease::unparse(&syntax_tree)
 }
 
 fn normalize(code: &str) -> String {
