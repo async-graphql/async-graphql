@@ -24,6 +24,9 @@ struct GraphQLParser;
     let tokens = pest_generator::derive_parser(input, false);
     let new = tokens.to_string();
     let code = format!("{}\n{}", PREAMBLE, &new);
-    fs::write("./src/parse/generated.rs", code).unwrap();
+    let current_code = fs::read_to_string("./src/parse/generated.rs").unwrap();
+    if current_code != code {
+        fs::write("./src/parse/generated.rs", code).unwrap();
+    }
     Ok(())
 }
