@@ -76,9 +76,9 @@ use futures_channel::oneshot;
 use futures_timer::Delay;
 use futures_util::future::BoxFuture;
 #[cfg(feature = "tracing")]
-use tracinglib as tracing;
+use tracing::{info_span, instrument, Instrument};
 #[cfg(feature = "tracing")]
-use tracing::{instrument, info_span, Instrument};
+use tracinglib as tracing;
 
 #[allow(clippy::type_complexity)]
 struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
