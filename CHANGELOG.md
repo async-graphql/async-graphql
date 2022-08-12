@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.8] 2022-08-12
+
+- Add tracing to dataloader methods when the tracing feature is enabled. [#996](https://github.com/async-graphql/async-graphql/pull/996)
+
 # [4.0.7] 2022-08-09
 
 - Limit parser recursion depth to `64`.

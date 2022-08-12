@@ -25,7 +25,7 @@ fn strip_brackets(type_name: &str) -> Option<&str> {
         .map(|rest| &rest[..rest.len() - 1])
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum MetaTypeName<'a> {
     List(&'a str),
     NonNull(&'a str),
@@ -499,7 +499,7 @@ impl Registry {
                     },
                 );
                 let ty = f(self);
-                *self.types.get_mut(&*name).unwrap() = ty;
+                *self.types.get_mut(name).unwrap() = ty;
             }
         }
     }
