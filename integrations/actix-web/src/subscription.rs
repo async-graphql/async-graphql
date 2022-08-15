@@ -60,7 +60,7 @@ where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    OnInit: Fn(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
     OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
     /// Specify the initial subscription context data, usually you can get
@@ -81,7 +81,7 @@ where
         callback: OnConnInit2,
     ) -> GraphQLSubscription<Query, Mutation, Subscription, OnConnInit2>
     where
-        OnConnInit2: Fn(serde_json::Value) -> Fut + Unpin + Send + 'static,
+        OnConnInit2: FnOnce(serde_json::Value) -> Fut + Unpin + Send + 'static,
         Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLSubscription {
