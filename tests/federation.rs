@@ -301,7 +301,6 @@ pub async fn test_entity_shareable() {
         a: i32,
     }
 
-
     struct Query;
 
     #[Object(extends)]
