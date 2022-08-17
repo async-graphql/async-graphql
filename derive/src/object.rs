@@ -26,6 +26,7 @@ pub fn generate(
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
+    let shareable = object_args.shareable;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -642,6 +643,7 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -681,6 +683,7 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

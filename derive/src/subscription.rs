@@ -409,6 +409,7 @@ pub fn generate(
                     extends: #extends,
                     keys: ::std::option::Option::None,
                     visible: #visible,
+                    shareable: false,
                     is_subscription: true,
                     rust_typename: ::std::any::type_name::<Self>(),
                 })

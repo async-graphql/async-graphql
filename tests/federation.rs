@@ -290,26 +290,41 @@ pub async fn test_entity_union() {
 #[tokio::test]
 pub async fn test_entity_shareable() {
     #[derive(SimpleObject)]
-    struct MyObj {
+    struct MyObjFieldShareable {
         #[graphql(shareable)]
+        field_shareable_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(shareable)]
+    struct MyObjShareable {
         a: i32,
     }
+
 
     struct Query;
 
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj(&self, _id: i32) -> MyObj {
+        async fn find_obj_field_shareable(&self, _id: i32) -> MyObjFieldShareable {
+            todo!()
+        }
+        #[graphql(entity)]
+        async fn find_obj_shareable(&self, _id: i32) -> MyObjShareable {
             todo!()
         }
     }
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
-    println!("{}", schema_sdl);
     assert_eq!(
-        schema_sdl.contains("a: Int! @shareable"),
+        schema_sdl.contains("fieldShareableA: Int! @shareable"),
+        true
+    );
+
+    assert_eq!(
+        schema_sdl.contains(r#"MyObjShareable @key(fields: "id") @shareable"#),
         true
     );
 }

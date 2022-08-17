@@ -200,6 +200,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub extends: bool,
     #[darling(default)]
+    pub shareable: bool,
+    #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
@@ -237,6 +239,7 @@ pub struct Object {
     pub rename_args: Option<RenameRule>,
     pub cache_control: CacheControl,
     pub extends: bool,
+    pub shareable: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
@@ -598,6 +601,8 @@ pub struct MergedObject {
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
+    #[darling(default)]
+    pub shareable: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]

@@ -54,6 +54,7 @@ impl OutputType for EmptyMutation {
             fields: Default::default(),
             cache_control: Default::default(),
             extends: false,
+            shareable: false,
             keys: None,
             visible: None,
             is_subscription: false,

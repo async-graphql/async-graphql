@@ -30,6 +30,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let ident = &object_args.ident;
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
+    let shareable = object_args.shareable;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -331,6 +332,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -395,6 +397,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
