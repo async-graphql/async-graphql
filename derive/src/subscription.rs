@@ -267,6 +267,7 @@ pub fn generate(
                     external: false,
                     requires: ::std::option::Option::None,
                     provides: ::std::option::Option::None,
+                    shareable: false,
                     visible: #visible,
                     compute_complexity: #complexity,
                 });

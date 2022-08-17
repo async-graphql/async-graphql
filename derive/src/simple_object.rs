@@ -127,6 +127,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
         let external = field.external;
+        let shareable = field.shareable;
         let requires = match &field.requires {
             Some(requires) => quote! { ::std::option::Option::Some(#requires) },
             None => quote! { ::std::option::Option::None },
@@ -174,6 +175,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     external: #external,
                     provides: #provides,
                     requires: #requires,
+                    shareable: #shareable,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
                 });

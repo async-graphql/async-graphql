@@ -170,6 +170,9 @@ impl Registry {
                 if let Some(provides) = field.provides {
                     write!(sdl, " @provides(fields: \"{}\")", provides).ok();
                 }
+                if field.shareable {
+                    write!(sdl, " @shareable").ok();
+                }
             }
 
             writeln!(sdl).ok();

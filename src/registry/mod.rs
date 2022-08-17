@@ -166,6 +166,7 @@ pub struct MetaField {
     pub requires: Option<&'static str>,
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
+    pub shareable: bool,
     pub compute_complexity: Option<ComplexityType>,
 }
 
@@ -619,6 +620,7 @@ impl Registry {
                     external: false,
                     requires: None,
                     provides: None,
+                    shareable: false,
                     visible: None,
                     compute_complexity: None,
                 },
@@ -664,6 +666,7 @@ impl Registry {
                         external: false,
                         requires: None,
                         provides: None,
+                        shareable: false,
                         visible: None,
                         compute_complexity: None,
                     },
@@ -694,6 +697,7 @@ impl Registry {
                             external: false,
                             requires: None,
                             provides: None,
+                            shareable: false,
                             visible: None,
                             compute_complexity: None,
                         },
