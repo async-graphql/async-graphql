@@ -286,3 +286,29 @@ pub async fn test_entity_union() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_entity_shareable() {
+    #[derive(SimpleObject)]
+    struct MyObj {
+        #[graphql(shareable)]
+        a: i32,
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(entity)]
+        async fn find_obj(&self, _id: i32) -> MyObj {
+            todo!()
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription).sdl_with_options(SDLExportOptions::new().federation());
+    println!("{}", schema_sdl);
+    assert_eq!(
+        schema_sdl.contains("a: Int! @shareable"),
+        true
+    );
+}
