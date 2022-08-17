@@ -305,7 +305,8 @@ pub async fn test_entity_shareable() {
         }
     }
 
-    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription).sdl_with_options(SDLExportOptions::new().federation());
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
     println!("{}", schema_sdl);
     assert_eq!(
         schema_sdl.contains("a: Int! @shareable"),
