@@ -151,6 +151,8 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub requires: Option<String>,
     #[darling(default)]
+    pub shareable: bool,
+    #[darling(default)]
     pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
     pub visible: Option<Visible>,
@@ -198,6 +200,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub extends: bool,
     #[darling(default)]
+    pub shareable: bool,
+    #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
@@ -235,6 +239,7 @@ pub struct Object {
     pub rename_args: Option<RenameRule>,
     pub cache_control: CacheControl,
     pub extends: bool,
+    pub shareable: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
@@ -278,6 +283,7 @@ pub struct ObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
+    pub shareable: bool,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
@@ -491,6 +497,8 @@ pub struct InterfaceField {
     pub requires: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub shareable: bool,
 }
 
 #[derive(FromVariant)]
@@ -593,6 +601,8 @@ pub struct MergedObject {
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
+    #[darling(default)]
+    pub shareable: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -764,6 +774,7 @@ pub struct ComplexObjectField {
     pub external: bool,
     pub provides: Option<String>,
     pub requires: Option<String>,
+    pub shareable: bool,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,

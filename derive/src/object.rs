@@ -26,6 +26,7 @@ pub fn generate(
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
+    let shareable = object_args.shareable;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -315,6 +316,7 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
                 let external = method_args.external;
+                let shareable = method_args.shareable;
                 let requires = match &method_args.requires {
                     Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                     None => quote! { ::std::option::Option::None },
@@ -507,6 +509,7 @@ pub fn generate(
                         external: #external,
                         provides: #provides,
                         requires: #requires,
+                        shareable: #shareable,
                         visible: #visible,
                         compute_complexity: #complexity,
                     });
@@ -640,6 +643,7 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -679,6 +683,7 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

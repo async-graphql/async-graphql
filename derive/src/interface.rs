@@ -137,6 +137,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         provides,
         requires,
         visible,
+        shareable,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -274,6 +275,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 external: #external,
                 provides: #provides,
                 requires: #requires,
+                shareable: #shareable,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
             });

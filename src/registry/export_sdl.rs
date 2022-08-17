@@ -170,6 +170,9 @@ impl Registry {
                 if let Some(provides) = field.provides {
                     write!(sdl, " @provides(fields: \"{}\")", provides).ok();
                 }
+                if field.shareable {
+                    write!(sdl, " @shareable").ok();
+                }
             }
 
             writeln!(sdl).ok();
@@ -198,6 +201,7 @@ impl Registry {
                 extends,
                 keys,
                 description,
+                shareable,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -240,6 +244,9 @@ impl Registry {
                         for key in keys {
                             write!(sdl, "@key(fields: \"{}\") ", key).ok();
                         }
+                    }
+                    if *shareable {
+                        write!(sdl, "@shareable ").ok();
                     }
                 }
 
