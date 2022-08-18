@@ -14,6 +14,8 @@
 
 - The `shareable` directive is used to indicate that an object type's field is allowed to be resolved by multiple subgraphs (by default, each field can be resolved by only one subgraph).
 
+- The `inaccessible` directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.
+
 ## Entity lookup function
 
 ```rust
