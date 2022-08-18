@@ -327,3 +327,167 @@ pub async fn test_entity_shareable() {
         true
     );
 }
+
+#[tokio::test]
+pub async fn test_entity_inaccessible() {
+    #[derive(SimpleObject)]
+    struct MyObjFieldInaccessible {
+        #[graphql(inaccessible)]
+        obj_field_inaccessible_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(inaccessible)]
+    struct MyObjInaccessible {
+        a: i32,
+    }
+
+    #[derive(InputObject)]
+    struct MyInputObjFieldInaccessible {
+        #[graphql(inaccessible)]
+        input_field_inaccessible_a: i32,
+    }
+
+    #[derive(InputObject)]
+    #[graphql(inaccessible)]
+    struct MyInputObjInaccessible {
+        a: i32,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    enum MyEnumVariantInaccessible {
+        #[graphql(inaccessible)]
+        OptionAInaccessible,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    #[graphql(inaccessible)]
+    enum MyEnumInaccessible {
+        OptionA,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyInterfaceObjA {
+        inaccessible_interface_value: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(inaccessible)]
+    struct MyInterfaceObjB {
+        inaccessible_interface_value: String,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = "inaccessible_interface_value", type = "String", inaccessible))]
+    #[graphql(inaccessible)]
+    enum MyInterfaceInaccessible {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    #[derive(Union)]
+    #[graphql(inaccessible)]
+    enum MyUnionInaccessible {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    struct MyNumberInaccessible(i32);
+
+    #[Scalar(inaccessible)]
+    impl ScalarType for MyNumberInaccessible {
+        fn parse(_value: Value) -> InputValueResult<Self> {
+            todo!()
+        }
+
+        fn to_value(&self) -> Value {
+            todo!()
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(entity)]
+        async fn find_obj_field_inaccessible(&self, _id: i32) -> MyObjFieldInaccessible {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_inaccessible(&self, _id: i32) -> MyObjInaccessible {
+            todo!()
+        }
+
+        async fn enum_variant_inaccessible(&self, _id: i32) -> MyEnumVariantInaccessible {
+            todo!()
+        }
+
+        async fn enum_inaccessible(&self, _id: i32) -> MyEnumInaccessible {
+            todo!()
+        }
+
+        #[graphql(inaccessible)]
+        async fn inaccessible_field(&self, _id: i32) -> i32 {
+            todo!()
+        }
+
+        async fn inaccessible_argument(&self, #[graphql(inaccessible)] _id: i32) -> i32 {
+            todo!()
+        }
+
+        async fn inaccessible_interface(&self) -> MyInterfaceInaccessible {
+            todo!()
+        }
+
+        async fn inaccessible_union(&self) -> MyUnionInaccessible {
+            todo!()
+        }
+
+        async fn inaccessible_scalar(&self) -> MyNumberInaccessible {
+            todo!()
+        }
+
+        async fn inaccessible_input_field(&self, _value: MyInputObjFieldInaccessible) -> i32 {
+            todo!()
+        }
+
+        async fn inaccessible_input(&self, _value: MyInputObjInaccessible) -> i32 {
+            todo!()
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    println!("{}", schema_sdl);
+
+    // FIELD_DEFINITION
+    assert!(schema_sdl.contains("inaccessibleField(id: Int!): Int! @inaccessible"));
+    assert!(schema_sdl.contains("objFieldInaccessibleA: Int! @inaccessible"));
+    assert!(schema_sdl.contains("inaccessibleInterfaceValue: String! @inaccessible"));
+    // INTERFACE
+    assert!(schema_sdl.contains("interface MyInterfaceInaccessible @inaccessible"));
+    // OBJECT
+    assert!(schema_sdl.contains(r#"type MyObjInaccessible @key(fields: "id") @inaccessible"#));
+    assert!(schema_sdl
+        .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible"));
+    // UNION
+    assert!(schema_sdl.contains("union MyUnionInaccessible @inaccessible ="));
+    // ARGUMENT_DEFINITION
+    assert!(schema_sdl.contains("inaccessibleArgument(id: Int! @inaccessible): Int!"));
+    // SCALAR
+    assert!(schema_sdl.contains("scalar MyNumberInaccessible @inaccessible"));
+    // ENUM
+    assert!(schema_sdl.contains("enum MyEnumInaccessible @inaccessible"));
+    // ENUM_VALUE
+    assert!(schema_sdl.contains("OPTION_A_INACCESSIBLE @inaccessible"));
+    // INPUT_OBJECT
+    assert!(schema_sdl.contains("input MyInputObjInaccessible @inaccessible"));
+    // INPUT_FIELD_DEFINITION
+    assert!(schema_sdl.contains("inputFieldInaccessibleA: Int! @inaccessible"));
+}

@@ -36,6 +36,7 @@ where
             description: Some("A scalar that can represent any JSON Object value."),
             is_valid: |_| true,
             visible: None,
+            inaccessible: false,
             specified_by_url: None,
         })
     }
@@ -92,6 +93,7 @@ where
             description: Some("A scalar that can represent any JSON Object value."),
             is_valid: |_| true,
             visible: None,
+            inaccessible: false,
             specified_by_url: None,
         })
     }

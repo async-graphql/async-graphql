@@ -111,6 +111,7 @@ pub struct MetaInputValue {
     pub ty: String,
     pub default_value: Option<String>,
     pub visible: Option<MetaVisibleFn>,
+    pub inaccessible: bool,
     pub is_secret: bool,
 }
 
@@ -167,6 +168,7 @@ pub struct MetaField {
     pub provides: Option<&'static str>,
     pub visible: Option<MetaVisibleFn>,
     pub shareable: bool,
+    pub inaccessible: bool,
     pub compute_complexity: Option<ComplexityType>,
 }
 
@@ -176,6 +178,7 @@ pub struct MetaEnumValue {
     pub description: Option<&'static str>,
     pub deprecation: Deprecation,
     pub visible: Option<MetaVisibleFn>,
+    pub inaccessible: bool,
 }
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
@@ -210,6 +213,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         is_valid: fn(value: &Value) -> bool,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         specified_by_url: Option<&'static str>,
     },
     Object {
@@ -221,6 +225,7 @@ pub enum MetaType {
         shareable: bool,
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         is_subscription: bool,
         rust_typename: &'static str,
     },
@@ -232,6 +237,7 @@ pub enum MetaType {
         extends: bool,
         keys: Option<Vec<String>>,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         rust_typename: &'static str,
     },
     Union {
@@ -239,6 +245,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         possible_types: IndexSet<String>,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         rust_typename: &'static str,
     },
     Enum {
@@ -246,6 +253,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         enum_values: IndexMap<&'static str, MetaEnumValue>,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         rust_typename: &'static str,
     },
     InputObject {
@@ -253,6 +261,7 @@ pub enum MetaType {
         description: Option<&'static str>,
         input_fields: IndexMap<String, MetaInputValue>,
         visible: Option<MetaVisibleFn>,
+        inaccessible: bool,
         rust_typename: &'static str,
         oneof: bool,
     },
@@ -495,6 +504,7 @@ impl Registry {
                         cache_control: Default::default(),
                         extends: false,
                         shareable: false,
+                        inaccessible: false,
                         keys: None,
                         visible: None,
                         is_subscription: false,
@@ -623,6 +633,7 @@ impl Registry {
                     requires: None,
                     provides: None,
                     shareable: false,
+                    inaccessible: false,
                     visible: None,
                     compute_complexity: None,
                 },
@@ -637,6 +648,7 @@ impl Registry {
                     description: None,
                     possible_types,
                     visible: None,
+                    inaccessible: false,
                     rust_typename: "async_graphql::federation::Entity",
                 },
             );
@@ -657,6 +669,7 @@ impl Registry {
                                     ty: "[_Any!]!".to_string(),
                                     default_value: None,
                                     visible: None,
+                                    inaccessible: false,
                                     is_secret: false,
                                 },
                             );
@@ -670,6 +683,7 @@ impl Registry {
                         provides: None,
                         shareable: false,
                         visible: None,
+                        inaccessible: false,
                         compute_complexity: None,
                     },
                 );
@@ -701,6 +715,7 @@ impl Registry {
                             provides: None,
                             shareable: false,
                             visible: None,
+                            inaccessible: false,
                             compute_complexity: None,
                         },
                     );
@@ -711,6 +726,7 @@ impl Registry {
                 shareable: false,
                 keys: None,
                 visible: None,
+                inaccessible: false,
                 is_subscription: false,
                 rust_typename: "async_graphql::federation::Service",
             },

@@ -399,6 +399,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     visible: None,
+                    inaccessible: false,
                     is_secret: false,
                 });
                 args
@@ -423,6 +424,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     visible: None,
+                    inaccessible: false,
                     is_secret: false,
                 });
                 args
