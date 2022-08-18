@@ -330,6 +330,20 @@ pub async fn test_entity_shareable() {
 
 #[tokio::test]
 pub async fn test_entity_inaccessible() {
+    struct MyCustomObjInaccessible;
+
+    #[Object(inaccessible)]
+    impl MyCustomObjInaccessible {
+        async fn a(&self) -> i32 {
+            todo!()
+        }
+
+        #[graphql(inaccessible)]
+        async fn custom_object_inaccessible(&self) -> i32 {
+            todo!()
+        }
+    }
+
     #[derive(SimpleObject)]
     struct MyObjFieldInaccessible {
         #[graphql(inaccessible)]
@@ -459,20 +473,24 @@ pub async fn test_entity_inaccessible() {
         async fn inaccessible_input(&self, _value: MyInputObjInaccessible) -> i32 {
             todo!()
         }
+
+        async fn inaccessible_custom_object(&self) -> MyCustomObjInaccessible {
+            todo!()
+        }
     }
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
 
-    println!("{}", schema_sdl);
-
     // FIELD_DEFINITION
     assert!(schema_sdl.contains("inaccessibleField(id: Int!): Int! @inaccessible"));
     assert!(schema_sdl.contains("objFieldInaccessibleA: Int! @inaccessible"));
     assert!(schema_sdl.contains("inaccessibleInterfaceValue: String! @inaccessible"));
+    assert!(schema_sdl.contains("customObjectInaccessible: Int! @inaccessible"));
     // INTERFACE
     assert!(schema_sdl.contains("interface MyInterfaceInaccessible @inaccessible"));
     // OBJECT
+    assert!(schema_sdl.contains("type MyCustomObjInaccessible @inaccessible"));
     assert!(schema_sdl.contains(r#"type MyObjInaccessible @key(fields: "id") @inaccessible"#));
     assert!(schema_sdl
         .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible"));
