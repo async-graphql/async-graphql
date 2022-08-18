@@ -593,6 +593,7 @@ where
             uploads: request.uploads,
             session_data,
             ctx_data: query_data,
+            extension_data: Arc::new(request.data),
             http_headers: Default::default(),
             introspection_mode: request.introspection_mode,
             errors: Default::default(),
