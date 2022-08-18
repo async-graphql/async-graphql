@@ -80,6 +80,7 @@ where
                 shareable: false,
                 keys: None,
                 visible: None,
+                inaccessible: false,
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -139,6 +140,7 @@ where
                 shareable: false,
                 keys: None,
                 visible: None,
+                inaccessible: false,
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -173,6 +175,7 @@ impl SubscriptionType for MergedObjectTail {
             shareable: false,
             keys: None,
             visible: None,
+            inaccessible: false,
             is_subscription: false,
             rust_typename: std::any::type_name::<Self>(),
         })

@@ -28,6 +28,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
+    let inaccessible = union_args.inaccessible;
     let desc = get_rustdoc(&union_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -193,6 +194,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                             possible_types
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
                         rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })

@@ -132,6 +132,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         requires: None,
                         provides: None,
                         shareable: false,
+                        inaccessible: false,
                         visible: None,
                         compute_complexity: None,
                     },
@@ -152,6 +153,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                                     ty: "String!".to_string(),
                                     default_value: None,
                                     visible: None,
+                                    inaccessible: false,
                                     is_secret: false,
                                 },
                             );
@@ -164,6 +166,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         requires: None,
                         provides: None,
                         shareable: false,
+                        inaccessible: false,
                         visible: None,
                         compute_complexity: None,
                     },

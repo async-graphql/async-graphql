@@ -31,6 +31,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
     let shareable = object_args.shareable;
+    let inaccessible = object_args.inaccessible;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -129,6 +130,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
         let external = field.external;
         let shareable = field.shareable;
+        let inaccessible = field.inaccessible;
         let requires = match &field.requires {
             Some(requires) => quote! { ::std::option::Option::Some(#requires) },
             None => quote! { ::std::option::Option::None },
@@ -177,6 +179,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     provides: #provides,
                     requires: #requires,
                     shareable: #shareable,
+                    inaccessible: #inaccessible,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
                 });
@@ -333,6 +336,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -398,6 +402,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

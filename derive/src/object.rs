@@ -27,6 +27,7 @@ pub fn generate(
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
     let shareable = object_args.shareable;
+    let inaccessible = object_args.inaccessible;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -317,6 +318,7 @@ pub fn generate(
                 let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
                 let external = method_args.external;
                 let shareable = method_args.shareable;
+                let inaccessible = method_args.inaccessible;
                 let requires = match &method_args.requires {
                     Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                     None => quote! { ::std::option::Option::None },
@@ -353,6 +355,7 @@ pub fn generate(
                         validator,
                         visible,
                         secret,
+                        inaccessible,
                         ..
                     },
                 ) in &args
@@ -386,6 +389,7 @@ pub fn generate(
                                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                                 default_value: #schema_default,
                                 visible: #visible,
+                                inaccessible: #inaccessible,
                                 is_secret: #secret,
                             });
                         });
@@ -510,6 +514,7 @@ pub fn generate(
                         provides: #provides,
                         requires: #requires,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         visible: #visible,
                         compute_complexity: #complexity,
                     });
@@ -644,6 +649,7 @@ pub fn generate(
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -684,6 +690,7 @@ pub fn generate(
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

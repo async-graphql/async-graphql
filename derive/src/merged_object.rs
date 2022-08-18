@@ -15,6 +15,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
     let shareable = object_args.shareable;
+    let inaccessible = object_args.inaccessible;
     let gql_typename = object_args
         .name
         .clone()
@@ -105,6 +106,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        inaccessible: #inaccessible,
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

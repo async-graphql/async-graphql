@@ -152,6 +152,10 @@ impl Registry {
                         sdl.push_str(", ");
                     }
                     sdl.push_str(&export_input_value(arg));
+
+                    if options.federation && arg.inaccessible {
+                        write!(sdl, " @inaccessible").ok();
+                    }
                 }
                 write!(sdl, "): {}", field.ty).ok();
             } else {
@@ -173,6 +177,9 @@ impl Registry {
                 if field.shareable {
                     write!(sdl, " @shareable").ok();
                 }
+                if field.inaccessible {
+                    write!(sdl, " @inaccessible").ok();
+                }
             }
 
             writeln!(sdl).ok();
@@ -182,7 +189,10 @@ impl Registry {
     fn export_type(&self, ty: &MetaType, sdl: &mut String, options: &SDLExportOptions) {
         match ty {
             MetaType::Scalar {
-                name, description, ..
+                name,
+                description,
+                inaccessible,
+                ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
                 if options.federation && FEDERATION_SCALARS.contains(&name.as_str()) {
@@ -192,7 +202,12 @@ impl Registry {
                     if let Some(description) = description {
                         export_description(sdl, options, true, description);
                     }
-                    writeln!(sdl, "scalar {}", name).ok();
+                    write!(sdl, "scalar {} ", name).ok();
+
+                    if options.federation && *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
+                    writeln!(sdl).ok();
                 }
             }
             MetaType::Object {
@@ -202,6 +217,7 @@ impl Registry {
                 keys,
                 description,
                 shareable,
+                inaccessible,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -248,6 +264,10 @@ impl Registry {
                     if *shareable {
                         write!(sdl, "@shareable ").ok();
                     }
+
+                    if *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
                 }
 
                 writeln!(sdl, "{{").ok();
@@ -260,6 +280,7 @@ impl Registry {
                 extends,
                 keys,
                 description,
+                inaccessible,
                 ..
             } => {
                 if let Some(description) = description {
@@ -277,6 +298,9 @@ impl Registry {
                             write!(sdl, "@key(fields: \"{}\") ", key).ok();
                         }
                     }
+                    if *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
                 }
                 self.write_implements(sdl, name);
 
@@ -288,6 +312,7 @@ impl Registry {
                 name,
                 enum_values,
                 description,
+                inaccessible,
                 ..
             } => {
                 if let Some(description) = description {
@@ -295,6 +320,9 @@ impl Registry {
                 }
 
                 write!(sdl, "enum {} ", name).ok();
+                if options.federation && *inaccessible {
+                    write!(sdl, "@inaccessible ").ok();
+                }
                 writeln!(sdl, "{{").ok();
 
                 let mut values = enum_values.values().collect::<Vec<_>>();
@@ -305,6 +333,9 @@ impl Registry {
                 for value in values {
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
+                    if options.federation && value.inaccessible {
+                        write!(sdl, " @inaccessible").ok();
+                    }
                     writeln!(sdl).ok();
                 }
 
@@ -314,6 +345,7 @@ impl Registry {
                 name,
                 input_fields,
                 description,
+                inaccessible,
                 oneof,
                 ..
             } => {
@@ -326,6 +358,9 @@ impl Registry {
                 if *oneof {
                     write!(sdl, "@oneof ").ok();
                 }
+                if options.federation && *inaccessible {
+                    write!(sdl, "@inaccessible ").ok();
+                }
                 writeln!(sdl, "{{").ok();
 
                 let mut fields = input_fields.values().collect::<Vec<_>>();
@@ -337,7 +372,11 @@ impl Registry {
                     if let Some(description) = field.description {
                         export_description(sdl, options, false, description);
                     }
-                    writeln!(sdl, "\t{}", export_input_value(&field)).ok();
+                    write!(sdl, "\t{} ", export_input_value(&field)).ok();
+                    if options.federation && field.inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
+                    writeln!(sdl).ok();
                 }
 
                 writeln!(sdl, "}}").ok();
@@ -346,13 +385,19 @@ impl Registry {
                 name,
                 possible_types,
                 description,
+                inaccessible,
                 ..
             } => {
                 if let Some(description) = description {
                     export_description(sdl, options, true, description);
                 }
 
-                write!(sdl, "union {} =", name).ok();
+                write!(sdl, "union {} ", name).ok();
+                if options.federation && *inaccessible {
+                    write!(sdl, "@inaccessible ").ok();
+                }
+                write!(sdl, "=").ok();
+
                 for (idx, ty) in possible_types.iter().enumerate() {
                     if idx == 0 {
                         write!(sdl, " {}", ty).ok();

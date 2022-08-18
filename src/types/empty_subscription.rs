@@ -26,6 +26,7 @@ impl SubscriptionType for EmptySubscription {
             shareable: false,
             keys: None,
             visible: None,
+            inaccessible: false,
             is_subscription: true,
             rust_typename: std::any::type_name::<Self>(),
         })

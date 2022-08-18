@@ -11,16 +11,18 @@ Define a GraphQL enum
 | remote       | Derive a remote enum                                                                                                                                                             | string | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                  | bool   | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                          | string | Y        |
+| inaccessible  | Indicate that an enum is not accessible from a supergraph when using Apollo Federation                                                                                          | bool   | Y        |
 
 # Item attributes
 
-| Attribute   | description                                                                                                                                     | Type   | Optional |
-|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
-| name        | Item name                                                                                                                                       | string | Y        |
-| deprecation | Item deprecated                                                                                                                                 | bool   | Y        |
-| deprecation | Item deprecation reason                                                                                                                         | string | Y        |
-| visible     | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
-| visible     | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
+| Attribute    | description                                                                                                                                     | Type   | Optional |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name         | Item name                                                                                                                                       | string | Y        |
+| deprecation  | Item deprecated                                                                                                                                 | bool   | Y        |
+| deprecation  | Item deprecation reason                                                                                                                         | string | Y        |
+| visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
+| visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
+| inaccessible | Indicate that an item is not accessible from a supergraph when using Apollo Federation                                                          | bool   | Y        |
 
 # Examples
 

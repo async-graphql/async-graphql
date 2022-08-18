@@ -153,6 +153,8 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub shareable: bool,
     #[darling(default)]
+    pub inaccessible: bool,
+    #[darling(default)]
     pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
     pub visible: Option<Visible>,
@@ -202,6 +204,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub shareable: bool,
     #[darling(default)]
+    pub inaccessible: bool,
+    #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
@@ -226,6 +230,7 @@ pub struct Argument {
     pub process_with: Option<String>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
+    pub inaccessible: bool,
     pub secret: bool,
 }
 
@@ -240,6 +245,7 @@ pub struct Object {
     pub cache_control: CacheControl,
     pub extends: bool,
     pub shareable: bool,
+    pub inaccessible: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
@@ -284,6 +290,7 @@ pub struct ObjectField {
     pub provides: Option<String>,
     pub requires: Option<String>,
     pub shareable: bool,
+    pub inaccessible: bool,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
@@ -321,6 +328,8 @@ pub struct Enum {
     pub remote: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
 }
 
 #[derive(FromVariant)]
@@ -336,6 +345,8 @@ pub struct EnumItem {
     pub deprecation: Deprecation,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
 }
 
 #[derive(FromDeriveInput)]
@@ -352,6 +363,8 @@ pub struct Union {
     pub name: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
 }
 
 #[derive(FromVariant)]
@@ -394,6 +407,8 @@ pub struct InputObjectField {
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
+    pub inaccessible: bool,
+    #[darling(default)]
     pub secret: bool,
 }
 
@@ -415,6 +430,8 @@ pub struct InputObject {
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
     // for SimpleObject
@@ -436,6 +453,8 @@ pub struct OneofObjectField {
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
+    pub inaccessible: bool,
+    #[darling(default)]
     pub secret: bool,
 }
 
@@ -455,6 +474,8 @@ pub struct OneofObject {
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
 }
@@ -472,6 +493,8 @@ pub struct InterfaceFieldArgument {
     pub default_with: Option<LitStr>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
     #[darling(default)]
     pub secret: bool,
 }
@@ -497,6 +520,8 @@ pub struct InterfaceField {
     pub requires: Option<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
     #[darling(default)]
     pub shareable: bool,
 }
@@ -529,6 +554,8 @@ pub struct Interface {
     pub extends: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
+    #[darling(default)]
+    pub inaccessible: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -538,6 +565,7 @@ pub struct Scalar {
     pub name: Option<String>,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
+    pub inaccessible: bool,
     pub specified_by_url: Option<String>,
 }
 
@@ -603,6 +631,8 @@ pub struct MergedObject {
     pub extends: bool,
     #[darling(default)]
     pub shareable: bool,
+    #[darling(default)]
+    pub inaccessible: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -751,6 +781,8 @@ pub struct NewType {
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
+    pub inaccessible: bool,
+    #[darling(default)]
     pub specified_by_url: Option<String>,
 }
 
@@ -775,6 +807,7 @@ pub struct ComplexObjectField {
     pub provides: Option<String>,
     pub requires: Option<String>,
     pub shareable: bool,
+    pub inaccessible: bool,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
