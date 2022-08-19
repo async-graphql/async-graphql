@@ -54,6 +54,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
             description: Some("A scalar that can represent any JSON value."),
             is_valid: |_| true,
             visible: None,
+            inaccessible: false,
             specified_by_url: None,
         })
     }
@@ -83,6 +84,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             description: Some("A scalar that can represent any JSON value."),
             is_valid: |_| true,
             visible: None,
+            inaccessible: false,
             specified_by_url: None,
         })
     }
@@ -110,6 +112,7 @@ impl InputType for serde_json::Value {
                 description: Some("A scalar that can represent any JSON value."),
                 is_valid: |_| true,
                 visible: None,
+                inaccessible: false,
                 specified_by_url: None,
             }
         })
@@ -141,6 +144,7 @@ impl OutputType for serde_json::Value {
                 description: Some("A scalar that can represent any JSON value."),
                 is_valid: |_| true,
                 visible: None,
+                inaccessible: false,
                 specified_by_url: None,
             }
         })

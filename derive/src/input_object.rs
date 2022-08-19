@@ -12,6 +12,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let crate_name = get_crate_name(object_args.internal);
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
+    let inaccessible = object_args.inaccessible;
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -65,6 +66,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 .rename_fields
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
+        let inaccessible = field.inaccessible;
 
         if field.skip || field.skip_input {
             get_fields.push(quote! {
@@ -188,6 +190,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,
                 visible: #visible,
+                inaccessible: #inaccessible,
                 is_secret: #secret,
             });
         })
@@ -240,6 +243,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: false,
                     })
@@ -287,6 +291,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: false,
                     })

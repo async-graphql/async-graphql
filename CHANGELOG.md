@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.10] 2022-08-18
+
+- Fixes extension `request.data(X)` being lost in the resolver [#1018](https://github.com/async-graphql/async-graphql/pull/1018)
+- Add Apollo federation `@shareable` directive support [#1025](https://github.com/async-graphql/async-graphql/pull/1025)
+- Add Apollo Federation `@inaccessible` directive support [#1026](https://github.com/async-graphql/async-graphql/pull/1026)
+
 # [4.0.9] 2022-08-15
 
 - `on_connection_init` takes `FnOnce` instead of `Fn` [#1022](https://github.com/async-graphql/async-graphql/issues/1022#issuecomment-1214575590)

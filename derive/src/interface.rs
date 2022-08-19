@@ -31,6 +31,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut enum_names = Vec::new();
     let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
+    let inaccessible = interface_args.inaccessible;
     let gql_typename = interface_args
         .name
         .clone()
@@ -137,6 +138,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         provides,
         requires,
         visible,
+        shareable,
+        inaccessible,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -178,6 +181,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             default,
             default_with,
             visible,
+            inaccessible,
             secret,
         } in args
         {
@@ -223,6 +227,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
                         visible: #visible,
+                        inaccessible: #inaccessible,
                         is_secret: #secret,
                     });
                 });
@@ -274,6 +279,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 external: #external,
                 provides: #provides,
                 requires: #requires,
+                shareable: #shareable,
+                inaccessible: #inaccessible,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
             });
@@ -359,6 +366,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         extends: #extends,
                         keys: ::std::option::Option::None,
                         visible: #visible,
+                        inaccessible: #inaccessible,
                         rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })

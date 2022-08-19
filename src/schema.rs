@@ -399,6 +399,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     visible: None,
+                    inaccessible: false,
                     is_secret: false,
                 });
                 args
@@ -423,6 +424,7 @@ where
                     ty: "Boolean!".to_string(),
                     default_value: None,
                     visible: None,
+                    inaccessible: false,
                     is_secret: false,
                 });
                 args
@@ -593,6 +595,7 @@ where
             uploads: request.uploads,
             session_data,
             ctx_data: query_data,
+            extension_data: Arc::new(request.data),
             http_headers: Default::default(),
             introspection_mode: request.introspection_mode,
             errors: Default::default(),

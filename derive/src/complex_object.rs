@@ -172,6 +172,8 @@ pub fn generate(
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
             let external = method_args.external;
+            let shareable = method_args.shareable;
+            let inaccessible = method_args.inaccessible;
             let requires = match &method_args.requires {
                 Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                 None => quote! { ::std::option::Option::None },
@@ -207,6 +209,7 @@ pub fn generate(
                     validator,
                     process_with,
                     visible,
+                    inaccessible,
                     secret,
                     ..
                 },
@@ -241,6 +244,7 @@ pub fn generate(
                             ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                             default_value: #schema_default,
                             visible: #visible,
+                            inaccessible: #inaccessible,
                             is_secret: #secret,
                         });
                     });
@@ -365,6 +369,8 @@ pub fn generate(
                     external: #external,
                     provides: #provides,
                     requires: #requires,
+                    shareable: #shareable,
+                    inaccessible: #inaccessible,
                     visible: #visible,
                     compute_complexity: #complexity,
                 }));

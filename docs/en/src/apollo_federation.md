@@ -12,6 +12,10 @@
 
 - The `requires` directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.
 
+- The `shareable` directive is used to indicate that an object type's field is allowed to be resolved by multiple subgraphs (by default, each field can be resolved by only one subgraph).
+
+- The `inaccessible` directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.
+
 ## Entity lookup function
 
 ```rust

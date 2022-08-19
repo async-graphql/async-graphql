@@ -23,8 +23,10 @@ impl SubscriptionType for EmptySubscription {
             fields: Default::default(),
             cache_control: Default::default(),
             extends: false,
+            shareable: false,
             keys: None,
             visible: None,
+            inaccessible: false,
             is_subscription: true,
             rust_typename: std::any::type_name::<Self>(),
         })

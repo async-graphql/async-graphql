@@ -77,8 +77,10 @@ where
                 fields,
                 cache_control: cc,
                 extends: false,
+                shareable: false,
                 keys: None,
                 visible: None,
+                inaccessible: false,
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -135,8 +137,10 @@ where
                 fields,
                 cache_control: cc,
                 extends: false,
+                shareable: false,
                 keys: None,
                 visible: None,
+                inaccessible: false,
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -168,8 +172,10 @@ impl SubscriptionType for MergedObjectTail {
             fields: Default::default(),
             cache_control: Default::default(),
             extends: false,
+            shareable: false,
             keys: None,
             visible: None,
+            inaccessible: false,
             is_subscription: false,
             rust_typename: std::any::type_name::<Self>(),
         })

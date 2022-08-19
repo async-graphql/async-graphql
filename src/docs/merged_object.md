@@ -12,6 +12,7 @@ Define a merged object with multiple object types.
 | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool                                       | Y        |
 | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string                                     | Y        |
 | serial        | Resolve each field sequentially.                                                                                                                | bool                                       | Y        |
+| inaccessible  | Indicate that an object is not accessible from a supergraph when using Apollo Federation                                                        | bool                                       | Y        |
 
 # Examples
 
