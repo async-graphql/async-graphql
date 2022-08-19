@@ -150,6 +150,12 @@
 <li>
 <p>The <code>requires</code> directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.</p>
 </li>
+<li>
+<p>The <code>shareable</code> directive is used to indicate that an object type's field is allowed to be resolved by multiple subgraphs (by default, each field can be resolved by only one subgraph).</p>
+</li>
+<li>
+<p>The <code>inaccessible</code> directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.</p>
+</li>
 </ul>
 <h2 id="entity-lookup-function"><a class="header" href="#entity-lookup-function">Entity lookup function</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
