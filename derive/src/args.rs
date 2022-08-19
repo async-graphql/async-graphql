@@ -155,6 +155,8 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub inaccessible: bool,
     #[darling(default)]
+    pub override_from: Option<String>,
+    #[darling(default)]
     pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
     pub visible: Option<Visible>,
@@ -291,6 +293,7 @@ pub struct ObjectField {
     pub requires: Option<String>,
     pub shareable: bool,
     pub inaccessible: bool,
+    pub override_from: Option<String>,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
@@ -524,6 +527,8 @@ pub struct InterfaceField {
     pub inaccessible: bool,
     #[darling(default)]
     pub shareable: bool,
+    #[darling(default)]
+    pub override_from: Option<String>,
 }
 
 #[derive(FromVariant)]
@@ -808,6 +813,7 @@ pub struct ComplexObjectField {
     pub requires: Option<String>,
     pub shareable: bool,
     pub inaccessible: bool,
+    pub override_from: Option<String>,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,

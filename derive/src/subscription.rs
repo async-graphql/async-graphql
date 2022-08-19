@@ -269,6 +269,7 @@ pub fn generate(
                     requires: ::std::option::Option::None,
                     provides: ::std::option::Option::None,
                     shareable: false,
+                    override_from: ::std::option::Option::None,
                     visible: #visible,
                     inaccessible: false,
                     compute_complexity: #complexity,

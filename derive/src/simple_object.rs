@@ -131,6 +131,10 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let external = field.external;
         let shareable = field.shareable;
         let inaccessible = field.inaccessible;
+        let override_from = match &field.override_from {
+            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            None => quote! { ::std::option::Option::None },
+        };
         let requires = match &field.requires {
             Some(requires) => quote! { ::std::option::Option::Some(#requires) },
             None => quote! { ::std::option::Option::None },
@@ -180,6 +184,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     requires: #requires,
                     shareable: #shareable,
                     inaccessible: #inaccessible,
+                    override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
                 });

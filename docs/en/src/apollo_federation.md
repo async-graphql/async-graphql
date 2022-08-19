@@ -16,6 +16,8 @@
 
 - The `inaccessible` directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.
 
+- The `override` directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.
+
 ## Entity lookup function
 
 ```rust
