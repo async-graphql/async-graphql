@@ -81,6 +81,7 @@ where
                 keys: None,
                 visible: None,
                 inaccessible: false,
+                tags: Default::default(),
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -141,6 +142,7 @@ where
                 keys: None,
                 visible: None,
                 inaccessible: false,
+                tags: Default::default(),
                 is_subscription: false,
                 rust_typename: std::any::type_name::<Self>(),
             }
@@ -176,6 +178,7 @@ impl SubscriptionType for MergedObjectTail {
             keys: None,
             visible: None,
             inaccessible: false,
+            tags: Default::default(),
             is_subscription: false,
             rust_typename: std::any::type_name::<Self>(),
         })

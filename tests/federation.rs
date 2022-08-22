@@ -535,3 +535,202 @@ pub async fn test_entity_inaccessible() {
     // INPUT_FIELD_DEFINITION
     assert!(schema_sdl.contains("inputFieldInaccessibleA: Int! @inaccessible"));
 }
+
+#[tokio::test]
+pub async fn test_entity_tag() {
+    struct MyCustomObjTagged;
+
+    #[Object(
+        tag = "tagged",
+        tag = "object",
+        tag = "with",
+        tag = "multiple",
+        tag = "tags"
+    )]
+    impl MyCustomObjTagged {
+        async fn a(&self) -> i32 {
+            todo!()
+        }
+
+        #[graphql(tag = "tagged_custom_object_field")]
+        async fn custom_object_tagged(&self) -> i32 {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct MyObjFieldTagged {
+        #[graphql(tag = "tagged_field")]
+        obj_field_tagged_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(tag = "tagged_simple_object")]
+    struct MyObjTagged {
+        a: i32,
+    }
+
+    #[derive(InputObject)]
+    struct MyInputObjFieldTagged {
+        #[graphql(tag = "tagged_input_object_field")]
+        input_field_tagged_a: i32,
+    }
+
+    #[derive(InputObject)]
+    #[graphql(tag = "input_object_tag")]
+    struct MyInputObjTagged {
+        a: i32,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    enum MyEnumVariantTagged {
+        #[graphql(tag = "tagged_enum_option")]
+        OptionATagged,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    #[graphql(tag = "tagged_num")]
+    enum MyEnumTagged {
+        OptionA,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyInterfaceObjA {
+        tagged_interface_value: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(tag = "interface_object")]
+    struct MyInterfaceObjB {
+        tagged_interface_value: String,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(
+        name = "tagged_interface_value",
+        type = "String",
+        tag = "tagged_interface_field"
+    ))]
+    #[graphql(tag = "tagged_interface")]
+    enum MyInterfaceTagged {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    #[derive(Union)]
+    #[graphql(tag = "tagged_union")]
+    enum MyUnionTagged {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    struct MyNumberTagged(i32);
+
+    #[Scalar(tag = "tagged_scalar")]
+    impl ScalarType for MyNumberTagged {
+        fn parse(_value: Value) -> InputValueResult<Self> {
+            todo!()
+        }
+
+        fn to_value(&self) -> Value {
+            todo!()
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(entity)]
+        async fn find_obj_field_tagged(&self, _id: i32) -> MyObjFieldTagged {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_tagged(&self, _id: i32) -> MyObjTagged {
+            todo!()
+        }
+
+        async fn enum_variant_tagged(&self, _id: i32) -> MyEnumVariantTagged {
+            todo!()
+        }
+
+        async fn enum_tagged(&self, _id: i32) -> MyEnumTagged {
+            todo!()
+        }
+
+        #[graphql(tag = "tagged_\"field\"")]
+        async fn tagged_field(&self, _id: i32) -> i32 {
+            todo!()
+        }
+
+        async fn tagged_argument(&self, #[graphql(tag = "tagged_argument")] _id: i32) -> i32 {
+            todo!()
+        }
+
+        async fn tagged_interface(&self) -> MyInterfaceTagged {
+            todo!()
+        }
+
+        async fn tagged_union(&self) -> MyUnionTagged {
+            todo!()
+        }
+
+        async fn tagged_scalar(&self) -> MyNumberTagged {
+            todo!()
+        }
+
+        async fn tagged_input_field(&self, _value: MyInputObjFieldTagged) -> i32 {
+            todo!()
+        }
+
+        async fn tagged_input(&self, _value: MyInputObjTagged) -> i32 {
+            todo!()
+        }
+
+        async fn tagged_custom_object(&self) -> MyCustomObjTagged {
+            todo!()
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    // FIELD_DEFINITION
+    assert!(schema_sdl.contains(r#"taggedField(id: Int!): Int! @tag(name: "tagged_\"field\"")"#));
+    assert!(schema_sdl.contains(r#"objFieldTaggedA: Int! @tag(name: "tagged_field")"#));
+    assert!(schema_sdl
+        .contains(r#"taggedInterfaceValue: String! @tag(name: "tagged_interface_field")"#));
+    assert!(
+        schema_sdl.contains(r#"customObjectTagged: Int! @tag(name: "tagged_custom_object_field")"#)
+    );
+    // INTERFACE
+    assert!(schema_sdl.contains(r#"interface MyInterfaceTagged @tag(name: "tagged_interface")"#));
+    // OBJECT
+    assert!(schema_sdl.contains(r#"type MyCustomObjTagged @tag(name: "tagged") @tag(name: "object") @tag(name: "with") @tag(name: "multiple") @tag(name: "tags") {"#));
+    assert!(schema_sdl
+        .contains(r#"type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {"#));
+    assert!(schema_sdl.contains(
+        r#"type MyInterfaceObjB implements MyInterfaceTagged @tag(name: "interface_object")"#
+    ));
+    // UNION
+    assert!(schema_sdl.contains(r#"union MyUnionTagged @tag(name: "tagged_union") ="#));
+    // ARGUMENT_DEFINITION
+    assert!(schema_sdl.contains(r#"taggedArgument(id: Int! @tag(name: "tagged_argument")): Int!"#));
+    // SCALAR
+    assert!(schema_sdl.contains(r#"scalar MyNumberTagged @tag(name: "tagged_scalar")"#));
+    // ENUM
+    assert!(schema_sdl.contains(r#"enum MyEnumTagged @tag(name: "tagged_num")"#));
+    // ENUM_VALUE
+    assert!(schema_sdl.contains(r#"OPTION_A_TAGGED @tag(name: "tagged_enum_option")"#));
+    // INPUT_OBJECT
+    assert!(schema_sdl.contains(r#"input MyInputObjTagged @tag(name: "input_object_tag")"#));
+    // INPUT_FIELD_DEFINITION
+    assert!(
+        schema_sdl.contains(r#"inputFieldTaggedA: Int! @tag(name: "tagged_input_object_field")"#)
+    );
+}

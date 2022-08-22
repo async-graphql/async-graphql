@@ -120,6 +120,7 @@ pub fn generate(
                             default_value: #schema_default,
                             visible: #visible,
                             inaccessible: false,
+                            tags: ::std::default::Default::default(),
                             is_secret: #secret,
                         });
                     });
@@ -272,6 +273,7 @@ pub fn generate(
                     override_from: ::std::option::Option::None,
                     visible: #visible,
                     inaccessible: false,
+                    tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
                 });
             });
@@ -414,6 +416,7 @@ pub fn generate(
                     visible: #visible,
                     shareable: false,
                     inaccessible: false,
+                    tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::any::type_name::<Self>(),
                 })
