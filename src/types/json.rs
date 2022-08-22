@@ -55,6 +55,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
             is_valid: |_| true,
             visible: None,
             inaccessible: false,
+            tags: Default::default(),
             specified_by_url: None,
         })
     }
@@ -85,6 +86,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             is_valid: |_| true,
             visible: None,
             inaccessible: false,
+            tags: Default::default(),
             specified_by_url: None,
         })
     }
@@ -113,6 +115,7 @@ impl InputType for serde_json::Value {
                 is_valid: |_| true,
                 visible: None,
                 inaccessible: false,
+                tags: Default::default(),
                 specified_by_url: None,
             }
         })
@@ -145,6 +148,7 @@ impl OutputType for serde_json::Value {
                 is_valid: |_| true,
                 visible: None,
                 inaccessible: false,
+                tags: Default::default(),
                 specified_by_url: None,
             }
         })

@@ -400,6 +400,7 @@ where
                     default_value: None,
                     visible: None,
                     inaccessible: false,
+                    tags: Default::default(),
                     is_secret: false,
                 });
                 args
@@ -425,6 +426,7 @@ where
                     default_value: None,
                     visible: None,
                     inaccessible: false,
+                    tags: Default::default(),
                     is_secret: false,
                 });
                 args

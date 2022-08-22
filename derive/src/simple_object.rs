@@ -32,6 +32,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -131,6 +132,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let external = field.external;
         let shareable = field.shareable;
         let inaccessible = field.inaccessible;
+        let tags = &field.tags;
         let override_from = match &field.override_from {
             Some(from) => quote! { ::std::option::Option::Some(#from) },
             None => quote! { ::std::option::Option::None },
@@ -184,6 +186,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     requires: #requires,
                     shareable: #shareable,
                     inaccessible: #inaccessible,
+                    tags: &[ #(#tags),* ],
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
@@ -342,6 +345,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -408,6 +412,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

@@ -17,6 +17,7 @@ some simple fields, and use the `ComplexObject` macro to define some other field
 | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE". | string | Y        |
 | guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                             | string | Y        |
 | inaccessible  | Indicate that an object is not accessible from a supergraph when using Apollo Federation                                                                                            | bool   | Y        |
+| tag           | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                                                      | string | Y        |
 
 # Field attributes
 
@@ -33,6 +34,7 @@ some simple fields, and use the `ComplexObject` macro to define some other field
 | requires      | Annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services. | string                                     | Y        |
 | shareable     | Indicate that a field is allowed to be resolved by multiple subgraphs                                                                                                                                                                    | bool                                       | Y        |
 | inaccessible  | Indicate that a field is not accessible from a supergraph when using Apollo Federation                                                                                                                                                   | bool                                       | Y        |
+| tag           | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                                                                                                           | string                                     | Y        |
 | override_from | Mark the field as overriding a field currently present on another subgraph. It is used to migrate fields between subgraphs.                                                                                                              | string                                     | Y        |
 | guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                                                                                  | string                                     | Y        |
 | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                                                                          | bool                                       | Y        |
@@ -53,6 +55,7 @@ some simple fields, and use the `ComplexObject` macro to define some other field
 | default_with | Expression to generate default value                                                                                                            | code string | Y        |
 | validator    | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object      | Y        |
 | inaccessible | Indicate that a field argument is not accessible from a supergraph when using Apollo Federation                                                 | bool        | Y        |
+| tag          | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                  | string      | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool        | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
 | secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |

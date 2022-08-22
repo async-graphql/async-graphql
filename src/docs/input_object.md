@@ -12,6 +12,7 @@ Define a GraphQL input object
 | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                          | string       | Y        |
 | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented.                                                                                                 | ConcreteType | Y        |
 | inaccessible  | Indicate that an input object is not accessible from a supergraph when using Apollo Federation                                                                                   | bool         | Y        |
+| tag           | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                                                   | string       | Y        |
 
 # Field attributes
 
@@ -30,6 +31,7 @@ Define a GraphQL input object
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string      | Y        |
 | secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |
 | inaccessible | Indicate that a field is not accessible from a supergraph when using Apollo Federation                                                          | bool        | Y        |
+| tag          | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                  | string      | Y        |
 
 # Examples
 

@@ -37,6 +37,7 @@ where
             is_valid: |_| true,
             visible: None,
             inaccessible: false,
+            tags: Default::default(),
             specified_by_url: None,
         })
     }
@@ -94,6 +95,7 @@ where
             is_valid: |_| true,
             visible: None,
             inaccessible: false,
+            tags: Default::default(),
             specified_by_url: None,
         })
     }
