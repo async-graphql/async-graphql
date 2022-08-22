@@ -215,14 +215,14 @@ impl Registry {
                     if let Some(description) = description {
                         export_description(sdl, options, true, description);
                     }
-                    write!(sdl, "scalar {} ", name).ok();
+                    write!(sdl, "scalar {}", name).ok();
 
                     if options.federation {
                         if *inaccessible {
-                            write!(sdl, "@inaccessible ").ok();
+                            write!(sdl, " @inaccessible").ok();
                         }
                         for tag in *tags {
-                            write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
                     writeln!(sdl).ok();
