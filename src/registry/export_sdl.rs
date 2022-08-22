@@ -180,6 +180,9 @@ impl Registry {
                 if field.inaccessible {
                     write!(sdl, " @inaccessible").ok();
                 }
+                if let Some(from) = field.override_from {
+                    write!(sdl, " @override(from: \"{}\")", from).ok();
+                }
             }
 
             writeln!(sdl).ok();

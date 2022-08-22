@@ -135,6 +135,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         inaccessible: false,
                         visible: None,
                         compute_complexity: None,
+                        override_from: None,
                     },
                 );
 
@@ -167,6 +168,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         provides: None,
                         shareable: false,
                         inaccessible: false,
+                        override_from: None,
                         visible: None,
                         compute_complexity: None,
                     },

@@ -169,6 +169,7 @@ pub struct MetaField {
     pub visible: Option<MetaVisibleFn>,
     pub shareable: bool,
     pub inaccessible: bool,
+    pub override_from: Option<&'static str>,
     pub compute_complexity: Option<ComplexityType>,
 }
 
@@ -634,6 +635,7 @@ impl Registry {
                     provides: None,
                     shareable: false,
                     inaccessible: false,
+                    override_from: None,
                     visible: None,
                     compute_complexity: None,
                 },
@@ -684,6 +686,7 @@ impl Registry {
                         shareable: false,
                         visible: None,
                         inaccessible: false,
+                        override_from: None,
                         compute_complexity: None,
                     },
                 );
@@ -716,6 +719,7 @@ impl Registry {
                             shareable: false,
                             visible: None,
                             inaccessible: false,
+                            override_from: None,
                             compute_complexity: None,
                         },
                     );
