@@ -159,7 +159,7 @@ impl Registry {
                         }
 
                         for tag in arg.tags {
-                            write!(sdl, " @tag(name: \"{}\")", tag.replace("\"", "\\\"")).ok();
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
                 }
@@ -187,7 +187,7 @@ impl Registry {
                     write!(sdl, " @inaccessible").ok();
                 }
                 for tag in field.tags {
-                    write!(sdl, " @tag(name: \"{}\")", tag.replace("\"", "\\\"")).ok();
+                    write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                 }
                 if let Some(from) = field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
@@ -222,7 +222,7 @@ impl Registry {
                             write!(sdl, "@inaccessible ").ok();
                         }
                         for tag in *tags {
-                            write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                            write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                         }
                     }
                     writeln!(sdl).ok();
@@ -289,7 +289,7 @@ impl Registry {
                     }
 
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                     }
                 }
 
@@ -327,7 +327,7 @@ impl Registry {
                     }
 
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 self.write_implements(sdl, name);
@@ -354,7 +354,7 @@ impl Registry {
                         write!(sdl, "@inaccessible ").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 writeln!(sdl, "{{").ok();
@@ -374,7 +374,7 @@ impl Registry {
                         }
 
                         for tag in value.tags {
-                            write!(sdl, " @tag(name: \"{}\")", tag.replace("\"", "\\\"")).ok();
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
                     writeln!(sdl).ok();
@@ -405,7 +405,7 @@ impl Registry {
                         write!(sdl, "@inaccessible ").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 writeln!(sdl, "{{").ok();
@@ -425,7 +425,7 @@ impl Registry {
                             write!(sdl, "@inaccessible ").ok();
                         }
                         for tag in field.tags {
-                            write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                            write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                         }
                     }
                     writeln!(sdl).ok();
@@ -451,7 +451,7 @@ impl Registry {
                         write!(sdl, "@inaccessible ").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace("\"", "\\\"")).ok();
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 write!(sdl, "=").ok();
