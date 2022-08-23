@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.11] 2022-08-23
+
+- Define `override` directive on fields [#1029](https://github.com/async-graphql/async-graphql/pull/1029)
+- Add `@tag` support [#1038](https://github.com/async-graphql/async-graphql/pull/1038)
+- Export SDL: avoid trailing space for scalar definitions [#1036](https://github.com/async-graphql/async-graphql/pull/1036)
+- Fixes [#1039](https://github.com/async-graphql/async-graphql/issues/1039)
+
 # [4.0.10] 2022-08-18
 
 - Fixes extension `request.data(X)` being lost in the resolver [#1018](https://github.com/async-graphql/async-graphql/pull/1018)
