@@ -34,6 +34,7 @@ async-graphql-value = { path = "value", version = "4.0.11" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
+base64 = "0.13.0"
 bytes = { version = "1.0.1", features = ["serde"] }
 fnv = "1.0.7"
 futures-util = { version = "0.3.0", default-features = false, features = [
