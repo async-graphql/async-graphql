@@ -10,3 +10,21 @@ fn test_recursion_limit() {
         Error::RecursionLimitExceeded
     );
 }
+
+#[test]
+fn test_issue_1039() {
+    let query = r#"
+      fragment onboardingFull on OnboardingState {
+        license
+      }
+      
+      query globalConfig {
+        globalConfig {
+          onboarding {
+            ...onboardingFull
+          }
+        }
+      }
+    "#;
+    parse_query(query).unwrap();
+}
