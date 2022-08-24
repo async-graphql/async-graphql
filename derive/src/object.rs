@@ -28,6 +28,7 @@ pub fn generate(
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -319,6 +320,11 @@ pub fn generate(
                 let external = method_args.external;
                 let shareable = method_args.shareable;
                 let inaccessible = method_args.inaccessible;
+                let tags = &method_args.tags;
+                let override_from = match &method_args.override_from {
+                    Some(from) => quote! { ::std::option::Option::Some(#from) },
+                    None => quote! { ::std::option::Option::None },
+                };
                 let requires = match &method_args.requires {
                     Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                     None => quote! { ::std::option::Option::None },
@@ -356,6 +362,7 @@ pub fn generate(
                         visible,
                         secret,
                         inaccessible,
+                        tags,
                         ..
                     },
                 ) in &args
@@ -390,6 +397,7 @@ pub fn generate(
                                 default_value: #schema_default,
                                 visible: #visible,
                                 inaccessible: #inaccessible,
+                                tags: &[ #(#tags),* ],
                                 is_secret: #secret,
                             });
                         });
@@ -515,6 +523,8 @@ pub fn generate(
                         requires: #requires,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
+                        override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
                     });
@@ -650,6 +660,7 @@ pub fn generate(
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -691,6 +702,7 @@ pub fn generate(
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

@@ -20,7 +20,7 @@ fragment_spread = { "..." ~ !type_condition ~ name ~ directives? }
 inline_fragment = { "..." ~ type_condition? ~ directives? ~ selection_set }
 
 fragment_definition = { "fragment" ~ name ~ type_condition ~ directives? ~ selection_set }
-type_condition = { "on" ~ name }
+type_condition = ${ "on" ~ WHITESPACE+ ~ name }
 
 // Service //
 

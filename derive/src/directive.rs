@@ -90,6 +90,7 @@ pub fn generate(
                 default_value: #schema_default,
                 visible: #visible,
                 inaccessible: false,
+                tags: ::std::default::Default::default(),
                 is_secret: #secret,
             });
         });

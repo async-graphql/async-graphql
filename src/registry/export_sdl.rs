@@ -153,8 +153,14 @@ impl Registry {
                     }
                     sdl.push_str(&export_input_value(arg));
 
-                    if options.federation && arg.inaccessible {
-                        write!(sdl, " @inaccessible").ok();
+                    if options.federation {
+                        if arg.inaccessible {
+                            write!(sdl, " @inaccessible").ok();
+                        }
+
+                        for tag in arg.tags {
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                        }
                     }
                 }
                 write!(sdl, "): {}", field.ty).ok();
@@ -180,6 +186,12 @@ impl Registry {
                 if field.inaccessible {
                     write!(sdl, " @inaccessible").ok();
                 }
+                for tag in field.tags {
+                    write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                }
+                if let Some(from) = field.override_from {
+                    write!(sdl, " @override(from: \"{}\")", from).ok();
+                }
             }
 
             writeln!(sdl).ok();
@@ -192,6 +204,7 @@ impl Registry {
                 name,
                 description,
                 inaccessible,
+                tags,
                 ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
@@ -202,10 +215,15 @@ impl Registry {
                     if let Some(description) = description {
                         export_description(sdl, options, true, description);
                     }
-                    write!(sdl, "scalar {} ", name).ok();
+                    write!(sdl, "scalar {}", name).ok();
 
-                    if options.federation && *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                    if options.federation {
+                        if *inaccessible {
+                            write!(sdl, " @inaccessible").ok();
+                        }
+                        for tag in *tags {
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                        }
                     }
                     writeln!(sdl).ok();
                 }
@@ -218,6 +236,7 @@ impl Registry {
                 description,
                 shareable,
                 inaccessible,
+                tags,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -268,6 +287,10 @@ impl Registry {
                     if *inaccessible {
                         write!(sdl, "@inaccessible ").ok();
                     }
+
+                    for tag in *tags {
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                    }
                 }
 
                 writeln!(sdl, "{{").ok();
@@ -281,6 +304,7 @@ impl Registry {
                 keys,
                 description,
                 inaccessible,
+                tags,
                 ..
             } => {
                 if let Some(description) = description {
@@ -301,6 +325,10 @@ impl Registry {
                     if *inaccessible {
                         write!(sdl, "@inaccessible ").ok();
                     }
+
+                    for tag in *tags {
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                    }
                 }
                 self.write_implements(sdl, name);
 
@@ -313,6 +341,7 @@ impl Registry {
                 enum_values,
                 description,
                 inaccessible,
+                tags,
                 ..
             } => {
                 if let Some(description) = description {
@@ -320,8 +349,13 @@ impl Registry {
                 }
 
                 write!(sdl, "enum {} ", name).ok();
-                if options.federation && *inaccessible {
-                    write!(sdl, "@inaccessible ").ok();
+                if options.federation {
+                    if *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
+                    for tag in *tags {
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                    }
                 }
                 writeln!(sdl, "{{").ok();
 
@@ -333,8 +367,15 @@ impl Registry {
                 for value in values {
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
-                    if options.federation && value.inaccessible {
-                        write!(sdl, " @inaccessible").ok();
+
+                    if options.federation {
+                        if value.inaccessible {
+                            write!(sdl, " @inaccessible").ok();
+                        }
+
+                        for tag in value.tags {
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                        }
                     }
                     writeln!(sdl).ok();
                 }
@@ -346,6 +387,7 @@ impl Registry {
                 input_fields,
                 description,
                 inaccessible,
+                tags,
                 oneof,
                 ..
             } => {
@@ -358,8 +400,13 @@ impl Registry {
                 if *oneof {
                     write!(sdl, "@oneof ").ok();
                 }
-                if options.federation && *inaccessible {
-                    write!(sdl, "@inaccessible ").ok();
+                if options.federation {
+                    if *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
+                    for tag in *tags {
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                    }
                 }
                 writeln!(sdl, "{{").ok();
 
@@ -373,8 +420,13 @@ impl Registry {
                         export_description(sdl, options, false, description);
                     }
                     write!(sdl, "\t{} ", export_input_value(&field)).ok();
-                    if options.federation && field.inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                    if options.federation {
+                        if field.inaccessible {
+                            write!(sdl, "@inaccessible ").ok();
+                        }
+                        for tag in field.tags {
+                            write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        }
                     }
                     writeln!(sdl).ok();
                 }
@@ -386,6 +438,7 @@ impl Registry {
                 possible_types,
                 description,
                 inaccessible,
+                tags,
                 ..
             } => {
                 if let Some(description) = description {
@@ -393,8 +446,13 @@ impl Registry {
                 }
 
                 write!(sdl, "union {} ", name).ok();
-                if options.federation && *inaccessible {
-                    write!(sdl, "@inaccessible ").ok();
+                if options.federation {
+                    if *inaccessible {
+                        write!(sdl, "@inaccessible ").ok();
+                    }
+                    for tag in *tags {
+                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                    }
                 }
                 write!(sdl, "=").ok();
 

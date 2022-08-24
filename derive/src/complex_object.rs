@@ -173,7 +173,12 @@ pub fn generate(
             let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
             let external = method_args.external;
             let shareable = method_args.shareable;
+            let override_from = match &method_args.override_from {
+                Some(from) => quote! { ::std::option::Option::Some(#from) },
+                None => quote! { ::std::option::Option::None },
+            };
             let inaccessible = method_args.inaccessible;
+            let tags = &method_args.tags;
             let requires = match &method_args.requires {
                 Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                 None => quote! { ::std::option::Option::None },
@@ -210,6 +215,7 @@ pub fn generate(
                     process_with,
                     visible,
                     inaccessible,
+                    tags,
                     secret,
                     ..
                 },
@@ -245,6 +251,7 @@ pub fn generate(
                             default_value: #schema_default,
                             visible: #visible,
                             inaccessible: #inaccessible,
+                            tags: &[ #(#tags),* ],
                             is_secret: #secret,
                         });
                     });
@@ -371,6 +378,8 @@ pub fn generate(
                     requires: #requires,
                     shareable: #shareable,
                     inaccessible: #inaccessible,
+                    tags: &[ #(#tags),* ],
+                    override_from: #override_from,
                     visible: #visible,
                     compute_complexity: #complexity,
                 }));

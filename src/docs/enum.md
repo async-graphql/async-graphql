@@ -11,7 +11,8 @@ Define a GraphQL enum
 | remote       | Derive a remote enum                                                                                                                                                             | string | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                  | bool   | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                          | string | Y        |
-| inaccessible  | Indicate that an enum is not accessible from a supergraph when using Apollo Federation                                                                                          | bool   | Y        |
+| inaccessible | Indicate that an enum is not accessible from a supergraph when using Apollo Federation                                                                                           | bool   | Y        |
+| tag          | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                                                   | string | Y        |
 
 # Item attributes
 
@@ -23,6 +24,7 @@ Define a GraphQL enum
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
 | visible      | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
 | inaccessible | Indicate that an item is not accessible from a supergraph when using Apollo Federation                                                          | bool   | Y        |
+| tag          | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                  | string | Y        |
 
 # Examples
 

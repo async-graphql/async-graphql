@@ -13,6 +13,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();
     let inaccessible = newtype_args.inaccessible;
+    let tags = &newtype_args.tags;
     let gql_typename = match &newtype_args.name {
         NewTypeName::New(name) => Some(name.clone()),
         NewTypeName::Rust => Some(RenameTarget::Type.rename(ident.to_string())),
@@ -53,6 +54,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
                 visible: #visible,
                 inaccessible: #inaccessible,
+                tags: &[ #(#tags),* ],
                 specified_by_url: #specified_by_url,
             })
         }

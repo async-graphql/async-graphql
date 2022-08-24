@@ -32,6 +32,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
     let inaccessible = interface_args.inaccessible;
+    let tags = &interface_args.tags;
     let gql_typename = interface_args
         .name
         .clone()
@@ -140,6 +141,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         visible,
         shareable,
         inaccessible,
+        tags,
+        override_from,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -170,6 +173,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             Some(provides) => quote! { ::std::option::Option::Some(#provides) },
             None => quote! { ::std::option::Option::None },
         };
+        let override_from = match &override_from {
+            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            None => quote! { ::std::option::Option::None },
+        };
 
         decl_params.push(quote! { ctx: &'ctx #crate_name::Context<'ctx> });
         use_params.push(quote! { ctx });
@@ -182,6 +189,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             default_with,
             visible,
             inaccessible,
+            tags,
             secret,
         } in args
         {
@@ -228,6 +236,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         default_value: #schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         is_secret: #secret,
                     });
                 });
@@ -281,6 +290,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 requires: #requires,
                 shareable: #shareable,
                 inaccessible: #inaccessible,
+                tags: &[ #(#tags),* ],
+                override_from: #override_from,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
             });
@@ -367,6 +378,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })

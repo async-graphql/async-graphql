@@ -154,6 +154,10 @@ pub struct SimpleObjectField {
     pub shareable: bool,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
+    #[darling(default)]
+    pub override_from: Option<String>,
     #[darling(default)]
     pub guard: Option<SpannedValue<String>>,
     #[darling(default)]
@@ -205,6 +209,8 @@ pub struct SimpleObject {
     pub shareable: bool,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
@@ -231,6 +237,8 @@ pub struct Argument {
     pub key: bool, // for entity
     pub visible: Option<Visible>,
     pub inaccessible: bool,
+    #[darling(multiple, rename = "tag")]
+    pub tags: Vec<String>,
     pub secret: bool,
 }
 
@@ -246,6 +254,8 @@ pub struct Object {
     pub extends: bool,
     pub shareable: bool,
     pub inaccessible: bool,
+    #[darling(multiple, rename = "tag")]
+    pub tags: Vec<String>,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
@@ -291,6 +301,9 @@ pub struct ObjectField {
     pub requires: Option<String>,
     pub shareable: bool,
     pub inaccessible: bool,
+    #[darling(multiple, rename = "tag")]
+    pub tags: Vec<String>,
+    pub override_from: Option<String>,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
@@ -330,6 +343,8 @@ pub struct Enum {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
 }
 
 #[derive(FromVariant)]
@@ -347,6 +362,8 @@ pub struct EnumItem {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
 }
 
 #[derive(FromDeriveInput)]
@@ -365,6 +382,8 @@ pub struct Union {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
 }
 
 #[derive(FromVariant)]
@@ -408,6 +427,8 @@ pub struct InputObjectField {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
 }
@@ -432,6 +453,8 @@ pub struct InputObject {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
     // for SimpleObject
@@ -454,6 +477,8 @@ pub struct OneofObjectField {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
 }
@@ -476,6 +501,8 @@ pub struct OneofObject {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
 }
@@ -495,6 +522,8 @@ pub struct InterfaceFieldArgument {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
 }
@@ -522,8 +551,12 @@ pub struct InterfaceField {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub shareable: bool,
+    #[darling(default)]
+    pub override_from: Option<String>,
 }
 
 #[derive(FromVariant)]
@@ -556,6 +589,8 @@ pub struct Interface {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -566,6 +601,8 @@ pub struct Scalar {
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub inaccessible: bool,
+    #[darling(multiple, rename = "tag")]
+    pub tags: Vec<String>,
     pub specified_by_url: Option<String>,
 }
 
@@ -633,6 +670,8 @@ pub struct MergedObject {
     pub shareable: bool,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -782,6 +821,8 @@ pub struct NewType {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default, multiple, rename = "tag")]
+    pub tags: Vec<String>,
     #[darling(default)]
     pub specified_by_url: Option<String>,
 }
@@ -808,6 +849,9 @@ pub struct ComplexObjectField {
     pub requires: Option<String>,
     pub shareable: bool,
     pub inaccessible: bool,
+    #[darling(multiple, rename = "tag")]
+    pub tags: Vec<String>,
+    pub override_from: Option<String>,
     pub guard: Option<SpannedValue<String>>,
     pub visible: Option<Visible>,
     pub complexity: Option<ComplexityType>,
