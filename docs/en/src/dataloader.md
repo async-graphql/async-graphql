@@ -7,7 +7,13 @@ Have you noticed some GraphQL queries end can make hundreds of database queries,
 Imagine if you have a simple query like this:
 
 ```graphql
-query { todos { users { name } } }
+query {
+  todos {
+    users {
+      name
+    }
+  }
+}
 ```
 
 and `User` resolver is like this:
@@ -30,7 +36,7 @@ impl User {
 }
 ```
 
-The query executor will call the `Todos` resolver which does a `select * from todo and return N todos`. Then for each 
+The query executor will call the `Todos` resolver which does a `select * from todo and return N todos`. Then for each
 of the todos, concurrently, call the `User` resolver, `SELECT from USER where id = todo.user_id`.
 
 eg：
@@ -55,7 +61,7 @@ SELECT name FROM user WHERE id = $1
 SELECT name FROM user WHERE id = $1
 ```
 
-After executing `SELECT name FROM user WHERE id = $1` many times, and most `Todo` objects belong to the same user, we 
+After executing `SELECT name FROM user WHERE id = $1` many times, and most `Todo` objects belong to the same user, we
 need to optimize these codes!
 
 ## Dataloader
@@ -90,11 +96,13 @@ impl Loader<u64> for UserNameLoader {
     }
 }
 
+#[derive(SimpleObject)]
+#[graphql(complex)]
 struct User {
     id: u64,
 }
 
-#[Object]
+#[ComplexObject]
 impl User {
     async fn name(&self, ctx: &Context<'_>) -> Result<String> {
         let loader = ctx.data_unchecked::<DataLoader<UserNameLoader>>();
