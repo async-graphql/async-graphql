@@ -2632,6 +2632,12 @@ fn concat(value: String) -&gt; impl CustomDirective {
 <li>
 <p>The <code>inaccessible</code> directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.</p>
 </li>
+<li>
+<p>The <code>tag</code> directive is used to provide a mechanism for applying arbitrary string metadata to the fields and types of a schema. Tags will be propagated up into composed supergraphs.</p>
+</li>
+<li>
+<p>The <code>override</code> directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.</p>
+</li>
 </ul>
 <h2 id="entity-lookup-function"><a class="header" href="#entity-lookup-function">Entity lookup function</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
