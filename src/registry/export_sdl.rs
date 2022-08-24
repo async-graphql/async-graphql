@@ -205,6 +205,7 @@ impl Registry {
                 description,
                 inaccessible,
                 tags,
+                specified_by_url,
                 ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
@@ -216,6 +217,15 @@ impl Registry {
                         export_description(sdl, options, true, description);
                     }
                     write!(sdl, "scalar {}", name).ok();
+
+                    if let Some(specified_by_url) = specified_by_url {
+                        write!(
+                            sdl,
+                            " @specifiedBy(url: \"{}\")",
+                            specified_by_url.replace('"', "\\\"")
+                        )
+                        .ok();
+                    }
 
                     if options.federation {
                         if *inaccessible {
