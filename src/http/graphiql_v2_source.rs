@@ -66,7 +66,7 @@ impl<'a> GraphiQLSource<'a> {
         };
 
         r#"
-      <!DOCTYPE html>
+        <!DOCTYPE html>
         <html>
           <head>
             <style>
@@ -113,7 +113,7 @@ impl<'a> GraphiQLSource<'a> {
             </script>
           </body>
         </html>
-      "#
+        "#
         .replace("%GRAPHIQL_URL%", &graphiql_url)
         .replace("%GRAPHIQL_SUBSCRIPTION_URL%", &graphiql_subscription_url)
         .replace("%GRAPHIQL_HEADERS%", &graphiql_headers)
@@ -133,7 +133,7 @@ mod tests {
         assert_eq!(
             graphiql_source,
             r#"
-      <!DOCTYPE html>
+        <!DOCTYPE html>
         <html>
           <head>
             <style>
@@ -180,7 +180,7 @@ mod tests {
             </script>
           </body>
         </html>
-      "#
+        "#
         )
     }
 
@@ -194,7 +194,7 @@ mod tests {
         assert_eq!(
             graphiql_source,
             r#"
-      <!DOCTYPE html>
+        <!DOCTYPE html>
         <html>
           <head>
             <style>
@@ -241,7 +241,7 @@ mod tests {
             </script>
           </body>
         </html>
-      "#
+        "#
         )
     }
 
@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(
             graphiql_source,
             r#"
-      <!DOCTYPE html>
+        <!DOCTYPE html>
         <html>
           <head>
             <style>
@@ -303,7 +303,7 @@ mod tests {
             </script>
           </body>
         </html>
-      "#
+        "#
         )
     }
 }
