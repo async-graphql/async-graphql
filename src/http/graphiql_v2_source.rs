@@ -69,6 +69,13 @@ impl<'a> GraphiQLSource<'a> {
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="origin">
+
+    <title>GraphiQL IDE</title>
+
     <style>
       body {
         height: 100%;
@@ -89,6 +96,7 @@ impl<'a> GraphiQLSource<'a> {
       crossorigin
       src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
     ></script>
+    <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
   </head>
 
@@ -136,6 +144,13 @@ mod tests {
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="origin">
+
+    <title>GraphiQL IDE</title>
+
     <style>
       body {
         height: 100%;
@@ -156,6 +171,7 @@ mod tests {
       crossorigin
       src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
     ></script>
+    <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
   </head>
 
@@ -197,6 +213,13 @@ mod tests {
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="origin">
+
+    <title>GraphiQL IDE</title>
+
     <style>
       body {
         height: 100%;
@@ -217,6 +240,7 @@ mod tests {
       crossorigin
       src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
     ></script>
+    <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
   </head>
 
@@ -259,6 +283,13 @@ mod tests {
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="origin">
+
+    <title>GraphiQL IDE</title>
+
     <style>
       body {
         height: 100%;
@@ -279,6 +310,7 @@ mod tests {
       crossorigin
       src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
     ></script>
+    <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
   </head>
 
