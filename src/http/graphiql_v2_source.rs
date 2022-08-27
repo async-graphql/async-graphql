@@ -59,7 +59,7 @@ impl<'a> GraphiQLSource<'a> {
         let graphiql_subscription_url = self
             .subscription_endpoint
             .map(|endpoint| format!("'{}'", endpoint))
-            .unwrap_or("undefined".into());
+            .unwrap_or_else(|| "undefined".into());
         let graphiql_headers = match self.headers {
             Some(headers) => serde_json::to_string(&headers).unwrap(),
             None => "undefined".into(),
