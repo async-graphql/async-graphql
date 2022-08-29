@@ -367,7 +367,7 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                writeln!(sdl, "{{").ok();
+                writeln!(sdl, " {{").ok();
 
                 let mut values = enum_values.values().collect::<Vec<_>>();
                 if options.sorted_enum_values {
@@ -418,7 +418,7 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                writeln!(sdl, "{{").ok();
+                writeln!(sdl, " {{").ok();
 
                 let mut fields = input_fields.values().collect::<Vec<_>>();
                 if options.sorted_fields {
