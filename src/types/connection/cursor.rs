@@ -4,6 +4,8 @@ use std::{
     num::{ParseFloatError, ParseIntError},
 };
 
+use serde::{de::DeserializeOwned, Serialize};
+
 use crate::ID;
 
 /// Cursor type
@@ -102,5 +104,25 @@ impl CursorType for f32 {
 
     fn encode_cursor(&self) -> String {
         self.to_string()
+    }
+}
+
+/// A opaque cursor that encode/decode the value to base64
+pub struct OpaqueCursor<T>(T);
+
+impl<T> CursorType for OpaqueCursor<T>
+where
+    T: Serialize + DeserializeOwned,
+{
+    type Error = Box<dyn std::error::Error + Send + Sync>;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        let data = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+        Ok(Self(serde_json::from_slice(&data)?))
+    }
+
+    fn encode_cursor(&self) -> String {
+        let value = serde_json::to_vec(&self.0).unwrap_or_default();
+        base64::encode_config(value, base64::URL_SAFE_NO_PAD)
     }
 }

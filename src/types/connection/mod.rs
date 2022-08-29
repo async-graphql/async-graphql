@@ -8,7 +8,7 @@ mod page_info;
 use std::{fmt::Display, future::Future};
 
 pub use connection_type::Connection;
-pub use cursor::CursorType;
+pub use cursor::{CursorType, OpaqueCursor};
 pub use edge::Edge;
 pub use page_info::PageInfo;
 
