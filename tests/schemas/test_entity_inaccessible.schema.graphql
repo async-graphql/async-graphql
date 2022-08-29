@@ -1,0 +1,67 @@
+
+
+
+
+type MyCustomObjInaccessible @inaccessible {
+	a: Int!
+	customObjectInaccessible: Int! @inaccessible
+}
+
+enum MyEnumInaccessible @inaccessible{
+	OPTION_A
+	OPTION_B
+	OPTION_C
+}
+
+enum MyEnumVariantInaccessible{
+	OPTION_A_INACCESSIBLE @inaccessible
+	OPTION_B
+	OPTION_C
+}
+
+input MyInputObjFieldInaccessible{
+	inputFieldInaccessibleA: Int! @inaccessible
+}
+
+input MyInputObjInaccessible @inaccessible{
+	a: Int!
+}
+
+interface MyInterfaceInaccessible @inaccessible {
+	inaccessibleInterfaceValue: String! @inaccessible
+}
+
+type MyInterfaceObjA implements MyInterfaceInaccessible {
+	inaccessibleInterfaceValue: String!
+}
+
+type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible {
+	inaccessibleInterfaceValue: String!
+}
+
+scalar MyNumberInaccessible @inaccessible
+
+type MyObjFieldInaccessible @key(fields: "id") {
+	objFieldInaccessibleA: Int! @inaccessible
+}
+
+type MyObjInaccessible @key(fields: "id") @inaccessible {
+	a: Int!
+}
+
+union MyUnionInaccessible @inaccessible = MyInterfaceObjA | MyInterfaceObjB
+
+extend type Query {
+	enumVariantInaccessible(id: Int!): MyEnumVariantInaccessible!
+	enumInaccessible(id: Int!): MyEnumInaccessible!
+	inaccessibleField(id: Int!): Int! @inaccessible
+	inaccessibleArgument(id: Int! @inaccessible): Int!
+	inaccessibleInterface: MyInterfaceInaccessible!
+	inaccessibleUnion: MyUnionInaccessible!
+	inaccessibleScalar: MyNumberInaccessible!
+	inaccessibleInputField(value: MyInputObjFieldInaccessible!): Int!
+	inaccessibleInput(value: MyInputObjInaccessible!): Int!
+	inaccessibleCustomObject: MyCustomObjInaccessible!
+}
+
+
