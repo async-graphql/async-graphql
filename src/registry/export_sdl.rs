@@ -281,29 +281,29 @@ impl Registry {
                     write!(sdl, "extend ").ok();
                 }
 
-                write!(sdl, "type {} ", name).ok();
+                write!(sdl, "type {}", name).ok();
                 self.write_implements(sdl, name);
 
                 if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
-                            write!(sdl, "@key(fields: \"{}\") ", key).ok();
+                            write!(sdl, " @key(fields: \"{}\")", key).ok();
                         }
                     }
                     if *shareable {
-                        write!(sdl, "@shareable ").ok();
+                        write!(sdl, " @shareable").ok();
                     }
 
                     if *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                        write!(sdl, " @inaccessible").ok();
                     }
 
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
 
-                writeln!(sdl, "{{").ok();
+                writeln!(sdl, " {{").ok();
                 Self::export_fields(sdl, fields.values(), options);
                 writeln!(sdl, "}}").ok();
             }
@@ -324,25 +324,25 @@ impl Registry {
                 if options.federation && *extends {
                     write!(sdl, "extend ").ok();
                 }
-                write!(sdl, "interface {} ", name).ok();
+                write!(sdl, "interface {}", name).ok();
 
                 if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
-                            write!(sdl, "@key(fields: \"{}\") ", key).ok();
+                            write!(sdl, " @key(fields: \"{}\")", key).ok();
                         }
                     }
                     if *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                        write!(sdl, " @inaccessible").ok();
                     }
 
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 self.write_implements(sdl, name);
 
-                writeln!(sdl, "{{").ok();
+                writeln!(sdl, " {{").ok();
                 Self::export_fields(sdl, fields.values(), options);
                 writeln!(sdl, "}}").ok();
             }
@@ -358,13 +358,13 @@ impl Registry {
                     export_description(sdl, options, true, description);
                 }
 
-                write!(sdl, "enum {} ", name).ok();
+                write!(sdl, "enum {}", name).ok();
                 if options.federation {
                     if *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                        write!(sdl, " @inaccessible").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 writeln!(sdl, "{{").ok();
@@ -405,17 +405,17 @@ impl Registry {
                     export_description(sdl, options, true, description);
                 }
 
-                write!(sdl, "input {} ", name).ok();
+                write!(sdl, "input {}", name).ok();
 
                 if *oneof {
-                    write!(sdl, "@oneof ").ok();
+                    write!(sdl, " @oneof").ok();
                 }
                 if options.federation {
                     if *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                        write!(sdl, " @inaccessible").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
                 writeln!(sdl, "{{").ok();
@@ -429,13 +429,13 @@ impl Registry {
                     if let Some(description) = field.description {
                         export_description(sdl, options, false, description);
                     }
-                    write!(sdl, "\t{} ", export_input_value(&field)).ok();
+                    write!(sdl, "\t{}", export_input_value(&field)).ok();
                     if options.federation {
                         if field.inaccessible {
-                            write!(sdl, "@inaccessible ").ok();
+                            write!(sdl, " @inaccessible").ok();
                         }
                         for tag in field.tags {
-                            write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                            write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
                     writeln!(sdl).ok();
@@ -455,16 +455,16 @@ impl Registry {
                     export_description(sdl, options, true, description);
                 }
 
-                write!(sdl, "union {} ", name).ok();
+                write!(sdl, "union {}", name).ok();
                 if options.federation {
                     if *inaccessible {
-                        write!(sdl, "@inaccessible ").ok();
+                        write!(sdl, " @inaccessible").ok();
                     }
                     for tag in *tags {
-                        write!(sdl, "@tag(name: \"{}\") ", tag.replace('"', "\\\"")).ok();
+                        write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                write!(sdl, "=").ok();
+                write!(sdl, " =").ok();
 
                 for (idx, ty) in possible_types.iter().enumerate() {
                     if idx == 0 {
@@ -483,7 +483,7 @@ impl Registry {
             if !implements.is_empty() {
                 write!(
                     sdl,
-                    "implements {} ",
+                    " implements {}",
                     implements
                         .iter()
                         .map(AsRef::as_ref)

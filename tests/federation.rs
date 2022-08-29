@@ -534,6 +534,8 @@ pub async fn test_entity_inaccessible() {
     assert!(schema_sdl.contains("input MyInputObjInaccessible @inaccessible"));
     // INPUT_FIELD_DEFINITION
     assert!(schema_sdl.contains("inputFieldInaccessibleA: Int! @inaccessible"));
+    // no trailing spaces
+    assert!(!schema_sdl.contains(" \n"));
 }
 
 #[tokio::test]
@@ -733,4 +735,6 @@ pub async fn test_entity_tag() {
     assert!(
         schema_sdl.contains(r#"inputFieldTaggedA: Int! @tag(name: "tagged_input_object_field")"#)
     );
+    // no trailing spaces
+    assert!(!schema_sdl.contains(" \n"));
 }
