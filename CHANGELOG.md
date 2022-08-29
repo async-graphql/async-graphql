@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.12] 2022-08-24
+
+- Update MSRV to `1.59.0`
+- Support `@specifiedBy` directive in SDL export [#1041](https://github.com/async-graphql/async-graphql/pull/1041)
+- Add GraphiQL v2 [#1044](https://github.com/async-graphql/async-graphql/pull/1044)
+- Export SDL: consistently avoid trailing spaces [#1043](https://github.com/async-graphql/async-graphql/pull/1043)
+
 # [4.0.11] 2022-08-23
 
 - Define `override` directive on fields [#1029](https://github.com/async-graphql/async-graphql/pull/1029)
