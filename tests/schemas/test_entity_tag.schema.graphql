@@ -7,23 +7,23 @@ type MyCustomObjTagged @tag(name: "tagged") @tag(name: "object") @tag(name: "wit
 	customObjectTagged: Int! @tag(name: "tagged_custom_object_field")
 }
 
-enum MyEnumTagged @tag(name: "tagged_num"){
+enum MyEnumTagged @tag(name: "tagged_num") {
 	OPTION_A
 	OPTION_B
 	OPTION_C
 }
 
-enum MyEnumVariantTagged{
+enum MyEnumVariantTagged {
 	OPTION_A_TAGGED @tag(name: "tagged_enum_option")
 	OPTION_B
 	OPTION_C
 }
 
-input MyInputObjFieldTagged{
+input MyInputObjFieldTagged {
 	inputFieldTaggedA: Int! @tag(name: "tagged_input_object_field")
 }
 
-input MyInputObjTagged @tag(name: "input_object_tag"){
+input MyInputObjTagged @tag(name: "input_object_tag") {
 	a: Int!
 }
 
