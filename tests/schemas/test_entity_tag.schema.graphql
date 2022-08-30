@@ -1,0 +1,67 @@
+
+
+
+
+type MyCustomObjTagged @tag(name: "tagged") @tag(name: "object") @tag(name: "with") @tag(name: "multiple") @tag(name: "tags") {
+	a: Int!
+	customObjectTagged: Int! @tag(name: "tagged_custom_object_field")
+}
+
+enum MyEnumTagged @tag(name: "tagged_num") {
+	OPTION_A
+	OPTION_B
+	OPTION_C
+}
+
+enum MyEnumVariantTagged {
+	OPTION_A_TAGGED @tag(name: "tagged_enum_option")
+	OPTION_B
+	OPTION_C
+}
+
+input MyInputObjFieldTagged {
+	inputFieldTaggedA: Int! @tag(name: "tagged_input_object_field")
+}
+
+input MyInputObjTagged @tag(name: "input_object_tag") {
+	a: Int!
+}
+
+type MyInterfaceObjA implements MyInterfaceTagged {
+	taggedInterfaceValue: String!
+}
+
+type MyInterfaceObjB implements MyInterfaceTagged @tag(name: "interface_object") {
+	taggedInterfaceValue: String!
+}
+
+interface MyInterfaceTagged @tag(name: "tagged_interface") {
+	taggedInterfaceValue: String! @tag(name: "tagged_interface_field")
+}
+
+scalar MyNumberTagged @tag(name: "tagged_scalar")
+
+type MyObjFieldTagged @key(fields: "id") {
+	objFieldTaggedA: Int! @tag(name: "tagged_field")
+}
+
+type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {
+	a: Int!
+}
+
+union MyUnionTagged @tag(name: "tagged_union") = MyInterfaceObjA | MyInterfaceObjB
+
+extend type Query {
+	enumVariantTagged(id: Int!): MyEnumVariantTagged!
+	enumTagged(id: Int!): MyEnumTagged!
+	taggedField(id: Int!): Int! @tag(name: "tagged_\"field\"")
+	taggedArgument(id: Int! @tag(name: "tagged_argument")): Int!
+	taggedInterface: MyInterfaceTagged!
+	taggedUnion: MyUnionTagged!
+	taggedScalar: MyNumberTagged!
+	taggedInputField(value: MyInputObjFieldTagged!): Int!
+	taggedInput(value: MyInputObjTagged!): Int!
+	taggedCustomObject: MyCustomObjTagged!
+}
+
+

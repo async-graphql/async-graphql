@@ -536,6 +536,15 @@ pub async fn test_entity_inaccessible() {
     assert!(schema_sdl.contains("inputFieldInaccessibleA: Int! @inaccessible"));
     // no trailing spaces
     assert!(!schema_sdl.contains(" \n"));
+
+    // compare to expected schema
+    let path = std::path::Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("tests/schemas/test_entity_inaccessible.schema.graphql");
+    let expected_schema = std::fs::read_to_string(&path).unwrap();
+    if schema_sdl != expected_schema {
+        std::fs::write(path, schema_sdl).unwrap();
+        panic!("schema was not up-to-date. rerun")
+    }
 }
 
 #[tokio::test]
@@ -737,4 +746,13 @@ pub async fn test_entity_tag() {
     );
     // no trailing spaces
     assert!(!schema_sdl.contains(" \n"));
+
+    // compare to expected schema
+    let path = std::path::Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("tests/schemas/test_entity_tag.schema.graphql");
+    let expected_schema = std::fs::read_to_string(&path).unwrap();
+    if schema_sdl != expected_schema {
+        std::fs::write(path, schema_sdl).unwrap();
+        panic!("schema was not up-to-date. rerun")
+    }
 }
