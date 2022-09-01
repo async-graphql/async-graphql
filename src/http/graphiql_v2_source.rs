@@ -88,24 +88,17 @@ impl<'a> GraphiQLSource<'a> {
         height: 100vh;
       }
     </style>
-    <script
-      crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
-    ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/graphiql@2.0.3/graphiql.min.css" integrity="sha512-GePWbFGQjhytVrlixKmga7iqaUN6EZWyWhYRMUWaug+1a4SNMU9Zl5OUC6r1jHxXv/M3llhlw7Ilm7gsfyx+nw==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
   </head>
 
   <body>
     <div id="graphiql">Loading...</div>
-    <script
-      src="https://unpkg.com/graphiql/graphiql.min.js"
-      type="application/javascript"
-    ></script>
+    
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" integrity="sha512-8Q6Y9XnTbOE+JNvjBQwJ2H8S+UV4uA6hiRykhdtIyDYZ2TprdNmWOUaKdGzOhyr4dCyk287OejbPvwl7lrfqrQ==" crossorigin="anonymous"  referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" integrity="sha512-MOCpqoRoisCTwJ8vQQiciZv0qcpROCidek3GTFS6KTk2+y7munJIlKCVkFCYY+p3ErYFXCjmFjnfTTRSC1OHWQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/graphiql@2.0.3/graphiql.min.js" integrity="sha512-2u/R6n1Z1Y2sWQ6IYlWqnzI6uz7xZTaI+RQCftaAhPTSkc01er59mQLMdYb31xePGWulyPebn8pfetF49kBU6Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <script>
       ReactDOM.render(
         React.createElement(GraphiQL, {
