@@ -1,8 +1,6 @@
 #[cfg(feature = "chrono")]
 use bson::DateTime as UtcDateTime;
-#[cfg(feature = "bson-uuid")]
-use bson::Uuid;
-use bson::{oid::ObjectId, Bson, Document};
+use bson::{oid::ObjectId, Bson, Document, Uuid};
 #[cfg(feature = "chrono")]
 use chrono::{DateTime, Utc};
 
@@ -22,7 +20,6 @@ impl ScalarType for ObjectId {
     }
 }
 
-#[cfg(feature = "bson-uuid")]
 #[Scalar(internal, name = "UUID")]
 impl ScalarType for Uuid {
     fn parse(value: Value) -> InputValueResult<Self> {

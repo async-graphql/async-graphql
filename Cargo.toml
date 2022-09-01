@@ -56,7 +56,10 @@ thiserror = "1.0.24"
 base64 = "0.13.0"
 
 # Feature optional dependencies
-bson = { version = "2.0.0", optional = true, features = ["chrono-0_4"] }
+bson = { version = "2.4.0", optional = true, features = [
+  "chrono-0_4",
+  "uuid-1",
+] }
 chrono = { version = "0.4.19", optional = true, default-features = false, features = [
   "clock",
   "std",
