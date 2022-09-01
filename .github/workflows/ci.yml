@@ -83,6 +83,9 @@ jobs:
           components: rustfmt
       - name: Check format
         run: cargo +${{ matrix.rust }} fmt --all -- --check
+      - name: Check examples format
+        working-directory: ./examples
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
 
   clippy:
     name: Run clippy - Rust (${{ matrix.rust }}) on ${{ matrix.os }}
@@ -141,16 +144,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: clippy, rustfmt
-      - name: Check examples format
-        run: cargo +${{ matrix.rust }} fmt --all -- --check
-        working-directory: ./examples
-
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
