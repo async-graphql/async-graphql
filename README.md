@@ -28,7 +28,7 @@ struct Query;
 
 #[Object]
 impl Query {
-  fn howdy() -> &'static str {
+  fn howdy(&self) -> &'static str {
     "partner"
   }
 }
@@ -39,8 +39,8 @@ async fn main() {
     let app = Route::new()
       .at("/",
           get(graphiql)
-            .post(GraphQL::new(schema)
-       ));
+            .post(GraphQL::new(schema))
+       );
 
     println!("GraphiQL: http://localhost:8000");
     Server::new(TcpListener::bind("0.0.0.0:8000"))
