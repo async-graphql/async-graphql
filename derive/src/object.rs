@@ -335,7 +335,11 @@ pub fn generate(
                 };
                 let cache_control = {
                     let public = method_args.cache_control.is_public();
-                    let max_age = method_args.cache_control.max_age;
+                    let max_age = if method_args.cache_control.no_cache {
+                        -1
+                    } else {
+                        method_args.cache_control.max_age as i32
+                    };
                     quote! {
                         #crate_name::CacheControl {
                             public: #public,
@@ -583,7 +587,11 @@ pub fn generate(
 
     let cache_control = {
         let public = object_args.cache_control.is_public();
-        let max_age = object_args.cache_control.max_age;
+        let max_age = if object_args.cache_control.no_cache {
+            -1
+        } else {
+            object_args.cache_control.max_age as i32
+        };
         quote! {
             #crate_name::CacheControl {
                 public: #public,

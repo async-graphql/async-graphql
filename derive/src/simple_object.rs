@@ -161,7 +161,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         let cache_control = {
             let public = field.cache_control.is_public();
-            let max_age = field.cache_control.max_age;
+            let max_age = if field.cache_control.no_cache {
+                -1
+            } else {
+                field.cache_control.max_age as i32
+            };
             quote! {
                 #crate_name::CacheControl {
                     public: #public,
@@ -275,7 +279,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let cache_control = {
         let public = object_args.cache_control.is_public();
-        let max_age = object_args.cache_control.max_age;
+        let max_age = if object_args.cache_control.no_cache {
+            -1
+        } else {
+            object_args.cache_control.max_age as i32
+        };
         quote! {
             #crate_name::CacheControl {
                 public: #public,

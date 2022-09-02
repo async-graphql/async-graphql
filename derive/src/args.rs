@@ -17,6 +17,7 @@ use crate::validators::Validators;
 pub struct CacheControl {
     public: bool,
     private: bool,
+    pub no_cache: bool,
     pub max_age: usize,
 }
 
@@ -25,6 +26,7 @@ impl Default for CacheControl {
         Self {
             public: true,
             private: false,
+            no_cache: false,
             max_age: 0,
         }
     }
