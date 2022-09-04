@@ -413,6 +413,11 @@ pub struct MetaDirective {
     pub visible: Option<MetaVisibleFn>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ApolloLinkConfig {
+    pub extend_schema: bool,
+}
+
 #[derive(Default)]
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
@@ -423,6 +428,7 @@ pub struct Registry {
     pub subscription_type: Option<String>,
     pub introspection_mode: IntrospectionMode,
     pub enable_federation: bool,
+    pub enable_apollo_link: bool,
     pub federation_subscription: bool,
     pub ignore_name_conflicts: HashSet<String>,
 }

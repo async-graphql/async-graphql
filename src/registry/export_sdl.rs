@@ -111,7 +111,14 @@ impl Registry {
             writeln!(sdl).ok();
         }
 
-        if !options.federation {
+        if options.federation {
+            if self.enable_apollo_link {
+                writeln!("extend schema @link(").ok();
+                writelin!("\turl: \"https://specs.apollo.dev/federation/v2.0\",").ok();
+                writeln!("\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
+                writeln!(")").ok();
+            }
+        } else {
             writeln!(sdl, "schema {{").ok();
             writeln!(sdl, "\tquery: {}", self.query_type).ok();
             if let Some(mutation_type) = self.mutation_type.as_deref() {
