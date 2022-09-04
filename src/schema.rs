@@ -30,7 +30,6 @@ use crate::{
     InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError, ServerResult,
     SubscriptionType, Variables, ID,
 };
-use crate::registry::ApolloLinkConfig;
 
 /// Introspection mode
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -389,6 +388,7 @@ where
             },
             introspection_mode: IntrospectionMode::Enabled,
             enable_federation: false,
+            enable_apollo_link: false,
             federation_subscription: false,
             ignore_name_conflicts,
         };
