@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.13] 2022-09-06
+
+- Compare to expected schema [#1048](https://github.com/async-graphql/async-graphql/pull/1048)
+- docs: readme flair [#1054](https://github.com/async-graphql/async-graphql/pull/1054)
+- Remove `bson-uuid` feature [#1032](https://github.com/async-graphql/async-graphql/issues/1032)
+- Add `no_cache` for `cache_control` attribute [#1051](https://github.com/async-graphql/async-graphql/issues/1051)
+- Resurrect code generation through tests [#1062](https://github.com/async-graphql/async-graphql/pull/1062)
+- Support for primitive type in CursorType [#1049](https://github.com/async-graphql/async-graphql/pull/1049)
+
 # [4.0.12] 2022-08-24
 
 - Update MSRV to `1.59.0`
