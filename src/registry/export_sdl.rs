@@ -408,7 +408,7 @@ impl Registry {
                 write!(sdl, "input {}", name).ok();
 
                 if *oneof {
-                    write!(sdl, " @oneof").ok();
+                    write!(sdl, " @oneOf").ok();
                 }
                 if options.federation {
                     if *inaccessible {
