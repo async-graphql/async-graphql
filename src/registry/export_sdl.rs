@@ -13,6 +13,7 @@ pub struct SDLExportOptions {
     sorted_enum_values: bool,
     federation: bool,
     prefer_single_line_descriptions: bool,
+    include_specified_by: bool,
 }
 
 impl SDLExportOptions {
@@ -68,6 +69,14 @@ impl SDLExportOptions {
     pub fn prefer_single_line_descriptions(self) -> Self {
         Self {
             prefer_single_line_descriptions: true,
+            ..self
+        }
+    }
+
+    /// Includes `specifiedBy` directive in SDL
+    pub fn include_specified_by(self) -> Self {
+        Self {
+            include_specified_by: true,
             ..self
         }
     }
@@ -218,13 +227,15 @@ impl Registry {
                     }
                     write!(sdl, "scalar {}", name).ok();
 
-                    if let Some(specified_by_url) = specified_by_url {
-                        write!(
-                            sdl,
-                            " @specifiedBy(url: \"{}\")",
-                            specified_by_url.replace('"', "\\\"")
-                        )
-                        .ok();
+                    if options.include_specified_by {
+                        if let Some(specified_by_url) = specified_by_url {
+                            write!(
+                                sdl,
+                                " @specifiedBy(url: \"{}\")",
+                                specified_by_url.replace('"', "\\\"")
+                            )
+                            .ok();
+                        }
                     }
 
                     if options.federation {
