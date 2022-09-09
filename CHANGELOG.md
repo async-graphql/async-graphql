@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `no_cache` for `cache_control` attribute [#1051](https://github.com/async-graphql/async-graphql/issues/1051)
 - Resurrect code generation through tests [#1062](https://github.com/async-graphql/async-graphql/pull/1062)
 - Support for primitive type in CursorType [#1049](https://github.com/async-graphql/async-graphql/pull/1049)
+- Add `SDLExportOptions::include_specified_by` method to enable `specifiedBy` directive [#1065](https://github.com/async-graphql/async-graphql/issues/1065)
 
 # [4.0.12] 2022-08-24
 
