@@ -138,7 +138,13 @@
 <p>Have you noticed some GraphQL queries end can make hundreds of database queries, often with mostly repeated data? Lets take a look why and how to fix it.</p>
 <h2 id="query-resolution"><a class="header" href="#query-resolution">Query Resolution</a></h2>
 <p>Imagine if you have a simple query like this:</p>
-<pre><code class="language-graphql">query { todos { users { name } } }
+<pre><code class="language-graphql">query {
+  todos {
+    users {
+      name
+    }
+  }
+}
 </code></pre>
 <p>and <code>User</code> resolver is like this:</p>
 <pre><code class="language-rust ignore">struct User {
@@ -157,7 +163,7 @@ impl User {
     }
 }
 </code></pre>
-<p>The query executor will call the <code>Todos</code> resolver which does a <code>select * from todo and return N todos</code>. Then for each 
+<p>The query executor will call the <code>Todos</code> resolver which does a <code>select * from todo and return N todos</code>. Then for each
 of the todos, concurrently, call the <code>User</code> resolver, <code>SELECT from USER where id = todo.user_id</code>.</p>
 <p>eg：</p>
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
@@ -178,7 +184,7 @@ SELECT name FROM user WHERE id = $1
 SELECT name FROM user WHERE id = $1
 SELECT name FROM user WHERE id = $1
 </code></pre>
-<p>After executing <code>SELECT name FROM user WHERE id = $1</code> many times, and most <code>Todo</code> objects belong to the same user, we 
+<p>After executing <code>SELECT name FROM user WHERE id = $1</code> many times, and most <code>Todo</code> objects belong to the same user, we
 need to optimize these codes!</p>
 <h2 id="dataloader"><a class="header" href="#dataloader">Dataloader</a></h2>
 <p>We need to group queries and exclude duplicate queries. <code>Dataloader</code> can do this.
@@ -208,11 +214,13 @@ impl Loader&lt;u64&gt; for UserNameLoader {
     }
 }
 
+#[derive(SimpleObject)]
+#[graphql(complex)]
 struct User {
     id: u64,
 }
 
-#[Object]
+#[ComplexObject]
 impl User {
     async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
         let loader = ctx.data_unchecked::&lt;DataLoader&lt;UserNameLoader&gt;&gt;();
