@@ -70,7 +70,7 @@ use std::{
     time::Duration,
 };
 
-pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
+pub use cache::{CacheFactory, CacheKey, CacheStorage, CacheValue, HashMapCache, LruCache, NoCache};
 use fnv::FnvHashMap;
 use futures_channel::oneshot;
 use futures_timer::Delay;
@@ -80,13 +80,16 @@ use tracing::{info_span, instrument, Instrument};
 #[cfg(feature = "tracing")]
 use tracinglib as tracing;
 
+/// Convenience trait with the constraints required for a loader's error.
+pub trait LoaderError: Clone + Send + Sync {}
+
 #[allow(clippy::type_complexity)]
-struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
+struct ResSender<K: CacheKey, T: Loader<K>> {
     use_cache_values: HashMap<K, T::Value>,
     tx: oneshot::Sender<Result<HashMap<K, T::Value>, T::Error>>,
 }
 
-struct Requests<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
+struct Requests<K: CacheKey, T: Loader<K>> {
     keys: HashSet<K>,
     pending: Vec<(HashSet<K>, ResSender<K, T>)>,
     cache_storage: Box<dyn CacheStorage<Key = K, Value = T::Value>>,
@@ -95,7 +98,7 @@ struct Requests<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
 
 type KeysAndSender<K, T> = (HashSet<K>, Vec<(HashSet<K>, ResSender<K, T>)>);
 
-impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> {
+impl<K: CacheKey, T: Loader<K>> Requests<K, T> {
     fn new<C: CacheFactory>(cache_factory: &C) -> Self {
         Self {
             keys: Default::default(),
@@ -113,17 +116,26 @@ impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> 
     }
 }
 
-/// Trait for batch loading.
+/// Trait for batch loading with any lifetime.
 #[async_trait::async_trait]
-pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 'static {
+pub trait BaseLoader<'a, K: Eq + Hash + 'a>: 'a {
     /// type of value.
-    type Value: Send + Sync + Clone + 'static;
+    type BaseValue: 'a;
 
     /// Type of error.
-    type Error: Send + Clone + 'static;
+    type BaseError;
 
     /// Load the data set specified by the `keys`.
-    async fn load(&self, keys: &[K]) -> Result<HashMap<K, Self::Value>, Self::Error>;
+    async fn load(&self, keys: &[K]) -> Result<HashMap<K, Self::BaseValue>, Self::BaseError>;
+}
+
+/// Trait for batch loading with a static lifetime to be able to be used with a cache.
+pub trait Loader<K: CacheKey>: BaseLoader<'static, K, BaseValue=Self::Value, BaseError=Self::Error> + Send + Sync {
+    /// type of value.
+    type Value: CacheValue;
+
+    /// Type of error.
+    type Error: LoaderError;
 }
 
 struct DataLoaderInner<T> {
@@ -134,9 +146,8 @@ struct DataLoaderInner<T> {
 impl<T> DataLoaderInner<T> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     async fn do_load<K>(&self, disable_cache: bool, (keys, senders): KeysAndSender<K, T>)
-    where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
-        T: Loader<K>,
+        where K: CacheKey,
+              T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
         let keys = keys.into_iter().collect::<Vec<_>>();
@@ -266,7 +277,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     /// Enable/Disable cache of specified loader.
     pub fn enable_cache<K>(&self, enable: bool)
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
@@ -283,7 +294,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn load_one<K>(&self, key: K) -> Result<Option<T::Value>, T::Error>
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         T: Loader<K>,
     {
         let mut values = self.load_many(std::iter::once(key.clone())).await?;
@@ -294,11 +305,11 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn load_many<K, I>(&self, keys: I) -> Result<HashMap<K, T::Value>, T::Error>
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         I: IntoIterator<Item = K>,
         T: Loader<K>,
     {
-        enum Action<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
+        enum Action<K: CacheKey, T: Loader<K>> {
             ImmediateLoad(KeysAndSender<K, T>),
             StartFetch,
             Delay,
@@ -408,7 +419,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn feed_many<K, I>(&self, values: I)
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         I: IntoIterator<Item = (K, T::Value)>,
         T: Loader<K>,
     {
@@ -433,7 +444,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub async fn feed_one<K>(&self, key: K, value: T::Value)
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         T: Loader<K>,
     {
         self.feed_many(std::iter::once((key, value))).await;
@@ -446,7 +457,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
     pub fn clear<K>(&self)
     where
-        K: Send + Sync + Hash + Eq + Clone + 'static,
+        K: CacheKey,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();

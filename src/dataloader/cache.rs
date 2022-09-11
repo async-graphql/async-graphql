@@ -5,24 +5,30 @@ use std::{
     marker::PhantomData,
 };
 
+/// Convenience trait with the constraints required for a cache key.
+pub trait CacheKey: Send + Sync + Hash + Eq + Clone + 'static {}
+
+/// Convenience trait with the constraints required for a cache value.
+pub trait CacheValue: Send + Sync + Clone + 'static {}
+
+/// Convenience trait with the constraints required for a cache state.
+pub trait CacheState: Send + Sync + BuildHasher + Default + 'static {}
+
 /// Factory for creating cache storage.
 pub trait CacheFactory: Send + Sync + 'static {
     /// Create a cache storage.
     ///
     /// TODO: When GAT is stable, this memory allocation can be optimized away.
-    fn create<K, V>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>
-    where
-        K: Send + Sync + Clone + Eq + Hash + 'static,
-        V: Send + Sync + Clone + 'static;
+    fn create<K: CacheKey, V: CacheValue>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>;
 }
 
 /// Cache storage for [DataLoader].
 pub trait CacheStorage: Send + Sync + 'static {
     /// The key type of the record.
-    type Key: Send + Sync + Clone + Eq + Hash + 'static;
+    type Key: CacheKey;
 
     /// The value type of the record.
-    type Value: Send + Sync + Clone + 'static;
+    type Value: CacheValue;
 
     /// Returns a reference to the value of the key in the cache or None if it
     /// is not present in the cache.
@@ -43,11 +49,7 @@ pub trait CacheStorage: Send + Sync + 'static {
 pub struct NoCache;
 
 impl CacheFactory for NoCache {
-    fn create<K, V>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>
-    where
-        K: Send + Sync + Clone + Eq + Hash + 'static,
-        V: Send + Sync + Clone + 'static,
-    {
+    fn create<K: CacheKey, V: CacheValue>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>> {
         Box::new(NoCacheImpl {
             _mark1: PhantomData,
             _mark2: PhantomData,
@@ -60,11 +62,7 @@ struct NoCacheImpl<K, V> {
     _mark2: PhantomData<V>,
 }
 
-impl<K, V> CacheStorage for NoCacheImpl<K, V>
-where
-    K: Send + Sync + Clone + Eq + Hash + 'static,
-    V: Send + Sync + Clone + 'static,
-{
+impl<K: CacheKey, V: CacheValue> CacheStorage for NoCacheImpl<K, V> {
     type Key = K;
     type Value = V;
 
@@ -88,7 +86,7 @@ pub struct HashMapCache<S = RandomState> {
     _mark: PhantomData<S>,
 }
 
-impl<S: Send + Sync + BuildHasher + Default + 'static> HashMapCache<S> {
+impl<S: CacheState> HashMapCache<S> {
     /// Use specified `S: BuildHasher` to create a `HashMap` cache.
     pub fn new() -> Self {
         Self { _mark: PhantomData }
@@ -101,24 +99,15 @@ impl Default for HashMapCache<RandomState> {
     }
 }
 
-impl<S: Send + Sync + BuildHasher + Default + 'static> CacheFactory for HashMapCache<S> {
-    fn create<K, V>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>
-    where
-        K: Send + Sync + Clone + Eq + Hash + 'static,
-        V: Send + Sync + Clone + 'static,
-    {
+impl<S: CacheState> CacheFactory for HashMapCache<S> {
+    fn create<K: CacheKey, V: CacheValue>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>> {
         Box::new(HashMapCacheImpl::<K, V, S>(HashMap::<K, V, S>::default()))
     }
 }
 
 struct HashMapCacheImpl<K, V, S>(HashMap<K, V, S>);
 
-impl<K, V, S> CacheStorage for HashMapCacheImpl<K, V, S>
-where
-    K: Send + Sync + Clone + Eq + Hash + 'static,
-    V: Send + Sync + Clone + 'static,
-    S: Send + Sync + BuildHasher + 'static,
-{
+impl<K: CacheKey, V: CacheValue, S: CacheState> CacheStorage for HashMapCacheImpl<K, V, S> {
     type Key = K;
     type Value = V;
 
@@ -156,22 +145,14 @@ impl LruCache {
 }
 
 impl CacheFactory for LruCache {
-    fn create<K, V>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>>
-    where
-        K: Send + Sync + Clone + Eq + Hash + 'static,
-        V: Send + Sync + Clone + 'static,
-    {
+    fn create<K: CacheKey, V: CacheValue>(&self) -> Box<dyn CacheStorage<Key = K, Value = V>> {
         Box::new(LruCacheImpl(lru::LruCache::new(self.cap)))
     }
 }
 
 struct LruCacheImpl<K, V>(lru::LruCache<K, V>);
 
-impl<K, V> CacheStorage for LruCacheImpl<K, V>
-where
-    K: Send + Sync + Clone + Eq + Hash + 'static,
-    V: Send + Sync + Clone + 'static,
-{
+impl<K: CacheKey, V: CacheValue> CacheStorage for LruCacheImpl<K, V> {
     type Key = K;
     type Value = V;
 
