@@ -222,7 +222,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// 
+///
 /// use async_graphql::*;
 /// use async_graphql::types::connection::*;
 ///
