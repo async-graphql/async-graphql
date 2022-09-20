@@ -317,15 +317,9 @@ pub async fn test_entity_shareable() {
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
-    assert_eq!(
-        schema_sdl.contains("fieldShareableA: Int! @shareable"),
-        true
-    );
+    assert!(schema_sdl.contains("fieldShareableA: Int! @shareable"),);
 
-    assert_eq!(
-        schema_sdl.contains(r#"MyObjShareable @key(fields: "id") @shareable"#),
-        true
-    );
+    assert!(schema_sdl.contains(r#"MyObjShareable @key(fields: "id") @shareable"#),);
 }
 
 #[tokio::test]
@@ -348,10 +342,7 @@ pub async fn test_field_override_directive() {
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
-    assert_eq!(
-        schema_sdl.contains("fieldOverrideA: Int! @override(from: \"AnotherSubgraph\")"),
-        true
-    );
+    assert!(schema_sdl.contains("fieldOverrideA: Int! @override(from: \"AnotherSubgraph\")"),);
 }
 
 #[tokio::test]

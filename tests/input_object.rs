@@ -454,6 +454,7 @@ pub async fn test_both_input_output_flatten() {
     #[derive(SimpleObject, InputObject)]
     #[graphql(input_name = "ABCInput")]
     #[graphql(name = "ABC")]
+    #[allow(clippy::upper_case_acronyms)]
     struct ABC {
         a: i32,
         #[graphql(flatten)]
