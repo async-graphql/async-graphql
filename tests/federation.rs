@@ -547,8 +547,10 @@ pub async fn test_entity_inaccessible() {
     }
 }
 
+// tests suppressing the link directive. note that test_entity_inaccessible and
+// test_entity_tag now verify the default printing of the link directive.
 #[tokio::test]
-pub async fn test_link_directive() {
+pub async fn test_suppress_link_directive() {
     struct User {
         id: ID,
     }
@@ -614,12 +616,12 @@ pub async fn test_link_directive() {
     }
 
     let schema_sdl = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .enable_apollo_fed2_link()
+        .suppress_apollo_link()
         .finish()
         .sdl_with_options(SDLExportOptions::new().federation());
 
     let path = std::path::Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
-        .join("tests/schemas/test_fed2_link.schema.graphqls");
+        .join("tests/schemas/test_suppress_link.graphqls");
     let expected_schema = std::fs::read_to_string(&path).unwrap();
     if schema_sdl != expected_schema {
         std::fs::write(path, schema_sdl).unwrap();

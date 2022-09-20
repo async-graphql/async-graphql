@@ -112,7 +112,7 @@ impl Registry {
         }
 
         if options.federation {
-            if self.enable_apollo_link {
+            if !self.suppress_apollo_link {
                 writeln!(sdl, "extend schema @link(").ok();
                 writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.0\",").ok();
                 writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
