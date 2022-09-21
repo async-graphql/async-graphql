@@ -1,12 +1,14 @@
 //! A helper module that supports HTTP
 
 mod graphiql_source;
+mod graphiql_v2_source;
 mod multipart;
 mod playground_source;
 mod websocket;
 
 use futures_util::io::{AsyncRead, AsyncReadExt};
 pub use graphiql_source::graphiql_source;
+pub use graphiql_v2_source::GraphiQLSource;
 use mime;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};

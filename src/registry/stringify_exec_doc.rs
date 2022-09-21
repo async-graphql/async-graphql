@@ -21,7 +21,7 @@ impl Registry {
             self.stringify_fragment_definition(
                 &mut output,
                 variables,
-                &*name,
+                name,
                 self.types
                     .get(fragment.node.type_condition.node.on.node.as_str()),
                 &fragment.node,

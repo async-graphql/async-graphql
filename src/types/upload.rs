@@ -113,6 +113,8 @@ impl InputType for Upload {
             description: None,
             is_valid: |value| matches!(value, Value::String(_)),
             visible: None,
+            inaccessible: false,
+            tags: Default::default(),
             specified_by_url: Some("https://github.com/jaydenseric/graphql-multipart-request-spec"),
         })
     }

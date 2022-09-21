@@ -16,6 +16,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
+    let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let gql_typename = object_args
         .name
         .clone()
@@ -41,6 +43,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 .rename_fields
                 .rename(enum_name.to_string(), RenameTarget::Field)
         });
+        let inaccessible = variant.inaccessible;
+        let tags = &variant.tags;
         let desc = get_rustdoc(&object_args.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(#s) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -80,6 +84,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     ty: <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry),
                     default_value: ::std::option::Option::None,
                     visible: #visible,
+                    inaccessible: #inaccessible,
+                    tags: &[ #(#tags),* ],
                     is_secret: #secret,
                 });
             });
@@ -133,6 +139,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: true,
                     })
@@ -183,6 +191,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: true,
                     })

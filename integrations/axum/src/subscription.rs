@@ -194,7 +194,7 @@ where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Send + Sync + 'static,
+    OnConnInit: FnOnce(serde_json::Value) -> OnConnInitFut + Send + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
     /// Specify the initial subscription context data, usually you can get
@@ -215,7 +215,7 @@ where
         callback: OnConnInit2,
     ) -> GraphQLWebSocket<Sink, Stream, Query, Mutation, Subscription, OnConnInit2>
     where
-        OnConnInit2: Fn(serde_json::Value) -> Fut + Send + Sync + 'static,
+        OnConnInit2: FnOnce(serde_json::Value) -> Fut + Send + 'static,
         Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLWebSocket {

@@ -406,6 +406,7 @@ mod tests {
     fn test_parser() {
         for entry in fs::read_dir("tests/services").unwrap() {
             let entry = entry.unwrap();
+            eprintln!("Parsing file {}", entry.path().display());
             GraphQLParser::parse(
                 Rule::service_document,
                 &fs::read_to_string(entry.path()).unwrap(),

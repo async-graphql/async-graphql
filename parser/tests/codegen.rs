@@ -9,34 +9,37 @@ use std::{
     process::{Command, Stdio},
 };
 
-const PREAMBLE: &str = "\
+const PREAMBLE: &str = r#"
 //! This is @generated code, do not edit by hand.
 //! See `graphql.pest` and `tests/codegen.rs`.
 #![allow(unused_attributes)]
 use super::GraphQLParser;
-";
+"#;
 
 #[test]
 fn generated_code_is_fresh() {
-    let input = r###"
+    let input = format!(
+        r###"
 #[derive(Parser)]
 #[grammar = r#"graphql.pest"#]
 struct GraphQLParser;
-"###
+"###,
+    )
     .parse::<proc_macro2::TokenStream>()
     .unwrap();
 
-    let tokens = pest_generator::derive_parser(input, false);
+    let tokens = pest_generator::derive_parser(input.into(), false);
     let current =
         String::from_utf8(fs::read("./src/parse/generated.rs").unwrap_or_default()).unwrap();
 
-    let normalized = normalize(match current.len() > PREAMBLE.len() {
+    let current_content = match current.len() > PREAMBLE.len() {
         true => &current[PREAMBLE.len()..],
         false => current.as_str(),
-    });
+    };
 
     let new = tokens.to_string();
-    let is_up_to_date = normalized == normalize(&new);
+    let is_up_to_date = normalize(&current_content) == normalize(&new);
+
     if is_up_to_date {
         return;
     }

@@ -30,6 +30,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let ident = &object_args.ident;
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let extends = object_args.extends;
+    let shareable = object_args.shareable;
+    let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -127,6 +130,13 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
         let external = field.external;
+        let shareable = field.shareable;
+        let inaccessible = field.inaccessible;
+        let tags = &field.tags;
+        let override_from = match &field.override_from {
+            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            None => quote! { ::std::option::Option::None },
+        };
         let requires = match &field.requires {
             Some(requires) => quote! { ::std::option::Option::Some(#requires) },
             None => quote! { ::std::option::Option::None },
@@ -151,7 +161,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         let cache_control = {
             let public = field.cache_control.is_public();
-            let max_age = field.cache_control.max_age;
+            let max_age = if field.cache_control.no_cache {
+                -1
+            } else {
+                field.cache_control.max_age as i32
+            };
             quote! {
                 #crate_name::CacheControl {
                     public: #public,
@@ -174,13 +188,17 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     external: #external,
                     provides: #provides,
                     requires: #requires,
+                    shareable: #shareable,
+                    inaccessible: #inaccessible,
+                    tags: &[ #(#tags),* ],
+                    override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
                 });
             });
         } else {
             schema_fields.push(quote! {
-                #ty::create_type_info(registry);
+                <#ty as #crate_name::OutputType>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                     registry.create_fake_output_type::<#ty>() {
                     fields.extend(obj_fields);
@@ -261,7 +279,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let cache_control = {
         let public = object_args.cache_control.is_public();
-        let max_age = object_args.cache_control.max_age;
+        let max_age = if object_args.cache_control.no_cache {
+            -1
+        } else {
+            object_args.cache_control.max_age as i32
+        };
         quote! {
             #crate_name::CacheControl {
                 public: #public,
@@ -329,6 +351,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -393,6 +418,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

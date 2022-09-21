@@ -12,6 +12,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let crate_name = get_crate_name(object_args.internal);
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
+    let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -65,6 +67,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 .rename_fields
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
+        let inaccessible = field.inaccessible;
+        let tags = &field.tags;
 
         if field.skip || field.skip_input {
             get_fields.push(quote! {
@@ -102,7 +106,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
             schema_fields.push(quote! {
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
-                #ty::create_type_info(registry);
+                <#ty as  #crate_name::InputType>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
                     registry.create_fake_input_type::<#ty>() {
                     fields.extend(input_fields);
@@ -188,6 +192,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,
                 visible: #visible,
+                inaccessible: #inaccessible,
+                tags: &[ #(#tags),* ],
                 is_secret: #secret,
             });
         })
@@ -240,6 +246,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: false,
                     })
@@ -287,6 +295,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                         oneof: false,
                     })

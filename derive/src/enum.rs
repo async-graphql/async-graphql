@@ -21,6 +21,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .clone()
         .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
 
+    let inaccessible = enum_args.inaccessible;
+    let tags = &enum_args.tags;
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -47,6 +49,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 .rename_items
                 .rename(variant.ident.unraw().to_string(), RenameTarget::EnumItem)
         });
+        let inaccessible = variant.inaccessible;
+        let tags = &variant.tags;
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -67,6 +71,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 description: #item_desc,
                 deprecation: #item_deprecation,
                 visible: #visible,
+                inaccessible: #inaccessible,
+                tags: &[ #(#tags),* ],
             });
         });
     }
@@ -141,6 +147,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                             enum_items
                         },
                         visible: #visible,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         rust_typename: ::std::any::type_name::<Self>(),
                     }
                 })

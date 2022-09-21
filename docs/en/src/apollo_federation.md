@@ -12,6 +12,14 @@
 
 - The `requires` directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.
 
+- The `shareable` directive is used to indicate that an object type's field is allowed to be resolved by multiple subgraphs (by default, each field can be resolved by only one subgraph).
+
+- The `inaccessible` directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.
+
+- The `tag` directive is used to provide a mechanism for applying arbitrary string metadata to the fields and types of a schema. Tags will be propagated up into composed supergraphs.
+
+- The `override` directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.
+
 ## Entity lookup function
 
 ```rust

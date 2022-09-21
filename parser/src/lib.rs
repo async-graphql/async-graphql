@@ -78,6 +78,8 @@ pub enum Error {
     },
     /// The document does not contain any operation.
     MissingOperation,
+    /// Recursion limit exceeded.
+    RecursionLimitExceeded,
 }
 
 impl Error {
@@ -106,6 +108,7 @@ impl Error {
                 ErrorPositions::new_2(*second, *first)
             }
             Self::MissingOperation => ErrorPositions::new_0(),
+            Self::RecursionLimitExceeded => ErrorPositions::new_0(),
         }
     }
 }
@@ -126,6 +129,7 @@ impl Display for Error {
                 write!(f, "fragment {} is defined twice", fragment)
             }
             Self::MissingOperation => f.write_str("document does not contain an operation"),
+            Self::RecursionLimitExceeded => f.write_str("recursion limit exceeded."),
         }
     }
 }

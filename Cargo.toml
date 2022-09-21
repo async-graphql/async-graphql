@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "4.0.6"
+version = "4.0.13"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -29,9 +29,9 @@ unblock = ["blocking"]
 compression = ["brotli", "flate2", "zstd"]
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "4.0.6" }
-async-graphql-parser = { path = "parser", version = "4.0.6" }
-async-graphql-value = { path = "value", version = "4.0.6" }
+async-graphql-derive = { path = "derive", version = "4.0.13" }
+async-graphql-parser = { path = "parser", version = "4.0.13" }
+async-graphql-value = { path = "value", version = "4.0.13" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"
@@ -54,9 +54,13 @@ serde_json = "1.0.64"
 static_assertions = "1.1.0"
 tempfile = "3.2.0"
 thiserror = "1.0.24"
+base64 = "0.13.0"
 
 # Feature optional dependencies
-bson = { version = "2.0.0", optional = true, features = ["chrono-0_4"] }
+bson = { version = "2.4.0", optional = true, features = [
+  "chrono-0_4",
+  "uuid-1",
+] }
 chrono = { version = "0.4.19", optional = true, default-features = false, features = [
   "clock",
   "std",
@@ -83,7 +87,7 @@ tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracinglib = { version = "0.1.25", optional = true, package = "tracing" }
+tracinglib = { version = "0.1.35", optional = true, package = "tracing" }
 url = { version = "2.2.1", optional = true }
 uuid = { version = "1.0.0", optional = true, features = ["v4", "serde"] }
 uuid08 = { version = "0.8", package = "uuid", optional = true, features = [

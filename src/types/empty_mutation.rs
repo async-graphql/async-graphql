@@ -54,8 +54,11 @@ impl OutputType for EmptyMutation {
             fields: Default::default(),
             cache_control: Default::default(),
             extends: false,
+            shareable: false,
             keys: None,
             visible: None,
+            inaccessible: false,
+            tags: Default::default(),
             is_subscription: false,
             rust_typename: std::any::type_name::<Self>(),
         })

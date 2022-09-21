@@ -4,9 +4,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.13] 2022-09-09
+
+- Compare to expected schema [#1048](https://github.com/async-graphql/async-graphql/pull/1048)
+- docs: readme flair [#1054](https://github.com/async-graphql/async-graphql/pull/1054)
+- Remove `bson-uuid` feature [#1032](https://github.com/async-graphql/async-graphql/issues/1032)
+- Add `no_cache` for `cache_control` attribute [#1051](https://github.com/async-graphql/async-graphql/issues/1051)
+- Resurrect code generation through tests [#1062](https://github.com/async-graphql/async-graphql/pull/1062)
+- Support for primitive type in CursorType [#1049](https://github.com/async-graphql/async-graphql/pull/1049)
+- Add `SDLExportOptions::include_specified_by` method to enable `specifiedBy` directive [#1065](https://github.com/async-graphql/async-graphql/issues/1065)
+
+# [4.0.12] 2022-08-24
+
+- Update MSRV to `1.59.0`
+- Support `@specifiedBy` directive in SDL export [#1041](https://github.com/async-graphql/async-graphql/pull/1041)
+- Add GraphiQL v2 [#1044](https://github.com/async-graphql/async-graphql/pull/1044)
+- Export SDL: consistently avoid trailing spaces [#1043](https://github.com/async-graphql/async-graphql/pull/1043)
+
+# [4.0.11] 2022-08-23
+
+- Define `override` directive on fields [#1029](https://github.com/async-graphql/async-graphql/pull/1029)
+- Add `@tag` support [#1038](https://github.com/async-graphql/async-graphql/pull/1038)
+- Export SDL: avoid trailing space for scalar definitions [#1036](https://github.com/async-graphql/async-graphql/pull/1036)
+- Fixes [#1039](https://github.com/async-graphql/async-graphql/issues/1039)
+
+# [4.0.10] 2022-08-18
+
+- Fixes extension `request.data(X)` being lost in the resolver [#1018](https://github.com/async-graphql/async-graphql/pull/1018)
+- Add Apollo federation `@shareable` directive support [#1025](https://github.com/async-graphql/async-graphql/pull/1025)
+- Add Apollo Federation `@inaccessible` directive support [#1026](https://github.com/async-graphql/async-graphql/pull/1026)
+
+# [4.0.9] 2022-08-15
+
+- `on_connection_init` takes `FnOnce` instead of `Fn` [#1022](https://github.com/async-graphql/async-graphql/issues/1022#issuecomment-1214575590)
+
+# [4.0.8] 2022-08-12
+
+- Add tracing to dataloader methods when the tracing feature is enabled. [#996](https://github.com/async-graphql/async-graphql/pull/996)
+
+# [4.0.7] 2022-08-09
+
+- Limit parser recursion depth to `64`.
+
 # [4.0.6] 2022-07-21
 
-- Limit recursive depth to `256` by default
+- Limit execution recursion depth to `32` by default.
 
 # [4.0.5] 2022-07-18
 

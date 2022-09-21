@@ -450,6 +450,52 @@ pub fn test_both_input_output_with_same_name() {
 }
 
 #[tokio::test]
+pub async fn test_both_input_output_flatten() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "ABCInput")]
+    #[graphql(name = "ABC")]
+    #[allow(clippy::upper_case_acronyms)]
+    struct ABC {
+        a: i32,
+        #[graphql(flatten)]
+        bc: BC,
+    }
+
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "BCInput")]
+    struct BC {
+        b: i32,
+        c: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: ABC) -> ABC {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: { a: 1, b: 2, c: 3 }) { a b c } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": 1,
+                "b": 2,
+                "c": 3
+            }
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_skip_input() {
     #[derive(SimpleObject, InputObject)]
     #[graphql(input_name = "MyObjectInput")]

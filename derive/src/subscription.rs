@@ -119,6 +119,8 @@ pub fn generate(
                             ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                             default_value: #schema_default,
                             visible: #visible,
+                            inaccessible: false,
+                            tags: ::std::default::Default::default(),
                             is_secret: #secret,
                         });
                     });
@@ -267,7 +269,11 @@ pub fn generate(
                     external: false,
                     requires: ::std::option::Option::None,
                     provides: ::std::option::Option::None,
+                    shareable: false,
+                    override_from: ::std::option::Option::None,
                     visible: #visible,
+                    inaccessible: false,
+                    tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
                 });
             });
@@ -408,6 +414,9 @@ pub fn generate(
                     extends: #extends,
                     keys: ::std::option::Option::None,
                     visible: #visible,
+                    shareable: false,
+                    inaccessible: false,
+                    tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::any::type_name::<Self>(),
                 })

@@ -164,6 +164,8 @@ macro_rules! scalar_internal {
                         description: $desc,
                         is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
                         visible: ::std::option::Option::None,
+                        inaccessible: false,
+                        tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
                     }
                 })
@@ -199,6 +201,8 @@ macro_rules! scalar_internal {
                         description: $desc,
                         is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
                         visible: ::std::option::Option::None,
+                        inaccessible: false,
+                        tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
                     }
                 })

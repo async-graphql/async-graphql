@@ -26,6 +26,9 @@ pub fn generate(
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
+    let shareable = object_args.shareable;
+    let inaccessible = object_args.inaccessible;
+    let tags = &object_args.tags;
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -315,6 +318,13 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
                 let external = method_args.external;
+                let shareable = method_args.shareable;
+                let inaccessible = method_args.inaccessible;
+                let tags = &method_args.tags;
+                let override_from = match &method_args.override_from {
+                    Some(from) => quote! { ::std::option::Option::Some(#from) },
+                    None => quote! { ::std::option::Option::None },
+                };
                 let requires = match &method_args.requires {
                     Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                     None => quote! { ::std::option::Option::None },
@@ -325,7 +335,11 @@ pub fn generate(
                 };
                 let cache_control = {
                     let public = method_args.cache_control.is_public();
-                    let max_age = method_args.cache_control.max_age;
+                    let max_age = if method_args.cache_control.no_cache {
+                        -1
+                    } else {
+                        method_args.cache_control.max_age as i32
+                    };
                     quote! {
                         #crate_name::CacheControl {
                             public: #public,
@@ -351,6 +365,8 @@ pub fn generate(
                         validator,
                         visible,
                         secret,
+                        inaccessible,
+                        tags,
                         ..
                     },
                 ) in &args
@@ -384,6 +400,8 @@ pub fn generate(
                                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                                 default_value: #schema_default,
                                 visible: #visible,
+                                inaccessible: #inaccessible,
+                                tags: &[ #(#tags),* ],
                                 is_secret: #secret,
                             });
                         });
@@ -507,6 +525,10 @@ pub fn generate(
                         external: #external,
                         provides: #provides,
                         requires: #requires,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
+                        override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
                     });
@@ -565,7 +587,11 @@ pub fn generate(
 
     let cache_control = {
         let public = object_args.cache_control.is_public();
-        let max_age = object_args.cache_control.max_age;
+        let max_age = if object_args.cache_control.no_cache {
+            -1
+        } else {
+            object_args.cache_control.max_age as i32
+        };
         quote! {
             #crate_name::CacheControl {
                 public: #public,
@@ -640,6 +666,9 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
@@ -679,6 +708,9 @@ pub fn generate(
                         },
                         cache_control: #cache_control,
                         extends: #extends,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: &[ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,

@@ -254,6 +254,7 @@ pub struct QueryEnvInner {
     pub uploads: Vec<UploadValue>,
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
+    pub extension_data: Arc<Data>,
     pub http_headers: Mutex<HeaderMap>,
     pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
@@ -392,9 +393,10 @@ impl<'a, T> ContextBase<'a, T> {
     /// the specified type data does not exist.
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
         self.query_env
-            .ctx_data
+            .extension_data
             .0
             .get(&TypeId::of::<D>())
+            .or_else(|| self.query_env.ctx_data.0.get(&TypeId::of::<D>()))
             .or_else(|| self.query_env.session_data.0.get(&TypeId::of::<D>()))
             .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())

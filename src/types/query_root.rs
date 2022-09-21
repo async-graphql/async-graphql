@@ -131,8 +131,12 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         external: false,
                         requires: None,
                         provides: None,
+                        shareable: false,
+                        inaccessible: false,
+                        tags: Default::default(),
                         visible: None,
                         compute_complexity: None,
+                        override_from: None,
                     },
                 );
 
@@ -151,6 +155,8 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                                     ty: "String!".to_string(),
                                     default_value: None,
                                     visible: None,
+                                    inaccessible: false,
+                                    tags: Default::default(),
                                     is_secret: false,
                                 },
                             );
@@ -162,6 +168,10 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
                         external: false,
                         requires: None,
                         provides: None,
+                        shareable: false,
+                        inaccessible: false,
+                        tags: Default::default(),
+                        override_from: None,
                         visible: None,
                         compute_complexity: None,
                     },

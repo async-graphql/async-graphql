@@ -18,6 +18,7 @@ use crate::{
 
 mod executable;
 #[allow(clippy::redundant_static_lifetimes)]
+#[rustfmt::skip]
 mod generated;
 mod service;
 mod utils;

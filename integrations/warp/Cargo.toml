@@ -9,10 +9,10 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT/Apache-2.0"
 name = "async-graphql-warp"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "4.0.6"
+version = "4.0.13"
 
 [dependencies]
-async-graphql = { path = "../..", version = "4.0.6", default-features = false }
+async-graphql = { path = "../..", version = "4.0.13", default-features = false }
 
 futures-util = { version = "0.3.0", default-features = false, features = [
   "sink",

@@ -1,8 +1,12 @@
 use std::{
+    char::ParseCharError,
     convert::Infallible,
     fmt::Display,
     num::{ParseFloatError, ParseIntError},
+    str::ParseBoolError,
 };
+
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::ID;
 
@@ -21,8 +25,26 @@ pub trait CursorType: Sized {
     fn encode_cursor(&self) -> String;
 }
 
-impl CursorType for usize {
-    type Error = ParseIntError;
+macro_rules! cursor_type_int_impl {
+    ($($t:ty)*) => {$(
+        impl CursorType for $t {
+            type Error = ParseIntError;
+
+            fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+                s.parse()
+            }
+
+            fn encode_cursor(&self) -> String {
+                self.to_string()
+            }
+        }
+    )*}
+}
+
+cursor_type_int_impl! { isize i8 i16 i32 i64 i128 usize u8 u16 u32 u64 u128 }
+
+impl CursorType for f32 {
+    type Error = ParseFloatError;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         s.parse()
@@ -33,8 +55,8 @@ impl CursorType for usize {
     }
 }
 
-impl CursorType for i32 {
-    type Error = ParseIntError;
+impl CursorType for f64 {
+    type Error = ParseFloatError;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         s.parse()
@@ -45,8 +67,20 @@ impl CursorType for i32 {
     }
 }
 
-impl CursorType for i64 {
-    type Error = ParseIntError;
+impl CursorType for char {
+    type Error = ParseCharError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl CursorType for bool {
+    type Error = ParseBoolError;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         s.parse()
@@ -81,26 +115,22 @@ impl CursorType for ID {
     }
 }
 
-impl CursorType for f64 {
-    type Error = ParseFloatError;
+/// A opaque cursor that encode/decode the value to base64
+pub struct OpaqueCursor<T>(T);
+
+impl<T> CursorType for OpaqueCursor<T>
+where
+    T: Serialize + DeserializeOwned,
+{
+    type Error = Box<dyn std::error::Error + Send + Sync>;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
-        s.parse()
+        let data = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+        Ok(Self(serde_json::from_slice(&data)?))
     }
 
     fn encode_cursor(&self) -> String {
-        self.to_string()
-    }
-}
-
-impl CursorType for f32 {
-    type Error = ParseFloatError;
-
-    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
-        s.parse()
-    }
-
-    fn encode_cursor(&self) -> String {
-        self.to_string()
+        let value = serde_json::to_vec(&self.0).unwrap_or_default();
+        base64::encode_config(value, base64::URL_SAFE_NO_PAD)
     }
 }
