@@ -20,3 +20,7 @@ extend type User @key(fields: "id") {
 	reviews: [Review!]!
 }
 
+extend schema @link(
+	url: "https://specs.apollo.dev/federation/v2.0",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires"]
+)
