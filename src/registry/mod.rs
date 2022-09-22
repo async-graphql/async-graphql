@@ -423,6 +423,7 @@ pub struct Registry {
     pub subscription_type: Option<String>,
     pub introspection_mode: IntrospectionMode,
     pub enable_federation: bool,
+    pub enable_apollo_link: bool,
     pub federation_subscription: bool,
     pub ignore_name_conflicts: HashSet<String>,
 }
