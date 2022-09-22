@@ -1,26 +1,30 @@
 # Apollo Federation
 
-`Apollo Federation` is a `GraphQL` API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction).
+Apollo Federation is a GraphQL architecture for combining multiple GraphQL services, or subgraphs, into a single supergraph. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/).
 
-`Async-graphql` supports all the functionality of `Apollo Federation v2`, but some modifications to your `Schema` are required.
+> To see a complete example of federation, check out the [federation example](https://github.com/async-graphql/examples/tree/master/federation). 
 
-- You can use the `extends` property declaration on `async_graphql::Object` and `async_graphql::Interface` to extend a type offered by another implementing service.
+## Enabling federation support
 
-- The `external` property declares that a field comes from another service。
+`async-graphql` supports all the functionality of Apollo Federation v2. Support will be enabled automatically if any `#[graphql(entity)]` resolvers are found in the schema. To enable it manually, use the `enable_federation` method on the `SchemaBuilder`.
 
-- The `provides` directive is used to annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway. 
+```rust
+#[tokio::main]
+async fn main() {
+  let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    .enable_federation()
+    .finish();
+  // ... Start your server of choice
+}
+```
 
-- The `requires` directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services.
+This will define the [`@link` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#link) on your schema to enable Federation v2.
 
-- The `shareable` directive is used to indicate that an object type's field is allowed to be resolved by multiple subgraphs (by default, each field can be resolved by only one subgraph).
+## Entities and `@key`
 
-- The `inaccessible` directive is used to indicate that a location in the schema cannot be queried at the supergraph level, but can still be queried at the subgraph level.
+[Entities](https://www.apollographql.com/docs/federation/entities) are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL `type` with at least one [`@key` directive][`@key`]. To create a [`@key`] for a type, create a reference resolver using the `#[graphql(entity)]` attribute. This resolver should be defined on the `Query` struct, but will not appear as a field in the schema.
 
-- The `tag` directive is used to provide a mechanism for applying arbitrary string metadata to the fields and types of a schema. Tags will be propagated up into composed supergraphs.
-
-- The `override` directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.
-
-## Entity lookup function
+### Example
 
 ```rust
 # extern crate async_graphql;
@@ -50,21 +54,27 @@ impl Query {
 
 **Notice the difference between these three lookup functions, which are all looking for the `User` object.**
 
-- `find_user_by_id`
+- `find_user_by_id`: Use `id` to find a `User` object, the key for `User` is `id`.
 
-    Use `id` to find an `User` object, the key for `User` is `id`.
+- `find_user_by_id_with_username`: Use `id` to find an `User` object, the key for `User` is `id`, and the `username` field value of the `User` object is requested (e.g., via `@external` and `@requires`).
 
-- `find_user_by_id_with_username`
+- `find_user_by_id_and_username`: Use `id` and `username` to find an `User` object, the keys for `User` are `id` and `username`.
 
-    Use `id` to find an `User` object, the key for `User` is `id`, and the `username` field value of the `User` object is requested.
+The resulting schema will look like this:
 
-- `find_user_by_id_and_username`
+```graphql
+type Query {
+  # These fields will not be exposed to users, they are only used by the router to resolve entities
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
 
-    Use `id` and `username` to find an `User` object, the keys for `User` are `id` and `username`.
+type User @key(fields: "id") @key(fields: "id username") {
+  id: ID!
+}
+```
 
-For a complete example, refer to: <https://github.com/async-graphql/examples/tree/master/federation>.
-
-## Defining a compound primary key
+### Defining a compound primary key
 
 A single primary key can consist of multiple fields, and even nested fields, you can use `InputObject` to implements a nested primary key.
 
@@ -74,7 +84,9 @@ In the following example, the primary key of the `User` object is `key { a b }`.
 # extern crate async_graphql;
 # use async_graphql::*;
 # #[derive(SimpleObject)]
-# struct User { id: i32 }
+# struct User { key: Key }
+# #[derive(SimpleObject)]
+# struct Key { a: i32, b: i32 }
 #[derive(InputObject)]
 struct NestedKey {
   a: i32,
@@ -87,7 +99,314 @@ struct Query;
 impl Query {
   #[graphql(entity)]
   async fn find_user_by_key(&self, key: NestedKey) -> User {
-    User { id: key.a }
+    let NestedKey { a, b } = key;
+    User { key: Key{a, b} }
   }
 }
 ```
+
+The resulting schema will look like this:
+
+```graphql
+type Query {
+  # These fields will not be exposed to users, they are only used by the router to resolve entities
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
+
+type User @key(fields: "key { a b }") {
+  key: Key!
+}
+
+type Key {
+  a: Int!
+  b: Int!
+}
+```
+
+## `@shareable`
+
+Apply the [`@shareable` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#shareable) to a type or field to indicate that multiple subgraphs can resolve it.
+
+### `@shareable` fields
+```rust
+#[SimpleObject]
+#[graphql(complex)]
+struct Position {
+  #[graphql(shareable)]
+  x: u64,
+}
+
+#[ComplexObject]
+impl Position {
+  #[graphql(shareable)]
+  async fn y(&self) -> u64 {
+    0
+  }
+}
+```
+
+The resulting schema will look like this:
+
+```graphql
+type Position {
+  x: Int! @shareable
+  y: Int! @shareable
+}
+```
+
+
+### `@shareable` type
+
+```rust
+#[SimpleObject]
+#[graphql(shareable)]
+struct Position {
+  x: u64,
+  y: u64,
+}
+```
+
+The resulting schema will look like this:
+
+```graphql
+type Position @shareable {
+  x: Int!
+  y: Int!
+}
+```
+
+## `@inaccessible`
+
+The [`@inaccessible` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#inaccessible) is used to omit something from the supergraph schema (e.g., if it's not yet added to all subgraphs which share a `@shareable` type).
+
+```rust
+#[SimpleObject]
+#[graphql(shareable)]
+struct Position {
+  x: u32,
+  y: u32,
+  #[graphql(inaccessible)]
+  z: u32,
+} 
+```
+
+Results in:
+
+```graphql
+type Position @shareable {
+  x: Int!
+  y: Int!
+  z: Int! @inaccessible
+}
+```
+
+## `@override`
+
+The [`@override` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#override) is used to take ownership of a field from another subgraph. This is useful for migrating a field from one subgraph to another.
+
+For example, if you add a new "Inventory" subgraph which should take over responsibility for the `inStock` field currently provided by the "Products" subgraph, you might have something like this:
+
+```rust
+#[SimpleObject]
+struct Product {
+  id: ID,
+  #[graphql(override_from = "Products")]
+  in_stock: bool,
+}
+```
+
+Which results in:
+
+```graphql
+type Product @key(fields: "id") {
+  id: ID!
+  inStock: Boolean! @override(from: "Products")
+}
+```
+
+## `@external`
+
+The [`@external` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#external) is used to indicate that a field is usually provided by another subgraph, but is sometimes required by this subgraph (when combined with `@requires`) or provided by this subgraph (when combined with `@provides`).
+
+```rust
+#[SimpleObject]
+struct Product {
+  id: ID,
+  #[graphql(external)]
+  name: String,
+  in_stock: bool,
+}
+```
+
+Results in:
+
+```graphql
+type Product {
+  id: ID!
+  name: String! @external
+  inStock: Boolean!
+}
+```
+
+## `@provides`
+
+The [`@provides` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#provides) is used to indicate that a field is provided by this subgraph, but only sometimes.
+
+```rust
+#[SimpleObject]
+struct Product {
+    id: ID,
+    #[graphql(external)]
+    human_name: String,
+    in_stock: bool,
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    /// This operation will provide the `humanName` field on `Product
+    #[graphql(provides(fields: "humanName"))]
+    async fn out_of_stock_products(&self) -> Vec<Product> {
+      vec![Product {
+        id: "1".to_string(),
+        human_name: "My Product".to_string(),
+        in_stock: false,
+      }]
+    }
+    async fn discontinued_products(&self) -> Vec<Product> {
+        vec![Product {
+            id: "2".to_string(),
+            human_name: String::new(),  // This is ignored by the router
+            in_stock: false,
+        }]
+    }
+    #[graphql(entity)]
+    async fn find_product_by_id(&self, id: ID) -> Product {
+        Product {
+            id,
+            human_name: String::new(),  // This is ignored by the router
+            in_stock: true,
+        }
+    }
+}
+```
+
+Note that the `#[graphql(provides)]` attribute takes the field name as it appears in the schema, not the Rust field name.
+
+The resulting schema will look like this:
+
+```graphql
+type Product @key(fields: "id") {
+    id: ID!
+    humanName: String! @external
+    inStock: Boolean!
+}
+
+type Query {
+    outOfStockProducts: [Product!]! @provides(fields: "humanName")
+    discontinuedProducts: [Product!]!
+}
+```
+
+## `@requires`
+
+The [`@requires` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#requires) is used to indicate that an `@external` field is required for this subgraph to resolve some other field(s). If our `shippingEstimate` field requires the `size` and `weightInPounts` fields, then we might want a subgraph entity which looks like this:
+
+```graphql
+type Product @key(fields: "id") {
+  id: ID!
+  size: Int! @external
+  weightInPounds: Int! @external
+  shippingEstimate: String! @requires(fields: "size weightInPounds")
+}
+```
+
+In order to implement this in Rust, we can use the `#[graphql(requires)]` attribute:
+
+```rust
+#[SimpleObject]
+#[graphql(complex)]
+struct Product {
+  id: ID,
+  #[graphql(external)]
+  size: u32,
+  #[graphql(external)]
+  weight_in_pounds: u32,
+}
+
+#[ComplexObject]
+impl Product {
+  #[graphql(requires = "size weightInPounds")]
+  async fn shipping_estimate(&self) -> String {
+    let price = self.size? * self.weight_in_pounds?;
+    Some(format!(${}, price))
+  }
+}
+```
+
+Note that we use the GraphQL field name `weightInPounds`, not the Rust field name `weight_in_pounds` in `requires`. To populate those external fields, we add them as arguments in the entity resolver:
+
+```rust
+#[Object]
+impl Query {
+  #[graphql(entity)]
+  async fn find_product_by_id(
+    &self, 
+    #[graphql(key)] id: ID, 
+    size: Option<u32>, 
+    weight_in_pounds: Option<u32>
+  ) -> Product {
+    Product {
+      id,
+      size: size.unwrap_or_default(),
+      weight_in_pounds: weight_in_pounds.unwrap_or_default(),
+    }
+  }
+}
+```
+
+The inputs are `Option<>` even though the fields are required. This is because the external fields are _only_ passed to the subgraph when the field(s) that require them are being selected. If the `shippingEstimate` field is not selected, then the `size` and `weightInPounds` fields will not be passed to the subgraph. **Always use optional types for external fields.**
+
+We have to put _something_ in place for `size` and `weight_in_pounds` as they are still required fields on the type, so we use `unwrap_or_default()` to provide a default value. This looks a little funny, as we're populating the fields with nonsense values, but we have confidence that they will not be needed if they were not provided.  **Make sure to use `@requires` if you are consuming `@external` fields, or your code will be wrong.**
+
+### Nested `@requires`
+
+A case where the `@requires` directive can be confusing is when there are nested entities. For example, if we had an `Order` type which contained a `Product`, then we would need an entity resolver like this:
+
+```rust
+#[Object]
+impl Query {
+  #[graphql(entity)]
+  async fn find_order_by_id(&self, id: ID) -> Option<Order> {
+    db::find_order_by_id(id)
+  }
+}
+```
+
+There are no inputs on this entity resolver, so how do we populate the `size` and `weight_in_pounds` fields on `Product` if a user has a query like `order { product { shippingEstimate } }`? The supergraph implementation will solve this for us by calling the `find_product_by_id` separately for any fields which have a `@requires` directive, so the subgraph code does not need to worry about how entities relate.
+
+## `@tag`
+
+The [`@tag` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#tag) is used to add metadata to a schema location for features like [contracts](https://www.apollographql.com/docs/studio/contracts/). To add a tag like this:
+
+```graphql
+type User @tag(name: "team-accounts") {
+  id: String!
+  name: String!
+}
+```
+
+You can write code like this:
+
+```rust
+#[SimpleObject]
+#[graphql(tag = "team-accounts")]
+struct User {
+  id: ID,
+  name: String,
+}
+```
+
+[`@key`]: https://www.apollographql.com/docs/federation/entities#1-define-a-key
