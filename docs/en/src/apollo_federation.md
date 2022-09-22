@@ -20,6 +20,26 @@
 
 - The `override` directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.
 
+- The `link` directive is needed in order to indicate that the subgraph is Federation v2 compatible, enabling the `shareable`, `inaccessable`, and `override` directives.
+
+## Enabling Federation v2 using the link directive
+
+async-graphql provides a configuration function `enable_apollo_fed2_link` on the schema builder to have it print out an `extend schema` element with an appropriately configured `link` directive whenever the federation schema is requested.
+
+```rust
+Schema::build(Query, EmptyMutation, EmptySubscription)
+    .enable_apollo_fed2_link()
+    .finish()
+```
+
+and the following (or similar) will be attached to the schema:
+```
+extend schema @link(
+    url: "https://specs.apollo.dev/federation/v2.0",
+    import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires"]
+)
+```
+
 ## Entity lookup function
 
 ```rust
