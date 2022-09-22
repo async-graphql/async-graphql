@@ -173,16 +173,6 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Enables printing the apollo federation 2 `@link` directive during
-    /// federation schema export; the directive is attached to an "extend
-    /// schema" element, and will have values set to ensure that
-    /// the federation schema directives and types are named properly.
-    #[must_use]
-    pub fn enable_apollo_fed2_link(mut self) -> Self {
-        self.registry.enable_apollo_link = true;
-        self
-    }
-
     /// Make the Federation SDL include subscriptions.
     ///
     /// Note: Not included by default, in order to be compatible with Apollo
@@ -389,7 +379,6 @@ where
             },
             introspection_mode: IntrospectionMode::Enabled,
             enable_federation: false,
-            enable_apollo_link: false,
             federation_subscription: false,
             ignore_name_conflicts,
         };

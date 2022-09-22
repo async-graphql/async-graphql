@@ -2,7 +2,7 @@
 
 `Apollo Federation` is a `GraphQL` API gateway which can combine multiple GraphQL services, allowing each service to implement the subset of the API it is responsible for. You can read more in the [official documentation](https://www.apollographql.com/docs/apollo-server/federation/introduction).
 
-`Async-graphql` supports all the functionality of `Apollo Federation`, but some modifications to your `Schema` are required.
+`Async-graphql` supports all the functionality of `Apollo Federation v2`, but some modifications to your `Schema` are required.
 
 - You can use the `extends` property declaration on `async_graphql::Object` and `async_graphql::Interface` to extend a type offered by another implementing service.
 
@@ -19,26 +19,6 @@
 - The `tag` directive is used to provide a mechanism for applying arbitrary string metadata to the fields and types of a schema. Tags will be propagated up into composed supergraphs.
 
 - The `override` directive is used to indicate that a field is now to be resolved by the current subgraph instead of the named subgraph.
-
-- The `link` directive is needed in order to indicate that the subgraph is Federation v2 compatible, enabling the `shareable`, `inaccessable`, and `override` directives.
-
-## Enabling Federation v2 using the link directive
-
-async-graphql provides a configuration function `enable_apollo_fed2_link` on the schema builder to have it print out an `extend schema` element with an appropriately configured `link` directive whenever the federation schema is requested.
-
-```rust
-Schema::build(Query, EmptyMutation, EmptySubscription)
-    .enable_apollo_fed2_link()
-    .finish()
-```
-
-and the following (or similar) will be attached to the schema:
-```
-extend schema @link(
-    url: "https://specs.apollo.dev/federation/v2.0",
-    import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires"]
-)
-```
 
 ## Entity lookup function
 

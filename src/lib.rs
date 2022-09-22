@@ -51,7 +51,7 @@
 //! * Apollo Tracing extension
 //! * Limit query complexity/depth
 //! * Error Extensions
-//! * Apollo Federation
+//! * Apollo Federation(v2)
 //! * Batch Queries
 //! * Apollo Persisted Queries
 //!

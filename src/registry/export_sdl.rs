@@ -112,12 +112,10 @@ impl Registry {
         }
 
         if options.federation {
-            if self.enable_apollo_link {
-                writeln!(sdl, "extend schema @link(").ok();
-                writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.0\",").ok();
-                writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
-                writeln!(sdl, ")").ok();
-            }
+            writeln!(sdl, "extend schema @link(").ok();
+            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.0\",").ok();
+            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
+            writeln!(sdl, ")").ok();
         } else {
             writeln!(sdl, "schema {{").ok();
             writeln!(sdl, "\tquery: {}", self.query_type).ok();

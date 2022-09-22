@@ -605,7 +605,6 @@ pub async fn test_link_directive() {
     }
 
     let schema_sdl = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .enable_apollo_fed2_link()
         .finish()
         .sdl_with_options(SDLExportOptions::new().federation());
 
