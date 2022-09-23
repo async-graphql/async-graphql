@@ -10,10 +10,8 @@ Apollo Federation is a GraphQL architecture for combining multiple GraphQL servi
 
 ```rust
 # extern crate async_graphql;
-# extern crate tokio;
 # use async_graphql::*;
-#[tokio::main]
-async fn main() {
+fn main() {
   let schema = Schema::build(EmptyQuery, EmptyMutation, EmptySubscription)
     .enable_federation()
     .finish();
