@@ -13,7 +13,9 @@ Apollo Federation is a GraphQL architecture for combining multiple GraphQL servi
 # use async_graphql::*;
 # struct Query;
 # #[Object]
-# impl Query {}
+# impl Query {
+#    async fn hello(&self) -> String { "Hello".to_string() }
+# }
 fn main() {
   let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .enable_federation()
@@ -283,7 +285,7 @@ struct Query;
 #[Object]
 impl Query {
     /// This operation will provide the `humanName` field on `Product
-    #[graphql(provides(fields: "humanName"))]
+    #[graphql(provides = "humanName")]
     async fn out_of_stock_products(&self) -> Vec<Product> {
       vec![Product {
         id: "1".to_string(),
@@ -359,7 +361,7 @@ impl Product {
   #[graphql(requires = "size weightInPounds")]
   async fn shipping_estimate(&self) -> String {
     let price = self.size * self.weight_in_pounds;
-    format!(${}, price)
+    format!("${}", price)
   }
 }
 ```
@@ -370,7 +372,6 @@ Note that we use the GraphQL field name `weightInPounds`, not the Rust field nam
 # extern crate async_graphql;
 # use async_graphql::*;
 # #[derive(SimpleObject)]
-# #[graphql(complex)]
 # struct Product {
 #     id: ID,
 #     #[graphql(external)]
