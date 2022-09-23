@@ -288,14 +288,14 @@ impl Query {
     #[graphql(provides = "humanName")]
     async fn out_of_stock_products(&self) -> Vec<Product> {
       vec![Product {
-        id: "1".to_string(),
+        id: "1".into(),
         human_name: "My Product".to_string(),
         in_stock: false,
       }]
     }
     async fn discontinued_products(&self) -> Vec<Product> {
         vec![Product {
-            id: "2".to_string(),
+            id: "2".into(),
             human_name: String::new(),  // This is ignored by the router
             in_stock: false,
         }]
