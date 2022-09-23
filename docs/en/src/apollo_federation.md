@@ -133,7 +133,7 @@ Apply the [`@shareable` directive](https://www.apollographql.com/docs/federation
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 #[graphql(complex)]
 struct Position {
   #[graphql(shareable)]
@@ -164,7 +164,7 @@ type Position {
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 #[graphql(shareable)]
 struct Position {
   x: u64,
@@ -188,7 +188,7 @@ The [`@inaccessible` directive](https://www.apollographql.com/docs/federation/fe
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 #[graphql(shareable)]
 struct Position {
   x: u32,
@@ -217,7 +217,7 @@ For example, if you add a new "Inventory" subgraph which should take over respon
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 struct Product {
   id: ID,
   #[graphql(override_from = "Products")]
@@ -241,7 +241,7 @@ The [`@external` directive](https://www.apollographql.com/docs/federation/federa
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 struct Product {
   id: ID,
   #[graphql(external)]
@@ -267,7 +267,7 @@ The [`@provides` directive](https://www.apollographql.com/docs/federation/federa
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 struct Product {
     id: ID,
     #[graphql(external)]
@@ -341,7 +341,7 @@ In order to implement this in Rust, we can use the `#[graphql(requires)]` attrib
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 #[graphql(complex)]
 struct Product {
   id: ID,
@@ -366,7 +366,7 @@ Note that we use the GraphQL field name `weightInPounds`, not the Rust field nam
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-# #[SimpleObject]
+# #[derive(SimpleObject)]
 # #[graphql(complex)]
 # struct Product {
 #     id: ID,
@@ -435,7 +435,7 @@ You can write code like this:
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[SimpleObject]
+#[derive(SimpleObject)]
 #[graphql(tag = "team-accounts")]
 struct User {
   id: ID,
