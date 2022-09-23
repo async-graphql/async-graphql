@@ -9,9 +9,12 @@ Apollo Federation is a GraphQL architecture for combining multiple GraphQL servi
 `async-graphql` supports all the functionality of Apollo Federation v2. Support will be enabled automatically if any `#[graphql(entity)]` resolvers are found in the schema. To enable it manually, use the `enable_federation` method on the `SchemaBuilder`.
 
 ```rust
+# extern crate async_graphql;
+# extern crate tokio;
+# use async_graphql::*;
 #[tokio::main]
 async fn main() {
-  let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+  let schema = Schema::build(EmptyQuery, EmptyMutation, EmptySubscription)
     .enable_federation()
     .finish();
   // ... Start your server of choice
@@ -130,6 +133,8 @@ Apply the [`@shareable` directive](https://www.apollographql.com/docs/federation
 
 ### `@shareable` fields
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 #[graphql(complex)]
 struct Position {
@@ -159,6 +164,8 @@ type Position {
 ### `@shareable` type
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 #[graphql(shareable)]
 struct Position {
@@ -181,6 +188,8 @@ type Position @shareable {
 The [`@inaccessible` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#inaccessible) is used to omit something from the supergraph schema (e.g., if it's not yet added to all subgraphs which share a `@shareable` type).
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 #[graphql(shareable)]
 struct Position {
@@ -208,6 +217,8 @@ The [`@override` directive](https://www.apollographql.com/docs/federation/federa
 For example, if you add a new "Inventory" subgraph which should take over responsibility for the `inStock` field currently provided by the "Products" subgraph, you might have something like this:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 struct Product {
   id: ID,
@@ -230,6 +241,8 @@ type Product @key(fields: "id") {
 The [`@external` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#external) is used to indicate that a field is usually provided by another subgraph, but is sometimes required by this subgraph (when combined with `@requires`) or provided by this subgraph (when combined with `@provides`).
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 struct Product {
   id: ID,
@@ -254,6 +267,8 @@ type Product {
 The [`@provides` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#provides) is used to indicate that a field is provided by this subgraph, but only sometimes.
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 struct Product {
     id: ID,
@@ -326,6 +341,8 @@ type Product @key(fields: "id") {
 In order to implement this in Rust, we can use the `#[graphql(requires)]` attribute:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 #[graphql(complex)]
 struct Product {
@@ -340,8 +357,8 @@ struct Product {
 impl Product {
   #[graphql(requires = "size weightInPounds")]
   async fn shipping_estimate(&self) -> String {
-    let price = self.size? * self.weight_in_pounds?;
-    Some(format!(${}, price))
+    let price = self.size * self.weight_in_pounds;
+    format!(${}, price)
   }
 }
 ```
@@ -349,6 +366,18 @@ impl Product {
 Note that we use the GraphQL field name `weightInPounds`, not the Rust field name `weight_in_pounds` in `requires`. To populate those external fields, we add them as arguments in the entity resolver:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[SimpleObject]
+# #[graphql(complex)]
+# struct Product {
+#     id: ID,
+#     #[graphql(external)]
+#     size: u32,
+#     #[graphql(external)]
+#     weight_in_pounds: u32,
+# }
+# struct Query;
 #[Object]
 impl Query {
   #[graphql(entity)]
@@ -376,11 +405,16 @@ We have to put _something_ in place for `size` and `weight_in_pounds` as they ar
 A case where the `@requires` directive can be confusing is when there are nested entities. For example, if we had an `Order` type which contained a `Product`, then we would need an entity resolver like this:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[derive(SimpleObject)]
+# pub struct Order { id: ID }
+# struct Query;
 #[Object]
 impl Query {
   #[graphql(entity)]
   async fn find_order_by_id(&self, id: ID) -> Option<Order> {
-    db::find_order_by_id(id)
+      Some(Order { id })
   }
 }
 ```
@@ -401,6 +435,8 @@ type User @tag(name: "team-accounts") {
 You can write code like this:
 
 ```rust
+# extern crate async_graphql;
+# use async_graphql::*;
 #[SimpleObject]
 #[graphql(tag = "team-accounts")]
 struct User {
