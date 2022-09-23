@@ -28,6 +28,7 @@ const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 #[cfg_attr(docsrs, doc(cfg(feature = "opentelemetry")))]
 pub struct OpenTelemetry<T> {
     tracer: Arc<T>,
+    ignore_introspection: bool,
 }
 
 impl<T> OpenTelemetry<T> {
@@ -39,7 +40,19 @@ impl<T> OpenTelemetry<T> {
     {
         Self {
             tracer: Arc::new(tracer),
+            ignore_introspection: false,
         }
+    }
+
+    /// Ignores introspection queries when creating traces and spans.
+    /// This is useful in development environments during debugging as
+    /// it is generally recommended to disable introspection in production.
+    ///
+    /// [disable_introspection](crate::Request::disable_introspection) is an
+    /// option when building the schema.
+    pub fn ignore_introspection(mut self) -> Self {
+        self.ignore_introspection = true;
+        self
     }
 }
 
@@ -100,6 +113,19 @@ where
         variables: &Variables,
         next: NextParseQuery<'_>,
     ) -> ServerResult<ExecutableDocument> {
+        if self.ignore_introspection {
+            let document = next.run(ctx, query, variables).await?;
+            let is_schema = document
+            .operations
+            .iter()
+            .filter(|(_, operation)| operation.node.ty == OperationType::Query)
+            .any(|(_, operation)| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
+
+            if is_schema {
+                return next.run(ctx, query, variables).await;
+            }
+        }
+
         let attributes = vec![
             KEY_SOURCE.string(query.to_string()),
             KEY_VARIABLES.string(serde_json::to_string(variables).unwrap()),
