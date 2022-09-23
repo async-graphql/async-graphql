@@ -76,9 +76,17 @@ impl<'a> FromRequest<'a> for GraphQLBatchRequest {
                 .get(header::CONTENT_TYPE)
                 .and_then(|value| value.to_str().ok())
                 .map(ToString::to_string);
+
+            let content_encoding = req
+                .headers()
+                .get(header::CONTENT_ENCODING)
+                .and_then(|value| value.to_str().ok())
+                .map(ToString::to_string);
+
             Ok(Self(
                 async_graphql::http::receive_batch_body(
                     content_type,
+                    content_encoding,
                     body.take()?.into_async_read().compat(),
                     MultipartOptions::default(),
                 )

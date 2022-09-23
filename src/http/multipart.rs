@@ -9,6 +9,7 @@ use futures_util::{io::AsyncRead, stream::Stream};
 use multer::{Constraints, Multipart, SizeLimit};
 use pin_project_lite::pin_project;
 
+use super::ContentEncoding;
 use crate::{BatchRequest, ParseRequestError, UploadValue};
 
 /// Options for `receive_multipart`.
@@ -43,6 +44,7 @@ impl MultipartOptions {
 
 pub(super) async fn receive_batch_multipart(
     body: impl AsyncRead + Send,
+    content_encoding: Option<ContentEncoding>,
     boundary: impl Into<String>,
     opts: MultipartOptions,
 ) -> Result<BatchRequest, ParseRequestError> {
@@ -79,7 +81,12 @@ pub(super) async fn receive_batch_multipart(
             Some("operations") => {
                 let body = field.bytes().await?;
                 request = Some(
-                    super::receive_batch_body_no_multipart(&content_type, body.as_ref()).await?,
+                    super::receive_batch_body_no_multipart(
+                        &content_type,
+                        content_encoding,
+                        body.as_ref(),
+                    )
+                    .await?,
                 )
             }
             Some("map") => {

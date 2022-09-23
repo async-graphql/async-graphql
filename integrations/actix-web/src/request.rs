@@ -84,6 +84,12 @@ impl FromRequest for GraphQLBatchRequest {
                 .and_then(|value| value.to_str().ok())
                 .map(|value| value.to_string());
 
+            let content_encoding = req
+                .headers()
+                .get(http::header::CONTENT_ENCODING)
+                .and_then(|value| value.to_str().ok())
+                .map(|value| value.to_string());
+
             let (tx, rx) = async_channel::bounded(16);
 
             // Payload is !Send so we create indirection with a channel
@@ -100,6 +106,7 @@ impl FromRequest for GraphQLBatchRequest {
                 Ok(GraphQLBatchRequest(
                     async_graphql::http::receive_batch_body(
                         content_type,
+                        content_encoding,
                         rx.map_err(|e| match e {
                             PayloadError::Incomplete(Some(e)) | PayloadError::Io(e) => e,
                             PayloadError::Incomplete(None) => {

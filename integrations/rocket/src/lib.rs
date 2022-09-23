@@ -63,6 +63,7 @@ impl<'r> FromData<'r> for GraphQLBatchRequest {
 
         let request = async_graphql::http::receive_batch_body(
             req.headers().get_one("Content-Type"),
+            req.headers().get_one("Content-Encoding"),
             data.open(
                 req.limits()
                     .get("graphql")

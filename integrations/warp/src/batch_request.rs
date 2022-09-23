@@ -38,10 +38,12 @@ where
         .and(warp::get().and(warp::query()).map(BatchRequest::Single))
         .or(warp::post()
             .and(warp::header::optional::<String>("content-type"))
+            .and(warp::header::optional::<String>("content-encoding"))
             .and(warp::body::stream())
-            .and_then(move |content_type, body| async move {
+            .and_then(move |content_type, content_encoding, body| async move {
                 async_graphql::http::receive_batch_body(
                     content_type,
+                    content_encoding,
                     TryStreamExt::map_err(body, |e| io::Error::new(ErrorKind::Other, e))
                         .map_ok(|mut buf| {
                             let remaining = Buf::remaining(&buf);
