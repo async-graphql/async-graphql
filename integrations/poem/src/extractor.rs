@@ -3,7 +3,6 @@ use poem::{
     async_trait,
     error::BadRequest,
     http::{header, Method},
-    web::Query,
     FromRequest, Request, RequestBody, Result,
 };
 use tokio_util::compat::TokioAsyncReadCompatExt;
@@ -68,7 +67,9 @@ pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 impl<'a> FromRequest<'a> for GraphQLBatchRequest {
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
-            let req = Query::from_request(req, body).await?.0;
+            let req =
+                async_graphql::http::parse_query_string(req.uri().query().unwrap_or_default())
+                    .map_err(BadRequest)?;
             Ok(Self(async_graphql::BatchRequest::Single(req)))
         } else {
             let content_type = req

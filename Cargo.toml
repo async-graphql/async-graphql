@@ -54,6 +54,7 @@ static_assertions = "1.1.0"
 tempfile = "3.2.0"
 thiserror = "1.0.24"
 base64 = "0.13.0"
+serde_urlencoded = "0.7.0"
 
 # Feature optional dependencies
 bson = { version = "2.4.0", optional = true, features = [

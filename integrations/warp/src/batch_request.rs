@@ -35,7 +35,13 @@ where
     Subscription: SubscriptionType + 'static,
 {
     warp::any()
-        .and(warp::get().and(warp::query()).map(BatchRequest::Single))
+        .and(warp::get().and(warp::filters::query::raw()).and_then(
+            |query_string: String| async move {
+                async_graphql::http::parse_query_string(&query_string)
+                    .map(Into::into)
+                    .map_err(|e| warp::reject::custom(GraphQLBadRequest(e)))
+            },
+        ))
         .or(warp::post()
             .and(warp::header::optional::<String>("content-type"))
             .and(warp::body::stream())
