@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [4.0.14] 2022-09-25
 
-# Add support for parse request from query string. [#1085](https://github.com/async-graphql/async-graphql/issues/1085)
+- Implement a simple approach to using the link directive. [#1060](https://github.com/async-graphql/async-graphql/pull/1060)
+- docs: Update federation docs with examples of each directive. [#1080](https://github.com/async-graphql/async-graphql/pull/1080)
+- Add support for parse request from query string. [#1085](https://github.com/async-graphql/async-graphql/issues/1085)
 
 # [4.0.13] 2022-09-09
 
