@@ -1,0 +1,26 @@
+
+
+
+
+extend type Product @key(fields: "upc") {
+	upc: String! @external
+	reviews: [Review!]!
+}
+
+
+type Review {
+	body: String!
+	author: User!
+	product: Product!
+}
+
+
+extend type User @key(fields: "id") {
+	id: ID! @external
+	reviews: [Review!]!
+}
+
+extend schema @link(
+	url: "https://specs.apollo.dev/federation/v2.0",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires"]
+)

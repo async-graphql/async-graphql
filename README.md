@@ -66,7 +66,7 @@ async fn main() {
 - Batch queries
 - Apollo Persisted Queries
 - Apollo Tracing extension
-- Apollo Federation
+- Apollo Federation(v2)
 
 > **Note**: Minimum supported Rust version: 1.59.0 or later
 
@@ -95,7 +95,7 @@ Integrations are what glue `async-graphql` with your web server, here are provid
 This crate offers the following features, all of which are not activated by default:
 
 | feature                        | enables                                                                                                                                                                                       |
-| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|:-------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **`apollo_tracing`**           | Enable the [Apollo tracing extension](extensions/struct.ApolloTracing.html).                                                                                                                  |
 | **`apollo_persisted_queries`** | Enable the [Apollo persisted queries extension](extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).                                                                      |
 | **`log`**                      | Enable the [logger extension](extensions/struct.Logger.html).                                                                                                                                 |

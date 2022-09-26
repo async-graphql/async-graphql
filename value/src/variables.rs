@@ -9,7 +9,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::{ConstValue, Name};
 
 /// Variables of a query.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]
 #[serde(transparent)]
 pub struct Variables(BTreeMap<Name, ConstValue>);
 

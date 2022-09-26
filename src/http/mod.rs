@@ -6,17 +6,58 @@ mod multipart;
 mod playground_source;
 mod websocket;
 
+use std::io::ErrorKind;
+
 use futures_util::io::{AsyncRead, AsyncReadExt};
 pub use graphiql_source::graphiql_source;
 pub use graphiql_v2_source::GraphiQLSource;
 use mime;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
+use serde::Deserialize;
 pub use websocket::{
     ClientMessage, Protocols as WebSocketProtocols, WebSocket, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
 };
 
 use crate::{BatchRequest, ParseRequestError, Request};
+
+/// Parse a GraphQL request from a query string.
+pub fn parse_query_string(input: &str) -> Result<Request, ParseRequestError> {
+    #[derive(Deserialize)]
+    struct RequestSerde {
+        #[serde(default)]
+        pub query: String,
+        pub operation_name: Option<String>,
+        pub variables: Option<String>,
+        pub extensions: Option<String>,
+    }
+
+    let request: RequestSerde = serde_urlencoded::from_str(input)
+        .map_err(|err| std::io::Error::new(ErrorKind::Other, err))?;
+    let variables = request
+        .variables
+        .map(|data| serde_json::from_str(&data))
+        .transpose()
+        .map_err(|err| {
+            std::io::Error::new(ErrorKind::Other, format!("invalid variables: {}", err))
+        })?
+        .unwrap_or_default();
+    let extensions = request
+        .extensions
+        .map(|data| serde_json::from_str(&data))
+        .transpose()
+        .map_err(|err| {
+            std::io::Error::new(ErrorKind::Other, format!("invalid extensions: {}", err))
+        })?
+        .unwrap_or_default();
+
+    Ok(Request {
+        operation_name: request.operation_name,
+        variables,
+        extensions,
+        ..Request::new(request.query)
+    })
+}
 
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
@@ -115,4 +156,34 @@ pub async fn receive_batch_cbor(body: impl AsyncRead) -> Result<BatchRequest, Pa
         .map_err(ParseRequestError::Io)?;
     serde_cbor::from_slice::<BatchRequest>(&data)
         .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::*;
+    use crate::{value, Variables};
+
+    #[test]
+    fn test_parse_query_string() {
+        let request = parse_query_string("variables=%7B%7D&extensions=%7B%22persistedQuery%22%3A%7B%22sha256Hash%22%3A%22cde5de0a350a19c59f8ddcd9646e5f260b2a7d5649ff6be8e63e9462934542c3%22%2C%22version%22%3A1%7D%7D").unwrap();
+        assert_eq!(request.query.as_str(), "");
+        assert_eq!(request.variables, Variables::default());
+        assert_eq!(request.extensions, {
+            let mut extensions = HashMap::new();
+            extensions.insert("persistedQuery".to_string(), value!({
+                "sha256Hash": "cde5de0a350a19c59f8ddcd9646e5f260b2a7d5649ff6be8e63e9462934542c3",
+                "version": 1,
+            }));
+            extensions
+        });
+
+        let request = parse_query_string("query={a}&variables=%7B%22a%22%3A10%7D").unwrap();
+        assert_eq!(request.query.as_str(), "{a}");
+        assert_eq!(
+            request.variables,
+            Variables::from_value(value!({ "a" : 10 }))
+        );
+    }
 }

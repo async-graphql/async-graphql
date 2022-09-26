@@ -107,12 +107,13 @@ where
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         if let (&Method::GET, uri) = (req.method(), req.uri()) {
-            let res = serde_urlencoded::from_str(uri.query().unwrap_or_default()).map_err(|err| {
-                ParseRequestError::Io(std::io::Error::new(
-                    ErrorKind::Other,
-                    format!("failed to parse graphql request from uri query: {}", err),
-                ))
-            });
+            let res = async_graphql::http::parse_query_string(uri.query().unwrap_or_default())
+                .map_err(|err| {
+                    ParseRequestError::Io(std::io::Error::new(
+                        ErrorKind::Other,
+                        format!("failed to parse graphql request from uri query: {}", err),
+                    ))
+                });
             Ok(Self(async_graphql::BatchRequest::Single(res?), PhantomData))
         } else {
             let content_type = req

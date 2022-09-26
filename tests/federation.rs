@@ -317,15 +317,9 @@ pub async fn test_entity_shareable() {
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
-    assert_eq!(
-        schema_sdl.contains("fieldShareableA: Int! @shareable"),
-        true
-    );
+    assert!(schema_sdl.contains("fieldShareableA: Int! @shareable"),);
 
-    assert_eq!(
-        schema_sdl.contains(r#"MyObjShareable @key(fields: "id") @shareable"#),
-        true
-    );
+    assert!(schema_sdl.contains(r#"MyObjShareable @key(fields: "id") @shareable"#),);
 }
 
 #[tokio::test]
@@ -348,10 +342,7 @@ pub async fn test_field_override_directive() {
 
     let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
         .sdl_with_options(SDLExportOptions::new().federation());
-    assert_eq!(
-        schema_sdl.contains("fieldOverrideA: Int! @override(from: \"AnotherSubgraph\")"),
-        true
-    );
+    assert!(schema_sdl.contains("fieldOverrideA: Int! @override(from: \"AnotherSubgraph\")"),);
 }
 
 #[tokio::test]
@@ -544,6 +535,85 @@ pub async fn test_entity_inaccessible() {
     if schema_sdl != expected_schema {
         std::fs::write(path, schema_sdl).unwrap();
         panic!("schema was not up-to-date. rerun")
+    }
+}
+
+#[tokio::test]
+pub async fn test_link_directive() {
+    struct User {
+        id: ID,
+    }
+
+    #[Object(extends)]
+    impl User {
+        #[graphql(external)]
+        async fn id(&self) -> &ID {
+            &self.id
+        }
+
+        async fn reviews(&self) -> Vec<Review> {
+            todo!()
+        }
+    }
+
+    struct Review;
+
+    #[Object]
+    impl Review {
+        async fn body(&self) -> String {
+            todo!()
+        }
+
+        async fn author(&self) -> User {
+            todo!()
+        }
+
+        async fn product(&self) -> Product {
+            todo!()
+        }
+    }
+
+    struct Product {
+        upc: String,
+    }
+
+    #[Object(extends)]
+    impl Product {
+        #[graphql(external)]
+        async fn upc(&self) -> &str {
+            &self.upc
+        }
+
+        async fn reviews(&self) -> Vec<Review> {
+            todo!()
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        #[graphql(entity)]
+        async fn find_user_by_id(&self, id: ID) -> User {
+            User { id }
+        }
+
+        #[graphql(entity)]
+        async fn find_product_by_upc(&self, upc: String) -> Product {
+            Product { upc }
+        }
+    }
+
+    let schema_sdl = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .finish()
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    let path = std::path::Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("tests/schemas/test_fed2_link.schema.graphqls");
+    let expected_schema = std::fs::read_to_string(&path).unwrap();
+    if schema_sdl != expected_schema {
+        std::fs::write(path, schema_sdl).unwrap();
+        panic!("schema was not up-to-date. verify changes and re-run if correct.")
     }
 }
 

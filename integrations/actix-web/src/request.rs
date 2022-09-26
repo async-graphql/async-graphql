@@ -75,7 +75,8 @@ impl FromRequest for GraphQLBatchRequest {
             .unwrap_or_default();
 
         if req.method() == Method::GET {
-            let res = serde_urlencoded::from_str(req.query_string());
+            let res = async_graphql::http::parse_query_string(req.query_string())
+                .map_err(|err| io::Error::new(ErrorKind::Other, err));
             Box::pin(async move { Ok(Self(async_graphql::BatchRequest::Single(res?))) })
         } else if req.method() == Method::POST {
             let content_type = req
