@@ -144,7 +144,7 @@ impl Extension for TracingExtension {
         next.run(ctx, info)
             .map_err(|err| {
                 tracinglib::error!(target: "async_graphql::graphql",
-                                  error = %err.message,
+                                  error = tracinglib::field::display(&err.message),
                                   "error");
                 err
             })
