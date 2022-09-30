@@ -104,15 +104,27 @@ impl<'a> MetaTypeName<'a> {
     }
 }
 
+/// Input value metadata
 #[derive(Clone)]
 pub struct MetaInputValue {
+    /// The name of the input value
     pub name: &'static str,
+    /// The description of the input value
     pub description: Option<&'static str>,
+    /// The type of the input value
     pub ty: String,
+    /// The default value of the input value
     pub default_value: Option<String>,
+    /// A function that uses to check if the input value should be exported to
+    /// schemas
     pub visible: Option<MetaVisibleFn>,
+    /// Indicate that an input object is not accessible from a supergraph when
+    /// using Apollo Federation
     pub inaccessible: bool,
+    /// Arbitrary string metadata that will be propagated to the supergraph when
+    /// using Apollo Federation. This attribute is repeatable
     pub tags: &'static [&'static str],
+    /// Indicate that an input obnject is secret
     pub is_secret: bool,
 }
 
@@ -156,22 +168,49 @@ impl Deprecation {
     }
 }
 
+/// Field metadata
 #[derive(Clone)]
 pub struct MetaField {
+    /// The name of the field
     pub name: String,
+    /// The description of the field
     pub description: Option<&'static str>,
+    /// The arguments of the field
     pub args: IndexMap<String, MetaInputValue>,
+    /// The type of the field
     pub ty: String,
+    /// Field deprecation
     pub deprecation: Deprecation,
+    /// Used to create HTTP `Cache-Control` header
     pub cache_control: CacheControl,
+    /// Mark a field as owned by another service. This allows service A to use
+    /// fields from service B while also knowing at runtime the types of that
+    /// field.
     pub external: bool,
+    /// Annotate the required input fieldset from a base type for a resolver. It
+    /// is used to develop a query plan where the required fields may not be
+    /// needed by the client, but the service may need additional information
+    /// from other services.
     pub requires: Option<&'static str>,
+    /// Annotate the expected returned fieldset from a field on a base type that
+    /// is guaranteed to be selectable by the gateway.
     pub provides: Option<&'static str>,
+    /// A function that uses to check if the field should be exported to
+    /// schemas
     pub visible: Option<MetaVisibleFn>,
+    /// Indicate that an object type's field is allowed to be resolved by
+    /// multiple subgraphs
     pub shareable: bool,
+    /// Indicate that an object is not accessible from a supergraph when using
+    /// Apollo Federation
     pub inaccessible: bool,
+    /// Arbitrary string metadata that will be propagated to the supergraph when
+    /// using Apollo Federation. This attribute is repeatable
     pub tags: &'static [&'static str],
+    /// Mark the field as overriding a field currently present on another
+    /// subgraph. It is used to migrate fields between subgraphs.
     pub override_from: Option<&'static str>,
+    /// A constant or function to get the complexity
     pub compute_complexity: Option<ComplexityType>,
 }
 
@@ -210,69 +249,205 @@ impl Display for MetaTypeId {
     }
 }
 
+/// Type metadata
 #[derive(Clone)]
 pub enum MetaType {
+    /// Scalar
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Scalars>
     Scalar {
+        /// The name of the scalar
         name: String,
+        /// the description of the scalar
         description: Option<&'static str>,
+        /// A function that uses to check if the scalar is valid
         is_valid: fn(value: &Value) -> bool,
+        /// A function that uses to check if the scalar should be exported to
+        /// schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that a scalar is not accessible from a supergraph when
+        /// using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// Provide a specification URL for this scalar type, it must link to a
+        /// human-readable specification of the data format, serialization and
+        /// coercion rules for this scalar.
         specified_by_url: Option<&'static str>,
     },
+    /// Object
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Objects>
     Object {
+        /// The name of the object
         name: String,
+        /// The description of the object
         description: Option<&'static str>,
+        /// The fields of the object type
         fields: IndexMap<String, MetaField>,
+        /// Used to create HTTP `Cache-Control` header
         cache_control: CacheControl,
+        /// Add fields to an entity that's defined in another service
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#extends>
         extends: bool,
+        /// Indicates that an object type's field is allowed to be resolved by
+        /// multiple subgraphs (by default in Federation 2, object fields can be
+        /// resolved by only one subgraph).
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#shareable>
         shareable: bool,
+        /// The keys of the object type
+        ///
+        /// Designates an object type as an [entity](https://www.apollographql.com/docs/federation/entities) and specifies
+        /// its key fields (a set of fields that the subgraph can use to
+        /// uniquely identify any instance of the entity).
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#key>
         keys: Option<Vec<String>>,
+        /// A function that uses to check if the object should be exported to
+        /// schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that an object is not accessible from a supergraph when
+        /// using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// Indicates whether it is a subscription object
         is_subscription: bool,
+        /// The Rust typename corresponding to the object
         rust_typename: &'static str,
     },
+    /// Interface
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Interfaces>
     Interface {
+        /// The name of the interface
         name: String,
+        /// The description of the interface
         description: Option<&'static str>,
+        /// The fields of the interface
         fields: IndexMap<String, MetaField>,
+        /// The object types that implement this interface
         possible_types: IndexSet<String>,
+        /// Add fields to an entity that's defined in another service
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#extends>
         extends: bool,
+        /// The keys of the object type
+        ///
+        /// Designates an object type as an [entity](https://www.apollographql.com/docs/federation/entities) and specifies
+        /// its key fields (a set of fields that the subgraph can use to
+        /// uniquely identify any instance of the entity).
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#key>
         keys: Option<Vec<String>>,
+        /// A function that uses to check if the interface should be exported to
+        /// schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that an interface is not accessible from a supergraph when
+        /// using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// The Rust typename corresponding to the interface
         rust_typename: &'static str,
     },
+    /// Union
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Unions>
     Union {
+        /// The name of the interface
         name: String,
+        /// The description of the union
         description: Option<&'static str>,
+        /// The object types that could be the union
         possible_types: IndexSet<String>,
+        /// A function that uses to check if the union should be exported to
+        /// schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that an union is not accessible from a supergraph when
+        /// using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// The Rust typename corresponding to the union
         rust_typename: &'static str,
     },
+    /// Enum
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Enums>
     Enum {
+        /// The name of the enum
         name: String,
+        /// The description of the enum
         description: Option<&'static str>,
+        /// The values of the enum
         enum_values: IndexMap<&'static str, MetaEnumValue>,
+        /// A function that uses to check if the enum should be exported to
+        /// schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that an enum is not accessible from a supergraph when
+        /// using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// The Rust typename corresponding to the enum
         rust_typename: &'static str,
     },
+    /// Input object
+    ///
+    /// Reference: <https://spec.graphql.org/October2021/#sec-Input-Objects>
     InputObject {
+        /// The name of the input object
         name: String,
+        /// The description of the input object
         description: Option<&'static str>,
+        /// The fields of the input object
         input_fields: IndexMap<String, MetaInputValue>,
+        /// A function that uses to check if the input object should be exported
+        /// to schemas
         visible: Option<MetaVisibleFn>,
+        /// Indicate that a input object is not accessible from a supergraph
+        /// when using Apollo Federation
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// Arbitrary string metadata that will be propagated to the supergraph
+        /// when using Apollo Federation. This attribute is repeatable
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
         tags: &'static [&'static str],
+        /// The Rust typename corresponding to the enum
         rust_typename: &'static str,
+        /// Is the oneof input objects
+        ///
+        /// Reference: <https://github.com/graphql/graphql-spec/pull/825>
         oneof: bool,
     },
 }
@@ -413,6 +588,7 @@ pub struct MetaDirective {
     pub visible: Option<MetaVisibleFn>,
 }
 
+/// A type registry for build schemas
 #[derive(Default)]
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
