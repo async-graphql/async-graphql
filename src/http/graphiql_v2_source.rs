@@ -18,6 +18,7 @@ pub struct GraphiQLSource<'a> {
     endpoint: &'a str,
     subscription_endpoint: Option<&'a str>,
     headers: Option<HashMap<&'a str, &'a str>>,
+    title: Option<&'a str>,
 }
 
 impl<'a> GraphiQLSource<'a> {
@@ -53,6 +54,14 @@ impl<'a> GraphiQLSource<'a> {
         }
     }
 
+    /// Sets the html document title.
+    pub fn title(self, title: &'a str) -> GraphiQLSource<'a> {
+        GraphiQLSource {
+            title: Some(title),
+            ..self
+        }
+    }
+
     /// Returns a GraphiQL (v2) HTML page.
     pub fn finish(self) -> String {
         let graphiql_url = format!("'{}'", self.endpoint);
@@ -64,6 +73,7 @@ impl<'a> GraphiQLSource<'a> {
             Some(headers) => serde_json::to_string(&headers).unwrap(),
             None => "undefined".into(),
         };
+        let graphiql_title = self.title.unwrap_or("GraphiQL IDE");
 
         r#"
 <!DOCTYPE html>
@@ -74,7 +84,7 @@ impl<'a> GraphiQLSource<'a> {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="origin">
 
-    <title>GraphiQL IDE</title>
+    <title>%GRAPHIQL_TITLE%</title>
 
     <style>
       body {
@@ -125,6 +135,7 @@ impl<'a> GraphiQLSource<'a> {
         .replace("%GRAPHIQL_URL%", &graphiql_url)
         .replace("%GRAPHIQL_SUBSCRIPTION_URL%", &graphiql_subscription_url)
         .replace("%GRAPHIQL_HEADERS%", &graphiql_headers)
+        .replace("%GRAPHIQL_TITLE%", &graphiql_title)
     }
 }
 
@@ -275,6 +286,7 @@ mod tests {
             .endpoint("http://localhost:8000")
             .subscription_endpoint("ws://localhost:8000/ws")
             .header("Authorization", "Bearer <token>")
+            .title("Awesome GraphiQL IDE Test")
             .finish();
 
         assert_eq!(
@@ -288,7 +300,7 @@ mod tests {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="origin">
 
-    <title>GraphiQL IDE</title>
+    <title>Awesome GraphiQL IDE Test</title>
 
     <style>
       body {

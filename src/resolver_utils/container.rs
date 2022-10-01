@@ -239,6 +239,7 @@ impl<'a> Fields<'a> {
                                         .alias
                                         .as_ref()
                                         .map(|alias| alias.node.as_str()),
+                                    is_for_introspection: ctx_field.is_for_introspection,
                                 };
 
                                 let resolve_fut = root.resolve_field(&ctx_field);
@@ -263,6 +264,7 @@ impl<'a> Fields<'a> {
                                         {
                                             let ctx_directive = ContextBase {
                                                 path_node: ctx_field.path_node,
+                                                is_for_introspection: false,
                                                 item: directive,
                                                 schema_env: ctx_field.schema_env,
                                                 query_env: ctx_field.query_env,

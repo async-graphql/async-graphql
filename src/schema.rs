@@ -609,6 +609,7 @@ where
         // execute
         let ctx = ContextBase {
             path_node: None,
+            is_for_introspection: false,
             item: &env.operation.node.selection_set,
             schema_env: &self.env,
             query_env: &env,

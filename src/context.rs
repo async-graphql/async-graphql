@@ -236,6 +236,8 @@ impl<'a> std::iter::FusedIterator for Parents<'a> {}
 pub struct ContextBase<'a, T> {
     /// The current path node being resolved.
     pub path_node: Option<QueryPathNode<'a>>,
+    /// If `true` means the current field is for introspection.
+    pub(crate) is_for_introspection: bool,
     #[doc(hidden)]
     pub item: T,
     #[doc(hidden)]
@@ -287,6 +289,7 @@ impl QueryEnv {
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
+            is_for_introspection: false,
             item,
             schema_env,
             query_env: self,
@@ -319,6 +322,7 @@ impl<'a, T> ContextBase<'a, T> {
                 parent: self.path_node.as_ref(),
                 segment: QueryPathSegment::Name(&field.node.response_key().node),
             }),
+            is_for_introspection: self.is_for_introspection,
             item: field,
             schema_env: self.schema_env,
             query_env: self.query_env,
@@ -332,6 +336,7 @@ impl<'a, T> ContextBase<'a, T> {
     ) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
         ContextBase {
             path_node: self.path_node,
+            is_for_introspection: self.is_for_introspection,
             item: selection_set,
             schema_env: self.schema_env,
             query_env: self.query_env,
@@ -605,6 +610,7 @@ impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
                 parent: self.path_node.as_ref(),
                 segment: QueryPathSegment::Index(idx),
             }),
+            is_for_introspection: self.is_for_introspection,
             item: self.item,
             schema_env: self.schema_env,
             query_env: self.query_env,
