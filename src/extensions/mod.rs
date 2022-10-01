@@ -125,6 +125,9 @@ pub struct ResolveInfo<'a> {
 
     /// Current field alias
     pub alias: Option<&'a str>,
+
+    /// If `true` means the current field is for introspection.
+    pub is_for_introspection: bool,
 }
 
 type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
