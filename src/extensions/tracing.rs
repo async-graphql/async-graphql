@@ -147,9 +147,9 @@ impl Extension for TracingExtension {
         };
 
         let fut = next.run(ctx, info).inspect_err(|err| {
-            tracinglib::info!(
+            tracinglib::error!(
                 target: "async_graphql::graphql",
-                error = %err.message,
+                error = tracinglib::field::display(&err.message),
                 "error",
             );
         });
