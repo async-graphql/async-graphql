@@ -168,8 +168,8 @@ pub fn is_valid_input_value(
                                 return Some(valid_error(
                                     &path_node,
                                     format!(
-                                        "field \"{}\" of type \"{}\" is required but not provided",
-                                        field.name, object_name,
+                                        r#"field "{}" of type "{}" is required but not provided"#,
+                                        field.name, field.ty,
                                     ),
                                 ));
                             }
