@@ -219,6 +219,13 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Enable field suggestions, default is `true`.
+    #[must_use]
+    pub fn enable_suggestions(mut self, enable: bool) -> Self {
+        self.registry.enable_suggestions = enable;
+        self
+    }
+
     /// Build schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
@@ -381,6 +388,7 @@ where
             enable_federation: false,
             federation_subscription: false,
             ignore_name_conflicts,
+            enable_suggestions: true,
         };
 
         registry.add_directive(MetaDirective {

@@ -601,6 +601,7 @@ pub struct Registry {
     pub enable_federation: bool,
     pub federation_subscription: bool,
     pub ignore_name_conflicts: HashSet<String>,
+    pub enable_suggestions: bool,
 }
 
 impl Registry {
