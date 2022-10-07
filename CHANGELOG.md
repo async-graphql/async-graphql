@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [4.0.15] 2022-10-01
 
 - Skip tracing for introspection queries. [#841](https://github.com/async-graphql/async-graphql/issues/841)
-- Add `SchemaBuilder::enable_suggestions` method to enable or disable field suggestions. [#1101](https://github.com/async-graphql/async-graphql/issues/1101)
+- Add `SchemaBuilder::disable_suggestions` method to disable field suggestions. [#1101](https://github.com/async-graphql/async-graphql/issues/1101)
 
 # [4.0.14] 2022-09-25
 

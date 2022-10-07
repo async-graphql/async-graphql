@@ -219,10 +219,10 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Enable field suggestions, default is `true`.
+    /// Disable field suggestions.
     #[must_use]
-    pub fn enable_suggestions(mut self, enable: bool) -> Self {
-        self.registry.enable_suggestions = enable;
+    pub fn disable_suggestions(mut self) -> Self {
+        self.registry.enable_suggestions = false;
         self
     }
 
