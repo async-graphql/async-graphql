@@ -38,17 +38,21 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
                         "Unknown field \"{}\" on type \"{}\".{}",
                         field.node.name,
                         parent_type.name(),
-                        make_suggestion(
-                            " Did you mean",
-                            parent_type
-                                .fields()
-                                .iter()
-                                .map(|fields| fields.keys())
-                                .flatten()
-                                .map(String::as_str),
-                            &field.node.name.node,
-                        )
-                        .unwrap_or_default()
+                        if ctx.registry.enable_suggestions {
+                            make_suggestion(
+                                " Did you mean",
+                                parent_type
+                                    .fields()
+                                    .iter()
+                                    .map(|fields| fields.keys())
+                                    .flatten()
+                                    .map(String::as_str),
+                                &field.node.name.node,
+                            )
+                            .unwrap_or_default()
+                        } else {
+                            String::new()
+                        }
                     ),
                 );
             }

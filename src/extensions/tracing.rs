@@ -133,22 +133,29 @@ impl Extension for TracingExtension {
         info: ResolveInfo<'_>,
         next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
-        let span = span!(
-            target: "async_graphql::graphql",
-            Level::INFO,
-            "field",
-            path = %info.path_node,
-            parent_type = %info.parent_type,
-            return_type = %info.return_type,
-        );
-        next.run(ctx, info)
-            .map_err(|err| {
-                tracinglib::info!(target: "async_graphql::graphql",
-                                  error = %err.message,
-                                  "error");
-                err
-            })
-            .instrument(span)
-            .await
+        let span = if !info.is_for_introspection {
+            Some(span!(
+                target: "async_graphql::graphql",
+                Level::INFO,
+                "field",
+                path = %info.path_node,
+                parent_type = %info.parent_type,
+                return_type = %info.return_type,
+            ))
+        } else {
+            None
+        };
+
+        let fut = next.run(ctx, info).inspect_err(|err| {
+            tracinglib::info!(
+                target: "async_graphql::graphql",
+                error = %err.message,
+                "error",
+            );
+        });
+        match span {
+            Some(span) => fut.instrument(span).await,
+            None => fut.await,
+        }
     }
 }

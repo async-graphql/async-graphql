@@ -34,7 +34,8 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
             IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly,
         ) {
             if ctx.item.node.name.node == "__schema" {
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let mut ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                ctx_obj.is_for_introspection = true;
                 let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
                 return OutputType::resolve(
                     &__Schema::new(&ctx.schema_env.registry, &visible_types),
@@ -45,7 +46,8 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 .map(Some);
             } else if ctx.item.node.name.node == "__type" {
                 let (_, type_name) = ctx.param_value::<String>("name", None)?;
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let mut ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                ctx_obj.is_for_introspection = true;
                 let visible_types = ctx.schema_env.registry.find_visible_types(ctx);
                 return OutputType::resolve(
                     &ctx.schema_env
@@ -81,7 +83,8 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 .await?;
                 return Ok(Some(Value::List(res)));
             } else if ctx.item.node.name.node == "_service" {
-                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                let mut ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                ctx_obj.is_for_introspection = true;
                 return OutputType::resolve(
                     &Service {
                         sdl: Some(

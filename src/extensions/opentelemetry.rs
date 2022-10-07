@@ -168,24 +168,35 @@ where
         info: ResolveInfo<'_>,
         next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
-        let attributes = vec![
-            KEY_PARENT_TYPE.string(info.parent_type.to_string()),
-            KEY_RETURN_TYPE.string(info.return_type.to_string()),
-        ];
-        let span = self
-            .tracer
-            .span_builder(info.path_node.to_string())
-            .with_kind(SpanKind::Server)
-            .with_attributes(attributes)
-            .start(&*self.tracer);
-        next.run(ctx, info)
-            .with_context(OpenTelemetryContext::current_with_span(span))
-            .inspect_err(|err| {
-                let current_cx = OpenTelemetryContext::current();
-                current_cx
-                    .span()
-                    .add_event("error".to_string(), vec![KEY_ERROR.string(err.to_string())]);
-            })
-            .await
+        let span = if !info.is_for_introspection {
+            let attributes = vec![
+                KEY_PARENT_TYPE.string(info.parent_type.to_string()),
+                KEY_RETURN_TYPE.string(info.return_type.to_string()),
+            ];
+            Some(
+                self.tracer
+                    .span_builder(info.path_node.to_string())
+                    .with_kind(SpanKind::Server)
+                    .with_attributes(attributes)
+                    .start(&*self.tracer),
+            )
+        } else {
+            None
+        };
+
+        let fut = next.run(ctx, info).inspect_err(|err| {
+            let current_cx = OpenTelemetryContext::current();
+            current_cx
+                .span()
+                .add_event("error".to_string(), vec![KEY_ERROR.string(err.to_string())]);
+        });
+
+        match span {
+            Some(span) => {
+                fut.with_context(OpenTelemetryContext::current_with_span(span))
+                    .await
+            }
+            None => fut.await,
+        }
     }
 }

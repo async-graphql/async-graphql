@@ -79,7 +79,11 @@ impl<'a> Visitor<'a> for KnownArgumentNames<'a> {
                                 name,
                                 field_name,
                                 type_name,
-                                self.get_suggestion(name.node.as_str())
+                                if ctx.registry.enable_suggestions {
+                                    self.get_suggestion(name.node.as_str())
+                                } else {
+                                    String::new()
+                                }
                             ),
                         );
                     }

@@ -219,6 +219,13 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Disable field suggestions.
+    #[must_use]
+    pub fn disable_suggestions(mut self) -> Self {
+        self.registry.enable_suggestions = false;
+        self
+    }
+
     /// Build schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
@@ -381,6 +388,7 @@ where
             enable_federation: false,
             federation_subscription: false,
             ignore_name_conflicts,
+            enable_suggestions: true,
         };
 
         registry.add_directive(MetaDirective {
@@ -609,6 +617,7 @@ where
         // execute
         let ctx = ContextBase {
             path_node: None,
+            is_for_introspection: false,
             item: &env.operation.node.selection_set,
             schema_env: &self.env,
             query_env: &env,
