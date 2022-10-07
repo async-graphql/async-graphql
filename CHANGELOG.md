@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [4.0.15] 2022-10-07
 
+- Dynamic Document Title for GraphiQL v2 and GraphQL Playground [#1099](https://github.com/async-graphql/async-graphql/pull/1099)
 - Skip tracing for introspection queries. [#841](https://github.com/async-graphql/async-graphql/issues/841)
 - Add `SchemaBuilder::disable_suggestions` method to disable field suggestions. [#1101](https://github.com/async-graphql/async-graphql/issues/1101)
 
