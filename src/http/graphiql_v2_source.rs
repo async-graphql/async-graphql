@@ -11,6 +11,7 @@ use std::collections::HashMap;
 ///     .endpoint("http://localhost:8000")
 ///     .subscription_endpoint("ws://localhost:8000/ws")
 ///     .header("Authorization", "Bearer <token>")
+///     .credentials("include")
 ///     .finish();
 /// ```
 #[derive(Default)]
@@ -19,6 +20,7 @@ pub struct GraphiQLSource<'a> {
     subscription_endpoint: Option<&'a str>,
     headers: Option<HashMap<&'a str, &'a str>>,
     title: Option<&'a str>,
+    credentials: Option<&'a str>,
 }
 
 impl<'a> GraphiQLSource<'a> {
@@ -62,6 +64,14 @@ impl<'a> GraphiQLSource<'a> {
         }
     }
 
+    /// Sets credentials option for the fetch requests.
+    pub fn credentials(self, credentials: &'a str) -> GraphiQLSource<'a> {
+        GraphiQLSource {
+            credentials: Some(credentials),
+            ..self
+        }
+    }
+
     /// Returns a GraphiQL (v2) HTML page.
     pub fn finish(self) -> String {
         let graphiql_url = format!("'{}'", self.endpoint);
@@ -74,6 +84,7 @@ impl<'a> GraphiQLSource<'a> {
             None => "undefined".into(),
         };
         let graphiql_title = self.title.unwrap_or("GraphiQL IDE");
+        let graphiql_credentials = self.credentials.unwrap_or("same-origin");
 
         r#"
 <!DOCTYPE html>
@@ -117,6 +128,8 @@ impl<'a> GraphiQLSource<'a> {
       type="application/javascript"
     ></script>
     <script>
+    customFetch = () => fetch({ ...arguments, credentials: %CREDENTIALS% })
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
@@ -136,6 +149,7 @@ impl<'a> GraphiQLSource<'a> {
         .replace("%GRAPHIQL_SUBSCRIPTION_URL%", &graphiql_subscription_url)
         .replace("%GRAPHIQL_HEADERS%", &graphiql_headers)
         .replace("%GRAPHIQL_TITLE%", &graphiql_title)
+        .replace("%CREDENTIALS%", &graphiql_credentials)
     }
 }
 
