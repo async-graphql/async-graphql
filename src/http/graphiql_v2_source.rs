@@ -130,7 +130,7 @@ impl<'a> GraphiQLSource<'a> {
     <script>
     customFetch = (...args) => {
       console.log(args);
-      fetch({ ...args, credentials: "%CREDENTIALS%" })
+      return fetch(...args)
     }
 
       ReactDOM.render(
