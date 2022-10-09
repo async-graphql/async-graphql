@@ -128,7 +128,7 @@ impl<'a> GraphiQLSource<'a> {
       type="application/javascript"
     ></script>
     <script>
-    customFetch = () => fetch({ ...arguments, credentials: %CREDENTIALS% })
+    customFetch = (...args) => fetch({ ...args, credentials: %CREDENTIALS% })
 
       ReactDOM.render(
         React.createElement(GraphiQL, {
