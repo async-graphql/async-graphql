@@ -152,7 +152,7 @@ impl<'a> GraphiQLSource<'a> {
         .replace("%GRAPHIQL_SUBSCRIPTION_URL%", &graphiql_subscription_url)
         .replace("%GRAPHIQL_HEADERS%", &graphiql_headers)
         .replace("%GRAPHIQL_TITLE%", &graphiql_title)
-        .replace("%CREDENTIALS%", &graphiql_credentials)
+        .replace("%GRAPHIQL_CREDENTIALS%", &graphiql_credentials)
     }
 }
 
