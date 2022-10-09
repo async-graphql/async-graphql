@@ -128,17 +128,17 @@ impl<'a> GraphiQLSource<'a> {
       type="application/javascript"
     ></script>
     <script>
-    customFetch = (url, opts = {}) => {
-      return fetch(url, {...opts, credentials: '%GRAPHIQL_CREDENTIALS%'})
-    }
+      customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: '%GRAPHIQL_CREDENTIALS%'})
+      }
 
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: %GRAPHIQL_URL%,
+            fetch: customFetch,
             subscriptionUrl: %GRAPHIQL_SUBSCRIPTION_URL%,
             headers: %GRAPHIQL_HEADERS%,
-            fetch: customFetch,
           }),
           defaultEditorToolsVisibility: true,
         }),
@@ -210,10 +210,15 @@ mod tests {
       type="application/javascript"
     ></script>
     <script>
+      customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'same-origin'})
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: 'http://localhost:8000',
+            fetch: customFetch,
             subscriptionUrl: undefined,
             headers: undefined,
           }),
@@ -279,10 +284,15 @@ mod tests {
       type="application/javascript"
     ></script>
     <script>
+      customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'same-origin'})
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: 'http://localhost:8000',
+            fetch: customFetch,
             subscriptionUrl: 'ws://localhost:8000/ws',
             headers: undefined,
           }),
@@ -304,6 +314,7 @@ mod tests {
             .subscription_endpoint("ws://localhost:8000/ws")
             .header("Authorization", "Bearer <token>")
             .title("Awesome GraphiQL IDE Test")
+            .credentials("include")
             .finish();
 
         assert_eq!(
@@ -350,10 +361,15 @@ mod tests {
       type="application/javascript"
     ></script>
     <script>
+      customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'include'})
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: 'http://localhost:8000',
+            fetch: customFetch,
             subscriptionUrl: 'ws://localhost:8000/ws',
             headers: {"Authorization":"Bearer <token>"},
           }),
