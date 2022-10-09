@@ -136,6 +136,7 @@ impl<'a> GraphiQLSource<'a> {
             url: %GRAPHIQL_URL%,
             subscriptionUrl: %GRAPHIQL_SUBSCRIPTION_URL%,
             headers: %GRAPHIQL_HEADERS%,
+            fetch: customFetch,
           }),
           defaultEditorToolsVisibility: true,
         }),
