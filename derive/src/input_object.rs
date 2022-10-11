@@ -42,11 +42,17 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         });
     }
 
-    let gql_typename = object_args
-        .input_name
-        .clone()
-        .or_else(|| object_args.name.clone())
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !object_args.name_type {
+        let name = object_args
+            .input_name
+            .clone()
+            .or_else(|| object_args.name.clone())
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -233,12 +239,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 type RawValueType = Self;
 
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                    #gql_typename
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         input_fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

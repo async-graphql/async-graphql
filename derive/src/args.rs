@@ -448,6 +448,8 @@ pub struct InputObject {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub input_name: Option<String>,
     #[darling(default)]
     pub rename_fields: Option<RenameRule>,
