@@ -580,7 +580,7 @@ impl MetaType {
 }
 
 pub struct MetaDirective {
-    pub name: &'static str,
+    pub name: String,
     pub description: Option<&'static str>,
     pub locations: Vec<__DirectiveLocation>,
     pub args: IndexMap<String, MetaInputValue>,

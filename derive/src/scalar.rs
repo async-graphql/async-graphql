@@ -13,10 +13,15 @@ pub fn generate(
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(scalar_args.internal);
     let self_name = get_type_path_and_name(item_impl.self_ty.as_ref())?.1;
-    let gql_typename = scalar_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+    let gql_typename = if !scalar_args.name_type {
+        let name = scalar_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = if scalar_args.use_type_description {
         quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
@@ -45,12 +50,12 @@ pub fn generate(
             type RawValueType = Self;
 
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                    name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
                     visible: #visible,
@@ -77,12 +82,12 @@ pub fn generate(
         #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_output_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                    name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
                     is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
                     visible: #visible,

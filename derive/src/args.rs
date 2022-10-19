@@ -338,6 +338,8 @@ pub struct Enum {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub rename_items: Option<RenameRule>,
     #[darling(default)]
     pub remote: Option<String>,
@@ -380,6 +382,8 @@ pub struct Union {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -500,6 +504,8 @@ pub struct OneofObject {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub visible: Option<Visible>,
@@ -582,6 +588,8 @@ pub struct Interface {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub rename_args: Option<RenameRule>,
@@ -602,6 +610,8 @@ pub struct Interface {
 pub struct Scalar {
     pub internal: bool,
     pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub inaccessible: bool,
@@ -615,6 +625,8 @@ pub struct Scalar {
 pub struct Subscription {
     pub internal: bool,
     pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub use_type_description: bool,
@@ -667,6 +679,8 @@ pub struct MergedObject {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub name_type: bool,
+    #[darling(default)]
     pub cache_control: CacheControl,
     #[darling(default)]
     pub extends: bool,
@@ -699,6 +713,8 @@ pub struct MergedSubscription {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -835,7 +851,6 @@ pub struct NewType {
 #[darling(default)]
 pub struct ComplexObject {
     pub internal: bool,
-    pub name: Option<String>,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub guard: Option<SpannedValue<String>>,
@@ -869,6 +884,8 @@ pub struct ComplexObjectField {
 pub struct Directive {
     pub internal: bool,
     pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
     pub visible: Option<Visible>,
     pub repeatable: bool,
     pub rename_args: Option<RenameRule>,

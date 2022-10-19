@@ -17,10 +17,15 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
     let tags = &object_args.tags;
-    let gql_typename = object_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !object_args.name_type {
+        let name = object_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -83,7 +88,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
@@ -101,7 +106,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                     }
 
                     #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         fields,
                         cache_control,

@@ -4,12 +4,13 @@ Define a merged subscription with multiple subscription types.
 
 # Macro attributes
 
-| Attribute | description                                                                                                                                     | Type   | Optional |
-|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
-| name      | Object name                                                                                                                                     | string | Y        |
-| extends   | Add fields to an entity that's defined in another service                                                                                       | bool   | Y        |
-| visible   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
-| visible   | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
+| Attribute | description                                                                                                                                                 | Type   | Optional |
+|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name      | Object name                                                                                                                                                 | string | Y        |
+| name_type | If `true`, the object name will be specified from [`async_graphql::TypeName`](https://docs.rs/async-graphql/latest/async_graphql/trait.TypeName.html) trait | bool   | Y        |
+| extends   | Add fields to an entity that's defined in another service                                                                                                   | bool   | Y        |
+| visible   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*             | bool   | Y        |
+| visible   | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                     | string | Y        |
 
 # Examples
 

@@ -12,7 +12,6 @@ some simple fields, and use the `ComplexObject` macro to define some other field
 
 | Attribute     | description                                                                                                                                                                         | Type   | Optional |
 |---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
-| name          | Object name                                                                                                                                                                         | string | Y        |
 | rename_fields | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE".    | string | Y        |
 | rename_args   | Rename all the arguments according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE". | string | Y        |
 | guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                             | string | Y        |

@@ -60,7 +60,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     depth: Option<usize>,
     recursive_depth: usize,
     extensions: Vec<Box<dyn ExtensionFactory>>,
-    custom_directives: HashMap<&'static str, Box<dyn CustomDirectiveFactory>>,
+    custom_directives: HashMap<String, Box<dyn CustomDirectiveFactory>>,
 }
 
 impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription> {
@@ -211,7 +211,10 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 
         if name == "skip"
             || name == "include"
-            || self.custom_directives.insert(name, instance).is_some()
+            || self
+                .custom_directives
+                .insert(name.clone().into(), instance)
+                .is_some()
         {
             panic!("Directive `{}` already exists", name);
         }
@@ -255,7 +258,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 pub struct SchemaEnvInner {
     pub registry: Registry,
     pub data: Data,
-    pub custom_directives: HashMap<&'static str, Box<dyn CustomDirectiveFactory>>,
+    pub custom_directives: HashMap<String, Box<dyn CustomDirectiveFactory>>,
 }
 
 #[doc(hidden)]
@@ -392,7 +395,7 @@ where
         };
 
         registry.add_directive(MetaDirective {
-            name: "include",
+            name: "include".into(),
             description: Some("Directs the executor to include this field or fragment only when the `if` argument is true."),
             locations: vec![
                 __DirectiveLocation::FIELD,
@@ -418,7 +421,7 @@ where
         });
 
         registry.add_directive(MetaDirective {
-            name: "skip",
+            name: "skip".into(),
             description: Some("Directs the executor to skip this field or fragment when the `if` argument is true."),
             locations: vec![
                 __DirectiveLocation::FIELD,

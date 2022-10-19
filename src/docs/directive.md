@@ -7,6 +7,7 @@ Define a directive for query.
 | Attribute   | description                                                                                                                                                                         | Type   | Optional |
 |-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
 | name        | Object name                                                                                                                                                                         | string | Y        |
+| name_type   | If `true`, the directive name will be specified from [`async_graphql::TypeName`](https://docs.rs/async-graphql/latest/async_graphql/trait.TypeName.html) trait                      | bool   | Y        |
 | visible     | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                     | bool   | Y        |
 | visible     | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                             | string | Y        |
 | repeatable  | It means that the directive can be used multiple times in the same location.                                                                                                        | bool   | Y        |

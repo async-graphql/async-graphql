@@ -16,10 +16,15 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         _ => return Err(Error::new_spanned(ident, "Enum can only be applied to an enum.").into()),
     };
 
-    let gql_typename = enum_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !enum_args.name_type {
+        let name = enum_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let inaccessible = enum_args.inaccessible;
     let tags = &enum_args.tags;
@@ -133,13 +138,13 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         #[allow(clippy::all, clippy::pedantic)]
         impl #ident {
             fn __type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             fn __create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::Enum, |registry| {
                     #crate_name::registry::MetaType::Enum {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         enum_values: {
                             let mut enum_items = #crate_name::indexmap::IndexMap::new();

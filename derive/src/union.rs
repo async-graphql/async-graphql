@@ -23,10 +23,15 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let mut enum_names = Vec::new();
     let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
-    let gql_typename = union_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !union_args.name_type {
+        let name = union_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let inaccessible = union_args.inaccessible;
     let tags = &union_args.tags;
@@ -173,7 +178,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-               ::std::borrow::Cow::Borrowed(#gql_typename)
+               #gql_typename
             }
 
             fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
@@ -187,7 +192,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Union {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         possible_types: {
                             let mut possible_types = #crate_name::indexmap::IndexSet::new();
