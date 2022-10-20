@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.16] 2022-10-20
+
+- Add credentials to GraphiQL 2 [#1105](https://github.com/async-graphql/async-graphql/pull/1105)
+- Add TypeName support for InputObject [#1110](https://github.com/async-graphql/async-graphql/pull/1110)
+- Fix error message [#1058](https://github.com/async-graphql/async-graphql/pull/1058)
+- Add TypeName support for Enum, Union, OneofInputObject, Subscription, MergedObject, MergedSubscription, Scalar, Interface, Directive
+- Fixes [#1052](https://github.com/async-graphql/async-graphql/issues/1052)
+
 # [4.0.15] 2022-10-07
 
 - Dynamic Document Title for GraphiQL v2 and GraphQL Playground [#1099](https://github.com/async-graphql/async-graphql/pull/1099)
