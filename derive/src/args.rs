@@ -465,6 +465,8 @@ pub struct InputObject {
     pub tags: Vec<String>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    #[darling(default)]
+    pub validator: Option<SpannedValue<String>>,
     // for SimpleObject
     #[darling(default)]
     pub complex: bool,

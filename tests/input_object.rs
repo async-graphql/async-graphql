@@ -694,3 +694,58 @@ pub async fn test_input_object_process_with() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_input_object_validator() {
+    fn check_my_object(obj: &MyInput) -> Result<(), &'static str> {
+        if obj.a < 100 || obj.b < 100 {
+            Err("invalid MyInput")
+        } else {
+            Ok(())
+        }
+    }
+
+    #[derive(InputObject)]
+    #[graphql(validator = "check_my_object")]
+    struct MyInput {
+        a: i32,
+        b: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn a(&self, input: MyInput) -> i32 {
+            input.a + input.b
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema
+            .execute("{ a(input: { a: 200, b: 300 }) }")
+            .await
+            .data,
+        value!({ "a": 500 })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ a(input: { a: 100, b: 25 }) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "MyInput": invalid MyInput"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 12
+            }],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+}

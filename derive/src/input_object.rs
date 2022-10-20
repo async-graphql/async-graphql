@@ -1,7 +1,7 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error};
+use syn::{ext::IdentExt, Error, Expr};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget},
@@ -232,6 +232,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
+    let obj_validator = if let Some(validator) = &object_args.validator {
+        let expr: Expr = syn::parse_str(validator)
+            .map_err(|err| Error::new(validator.span(), err.to_string()))?;
+        Some(
+            quote! { ::std::result::Result::map_err(#crate_name::CustomValidator::check(&#expr, &obj), #crate_name::InputValueError::custom)?; },
+        )
+    } else {
+        None
+    };
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -262,7 +272,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                         #(#get_fields)*
-                        ::std::result::Result::Ok(Self { #(#fields),* })
+                        let obj = Self { #(#fields),* };
+                        #obj_validator
+                        ::std::result::Result::Ok(obj)
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }
@@ -311,7 +323,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 fn __internal_parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> where Self: #crate_name::InputType {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                         #(#get_fields)*
-                        ::std::result::Result::Ok(Self { #(#fields),* })
+                        let obj = Self { #(#fields),* };
+                        #obj_validator
+                        ::std::result::Result::Ok(obj)
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }

@@ -510,6 +510,55 @@ pub async fn test_custom_validator() {
 }
 
 #[tokio::test]
+pub async fn test_custom_validator_with_fn() {
+    fn check_100(value: &i32) -> Result<(), String> {
+        if *value == 100 {
+            Ok(())
+        } else {
+            Err(format!("expect 100, actual {}", value))
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self, #[graphql(validator(custom = "check_100"))] n: i32) -> i32 {
+            n
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value(n: 100) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 100 })
+    );
+
+    assert_eq!(
+        schema
+            .execute("{ value(n: 11) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": expect 100, actual 11"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 12
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: None
+        }]
+    );
+}
+
+#[tokio::test]
 pub async fn test_list_validator() {
     struct Query;
 

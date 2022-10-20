@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix error message [#1058](https://github.com/async-graphql/async-graphql/pull/1058)
 - Add TypeName support for Enum, Union, OneofInputObject, Subscription, MergedObject, MergedSubscription, Scalar, Interface, Directive
 - Fixes [#1052](https://github.com/async-graphql/async-graphql/issues/1052)
+- Implement `CustomValidator<T>` for `F: Fn(&T) -> Result<(), E: Into<String>>`
+- Add `validator` attribute to `InputObject` macro [#1072](https://github.com/async-graphql/async-graphql/issues/1072)
 
 # [4.0.15] 2022-10-07
 
