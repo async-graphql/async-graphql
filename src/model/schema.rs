@@ -101,7 +101,7 @@ impl<'a> __Schema<'a> {
                 directive,
             })
             .collect();
-        directives.sort_by(|a, b| a.directive.name.cmp(b.directive.name));
+        directives.sort_by(|a, b| a.directive.name.cmp(&b.directive.name));
         directives
     }
 }

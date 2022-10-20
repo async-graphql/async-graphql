@@ -18,10 +18,15 @@ pub fn generate(
     let crate_name = get_crate_name(directive_args.internal);
     let ident = &item_fn.sig.ident;
     let vis = &item_fn.vis;
-    let directive_name = directive_args
-        .name
-        .clone()
-        .unwrap_or_else(|| item_fn.sig.ident.to_string());
+    let directive_name = if !directive_args.name_type {
+        let name = directive_args
+            .name
+            .clone()
+            .unwrap_or_else(|| item_fn.sig.ident.to_string());
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
     let desc = get_rustdoc(&item_fn.attrs)?
         .map(|s| quote!(::std::option::Option::Some(#s)))
         .unwrap_or_else(|| quote!(::std::option::Option::None));
@@ -139,13 +144,13 @@ pub fn generate(
 
         #[#crate_name::async_trait::async_trait]
         impl #crate_name::CustomDirectiveFactory for #ident {
-            fn name(&self) -> &'static str {
+            fn name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #directive_name
             }
 
             fn register(&self, registry: &mut #crate_name::registry::Registry) {
                 let meta = #crate_name::registry::MetaDirective {
-                    name: #directive_name,
+                    name: ::std::borrow::Cow::into_owned(#directive_name),
                     description: #desc,
                     locations: vec![#(#locations),*],
                     args: {

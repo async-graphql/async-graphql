@@ -4,8 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [4.0.16] 2022-10-20
+
+- Add credentials to GraphiQL 2 [#1105](https://github.com/async-graphql/async-graphql/pull/1105)
+- Add TypeName support for InputObject [#1110](https://github.com/async-graphql/async-graphql/pull/1110)
+- Fix error message [#1058](https://github.com/async-graphql/async-graphql/pull/1058)
+- Add TypeName support for Enum, Union, OneofInputObject, Subscription, MergedObject, MergedSubscription, Scalar, Interface, Directive
+- Fixes [#1052](https://github.com/async-graphql/async-graphql/issues/1052)
+- Implement `CustomValidator<T>` for `F: Fn(&T) -> Result<(), E: Into<String>>`
+- Add `validator` attribute to `InputObject` macro [#1072](https://github.com/async-graphql/async-graphql/issues/1072)
+
 # [4.0.15] 2022-10-07
 
+- Dynamic Document Title for GraphiQL v2 and GraphQL Playground [#1099](https://github.com/async-graphql/async-graphql/pull/1099)
 - Skip tracing for introspection queries. [#841](https://github.com/async-graphql/async-graphql/issues/841)
 - Add `SchemaBuilder::disable_suggestions` method to disable field suggestions. [#1101](https://github.com/async-graphql/async-graphql/issues/1101)
 

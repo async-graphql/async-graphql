@@ -83,7 +83,7 @@ pub struct __Directive<'a> {
 impl<'a> __Directive<'a> {
     #[inline]
     async fn name(&self) -> &str {
-        self.directive.name
+        &self.directive.name
     }
 
     #[inline]

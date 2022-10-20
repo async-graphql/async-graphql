@@ -3,6 +3,7 @@ use std::{
     convert::Infallible,
     fmt::Display,
     num::{ParseFloatError, ParseIntError},
+    ops::{Deref, DerefMut},
     str::ParseBoolError,
 };
 
@@ -116,7 +117,23 @@ impl CursorType for ID {
 }
 
 /// A opaque cursor that encode/decode the value to base64
-pub struct OpaqueCursor<T>(T);
+pub struct OpaqueCursor<T>(pub T);
+
+impl<T> Deref for OpaqueCursor<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for OpaqueCursor<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl<T> CursorType for OpaqueCursor<T>
 where

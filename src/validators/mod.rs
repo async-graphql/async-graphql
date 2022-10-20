@@ -38,3 +38,15 @@ pub trait CustomValidator<T: InputType> {
     /// Check the value is valid.
     fn check(&self, value: &T) -> Result<(), String>;
 }
+
+impl<T, F, E> CustomValidator<T> for F
+where
+    T: InputType,
+    E: Into<String>,
+    F: Fn(&T) -> Result<(), E>,
+{
+    #[inline]
+    fn check(&self, value: &T) -> Result<(), String> {
+        (self)(value).map_err(Into::into)
+    }
+}

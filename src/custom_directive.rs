@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     extensions::ResolveFut, parser::types::Directive, registry::Registry, Context,
     ContextDirective, ServerResult, Value,
@@ -5,7 +7,7 @@ use crate::{
 
 #[doc(hidden)]
 pub trait CustomDirectiveFactory: Send + Sync + 'static {
-    fn name(&self) -> &'static str;
+    fn name(&self) -> Cow<'static, str>;
 
     fn register(&self, registry: &mut Registry);
 

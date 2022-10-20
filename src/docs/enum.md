@@ -7,6 +7,7 @@ Define a GraphQL enum
 | Attribute    | description                                                                                                                                                                      | Type   | Optional |
 |--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
 | name         | Enum name                                                                                                                                                                        | string | Y        |
+| name_type    | If `true`, the enum name will be specified from [`async_graphql::TypeName`](https://docs.rs/async-graphql/latest/async_graphql/trait.TypeName.html) trait                        | bool   | Y        |
 | rename_items | Rename all the fields according to the given case convention. The possible values are "lowercase", "UPPERCASE", "PascalCase", "camelCase", "snake_case", "SCREAMING_SNAKE_CASE". | string | Y        |
 | remote       | Derive a remote enum                                                                                                                                                             | string | Y        |
 | visible      | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                  | bool   | Y        |

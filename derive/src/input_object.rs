@@ -1,7 +1,7 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error};
+use syn::{ext::IdentExt, Error, Expr};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget},
@@ -42,11 +42,17 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         });
     }
 
-    let gql_typename = object_args
-        .input_name
-        .clone()
-        .or_else(|| object_args.name.clone())
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !object_args.name_type {
+        let name = object_args
+            .input_name
+            .clone()
+            .or_else(|| object_args.name.clone())
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -226,6 +232,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
+    let obj_validator = if let Some(validator) = &object_args.validator {
+        let expr: Expr = syn::parse_str(validator)
+            .map_err(|err| Error::new(validator.span(), err.to_string()))?;
+        Some(
+            quote! { ::std::result::Result::map_err(#crate_name::CustomValidator::check(&#expr, &obj), #crate_name::InputValueError::custom)?; },
+        )
+    } else {
+        None
+    };
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -233,12 +249,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 type RawValueType = Self;
 
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    ::std::borrow::Cow::Borrowed(#gql_typename)
+                    #gql_typename
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         input_fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();
@@ -256,7 +272,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                         #(#get_fields)*
-                        ::std::result::Result::Ok(Self { #(#fields),* })
+                        let obj = Self { #(#fields),* };
+                        #obj_validator
+                        ::std::result::Result::Ok(obj)
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }
@@ -305,7 +323,9 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 fn __internal_parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> where Self: #crate_name::InputType {
                     if let ::std::option::Option::Some(#crate_name::Value::Object(obj)) = value {
                         #(#get_fields)*
-                        ::std::result::Result::Ok(Self { #(#fields),* })
+                        let obj = Self { #(#fields),* };
+                        #obj_validator
+                        ::std::result::Result::Ok(obj)
                     } else {
                         ::std::result::Result::Err(#crate_name::InputValueError::expected_type(value.unwrap_or_default()))
                     }

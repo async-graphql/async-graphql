@@ -33,10 +33,15 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut type_into_impls = Vec::new();
     let inaccessible = interface_args.inaccessible;
     let tags = &interface_args.tags;
-    let gql_typename = interface_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+    let gql_typename = if !interface_args.name_type {
+        let name = interface_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = get_rustdoc(&interface_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(#s) })
@@ -97,7 +102,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
             registry_types.push(quote! {
                 <#p as #crate_name::OutputType>::create_type_info(registry);
-                registry.add_implements(&<#p as #crate_name::OutputType>::type_name(), #gql_typename);
+                registry.add_implements(&<#p as #crate_name::OutputType>::type_name(), ::std::convert::AsRef::as_ref(&#gql_typename));
             });
 
             possible_types.push(quote! {
@@ -350,7 +355,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #[#crate_name::async_trait::async_trait]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
@@ -362,7 +367,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Interface {
-                        name: ::std::string::ToString::to_string(#gql_typename),
+                        name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
                         fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

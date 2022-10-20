@@ -25,10 +25,15 @@ pub fn generate(
     let where_clause = &item_impl.generics.where_clause;
     let extends = subscription_args.extends;
 
-    let gql_typename = subscription_args
-        .name
-        .clone()
-        .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+    let gql_typename = if !subscription_args.name_type {
+        let name = subscription_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+        quote!(::std::borrow::Cow::Borrowed(#name))
+    } else {
+        quote!(<Self as #crate_name::TypeName>::type_name())
+    };
 
     let desc = if subscription_args.use_type_description {
         quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
@@ -329,10 +334,11 @@ pub fn generate(
                             );
 
                             let mut execute_fut = async {
+                                let parent_type = #gql_typename;
                                 #[allow(bare_trait_objects)]
                                 let ri = #crate_name::extensions::ResolveInfo {
                                     path_node: ctx_selection_set.path_node.as_ref().unwrap(),
-                                    parent_type: #gql_typename,
+                                    parent_type: &parent_type,
                                     return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
                                     name: field.node.name.node.as_str(),
                                     alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
@@ -398,13 +404,13 @@ pub fn generate(
         #[allow(unused_braces, unused_variables)]
         impl #generics #crate_name::SubscriptionType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                ::std::borrow::Cow::Borrowed(#gql_typename)
+                #gql_typename
             }
 
             #[allow(bare_trait_objects)]
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_subscription_type::<Self, _>(|registry| #crate_name::registry::MetaType::Object {
-                    name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                    name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
                     fields: {
                         let mut fields = #crate_name::indexmap::IndexMap::new();
