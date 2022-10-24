@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.7] 2023-03-02
+
+- Add support for `input_name_suffix` in `#[graphql(...)]` attribute [#1117](https://github.com/async-graphql/async-graphql/issues/1117)
+
 # [5.0.6] 2023-02-11
 
 - docs: Tweak dataloader example and link to full example [#1194](https://github.com/async-graphql/async-graphql/pull/1194)
