@@ -440,3 +440,46 @@ pub fn test_macro_generated_union() {
 
     let _ = MyEnum::Val(IntObj { val: 1 });
 }
+
+#[tokio::test]
+pub async fn test_union_with_oneof_object() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjInput")]
+    struct MyObj {
+        id: i32,
+        title: String,
+    }
+
+    #[derive(OneofObject, Union)]
+    #[graphql(input_name = "NodeInput")]
+    enum Node {
+        MyObj(MyObj),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node(&self, input: Node) -> Node {
+            input
+        }
+    }
+
+    let query = r#"{
+            node(input: { myObj: { id: 10, title: "abc" } }) {
+                ... on MyObj {
+                    id title
+                }
+            }
+        }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "node": {
+                "id": 10,
+                "title": "abc",
+            }
+        })
+    );
+}

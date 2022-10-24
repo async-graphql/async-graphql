@@ -390,6 +390,9 @@ pub struct Union {
     pub inaccessible: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+    // for OneofObject
+    #[darling(default)]
+    pub input_name: Option<String>,
 }
 
 #[derive(FromVariant)]
@@ -505,6 +508,8 @@ pub struct OneofObject {
     pub internal: bool,
     #[darling(default)]
     pub name: Option<String>,
+    #[darling(default)]
+    pub input_name: Option<String>,
     #[darling(default)]
     pub name_type: bool,
     #[darling(default)]

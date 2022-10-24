@@ -20,8 +20,9 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
     let tags = &object_args.tags;
     let gql_typename = if !object_args.name_type {
         let name = object_args
-            .name
+            .input_name
             .clone()
+            .or_else(|| object_args.name.clone())
             .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
         quote!(::std::borrow::Cow::Borrowed(#name))
     } else {
