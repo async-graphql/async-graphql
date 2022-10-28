@@ -20,7 +20,7 @@ use crate::{Error, ObjectType, OutputType, Result, SimpleObject};
 pub struct EmptyFields;
 
 /// Used to specify the edge name.
-pub trait EdgeNameType: Send + Sync {
+pub trait EdgeNameType {
     /// Returns the edge type name.
     fn type_name<T: OutputType>() -> String;
 }
@@ -35,7 +35,7 @@ impl EdgeNameType for DefaultEdgeName {
 }
 
 /// Used to specify the connection name.
-pub trait ConnectionNameType: Send + Sync {
+pub trait ConnectionNameType {
     /// Returns the connection type name.
     fn type_name<T: OutputType>() -> String;
 }
@@ -198,8 +198,8 @@ pub async fn query<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields, F
 where
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
-    Cursor: CursorType + Send + Sync,
-    <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
+    Cursor: CursorType,
+    <Cursor as CursorType>::Error: Display + 'static,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
@@ -222,7 +222,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// 
+///
 /// use async_graphql::*;
 /// use async_graphql::types::connection::*;
 ///
@@ -310,8 +310,8 @@ pub async fn query_with<Cursor, T, F, R, E>(
     f: F,
 ) -> Result<T>
 where
-    Cursor: CursorType + Send + Sync,
-    <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
+    Cursor: CursorType,
+    <Cursor as CursorType>::Error: Display + 'static,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
     R: Future<Output = Result<T, E>>,
     E: Into<Error>,

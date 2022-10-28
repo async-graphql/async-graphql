@@ -4,11 +4,11 @@ use async_graphql_parser::types::Field;
 
 use crate::{registry, ContextSelectionSet, OutputType, Positioned, ServerResult, Value};
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<'a, T> OutputType for Cow<'a, T>
 where
     T: OutputType + ToOwned + ?Sized,
-    <T as ToOwned>::Owned: Send + Sync,
+    <T as ToOwned>::Owned:,
 {
     fn type_name() -> Cow<'static, str> {
         T::type_name()

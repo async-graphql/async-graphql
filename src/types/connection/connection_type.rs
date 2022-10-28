@@ -20,7 +20,7 @@ pub struct Connection<
     Name = DefaultConnectionName,
     EdgeName = DefaultEdgeName,
 > where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
@@ -42,7 +42,7 @@ pub struct Connection<
 impl<Cursor, Node, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, EmptyFields, EdgeFields, Name, EdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
@@ -65,7 +65,7 @@ where
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
@@ -94,7 +94,7 @@ where
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
@@ -132,7 +132,7 @@ where
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName> TypeName
     for Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,

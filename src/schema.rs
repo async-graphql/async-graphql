@@ -153,7 +153,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Add a global data that can be accessed in the `Schema`. You access it
     /// with `Context::data`.
     #[must_use]
-    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+    pub fn data<D: Any>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
     }
@@ -701,14 +701,14 @@ where
     #[doc(hidden)]
     pub fn execute_stream_with_session_data(
         &self,
-        request: impl Into<Request> + Send,
+        request: impl Into<Request>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Unpin {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
 
-        let stream = futures_util::stream::StreamExt::boxed({
+        let stream = futures_util::stream::StreamExt::boxed_local({
             let extensions = extensions.clone();
             async_stream::stream! {
                 let (env, cache_control) = match schema.prepare_request(extensions, request, session_data).await {
@@ -756,7 +756,7 @@ where
     pub fn execute_stream(
         &self,
         request: impl Into<Request>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Unpin {
         self.execute_stream_with_session_data(request.into(), Default::default())
     }
 }

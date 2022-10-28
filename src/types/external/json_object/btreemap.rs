@@ -13,9 +13,9 @@ use crate::{
 
 impl<K, V> InputType for BTreeMap<K, V>
 where
-    K: ToString + FromStr + Ord + Send + Sync,
+    K: ToString + FromStr + Ord,
     K::Err: Display,
-    V: Serialize + DeserializeOwned + Send + Sync,
+    V: Serialize + DeserializeOwned,
 {
     type RawValueType = Self;
 
@@ -70,11 +70,11 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<K, V> OutputType for BTreeMap<K, V>
 where
-    K: ToString + Ord + Send + Sync,
-    V: Serialize + Send + Sync,
+    K: ToString + Ord,
+    V: Serialize,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSONObject")

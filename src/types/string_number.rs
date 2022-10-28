@@ -19,7 +19,7 @@ impl<T: Num + Display + Default> Default for StringNumber<T> {
 }
 
 #[Scalar(internal)]
-impl<T: Num + Display + Send + Sync> ScalarType for StringNumber<T>
+impl<T: Num + Display> ScalarType for StringNumber<T>
 where
     <T as Num>::FromStrRadixErr: Display,
 {

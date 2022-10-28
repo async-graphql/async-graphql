@@ -160,7 +160,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         #(#type_into_impls)*
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
+        #[#crate_name::async_trait::async_trait(?Send)]
 
         impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
@@ -175,7 +175,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
+        #[#crate_name::async_trait::async_trait(?Send)]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                #gql_typename

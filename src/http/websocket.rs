@@ -76,7 +76,7 @@ pin_project! {
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
         schema: Schema<Query, Mutation, Subscription>,
-        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
+        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response>>>>,
         #[pin]
         stream: S,
         protocol: Protocols,
@@ -161,8 +161,8 @@ where
         callback: F,
     ) -> WebSocket<S, Query, Mutation, Subscription, F>
     where
-        F: FnOnce(serde_json::Value) -> R + Send + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        F: FnOnce(serde_json::Value) -> R + 'static,
+        R: Future<Output = Result<Data>> + 'static,
     {
         WebSocket {
             on_connection_init: Some(callback),
@@ -184,8 +184,8 @@ where
     Query: ObjectType + 'static,
     Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
-    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
-    InitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + Sync + 'static,
+    InitFut: Future<Output = Result<Data>> + Send + Sync + 'static,
 {
     type Item = WsMessage;
 

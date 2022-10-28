@@ -10,7 +10,7 @@ use crate::{
 pub(crate) struct CursorScalar<T: CursorType>(pub(crate) T);
 
 #[Scalar(internal, name = "String")]
-impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
+impl<T: CursorType> ScalarType for CursorScalar<T> {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => T::decode_cursor(&s)
@@ -34,7 +34,7 @@ impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
 #[graphql(internal, name_type)]
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
@@ -51,7 +51,7 @@ where
 
 impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
@@ -65,7 +65,7 @@ where
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Name: EdgeNameType,
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
 {
@@ -87,7 +87,7 @@ where
 
 impl<Cursor, Node, Name> Edge<Cursor, Node, EmptyFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     Name: EdgeNameType,
 {

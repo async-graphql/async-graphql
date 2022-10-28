@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// A GraphQL subscription object
-pub trait SubscriptionType: Send + Sync {
+pub trait SubscriptionType {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
 
@@ -32,10 +32,10 @@ pub trait SubscriptionType: Send + Sync {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>>;
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + 'a>>>;
 }
 
-type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = Response> + 'a + Send>>;
+type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = Response> + 'a>>;
 
 pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     ctx: &ContextSelectionSet<'a>,
@@ -113,7 +113,7 @@ impl<T: SubscriptionType> SubscriptionType for &T {
     fn create_field_stream<'a>(
         &'a self,
         ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>> {
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + 'a>>> {
         T::create_field_stream(*self, ctx)
     }
 }

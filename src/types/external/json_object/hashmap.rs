@@ -19,10 +19,10 @@ use crate::{
 
 impl<K, V, S> InputType for HashMap<K, V, S>
 where
-    K: ToString + FromStr + Eq + Hash + Send + Sync,
+    K: ToString + FromStr + Eq + Hash,
     K::Err: Display,
-    V: Serialize + DeserializeOwned + Send + Sync,
-    S: Default + BuildHasher + Send + Sync,
+    V: Serialize + DeserializeOwned,
+    S: Default + BuildHasher,
 {
     type RawValueType = Self;
 
@@ -77,12 +77,11 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<K, V, S> OutputType for HashMap<K, V, S>
 where
-    K: ToString + Eq + Hash + Send + Sync,
-    V: Serialize + Send + Sync,
-    S: Send + Sync,
+    K: ToString + Eq + Hash,
+    V: Serialize,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSONObject")
