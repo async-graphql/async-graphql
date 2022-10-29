@@ -115,7 +115,9 @@ impl InputType for Upload {
             visible: None,
             inaccessible: false,
             tags: Default::default(),
-            specified_by_url: Some("https://github.com/jaydenseric/graphql-multipart-request-spec"),
+            specified_by_url: Some(
+                "https://github.com/jaydenseric/graphql-multipart-request-spec".to_string(),
+            ),
         })
     }
 

@@ -5,30 +5,26 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::stream::{self, Stream, StreamExt};
-use indexmap::map::IndexMap;
+use async_graphql_parser::types::ExecutableDocument;
+use futures_util::stream::{self, BoxStream, Stream, StreamExt};
 
 use crate::{
     context::{Data, QueryEnvInner},
     custom_directive::CustomDirectiveFactory,
     extensions::{ExtensionFactory, Extensions},
-    model::__DirectiveLocation,
     parser::{
         parse_query,
-        types::{
-            Directive, DocumentOperations, ExecutableDocument, OperationType, Selection,
-            SelectionSet,
-        },
+        types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet},
         Positioned,
     },
-    registry::{MetaDirective, MetaInputValue, Registry, SDLExportOptions},
+    registry::{Registry, SDLExportOptions},
     resolver_utils::{resolve_container, resolve_container_serial},
     subscription::collect_subscription_streams,
     types::QueryRoot,
     validation::{check_rules, ValidationMode},
     BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
-    InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError, ServerResult,
-    SubscriptionType, Variables, ID,
+    Executor, InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
+    ServerResult, SubscriptionType, Variables,
 };
 
 /// Introspection mode
@@ -229,7 +225,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Build schema.
+    /// Consumes this builder and returns a schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
         if self.registry.enable_federation || self.registry.has_entities() {
@@ -263,7 +259,7 @@ pub struct SchemaEnvInner {
 
 #[doc(hidden)]
 #[derive(Clone)]
-pub struct SchemaEnv(Arc<SchemaEnvInner>);
+pub struct SchemaEnv(pub(crate) Arc<SchemaEnvInner>);
 
 impl Deref for SchemaEnv {
     type Target = SchemaEnvInner;
@@ -289,7 +285,9 @@ pub struct SchemaInner<Query, Mutation, Subscription> {
 /// GraphQL schema.
 ///
 /// Cloning a schema is cheap, so it can be easily shared.
-pub struct Schema<Query, Mutation, Subscription>(Arc<SchemaInner<Query, Mutation, Subscription>>);
+pub struct Schema<Query, Mutation, Subscription>(
+    pub(crate) Arc<SchemaInner<Query, Mutation, Subscription>>,
+);
 
 impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscription> {
     fn clone(&self) -> Self {
@@ -309,14 +307,6 @@ where
             Mutation::default(),
             Subscription::default(),
         )
-    }
-}
-
-impl<Query, Mutation, Subscription> Deref for Schema<Query, Mutation, Subscription> {
-    type Target = SchemaInner<Query, Mutation, Subscription>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 
@@ -393,65 +383,7 @@ where
             ignore_name_conflicts,
             enable_suggestions: true,
         };
-
-        registry.add_directive(MetaDirective {
-            name: "include".into(),
-            description: Some("Directs the executor to include this field or fragment only when the `if` argument is true."),
-            locations: vec![
-                __DirectiveLocation::FIELD,
-                __DirectiveLocation::FRAGMENT_SPREAD,
-                __DirectiveLocation::INLINE_FRAGMENT
-            ],
-            args: {
-                let mut args = IndexMap::new();
-                args.insert("if".to_string(), MetaInputValue {
-                    name: "if",
-                    description: Some("Included when true."),
-                    ty: "Boolean!".to_string(),
-                    default_value: None,
-                    visible: None,
-                    inaccessible: false,
-                    tags: Default::default(),
-                    is_secret: false,
-                });
-                args
-            },
-            is_repeatable: false,
-            visible: None,
-        });
-
-        registry.add_directive(MetaDirective {
-            name: "skip".into(),
-            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true."),
-            locations: vec![
-                __DirectiveLocation::FIELD,
-                __DirectiveLocation::FRAGMENT_SPREAD,
-                __DirectiveLocation::INLINE_FRAGMENT
-            ],
-            args: {
-                let mut args = IndexMap::new();
-                args.insert("if".to_string(), MetaInputValue {
-                    name: "if",
-                    description: Some("Skipped when true."),
-                    ty: "Boolean!".to_string(),
-                    default_value: None,
-                    visible: None,
-                    inaccessible: false,
-                    tags: Default::default(),
-                    is_secret: false,
-                });
-                args
-            },
-            is_repeatable: false,
-            visible: None,
-        });
-
-        // register scalars
-        <bool as InputType>::create_type_info(&mut registry);
-        <i32 as InputType>::create_type_info(&mut registry);
-        <f32 as InputType>::create_type_info(&mut registry);
-        <String as InputType>::create_type_info(&mut registry);
-        <ID as InputType>::create_type_info(&mut registry);
+        registry.add_system_types();
 
         QueryRoot::<Query>::create_type_info(&mut registry);
         if !Mutation::is_empty() {
@@ -477,7 +409,7 @@ where
     #[inline]
     #[allow(unused)]
     pub(crate) fn registry(&self) -> &Registry {
-        &self.env.registry
+        &self.0.env.registry
     }
 
     /// Returns SDL(Schema Definition Language) of this schema.
@@ -502,118 +434,10 @@ where
 
     fn create_extensions(&self, session_data: Arc<Data>) -> Extensions {
         Extensions::new(
-            self.extensions.iter().map(|f| f.create()),
-            self.env.clone(),
+            self.0.extensions.iter().map(|f| f.create()),
+            self.0.env.clone(),
             session_data,
         )
-    }
-
-    async fn prepare_request(
-        &self,
-        mut extensions: Extensions,
-        request: Request,
-        session_data: Arc<Data>,
-    ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
-        let mut request = request;
-        let query_data = Arc::new(std::mem::take(&mut request.data));
-        extensions.attach_query_data(query_data.clone());
-
-        let mut request = extensions.prepare_request(request).await?;
-        let mut document = {
-            let query = &request.query;
-            let parsed_doc = request.parsed_query.take();
-            let recursive_depth = self.recursive_depth;
-            let fut_parse = async move {
-                let doc = match parsed_doc {
-                    Some(parsed_doc) => parsed_doc,
-                    None => parse_query(query)?,
-                };
-                check_recursive_depth(&doc, recursive_depth)?;
-                Ok(doc)
-            };
-            futures_util::pin_mut!(fut_parse);
-            extensions
-                .parse_query(query, &request.variables, &mut fut_parse)
-                .await?
-        };
-
-        // check rules
-        let validation_result = {
-            let validation_fut = async {
-                check_rules(
-                    &self.env.registry,
-                    &document,
-                    Some(&request.variables),
-                    self.validation_mode,
-                )
-            };
-            futures_util::pin_mut!(validation_fut);
-            extensions.validation(&mut validation_fut).await?
-        };
-
-        // check limit
-        if let Some(limit_complexity) = self.complexity {
-            if validation_result.complexity > limit_complexity {
-                return Err(vec![ServerError::new("Query is too complex.", None)]);
-            }
-        }
-
-        if let Some(limit_depth) = self.depth {
-            if validation_result.depth > limit_depth {
-                return Err(vec![ServerError::new("Query is nested too deep.", None)]);
-            }
-        }
-
-        let operation = if let Some(operation_name) = &request.operation_name {
-            match document.operations {
-                DocumentOperations::Single(_) => None,
-                DocumentOperations::Multiple(mut operations) => operations
-                    .remove(operation_name.as_str())
-                    .map(|operation| (Some(operation_name.clone()), operation)),
-            }
-            .ok_or_else(|| {
-                ServerError::new(
-                    format!(r#"Unknown operation named "{}""#, operation_name),
-                    None,
-                )
-            })
-        } else {
-            match document.operations {
-                DocumentOperations::Single(operation) => Ok((None, operation)),
-                DocumentOperations::Multiple(map) if map.len() == 1 => {
-                    let (operation_name, operation) = map.into_iter().next().unwrap();
-                    Ok((Some(operation_name.to_string()), operation))
-                }
-                DocumentOperations::Multiple(_) => Err(ServerError::new(
-                    "Operation name required in request.",
-                    None,
-                )),
-            }
-        };
-
-        let (operation_name, mut operation) = operation.map_err(|err| vec![err])?;
-
-        // remove skipped fields
-        for fragment in document.fragments.values_mut() {
-            remove_skipped_selection(&mut fragment.node.selection_set.node, &request.variables);
-        }
-        remove_skipped_selection(&mut operation.node.selection_set.node, &request.variables);
-
-        let env = QueryEnvInner {
-            extensions,
-            variables: request.variables,
-            operation_name,
-            operation,
-            fragments: document.fragments,
-            uploads: request.uploads,
-            session_data,
-            ctx_data: query_data,
-            extension_data: Arc::new(request.data),
-            http_headers: Default::default(),
-            introspection_mode: request.introspection_mode,
-            errors: Default::default(),
-        };
-        Ok((QueryEnv::new(env), validation_result.cache_control))
     }
 
     async fn execute_once(&self, env: QueryEnv) -> Response {
@@ -622,19 +446,19 @@ where
             path_node: None,
             is_for_introspection: false,
             item: &env.operation.node.selection_set,
-            schema_env: &self.env,
+            schema_env: &self.0.env,
             query_env: &env,
         };
 
         let res = match &env.operation.node.ty {
-            OperationType::Query => resolve_container(&ctx, &self.query).await,
+            OperationType::Query => resolve_container(&ctx, &self.0.query).await,
             OperationType::Mutation => {
-                if self.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
+                if self.0.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
                     || env.introspection_mode == IntrospectionMode::IntrospectionOnly
                 {
                     resolve_container_serial(&ctx, &EmptyMutation).await
                 } else {
-                    resolve_container_serial(&ctx, &self.mutation).await
+                    resolve_container_serial(&ctx, &self.0.mutation).await
                 }
             }
             OperationType::Subscription => Err(ServerError::new(
@@ -661,9 +485,17 @@ where
         let request_fut = {
             let extensions = extensions.clone();
             async move {
-                match self
-                    .prepare_request(extensions, request, Default::default())
-                    .await
+                match prepare_request(
+                    extensions,
+                    request,
+                    Default::default(),
+                    &self.0.env.registry,
+                    self.0.validation_mode,
+                    self.0.recursive_depth,
+                    self.0.complexity,
+                    self.0.depth,
+                )
+                .await
                 {
                     Ok((env, cache_control)) => {
                         let fut = async {
@@ -698,10 +530,9 @@ where
     }
 
     /// Execute a GraphQL subscription with session data.
-    #[doc(hidden)]
     pub fn execute_stream_with_session_data(
         &self,
-        request: impl Into<Request> + Send,
+        request: impl Into<Request>,
         session_data: Arc<Data>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         let schema = self.clone();
@@ -710,8 +541,12 @@ where
 
         let stream = futures_util::stream::StreamExt::boxed({
             let extensions = extensions.clone();
+            let env = self.0.env.clone();
             async_stream::stream! {
-                let (env, cache_control) = match schema.prepare_request(extensions, request, session_data).await {
+                let (env, cache_control) = match prepare_request(
+                        extensions, request, session_data, &env.registry,
+                        schema.0.validation_mode, schema.0.recursive_depth, schema.0.complexity, schema.0.depth
+                ).await {
                     Ok(res) => res,
                     Err(errors) => {
                         yield Response::from_errors(errors);
@@ -725,19 +560,19 @@ where
                 }
 
                 let ctx = env.create_context(
-                    &schema.env,
+                    &schema.0.env,
                     None,
                     &env.operation.node.selection_set,
                 );
 
                 let mut streams = Vec::new();
-                let collect_result = if schema.env.registry.introspection_mode
+                let collect_result = if schema.0.env.registry.introspection_mode
                     == IntrospectionMode::IntrospectionOnly
                     || env.introspection_mode == IntrospectionMode::IntrospectionOnly
                 {
                     collect_subscription_streams(&ctx, &EmptySubscription, &mut streams)
                 } else {
-                    collect_subscription_streams(&ctx, &schema.subscription, &mut streams)
+                    collect_subscription_streams(&ctx, &schema.0.subscription, &mut streams)
                 };
                 if let Err(err) = collect_result {
                     yield Response::from_errors(vec![err]);
@@ -757,55 +592,28 @@ where
         &self,
         request: impl Into<Request>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
-        self.execute_stream_with_session_data(request.into(), Default::default())
+        self.execute_stream_with_session_data(request, Default::default())
     }
 }
 
-fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variables) {
-    fn is_skipped(directives: &[Positioned<Directive>], variables: &Variables) -> bool {
-        for directive in directives {
-            let include = match &*directive.node.name.node {
-                "skip" => false,
-                "include" => true,
-                _ => continue,
-            };
-
-            if let Some(condition_input) = directive.node.get_argument("if") {
-                let value = condition_input
-                    .node
-                    .clone()
-                    .into_const_with(|name| variables.get(&name).cloned().ok_or(()))
-                    .unwrap_or_default();
-                let value: bool = InputType::parse(Some(value)).unwrap_or_default();
-                if include != value {
-                    return true;
-                }
-            }
-        }
-
-        false
+#[async_trait::async_trait]
+impl<Query, Mutation, Subscription> Executor for Schema<Query, Mutation, Subscription>
+where
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
+    Subscription: SubscriptionType + 'static,
+{
+    async fn execute(&self, request: Request) -> Response {
+        Schema::execute(self, request).await
     }
 
-    selection_set
-        .items
-        .retain(|selection| !is_skipped(selection.node.directives(), variables));
-
-    for selection in &mut selection_set.items {
-        selection.node.directives_mut().retain(|directive| {
-            directive.node.name.node != "skip" && directive.node.name.node != "include"
-        });
-    }
-
-    for selection in &mut selection_set.items {
-        match &mut selection.node {
-            Selection::Field(field) => {
-                remove_skipped_selection(&mut field.node.selection_set.node, variables);
-            }
-            Selection::FragmentSpread(_) => {}
-            Selection::InlineFragment(inline_fragment) => {
-                remove_skipped_selection(&mut inline_fragment.node.selection_set.node, variables);
-            }
-        }
+    fn execute_stream(
+        &self,
+        request: Request,
+        session_data: Option<Arc<Data>>,
+    ) -> BoxStream<'static, Response> {
+        Schema::execute_stream_with_session_data(&self, request, session_data.unwrap_or_default())
+            .boxed()
     }
 }
 
@@ -869,4 +677,164 @@ fn check_recursive_depth(doc: &ExecutableDocument, max_depth: usize) -> ServerRe
     }
 
     Ok(())
+}
+
+fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variables) {
+    fn is_skipped(directives: &[Positioned<Directive>], variables: &Variables) -> bool {
+        for directive in directives {
+            let include = match &*directive.node.name.node {
+                "skip" => false,
+                "include" => true,
+                _ => continue,
+            };
+
+            if let Some(condition_input) = directive.node.get_argument("if") {
+                let value = condition_input
+                    .node
+                    .clone()
+                    .into_const_with(|name| variables.get(&name).cloned().ok_or(()))
+                    .unwrap_or_default();
+                let value: bool = InputType::parse(Some(value)).unwrap_or_default();
+                if include != value {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    selection_set
+        .items
+        .retain(|selection| !is_skipped(selection.node.directives(), variables));
+
+    for selection in &mut selection_set.items {
+        selection.node.directives_mut().retain(|directive| {
+            directive.node.name.node != "skip" && directive.node.name.node != "include"
+        });
+    }
+
+    for selection in &mut selection_set.items {
+        match &mut selection.node {
+            Selection::Field(field) => {
+                remove_skipped_selection(&mut field.node.selection_set.node, variables);
+            }
+            Selection::FragmentSpread(_) => {}
+            Selection::InlineFragment(inline_fragment) => {
+                remove_skipped_selection(&mut inline_fragment.node.selection_set.node, variables);
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn prepare_request(
+    mut extensions: Extensions,
+    request: Request,
+    session_data: Arc<Data>,
+    registry: &Registry,
+    validation_mode: ValidationMode,
+    recursive_depth: usize,
+    complexity: Option<usize>,
+    depth: Option<usize>,
+) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
+    let mut request = request;
+    let query_data = Arc::new(std::mem::take(&mut request.data));
+    extensions.attach_query_data(query_data.clone());
+
+    let mut request = extensions.prepare_request(request).await?;
+    let mut document = {
+        let query = &request.query;
+        let parsed_doc = request.parsed_query.take();
+        let fut_parse = async move {
+            let doc = match parsed_doc {
+                Some(parsed_doc) => parsed_doc,
+                None => parse_query(query)?,
+            };
+            check_recursive_depth(&doc, recursive_depth)?;
+            Ok(doc)
+        };
+        futures_util::pin_mut!(fut_parse);
+        extensions
+            .parse_query(query, &request.variables, &mut fut_parse)
+            .await?
+    };
+
+    // check rules
+    let validation_result = {
+        let validation_fut = async {
+            check_rules(
+                registry,
+                &document,
+                Some(&request.variables),
+                validation_mode,
+            )
+        };
+        futures_util::pin_mut!(validation_fut);
+        extensions.validation(&mut validation_fut).await?
+    };
+
+    // check limit
+    if let Some(limit_complexity) = complexity {
+        if validation_result.complexity > limit_complexity {
+            return Err(vec![ServerError::new("Query is too complex.", None)]);
+        }
+    }
+
+    if let Some(limit_depth) = depth {
+        if validation_result.depth > limit_depth {
+            return Err(vec![ServerError::new("Query is nested too deep.", None)]);
+        }
+    }
+
+    let operation = if let Some(operation_name) = &request.operation_name {
+        match document.operations {
+            DocumentOperations::Single(_) => None,
+            DocumentOperations::Multiple(mut operations) => operations
+                .remove(operation_name.as_str())
+                .map(|operation| (Some(operation_name.clone()), operation)),
+        }
+        .ok_or_else(|| {
+            ServerError::new(
+                format!(r#"Unknown operation named "{}""#, operation_name),
+                None,
+            )
+        })
+    } else {
+        match document.operations {
+            DocumentOperations::Single(operation) => Ok((None, operation)),
+            DocumentOperations::Multiple(map) if map.len() == 1 => {
+                let (operation_name, operation) = map.into_iter().next().unwrap();
+                Ok((Some(operation_name.to_string()), operation))
+            }
+            DocumentOperations::Multiple(_) => Err(ServerError::new(
+                "Operation name required in request.",
+                None,
+            )),
+        }
+    };
+
+    let (operation_name, mut operation) = operation.map_err(|err| vec![err])?;
+
+    // remove skipped fields
+    for fragment in document.fragments.values_mut() {
+        remove_skipped_selection(&mut fragment.node.selection_set.node, &request.variables);
+    }
+    remove_skipped_selection(&mut operation.node.selection_set.node, &request.variables);
+
+    let env = QueryEnvInner {
+        extensions,
+        variables: request.variables,
+        operation_name,
+        operation,
+        fragments: document.fragments,
+        uploads: request.uploads,
+        session_data,
+        ctx_data: query_data,
+        extension_data: Arc::new(request.data),
+        http_headers: Default::default(),
+        introspection_mode: request.introspection_mode,
+        errors: Default::default(),
+    };
+    Ok((QueryEnv::new(env), validation_result.cache_control))
 }

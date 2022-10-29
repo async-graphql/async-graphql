@@ -10,7 +10,7 @@ impl ScalarType for char {
             Value::String(s) => {
                 let mut chars = s.chars();
                 match chars.next() {
-                    Some(ch) if chars.next() == None => Ok(ch),
+                    Some(ch) if chars.next().is_none() => Ok(ch),
                     Some(_) => Err(InputValueError::custom(
                         "There can only be one unicode character in the string.",
                     )),

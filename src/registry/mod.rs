@@ -13,10 +13,11 @@ use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::__DirectiveLocation;
 use crate::{
+    model::__Schema,
     parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
     schema::IntrospectionMode,
     Any, Context, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
-    VisitorContext,
+    VisitorContext, ID,
 };
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
@@ -108,9 +109,9 @@ impl<'a> MetaTypeName<'a> {
 #[derive(Clone)]
 pub struct MetaInputValue {
     /// The name of the input value
-    pub name: &'static str,
+    pub name: String,
     /// The description of the input value
-    pub description: Option<&'static str>,
+    pub description: Option<String>,
     /// The type of the input value
     pub ty: String,
     /// The default value of the input value
@@ -123,7 +124,7 @@ pub struct MetaInputValue {
     pub inaccessible: bool,
     /// Arbitrary string metadata that will be propagated to the supergraph when
     /// using Apollo Federation. This attribute is repeatable
-    pub tags: &'static [&'static str],
+    pub tags: Vec<String>,
     /// Indicate that an input obnject is secret
     pub is_secret: bool,
 }
@@ -144,7 +145,7 @@ pub enum ComplexityType {
 #[derive(Debug, Clone)]
 pub enum Deprecation {
     NoDeprecated,
-    Deprecated { reason: Option<&'static str> },
+    Deprecated { reason: Option<String> },
 }
 
 impl Default for Deprecation {
@@ -174,7 +175,7 @@ pub struct MetaField {
     /// The name of the field
     pub name: String,
     /// The description of the field
-    pub description: Option<&'static str>,
+    pub description: Option<String>,
     /// The arguments of the field
     pub args: IndexMap<String, MetaInputValue>,
     /// The type of the field
@@ -206,7 +207,7 @@ pub struct MetaField {
     pub inaccessible: bool,
     /// Arbitrary string metadata that will be propagated to the supergraph when
     /// using Apollo Federation. This attribute is repeatable
-    pub tags: &'static [&'static str],
+    pub tags: Vec<String>,
     /// Mark the field as overriding a field currently present on another
     /// subgraph. It is used to migrate fields between subgraphs.
     pub override_from: Option<&'static str>,
@@ -216,12 +217,12 @@ pub struct MetaField {
 
 #[derive(Clone)]
 pub struct MetaEnumValue {
-    pub name: &'static str,
-    pub description: Option<&'static str>,
+    pub name: String,
+    pub description: Option<String>,
     pub deprecation: Deprecation,
     pub visible: Option<MetaVisibleFn>,
     pub inaccessible: bool,
-    pub tags: &'static [&'static str],
+    pub tags: Vec<String>,
 }
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
@@ -259,7 +260,7 @@ pub enum MetaType {
         /// The name of the scalar
         name: String,
         /// the description of the scalar
-        description: Option<&'static str>,
+        description: Option<String>,
         /// A function that uses to check if the scalar is valid
         is_valid: fn(value: &Value) -> bool,
         /// A function that uses to check if the scalar should be exported to
@@ -274,11 +275,11 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// Provide a specification URL for this scalar type, it must link to a
         /// human-readable specification of the data format, serialization and
         /// coercion rules for this scalar.
-        specified_by_url: Option<&'static str>,
+        specified_by_url: Option<String>,
     },
     /// Object
     ///
@@ -287,7 +288,7 @@ pub enum MetaType {
         /// The name of the object
         name: String,
         /// The description of the object
-        description: Option<&'static str>,
+        description: Option<String>,
         /// The fields of the object type
         fields: IndexMap<String, MetaField>,
         /// Used to create HTTP `Cache-Control` header
@@ -322,11 +323,11 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// Indicates whether it is a subscription object
         is_subscription: bool,
         /// The Rust typename corresponding to the object
-        rust_typename: &'static str,
+        rust_typename: Option<&'static str>,
     },
     /// Interface
     ///
@@ -335,13 +336,12 @@ pub enum MetaType {
         /// The name of the interface
         name: String,
         /// The description of the interface
-        description: Option<&'static str>,
+        description: Option<String>,
         /// The fields of the interface
         fields: IndexMap<String, MetaField>,
         /// The object types that implement this interface
-        possible_types: IndexSet<String>,
         /// Add fields to an entity that's defined in another service
-        ///
+        possible_types: IndexSet<String>,
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#extends>
         extends: bool,
         /// The keys of the object type
@@ -364,9 +364,9 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// The Rust typename corresponding to the interface
-        rust_typename: &'static str,
+        rust_typename: Option<&'static str>,
     },
     /// Union
     ///
@@ -375,7 +375,7 @@ pub enum MetaType {
         /// The name of the interface
         name: String,
         /// The description of the union
-        description: Option<&'static str>,
+        description: Option<String>,
         /// The object types that could be the union
         possible_types: IndexSet<String>,
         /// A function that uses to check if the union should be exported to
@@ -390,9 +390,9 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// The Rust typename corresponding to the union
-        rust_typename: &'static str,
+        rust_typename: Option<&'static str>,
     },
     /// Enum
     ///
@@ -401,9 +401,9 @@ pub enum MetaType {
         /// The name of the enum
         name: String,
         /// The description of the enum
-        description: Option<&'static str>,
+        description: Option<String>,
         /// The values of the enum
-        enum_values: IndexMap<&'static str, MetaEnumValue>,
+        enum_values: IndexMap<String, MetaEnumValue>,
         /// A function that uses to check if the enum should be exported to
         /// schemas
         visible: Option<MetaVisibleFn>,
@@ -416,9 +416,9 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// The Rust typename corresponding to the enum
-        rust_typename: &'static str,
+        rust_typename: Option<&'static str>,
     },
     /// Input object
     ///
@@ -427,7 +427,7 @@ pub enum MetaType {
         /// The name of the input object
         name: String,
         /// The description of the input object
-        description: Option<&'static str>,
+        description: Option<String>,
         /// The fields of the input object
         input_fields: IndexMap<String, MetaInputValue>,
         /// A function that uses to check if the input object should be exported
@@ -442,9 +442,9 @@ pub enum MetaType {
         /// when using Apollo Federation. This attribute is repeatable
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#applying-metadata>
-        tags: &'static [&'static str],
+        tags: Vec<String>,
         /// The Rust typename corresponding to the enum
-        rust_typename: &'static str,
+        rust_typename: Option<&'static str>,
         /// Is the oneof input objects
         ///
         /// Reference: <https://github.com/graphql/graphql-spec/pull/825>
@@ -570,18 +570,18 @@ impl MetaType {
     pub fn rust_typename(&self) -> Option<&'static str> {
         match self {
             MetaType::Scalar { .. } => None,
-            MetaType::Object { rust_typename, .. } => Some(rust_typename),
-            MetaType::Interface { rust_typename, .. } => Some(rust_typename),
-            MetaType::Union { rust_typename, .. } => Some(rust_typename),
-            MetaType::Enum { rust_typename, .. } => Some(rust_typename),
-            MetaType::InputObject { rust_typename, .. } => Some(rust_typename),
+            MetaType::Object { rust_typename, .. } => *rust_typename,
+            MetaType::Interface { rust_typename, .. } => *rust_typename,
+            MetaType::Union { rust_typename, .. } => *rust_typename,
+            MetaType::Enum { rust_typename, .. } => *rust_typename,
+            MetaType::InputObject { rust_typename, .. } => *rust_typename,
         }
     }
 }
 
 pub struct MetaDirective {
     pub name: String,
-    pub description: Option<&'static str>,
+    pub description: Option<String>,
     pub locations: Vec<__DirectiveLocation>,
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
@@ -605,17 +605,73 @@ pub struct Registry {
 }
 
 impl Registry {
+    pub(crate) fn add_system_types(&mut self) {
+        self.add_directive(MetaDirective {
+            name: "include".into(),
+            description: Some("Directs the executor to include this field or fragment only when the `if` argument is true.".to_string()),
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert("if".to_string(), MetaInputValue {
+                    name: "if".to_string(),
+                    description: Some("Included when true.".to_string()),
+                    ty: "Boolean!".to_string(),
+                    default_value: None,
+                    visible: None,
+                    inaccessible: false,
+                    tags: Default::default(),
+                    is_secret: false,
+                });
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+        });
+
+        self.add_directive(MetaDirective {
+            name: "skip".into(),
+            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert("if".to_string(), MetaInputValue {
+                    name: "if".to_string(),
+                    description: Some("Skipped when true.".to_string()),
+                    ty: "Boolean!".to_string(),
+                    default_value: None,
+                    visible: None,
+                    inaccessible: false,
+                    tags: Default::default(),
+                    is_secret: false,
+                });
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+        });
+
+        // create system scalars
+        <bool as InputType>::create_type_info(self);
+        <i32 as InputType>::create_type_info(self);
+        <f32 as InputType>::create_type_info(self);
+        <String as InputType>::create_type_info(self);
+        <ID as InputType>::create_type_info(self);
+    }
+
     pub fn create_input_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
     where
         T: InputType + ?Sized,
         F: FnMut(&mut Registry) -> MetaType,
     {
-        self.create_type(
-            &mut f,
-            &*T::type_name(),
-            std::any::type_name::<T>(),
-            type_id,
-        );
+        self.create_type(&mut f, &T::type_name(), std::any::type_name::<T>(), type_id);
         T::qualified_type_name()
     }
 
@@ -624,12 +680,7 @@ impl Registry {
         T: OutputType + ?Sized,
         F: FnMut(&mut Registry) -> MetaType,
     {
-        self.create_type(
-            &mut f,
-            &*T::type_name(),
-            std::any::type_name::<T>(),
-            type_id,
-        );
+        self.create_type(&mut f, &T::type_name(), std::any::type_name::<T>(), type_id);
         T::qualified_type_name()
     }
 
@@ -640,7 +691,7 @@ impl Registry {
     {
         self.create_type(
             &mut f,
-            &*T::type_name(),
+            &T::type_name(),
             std::any::type_name::<T>(),
             MetaTypeId::Object,
         );
@@ -696,7 +747,7 @@ impl Registry {
                         keys: None,
                         visible: None,
                         is_subscription: false,
-                        rust_typename: "__fake_type__",
+                        rust_typename: None,
                     },
                 );
                 let ty = f(self);
@@ -840,7 +891,7 @@ impl Registry {
                     visible: None,
                     inaccessible: false,
                     tags: Default::default(),
-                    rust_typename: "async_graphql::federation::Entity",
+                    rust_typename: Some("async_graphql::federation::Entity"),
                 },
             );
 
@@ -855,7 +906,7 @@ impl Registry {
                             args.insert(
                                 "representations".to_string(),
                                 MetaInputValue {
-                                    name: "representations",
+                                    name: "representations".to_string(),
                                     description: None,
                                     ty: "[_Any!]!".to_string(),
                                     default_value: None,
@@ -882,6 +933,70 @@ impl Registry {
                     },
                 );
             }
+        }
+    }
+
+    pub(crate) fn create_introspection_types(&mut self) {
+        __Schema::create_type_info(self);
+
+        if let Some(MetaType::Object { fields, .. }) = self.types.get_mut(&self.query_type) {
+            fields.insert(
+                "__schema".to_string(),
+                MetaField {
+                    name: "__schema".to_string(),
+                    description: Some("Access the current type schema of this server.".to_string()),
+                    args: Default::default(),
+                    ty: "__Schema".to_string(),
+                    deprecation: Default::default(),
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                    shareable: false,
+                    inaccessible: false,
+                    tags: Default::default(),
+                    visible: None,
+                    compute_complexity: None,
+                    override_from: None,
+                },
+            );
+
+            fields.insert(
+                "__type".to_string(),
+                MetaField {
+                    name: "__type".to_string(),
+                    description: Some("Request the type information of a single type.".to_string()),
+                    args: {
+                        let mut args = IndexMap::new();
+                        args.insert(
+                            "name".to_string(),
+                            MetaInputValue {
+                                name: "name".to_string(),
+                                description: None,
+                                ty: "String!".to_string(),
+                                default_value: None,
+                                visible: None,
+                                inaccessible: false,
+                                tags: Default::default(),
+                                is_secret: false,
+                            },
+                        );
+                        args
+                    },
+                    ty: "__Type".to_string(),
+                    deprecation: Default::default(),
+                    cache_control: Default::default(),
+                    external: false,
+                    requires: None,
+                    provides: None,
+                    shareable: false,
+                    inaccessible: false,
+                    tags: Default::default(),
+                    override_from: None,
+                    visible: None,
+                    compute_complexity: None,
+                },
+            );
         }
     }
 
@@ -925,7 +1040,7 @@ impl Registry {
                 inaccessible: false,
                 tags: Default::default(),
                 is_subscription: false,
-                rust_typename: "async_graphql::federation::Service",
+                rust_typename: Some("async_graphql::federation::Service"),
             },
         );
 
@@ -976,8 +1091,9 @@ impl Registry {
         names.into_iter().collect()
     }
 
-    pub fn set_description(&mut self, name: &str, desc: &'static str) {
-        match self.types.get_mut(name) {
+    pub fn set_description(&mut self, name: impl AsRef<str>, desc: impl Into<String>) {
+        let desc = desc.into();
+        match self.types.get_mut(name.as_ref()) {
             Some(MetaType::Scalar { description, .. }) => *description = Some(desc),
             Some(MetaType::Object { description, .. }) => *description = Some(desc),
             Some(MetaType::Interface { description, .. }) => *description = Some(desc),

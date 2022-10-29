@@ -182,6 +182,7 @@
 mod base;
 mod custom_directive;
 mod error;
+mod executor;
 mod guard;
 mod look_ahead;
 mod model;
@@ -195,6 +196,9 @@ pub mod context;
 #[cfg(feature = "dataloader")]
 #[cfg_attr(docsrs, doc(cfg(feature = "dataloader")))]
 pub mod dataloader;
+#[cfg(feature = "dynamic-schema")]
+#[cfg_attr(docsrs, doc(cfg(feature = "dynamic-schema")))]
+pub mod dynamic;
 pub mod extensions;
 pub mod http;
 pub mod resolver_utils;
@@ -226,6 +230,7 @@ pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
+pub use executor::Executor;
 pub use extensions::ResolveFut;
 #[doc(hidden)]
 pub use futures_util;

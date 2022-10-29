@@ -230,7 +230,7 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
         Deprecation::Deprecated {
             reason: Some(reason),
         } => {
-            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::Some(#reason) } }
+            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::Some(::std::string::ToString::to_string(#reason)) } }
         }
         Deprecation::Deprecated { reason: None } => {
             quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::None } }

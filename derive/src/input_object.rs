@@ -13,7 +13,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
     let inaccessible = object_args.inaccessible;
-    let tags = &object_args.tags;
+    let tags = object_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -29,7 +33,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         let ty = &field.ty;
         let ident = match &field.ident {
             Some(ident) => ident,
-            None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
+            None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
         };
         let attrs = field
             .attrs
@@ -55,7 +59,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     };
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut get_fields = Vec::new();
@@ -74,7 +78,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
         let inaccessible = field.inaccessible;
-        let tags = &field.tags;
+        let tags = field
+            .tags
+            .iter()
+            .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+            .collect::<Vec<_>>();
 
         if field.skip || field.skip_input {
             get_fields.push(quote! {
@@ -139,7 +147,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
 
         let desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let default = generate_default(&field.default, &field.default_with)?;
         let schema_default = default
@@ -193,13 +201,13 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         let visible = visible_fn(&field.visible);
         schema_fields.push(quote! {
             fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                name: #name,
+                name: ::std::string::ToString::to_string(#name),
                 description: #desc,
                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,
                 visible: #visible,
                 inaccessible: #inaccessible,
-                tags: &[ #(#tags),* ],
+                tags: ::std::vec![ #(#tags),* ],
                 is_secret: #secret,
             });
         })
@@ -207,7 +215,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
     if get_fields.is_empty() {
         return Err(Error::new_spanned(
-            &ident,
+            ident,
             "A GraphQL Input Object type must define one or more input fields.",
         )
         .into());
@@ -263,8 +271,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: false,
                     })
                 }
@@ -314,8 +322,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: false,
                     })
                 }

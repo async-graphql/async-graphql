@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 
-use indexmap::map::IndexMap;
-
 use crate::{
     model::{__Schema, __Type},
     parser::types::Field,
@@ -118,68 +116,7 @@ impl<T: ObjectType> OutputType for QueryRoot<T> {
             registry.introspection_mode,
             IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
         ) {
-            let schema_type = __Schema::create_type_info(registry);
-            if let Some(registry::MetaType::Object { fields, .. }) =
-                registry.types.get_mut(T::type_name().as_ref())
-            {
-                fields.insert(
-                    "__schema".to_string(),
-                    registry::MetaField {
-                        name: "__schema".to_string(),
-                        description: Some("Access the current type schema of this server."),
-                        args: Default::default(),
-                        ty: schema_type,
-                        deprecation: Default::default(),
-                        cache_control: Default::default(),
-                        external: false,
-                        requires: None,
-                        provides: None,
-                        shareable: false,
-                        inaccessible: false,
-                        tags: Default::default(),
-                        visible: None,
-                        compute_complexity: None,
-                        override_from: None,
-                    },
-                );
-
-                fields.insert(
-                    "__type".to_string(),
-                    registry::MetaField {
-                        name: "__type".to_string(),
-                        description: Some("Request the type information of a single type."),
-                        args: {
-                            let mut args = IndexMap::new();
-                            args.insert(
-                                "name".to_string(),
-                                registry::MetaInputValue {
-                                    name: "name",
-                                    description: None,
-                                    ty: "String!".to_string(),
-                                    default_value: None,
-                                    visible: None,
-                                    inaccessible: false,
-                                    tags: Default::default(),
-                                    is_secret: false,
-                                },
-                            );
-                            args
-                        },
-                        ty: "__Type".to_string(),
-                        deprecation: Default::default(),
-                        cache_control: Default::default(),
-                        external: false,
-                        requires: None,
-                        provides: None,
-                        shareable: false,
-                        inaccessible: false,
-                        tags: Default::default(),
-                        override_from: None,
-                        visible: None,
-                        compute_complexity: None,
-                    },
-                );
-            }
+            registry.create_introspection_types();
         }
 
         root

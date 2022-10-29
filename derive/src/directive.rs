@@ -28,7 +28,7 @@ pub fn generate(
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
     let desc = get_rustdoc(&item_fn.attrs)?
-        .map(|s| quote!(::std::option::Option::Some(#s)))
+        .map(|s| quote!(::std::option::Option::Some(::std::string::ToString::to_string(#s))))
         .unwrap_or_else(|| quote!(::std::option::Option::None));
     let visible = visible_fn(&directive_args.visible);
     let repeatable = directive_args.repeatable;
@@ -72,7 +72,7 @@ pub fn generate(
         });
         let desc = desc
             .as_ref()
-            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let default = generate_default(&default, &default_with)?;
         let schema_default = default
@@ -89,7 +89,7 @@ pub fn generate(
 
         schema_args.push(quote! {
             args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                name: #name,
+                name: ::std::string::ToString::to_string(#name),
                 description: #desc,
                 ty: <#arg_ty as #crate_name::InputType>::create_type_info(registry),
                 default_value: #schema_default,

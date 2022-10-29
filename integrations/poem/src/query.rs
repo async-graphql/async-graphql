@@ -1,4 +1,4 @@
-use async_graphql::{ObjectType, Schema, SubscriptionType};
+use async_graphql::Executor;
 use poem::{async_trait, Endpoint, FromRequest, Request, Result};
 
 use crate::{GraphQLBatchRequest, GraphQLBatchResponse};
@@ -26,29 +26,29 @@ use crate::{GraphQLBatchRequest, GraphQLBatchResponse};
 /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 /// let app = Route::new().at("/", post(GraphQL::new(schema)));
 /// ```
-pub struct GraphQL<Query, Mutation, Subscription> {
-    schema: Schema<Query, Mutation, Subscription>,
+pub struct GraphQL<E> {
+    executor: E,
 }
 
-impl<Query, Mutation, Subscription> GraphQL<Query, Mutation, Subscription> {
+impl<E> GraphQL<E> {
     /// Create a GraphQL query endpoint.
-    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
-        Self { schema }
+    pub fn new(executor: E) -> Self {
+        Self { executor }
     }
 }
 
 #[async_trait]
-impl<Query, Mutation, Subscription> Endpoint for GraphQL<Query, Mutation, Subscription>
+impl<E> Endpoint for GraphQL<E>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
 {
     type Output = GraphQLBatchResponse;
 
     async fn call(&self, req: Request) -> Result<Self::Output> {
         let (req, mut body) = req.split();
         let req = GraphQLBatchRequest::from_request(&req, &mut body).await?;
-        Ok(GraphQLBatchResponse(self.schema.execute_batch(req.0).await))
+        Ok(GraphQLBatchResponse(
+            self.executor.execute_batch(req.0).await,
+        ))
     }
 }

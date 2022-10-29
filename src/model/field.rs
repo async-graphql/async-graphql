@@ -24,7 +24,7 @@ impl<'a> __Field<'a> {
 
     #[inline]
     async fn description(&self) -> Option<&str> {
-        self.field.description
+        self.field.description.as_deref()
     }
 
     async fn args(&self, ctx: &Context<'_>) -> Vec<__InputValue<'a>> {

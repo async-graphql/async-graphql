@@ -26,6 +26,7 @@ string_number = []
 tokio-sync = ["tokio"]
 tracing = ["tracinglib", "tracing-futures"]
 unblock = ["blocking"]
+dynamic-schema = []
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "4.0.16" }

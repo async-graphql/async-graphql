@@ -11,9 +11,7 @@
 #[cfg(feature = "websocket")]
 mod subscription;
 
-use async_graphql::{
-    http::MultipartOptions, ObjectType, ParseRequestError, Schema, SubscriptionType,
-};
+use async_graphql::{http::MultipartOptions, Executor, ParseRequestError};
 #[cfg(feature = "websocket")]
 pub use subscription::GraphQLSubscription;
 use tide::{
@@ -25,14 +23,12 @@ use tide::{
     Body, Request, Response, StatusCode,
 };
 
-/// Create a new GraphQL endpoint with the schema.
+/// Create a new GraphQL endpoint with the executor.
 ///
 /// Default multipart options are used and batch operations are supported.
-pub fn graphql<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-) -> GraphQLEndpoint<Query, Mutation, Subscription> {
+pub fn graphql<E>(executor: E) -> GraphQLEndpoint<E> {
     GraphQLEndpoint {
-        schema,
+        executor,
         opts: MultipartOptions::default(),
         batch: true,
     }
@@ -42,16 +38,16 @@ pub fn graphql<Query, Mutation, Subscription>(
 ///
 /// This is created with the [`endpoint`](fn.endpoint.html) function.
 #[non_exhaustive]
-pub struct GraphQLEndpoint<Query, Mutation, Subscription> {
-    /// The schema of the endpoint.
-    pub schema: Schema<Query, Mutation, Subscription>,
+pub struct GraphQLEndpoint<E> {
+    /// The graphql executor
+    pub executor: E,
     /// The multipart options of the endpoint.
     pub opts: MultipartOptions,
     /// Whether to support batch requests in the endpoint.
     pub batch: bool,
 }
 
-impl<Query, Mutation, Subscription> GraphQLEndpoint<Query, Mutation, Subscription> {
+impl<E> GraphQLEndpoint<E> {
     /// Set the multipart options of the endpoint.
     #[must_use]
     pub fn multipart_opts(self, opts: MultipartOptions) -> Self {
@@ -65,10 +61,10 @@ impl<Query, Mutation, Subscription> GraphQLEndpoint<Query, Mutation, Subscriptio
 }
 
 // Manual impl to remove bounds on generics
-impl<Query, Mutation, Subscription> Clone for GraphQLEndpoint<Query, Mutation, Subscription> {
+impl<E: Executor> Clone for GraphQLEndpoint<E> {
     fn clone(&self) -> Self {
         Self {
-            schema: self.schema.clone(),
+            executor: self.executor.clone(),
             opts: self.opts,
             batch: self.batch,
         }
@@ -76,17 +72,14 @@ impl<Query, Mutation, Subscription> Clone for GraphQLEndpoint<Query, Mutation, S
 }
 
 #[async_trait]
-impl<Query, Mutation, Subscription, TideState> tide::Endpoint<TideState>
-    for GraphQLEndpoint<Query, Mutation, Subscription>
+impl<E, TideState> tide::Endpoint<TideState> for GraphQLEndpoint<E>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
     TideState: Clone + Send + Sync + 'static,
 {
     async fn call(&self, request: Request<TideState>) -> tide::Result {
         respond(
-            self.schema
+            self.executor
                 .execute_batch(if self.batch {
                     receive_batch_request_opts(request, self.opts).await
                 } else {
