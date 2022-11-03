@@ -391,6 +391,9 @@ impl Registry {
                 }
 
                 for value in values {
+                    if let Some(description) = value.description {
+                        export_description(sdl, options, false, description);
+                    }
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
 
