@@ -20,7 +20,8 @@ cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
 dataloader = ["futures-timer", "futures-channel", "lru"]
 decimal = ["rust_decimal"]
-default = ["email-validator"]
+default = ["email-validator", "multipart"]
+multipart = ["dep:tempfile"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["tokio"]
@@ -51,7 +52,7 @@ regex = "1.5.5"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
 static_assertions = "1.1.0"
-tempfile = "3.2.0"
+tempfile = { optional = true, version = "3.2.0" }
 thiserror = "1.0.24"
 base64 = "0.13.0"
 serde_urlencoded = "0.7.0"

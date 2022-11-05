@@ -63,7 +63,7 @@ pub fn parse_query_string(input: &str) -> Result<Request, ParseRequestError> {
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
     body: impl AsyncRead + Send,
-    opts: MultipartOptions,
+    #[allow(unused)] opts: MultipartOptions,
 ) -> Result<Request, ParseRequestError> {
     receive_batch_body(content_type, body, opts)
         .await?
@@ -74,7 +74,7 @@ pub async fn receive_body(
 pub async fn receive_batch_body(
     content_type: Option<impl AsRef<str>>,
     body: impl AsyncRead + Send,
-    opts: MultipartOptions,
+    #[allow(unused)] opts: MultipartOptions,
 ) -> Result<BatchRequest, ParseRequestError> {
     // if no content-type header is set, we default to json
     let content_type = content_type
@@ -86,6 +86,7 @@ pub async fn receive_batch_body(
 
     match (content_type.type_(), content_type.subtype()) {
         // try to use multipart
+        #[cfg(feature = "multipart")]
         (mime::MULTIPART, _) => {
             if let Some(boundary) = content_type.get_param("boundary") {
                 multipart::receive_batch_multipart(body, boundary.to_string(), opts).await

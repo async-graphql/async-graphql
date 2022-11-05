@@ -1,26 +1,30 @@
-use std::{
-    collections::HashMap,
-    io::{self, Seek, SeekFrom, Write},
-    pin::Pin,
-    task::{Context, Poll},
+#[cfg(feature = "multipart")]
+use {
+    crate::{BatchRequest, ParseRequestError, UploadValue},
+    futures_util::{io::AsyncRead, stream::Stream},
+    multer::{Constraints, Multipart, SizeLimit},
+    pin_project_lite::pin_project,
+    std::{
+        collections::HashMap,
+        io::{self, Seek, SeekFrom, Write},
+        pin::Pin,
+        task::{Context, Poll},
+    },
 };
-
-use futures_util::{io::AsyncRead, stream::Stream};
-use multer::{Constraints, Multipart, SizeLimit};
-use pin_project_lite::pin_project;
-
-use crate::{BatchRequest, ParseRequestError, UploadValue};
 
 /// Options for `receive_multipart`.
 #[derive(Default, Clone, Copy)]
 #[non_exhaustive]
 pub struct MultipartOptions {
     /// The maximum file size.
+    #[cfg(feature = "multipart")]
     pub max_file_size: Option<usize>,
     /// The maximum number of files.
+    #[cfg(feature = "multipart")]
     pub max_num_files: Option<usize>,
 }
 
+#[cfg(feature = "multipart")]
 impl MultipartOptions {
     /// Set maximum file size.
     #[must_use]
@@ -41,6 +45,7 @@ impl MultipartOptions {
     }
 }
 
+#[cfg(feature = "multipart")]
 pub(super) async fn receive_batch_multipart(
     body: impl AsyncRead + Send,
     boundary: impl Into<String>,
@@ -166,6 +171,7 @@ pub(super) async fn receive_batch_multipart(
     Ok(request)
 }
 
+#[cfg(feature = "multipart")]
 pin_project! {
     pub(crate) struct ReaderStream<T> {
         buf: [u8; 2048],
@@ -174,6 +180,7 @@ pin_project! {
     }
 }
 
+#[cfg(feature = "multipart")]
 impl<T> ReaderStream<T> {
     pub(crate) fn new(reader: T) -> Self {
         Self {
@@ -183,6 +190,7 @@ impl<T> ReaderStream<T> {
     }
 }
 
+#[cfg(feature = "multipart")]
 impl<T: AsyncRead> Stream for ReaderStream<T> {
     type Item = io::Result<Vec<u8>>;
 
