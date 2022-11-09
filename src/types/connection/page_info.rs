@@ -2,7 +2,7 @@ use crate::SimpleObject;
 
 /// Information about pagination in a connection
 #[derive(SimpleObject)]
-#[graphql(internal)]
+#[graphql(internal, shareable)]
 pub struct PageInfo {
     /// When paginating backwards, are there more items?
     pub has_previous_page: bool,
