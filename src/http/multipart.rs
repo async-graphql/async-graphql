@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::{self, Seek, SeekFrom, Write},
+    io,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -67,7 +67,7 @@ pub(super) async fn receive_batch_multipart(
     let mut map = None;
     let mut files = Vec::new();
 
-    while let Some(mut field) = multipart.next_field().await? {
+    while let Some(field) = multipart.next_field().await? {
         // in multipart, each field / file can actually have a own Content-Type.
         // We use this to determine the encoding of the graphql query
         let content_type = field
@@ -115,12 +115,24 @@ pub(super) async fn receive_batch_multipart(
                 if let Some(name) = field.name().map(ToString::to_string) {
                     if let Some(filename) = field.file_name().map(ToString::to_string) {
                         let content_type = field.content_type().map(ToString::to_string);
-                        let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
-                        while let Some(chunk) = field.chunk().await? {
-                            file.write(&chunk).map_err(ParseRequestError::Io)?;
-                        }
-                        file.seek(SeekFrom::Start(0))?;
-                        files.push((name, filename, content_type, file));
+
+                        #[cfg(feature = "tempfile")]
+                        let content = {
+                            use std::io::{Seek, SeekFrom, Write};
+
+                            let mut field = field;
+                            let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
+                            while let Some(chunk) = field.chunk().await? {
+                                file.write(&chunk).map_err(ParseRequestError::Io)?;
+                            }
+                            file.seek(SeekFrom::Start(0))?;
+                            file
+                        };
+
+                        #[cfg(not(feature = "tempfile"))]
+                        let content = field.bytes().await?;
+
+                        files.push((name, filename, content_type, content));
                     }
                 }
             }

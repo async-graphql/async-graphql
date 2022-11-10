@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fs::File, io::Read};
+use std::{borrow::Cow, io::Read};
 
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
@@ -14,7 +14,11 @@ pub struct UploadValue {
     /// The content type of the file.
     pub content_type: Option<String>,
     /// The file data.
-    pub content: File,
+    #[cfg(feature = "tempfile")]
+    pub content: std::fs::File,
+    /// The file data.
+    #[cfg(not(feature = "tempfile"))]
+    pub content: bytes::Bytes,
 }
 
 impl UploadValue {
@@ -25,30 +29,66 @@ impl UploadValue {
     ///
     /// Fails if cloning the inner `File` fails.
     pub fn try_clone(&self) -> std::io::Result<Self> {
-        Ok(Self {
-            filename: self.filename.clone(),
-            content_type: self.content_type.clone(),
-            content: self.content.try_clone()?,
-        })
+        #[cfg(feature = "tempfile")]
+        {
+            Ok(Self {
+                filename: self.filename.clone(),
+                content_type: self.content_type.clone(),
+                content: self.content.try_clone()?,
+            })
+        }
+
+        #[cfg(not(feature = "tempfile"))]
+        {
+            Ok(Self {
+                filename: self.filename.clone(),
+                content_type: self.content_type.clone(),
+                content: self.content.clone(),
+            })
+        }
     }
 
     /// Convert to a `Read`.
     ///
     /// **Note**: this is a *synchronous/blocking* reader.
     pub fn into_read(self) -> impl Read + Sync + Send + 'static {
-        self.content
+        #[cfg(feature = "tempfile")]
+        {
+            self.content
+        }
+
+        #[cfg(not(feature = "tempfile"))]
+        {
+            std::io::Cursor::new(self.content)
+        }
     }
 
+    /// Convert to a `AsyncRead`.
     #[cfg(feature = "unblock")]
     #[cfg_attr(docsrs, doc(cfg(feature = "unblock")))]
-    /// Convert to a `AsyncRead`.
     pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
-        blocking::Unblock::new(self.content)
+        #[cfg(feature = "tempfile")]
+        {
+            blocking::Unblock::new(self.content)
+        }
+
+        #[cfg(not(feature = "tempfile"))]
+        {
+            std::io::Cursor::new(self.content)
+        }
     }
 
     /// Returns the size of the file, in bytes.
     pub fn size(&self) -> std::io::Result<u64> {
-        self.content.metadata().map(|meta| meta.len())
+        #[cfg(feature = "tempfile")]
+        {
+            self.content.metadata().map(|meta| meta.len())
+        }
+
+        #[cfg(not(feature = "tempfile"))]
+        {
+            Ok(self.content.len() as u64)
+        }
     }
 }
 
