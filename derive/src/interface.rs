@@ -32,7 +32,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut enum_items = HashSet::new();
     let mut type_into_impls = Vec::new();
     let inaccessible = interface_args.inaccessible;
-    let tags = &interface_args.tags;
+    let tags = interface_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = if !interface_args.name_type {
         let name = interface_args
             .name
@@ -44,7 +48,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     };
 
     let desc = get_rustdoc(&interface_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut registry_types = Vec::new();
@@ -127,7 +131,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
     if interface_args.fields.is_empty() {
         return Err(Error::new_spanned(
-            &ident,
+            ident,
             "A GraphQL Interface type must define one or more fields.",
         )
         .into());
@@ -163,7 +167,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         };
         let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
             Ok(ty) => ty,
-            Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
+            Err(_) => return Err(Error::new_spanned(ty, "Expect type").into()),
         };
         let mut calls = Vec::new();
         let mut use_params = Vec::new();
@@ -204,7 +208,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 .rename(name, RenameTarget::Argument);
             let ty = match syn::parse_str::<syn::Type>(&ty.value()) {
                 Ok(ty) => ty,
-                Err(_) => return Err(Error::new_spanned(&ty, "Expect type").into()),
+                Err(_) => return Err(Error::new_spanned(ty, "Expect type").into()),
             };
             decl_params.push(quote! { #ident: #ty });
             use_params.push(quote! { #ident });
@@ -220,7 +224,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
             let desc = desc
                 .as_ref()
-                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let schema_default = default
                 .as_ref()
@@ -233,15 +237,20 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let visible = visible_fn(visible);
+            let tags = tags
+                .iter()
+                .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                .collect::<Vec<_>>();
+
             schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                        name: #name,
+                        name: ::std::string::ToString::to_string(#name),
                         description: #desc,
                         ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                         default_value: #schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         is_secret: #secret,
                     });
                 });
@@ -257,7 +266,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
         let desc = desc
             .as_ref()
-            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let deprecation = gen_deprecation(deprecation, &crate_name);
 
@@ -278,6 +287,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         });
 
         let visible = visible_fn(visible);
+        let tags = tags
+            .iter()
+            .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+            .collect::<Vec<_>>();
+
         schema_fields.push(quote! {
             fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {
                 name: ::std::string::ToString::to_string(#name),
@@ -295,7 +309,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 requires: #requires,
                 shareable: #shareable,
                 inaccessible: #inaccessible,
-                tags: &[ #(#tags),* ],
+                tags: ::std::vec![ #(#tags),* ],
                 override_from: #override_from,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
@@ -383,8 +397,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     }
                 })
             }

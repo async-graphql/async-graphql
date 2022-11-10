@@ -384,7 +384,7 @@ where
     F: Fn() -> V,
 {
     let schema = &*TEST_HARNESS;
-    let registry = &schema.env.registry;
+    let registry = &schema.0.env.registry;
     let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();
     visit(&mut visitor, &mut ctx, doc);

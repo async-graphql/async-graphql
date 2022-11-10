@@ -101,8 +101,8 @@ macro_rules! scalar {
         $crate::scalar_internal!(
             $ty,
             $name,
-            ::std::option::Option::Some($desc),
-            ::std::option::Option::Some($specified_by_url)
+            ::std::option::Option::Some(::std::string::ToString::to_string($desc)),
+            ::std::option::Option::Some(::std::string::ToString::to_string($specified_by_url))
         );
     };
 
@@ -110,7 +110,7 @@ macro_rules! scalar {
         $crate::scalar_internal!(
             $ty,
             $name,
-            ::std::option::Option::Some($desc),
+            ::std::option::Option::Some(::std::string::ToString::to_string($desc)),
             ::std::option::Option::None
         );
     };

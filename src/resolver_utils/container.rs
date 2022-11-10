@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 
 use crate::{
     extensions::ResolveInfo, parser::types::Selection, Context, ContextBase, ContextSelectionSet,
-    Error, Name, OutputType, ServerError, ServerResult, Value,
+    Error, IntrospectionMode, Name, OutputType, ServerError, ServerResult, Value,
 };
 
 /// Represents a GraphQL container object.
@@ -116,6 +116,14 @@ pub async fn resolve_container_serial<'a, T: ContainerType + ?Sized>(
     resolve_container_inner(ctx, root, false).await
 }
 
+pub(crate) fn create_value_object(values: Vec<(Name, Value)>) -> Value {
+    let mut map = IndexMap::new();
+    for (name, value) in values {
+        insert_value(&mut map, name, value);
+    }
+    Value::Object(map)
+}
+
 fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
     if let Some(prev_value) = target.get_mut(&name) {
         if let Value::Object(target_map) = prev_value {
@@ -160,11 +168,7 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
         results
     };
 
-    let mut map = IndexMap::new();
-    for (name, value) in res {
-        insert_value(&mut map, name, value);
-    }
-    Ok(Value::Object(map))
+    Ok(create_value_object(res))
 }
 
 type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
@@ -184,14 +188,27 @@ impl<'a> Fields<'a> {
             match &selection.node {
                 Selection::Field(field) => {
                     if field.node.name.node == "__typename" {
-                        // Get the typename
-                        let ctx_field = ctx.with_field(field);
-                        let field_name = ctx_field.item.node.response_key().node.clone();
-                        let typename = root.introspection_type_name().into_owned();
+                        if matches!(
+                            ctx.schema_env.registry.introspection_mode,
+                            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
+                        ) && matches!(
+                            ctx.query_env.introspection_mode,
+                            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly,
+                        ) {
+                            // Get the typename
+                            let ctx_field = ctx.with_field(field);
+                            let field_name = ctx_field.item.node.response_key().node.clone();
+                            let typename = root.introspection_type_name().into_owned();
 
-                        self.0.push(Box::pin(async move {
-                            Ok((field_name, Value::String(typename)))
-                        }));
+                            self.0.push(Box::pin(async move {
+                                Ok((field_name, Value::String(typename)))
+                            }));
+                        } else {
+                            self.0.push(Box::pin(async move {
+                                Ok((field.node.response_key().node.clone(), Value::Null))
+                            }));
+                        }
+
                         continue;
                     }
 

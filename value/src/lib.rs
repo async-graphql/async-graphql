@@ -191,6 +191,7 @@ macro_rules! from_integer {
     ($($ty:ident),*) => {
         $(
             impl From<$ty> for ConstValue {
+                #[inline]
                 fn from(n: $ty) -> Self {
                     ConstValue::Number(n.into())
                 }
@@ -202,36 +203,49 @@ macro_rules! from_integer {
 from_integer!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize);
 
 impl From<f32> for ConstValue {
+    #[inline]
     fn from(f: f32) -> Self {
         From::from(f as f64)
     }
 }
 
 impl From<f64> for ConstValue {
+    #[inline]
     fn from(f: f64) -> Self {
         Number::from_f64(f).map_or(ConstValue::Null, ConstValue::Number)
     }
 }
 
 impl From<bool> for ConstValue {
+    #[inline]
     fn from(value: bool) -> Self {
         ConstValue::Boolean(value)
     }
 }
 
 impl From<String> for ConstValue {
+    #[inline]
     fn from(value: String) -> Self {
         ConstValue::String(value)
     }
 }
 
+impl From<Name> for ConstValue {
+    #[inline]
+    fn from(value: Name) -> Self {
+        ConstValue::Enum(value)
+    }
+}
+
 impl<'a> From<&'a str> for ConstValue {
+    #[inline]
     fn from(value: &'a str) -> Self {
         ConstValue::String(value.into())
     }
 }
 
 impl<'a> From<Cow<'a, str>> for ConstValue {
+    #[inline]
     fn from(f: Cow<'a, str>) -> Self {
         ConstValue::String(f.into_owned())
     }

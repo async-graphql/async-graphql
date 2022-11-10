@@ -28,7 +28,11 @@ pub fn generate(
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
-    let tags = &object_args.tags;
+    let tags = object_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -43,10 +47,10 @@ pub fn generate(
     };
 
     let desc = if object_args.use_type_description {
-        quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
+        quote! { ::std::option::Option::Some(::std::string::ToString::to_string(<Self as #crate_name::Description>::description())) }
     } else {
         get_rustdoc(&item_impl.attrs)?
-            .map(|s| quote!(::std::option::Option::Some(#s)))
+            .map(|s| quote!(::std::option::Option::Some(::std::string::ToString::to_string(#s))))
             .unwrap_or_else(|| quote!(::std::option::Option::None))
     };
 
@@ -111,7 +115,7 @@ pub fn generate(
                                 FnArg::Typed(pat) => match &*pat.pat {
                                     Pat::Ident(ident) => Some(Ok(ident.ident.clone())),
                                     _ => Some(Err(Error::new_spanned(
-                                        &pat,
+                                        pat,
                                         "Must be a simple argument",
                                     ))),
                                 },
@@ -314,13 +318,17 @@ pub fn generate(
                         .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
                 });
                 let field_desc = get_rustdoc(&method.attrs)?
-                    .map(|s| quote! { ::std::option::Option::Some(#s) })
+                    .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
                 let external = method_args.external;
                 let shareable = method_args.shareable;
                 let inaccessible = method_args.inaccessible;
-                let tags = &method_args.tags;
+                let tags = method_args
+                    .tags
+                    .iter()
+                    .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                    .collect::<Vec<_>>();
                 let override_from = match &method_args.override_from {
                     Some(from) => quote! { ::std::option::Option::Some(#from) },
                     None => quote! { ::std::option::Option::None },
@@ -378,7 +386,7 @@ pub fn generate(
                     });
                     let desc = desc
                         .as_ref()
-                        .map(|s| quote! {::std::option::Option::Some(#s)})
+                        .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
                         .unwrap_or_else(|| quote! {::std::option::Option::None});
                     let default = generate_default(default, default_with)?;
                     let schema_default = default
@@ -393,15 +401,20 @@ pub fn generate(
                         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
                     let visible = visible_fn(visible);
+                    let tags = tags
+                        .iter()
+                        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                        .collect::<Vec<_>>();
+
                     schema_args.push(quote! {
                             args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                                name: #name,
+                                name: ::std::string::ToString::to_string(#name),
                                 description: #desc,
                                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                                 default_value: #schema_default,
                                 visible: #visible,
                                 inaccessible: #inaccessible,
-                                tags: &[ #(#tags),* ],
+                                tags: ::std::vec![ #(#tags),* ],
                                 is_secret: #secret,
                             });
                         });
@@ -527,7 +540,7 @@ pub fn generate(
                         requires: #requires,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
@@ -605,7 +618,7 @@ pub fn generate(
 
     if resolvers.is_empty() && create_entity_types.is_empty() {
         return Err(Error::new_spanned(
-            &self_ty,
+            self_ty,
             "A GraphQL Object type must define one or more fields.",
         )
         .into());
@@ -668,11 +681,11 @@ pub fn generate(
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -710,11 +723,11 @@ pub fn generate(
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

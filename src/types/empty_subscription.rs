@@ -29,7 +29,7 @@ impl SubscriptionType for EmptySubscription {
             inaccessible: false,
             tags: Default::default(),
             is_subscription: true,
-            rust_typename: std::any::type_name::<Self>(),
+            rust_typename: Some(std::any::type_name::<Self>()),
         })
     }
 

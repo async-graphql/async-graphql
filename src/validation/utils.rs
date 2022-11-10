@@ -149,15 +149,15 @@ pub fn is_valid_input_value(
                             values.keys().map(AsRef::as_ref).collect::<HashSet<_>>();
 
                         for field in input_fields.values() {
-                            input_names.remove(field.name);
-                            if let Some(value) = values.get(field.name) {
+                            input_names.remove(&*field.name);
+                            if let Some(value) = values.get(&*field.name) {
                                 if let Some(reason) = is_valid_input_value(
                                     registry,
                                     &field.ty,
                                     value,
                                     QueryPathNode {
                                         parent: Some(&path_node),
-                                        segment: QueryPathSegment::Name(field.name),
+                                        segment: QueryPathSegment::Name(&field.name),
                                     },
                                 ) {
                                     return Some(reason);

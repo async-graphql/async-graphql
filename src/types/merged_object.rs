@@ -83,7 +83,7 @@ where
                 inaccessible: false,
                 tags: Default::default(),
                 is_subscription: false,
-                rust_typename: std::any::type_name::<Self>(),
+                rust_typename: Some(std::any::type_name::<Self>()),
             }
         })
     }
@@ -144,7 +144,7 @@ where
                 inaccessible: false,
                 tags: Default::default(),
                 is_subscription: false,
-                rust_typename: std::any::type_name::<Self>(),
+                rust_typename: Some(std::any::type_name::<Self>()),
             }
         })
     }
@@ -180,7 +180,7 @@ impl SubscriptionType for MergedObjectTail {
             inaccessible: false,
             tags: Default::default(),
             is_subscription: false,
-            rust_typename: std::any::type_name::<Self>(),
+            rust_typename: Some(std::any::type_name::<Self>()),
         })
     }
 

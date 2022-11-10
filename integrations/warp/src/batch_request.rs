@@ -1,6 +1,6 @@
 use std::{io, io::ErrorKind};
 
-use async_graphql::{http::MultipartOptions, BatchRequest, ObjectType, Schema, SubscriptionType};
+use async_graphql::{http::MultipartOptions, BatchRequest, Executor};
 use futures_util::TryStreamExt;
 use warp::{reply::Response as WarpResponse, Buf, Filter, Rejection, Reply};
 
@@ -8,31 +8,25 @@ use crate::GraphQLBadRequest;
 
 /// GraphQL batch request filter
 ///
-/// It outputs a tuple containing the `async_graphql::Schema` and
+/// It outputs a tuple containing the `async_graphql::Executor` and
 /// `async_graphql::BatchRequest`.
-pub fn graphql_batch<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
-) -> impl Filter<Extract = ((Schema<Query, Mutation, Subscription>, BatchRequest),), Error = Rejection>
-       + Clone
+pub fn graphql_batch<E>(
+    executor: E,
+) -> impl Filter<Extract = ((E, BatchRequest),), Error = Rejection> + Clone
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
 {
-    graphql_batch_opts(schema, Default::default())
+    graphql_batch_opts(executor, Default::default())
 }
 
 /// Similar to graphql_batch, but you can set the options with
 /// :`async_graphql::MultipartOptions`.
-pub fn graphql_batch_opts<Query, Mutation, Subscription>(
-    schema: Schema<Query, Mutation, Subscription>,
+pub fn graphql_batch_opts<E>(
+    executor: E,
     opts: MultipartOptions,
-) -> impl Filter<Extract = ((Schema<Query, Mutation, Subscription>, BatchRequest),), Error = Rejection>
-       + Clone
+) -> impl Filter<Extract = ((E, BatchRequest),), Error = Rejection> + Clone
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
 {
     warp::any()
         .and(warp::get().and(warp::filters::query::raw()).and_then(
@@ -60,7 +54,7 @@ where
                 .map_err(|e| warp::reject::custom(GraphQLBadRequest(e)))
             }))
         .unify()
-        .map(move |res| (schema.clone(), res))
+        .map(move |res| (executor.clone(), res))
 }
 
 /// Reply for `async_graphql::BatchRequest`.

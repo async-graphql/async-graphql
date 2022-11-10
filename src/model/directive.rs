@@ -88,7 +88,7 @@ impl<'a> __Directive<'a> {
 
     #[inline]
     async fn description(&self) -> Option<&str> {
-        self.directive.description
+        self.directive.description.as_deref()
     }
 
     #[inline]

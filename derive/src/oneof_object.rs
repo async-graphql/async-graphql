@@ -14,14 +14,19 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
     let inaccessible = object_args.inaccessible;
-    let tags = &object_args.tags;
+    let tags = object_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = if !object_args.name_type {
         let name = object_args
-            .name
+            .input_name
             .clone()
+            .or_else(|| object_args.name.clone())
             .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
         quote!(::std::borrow::Cow::Borrowed(#name))
     } else {
@@ -49,9 +54,13 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 .rename(enum_name.to_string(), RenameTarget::Field)
         });
         let inaccessible = variant.inaccessible;
-        let tags = &variant.tags;
+        let tags = variant
+            .tags
+            .iter()
+            .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+            .collect::<Vec<_>>();
         let desc = get_rustdoc(&object_args.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
@@ -84,13 +93,13 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
 
             schema_fields.push(quote! {
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaInputValue {
-                    name: #field_name,
+                    name: ::std::string::ToString::to_string(#field_name),
                     description: #desc,
                     ty: <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry),
                     default_value: ::std::option::Option::None,
                     visible: #visible,
                     inaccessible: #inaccessible,
-                    tags: &[ #(#tags),* ],
+                    tags: ::std::vec![ #(#tags),* ],
                     is_secret: #secret,
                 });
             });
@@ -145,8 +154,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: true,
                     })
                 }
@@ -197,8 +206,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: true,
                     })
                 }

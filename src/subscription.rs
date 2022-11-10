@@ -3,10 +3,8 @@ use std::{borrow::Cow, pin::Pin};
 use futures_util::stream::{Stream, StreamExt};
 
 use crate::{
-    parser::types::{Selection, TypeCondition},
-    registry,
-    registry::Registry,
-    Context, ContextSelectionSet, PathSegment, Response, ServerError, ServerResult,
+    parser::types::Selection, registry, registry::Registry, Context, ContextSelectionSet,
+    PathSegment, Response, ServerError, ServerResult,
 };
 
 /// A GraphQL subscription object
@@ -35,7 +33,7 @@ pub trait SubscriptionType: Send + Sync {
     ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>>;
 }
 
-type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = Response> + 'a + Send>>;
+pub(crate) type BoxFieldStream<'a> = Pin<Box<dyn Stream<Item = Response> + 'a + Send>>;
 
 pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     ctx: &ContextSelectionSet<'a>,
@@ -43,8 +41,8 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
     streams: &mut Vec<BoxFieldStream<'a>>,
 ) -> ServerResult<()> {
     for selection in &ctx.item.node.items {
-        match &selection.node {
-            Selection::Field(field) => streams.push(Box::pin({
+        if let Selection::Field(field) = &selection.node {
+            streams.push(Box::pin({
                 let ctx = ctx.clone();
                 async_stream::stream! {
                     let ctx = ctx.with_field(field);
@@ -60,42 +58,7 @@ pub(crate) fn collect_subscription_streams<'a, T: SubscriptionType + 'static>(
                         yield Response::from_errors(vec![err]);
                     }
                 }
-            })),
-            Selection::FragmentSpread(fragment_spread) => {
-                if let Some(fragment) = ctx
-                    .query_env
-                    .fragments
-                    .get(&fragment_spread.node.fragment_name.node)
-                {
-                    collect_subscription_streams(
-                        &ctx.with_selection_set(&fragment.node.selection_set),
-                        root,
-                        streams,
-                    )?;
-                }
-            }
-            Selection::InlineFragment(inline_fragment) => {
-                if let Some(TypeCondition { on: name }) = inline_fragment
-                    .node
-                    .type_condition
-                    .as_ref()
-                    .map(|v| &v.node)
-                {
-                    if name.node.as_str() == T::type_name() {
-                        collect_subscription_streams(
-                            &ctx.with_selection_set(&inline_fragment.node.selection_set),
-                            root,
-                            streams,
-                        )?;
-                    }
-                } else {
-                    collect_subscription_streams(
-                        &ctx.with_selection_set(&inline_fragment.node.selection_set),
-                        root,
-                        streams,
-                    )?;
-                }
-            }
+            }))
         }
     }
     Ok(())

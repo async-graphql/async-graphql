@@ -15,12 +15,12 @@ pub struct __InputValue<'a> {
 impl<'a> __InputValue<'a> {
     #[inline]
     async fn name(&self) -> &str {
-        self.input_value.name
+        &self.input_value.name
     }
 
     #[inline]
     async fn description(&self) -> Option<&str> {
-        self.input_value.description
+        self.input_value.description.as_deref()
     }
 
     #[graphql(name = "type")]

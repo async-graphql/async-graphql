@@ -85,7 +85,7 @@ pub fn generate(
                                 FnArg::Typed(pat) => match &*pat.pat {
                                     Pat::Ident(ident) => Some(Ok(ident.ident.clone())),
                                     _ => Some(Err(Error::new_spanned(
-                                        &pat,
+                                        pat,
                                         "Must be a simple argument",
                                     ))),
                                 },
@@ -178,7 +178,11 @@ pub fn generate(
                 None => quote! { ::std::option::Option::None },
             };
             let inaccessible = method_args.inaccessible;
-            let tags = &method_args.tags;
+            let tags = method_args
+                .tags
+                .iter()
+                .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                .collect::<Vec<_>>();
             let requires = match &method_args.requires {
                 Some(requires) => quote! { ::std::option::Option::Some(#requires) },
                 None => quote! { ::std::option::Option::None },
@@ -247,15 +251,19 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
 
                 let visible = visible_fn(visible);
+                let tags = tags
+                    .iter()
+                    .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                    .collect::<Vec<_>>();
                 schema_args.push(quote! {
                         args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                            name: #name,
+                            name: ::std::string::ToString::to_string(#name),
                             description: #desc,
                             ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                             default_value: #schema_default,
                             visible: #visible,
                             inaccessible: #inaccessible,
-                            tags: &[ #(#tags),* ],
+                            tags: ::std::vec![ #(#tags),* ],
                             is_secret: #secret,
                         });
                     });
@@ -382,7 +390,7 @@ pub fn generate(
                     requires: #requires,
                     shareable: #shareable,
                     inaccessible: #inaccessible,
-                    tags: &[ #(#tags),* ],
+                    tags: ::std::vec![ #(#tags),* ],
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: #complexity,

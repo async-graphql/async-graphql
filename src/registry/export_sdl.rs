@@ -139,7 +139,7 @@ impl Registry {
         let mut fields = it.collect::<Vec<_>>();
 
         if options.sorted_fields {
-            fields.sort_by(|a, b| a.name.cmp(&b.name));
+            fields.sort_by_key(|field| &field.name);
         }
 
         for field in fields {
@@ -149,7 +149,7 @@ impl Registry {
                 continue;
             }
 
-            if let Some(description) = field.description {
+            if let Some(description) = &field.description {
                 export_description(sdl, options, false, description);
             }
 
@@ -158,7 +158,7 @@ impl Registry {
 
                 let mut args = field.args.values().collect::<Vec<_>>();
                 if options.sorted_arguments {
-                    args.sort_by(|a, b| a.name.cmp(b.name));
+                    args.sort_by_key(|value| &value.name);
                 }
 
                 for (i, arg) in args.into_iter().enumerate() {
@@ -172,7 +172,7 @@ impl Registry {
                             write!(sdl, " @inaccessible").ok();
                         }
 
-                        for tag in arg.tags {
+                        for tag in &arg.tags {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
@@ -200,7 +200,7 @@ impl Registry {
                 if field.inaccessible {
                     write!(sdl, " @inaccessible").ok();
                 }
-                for tag in field.tags {
+                for tag in &field.tags {
                     write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                 }
                 if let Some(from) = field.override_from {
@@ -247,7 +247,7 @@ impl Registry {
                         if *inaccessible {
                             write!(sdl, " @inaccessible").ok();
                         }
-                        for tag in *tags {
+                        for tag in tags {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
@@ -314,7 +314,7 @@ impl Registry {
                         write!(sdl, " @inaccessible").ok();
                     }
 
-                    for tag in *tags {
+                    for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
@@ -352,7 +352,7 @@ impl Registry {
                         write!(sdl, " @inaccessible").ok();
                     }
 
-                    for tag in *tags {
+                    for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
@@ -379,7 +379,7 @@ impl Registry {
                     if *inaccessible {
                         write!(sdl, " @inaccessible").ok();
                     }
-                    for tag in *tags {
+                    for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
@@ -387,10 +387,13 @@ impl Registry {
 
                 let mut values = enum_values.values().collect::<Vec<_>>();
                 if options.sorted_enum_values {
-                    values.sort_by(|a, b| a.name.cmp(&b.name));
+                    values.sort_by_key(|value| &value.name);
                 }
 
                 for value in values {
+                    if let Some(description) = &value.description {
+                        export_description(sdl, options, false, description);
+                    }
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
 
@@ -399,7 +402,7 @@ impl Registry {
                             write!(sdl, " @inaccessible").ok();
                         }
 
-                        for tag in value.tags {
+                        for tag in &value.tags {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
@@ -430,7 +433,7 @@ impl Registry {
                     if *inaccessible {
                         write!(sdl, " @inaccessible").ok();
                     }
-                    for tag in *tags {
+                    for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
@@ -438,11 +441,11 @@ impl Registry {
 
                 let mut fields = input_fields.values().collect::<Vec<_>>();
                 if options.sorted_fields {
-                    fields.sort_by(|a, b| a.name.cmp(b.name));
+                    fields.sort_by_key(|value| &value.name);
                 }
 
                 for field in fields {
-                    if let Some(description) = field.description {
+                    if let Some(description) = &field.description {
                         export_description(sdl, options, false, description);
                     }
                     write!(sdl, "\t{}", export_input_value(&field)).ok();
@@ -450,7 +453,7 @@ impl Registry {
                         if field.inaccessible {
                             write!(sdl, " @inaccessible").ok();
                         }
-                        for tag in field.tags {
+                        for tag in &field.tags {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
@@ -476,7 +479,7 @@ impl Registry {
                     if *inaccessible {
                         write!(sdl, " @inaccessible").ok();
                     }
-                    for tag in *tags {
+                    for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
