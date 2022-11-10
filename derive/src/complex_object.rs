@@ -168,7 +168,7 @@ pub fn generate(
                     .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
             });
             let field_desc = get_rustdoc(&method.attrs)?
-                .map(|s| quote! { ::std::option::Option::Some(#s) })
+                .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
             let external = method_args.external;
@@ -236,7 +236,7 @@ pub fn generate(
                 });
                 let desc = desc
                     .as_ref()
-                    .map(|s| quote! {::std::option::Option::Some(#s)})
+                    .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let default = generate_default(default, default_with)?;
                 let schema_default = default
