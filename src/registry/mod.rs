@@ -593,7 +593,7 @@ pub struct MetaDirective {
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
     pub directives: HashMap<String, MetaDirective>,
-    pub implements: HashMap<String, HashSet<String>>,
+    pub implements: HashMap<String, IndexSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
     pub subscription_type: Option<String>,
@@ -792,7 +792,7 @@ impl Registry {
                 interfaces.insert(interface.to_string());
             })
             .or_insert({
-                let mut interfaces = HashSet::new();
+                let mut interfaces = IndexSet::new();
                 interfaces.insert(interface.to_string());
                 interfaces
             });
