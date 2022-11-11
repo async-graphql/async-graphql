@@ -40,113 +40,82 @@ impl Display for TypeRef {
     }
 }
 
-/// A type reference builder for named type
-pub struct NamedTypeRefBuilder {
-    name: Cow<'static, str>,
-    non_null: bool,
-}
-
-impl NamedTypeRefBuilder {
-    /// Specifies this type is non-null
-    pub fn non_null(self) -> Self {
-        Self {
-            non_null: true,
-            ..self
-        }
-    }
-
-    /// Consumes this type and returns a list type builder
-    pub fn list(self) -> ListTypeRefBuilder {
-        ListTypeRefBuilder {
-            element: TypeRef::from(self).0,
-            non_null: false,
-        }
-    }
-
-    /// Consumes this builder and returns a type reference
-    pub fn into_type_ref(self) -> TypeRef {
-        TypeRef::from(self)
-    }
-}
-
-impl From<NamedTypeRefBuilder> for TypeRef {
-    fn from(builder: NamedTypeRefBuilder) -> Self {
-        let ty = TypeRefInner::Named(builder.name);
-        if builder.non_null {
-            TypeRef(TypeRefInner::NonNull(Box::new(ty)))
-        } else {
-            TypeRef(ty)
-        }
-    }
-}
-
-/// A type reference builder for list type
-pub struct ListTypeRefBuilder {
-    element: TypeRefInner,
-    non_null: bool,
-}
-
-impl ListTypeRefBuilder {
-    /// Specifies this list is non-null
-    pub fn non_null(self) -> Self {
-        Self {
-            non_null: true,
-            ..self
-        }
-    }
-
-    /// Consumes this builder and returns a type reference
-    pub fn into_type_ref(self) -> TypeRef {
-        TypeRef::from(self)
-    }
-}
-
-impl From<ListTypeRefBuilder> for TypeRef {
-    fn from(builder: ListTypeRefBuilder) -> Self {
-        if builder.non_null {
-            TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
-                Box::new(builder.element),
-            ))))
-        } else {
-            TypeRef(TypeRefInner::List(Box::new(builder.element)))
-        }
-    }
-}
-
 impl TypeRef {
-    /// A Int scalar type
-    pub const INT: NamedTypeRefBuilder = NamedTypeRefBuilder {
-        name: Cow::Borrowed("Int"),
-        non_null: false,
-    };
-    /// A Float scalar type
-    pub const FLOAT: NamedTypeRefBuilder = NamedTypeRefBuilder {
-        name: Cow::Borrowed("Float"),
-        non_null: false,
-    };
-    /// A String scalar type
-    pub const STRING: NamedTypeRefBuilder = NamedTypeRefBuilder {
-        name: Cow::Borrowed("String"),
-        non_null: false,
-    };
-    /// A Boolean scalar type
-    pub const BOOLEAN: NamedTypeRefBuilder = NamedTypeRefBuilder {
-        name: Cow::Borrowed("Boolean"),
-        non_null: false,
-    };
-    /// A ID scalar type
-    pub const ID: NamedTypeRefBuilder = NamedTypeRefBuilder {
-        name: Cow::Borrowed("ID"),
-        non_null: false,
-    };
+    /// A int scalar type
+    pub const INT: &str = "Int";
 
-    /// Create a named type reference
-    #[inline(always)]
-    pub fn named(type_name: impl Into<Cow<'static, str>>) -> NamedTypeRefBuilder {
-        NamedTypeRefBuilder {
-            name: type_name.into(),
-            non_null: false,
-        }
+    /// A float scalar type
+    pub const FLOAT: &str = "Float";
+
+    /// A string scalar type
+    pub const STRING: &str = "String";
+
+    /// A boolean scalar type
+    pub const BOOLEAN: &str = "Boolean";
+
+    /// A ID scalar type
+    pub const ID: &str = "ID";
+
+    /// Returns the nullable type reference
+    ///
+    /// GraphQL Type: `T`
+    #[inline]
+    pub fn named(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::Named(type_name.into().into()))
+    }
+
+    /// Returns the non-null type reference
+    ///
+    /// GraphQL Type: `T!`
+    #[inline]
+    pub fn named_nn(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
+            type_name.into().into(),
+        ))))
+    }
+
+    /// Returns a nullable list of nullable members type reference
+    ///
+    /// GraphQL Type: `[T]`
+    #[inline]
+    pub fn named_list(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::List(Box::new(TypeRefInner::Named(
+            type_name.into().into(),
+        ))))
+    }
+
+    /// Returns a nullable list of non-null members type reference
+    ///
+    /// GraphQL Type: `[T!]`
+    #[inline]
+    pub fn named_nn_list(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::List(Box::new(TypeRefInner::NonNull(
+            Box::new(TypeRefInner::Named(type_name.into().into())),
+        ))))
+    }
+
+    /// Returns a non-null list of nullable members type reference
+    ///
+    /// GraphQL Type: `[T]!`
+    #[inline]
+    pub fn named_list_nn(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
+            Box::new(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
+                type_name.into().into(),
+            )))),
+        ))))
+    }
+
+    /// Returns a non-null list of non-null members type reference
+    ///
+    /// GraphQL Type: `[T!]!`
+    #[inline]
+    pub fn named_nn_list_nn(type_name: impl Into<String>) -> TypeRef {
+        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
+            Box::new(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
+                type_name.into().into(),
+            )))),
+        ))))
     }
 
     #[inline(always)]
@@ -208,27 +177,9 @@ mod tests {
 
     #[test]
     fn create() {
-        assert_eq!(TypeRef::named("MyObj").into_type_ref().to_string(), "MyObj");
-        assert_eq!(
-            TypeRef::named("MyObj").list().into_type_ref().to_string(),
-            "[MyObj]"
-        );
-        assert_eq!(
-            TypeRef::named("MyObj")
-                .non_null()
-                .list()
-                .into_type_ref()
-                .to_string(),
-            "[MyObj!]"
-        );
-        assert_eq!(
-            TypeRef::named("MyObj")
-                .non_null()
-                .list()
-                .non_null()
-                .into_type_ref()
-                .to_string(),
-            "[MyObj!]!"
-        );
+        assert_eq!(TypeRef::named("MyObj").to_string(), "MyObj");
+        assert_eq!(TypeRef::named_list("MyObj").to_string(), "[MyObj]");
+        assert_eq!(TypeRef::named_nn_list("MyObj").to_string(), "[MyObj!]");
+        assert_eq!(TypeRef::named_nn_list_nn("MyObj").to_string(), "[MyObj!]!");
     }
 }

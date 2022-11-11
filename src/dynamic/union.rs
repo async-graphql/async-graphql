@@ -1,7 +1,7 @@
 use indexmap::IndexSet;
 
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, SchemaError, TypeRef},
+    dynamic::SchemaError,
     registry::{MetaType, Registry},
 };
 
@@ -13,18 +13,18 @@ use crate::{
 /// use async_graphql::{dynamic::*, value, Value};
 ///
 /// let obj_a = Object::new("MyObjA")
-///     .field(Field::new("a", TypeRef::INT, |_| {
+///     .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(100))) })
 ///     }))
-///     .field(Field::new("b", TypeRef::INT, |_| {
+///     .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(200))) })
 ///     }));
 ///
 /// let obj_b = Object::new("MyObjB")
-///     .field(Field::new("c", TypeRef::INT, |_| {
+///     .field(Field::new("c", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(300))) })
 ///     }))
-///     .field(Field::new("d", TypeRef::INT, |_| {
+///     .field(Field::new("d", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(400))) })
 ///     }));
 ///
@@ -33,12 +33,12 @@ use crate::{
 ///     .possible_type(obj_b.type_name());
 ///
 /// let query = Object::new("Query")
-///     .field(Field::new("valueA", union.type_ref(), |_| {
+///     .field(Field::new("valueA", TypeRef::named_nn(union.type_name()), |_| {
 ///         FieldFuture::new(async {
 ///             Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjA")))
 ///         })
 ///     }))
-///     .field(Field::new("valueB", union.type_ref(), |_| {
+///     .field(Field::new("valueB", TypeRef::named_nn(union.type_name()), |_| {
 ///         FieldFuture::new(async {
 ///             Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjB")))
 ///         })
@@ -117,12 +117,6 @@ impl Union {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
         registry.types.insert(
             self.name.clone(),
@@ -149,18 +143,18 @@ mod tests {
     #[tokio::test]
     async fn basic_union() {
         let obj_a = Object::new("MyObjA")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }))
-            .field(Field::new("b", TypeRef::INT, |_| {
+            .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(200))) })
             }));
 
         let obj_b = Object::new("MyObjB")
-            .field(Field::new("c", TypeRef::INT, |_| {
+            .field(Field::new("c", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(300))) })
             }))
-            .field(Field::new("d", TypeRef::INT, |_| {
+            .field(Field::new("d", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(400))) })
             }));
 
@@ -169,12 +163,16 @@ mod tests {
             .possible_type(obj_b.type_name());
 
         let query = Object::new("Query")
-            .field(Field::new("valueA", union.type_ref(), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) })
-            }))
-            .field(Field::new("valueB", union.type_ref(), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) })
-            }));
+            .field(Field::new(
+                "valueA",
+                TypeRef::named_nn(union.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) }),
+            ))
+            .field(Field::new(
+                "valueB",
+                TypeRef::named_nn(union.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) }),
+            ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(obj_a)
@@ -210,26 +208,28 @@ mod tests {
     #[tokio::test]
     async fn does_not_contain() {
         let obj_a = Object::new("MyObjA")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }))
-            .field(Field::new("b", TypeRef::INT, |_| {
+            .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(200))) })
             }));
 
         let obj_b = Object::new("MyObjB")
-            .field(Field::new("c", TypeRef::INT, |_| {
+            .field(Field::new("c", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(300))) })
             }))
-            .field(Field::new("d", TypeRef::INT, |_| {
+            .field(Field::new("d", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(400))) })
             }));
 
         let union = Union::new("MyUnion").possible_type(obj_a.type_name());
 
-        let query = Object::new("Query").field(Field::new("valueA", union.type_ref(), |_| {
-            FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "valueA",
+            TypeRef::named_nn(union.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) }),
+        ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(obj_a)

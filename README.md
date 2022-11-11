@@ -63,7 +63,7 @@ use async_graphql_poem::*;
 use poem::{*, listener::TcpListener};
 
 let query = Object::new("Query")
-  .field(Field::new("howdy", TypeRef::STRING, |_| FieldFuture::new(async { "partner" })));
+  .field(Field::new("howdy", TypeRef::named_nn(TypeRef::STRING), |_| FieldFuture::new(async { "partner" })));
 
 async fn main() -> Result<(), Box<dyn Error>> {
   // create the schema

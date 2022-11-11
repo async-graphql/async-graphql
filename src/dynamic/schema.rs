@@ -457,20 +457,22 @@ mod tests {
     #[tokio::test]
     async fn basic_query() {
         let myobj = Object::new("MyObj")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(123))) })
             }))
-            .field(Field::new("b", TypeRef::STRING, |_| {
+            .field(Field::new("b", TypeRef::named(TypeRef::STRING), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from("abc"))) })
             }));
 
         let query = Object::new("Query")
-            .field(Field::new("value", TypeRef::INT, |_| {
+            .field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }))
-            .field(Field::new("valueObj", TypeRef::named("MyObj"), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL)) })
-            }));
+            .field(Field::new(
+                "valueObj",
+                TypeRef::named_nn(myobj.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
+            ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .register(myobj)
@@ -496,9 +498,10 @@ mod tests {
 
     #[tokio::test]
     async fn field_alias() {
-        let query = Object::new("Query").field(Field::new("value", TypeRef::INT, |_| {
-            FieldFuture::new(async { Ok(Some(Value::from(100))) })
-        }));
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .finish()
@@ -520,17 +523,18 @@ mod tests {
     #[tokio::test]
     async fn fragment_spread() {
         let myobj = Object::new("MyObj")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(123))) })
             }))
-            .field(Field::new("b", TypeRef::STRING, |_| {
+            .field(Field::new("b", TypeRef::named(TypeRef::STRING), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from("abc"))) })
             }));
 
-        let query =
-            Object::new("Query").field(Field::new("valueObj", TypeRef::named("MyObj"), |_| {
-                FieldFuture::new(async { Ok(Some(Value::Null)) })
-            }));
+        let query = Object::new("Query").field(Field::new(
+            "valueObj",
+            TypeRef::named_nn(myobj.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(Value::Null)) }),
+        ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .register(myobj)
@@ -559,17 +563,18 @@ mod tests {
     #[tokio::test]
     async fn inline_fragment() {
         let myobj = Object::new("MyObj")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(123))) })
             }))
-            .field(Field::new("b", TypeRef::STRING, |_| {
+            .field(Field::new("b", TypeRef::named(TypeRef::STRING), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from("abc"))) })
             }));
 
-        let query =
-            Object::new("Query").field(Field::new("valueObj", TypeRef::named("MyObj"), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL)) })
-            }));
+        let query = Object::new("Query").field(Field::new(
+            "valueObj",
+            TypeRef::named_nn(myobj.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
+        ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .register(myobj)
@@ -599,18 +604,26 @@ mod tests {
     #[tokio::test]
     async fn non_null() {
         let query = Object::new("Query")
-            .field(Field::new("valueA", TypeRef::INT.non_null(), |_| {
-                FieldFuture::new(async { Ok(FieldValue::none()) })
-            }))
-            .field(Field::new("valueB", TypeRef::INT.non_null(), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(100))) })
-            }))
-            .field(Field::new("valueC", TypeRef::INT, |_| {
-                FieldFuture::new(async { Ok(FieldValue::none()) })
-            }))
-            .field(Field::new("valueD", TypeRef::INT, |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(200))) })
-            }));
+            .field(Field::new(
+                "valueA",
+                TypeRef::named_nn(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(FieldValue::none()) }),
+            ))
+            .field(Field::new(
+                "valueB",
+                TypeRef::named_nn(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(100))) }),
+            ))
+            .field(Field::new(
+                "valueC",
+                TypeRef::named(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(FieldValue::none()) }),
+            ))
+            .field(Field::new(
+                "valueD",
+                TypeRef::named(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(200))) }),
+            ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .finish()
@@ -659,11 +672,15 @@ mod tests {
 
     #[tokio::test]
     async fn list() {
-        let query = Object::new("Query").field(Field::new("values", TypeRef::INT.list(), |_| {
-            FieldFuture::new(async {
-                Ok(Some(vec![Value::from(3), Value::from(6), Value::from(9)]))
-            })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "values",
+            TypeRef::named_nn_list_nn(TypeRef::INT),
+            |_| {
+                FieldFuture::new(async {
+                    Ok(Some(vec![Value::from(3), Value::from(6), Value::from(9)]))
+                })
+            },
+        ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .finish()
@@ -793,12 +810,16 @@ mod tests {
 
         {
             let query = Object::new("Query")
-                .field(Field::new("value1", TypeRef::INT.non_null(), |_| {
-                    FieldFuture::new(async { Ok(Some(Value::from(10))) })
-                }))
-                .field(Field::new("value2", TypeRef::INT.non_null(), |_| {
-                    FieldFuture::new(async { Ok(Some(Value::from(10))) })
-                }));
+                .field(Field::new(
+                    "value1",
+                    TypeRef::named_nn(TypeRef::INT),
+                    |_| FieldFuture::new(async { Ok(Some(Value::from(10))) }),
+                ))
+                .field(Field::new(
+                    "value2",
+                    TypeRef::named_nn(TypeRef::INT),
+                    |_| FieldFuture::new(async { Ok(Some(Value::from(10))) }),
+                ));
 
             let calls: Arc<Mutex<Vec<&'static str>>> = Default::default();
             let schema = Schema::build(query.type_name(), None, None)
@@ -837,14 +858,15 @@ mod tests {
         }
 
         {
-            let query =
-                Object::new("Query").field(Field::new("value1", TypeRef::INT.non_null(), |_| {
-                    FieldFuture::new(async { Ok(Some(Value::from(10))) })
-                }));
+            let query = Object::new("Query").field(Field::new(
+                "value1",
+                TypeRef::named_nn(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(10))) }),
+            ));
 
             let subscription = Subscription::new("Subscription").field(SubscriptionField::new(
                 "value",
-                TypeRef::INT.non_null(),
+                TypeRef::named_nn(TypeRef::INT),
                 |_| {
                     SubscriptionFieldFuture::new(async {
                         Ok(futures_util::stream::iter([1, 2, 3])

@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, InputValue, TypeRef},
+    dynamic::InputValue,
     registry::{MetaInputValue, MetaType, Registry},
 };
 
@@ -13,11 +13,11 @@ use crate::{
 /// use async_graphql::{dynamic::*, value, Value};
 ///
 /// let my_input = InputObject::new("MyInput")
-///     .field(InputValue::new("a", TypeRef::INT.non_null()))
-///     .field(InputValue::new("b", TypeRef::INT.non_null()));
+///     .field(InputValue::new("a", TypeRef::named_nn(TypeRef::INT)))
+///     .field(InputValue::new("b", TypeRef::named_nn(TypeRef::INT)));
 ///
 /// let query = Object::new("Query").field(
-///     Field::new("add", TypeRef::INT, |ctx| {
+///     Field::new("add", TypeRef::named_nn(TypeRef::INT), |ctx| {
 ///         FieldFuture::new(async move {
 ///             let input = ctx.args.try_get("input")?;
 ///             let input = input.object()?;
@@ -26,7 +26,7 @@ use crate::{
 ///             Ok(Some(Value::from(a + b)))
 ///         })
 ///     })
-///     .argument(InputValue::new("input", my_input.type_ref()))
+///     .argument(InputValue::new("input", TypeRef::named_nn(my_input.type_name())))
 /// );
 ///
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async move {
@@ -104,12 +104,6 @@ impl InputObject {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), super::SchemaError> {
         let mut input_fields = IndexMap::new();
 
@@ -154,10 +148,10 @@ mod tests {
     #[tokio::test]
     async fn input_object() {
         let myinput = InputObject::new("MyInput")
-            .field(InputValue::new("a", TypeRef::INT))
-            .field(InputValue::new("b", TypeRef::INT));
+            .field(InputValue::new("a", TypeRef::named_nn(TypeRef::INT)))
+            .field(InputValue::new("b", TypeRef::named_nn(TypeRef::INT)));
         let query = Object::new("Query").field(
-            Field::new("add", TypeRef::INT, |ctx| {
+            Field::new("add", TypeRef::named_nn(TypeRef::INT), |ctx| {
                 FieldFuture::new(async move {
                     let input = ctx.args.try_get("input")?;
                     let input = input.object()?;
@@ -166,7 +160,10 @@ mod tests {
                     Ok(Some(Value::from(a + b)))
                 })
             })
-            .argument(InputValue::new("input", myinput.type_ref())),
+            .argument(InputValue::new(
+                "input",
+                TypeRef::named_nn(myinput.type_name()),
+            )),
         );
 
         let schema = Schema::build(query.type_name(), None, None)
@@ -192,11 +189,11 @@ mod tests {
     async fn oneof_input_object() {
         let myinput = InputObject::new("MyInput")
             .oneof()
-            .field(InputValue::new("a", TypeRef::INT))
-            .field(InputValue::new("b", TypeRef::INT));
+            .field(InputValue::new("a", TypeRef::named(TypeRef::INT)))
+            .field(InputValue::new("b", TypeRef::named(TypeRef::INT)));
 
         let query = Object::new("Query").field(
-            Field::new("add10", TypeRef::INT, |ctx| {
+            Field::new("add10", TypeRef::named_nn(TypeRef::INT), |ctx| {
                 FieldFuture::new(async move {
                     let input = ctx.args.try_get("input")?;
                     let input = input.object()?;
@@ -209,7 +206,10 @@ mod tests {
                     })))
                 })
             })
-            .argument(InputValue::new("input", myinput.type_ref())),
+            .argument(InputValue::new(
+                "input",
+                TypeRef::named_nn(myinput.type_name()),
+            )),
         );
 
         let schema = Schema::build(query.type_name(), None, None)
@@ -277,14 +277,17 @@ mod tests {
     async fn invalid_oneof_input_object() {
         let myinput = InputObject::new("MyInput")
             .oneof()
-            .field(InputValue::new("a", TypeRef::INT))
-            .field(InputValue::new("b", TypeRef::INT.non_null()));
+            .field(InputValue::new("a", TypeRef::named(TypeRef::INT)))
+            .field(InputValue::new("b", TypeRef::named_nn(TypeRef::INT)));
 
         let query = Object::new("Query").field(
-            Field::new("value", TypeRef::INT, |_| {
+            Field::new("value", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async move { Ok(Some(Value::from(10))) })
             })
-            .argument(InputValue::new("input", myinput.type_ref())),
+            .argument(InputValue::new(
+                "input",
+                TypeRef::named_nn(myinput.type_name()),
+            )),
         );
 
         let err = Schema::build(query.type_name(), None, None)
@@ -296,14 +299,17 @@ mod tests {
 
         let myinput = InputObject::new("MyInput")
             .oneof()
-            .field(InputValue::new("a", TypeRef::INT))
-            .field(InputValue::new("b", TypeRef::INT).default_value(value!(10)));
+            .field(InputValue::new("a", TypeRef::named(TypeRef::INT)))
+            .field(InputValue::new("b", TypeRef::named(TypeRef::INT)).default_value(value!(10)));
 
         let query = Object::new("Query").field(
-            Field::new("value", TypeRef::INT, |_| {
+            Field::new("value", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async move { Ok(Some(Value::from(10))) })
             })
-            .argument(InputValue::new("input", myinput.type_ref())),
+            .argument(InputValue::new(
+                "input",
+                TypeRef::named_nn(myinput.type_name()),
+            )),
         );
 
         let err = Schema::build(query.type_name(), None, None)
