@@ -15,7 +15,9 @@ use crate::{
 };
 
 /// A value returned from the resolver function
-pub enum FieldValue<'a> {
+pub struct FieldValue<'a>(pub(crate) FieldValueInner<'a>);
+
+pub(crate) enum FieldValueInner<'a> {
     /// Const value
     Value(Value),
     /// Borrowed any value
@@ -36,26 +38,28 @@ pub enum FieldValue<'a> {
 impl<'a> From<()> for FieldValue<'a> {
     #[inline]
     fn from(_: ()) -> Self {
-        FieldValue::Value(Value::Null)
+        Self(FieldValueInner::Value(Value::Null))
     }
 }
 
 impl<'a> From<Value> for FieldValue<'a> {
     #[inline]
     fn from(value: Value) -> Self {
-        FieldValue::Value(value)
+        Self(FieldValueInner::Value(value))
     }
 }
 
 impl<'a, T: Into<FieldValue<'a>>> From<Vec<T>> for FieldValue<'a> {
     fn from(values: Vec<T>) -> Self {
-        FieldValue::List(values.into_iter().map(Into::into).collect())
+        Self(FieldValueInner::List(
+            values.into_iter().map(Into::into).collect(),
+        ))
     }
 }
 
 impl<'a> FieldValue<'a> {
     /// A null value equivalent to `FieldValue::Value(Value::Null)`
-    pub const NULL: FieldValue<'a> = FieldValue::Value(Value::Null);
+    pub const NULL: FieldValue<'a> = Self(FieldValueInner::Value(Value::Null));
 
     /// A none value equivalent to `None::<FieldValue>`
     ///
@@ -80,19 +84,19 @@ impl<'a> FieldValue<'a> {
     /// Create a FieldValue from [`Value`]
     #[inline]
     pub fn value(value: impl Into<Value>) -> Self {
-        FieldValue::Value(value.into())
+        Self(FieldValueInner::Value(value.into()))
     }
 
     /// Create a FieldValue from owned any value
     #[inline]
     pub fn owned_any(obj: impl Any + Send + Sync) -> Self {
-        FieldValue::OwnedAny(Box::new(obj))
+        Self(FieldValueInner::OwnedAny(Box::new(obj)))
     }
 
     /// Create a FieldValue from owned any value
     #[inline]
     pub fn borrowed_any(obj: &'a (impl Any + Send + Sync)) -> Self {
-        FieldValue::BorrowedAny(obj)
+        Self(FieldValueInner::BorrowedAny(obj))
     }
 
     /// Create a FieldValue from list
@@ -102,7 +106,9 @@ impl<'a> FieldValue<'a> {
         I: IntoIterator<Item = T>,
         T: Into<FieldValue<'a>>,
     {
-        FieldValue::List(values.into_iter().map(Into::into).collect())
+        Self(FieldValueInner::List(
+            values.into_iter().map(Into::into).collect(),
+        ))
     }
 
     /// Create a FieldValue and specify its type, which must be an object
@@ -134,10 +140,7 @@ impl<'a> FieldValue<'a> {
     ///     "obj",
     ///     my_union.type_ref(),
     ///     |_| FieldFuture::new(async move {
-    ///         Ok(Some(FieldValue::with_type(
-    ///             FieldValue::owned_any(MyObjData { a: 10 }),
-    ///             "MyObj",
-    ///         )))
+    ///         Ok(Some(FieldValue::owned_any(MyObjData { a: 10 }).with_type("MyObj")))
     ///     }),
     /// ));
     ///
@@ -160,19 +163,19 @@ impl<'a> FieldValue<'a> {
     /// );
     /// # });
     /// ```
-    pub fn with_type(value: impl Into<FieldValue<'a>>, ty: impl Into<Cow<'static, str>>) -> Self {
-        FieldValue::WithType {
-            value: Box::new(value.into()),
+    pub fn with_type(self, ty: impl Into<Cow<'static, str>>) -> Self {
+        Self(FieldValueInner::WithType {
+            value: Box::new(self),
             ty: ty.into(),
-        }
+        })
     }
 
     /// If the FieldValue is a [`FieldValue::Value`], returns the associated
     /// Value. Returns `None` otherwise.
     #[inline]
     pub fn as_value(&self) -> Option<&Value> {
-        match &self {
-            FieldValue::Value(value) => Some(value),
+        match &self.0 {
+            FieldValueInner::Value(value) => Some(value),
             _ => None,
         }
     }
@@ -188,8 +191,8 @@ impl<'a> FieldValue<'a> {
     /// vector. Returns `None` otherwise.
     #[inline]
     pub fn as_list(&self) -> Option<&[FieldValue]> {
-        match &self {
-            FieldValue::List(values) => Some(values),
+        match &self.0 {
+            FieldValueInner::List(values) => Some(values),
             _ => None,
         }
     }
@@ -205,9 +208,9 @@ impl<'a> FieldValue<'a> {
     /// vector. Returns `None` otherwise.
     #[inline]
     pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
-        match &self {
-            FieldValue::BorrowedAny(value) => value.downcast_ref::<T>(),
-            FieldValue::OwnedAny(value) => value.downcast_ref::<T>(),
+        match &self.0 {
+            FieldValueInner::BorrowedAny(value) => value.downcast_ref::<T>(),
+            FieldValueInner::OwnedAny(value) => value.downcast_ref::<T>(),
             _ => None,
         }
     }

@@ -372,14 +372,16 @@ mod tests {
         let subscription = Subscription::new("Subscription").field(SubscriptionField::new(
             "values",
             TypeRef::INT,
-            |ctx| SubscriptionFieldFuture::new(async move {
-                Ok(async_stream::try_stream! {
-                    for i in 0..10 {
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                        yield FieldValue::Value(Value::from(ctx.data_unchecked::<MyObjData>().value + i));
-                    }
+            |ctx| {
+                SubscriptionFieldFuture::new(async move {
+                    Ok(async_stream::try_stream! {
+                        for i in 0..10 {
+                            tokio::time::sleep(Duration::from_millis(100)).await;
+                            yield FieldValue::value(ctx.data_unchecked::<MyObjData>().value + i);
+                        }
+                    })
                 })
-            }),
+            },
         ));
 
         let schema = Schema::build("Query", None, Some(subscription.type_name()))
