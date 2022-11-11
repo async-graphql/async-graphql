@@ -614,16 +614,12 @@ mod tests {
                 TypeRef::named_nn(TypeRef::INT),
                 |_| FieldFuture::new(async { Ok(Some(Value::from(100))) }),
             ))
-            .field(Field::new(
-                "valueC",
-                TypeRef::named(TypeRef::INT),
-                |_| FieldFuture::new(async { Ok(FieldValue::none()) }),
-            ))
-            .field(Field::new(
-                "valueD",
-                TypeRef::named(TypeRef::INT),
-                |_| FieldFuture::new(async { Ok(Some(Value::from(200))) }),
-            ));
+            .field(Field::new("valueC", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(FieldValue::none()) })
+            }))
+            .field(Field::new("valueD", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .finish()

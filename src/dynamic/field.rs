@@ -70,9 +70,10 @@ impl<'a> FieldValue<'a> {
     /// ```
     /// use async_graphql::dynamic::*;
     ///
-    /// let query = Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |ctx| {
-    ///     FieldFuture::new(async move { Ok(FieldValue::NONE) })
-    /// }));
+    /// let query =
+    ///     Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |ctx| {
+    ///         FieldFuture::new(async move { Ok(FieldValue::NONE) })
+    ///     }));
     /// ```
     pub const NONE: Option<FieldValue<'a>> = None;
 

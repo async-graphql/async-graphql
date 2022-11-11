@@ -42,19 +42,19 @@ impl Display for TypeRef {
 
 impl TypeRef {
     /// A int scalar type
-    pub const INT: &str = "Int";
+    pub const INT: &'static str = "Int";
 
     /// A float scalar type
-    pub const FLOAT: &str = "Float";
+    pub const FLOAT: &'static str = "Float";
 
     /// A string scalar type
-    pub const STRING: &str = "String";
+    pub const STRING: &'static str = "String";
 
     /// A boolean scalar type
-    pub const BOOLEAN: &str = "Boolean";
+    pub const BOOLEAN: &'static str = "Boolean";
 
     /// A ID scalar type
-    pub const ID: &str = "ID";
+    pub const ID: &'static str = "ID";
 
     /// Returns the nullable type reference
     ///
