@@ -170,14 +170,10 @@ mod tests {
 
         let query = Object::new("Query")
             .field(Field::new("valueA", union.type_ref(), |_| {
-                FieldFuture::new(async {
-                    Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjA")))
-                })
+                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) })
             }))
             .field(Field::new("valueB", union.type_ref(), |_| {
-                FieldFuture::new(async {
-                    Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjB")))
-                })
+                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) })
             }));
 
         let schema = Schema::build(query.type_name(), None, None)
@@ -232,7 +228,7 @@ mod tests {
         let union = Union::new("MyUnion").possible_type(obj_a.type_name());
 
         let query = Object::new("Query").field(Field::new("valueA", union.type_ref(), |_| {
-            FieldFuture::new(async { Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjB"))) })
+            FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) })
         }));
 
         let schema = Schema::build(query.type_name(), None, None)

@@ -376,7 +376,7 @@ mod tests {
                 Ok(async_stream::try_stream! {
                     for i in 0..10 {
                         tokio::time::sleep(Duration::from_millis(100)).await;
-                        yield FieldValue::Value(Value::from(ctx.data_unchecked::<MyObjData>().value + i));
+                        yield FieldValue::value(ctx.data_unchecked::<MyObjData>().value + i);
                     }
                 })
             }),

@@ -5,7 +5,8 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::{
-        type_ref::TypeRefInner, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type,
+        field::FieldValueInner, type_ref::TypeRefInner, FieldValue, Object, ObjectAccessor,
+        ResolverContext, Schema, Type,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
@@ -284,7 +285,7 @@ pub(crate) fn resolve<'a>(
                     .into_server_error(ctx.item.pos),
             )),
 
-            (TypeRefInner::List(type_def), Some(FieldValue::List(values))) => {
+            (TypeRefInner::List(type_def), Some(FieldValue(FieldValueInner::List(values)))) => {
                 let mut futures = Vec::with_capacity(values.len());
                 for (idx, value) in values.iter().enumerate() {
                     let ctx_item = ctx.with_index(idx);
@@ -336,8 +337,8 @@ async fn resolve_value(
     field_type: &Type,
     value: &FieldValue<'_>,
 ) -> ServerResult<Option<Value>> {
-    match (field_type, value) {
-        (Type::Scalar(_), FieldValue::Value(value)) => Ok(Some(value.clone())),
+    match (field_type, &value.0) {
+        (Type::Scalar(_), FieldValueInner::Value(value)) => Ok(Some(value.clone())),
         (Type::Scalar(scalar), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: invalid value for scalar \"{}\", expected \"FieldValue::Value\"",
@@ -346,7 +347,7 @@ async fn resolve_value(
             .into_server_error(ctx.item.pos),
         )),
 
-        (Type::Object(object), value) => {
+        (Type::Object(object), _) => {
             resolve_container(
                 schema,
                 object,
@@ -365,7 +366,7 @@ async fn resolve_value(
             .into_server_error(ctx.item.pos),
         )),
 
-        (Type::Enum(e), FieldValue::Value(Value::Enum(name))) => {
+        (Type::Enum(e), FieldValueInner::Value(Value::Enum(name))) => {
             if !e.enum_values.contains_key(name.as_str()) {
                 return Err(ctx.set_error_path(
                     Error::new(format!("internal: invalid item for enum \"{}\"", e.name))
@@ -374,7 +375,7 @@ async fn resolve_value(
             }
             Ok(Some(Value::Enum(name.clone())))
         }
-        (Type::Enum(e), FieldValue::Value(Value::String(name))) => {
+        (Type::Enum(e), FieldValueInner::Value(Value::String(name))) => {
             if !e.enum_values.contains_key(name) {
                 return Err(ctx.set_error_path(
                     Error::new(format!("internal: invalid item for enum \"{}\"", e.name))
@@ -388,7 +389,7 @@ async fn resolve_value(
                 .into_server_error(ctx.item.pos),
         )),
 
-        (Type::Interface(interface), FieldValue::WithType { value, ty }) => {
+        (Type::Interface(interface), FieldValueInner::WithType { value, ty }) => {
             let is_contains_obj = schema
                 .0
                 .env
@@ -446,7 +447,7 @@ async fn resolve_value(
             .into_server_error(ctx.item.pos),
         )),
 
-        (Type::Union(union), FieldValue::WithType { value, ty }) => {
+        (Type::Union(union), FieldValueInner::WithType { value, ty }) => {
             if !union.possible_types.contains(ty.as_ref()) {
                 return Err(ctx.set_error_path(
                     Error::new(format!(
