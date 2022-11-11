@@ -1,5 +1,5 @@
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, SchemaError, TypeRef},
+    dynamic::SchemaError,
     registry::{MetaType, Registry},
 };
 
@@ -12,7 +12,7 @@ use crate::{
 ///
 /// let my_scalar = Scalar::new("MyScalar");
 ///
-/// let query = Object::new("Query").field(Field::new("value", my_scalar.type_ref(), |ctx| {
+/// let query = Object::new("Query").field(Field::new("value", TypeRef::named_nn(my_scalar.type_name()), |ctx| {
 ///     FieldFuture::new(async move { Ok(Some(Value::from("abc"))) })
 /// }));
 ///
@@ -78,12 +78,6 @@ impl Scalar {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
         registry.types.insert(
             self.name.clone(),
@@ -110,14 +104,18 @@ mod tests {
     #[tokio::test]
     async fn custom_scalar() {
         let scalar = Scalar::new("MyScalar");
-        let query = Object::new("Query").field(Field::new("value", scalar.type_ref(), |_| {
-            FieldFuture::new(async move {
-                Ok(Some(value!({
-                    "a": 1,
-                    "b": "abc",
-                })))
-            })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(scalar.type_name()),
+            |_| {
+                FieldFuture::new(async move {
+                    Ok(Some(value!({
+                        "a": 1,
+                        "b": "abc",
+                    })))
+                })
+            },
+        ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(query)
@@ -144,9 +142,11 @@ mod tests {
     #[tokio::test]
     async fn invalid_scalar_value() {
         let scalar = Scalar::new("MyScalar");
-        let query = Object::new("Query").field(Field::new("value", scalar.type_ref(), |_| {
-            FieldFuture::new(async move { Ok(Some(FieldValue::owned_any(10i32))) })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(scalar.type_name()),
+            |_| FieldFuture::new(async move { Ok(Some(FieldValue::owned_any(10i32))) }),
+        ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(query)

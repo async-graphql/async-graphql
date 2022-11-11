@@ -5,7 +5,7 @@
 //! ```
 //! use async_graphql::{dynamic::*, value, Value};
 //!
-//! let query = Object::new("Query").field(Field::new("value", TypeRef::INT, |ctx| {
+//! let query = Object::new("Query").field(Field::new("value", TypeRef::named_nn(TypeRef::INT), |ctx| {
 //!     FieldFuture::new(async move { Ok(Some(Value::from(100))) })
 //! }));
 //!
@@ -53,7 +53,7 @@ pub use input_object::InputObject;
 pub use input_value::InputValue;
 pub use interface::{Interface, InterfaceField};
 pub use object::Object;
-pub use r#enum::Enum;
+pub use r#enum::{Enum, EnumItem};
 pub use r#type::Type;
 pub use scalar::Scalar;
 pub use schema::{Schema, SchemaBuilder};
@@ -61,8 +61,3 @@ pub use subscription::{Subscription, SubscriptionField, SubscriptionFieldFuture}
 pub use type_ref::TypeRef;
 pub use union::Union;
 pub use value_accessor::{ListAccessor, ObjectAccessor, ValueAccessor};
-
-/// Other types
-pub mod misc {
-    pub use super::type_ref::{ListTypeRefBuilder, NamedTypeRefBuilder};
-}

@@ -7,8 +7,8 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::{
-        misc::NamedTypeRefBuilder, resolve::resolve, FieldValue, InputValue, ObjectAccessor,
-        ResolverContext, Schema, SchemaError, TypeRef,
+        resolve::resolve, FieldValue, InputValue, ObjectAccessor, ResolverContext, Schema,
+        SchemaError, TypeRef,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
@@ -145,12 +145,6 @@ impl Subscription {
     #[inline]
     pub fn type_name(&self) -> &str {
         &self.name
-    }
-
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
     }
 
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
@@ -305,22 +299,27 @@ mod tests {
             value: i32,
         }
 
-        let my_obj = Object::new("MyObject").field(Field::new("value", TypeRef::INT, |ctx| {
-            FieldFuture::new(async {
-                Ok(Some(Value::from(
-                    ctx.parent_value.try_downcast_ref::<MyObjData>()?.value,
-                )))
-            })
-        }));
+        let my_obj = Object::new("MyObject").field(Field::new(
+            "value",
+            TypeRef::named_nn(TypeRef::INT),
+            |ctx| {
+                FieldFuture::new(async {
+                    Ok(Some(Value::from(
+                        ctx.parent_value.try_downcast_ref::<MyObjData>()?.value,
+                    )))
+                })
+            },
+        ));
 
-        let query =
-            Object::new("Query").field(Field::new("value", TypeRef::INT.non_null(), |_| {
-                FieldFuture::new(async { Ok(FieldValue::none()) })
-            }));
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(TypeRef::INT),
+            |_| FieldFuture::new(async { Ok(FieldValue::none()) }),
+        ));
 
         let subscription = Subscription::new("Subscription").field(SubscriptionField::new(
             "obj",
-            my_obj.type_ref(),
+            TypeRef::named_nn(my_obj.type_name()),
             |_| {
                 SubscriptionFieldFuture::new(async {
                     Ok(async_stream::try_stream! {
@@ -353,31 +352,24 @@ mod tests {
 
     #[tokio::test]
     async fn borrow_context() {
-        struct MyObjData {
+        struct State {
             value: i32,
         }
 
-        let my_obj = Object::new("MyObj").field(Field::new("value", TypeRef::INT, |ctx| {
-            FieldFuture::new(async move {
-                Ok(Some(Value::from(
-                    ctx.parent_value.try_downcast_ref::<MyObjData>()?.value,
-                )))
-            })
-        }));
-
-        let query = Object::new("Query").field(Field::new("value", TypeRef::INT, |_| {
-            FieldFuture::new(async { Ok(FieldValue::NONE) })
-        }));
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(FieldValue::NONE) })
+            }));
 
         let subscription = Subscription::new("Subscription").field(SubscriptionField::new(
             "values",
-            TypeRef::INT,
+            TypeRef::named_nn(TypeRef::INT),
             |ctx| {
                 SubscriptionFieldFuture::new(async move {
                     Ok(async_stream::try_stream! {
                         for i in 0..10 {
                             tokio::time::sleep(Duration::from_millis(100)).await;
-                            yield FieldValue::value(ctx.data_unchecked::<MyObjData>().value + i);
+                            yield FieldValue::value(ctx.data_unchecked::<State>().value + i);
                         }
                     })
                 })
@@ -387,8 +379,7 @@ mod tests {
         let schema = Schema::build("Query", None, Some(subscription.type_name()))
             .register(query)
             .register(subscription)
-            .register(my_obj)
-            .data(MyObjData { value: 123 })
+            .data(State { value: 123 })
             .finish()
             .unwrap();
 

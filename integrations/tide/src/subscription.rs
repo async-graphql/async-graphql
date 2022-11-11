@@ -2,7 +2,7 @@ use std::{future::Future, str::FromStr};
 
 use async_graphql::{
     http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
-    Data, ObjectType, Result, Schema, SubscriptionType,
+    Data, Executor, Result,
 };
 use futures_util::{future, future::Ready, StreamExt};
 use tide::Endpoint;
@@ -10,8 +10,8 @@ use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 
 /// A GraphQL subscription endpoint builder.
 #[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
-pub struct GraphQLSubscription<Query, Mutation, Subscription, OnConnInit> {
-    schema: Schema<Query, Mutation, Subscription>,
+pub struct GraphQLSubscription<E, OnConnInit> {
+    executor: E,
     on_connection_init: OnConnInit,
 }
 
@@ -21,28 +21,22 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Resu
     futures_util::future::ready(Ok(Data::default()))
 }
 
-impl<Query, Mutation, Subscription>
-    GraphQLSubscription<Query, Mutation, Subscription, DefaultOnConnInitType>
+impl<E> GraphQLSubscription<E, DefaultOnConnInitType>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
 {
     /// Create a [`GraphQLSubscription`] object.
-    pub fn new(schema: Schema<Query, Mutation, Subscription>) -> Self {
+    pub fn new(executor: E) -> Self {
         GraphQLSubscription {
-            schema,
+            executor,
             on_connection_init: default_on_connection_init,
         }
     }
 }
 
-impl<Query, Mutation, Subscription, OnConnInit, OnConnInitFut>
-    GraphQLSubscription<Query, Mutation, Subscription, OnConnInit>
+impl<E, OnConnInit, OnConnInitFut> GraphQLSubscription<E, OnConnInit>
 where
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
+    E: Executor,
     OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Clone + Send + Sync + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
 {
@@ -55,13 +49,13 @@ where
     pub fn on_connection_init<OnConnInit2, Fut>(
         self,
         callback: OnConnInit2,
-    ) -> GraphQLSubscription<Query, Mutation, Subscription, OnConnInit2>
+    ) -> GraphQLSubscription<E, OnConnInit2>
     where
         OnConnInit2: Fn(serde_json::Value) -> Fut + Clone + Send + Sync + 'static,
         Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLSubscription {
-            schema: self.schema,
+            executor: self.executor,
             on_connection_init: callback,
         }
     }
@@ -69,7 +63,7 @@ where
     /// Consumes this builder to create a tide endpoint.
     pub fn build<S: Send + Sync + Clone + 'static>(self) -> impl Endpoint<S> {
         tide_websockets::WebSocket::<S, _>::new(move |request, connection| {
-            let schema = self.schema.clone();
+            let executor = self.executor.clone();
             let on_connection_init = self.on_connection_init.clone();
             async move {
                 let protocol = match request
@@ -89,7 +83,7 @@ where
 
                 let sink = connection.clone();
                 let mut stream = AGWebSocket::new(
-                    schema.clone(),
+                    executor.clone(),
                     connection
                         .take_while(|msg| future::ready(msg.is_ok()))
                         .map(Result::unwrap)

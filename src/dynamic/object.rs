@@ -1,7 +1,7 @@
 use indexmap::{IndexMap, IndexSet};
 
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, Field, SchemaError, TypeRef},
+    dynamic::{Field, SchemaError},
     registry::{MetaField, MetaType, Registry},
 };
 
@@ -12,7 +12,7 @@ use crate::{
 /// ```
 /// use async_graphql::{dynamic::*, value, Value};
 ///
-/// let query = Object::new("Query").field(Field::new("value", TypeRef::STRING, |ctx| {
+/// let query = Object::new("Query").field(Field::new("value", TypeRef::named_nn(TypeRef::STRING), |ctx| {
 ///     FieldFuture::new(async move { Ok(Some(Value::from("abc"))) })
 /// }));
 ///
@@ -95,12 +95,6 @@ impl Object {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
         let mut fields = IndexMap::new();
 
@@ -169,21 +163,26 @@ mod tests {
             value: i32,
         }
 
-        let my_obj = Object::new("MyObj").field(Field::new("value", TypeRef::INT, |ctx| {
-            FieldFuture::new(async move {
-                Ok(Some(Value::from(
-                    ctx.parent_value.try_downcast_ref::<MyObjData>()?.value,
-                )))
-            })
-        }));
+        let my_obj =
+            Object::new("MyObj").field(Field::new("value", TypeRef::named(TypeRef::INT), |ctx| {
+                FieldFuture::new(async move {
+                    Ok(Some(Value::from(
+                        ctx.parent_value.try_downcast_ref::<MyObjData>()?.value,
+                    )))
+                })
+            }));
 
-        let query = Object::new("Query").field(Field::new("obj", my_obj.type_ref(), |ctx| {
-            FieldFuture::new(async move {
-                Ok(Some(FieldValue::borrowed_any(
-                    ctx.data_unchecked::<MyObjData>(),
-                )))
-            })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "obj",
+            TypeRef::named_nn(my_obj.type_name()),
+            |ctx| {
+                FieldFuture::new(async move {
+                    Ok(Some(FieldValue::borrowed_any(
+                        ctx.data_unchecked::<MyObjData>(),
+                    )))
+                })
+            },
+        ));
 
         let schema = Schema::build("Query", None, None)
             .register(query)

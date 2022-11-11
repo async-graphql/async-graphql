@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, SchemaError, TypeRef},
+    dynamic::SchemaError,
     registry::{Deprecation, MetaEnumValue, MetaType, Registry},
 };
 
@@ -25,11 +25,13 @@ impl<T: Into<String>> From<T> for EnumItem {
 }
 
 impl EnumItem {
+    /// Create a new EnumItem
     #[inline]
     pub fn new(name: impl Into<String>) -> Self {
         name.into().into()
     }
 
+    /// Set the description
     #[inline]
     pub fn description(self, description: impl Into<String>) -> Self {
         Self {
@@ -81,12 +83,6 @@ impl Enum {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
         let mut enum_values = IndexMap::new();
 
@@ -130,22 +126,29 @@ mod tests {
         let my_enum = Enum::new("MyEnum").item("A").item("B");
 
         let query = Object::new("Query")
-            .field(Field::new("value", TypeRef::named("MyEnum"), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(Name::new("A")))) })
-            }))
+            .field(Field::new(
+                "value",
+                TypeRef::named_nn(my_enum.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(Name::new("A")))) }),
+            ))
             .field(
-                Field::new("value2", TypeRef::named("MyEnum"), |ctx| {
+                Field::new("value2", TypeRef::named_nn(my_enum.type_name()), |ctx| {
                     FieldFuture::new(async move {
                         Ok(Some(FieldValue::value(Name::new(
                             ctx.args.try_get("input")?.enum_name()?,
                         ))))
                     })
                 })
-                .argument(InputValue::new("input", TypeRef::named("MyEnum"))),
+                .argument(InputValue::new(
+                    "input",
+                    TypeRef::named_nn(my_enum.type_name()),
+                )),
             )
-            .field(Field::new("errValue", TypeRef::named("MyEnum"), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(Name::new("C")))) })
-            }));
+            .field(Field::new(
+                "errValue",
+                TypeRef::named_nn(my_enum.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(Name::new("C")))) }),
+            ));
         let schema = Schema::build("Query", None, None)
             .register(my_enum)
             .register(query)

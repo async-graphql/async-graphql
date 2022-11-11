@@ -70,9 +70,10 @@ impl<'a> FieldValue<'a> {
     /// ```
     /// use async_graphql::dynamic::*;
     ///
-    /// let query = Object::new("Query").field(Field::new("value", TypeRef::INT, |ctx| {
-    ///     FieldFuture::new(async move { Ok(FieldValue::NONE) })
-    /// }));
+    /// let query =
+    ///     Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |ctx| {
+    ///         FieldFuture::new(async move { Ok(FieldValue::NONE) })
+    ///     }));
     /// ```
     pub const NONE: Option<FieldValue<'a>> = None;
 
@@ -127,7 +128,7 @@ impl<'a> FieldValue<'a> {
     ///
     /// let my_obj = Object::new("MyObj").field(Field::new(
     ///     "a",
-    ///     TypeRef::INT,
+    ///     TypeRef::named_nn(TypeRef::INT),
     ///     |ctx| FieldFuture::new(async move {
     ///         let data = ctx.parent_value.try_downcast_ref::<MyObjData>()?;
     ///         Ok(Some(Value::from(data.a)))
@@ -138,7 +139,7 @@ impl<'a> FieldValue<'a> {
     ///
     /// let query = Object::new("Query").field(Field::new(
     ///     "obj",
-    ///     my_union.type_ref(),
+    ///     TypeRef::named_nn(my_union.type_name()),
     ///     |_| FieldFuture::new(async move {
     ///         Ok(Some(FieldValue::owned_any(MyObjData { a: 10 }).with_type("MyObj")))
     ///     }),

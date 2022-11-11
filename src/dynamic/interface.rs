@@ -1,7 +1,7 @@
 use indexmap::{IndexMap, IndexSet};
 
 use crate::{
-    dynamic::{misc::NamedTypeRefBuilder, InputValue, SchemaError, TypeRef},
+    dynamic::{InputValue, SchemaError, TypeRef},
     registry::{Deprecation, MetaField, MetaType, Registry},
 };
 
@@ -14,31 +14,31 @@ use crate::{
 ///
 /// let obj_a = Object::new("MyObjA")
 ///     .implement("MyInterface")
-///     .field(Field::new("a", TypeRef::INT, |_| {
+///     .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(100))) })
 ///     }))
-///     .field(Field::new("b", TypeRef::INT, |_| {
+///     .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(200))) })
 ///     }));
 ///
 /// let obj_b = Object::new("MyObjB")
 ///     .implement("MyInterface")
-///     .field(Field::new("a", TypeRef::INT, |_| {
+///     .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(300))) })
 ///     }))
-///     .field(Field::new("c", TypeRef::INT, |_| {
+///     .field(Field::new("c", TypeRef::named_nn(TypeRef::INT), |_| {
 ///         FieldFuture::new(async { Ok(Some(Value::from(400))) })
 ///     }));
 ///
-/// let interface = Interface::new("MyInterface").field(InterfaceField::new("a", TypeRef::INT));
+/// let interface = Interface::new("MyInterface").field(InterfaceField::new("a", TypeRef::named_nn(TypeRef::INT)));
 ///
 /// let query = Object::new("Query")
-///     .field(Field::new("valueA", interface.type_ref(), |_| {
+///     .field(Field::new("valueA", TypeRef::named_nn(interface.type_name()), |_| {
 ///         FieldFuture::new(async {
 ///             Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjA")))
 ///         })
 ///     }))
-///     .field(Field::new("valueB", interface.type_ref(), |_| {
+///     .field(Field::new("valueB", TypeRef::named_nn(interface.type_name()), |_| {
 ///         FieldFuture::new(async {
 ///             Ok(Some(FieldValue::with_type(FieldValue::NULL, "MyObjB")))
 ///         })
@@ -180,12 +180,6 @@ impl Interface {
         &self.name
     }
 
-    /// Returns the type reference
-    #[inline]
-    pub fn type_ref(&self) -> NamedTypeRefBuilder {
-        TypeRef::named(self.name.clone())
-    }
-
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
         let mut fields = IndexMap::new();
 
@@ -248,31 +242,36 @@ mod tests {
     async fn basic_interface() {
         let obj_a = Object::new("MyObjA")
             .implement("MyInterface")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }))
-            .field(Field::new("b", TypeRef::INT, |_| {
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(200))) })
             }));
 
         let obj_b = Object::new("MyObjB")
             .implement("MyInterface")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(300))) })
             }))
-            .field(Field::new("c", TypeRef::INT, |_| {
+            .field(Field::new("c", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(400))) })
             }));
 
-        let interface = Interface::new("MyInterface").field(InterfaceField::new("a", TypeRef::INT));
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
 
         let query = Object::new("Query")
-            .field(Field::new("valueA", interface.type_ref(), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) })
-            }))
-            .field(Field::new("valueB", interface.type_ref(), |_| {
-                FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) })
-            }));
+            .field(Field::new(
+                "valueA",
+                TypeRef::named_nn(interface.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) }),
+            ))
+            .field(Field::new(
+                "valueB",
+                TypeRef::named_nn(interface.type_name()),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjB"))) }),
+            ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(obj_a)
@@ -316,18 +315,21 @@ mod tests {
     #[tokio::test]
     async fn does_not_implement() {
         let obj_a = Object::new("MyObjA")
-            .field(Field::new("a", TypeRef::INT, |_| {
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }))
-            .field(Field::new("b", TypeRef::INT, |_| {
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(200))) })
             }));
 
-        let interface = Interface::new("MyInterface").field(InterfaceField::new("a", TypeRef::INT));
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
 
-        let query = Object::new("Query").field(Field::new("valueA", interface.type_ref(), |_| {
-            FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) })
-        }));
+        let query = Object::new("Query").field(Field::new(
+            "valueA",
+            TypeRef::named_nn(interface.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjA"))) }),
+        ));
 
         let schema = Schema::build(query.type_name(), None, None)
             .register(obj_a)
