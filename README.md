@@ -52,6 +52,7 @@ async fn main() {
 
 ## Features
 
+- Static and dynamic schemas are fully supported
 - Fully supports async/await
 - Type safety
 - Rustfmt friendly (Procedural Macro)
