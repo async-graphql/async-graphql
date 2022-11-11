@@ -23,30 +23,59 @@ _This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented i
 
 </div>
 
+## Static schema
+
 ```rs
+use std::error::Error;
+
+use async_graphql::*;
+use async_graphql_poem::*;
+use poem::{*, listener::TcpListener};
+
 struct Query;
 
 #[Object]
 impl Query {
-  fn howdy(&self) -> &'static str {
+  async fn howdy(&self) -> &'static str {
     "partner"
   }
 }
 
-async fn main() {
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+async fn main() -> Result<(), Box<dyn Error>> {
+  // create the schema
+  let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
 
-    let app = Route::new()
-      .at("/",
-          get(graphiql)
-            .post(GraphQL::new(schema))
-       );
+  // start the http server
+  let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
+  println!("GraphiQL: http://localhost:8000");
+  Server::new(TcpListener::bind("0.0.0.0:8000")).run(app).await?;
+  Ok(())
+}
+```
 
-    println!("GraphiQL: http://localhost:8000");
-    Server::new(TcpListener::bind("0.0.0.0:8000"))
-        .run(app)
-        .await
-        .unwrap();
+## Dynamic schema
+
+```rs
+use std::error::Error;
+
+use async_graphql::dynamic::*;
+use async_graphql_poem::*;
+use poem::{*, listener::TcpListener};
+
+let query = Object::new("Query")
+  .field(Field::new("howdy", TypeRef::STRING, |_| FieldFuture::new(async { "partner" })));
+
+async fn main() -> Result<(), Box<dyn Error>> {
+  // create the schema
+  let schema = Schema::build(query, None, None)
+    .register(query)
+    .finish()?;
+
+  // start the http server
+  let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
+  println!("GraphiQL: http://localhost:8000");
+  Server::new(TcpListener::bind("0.0.0.0:8000")).run(app).await?;
+  Ok(())
 }
 ```
 
@@ -58,7 +87,7 @@ async fn main() {
 - Rustfmt friendly (Procedural Macro)
 - Custom scalars
 - Minimal overhead
-- Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide, warp, rocket ...)
+- Easy integration ([poem](https://crates.io/crates/poem), [axum](https://crates.io/crates/axum), [actix-web](https://crates.io/crates/actix-web), [tide](https://crates.io/crates/tide), [warp](https://crates.io/crates/warp), [rocket](https://crates.io/crates/rocket) ...)
 - Upload files (Multipart request)
 - Subscriptions (WebSocket transport)
 - Custom extensions
