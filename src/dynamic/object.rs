@@ -41,6 +41,11 @@ pub struct Object {
     pub(crate) description: Option<String>,
     pub(crate) fields: IndexMap<String, Field>,
     pub(crate) implements: IndexSet<String>,
+    keys: Vec<String>,
+    extends: bool,
+    shareable: bool,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl Object {
@@ -52,17 +57,19 @@ impl Object {
             description: None,
             fields: Default::default(),
             implements: Default::default(),
+            keys: Vec::new(),
+            extends: false,
+            shareable: false,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_extends!();
+    impl_set_shareable!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Add an field to the object
     #[inline]
@@ -86,6 +93,31 @@ impl Object {
             interface
         );
         self.implements.insert(interface);
+        self
+    }
+
+    /// Add an entity key
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_graphql::{dynamic::*, Value};
+    ///
+    /// let obj = Object::new("MyObj")
+    ///     .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+    ///         FieldFuture::new(async move { Ok(Some(Value::from(10))) })
+    ///     }))
+    ///     .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+    ///         FieldFuture::new(async move { Ok(Some(Value::from(20))) })
+    ///     }))
+    ///     .field(Field::new("c", TypeRef::named(TypeRef::INT), |_| {
+    ///         FieldFuture::new(async move { Ok(Some(Value::from(30))) })
+    ///     }))
+    ///     .key("a b")
+    ///     .key("c");
+    /// ```
+    pub fn key(mut self, fields: impl Into<String>) -> Self {
+        self.keys.push(fields.into());
         self
     }
 
@@ -114,14 +146,14 @@ impl Object {
                     ty: field.ty.to_string(),
                     deprecation: field.deprecation.clone(),
                     cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
+                    external: field.external,
+                    requires: field.requires.clone(),
+                    provides: field.provides.clone(),
                     visible: None,
-                    shareable: false,
-                    inaccessible: false,
-                    tags: vec![],
-                    override_from: None,
+                    shareable: field.shareable,
+                    inaccessible: field.inaccessible,
+                    tags: field.tags.clone(),
+                    override_from: field.override_from.clone(),
                     compute_complexity: None,
                 },
             );
@@ -134,12 +166,16 @@ impl Object {
                 description: self.description.clone(),
                 fields,
                 cache_control: Default::default(),
-                extends: false,
-                shareable: false,
-                keys: None,
+                extends: self.extends,
+                shareable: self.shareable,
+                keys: if !self.keys.is_empty() {
+                    Some(self.keys.clone())
+                } else {
+                    None
+                },
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 is_subscription: false,
                 rust_typename: None,
             },

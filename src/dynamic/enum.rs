@@ -11,6 +11,8 @@ pub struct EnumItem {
     pub(crate) name: String,
     pub(crate) description: Option<String>,
     pub(crate) deprecation: Deprecation,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl<T: Into<String>> From<T> for EnumItem {
@@ -20,6 +22,8 @@ impl<T: Into<String>> From<T> for EnumItem {
             name: name.into(),
             description: None,
             deprecation: Deprecation::NoDeprecated,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 }
@@ -31,14 +35,10 @@ impl EnumItem {
         name.into().into()
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_deprecation!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 }
 
 /// A GraphQL enum type
@@ -47,6 +47,8 @@ pub struct Enum {
     pub(crate) name: String,
     pub(crate) description: Option<String>,
     pub(crate) enum_values: IndexMap<String, EnumItem>,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl Enum {
@@ -57,17 +59,12 @@ impl Enum {
             name: name.into(),
             description: None,
             enum_values: Default::default(),
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
 
     /// Add an item
     #[inline]
@@ -76,6 +73,9 @@ impl Enum {
         self.enum_values.insert(item.name.clone(), item);
         self
     }
+
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Returns the type name
     #[inline]
@@ -94,8 +94,8 @@ impl Enum {
                     description: item.description.clone(),
                     deprecation: item.deprecation.clone(),
                     visible: None,
-                    inaccessible: false,
-                    tags: vec![],
+                    inaccessible: item.inaccessible,
+                    tags: item.tags.clone(),
                 },
             );
         }
@@ -107,8 +107,8 @@ impl Enum {
                 description: self.description.clone(),
                 enum_values,
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 rust_typename: None,
             },
         );

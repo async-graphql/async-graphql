@@ -192,10 +192,10 @@ pub struct MetaField {
     /// is used to develop a query plan where the required fields may not be
     /// needed by the client, but the service may need additional information
     /// from other services.
-    pub requires: Option<&'static str>,
+    pub requires: Option<String>,
     /// Annotate the expected returned fieldset from a field on a base type that
     /// is guaranteed to be selectable by the gateway.
-    pub provides: Option<&'static str>,
+    pub provides: Option<String>,
     /// A function that uses to check if the field should be exported to
     /// schemas
     pub visible: Option<MetaVisibleFn>,
@@ -210,7 +210,7 @@ pub struct MetaField {
     pub tags: Vec<String>,
     /// Mark the field as overriding a field currently present on another
     /// subgraph. It is used to migrate fields between subgraphs.
-    pub override_from: Option<&'static str>,
+    pub override_from: Option<String>,
     /// A constant or function to get the complexity
     pub compute_complexity: Option<ComplexityType>,
 }
@@ -293,7 +293,8 @@ pub enum MetaType {
         fields: IndexMap<String, MetaField>,
         /// Used to create HTTP `Cache-Control` header
         cache_control: CacheControl,
-        /// Add fields to an entity that's defined in another service
+        /// Indicates that an object definition is an extension of another
+        /// definition of that same type.
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#extends>
         extends: bool,
@@ -342,6 +343,9 @@ pub enum MetaType {
         /// The object types that implement this interface
         /// Add fields to an entity that's defined in another service
         possible_types: IndexSet<String>,
+        /// Indicates that an interface definition is an extension of another
+        /// definition of that same type.
+        ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#extends>
         extends: bool,
         /// The keys of the object type
@@ -798,16 +802,16 @@ impl Registry {
             });
     }
 
-    pub fn add_keys(&mut self, ty: &str, keys: &str) {
+    pub fn add_keys(&mut self, ty: &str, keys: impl Into<String>) {
         let all_keys = match self.types.get_mut(ty) {
             Some(MetaType::Object { keys: all_keys, .. }) => all_keys,
             Some(MetaType::Interface { keys: all_keys, .. }) => all_keys,
             _ => return,
         };
         if let Some(all_keys) = all_keys {
-            all_keys.push(keys.to_string());
+            all_keys.push(keys.into());
         } else {
-            *all_keys = Some(vec![keys.to_string()]);
+            *all_keys = Some(vec![keys.into()]);
         }
     }
 

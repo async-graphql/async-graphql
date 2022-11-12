@@ -175,15 +175,21 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let mut get_params = Vec::new();
         let mut schema_args = Vec::new();
         let requires = match &requires {
-            Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+            Some(requires) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#requires)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let provides = match &provides {
-            Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+            Some(provides) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#provides)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let override_from = match &override_from {
-            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            Some(from) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
 

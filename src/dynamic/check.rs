@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 use crate::dynamic::{
     base::{BaseContainer, BaseField},
@@ -45,7 +45,7 @@ impl SchemaInner {
 
     fn check_types_exists(&self) -> Result<(), SchemaError> {
         fn check<I: IntoIterator<Item = T>, T: AsRef<str>>(
-            types: &HashMap<String, Type>,
+            types: &IndexMap<String, Type>,
             type_names: I,
         ) -> Result<(), SchemaError> {
             for name in type_names {

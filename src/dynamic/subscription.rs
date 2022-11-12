@@ -72,14 +72,8 @@ impl SubscriptionField {
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_deprecation!();
 
     /// Add an argument to the subscription field
     #[inline]
@@ -120,14 +114,7 @@ impl Subscription {
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
 
     /// Add an field to the object
     #[inline]

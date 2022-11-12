@@ -2,11 +2,12 @@ use std::{any::Any, collections::HashMap, fmt::Debug, sync::Arc};
 
 use async_graphql_parser::types::OperationType;
 use futures_util::{stream::BoxStream, Stream, StreamExt, TryFutureExt};
+use indexmap::IndexMap;
 
 use crate::{
     dynamic::{
-        r#type::Type, resolve::resolve_container, FieldValue, Object, Scalar, SchemaError,
-        Subscription,
+        field::BoxResolverFn, r#type::Type, resolve::resolve_container, FieldFuture, FieldValue,
+        Object, ResolverContext, Scalar, SchemaError, Subscription,
     },
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
@@ -20,7 +21,7 @@ pub struct SchemaBuilder {
     query_type: String,
     mutation_type: Option<String>,
     subscription_type: Option<String>,
-    types: HashMap<String, Type>,
+    types: IndexMap<String, Type>,
     data: Data,
     extensions: Vec<Box<dyn ExtensionFactory>>,
     validation_mode: ValidationMode,
@@ -29,6 +30,8 @@ pub struct SchemaBuilder {
     depth: Option<usize>,
     enable_suggestions: bool,
     introspection_mode: IntrospectionMode,
+    enable_federation: bool,
+    entity_resolver: Option<BoxResolverFn>,
 }
 
 impl SchemaBuilder {
@@ -109,6 +112,25 @@ impl SchemaBuilder {
         self
     }
 
+    /// Enable federation, which is automatically enabled if the Query has least
+    /// one entity definition.
+    #[must_use]
+    pub fn enable_federation(mut self) -> Self {
+        self.enable_federation = true;
+        self
+    }
+
+    /// Set the entity resolver for federation
+    pub fn entity_resolver<F>(self, resolver_fn: F) -> Self
+    where
+        F: for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync + 'static,
+    {
+        Self {
+            entity_resolver: Some(Box::new(resolver_fn)),
+            ..self
+        }
+    }
+
     /// Consumes this builder and returns a schema.
     pub fn finish(mut self) -> Result<Schema, SchemaError> {
         let mut registry = Registry {
@@ -145,6 +167,12 @@ impl SchemaBuilder {
             registry.create_introspection_types();
         }
 
+        // create entity types
+        if self.enable_federation || registry.has_entities() {
+            registry.enable_federation = true;
+            registry.create_federation_types();
+        }
+
         let inner = SchemaInner {
             env: SchemaEnv(Arc::new(SchemaEnvInner {
                 registry,
@@ -157,6 +185,7 @@ impl SchemaBuilder {
             complexity: self.complexity,
             depth: self.depth,
             validation_mode: self.validation_mode,
+            entity_resolver: self.entity_resolver,
         };
         inner.check()?;
         Ok(Schema(Arc::new(inner)))
@@ -177,12 +206,13 @@ impl Debug for Schema {
 
 pub struct SchemaInner {
     pub(crate) env: SchemaEnv,
-    pub(crate) types: HashMap<String, Type>,
+    pub(crate) types: IndexMap<String, Type>,
     extensions: Vec<Box<dyn ExtensionFactory>>,
     recursive_depth: usize,
     complexity: Option<usize>,
     depth: Option<usize>,
     validation_mode: ValidationMode,
+    pub(crate) entity_resolver: Option<BoxResolverFn>,
 }
 
 impl Schema {
@@ -201,6 +231,8 @@ impl Schema {
             depth: None,
             enable_suggestions: true,
             introspection_mode: IntrospectionMode::Enabled,
+            entity_resolver: None,
+            enable_federation: false,
         }
     }
 
@@ -412,7 +444,7 @@ impl Executor for Schema {
     }
 }
 
-fn update_interface_possible_types(types: &mut HashMap<String, Type>, registry: &mut Registry) {
+fn update_interface_possible_types(types: &mut IndexMap<String, Type>, registry: &mut Registry) {
     let mut interfaces = registry
         .types
         .values_mut()

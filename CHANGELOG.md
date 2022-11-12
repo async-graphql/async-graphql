@@ -4,16 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [5.0.0-alpha3] 2022-11-12
+# [5.0.0-alpha.4] 2022-11-12
+
+- Add support to federation(v2) for dynamic schema
+
+# [5.0.0-alpha.3] 2022-11-12
 
 - Simplified way to create type reference `dynamic::TypeRef`
 
-# [5.0.0-alpha2] 2022-11-11
+# [5.0.0-alpha.2] 2022-11-11
 
 - Keep object 'implements' order stable in SDL export [#1142](https://github.com/async-graphql/async-graphql/pull/1142)
 - Fix regression on `ComplexObject` descriptions [#1141](https://github.com/async-graphql/async-graphql/pull/1141)
 
-# [5.0.0-alpha1] 2022-11-10
+# [5.0.0-alpha.1] 2022-11-10
 
 - Add support for dynamic schema
 - Add `tempfile` feature, enabled by default

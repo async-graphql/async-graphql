@@ -55,6 +55,8 @@ pub struct InputObject {
     pub(crate) description: Option<String>,
     pub(crate) fields: IndexMap<String, InputValue>,
     pub(crate) oneof: bool,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl InputObject {
@@ -66,17 +68,14 @@ impl InputObject {
             description: None,
             fields: Default::default(),
             oneof: false,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Add a field
     #[inline]
@@ -116,8 +115,8 @@ impl InputObject {
                     ty: field.ty.to_string(),
                     default_value: field.default_value.as_ref().map(ToString::to_string),
                     visible: None,
-                    inaccessible: false,
-                    tags: vec![],
+                    inaccessible: self.inaccessible,
+                    tags: self.tags.clone(),
                     is_secret: false,
                 },
             );
@@ -130,8 +129,8 @@ impl InputObject {
                 description: self.description.clone(),
                 input_fields,
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 rust_typename: None,
                 oneof: self.oneof,
             },

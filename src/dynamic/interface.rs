@@ -88,6 +88,13 @@ pub struct InterfaceField {
     pub(crate) arguments: IndexMap<String, InputValue>,
     pub(crate) ty: TypeRef,
     pub(crate) deprecation: Deprecation,
+    pub(crate) external: bool,
+    pub(crate) requires: Option<String>,
+    pub(crate) provides: Option<String>,
+    pub(crate) shareable: bool,
+    pub(crate) inaccessible: bool,
+    pub(crate) tags: Vec<String>,
+    pub(crate) override_from: Option<String>,
 }
 
 impl InterfaceField {
@@ -99,17 +106,25 @@ impl InterfaceField {
             arguments: Default::default(),
             ty: ty.into(),
             deprecation: Deprecation::NoDeprecated,
+            external: false,
+            requires: None,
+            provides: None,
+            shareable: false,
+            inaccessible: false,
+            tags: Vec::new(),
+            override_from: None,
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_deprecation!();
+    impl_set_external!();
+    impl_set_requires!();
+    impl_set_provides!();
+    impl_set_shareable!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
+    impl_set_override_from!();
 
     /// Add an argument to the field
     #[inline]
@@ -126,6 +141,10 @@ pub struct Interface {
     pub(crate) description: Option<String>,
     pub(crate) fields: IndexMap<String, InterfaceField>,
     pub(crate) implements: IndexSet<String>,
+    pub(crate) keys: Vec<String>,
+    extends: bool,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl Interface {
@@ -137,17 +156,17 @@ impl Interface {
             description: None,
             fields: Default::default(),
             implements: Default::default(),
+            keys: Vec::new(),
+            extends: false,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_extends!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Add a field to the interface type
     #[inline]
@@ -171,6 +190,14 @@ impl Interface {
             interface
         );
         self.implements.insert(interface);
+        self
+    }
+
+    /// Add an entity key
+    ///
+    /// See also: [`Object::key`](crate::dynamic::Object::key)
+    pub fn key(mut self, fields: impl Into<String>) -> Self {
+        self.keys.push(fields.into());
         self
     }
 
@@ -199,14 +226,14 @@ impl Interface {
                     ty: field.ty.to_string(),
                     deprecation: field.deprecation.clone(),
                     cache_control: Default::default(),
-                    external: false,
-                    requires: None,
-                    provides: None,
+                    external: field.external,
+                    requires: field.requires.clone(),
+                    provides: field.provides.clone(),
                     visible: None,
-                    shareable: false,
-                    inaccessible: false,
-                    tags: vec![],
-                    override_from: None,
+                    shareable: field.shareable,
+                    inaccessible: field.inaccessible,
+                    tags: field.tags.clone(),
+                    override_from: field.override_from.clone(),
                     compute_complexity: None,
                 },
             );
@@ -219,11 +246,15 @@ impl Interface {
                 description: self.description.clone(),
                 fields,
                 possible_types: Default::default(),
-                extends: false,
-                keys: None,
+                extends: self.extends,
+                keys: if !self.keys.is_empty() {
+                    Some(self.keys.clone())
+                } else {
+                    None
+                },
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 rust_typename: None,
             },
         );

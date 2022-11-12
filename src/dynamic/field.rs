@@ -171,7 +171,7 @@ impl<'a> FieldValue<'a> {
         })
     }
 
-    /// If the FieldValue is a [`FieldValue::Value`], returns the associated
+    /// If the FieldValue is a value, returns the associated
     /// Value. Returns `None` otherwise.
     #[inline]
     pub fn as_value(&self) -> Option<&Value> {
@@ -188,7 +188,7 @@ impl<'a> FieldValue<'a> {
             .ok_or_else(|| Error::new("internal: not a Value"))
     }
 
-    /// If the FieldValue is a [`FieldValue::List`], returns the associated
+    /// If the FieldValue is a list, returns the associated
     /// vector. Returns `None` otherwise.
     #[inline]
     pub fn as_list(&self) -> Option<&[FieldValue]> {
@@ -205,7 +205,7 @@ impl<'a> FieldValue<'a> {
             .ok_or_else(|| Error::new("internal: not a list"))
     }
 
-    /// If the FieldValue is a [`FieldValue::Any`], returns the associated
+    /// If the FieldValue is a any, returns the associated
     /// vector. Returns `None` otherwise.
     #[inline]
     pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
@@ -268,7 +268,8 @@ impl<'a> FieldFuture<'a> {
     }
 }
 
-type BoxResolverFn = Box<(dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync)>;
+pub(crate) type BoxResolverFn =
+    Box<(dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync)>;
 
 /// A GraphQL field
 pub struct Field {
@@ -278,6 +279,13 @@ pub struct Field {
     pub(crate) ty: TypeRef,
     pub(crate) resolver_fn: BoxResolverFn,
     pub(crate) deprecation: Deprecation,
+    pub(crate) external: bool,
+    pub(crate) requires: Option<String>,
+    pub(crate) provides: Option<String>,
+    pub(crate) shareable: bool,
+    pub(crate) inaccessible: bool,
+    pub(crate) tags: Vec<String>,
+    pub(crate) override_from: Option<String>,
 }
 
 impl Debug for Field {
@@ -307,17 +315,25 @@ impl Field {
             ty: ty.into(),
             resolver_fn: Box::new(resolver_fn),
             deprecation: Deprecation::NoDeprecated,
+            external: false,
+            requires: None,
+            provides: None,
+            shareable: false,
+            inaccessible: false,
+            tags: Vec::new(),
+            override_from: None,
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_deprecation!();
+    impl_set_external!();
+    impl_set_requires!();
+    impl_set_provides!();
+    impl_set_shareable!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
+    impl_set_override_from!();
 
     /// Add an argument to the field
     #[inline]

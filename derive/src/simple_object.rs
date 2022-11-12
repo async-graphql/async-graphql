@@ -140,15 +140,21 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
         let override_from = match &field.override_from {
-            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            Some(from) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let requires = match &field.requires {
-            Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+            Some(requires) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#requires)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let provides = match &field.provides {
-            Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+            Some(provides) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#provides)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let vis = &field.vis;
