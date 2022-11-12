@@ -188,10 +188,10 @@ impl Registry {
                 if field.external {
                     write!(sdl, " @external").ok();
                 }
-                if let Some(requires) = field.requires {
+                if let Some(requires) = &field.requires {
                     write!(sdl, " @requires(fields: \"{}\")", requires).ok();
                 }
-                if let Some(provides) = field.provides {
+                if let Some(provides) = &field.provides {
                     write!(sdl, " @provides(fields: \"{}\")", provides).ok();
                 }
                 if field.shareable {
@@ -203,7 +203,7 @@ impl Registry {
                 for tag in &field.tags {
                     write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                 }
-                if let Some(from) = field.override_from {
+                if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
                 }
             }

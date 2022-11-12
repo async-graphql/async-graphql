@@ -7,6 +7,8 @@ pub struct InputValue {
     pub(crate) description: Option<String>,
     pub(crate) ty: TypeRef,
     pub(crate) default_value: Option<Value>,
+    pub(crate) inaccessible: bool,
+    pub(crate) tags: Vec<String>,
 }
 
 impl InputValue {
@@ -18,17 +20,14 @@ impl InputValue {
             description: None,
             ty: ty.into(),
             default_value: None,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Set the default value
     #[inline]
@@ -49,8 +48,8 @@ impl InputValue {
                 .as_ref()
                 .map(std::string::ToString::to_string),
             visible: None,
-            inaccessible: false,
-            tags: vec![],
+            inaccessible: self.inaccessible,
+            tags: self.tags.clone(),
             is_secret: false,
         }
     }

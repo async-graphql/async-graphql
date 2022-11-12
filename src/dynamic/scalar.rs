@@ -41,6 +41,8 @@ pub struct Scalar {
     pub(crate) name: String,
     pub(crate) description: Option<String>,
     pub(crate) specified_by_url: Option<String>,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl Scalar {
@@ -51,17 +53,14 @@ impl Scalar {
             name: name.into(),
             description: None,
             specified_by_url: None,
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Set the specified by url
     #[inline]
@@ -86,8 +85,8 @@ impl Scalar {
                 description: self.description.clone(),
                 is_valid: |_| true,
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 specified_by_url: self.specified_by_url.clone(),
             },
         );

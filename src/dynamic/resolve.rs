@@ -6,12 +6,13 @@ use indexmap::IndexMap;
 use crate::{
     dynamic::{
         field::FieldValueInner, type_ref::TypeRefInner, FieldValue, Object, ObjectAccessor,
-        ResolverContext, Schema, Type,
+        ResolverContext, Schema, Type, TypeRef,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
     resolver_utils::create_value_object,
-    Context, ContextSelectionSet, Error, IntrospectionMode, Name, ServerError, ServerResult, Value,
+    Context, ContextSelectionSet, Error, IntrospectionMode, Name, SDLExportOptions, ServerError,
+    ServerResult, Value,
 };
 
 type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
@@ -138,6 +139,70 @@ fn collect_fields<'a>(
                                     ctx_field.item,
                                 )
                                 .await?;
+                                Ok((field.node.response_key().node.clone(), value))
+                            }
+                            .boxed(),
+                        );
+                        continue;
+                    } else if ctx.schema_env.registry.enable_federation
+                        && field.node.name.node == "_service"
+                    {
+                        let sdl = ctx
+                            .schema_env
+                            .registry
+                            .export_sdl(SDLExportOptions::new().federation());
+                        fields.push(
+                            async move {
+                                Ok((field.node.response_key().node.clone(), Value::from(sdl)))
+                            }
+                            .boxed(),
+                        );
+                        continue;
+                    } else if ctx.schema_env.registry.enable_federation
+                        && field.node.name.node == "_entities"
+                    {
+                        let ctx = ctx.clone();
+                        fields.push(
+                            async move {
+                                let ctx_field = ctx.with_field(field);
+                                let entity_resolver =
+                                    schema.0.entity_resolver.as_ref().ok_or_else(|| {
+                                        ctx_field.set_error_path(
+                                            Error::new("internal: missing entity resolver")
+                                                .into_server_error(ctx_field.item.pos),
+                                        )
+                                    })?;
+                                let entity_type = TypeRef::named_list_nn("_Entity");
+
+                                let arguments = ObjectAccessor(Cow::Owned(
+                                    field
+                                        .node
+                                        .arguments
+                                        .iter()
+                                        .map(|(name, value)| {
+                                            ctx_field
+                                                .resolve_input_value(value.clone())
+                                                .map(|value| (name.node.clone(), value))
+                                        })
+                                        .collect::<ServerResult<IndexMap<Name, Value>>>()?,
+                                ));
+
+                                let field_value = (entity_resolver)(ResolverContext {
+                                    ctx: &ctx_field,
+                                    args: arguments,
+                                    parent_value,
+                                })
+                                .0
+                                .await
+                                .map_err(|err| err.into_server_error(field.pos))?;
+                                let value = resolve(
+                                    schema,
+                                    &ctx_field,
+                                    &entity_type.0,
+                                    field_value.as_ref(),
+                                )
+                                .await?
+                                .unwrap_or_default();
                                 Ok((field.node.response_key().node.clone(), value))
                             }
                             .boxed(),

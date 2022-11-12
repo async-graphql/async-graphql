@@ -82,6 +82,8 @@ pub struct Union {
     pub(crate) name: String,
     pub(crate) description: Option<String>,
     pub(crate) possible_types: IndexSet<String>,
+    inaccessible: bool,
+    tags: Vec<String>,
 }
 
 impl Union {
@@ -92,17 +94,14 @@ impl Union {
             name: name.into(),
             description: None,
             possible_types: Default::default(),
+            inaccessible: false,
+            tags: Vec::new(),
         }
     }
 
-    /// Set the description
-    #[inline]
-    pub fn description(self, description: impl Into<String>) -> Self {
-        Self {
-            description: Some(description.into()),
-            ..self
-        }
-    }
+    impl_set_description!();
+    impl_set_inaccessible!();
+    impl_set_tags!();
 
     /// Add a possible type to the union that must be an object
     #[inline]
@@ -125,8 +124,8 @@ impl Union {
                 description: self.description.clone(),
                 possible_types: self.possible_types.clone(),
                 visible: None,
-                inaccessible: false,
-                tags: vec![],
+                inaccessible: self.inaccessible,
+                tags: self.tags.clone(),
                 rust_typename: None,
             },
         );

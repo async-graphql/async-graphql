@@ -174,7 +174,9 @@ pub fn generate(
             let external = method_args.external;
             let shareable = method_args.shareable;
             let override_from = match &method_args.override_from {
-                Some(from) => quote! { ::std::option::Option::Some(#from) },
+                Some(from) => {
+                    quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
+                }
                 None => quote! { ::std::option::Option::None },
             };
             let inaccessible = method_args.inaccessible;
@@ -184,11 +186,15 @@ pub fn generate(
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
             let requires = match &method_args.requires {
-                Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+                Some(requires) => {
+                    quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#requires)) }
+                }
                 None => quote! { ::std::option::Option::None },
             };
             let provides = match &method_args.provides {
-                Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+                Some(provides) => {
+                    quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#provides)) }
+                }
                 None => quote! { ::std::option::Option::None },
             };
             let cache_control = {

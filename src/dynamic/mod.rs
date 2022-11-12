@@ -29,6 +29,9 @@
 //! # }).unwrap();
 //! ```
 
+#[macro_use]
+mod macros;
+
 mod base;
 mod check;
 mod r#enum;

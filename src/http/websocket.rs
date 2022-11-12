@@ -383,14 +383,14 @@ pub enum ClientMessage {
     /// Useful for detecting failed connections, displaying latency metrics or
     /// other types of network probing.
     ///
-    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping
+    /// Reference: <https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping>
     Ping {
         /// Additional details about the ping.
         payload: Option<serde_json::Value>,
     },
     /// The response to the Ping message.
     ///
-    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong
+    /// Reference: <https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong>
     Pong {
         /// Additional details about the pong.
         payload: Option<serde_json::Value>,
