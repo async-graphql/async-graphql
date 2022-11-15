@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.0-alpha.5] 2022-11-15
+
+- Fixes [#1138](https://github.com/async-graphql/async-graphql/issues/1138)
+- Fixes [#1140](https://github.com/async-graphql/async-graphql/issues/1140)
+
 # [5.0.0-alpha.4] 2022-11-12
 
 - Add support to federation(v2) for dynamic schema
