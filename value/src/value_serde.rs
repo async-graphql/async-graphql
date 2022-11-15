@@ -3,11 +3,11 @@ use std::fmt::{self, Formatter};
 use indexmap::IndexMap;
 use serde::{
     de::{Error as DeError, MapAccess, SeqAccess, Visitor},
-    ser::Error as SerError,
+    ser::SerializeMap,
     Deserialize, Deserializer, Serialize, Serializer,
 };
 
-use crate::{ConstValue, Number, Value};
+use crate::{ConstValue, Name, Number, Value};
 
 impl Serialize for ConstValue {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -151,10 +151,21 @@ impl<'de> Deserialize<'de> for ConstValue {
     }
 }
 
+#[derive(Debug)]
+struct SerdeVariable(Name);
+
+impl Serialize for SerdeVariable {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut s = serializer.serialize_map(Some(1))?;
+        s.serialize_entry("$var", &self.0)?;
+        s.end()
+    }
+}
+
 impl Serialize for Value {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
-            Value::Variable(_) => Err(S::Error::custom("cannot serialize variable")),
+            Value::Variable(name) => SerdeVariable(name.clone()).serialize(serializer),
             Value::Null => serializer.serialize_none(),
             Value::Number(v) => v.serialize(serializer),
             Value::String(v) => serializer.serialize_str(v),
@@ -284,12 +295,32 @@ impl<'de> Deserialize<'de> for Value {
             {
                 let mut map = IndexMap::new();
                 while let Some((name, value)) = visitor.next_entry()? {
-                    map.insert(name, value);
+                    match &value {
+                        Value::String(value) if name == "$var" => {
+                            return Ok(Value::Variable(Name::new(value)));
+                        }
+                        _ => {
+                            map.insert(name, value);
+                        }
+                    }
                 }
                 Ok(Value::Object(map))
             }
         }
 
         deserializer.deserialize_any(ValueVisitor)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn var_serde() {
+        let var = Value::Variable(Name::new("abc"));
+        let s = serde_json::to_string(&var).unwrap();
+        assert_eq!(s, r#"{"$var":"abc"}"#);
+        assert_eq!(var, serde_json::from_str(&s).unwrap());
     }
 }
