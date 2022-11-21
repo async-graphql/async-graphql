@@ -74,8 +74,11 @@ pub fn is_valid_input_value(
                 .get(type_name)
                 .unwrap_or_else(|| panic!("Type `{}` not defined", type_name))
             {
-                registry::MetaType::Scalar { is_valid, .. } => {
-                    if is_valid(&value) {
+                registry::MetaType::Scalar {
+                    is_valid: Some(is_valid_fn),
+                    ..
+                } => {
+                    if (is_valid_fn)(&value) {
                         None
                     } else {
                         Some(valid_error(
@@ -84,6 +87,7 @@ pub fn is_valid_input_value(
                         ))
                     }
                 }
+                registry::MetaType::Scalar { is_valid: None, .. } => None,
                 registry::MetaType::Enum {
                     enum_values,
                     name: enum_name,

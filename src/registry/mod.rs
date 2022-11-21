@@ -5,6 +5,7 @@ mod stringify_exec_doc;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fmt::{self, Display, Formatter},
+    sync::Arc,
 };
 
 pub use cache_control::CacheControl;
@@ -250,6 +251,9 @@ impl Display for MetaTypeId {
     }
 }
 
+/// A validator for scalar
+pub type ScalarValidatorFn = Arc<dyn Fn(&Value) -> bool + Send + Sync>;
+
 /// Type metadata
 #[derive(Clone)]
 pub enum MetaType {
@@ -262,7 +266,7 @@ pub enum MetaType {
         /// the description of the scalar
         description: Option<String>,
         /// A function that uses to check if the scalar is valid
-        is_valid: fn(value: &Value) -> bool,
+        is_valid: Option<ScalarValidatorFn>,
         /// A function that uses to check if the scalar should be exported to
         /// schemas
         visible: Option<MetaVisibleFn>,

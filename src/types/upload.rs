@@ -1,4 +1,4 @@
-use std::{borrow::Cow, io::Read};
+use std::{borrow::Cow, io::Read, sync::Arc};
 
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
@@ -151,7 +151,7 @@ impl InputType for Upload {
         registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
-            is_valid: |value| matches!(value, Value::String(_)),
+            is_valid: Some(Arc::new(|value| matches!(value, Value::String(_)))),
             visible: None,
             inaccessible: false,
             tags: Default::default(),

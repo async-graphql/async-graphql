@@ -155,9 +155,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
-            (name.to_string(), Ident::new(method, Span::call_site()))
+            (name.to_string(), Ident::new_raw(method, Span::call_site()))
         } else {
-            let method_name = Ident::new(name, Span::call_site());
+            let method_name = Ident::new_raw(name, Span::call_site());
             (
                 interface_args
                     .rename_fields
@@ -208,7 +208,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             secret,
         } in args
         {
-            let ident = Ident::new(name, Span::call_site());
+            let ident = Ident::new_raw(name, Span::call_site());
             let name = interface_args
                 .rename_args
                 .rename(name, RenameTarget::Argument);
