@@ -63,7 +63,7 @@ pub fn generate(
                 registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
-                    is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
+                    is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
                     visible: #visible,
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
@@ -95,7 +95,7 @@ pub fn generate(
                 registry.create_output_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
-                    is_valid: |value| <#self_ty as #crate_name::ScalarType>::is_valid(value),
+                    is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
                     visible: #visible,
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],

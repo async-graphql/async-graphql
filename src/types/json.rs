@@ -52,7 +52,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
         registry.create_input_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON value.".to_string()),
-            is_valid: |_| true,
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -83,7 +83,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
         registry.create_output_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as OutputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON value.".to_string()),
-            is_valid: |_| true,
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -112,7 +112,7 @@ impl InputType for serde_json::Value {
             MetaType::Scalar {
                 name: <Self as InputType>::type_name().to_string(),
                 description: Some("A scalar that can represent any JSON value.".to_string()),
-                is_valid: |_| true,
+                is_valid: None,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),
@@ -145,7 +145,7 @@ impl OutputType for serde_json::Value {
             MetaType::Scalar {
                 name: <Self as OutputType>::type_name().to_string(),
                 description: Some("A scalar that can represent any JSON value.".to_string()),
-                is_valid: |_| true,
+                is_valid: None,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),

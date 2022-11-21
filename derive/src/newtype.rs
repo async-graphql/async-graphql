@@ -55,7 +55,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             registry.create_input_type::<#ident, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                 name: ::std::borrow::ToOwned::to_owned(#name),
                 description: #desc,
-                is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
+                is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#ident as #crate_name::ScalarType>::is_valid(value))),
                 visible: #visible,
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],

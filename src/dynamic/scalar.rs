@@ -1,6 +1,12 @@
+use std::{
+    fmt::{self, Debug},
+    sync::Arc,
+};
+
 use crate::{
     dynamic::SchemaError,
-    registry::{MetaType, Registry},
+    registry::{MetaType, Registry, ScalarValidatorFn},
+    Value,
 };
 
 /// A GraphQL scalar type
@@ -36,13 +42,25 @@ use crate::{
 /// # Ok::<_, SchemaError>(())
 /// # }).unwrap();
 /// ```
-#[derive(Debug)]
 pub struct Scalar {
     pub(crate) name: String,
     pub(crate) description: Option<String>,
     pub(crate) specified_by_url: Option<String>,
+    pub(crate) validator: Option<ScalarValidatorFn>,
     inaccessible: bool,
     tags: Vec<String>,
+}
+
+impl Debug for Scalar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Scalar")
+            .field("name", &self.name)
+            .field("description", &self.description)
+            .field("specified_by_url", &self.specified_by_url)
+            .field("inaccessible", &self.inaccessible)
+            .field("tags", &self.tags)
+            .finish()
+    }
 }
 
 impl Scalar {
@@ -53,6 +71,7 @@ impl Scalar {
             name: name.into(),
             description: None,
             specified_by_url: None,
+            validator: None,
             inaccessible: false,
             tags: Vec::new(),
         }
@@ -61,6 +80,23 @@ impl Scalar {
     impl_set_description!();
     impl_set_inaccessible!();
     impl_set_tags!();
+
+    /// Set the validator
+    #[inline]
+    pub fn validator(self, validator: impl Fn(&Value) -> bool + Send + Sync + 'static) -> Self {
+        Self {
+            validator: Some(Arc::new(validator)),
+            ..self
+        }
+    }
+
+    #[inline]
+    pub(crate) fn validate(&self, value: &Value) -> bool {
+        match &self.validator {
+            Some(validator) => (validator)(value),
+            None => true,
+        }
+    }
 
     /// Set the specified by url
     #[inline]
@@ -83,7 +119,7 @@ impl Scalar {
             MetaType::Scalar {
                 name: self.name.clone(),
                 description: self.description.clone(),
-                is_valid: |_| true,
+                is_valid: self.validator.clone(),
                 visible: None,
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),

@@ -403,7 +403,9 @@ async fn resolve_value(
     value: &FieldValue<'_>,
 ) -> ServerResult<Option<Value>> {
     match (field_type, &value.0) {
-        (Type::Scalar(_), FieldValueInner::Value(value)) => Ok(Some(value.clone())),
+        (Type::Scalar(scalar), FieldValueInner::Value(value)) if scalar.validate(value) => {
+            Ok(Some(value.clone()))
+        }
         (Type::Scalar(scalar), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: invalid value for scalar \"{}\", expected \"FieldValue::Value\"",
