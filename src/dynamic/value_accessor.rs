@@ -15,6 +15,14 @@ impl<'a> ValueAccessor<'a> {
         matches!(self.0, Value::Null)
     }
 
+    /// Returns the boolean
+    pub fn boolean(&self) -> Result<bool> {
+        match self.0 {
+            Value::Boolean(b) => Ok(*b),
+            _ => Err(Error::new("internal: not a boolean")),
+        }
+    }
+
     /// Returns the enum name
     pub fn enum_name(&self) -> Result<&str> {
         match self.0 {
