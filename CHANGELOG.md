@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # # [5.0.0] 2022-11-27
 
+- Update MSRV to `1.60.0`
 - [async-graphql-axum] bump axum from `0.5.1` to `0.6.0` [#1106](https://github.com/async-graphql/async-graphql/issues/1106)
 
 # [5.0.0-alpha.5] 2022-11-21
