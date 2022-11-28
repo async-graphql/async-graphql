@@ -9,13 +9,13 @@ keywords = ["futures", "async", "graphql", "axum"]
 license = "MIT/Apache-2.0"
 name = "async-graphql-axum"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "5.0.0-alpha.5"
+version = "5.0.0"
 
 [dependencies]
-async-graphql = { path = "../..", version = "5.0.0-alpha.5", default-features = false }
+async-graphql = { path = "../..", version = "5.0.0", default-features = false }
 
 async-trait = "0.1.51"
-axum = { version = "0.5.1", features = ["ws", "headers"] }
+axum = { version = "0.6.0", features = ["ws", "headers"] }
 bytes = "1.0.1"
 futures-util = "0.3.0"
 http-body = "0.4.2"

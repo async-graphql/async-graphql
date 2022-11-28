@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "5.0.0-alpha.5"
+version = "5.0.0"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -29,9 +29,9 @@ unblock = ["blocking"]
 dynamic-schema = []
 
 [dependencies]
-async-graphql-derive = { path = "derive", version = "5.0.0-alpha.5" }
-async-graphql-parser = { path = "parser", version = "5.0.0-alpha.5" }
-async-graphql-value = { path = "value", version = "5.0.0-alpha.5" }
+async-graphql-derive = { path = "derive", version = "5.0.0" }
+async-graphql-parser = { path = "parser", version = "5.0.0" }
+async-graphql-value = { path = "value", version = "5.0.0" }
 
 async-stream = "0.3.0"
 async-trait = "0.1.48"

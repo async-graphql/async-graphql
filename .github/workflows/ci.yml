@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - { rust: stable, os: ubuntu-latest }
-          - { rust: 1.59.0, os: ubuntu-latest }
+          - { rust: 1.60.0, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: 1.59.0, os: ubuntu-latest }
+          - { rust: 1.60.0, os: ubuntu-latest }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -55,7 +55,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: rustfmt
           override: true
-      # We exclude async-graphql-tide since it indirectly depends on async-global-executor which requires rust 1.59+
+      # We exclude async-graphql-tide since it indirectly depends on async-global-executor which requires rust 1.60+
       - name: Build with all features
         run: cargo build --all-features
       - name: Build
