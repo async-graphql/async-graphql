@@ -4,11 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# # [5.0.1] 2022-11-29
+# [5.0.2] 2022-11-30
+
+- Fixes [#1157](https://github.com/async-graphql/async-graphql/issues/1157)
+
+# [5.0.1] 2022-11-29
 
 - Add boolean dynamic ValueAccessor method [#1153](https://github.com/async-graphql/async-graphql/pull/1153)
 
-# # [5.0.0] 2022-11-27
+# [5.0.0] 2022-11-27
 
 - Update MSRV to `1.60.0`
 - [async-graphql-axum] bump axum from `0.5.1` to `0.6.0` [#1106](https://github.com/async-graphql/async-graphql/issues/1106)
