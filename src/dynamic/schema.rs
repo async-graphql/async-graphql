@@ -700,15 +700,29 @@ mod tests {
 
     #[tokio::test]
     async fn list() {
-        let query = Object::new("Query").field(Field::new(
-            "values",
-            TypeRef::named_nn_list_nn(TypeRef::INT),
-            |_| {
-                FieldFuture::new(async {
-                    Ok(Some(vec![Value::from(3), Value::from(6), Value::from(9)]))
-                })
-            },
-        ));
+        let query = Object::new("Query")
+            .field(Field::new(
+                "values",
+                TypeRef::named_nn_list_nn(TypeRef::INT),
+                |_| {
+                    FieldFuture::new(async {
+                        Ok(Some(vec![Value::from(3), Value::from(6), Value::from(9)]))
+                    })
+                },
+            ))
+            .field(Field::new(
+                "values2",
+                TypeRef::named_nn_list_nn(TypeRef::INT),
+                |_| {
+                    FieldFuture::new(async {
+                        Ok(Some(Value::List(vec![
+                            Value::from(3),
+                            Value::from(6),
+                            Value::from(9),
+                        ])))
+                    })
+                },
+            ));
         let schema = Schema::build("Query", None, None)
             .register(query)
             .finish()
@@ -716,13 +730,14 @@ mod tests {
 
         assert_eq!(
             schema
-                .execute("{ values }")
+                .execute("{ values values2 }")
                 .await
                 .into_result()
                 .unwrap()
                 .data,
             value!({
-                "values": [3, 6, 9]
+                "values": [3, 6, 9],
+                "values2": [3, 6, 9],
             })
         );
     }

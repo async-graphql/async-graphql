@@ -350,42 +350,19 @@ pub(crate) fn resolve<'a>(
                     .into_server_error(ctx.item.pos),
             )),
 
-            (TypeRefInner::List(type_def), Some(FieldValue(FieldValueInner::List(values)))) => {
-                let mut futures = Vec::with_capacity(values.len());
-                for (idx, value) in values.iter().enumerate() {
-                    let ctx_item = ctx.with_index(idx);
-
-                    futures.push(async move {
-                        let parent_type = format!("[{}]", type_def);
-                        let return_type = type_def.to_string();
-                        let resolve_info = ResolveInfo {
-                            path_node: ctx_item.path_node.as_ref().unwrap(),
-                            parent_type: &parent_type,
-                            return_type: &return_type,
-                            name: ctx.item.node.name.node.as_str(),
-                            alias: ctx
-                                .item
-                                .node
-                                .alias
-                                .as_ref()
-                                .map(|alias| alias.node.as_str()),
-                            is_for_introspection: ctx_item.is_for_introspection,
-                        };
-
-                        let resolve_fut =
-                            async { resolve(schema, &ctx_item, type_def, Some(value)).await };
-                        futures_util::pin_mut!(resolve_fut);
-
-                        let res_value = ctx_item
-                            .query_env
-                            .extensions
-                            .resolve(resolve_info, &mut resolve_fut)
-                            .await?;
-                        Ok::<_, ServerError>(res_value.unwrap_or_default())
-                    });
-                }
-                let values = futures_util::future::try_join_all(futures).await?;
-                Ok(Some(Value::List(values)))
+            (TypeRefInner::List(type_ref), Some(FieldValue(FieldValueInner::List(values)))) => {
+                resolve_list(schema, ctx, type_ref, values).await
+            }
+            (
+                TypeRefInner::List(type_ref),
+                Some(FieldValue(FieldValueInner::Value(Value::List(values)))),
+            ) => {
+                let values = values
+                    .iter()
+                    .cloned()
+                    .map(FieldValue::value)
+                    .collect::<Vec<_>>();
+                resolve_list(schema, ctx, type_ref, &values).await
             }
             (TypeRefInner::List(_), Some(_)) => Err(ctx.set_error_path(
                 Error::new("internal: expects an array").into_server_error(ctx.item.pos),
@@ -394,6 +371,48 @@ pub(crate) fn resolve<'a>(
         }
     }
     .boxed()
+}
+
+async fn resolve_list<'a>(
+    schema: &'a Schema,
+    ctx: &'a Context<'a>,
+    type_ref: &'a TypeRefInner,
+    values: &[FieldValue<'_>],
+) -> ServerResult<Option<Value>> {
+    let mut futures = Vec::with_capacity(values.len());
+    for (idx, value) in values.iter().enumerate() {
+        let ctx_item = ctx.with_index(idx);
+
+        futures.push(async move {
+            let parent_type = format!("[{}]", type_ref);
+            let return_type = type_ref.to_string();
+            let resolve_info = ResolveInfo {
+                path_node: ctx_item.path_node.as_ref().unwrap(),
+                parent_type: &parent_type,
+                return_type: &return_type,
+                name: ctx.item.node.name.node.as_str(),
+                alias: ctx
+                    .item
+                    .node
+                    .alias
+                    .as_ref()
+                    .map(|alias| alias.node.as_str()),
+                is_for_introspection: ctx_item.is_for_introspection,
+            };
+
+            let resolve_fut = async { resolve(schema, &ctx_item, type_ref, Some(value)).await };
+            futures_util::pin_mut!(resolve_fut);
+
+            let res_value = ctx_item
+                .query_env
+                .extensions
+                .resolve(resolve_info, &mut resolve_fut)
+                .await?;
+            Ok::<_, ServerError>(res_value.unwrap_or_default())
+        });
+    }
+    let values = futures_util::future::try_join_all(futures).await?;
+    Ok(Some(Value::List(values)))
 }
 
 async fn resolve_value(
