@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.3] 2022-12-07
+
+- Fixes [#1163](https://github.com/async-graphql/async-graphql/issues/1163)
+- Fixes [#1161](https://github.com/async-graphql/async-graphql/issues/1161)
+
 # [5.0.2] 2022-11-30
 
 - Fixes [#1157](https://github.com/async-graphql/async-graphql/issues/1157)
