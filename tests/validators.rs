@@ -839,3 +839,62 @@ pub async fn test_list_both_max_items_and_max_length() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_issue_1164() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn a(
+            &self,
+            #[graphql(validator(min_length = 6, max_length = 16))] value: String,
+        ) -> String {
+            value
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "abcdef")}"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "a": "abcdef"
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "abc") }"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 3, must be greater than or equal to 6"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 12, line: 1}],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "abcdefabcdefabcdef") }"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 18, must be less than or equal to 16"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 12, line: 1}],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+}

@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 
 use crate::{
     extensions::ResolveInfo, parser::types::Selection, Context, ContextBase, ContextSelectionSet,
-    Error, IntrospectionMode, Name, OutputType, ServerError, ServerResult, Value,
+    Error, Name, OutputType, ServerError, ServerResult, Value,
 };
 
 /// Represents a GraphQL container object.
@@ -188,27 +188,14 @@ impl<'a> Fields<'a> {
             match &selection.node {
                 Selection::Field(field) => {
                     if field.node.name.node == "__typename" {
-                        if matches!(
-                            ctx.schema_env.registry.introspection_mode,
-                            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
-                        ) && matches!(
-                            ctx.query_env.introspection_mode,
-                            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly,
-                        ) {
-                            // Get the typename
-                            let ctx_field = ctx.with_field(field);
-                            let field_name = ctx_field.item.node.response_key().node.clone();
-                            let typename = root.introspection_type_name().into_owned();
+                        // Get the typename
+                        let ctx_field = ctx.with_field(field);
+                        let field_name = ctx_field.item.node.response_key().node.clone();
+                        let typename = root.introspection_type_name().into_owned();
 
-                            self.0.push(Box::pin(async move {
-                                Ok((field_name, Value::String(typename)))
-                            }));
-                        } else {
-                            self.0.push(Box::pin(async move {
-                                Ok((field.node.response_key().node.clone(), Value::Null))
-                            }));
-                        }
-
+                        self.0.push(Box::pin(async move {
+                            Ok((field_name, Value::String(typename)))
+                        }));
                         continue;
                     }
 
