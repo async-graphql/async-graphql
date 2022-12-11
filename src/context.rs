@@ -567,7 +567,7 @@ impl<'a, T> ContextBase<'a, T> {
             })
     }
 
-    fn resolve_input_value(&self, value: Positioned<InputValue>) -> ServerResult<Value> {
+    pub(crate) fn resolve_input_value(&self, value: Positioned<InputValue>) -> ServerResult<Value> {
         let pos = value.pos;
         value
             .node
@@ -599,12 +599,13 @@ impl<'a, T> ContextBase<'a, T> {
             .map(|value| (pos, value))
             .map_err(|e| e.into_server_error(pos))
     }
-}
 
-impl<'a> ContextBase<'a, &'a Positioned<SelectionSet>> {
     #[doc(hidden)]
     #[must_use]
-    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, &'a Positioned<SelectionSet>> {
+    pub fn with_index(&'a self, idx: usize) -> ContextBase<'a, T>
+    where
+        T: Copy,
+    {
         ContextBase {
             path_node: Some(QueryPathNode {
                 parent: self.path_node.as_ref(),

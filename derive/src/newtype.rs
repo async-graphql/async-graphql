@@ -13,14 +13,18 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();
     let inaccessible = newtype_args.inaccessible;
-    let tags = &newtype_args.tags;
+    let tags = newtype_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = match &newtype_args.name {
         NewTypeName::New(name) => Some(name.clone()),
         NewTypeName::Rust => Some(RenameTarget::Type.rename(ident.to_string())),
         NewTypeName::Original => None,
     };
     let desc = get_rustdoc(&newtype_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
     let visible = visible_fn(&newtype_args.visible);
 
@@ -51,10 +55,10 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             registry.create_input_type::<#ident, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                 name: ::std::borrow::ToOwned::to_owned(#name),
                 description: #desc,
-                is_valid: |value| <#ident as #crate_name::ScalarType>::is_valid(value),
+                is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#ident as #crate_name::ScalarType>::is_valid(value))),
                 visible: #visible,
                 inaccessible: #inaccessible,
-                tags: &[ #(#tags),* ],
+                tags: ::std::vec![ #(#tags),* ],
                 specified_by_url: #specified_by_url,
             })
         }

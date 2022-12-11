@@ -66,7 +66,7 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                     &value,
                     QueryPathNode {
                         parent: None,
-                        segment: QueryPathSegment::Name(arg.name),
+                        segment: QueryPathSegment::Name(&arg.name),
                     },
                 )
             }) {

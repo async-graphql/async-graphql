@@ -87,9 +87,11 @@
 //! - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
 //! - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
 //! - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
-//! - `tokio-sync` Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html)
+//! - `tokio-sync`: Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html)
 //!   and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html).
 //! - `fast_chemail`: Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).
+//! - `tempfile`: Save the uploaded content in the temporary file.
+//! - `dynamic-schema`: Support dynamic schema.
 //!
 //! ## Integrations
 //!
@@ -182,6 +184,7 @@
 mod base;
 mod custom_directive;
 mod error;
+mod executor;
 mod guard;
 mod look_ahead;
 mod model;
@@ -195,6 +198,9 @@ pub mod context;
 #[cfg(feature = "dataloader")]
 #[cfg_attr(docsrs, doc(cfg(feature = "dataloader")))]
 pub mod dataloader;
+#[cfg(feature = "dynamic-schema")]
+#[cfg_attr(docsrs, doc(cfg(feature = "dynamic-schema")))]
+pub mod dynamic;
 pub mod extensions;
 pub mod http;
 pub mod resolver_utils;
@@ -226,6 +232,7 @@ pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
 };
+pub use executor::Executor;
 pub use extensions::ResolveFut;
 #[doc(hidden)]
 pub use futures_util;

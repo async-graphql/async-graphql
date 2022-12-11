@@ -26,8 +26,8 @@ where
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON Object value."),
-            is_valid: |_| true,
+            description: Some("A scalar that can represent any JSON Object value.".to_string()),
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -83,8 +83,8 @@ where
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as OutputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON Object value."),
-            is_valid: |_| true,
+            description: Some("A scalar that can represent any JSON Object value.".to_string()),
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),

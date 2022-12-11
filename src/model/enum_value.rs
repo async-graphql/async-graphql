@@ -12,12 +12,12 @@ pub struct __EnumValue<'a> {
 impl<'a> __EnumValue<'a> {
     #[inline]
     async fn name(&self) -> &str {
-        self.value.name
+        &self.value.name
     }
 
     #[inline]
     async fn description(&self) -> Option<&str> {
-        self.value.description
+        self.value.description.as_deref()
     }
 
     #[inline]

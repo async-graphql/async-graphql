@@ -93,11 +93,11 @@ fn generate_default_value(lit: &Lit) -> GeneratorResult<TokenStream> {
         }
         Lit::Int(value) => {
             let value = value.base10_parse::<i32>()?;
-            Ok(quote!({ ::std::convert::TryInto::try_into(#value).unwrap() }))
+            Ok(quote!({ ::std::convert::TryInto::try_into(#value).unwrap_or_default() }))
         }
         Lit::Float(value) => {
             let value = value.base10_parse::<f64>()?;
-            Ok(quote!({ ::std::convert::TryInto::try_into(#value) }))
+            Ok(quote!({ ::std::convert::TryInto::try_into(#value).unwrap_or_default() }))
         }
         Lit::Bool(value) => {
             let value = value.value;
@@ -230,7 +230,7 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
         Deprecation::Deprecated {
             reason: Some(reason),
         } => {
-            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::Some(#reason) } }
+            quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::Some(::std::string::ToString::to_string(#reason)) } }
         }
         Deprecation::Deprecated { reason: None } => {
             quote! { #crate_name::registry::Deprecation::Deprecated { reason: ::std::option::Option::None } }

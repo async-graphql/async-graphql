@@ -27,9 +27,13 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     };
 
     let inaccessible = enum_args.inaccessible;
-    let tags = &enum_args.tags;
+    let tags = enum_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let desc = get_rustdoc(&enum_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut enum_items = Vec::new();
@@ -55,10 +59,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 .rename(variant.ident.unraw().to_string(), RenameTarget::EnumItem)
         });
         let inaccessible = variant.inaccessible;
-        let tags = &variant.tags;
+        let tags = variant
+            .tags
+            .iter()
+            .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+            .collect::<Vec<_>>();
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(#s) })
+            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
 
         enum_items.push(item_ident);
@@ -71,13 +79,13 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         let visible = visible_fn(&variant.visible);
         schema_enum_items.push(quote! {
-            enum_items.insert(#gql_item_name, #crate_name::registry::MetaEnumValue {
-                name: #gql_item_name,
+            enum_items.insert(::std::string::ToString::to_string(#gql_item_name), #crate_name::registry::MetaEnumValue {
+                name: ::std::string::ToString::to_string(#gql_item_name),
                 description: #item_desc,
                 deprecation: #item_deprecation,
                 visible: #visible,
                 inaccessible: #inaccessible,
-                tags: &[ #(#tags),* ],
+                tags: ::std::vec![ #(#tags),* ],
             });
         });
     }
@@ -120,7 +128,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
     if schema_enum_items.is_empty() {
         return Err(Error::new_spanned(
-            &ident,
+            ident,
             "A GraphQL Enum type must define one or more unique enum values.",
         )
         .into());
@@ -153,8 +161,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     }
                 })
             }

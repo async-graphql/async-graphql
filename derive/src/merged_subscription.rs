@@ -24,14 +24,14 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
     };
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
         Data::Struct(e) => e,
         _ => {
             return Err(Error::new_spanned(
-                &ident,
+                ident,
                 "MergedSubscription can only be applied to an struct.",
             )
             .into())
@@ -83,7 +83,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
                         is_subscription: true,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     }
                 })
             }

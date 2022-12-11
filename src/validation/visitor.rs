@@ -312,7 +312,7 @@ impl VisitorNil {
 pub(crate) struct VisitorCons<A, B>(A, B);
 
 impl<A, B> VisitorCons<A, B> {
-    pub(crate) fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
+    pub(crate) const fn with<V>(self, visitor: V) -> VisitorCons<V, Self> {
         VisitorCons(visitor, self)
     }
 }

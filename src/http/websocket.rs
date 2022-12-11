@@ -16,7 +16,7 @@ use futures_util::{
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Error, ObjectType, Request, Response, Result, Schema, SubscriptionType};
+use crate::{Data, Error, Executor, Request, Response, Result};
 
 /// All known protocols based on WebSocket.
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
@@ -70,12 +70,12 @@ pin_project! {
     ///
     /// - [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
     /// - [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
-    pub struct WebSocket<S, Query, Mutation, Subscription, OnInit> {
+    pub struct WebSocket<S, E, OnInit> {
         on_connection_init: Option<OnInit>,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
-        schema: Schema<Query, Mutation, Subscription>,
+        executor: E,
         streams: HashMap<String, Pin<Box<dyn Stream<Item = Response>>>>,
         #[pin]
         stream: S,
@@ -92,23 +92,19 @@ fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
     futures_util::future::ready(Ok(Data::default()))
 }
 
-impl<S, Query, Mutation, Subscription>
-    WebSocket<S, Query, Mutation, Subscription, DefaultOnConnInitType>
+impl<S, E> WebSocket<S, E, DefaultOnConnInitType>
 where
+    E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
 {
     /// Create a new websocket from [`ClientMessage`] stream.
-    pub fn from_message_stream(
-        schema: Schema<Query, Mutation, Subscription>,
-        stream: S,
-        protocol: Protocols,
-    ) -> Self {
+    pub fn from_message_stream(executor: E, stream: S, protocol: Protocols) -> Self {
         WebSocket {
             on_connection_init: Some(default_on_connection_init),
             init_fut: None,
             connection_data: None,
             data: None,
-            schema,
+            executor,
             streams: HashMap::new(),
             stream,
             protocol,
@@ -116,26 +112,23 @@ where
     }
 }
 
-impl<S, Query, Mutation, Subscription>
-    WebSocket<MessageMapStream<S>, Query, Mutation, Subscription, DefaultOnConnInitType>
+impl<S, E> WebSocket<MessageMapStream<S>, E, DefaultOnConnInitType>
 where
+    E: Executor,
     S: Stream,
     S::Item: AsRef<[u8]>,
 {
     /// Create a new websocket from bytes stream.
-    pub fn new(
-        schema: Schema<Query, Mutation, Subscription>,
-        stream: S,
-        protocol: Protocols,
-    ) -> Self {
+    pub fn new(executor: E, stream: S, protocol: Protocols) -> Self {
         let stream = stream
             .map(ClientMessage::from_bytes as fn(S::Item) -> serde_json::Result<ClientMessage>);
-        WebSocket::from_message_stream(schema, stream, protocol)
+        WebSocket::from_message_stream(executor, stream, protocol)
     }
 }
 
-impl<S, Query, Mutation, Subscription, OnInit> WebSocket<S, Query, Mutation, Subscription, OnInit>
+impl<S, E, OnInit> WebSocket<S, E, OnInit>
 where
+    E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
 {
     /// Specify a connection data.
@@ -156,10 +149,7 @@ where
     /// client in the [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
     /// From that point on the returned data will be accessible to all requests.
     #[must_use]
-    pub fn on_connection_init<F, R>(
-        self,
-        callback: F,
-    ) -> WebSocket<S, Query, Mutation, Subscription, F>
+    pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F>
     where
         F: FnOnce(serde_json::Value) -> R + 'static,
         R: Future<Output = Result<Data>> + 'static,
@@ -169,7 +159,7 @@ where
             init_fut: self.init_fut,
             connection_data: self.connection_data,
             data: self.data,
-            schema: self.schema,
+            executor: self.executor,
             streams: self.streams,
             stream: self.stream,
             protocol: self.protocol,
@@ -177,15 +167,12 @@ where
     }
 }
 
-impl<S, Query, Mutation, Subscription, OnInit, InitFut> Stream
-    for WebSocket<S, Query, Mutation, Subscription, OnInit>
+impl<S, E, OnInit, InitFut> Stream for WebSocket<S, E, OnInit>
 where
+    E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
-    Query: ObjectType + 'static,
-    Mutation: ObjectType + 'static,
-    Subscription: SubscriptionType + 'static,
-    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + Sync + 'static,
-    InitFut: Future<Output = Result<Data>> + Send + Sync + 'static,
+    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
+    InitFut: Future<Output = Result<Data>> + Send + 'static,
 {
     type Item = WsMessage;
 
@@ -239,9 +226,7 @@ where
                         if let Some(data) = this.data.clone() {
                             this.streams.insert(
                                 id,
-                                Box::pin(
-                                    this.schema.execute_stream_with_session_data(request, data),
-                                ),
+                                Box::pin(this.executor.execute_stream(request, Some(data))),
                             );
                         } else {
                             return Poll::Ready(Some(WsMessage::Close(
@@ -398,14 +383,14 @@ pub enum ClientMessage {
     /// Useful for detecting failed connections, displaying latency metrics or
     /// other types of network probing.
     ///
-    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping
+    /// Reference: <https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping>
     Ping {
         /// Additional details about the ping.
         payload: Option<serde_json::Value>,
     },
     /// The response to the Ping message.
     ///
-    /// https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong
+    /// Reference: <https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong>
     Pong {
         /// Additional details about the pong.
         payload: Option<serde_json::Value>,

@@ -15,9 +15,7 @@
 use core::any::Any;
 use std::io::Cursor;
 
-use async_graphql::{
-    http::MultipartOptions, ObjectType, ParseRequestError, Schema, SubscriptionType,
-};
+use async_graphql::{http::MultipartOptions, Executor, ParseRequestError};
 use rocket::{
     data::{self, Data, FromData, ToByteUnit},
     form::FromForm,
@@ -40,17 +38,12 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
 impl GraphQLBatchRequest {
-    /// Shortcut method to execute the request on the schema.
-    pub async fn execute<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> GraphQLResponse
+    /// Shortcut method to execute the request on the executor.
+    pub async fn execute<E>(self, executor: &E) -> GraphQLResponse
     where
-        Query: ObjectType + 'static,
-        Mutation: ObjectType + 'static,
-        Subscription: SubscriptionType + 'static,
+        E: Executor,
     {
-        GraphQLResponse(schema.execute_batch(self.0).await)
+        GraphQLResponse(executor.execute_batch(self.0).await)
     }
 }
 
@@ -101,16 +94,11 @@ pub struct GraphQLRequest(pub async_graphql::Request);
 
 impl GraphQLRequest {
     /// Shortcut method to execute the request on the schema.
-    pub async fn execute<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> GraphQLResponse
+    pub async fn execute<E>(self, executor: &E) -> GraphQLResponse
     where
-        Query: ObjectType + 'static,
-        Mutation: ObjectType + 'static,
-        Subscription: SubscriptionType + 'static,
+        E: Executor,
     {
-        GraphQLResponse(schema.execute(self.0).await.into())
+        GraphQLResponse(executor.execute(self.0).await.into())
     }
 
     /// Insert some data for this request.
@@ -159,17 +147,12 @@ pub struct GraphQLQuery {
 
 impl GraphQLQuery {
     /// Shortcut method to execute the request on the schema.
-    pub async fn execute<Query, Mutation, Subscription>(
-        self,
-        schema: &Schema<Query, Mutation, Subscription>,
-    ) -> GraphQLResponse
+    pub async fn execute<E>(self, executor: &E) -> GraphQLResponse
     where
-        Query: ObjectType + 'static,
-        Mutation: ObjectType + 'static,
-        Subscription: SubscriptionType + 'static,
+        E: Executor,
     {
         let request: GraphQLRequest = self.into();
-        request.execute(schema).await
+        request.execute(executor).await
     }
 }
 

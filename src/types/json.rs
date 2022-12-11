@@ -51,8 +51,8 @@ impl<T: DeserializeOwned + Serialize> InputType for Json<T> {
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_input_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON value."),
-            is_valid: |_| true,
+            description: Some("A scalar that can represent any JSON value.".to_string()),
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -82,8 +82,8 @@ impl<T: Serialize> OutputType for Json<T> {
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as OutputType>::type_name().to_string(),
-            description: Some("A scalar that can represent any JSON value."),
-            is_valid: |_| true,
+            description: Some("A scalar that can represent any JSON value.".to_string()),
+            is_valid: None,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -111,8 +111,8 @@ impl InputType for serde_json::Value {
         registry.create_input_type::<serde_json::Value, _>(MetaTypeId::Scalar, |_| {
             MetaType::Scalar {
                 name: <Self as InputType>::type_name().to_string(),
-                description: Some("A scalar that can represent any JSON value."),
-                is_valid: |_| true,
+                description: Some("A scalar that can represent any JSON value.".to_string()),
+                is_valid: None,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),
@@ -144,8 +144,8 @@ impl OutputType for serde_json::Value {
         registry.create_output_type::<serde_json::Value, _>(MetaTypeId::Scalar, |_| {
             MetaType::Scalar {
                 name: <Self as OutputType>::type_name().to_string(),
-                description: Some("A scalar that can represent any JSON value."),
-                is_valid: |_| true,
+                description: Some("A scalar that can represent any JSON value.".to_string()),
+                is_valid: None,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),

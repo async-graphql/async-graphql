@@ -32,7 +32,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
-    let tags = &object_args.tags;
+    let tags = object_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -47,17 +51,15 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     };
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
         Data::Struct(e) => e,
         _ => {
-            return Err(Error::new_spanned(
-                &ident,
-                "SimpleObject can only be applied to an struct.",
+            return Err(
+                Error::new_spanned(ident, "SimpleObject can only be applied to an struct.").into(),
             )
-            .into())
         }
     };
     let mut getters = Vec::new();
@@ -111,7 +113,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         let base_ident = match &field.ident {
             Some(ident) => ident,
-            None => return Err(Error::new_spanned(&ident, "All fields must be named.").into()),
+            None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
         };
 
         let ident = if let Some(derived) = derived {
@@ -126,23 +128,33 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
         let field_desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! {::std::option::Option::Some(#s)})
+            .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
         let external = field.external;
         let shareable = field.shareable;
         let inaccessible = field.inaccessible;
-        let tags = &field.tags;
+        let tags = field
+            .tags
+            .iter()
+            .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+            .collect::<Vec<_>>();
         let override_from = match &field.override_from {
-            Some(from) => quote! { ::std::option::Option::Some(#from) },
+            Some(from) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let requires = match &field.requires {
-            Some(requires) => quote! { ::std::option::Option::Some(#requires) },
+            Some(requires) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#requires)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let provides = match &field.provides {
-            Some(provides) => quote! { ::std::option::Option::Some(#provides) },
+            Some(provides) => {
+                quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#provides)) }
+            }
             None => quote! { ::std::option::Option::None },
         };
         let vis = &field.vis;
@@ -190,7 +202,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     requires: #requires,
                     shareable: #shareable,
                     inaccessible: #inaccessible,
-                    tags: &[ #(#tags),* ],
+                    tags: ::std::vec![ #(#tags),* ],
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
@@ -271,7 +283,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     if !object_args.fake && resolvers.is_empty() {
         return Err(Error::new_spanned(
-            &ident,
+            ident,
             "A GraphQL Object type must define one or more fields.",
         )
         .into());
@@ -353,11 +365,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     })
                 }
 
@@ -420,11 +432,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     })
                 }
 

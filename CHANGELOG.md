@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.3] 2022-12-07
+
+- Fixes [#1163](https://github.com/async-graphql/async-graphql/issues/1163)
+- Fixes [#1161](https://github.com/async-graphql/async-graphql/issues/1161)
+
+# [5.0.2] 2022-11-30
+
+- Fixes [#1157](https://github.com/async-graphql/async-graphql/issues/1157)
+
+# [5.0.1] 2022-11-29
+
+- Add boolean dynamic ValueAccessor method [#1153](https://github.com/async-graphql/async-graphql/pull/1153)
+
+# [5.0.0] 2022-11-27
+
+- Update MSRV to `1.60.0`
+- [async-graphql-axum] bump axum from `0.5.1` to `0.6.0` [#1106](https://github.com/async-graphql/async-graphql/issues/1106)
+
+# [5.0.0-alpha.5] 2022-11-21
+
+- Fixes [#1138](https://github.com/async-graphql/async-graphql/issues/1138)
+- Fixes [#1140](https://github.com/async-graphql/async-graphql/issues/1140)
+- Add `dynamic::Scalar::validator` method to set value validator.
+
+# [5.0.0-alpha.4] 2022-11-12
+
+- Add support to federation(v2) for dynamic schema
+
+# [5.0.0-alpha.3] 2022-11-12
+
+- Simplified way to create type reference `dynamic::TypeRef`
+
+# [5.0.0-alpha.2] 2022-11-11
+
+- Keep object 'implements' order stable in SDL export [#1142](https://github.com/async-graphql/async-graphql/pull/1142)
+- Fix regression on `ComplexObject` descriptions [#1141](https://github.com/async-graphql/async-graphql/pull/1141)
+
+# [5.0.0-alpha.1] 2022-11-10
+
+- Add support for dynamic schema
+- Add `tempfile` feature, enabled by default
+
 # [4.0.17] 2022-10-24
 
 - Add support for using `Union` and `OneofObject` on the same struct [#1116](https://github.com/async-graphql/async-graphql/issues/1116)

@@ -16,9 +16,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let (impl_generics, ty_generics, where_clause) = union_args.generics.split_for_impl();
     let s = match &union_args.data {
         Data::Enum(s) => s,
-        _ => {
-            return Err(Error::new_spanned(&ident, "Union can only be applied to an enum.").into())
-        }
+        _ => return Err(Error::new_spanned(ident, "Union can only be applied to an enum.").into()),
     };
     let mut enum_names = Vec::new();
     let mut enum_items = HashSet::new();
@@ -34,9 +32,13 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     };
 
     let inaccessible = union_args.inaccessible;
-    let tags = &union_args.tags;
+    let tags = union_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let desc = get_rustdoc(&union_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut registry_types = Vec::new();
@@ -77,11 +79,9 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
         if matches!(ty, Type::Path(_) | Type::Macro(_)) {
             // This validates that the field type wasn't already used
             if !enum_items.insert(ty) {
-                return Err(Error::new_spanned(
-                    &ty,
-                    "This type is already used in another variant",
-                )
-                .into());
+                return Err(
+                    Error::new_spanned(ty, "This type is already used in another variant").into(),
+                );
             }
 
             enum_names.push(enum_name);
@@ -149,7 +149,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
     if possible_types.is_empty() {
         return Err(Error::new_spanned(
-            &ident,
+            ident,
             "A GraphQL Union type must include one or more unique member types.",
         )
         .into());
@@ -201,8 +201,8 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                         },
                         visible: #visible,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        tags: ::std::vec![ #(#tags),* ],
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     }
                 })
             }

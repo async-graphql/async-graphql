@@ -60,7 +60,7 @@ impl OutputType for EmptyMutation {
             inaccessible: false,
             tags: Default::default(),
             is_subscription: false,
-            rust_typename: std::any::type_name::<Self>(),
+            rust_typename: Some(std::any::type_name::<Self>()),
         })
     }
 

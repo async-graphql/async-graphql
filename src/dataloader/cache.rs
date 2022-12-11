@@ -16,7 +16,7 @@ pub trait CacheFactory: Send + Sync + 'static {
         V: Send + Sync + Clone + 'static;
 }
 
-/// Cache storage for [DataLoader].
+/// Cache storage for [DataLoader](crate::dataloader::DataLoader).
 pub trait CacheStorage: Send + Sync + 'static {
     /// The key type of the record.
     type Key: Send + Sync + Clone + Eq + Hash + 'static;

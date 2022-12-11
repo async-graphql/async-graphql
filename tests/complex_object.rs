@@ -43,6 +43,7 @@ async fn test_complex_object_process_with_method_field() {
 
 #[tokio::test]
 pub async fn test_complex_object() {
+    /// A complex object.
     #[derive(SimpleObject)]
     #[graphql(complex)]
     struct MyObj {
@@ -52,11 +53,13 @@ pub async fn test_complex_object() {
 
     #[ComplexObject]
     impl MyObj {
+        /// A field named `c`.
         async fn c(&self) -> i32 {
             self.a + self.b
         }
 
-        async fn d(&self, v: i32) -> i32 {
+        /// A field named `d`.
+        async fn d(&self, #[graphql(desc = "An argument named `v`.")] v: i32) -> i32 {
             self.a + self.b + v
         }
     }

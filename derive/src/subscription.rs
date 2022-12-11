@@ -36,10 +36,10 @@ pub fn generate(
     };
 
     let desc = if subscription_args.use_type_description {
-        quote! { ::std::option::Option::Some(<Self as #crate_name::Description>::description()) }
+        quote! { ::std::option::Option::Some(::std::string::ToString::to_string(<Self as #crate_name::Description>::description())) }
     } else {
         get_rustdoc(&item_impl.attrs)?
-            .map(|s| quote!(::std::option::Option::Some(#s)))
+            .map(|s| quote!(::std::option::Option::Some(::std::string::ToString::to_string(#s))))
             .unwrap_or_else(|| quote!(::std::option::Option::None))
     };
 
@@ -61,7 +61,7 @@ pub fn generate(
                     .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
             });
             let field_desc = get_rustdoc(&method.attrs)?
-                .map(|s| quote! {::std::option::Option::Some(#s)})
+                .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
             let cfg_attrs = get_cfg_attrs(&method.attrs);
@@ -101,7 +101,7 @@ pub fn generate(
                 });
                 let desc = desc
                     .as_ref()
-                    .map(|s| quote! {::std::option::Option::Some(#s)})
+                    .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let default = generate_default(default, default_with)?;
 
@@ -119,7 +119,7 @@ pub fn generate(
                 let visible = visible_fn(arg_visible);
                 schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                            name: #name,
+                            name: ::std::string::ToString::to_string(#name),
                             description: #desc,
                             ty: <#ty as #crate_name::InputType>::create_type_info(registry),
                             default_value: #schema_default,
@@ -333,7 +333,7 @@ pub fn generate(
                                 &field.node.selection_set,
                             );
 
-                            let mut execute_fut = async {
+                            let execute_fut = async {
                                 let parent_type = #gql_typename;
                                 #[allow(bare_trait_objects)]
                                 let ri = #crate_name::extensions::ResolveInfo {
@@ -389,7 +389,7 @@ pub fn generate(
 
     if create_stream.is_empty() {
         return Err(Error::new_spanned(
-            &self_ty,
+            self_ty,
             "A GraphQL Object type must define one or more fields.",
         )
         .into());
@@ -425,7 +425,7 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
-                    rust_typename: ::std::any::type_name::<Self>(),
+                    rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                 })
             }
 

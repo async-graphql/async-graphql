@@ -16,7 +16,11 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
-    let tags = &object_args.tags;
+    let tags = object_args
+        .tags
+        .iter()
+        .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
     let gql_typename = if !object_args.name_type {
         let name = object_args
             .name
@@ -28,7 +32,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     };
 
     let desc = get_rustdoc(&object_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(#s) })
+        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let s = match &object_args.data {
@@ -113,11 +117,11 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
-                        tags: &[ #(#tags),* ],
+                        tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         is_subscription: false,
-                        rust_typename: ::std::any::type_name::<Self>(),
+                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     }
                 })
             }

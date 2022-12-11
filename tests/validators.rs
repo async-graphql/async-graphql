@@ -839,3 +839,99 @@ pub async fn test_list_both_max_items_and_max_length() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_issue_1164() {
+    struct PasswordValidator;
+
+    impl CustomValidator<String> for PasswordValidator {
+        /// Check if `value` only contains allowed chars
+        fn check(&self, value: &String) -> Result<(), String> {
+            let allowed_chars = ['1', '2', '3', '4', '5', '6'];
+
+            if value
+                .chars()
+                .all(|c| allowed_chars.contains(&c.to_ascii_lowercase()))
+            {
+                Ok(())
+            } else {
+                Err(format!("illegal char in password: `{}`", value))
+            }
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn a(
+            &self,
+            #[graphql(validator(min_length = 6, max_length = 16, custom = "PasswordValidator"))]
+            value: String,
+        ) -> String {
+            value
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "123456")}"#)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "a": "123456"
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "123") }"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 3, must be greater than or equal to 6"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 12, line: 1}],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "123123123123123123") }"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": the string length is 18, must be less than or equal to 16"#.to_string(),
+            source: None,
+            locations: vec![Pos { column: 12, line: 1}],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+
+    assert_eq!(
+        schema
+            .execute(r#"{ a(value: "abcdef") }"#)
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "String": illegal char in password: `abcdef`"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                column: 12,
+                line: 1
+            }],
+            path: vec![PathSegment::Field("a".to_string())],
+            extensions: None
+        }]
+    );
+}

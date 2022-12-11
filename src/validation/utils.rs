@@ -74,8 +74,11 @@ pub fn is_valid_input_value(
                 .get(type_name)
                 .unwrap_or_else(|| panic!("Type `{}` not defined", type_name))
             {
-                registry::MetaType::Scalar { is_valid, .. } => {
-                    if is_valid(&value) {
+                registry::MetaType::Scalar {
+                    is_valid: Some(is_valid_fn),
+                    ..
+                } => {
+                    if (is_valid_fn)(&value) {
                         None
                     } else {
                         Some(valid_error(
@@ -84,6 +87,7 @@ pub fn is_valid_input_value(
                         ))
                     }
                 }
+                registry::MetaType::Scalar { is_valid: None, .. } => None,
                 registry::MetaType::Enum {
                     enum_values,
                     name: enum_name,
@@ -149,15 +153,15 @@ pub fn is_valid_input_value(
                             values.keys().map(AsRef::as_ref).collect::<HashSet<_>>();
 
                         for field in input_fields.values() {
-                            input_names.remove(field.name);
-                            if let Some(value) = values.get(field.name) {
+                            input_names.remove(&*field.name);
+                            if let Some(value) = values.get(&*field.name) {
                                 if let Some(reason) = is_valid_input_value(
                                     registry,
                                     &field.ty,
                                     value,
                                     QueryPathNode {
                                         parent: Some(&path_node),
-                                        segment: QueryPathSegment::Name(field.name),
+                                        segment: QueryPathSegment::Name(&field.name),
                                     },
                                 ) {
                                     return Some(reason);

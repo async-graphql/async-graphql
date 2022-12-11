@@ -101,8 +101,8 @@ macro_rules! scalar {
         $crate::scalar_internal!(
             $ty,
             $name,
-            ::std::option::Option::Some($desc),
-            ::std::option::Option::Some($specified_by_url)
+            ::std::option::Option::Some(::std::string::ToString::to_string($desc)),
+            ::std::option::Option::Some(::std::string::ToString::to_string($specified_by_url))
         );
     };
 
@@ -110,7 +110,7 @@ macro_rules! scalar {
         $crate::scalar_internal!(
             $ty,
             $name,
-            ::std::option::Option::Some($desc),
+            ::std::option::Option::Some(::std::string::ToString::to_string($desc)),
             ::std::option::Option::None
         );
     };
@@ -162,7 +162,9 @@ macro_rules! scalar_internal {
                     $crate::registry::MetaType::Scalar {
                         name: ::std::borrow::ToOwned::to_owned($name),
                         description: $desc,
-                        is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                        is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| {
+                            <$ty as $crate::ScalarType>::is_valid(value)
+                        })),
                         visible: ::std::option::Option::None,
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
@@ -199,7 +201,9 @@ macro_rules! scalar_internal {
                     $crate::registry::MetaType::Scalar {
                         name: ::std::borrow::ToOwned::to_owned($name),
                         description: $desc,
-                        is_valid: |value| <$ty as $crate::ScalarType>::is_valid(value),
+                        is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| {
+                            <$ty as $crate::ScalarType>::is_valid(value)
+                        })),
                         visible: ::std::option::Option::None,
                         inaccessible: false,
                         tags: ::std::default::Default::default(),

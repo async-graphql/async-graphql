@@ -18,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::stream::{BoxStream, LocalBoxStream};
+use futures_util::stream::LocalBoxStream;
 
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
