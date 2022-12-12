@@ -30,12 +30,11 @@ macro_rules! impl_set_extends {
     () => {
         /// Indicates that an object or interface definition is an extension of another
         /// definition of that same type.
+        ///
+        /// Extend feature is not supported
         #[inline]
         pub fn extends(self) -> Self {
-            Self {
-                extends: true,
-                ..self
-            }
+            unimplemented!("Extend feature is not supported");
         }
     };
 }
