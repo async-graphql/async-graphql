@@ -100,9 +100,7 @@ impl TypeRef {
     #[inline]
     pub fn named_list_nn(type_name: impl Into<String>) -> TypeRef {
         TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
-            Box::new(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
-                type_name.into().into(),
-            )))),
+            Box::new(TypeRefInner::Named(type_name.into().into())),
         ))))
     }
 
@@ -178,7 +176,9 @@ mod tests {
     #[test]
     fn create() {
         assert_eq!(TypeRef::named("MyObj").to_string(), "MyObj");
+        assert_eq!(TypeRef::named_nn("MyObj").to_string(), "MyObj!");
         assert_eq!(TypeRef::named_list("MyObj").to_string(), "[MyObj]");
+        assert_eq!(TypeRef::named_list_nn("MyObj").to_string(), "[MyObj]!");
         assert_eq!(TypeRef::named_nn_list("MyObj").to_string(), "[MyObj!]");
         assert_eq!(TypeRef::named_nn_list_nn("MyObj").to_string(), "[MyObj!]!");
     }
