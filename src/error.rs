@@ -179,6 +179,7 @@ pub type ServerResult<T> = std::result::Result<T, ServerError>;
 #[derive(Debug)]
 pub struct InputValueError<T> {
     message: String,
+    extensions: Option<ErrorExtensionValues>,
     phantom: PhantomData<T>,
 }
 
@@ -186,6 +187,7 @@ impl<T: InputType> InputValueError<T> {
     fn new(message: String) -> Self {
         Self {
             message,
+            extensions: None,
             phantom: PhantomData,
         }
     }
@@ -222,9 +224,19 @@ impl<T: InputType> InputValueError<T> {
         }
     }
 
+    /// Set an extension value.
+    pub fn with_extension(mut self, name: impl AsRef<str>, value: impl Into<Value>) -> Self {
+        self.extensions
+            .get_or_insert_with(ErrorExtensionValues::default)
+            .set(name, value);
+        self
+    }
+
     /// Convert the error into a server error.
     pub fn into_server_error(self, pos: Pos) -> ServerError {
-        ServerError::new(self.message, Some(pos))
+        let mut err = ServerError::new(self.message, Some(pos));
+        err.extensions = self.extensions;
+        err
     }
 }
 

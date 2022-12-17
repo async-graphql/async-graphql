@@ -31,22 +31,22 @@ pub use minimum::minimum;
 pub use multiple_of::multiple_of;
 
 pub use self::{regex::regex, url::url};
-use crate::InputType;
+use crate::{InputType, InputValueError};
 
 /// Represents a custom input value validator.
 pub trait CustomValidator<T: InputType> {
     /// Check the value is valid.
-    fn check(&self, value: &T) -> Result<(), String>;
+    fn check(&self, value: &T) -> Result<(), InputValueError<T>>;
 }
 
 impl<T, F, E> CustomValidator<T> for F
 where
     T: InputType,
-    E: Into<String>,
+    E: Into<InputValueError<T>>,
     F: Fn(&T) -> Result<(), E>,
 {
     #[inline]
-    fn check(&self, value: &T) -> Result<(), String> {
+    fn check(&self, value: &T) -> Result<(), InputValueError<T>> {
         (self)(value).map_err(Into::into)
     }
 }
