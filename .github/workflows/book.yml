@@ -5,12 +5,12 @@ on:
     branches:
       - release
     paths:
-      - 'docs/**'
+      - "docs/**"
 
 jobs:
   deploy_en:
     name: Deploy book on gh-pages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
