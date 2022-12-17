@@ -4,8 +4,10 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>SimpleObject - Async-graphql Book</title>
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -16,25 +18,28 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -50,7 +55,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -62,7 +67,7 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
             var sidebar = 'hidden';
             if (document.body.clientWidth >= 1080) {
@@ -83,7 +88,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -93,7 +98,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -110,6 +115,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -123,8 +129,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -154,8 +161,7 @@ struct MyObject {
     #[graphql(skip)]
     c: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="user-defined-resolvers"><a class="header" href="#user-defined-resolvers">User-defined resolvers</a></h2>
 <p>Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
 fields are calculated. In this case, the <a href="define_complex_object.html">Object</a> macro cannot be used unless you hand-write all the resolvers.</p>
@@ -179,8 +185,7 @@ impl MyObj {
         self.a + self.b
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="generic-simpleobjects"><a class="header" href="#generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
 <p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
 and specify how its concrete types should be implemented.</p>
@@ -200,8 +205,7 @@ pub struct SomeGenericObject&lt;T: OutputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
 <p>The schema generated is:</p>
 <pre><code class="language-gql">type SomeName {
@@ -235,8 +239,7 @@ pub struct YetAnotherObject {
     a: SomeGenericObject&lt;SomeType&gt;,
     b: SomeGenericObject&lt;SomeOtherType&gt;,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h2 id="used-for-both-input-and-output"><a class="header" href="#used-for-both-input-and-output">Used for both input and output</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -249,8 +252,7 @@ struct MyObj {
     a: i32,
     b: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
@@ -259,9 +261,11 @@ struct MyObj {
                             <a rel="prev" href="typesystem.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
+
                             <a rel="next" href="define_complex_object.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
@@ -271,6 +275,7 @@ struct MyObj {
                     <a rel="prev" href="typesystem.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
+
                     <a rel="next" href="define_complex_object.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
@@ -278,16 +283,24 @@ struct MyObj {
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+
+
     </body>
 </html>

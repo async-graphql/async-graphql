@@ -5,8 +5,10 @@
         <meta charset="UTF-8">
         <title>Async-graphql Book</title>
         <meta name="robots" content="noindex" />
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -17,25 +19,28 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -51,7 +56,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -63,7 +68,7 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
             var sidebar = 'hidden';
             if (document.body.clientWidth >= 1080) {
@@ -84,7 +89,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -94,7 +99,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -111,6 +116,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -124,8 +130,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -172,8 +179,7 @@ impl Query {
         a + b
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="execute-the-query"><a class="header" href="#execute-the-query">Execute the query</a></h2>
 <p>In our example, there is only a Query without a Mutation or Subscription, so we create the Schema with <code>EmptyMutation</code> and <code>EmptySubscription</code>, and then call <code>Schema::execute</code> to execute the Query.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -190,11 +196,9 @@ impl Query {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="output-the-query-results-as-json"><a class="header" href="#output-the-query-results-as-json">Output the query results as JSON</a></h2>
-<pre><code class="language-rust ignore">let json = serde_json::to_string(&amp;res);
-</code></pre>
+<pre><code class="language-rust ignore">let json = serde_json::to_string(&amp;res);</code></pre>
 <h2 id="web-server-integration"><a class="header" href="#web-server-integration">Web server integration</a></h2>
 <p>Please refer to <a href="https://github.com/async-graphql/examples">https://github.com/async-graphql/examples</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-system"><a class="header" href="#type-system">Type System</a></h1>
@@ -219,8 +223,7 @@ struct MyObject {
     #[graphql(skip)]
     c: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="user-defined-resolvers"><a class="header" href="#user-defined-resolvers">User-defined resolvers</a></h2>
 <p>Sometimes most of the fields of a GraphQL object simply return the value of the structure member, but a few
 fields are calculated. In this case, the <a href="define_complex_object.html">Object</a> macro cannot be used unless you hand-write all the resolvers.</p>
@@ -244,8 +247,7 @@ impl MyObj {
         self.a + self.b
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="generic-simpleobjects"><a class="header" href="#generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
 <p>If you want to reuse an <code>SimpleObject</code> for other types, you can define a generic SimpleObject
 and specify how its concrete types should be implemented.</p>
@@ -265,8 +267,7 @@ pub struct SomeGenericObject&lt;T: OutputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
 <p>The schema generated is:</p>
 <pre><code class="language-gql">type SomeName {
@@ -300,8 +301,7 @@ pub struct YetAnotherObject {
     a: SomeGenericObject&lt;SomeType&gt;,
     b: SomeGenericObject&lt;SomeOtherType&gt;,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h2 id="used-for-both-input-and-output"><a class="header" href="#used-for-both-input-and-output">Used for both input and output</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -314,8 +314,7 @@ struct MyObj {
     a: i32,
     b: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object"><a class="header" href="#object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
@@ -356,8 +355,7 @@ impl MyObject {
         Ok(conn.query_something(id)?.name)
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="context"><a class="header" href="#context">Context</a></h1>
 <p>The main goal of <code>Context</code> is to acquire global data attached to Schema and also data related to the actual query being processed.</p>
 <h2 id="store-data"><a class="header" href="#store-data">Store Data</a></h2>
@@ -382,8 +380,7 @@ impl Query {
         ctx.data::&lt;String&gt;()
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h3 id="schema-data"><a class="header" href="#schema-data">Schema data</a></h3>
 <p>You can put data inside the context at the creation of the schema, it's useful for data that do not change, like a connection pool.</p>
 <p>An instance of how it would be written inside an application:</p>
@@ -404,8 +401,7 @@ impl Query {
     .data(s3_storage)
     .data(db_core)
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h3 id="request-data"><a class="header" href="#request-data">Request data</a></h3>
 <p>You can put data inside the context at the execution of the request, it's useful for authentication data for instance.</p>
 <p>A little example with a <code>warp</code> route:</p>
@@ -437,8 +433,7 @@ impl Query {
 
     Ok::&lt;_, Infallible&gt;(async_graphql_warp::GraphQLResponse::from(response))
   });
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="headers"><a class="header" href="#headers">Headers</a></h2>
 <p>With the Context you can also insert and appends headers.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -465,8 +460,7 @@ impl Query {
         String::from(&quot;Hello world&quot;)
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
 <p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields across the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate across the fields and subfields.</p>
 <p>If you want to perform a search across the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
@@ -503,12 +497,10 @@ impl Query {
         unimplemented!()
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="error-handling"><a class="header" href="#error-handling">Error handling</a></h1>
 <p>Resolve can return a <code>Result</code>, which has the following definition:</p>
-<pre><code class="language-rust ignore">type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;
-</code></pre>
+<pre><code class="language-rust ignore">type Result&lt;T&gt; = std::result::Result&lt;T, Error&gt;;</code></pre>
 <p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>Error</code> and you can extend the error message.</p>
 <p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
 See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
@@ -528,12 +520,10 @@ impl Query {
             .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set(&quot;code&quot;, 400)))?)
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h4 id="errors-in-subscriptions"><a class="header" href="#errors-in-subscriptions">Errors in subscriptions</a></h4>
 <p>Errors can be returned from subscription resolvers as well, using a return type of the form:</p>
-<pre><code class="language-rust ignore">async fn my_subscription_resolver(&amp;self) -&gt; impl Stream&lt;Item = Result&lt;MyItem, MyError&gt;&gt; { ... }
-</code></pre>
+<pre><code class="language-rust ignore">async fn my_subscription_resolver(&amp;self) -&gt; impl Stream&lt;Item = Result&lt;MyItem, MyError&gt;&gt; { ... }</code></pre>
 <p>Note however that the <code>MyError</code> struct must have <code>Clone</code> implemented, due to the restrictions placed by the <code>Subscription</code> macro. One way to accomplish this is by creating a custom error type, with <code>#[derive(Clone)]</code>, as <a href="https://github.com/async-graphql/async-graphql/issues/845#issuecomment-1090933464">seen here</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="merging-objects"><a class="header" href="#merging-objects">Merging Objects</a></h1>
 <p>Usually we can create multiple implementations for the same type in Rust, but due to the limitation of procedural macros, we can not create multiple Object implementations for the same type. For example, the following code will fail to compile.</p>
@@ -549,8 +539,7 @@ impl Query {
     async fn movies(&amp;self) -&gt; Vec&lt;Movie&gt; {
         todo!()
     }
-}
-</code></pre>
+}</code></pre>
 <p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
 <p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
@@ -590,8 +579,7 @@ let schema = Schema::new(
     EmptyMutation,
     EmptySubscription
 );
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>⚠️ <strong>MergedObject cannot be used in Interface。</strong></p>
 </blockquote>
@@ -634,8 +622,7 @@ let schema = Schema::new(
     EmptyMutation,
     Subscription::default()
 );
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="derived-fields"><a class="header" href="#derived-fields">Derived fields</a></h1>
 <p>Sometimes two fields have the same query logic, but the output type is different. In <code>async-graphql</code>, you can create a derived field for it.</p>
 <p>In the following example, you already have a <code>duration_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
@@ -681,8 +668,7 @@ impl Query {
         todo!()
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>It will render a GraphQL like:</p>
 <pre><code class="language-graphql">type Query {
 	duration_rfc2822(arg: String): DateRFC2822!
@@ -694,8 +680,7 @@ impl Query {
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so the following code cannot be compiled:</p>
 <pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
-}
-</code></pre>
+}</code></pre>
 <p>So you wouldn't be able to generate derived fields for existing wrapper type structures like <code>Vec</code> or <code>Option</code>. But when you implement a <code>From&lt;U&gt; for T</code> you should be able to derived a <code>From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt;</code> and a <code>From&lt;Option&lt;U&gt;&gt; for Option&lt;T&gt;</code>.
 We included a <code>with</code> parameter to help you define a function to call instead of using the <code>Into</code> trait implementation between wrapper structures.</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
@@ -729,8 +714,7 @@ struct TestObj {
     #[graphql(derived(owned, name = &quot;value2&quot;, into = &quot;Option&lt;ValueDerived2&gt;&quot;, with = &quot;option_to_option&quot;))]
     pub value1: Option&lt;ValueDerived&gt;,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="enum"><a class="header" href="#enum">Enum</a></h1>
 <p>It's easy to define an <code>Enum</code>, here we have an example:</p>
 <p><strong>Async-graphql will automatically change the name of each item to GraphQL's CONSTANT_CASE convention. You can use <code>name</code> to rename.</strong></p>
@@ -752,8 +736,7 @@ pub enum Episode {
     #[graphql(name=&quot;AAA&quot;)]
     Jedi,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="wrapping-a-remote-enum"><a class="header" href="#wrapping-a-remote-enum">Wrapping a remote enum</a></h2>
 <p>Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the 
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
@@ -783,8 +766,7 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
         }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The process is tedious and requires multiple steps to keep the local and remote enums in sync. <code>Async_graphql</code> provides a handy feature to generate the <code>From&lt;remote_crate::RemoteEnum&gt; for LocalEnum</code> as well as an opposite direction of <code>From&lt;LocalEnum&gt; for remote_crate::RemoteEnum</code> via an additional attribute after deriving <code>Enum</code>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -798,8 +780,7 @@ enum LocalEnum {
     B,
     C,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="interface"><a class="header" href="#interface">Interface</a></h1>
 <p><code>Interface</code> is used to abstract <code>Object</code>s with common fields.
 <code>Async-graphql</code> implements it as a wrapper.
@@ -867,8 +848,7 @@ enum Shape {
     Circle(Circle),
     Square(Square),
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="register-the-interface-manually"><a class="header" href="#register-the-interface-manually">Register the interface manually</a></h2>
 <p><code>Async-graphql</code> traverses and registers all directly or indirectly referenced types from <code>Schema</code> in the initialization phase.
 If an interface is not referenced, it will not exist in the registry, as in the following example , even if <code>MyObject</code> implements <code>MyInterface</code>,
@@ -900,8 +880,7 @@ impl Query {
 }
 
 type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>You need to manually register the <code>MyInterface</code> type when constructing the <code>Schema</code>:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -919,8 +898,7 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_output_type::&lt;MyInterface&gt;()
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="union"><a class="header" href="#union">Union</a></h1>
 <p>The definition of a <code>Union</code> is similar to an <code>Interface</code>, <strong>but with no fields allowed.</strong>.
 The implementation is quite similar for <code>Async-graphql</code>; from <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
@@ -965,8 +943,7 @@ enum Shape {
     Circle(Circle),
     Square(Square),
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="flattening-nested-unions"><a class="header" href="#flattening-nested-unions">Flattening nested unions</a></h2>
 <p>A restriction in GraphQL is the inability to create a union type out of
 other union types. All members must be <code>Object</code>. To support nested
@@ -1008,8 +985,7 @@ pub struct D {
     d: i32,
     // ...
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The above example transforms the top-level union into this equivalent:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1026,8 +1002,7 @@ pub enum TopLevelUnion {
     C(C),
     D(D),
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="inputobject"><a class="header" href="#inputobject">InputObject</a></h1>
 <p>You can use an <code>Object</code> as an argument, and GraphQL calls it an <code>InputObject</code>.</p>
 <p>The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
@@ -1056,8 +1031,7 @@ impl Mutation {
 <span class="boring">      todo!()
 </span>    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="generic-inputobjects"><a class="header" href="#generic-inputobjects">Generic <code>InputObject</code>s</a></h2>
 <p>If you want to reuse an <code>InputObject</code> for other types, you can define a generic InputObject
 and specify how its concrete types should be implemented.</p>
@@ -1077,8 +1051,7 @@ pub struct SomeGenericInput&lt;T: InputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note: Each generic parameter must implement <code>InputType</code>, as shown above.</p>
 <p>The schema generated is:</p>
 <pre><code class="language-gql">input SomeName {
@@ -1112,8 +1085,7 @@ pub struct YetAnotherInput {
     a: SomeGenericInput&lt;SomeType&gt;,
     b: SomeGenericInput&lt;SomeOtherType&gt;,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h2 id="redacting-sensitive-data"><a class="header" href="#redacting-sensitive-data">Redacting sensitive data</a></h2>
 <p>If any part of your input is considered sensitive and you wish to redact it, you can mark it with <code>secret</code> directive. For example:</p>
@@ -1127,8 +1099,7 @@ pub struct CredentialsInput {
     #[graphql(secret)]
     password: String,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="oneofobject"><a class="header" href="#oneofobject">OneofObject</a></h1>
 <p>A <code>OneofObject</code> is a special type of <code>InputObject</code>, in which only one of its fields must be set and is not-null.
 It is especially useful when you want a user to be able to choose between several potential input types.</p>
@@ -1164,8 +1135,7 @@ impl Query {
 <span class="boring">        todo!()
 </span>    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>As you can see, a <code>OneofObject</code> is represented by an <code>enum</code> in which each variant contains another <code>InputType</code>. This means that you can use <a href="define_input_object.html"><code>InputObject</code></a> as variant too.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="default-value"><a class="header" href="#default-value">Default value</a></h1>
 <p>You can define default values for input value types.
@@ -1193,8 +1163,7 @@ impl Query {
     // The default value of the value parameter uses the return result of the my_default function, the value is 30.
     async fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) -&gt; i32 { todo!() }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="interface-field"><a class="header" href="#interface-field">Interface field</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1218,8 +1187,7 @@ impl Query {
 enum MyInterface {
     MyObj(MyObj),
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="input-object-field"><a class="header" href="#input-object-field">Input object field</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1238,8 +1206,7 @@ struct MyInputObject {
     #[graphql(default_with = &quot;my_default()&quot;)]
     value3: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="schema"><a class="header" href="#schema">Schema</a></h1>
 <p>After defining the basic types, you need to define a schema to combine them. The schema consists of three types: a query object, a mutation object, and a subscription object, where the mutation object and subscription object are optional.</p>
 <p>When the schema is created, <code>Async-graphql</code> will traverse all object graphs and register all types. This means that if a GraphQL object is defined but never referenced, this object will not be exposed in the schema.</p>
@@ -1263,8 +1230,7 @@ impl Query {
 </span>    }
 }
 
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="mutation-root-object"><a class="header" href="#mutation-root-object">Mutation root object</a></h2>
 <p>The mutation root object is also a GraphQL object, but it executes sequentially. One mutation following from another will only be executed only after the first mutation is completed.</p>
 <p>The following mutation root object provides an example of user registration and login:</p>
@@ -1287,10 +1253,9 @@ impl Mutation {
 <span class="boring">       todo!()
 </span>    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subscription"><a class="header" href="#subscription">Subscription</a></h1>
-<p>The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a <a href="https://docs.rs/futures-core/%7E0.3/futures_core/stream/trait.Stream.html">Stream</a> or <code>Result&lt;Stream&gt;</code>, and the field parameters are usually used as data filtering conditions.</p>
+<p>The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a <a href="https://docs.rs/futures-core/~0.3/futures_core/stream/trait.Stream.html">Stream</a> or <code>Result&lt;Stream&gt;</code>, and the field parameters are usually used as data filtering conditions.</p>
 <p>The following example subscribes to an integer stream, which generates one integer per second. The parameter <code>step</code> specifies the integer step size with a default of 1.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1315,8 +1280,7 @@ impl Subscription {
             })
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="sdl-export"><a class="header" href="#sdl-export">SDL Export</a></h1>
 <p>You can export your schema in Schema Definition Language (SDL) by using the <code>Schema::sdl()</code> method.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1337,8 +1301,7 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     
 // Print the schema in SDL format
 println!(&quot;{}&quot;, &amp;schema.sdl());
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="utilities"><a class="header" href="#utilities">Utilities</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="field-guard"><a class="header" href="#field-guard">Field Guard</a></h1>
 <p>You can define a <code>guard</code> for the fields of <code>Object</code>, <code>SimpleObject</code>, <code>ComplexObject</code> and <code>Subscription</code>, it will be executed before calling the resolver function, and an error will be returned if it fails.</p>
@@ -1372,8 +1335,7 @@ impl Guard for RoleGuard {
         }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Use it with the <code>guard</code> attribute:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1394,8 +1356,7 @@ struct Query {
     #[graphql(guard = &quot;RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))&quot;)]
     value2: i32,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="use-parameter-value"><a class="header" href="#use-parameter-value">Use parameter value</a></h2>
 <p>Sometimes guards need to use field parameters, you need to pass the parameter value when creating the guard like this:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1433,8 +1394,7 @@ impl Query {
         value
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="input-value-validators"><a class="header" href="#input-value-validators">Input value validators</a></h1>
 <p><code>Async-graphql</code> has some common validators built-in, you can use them on the parameters of object fields or on the fields of <code>InputObject</code>.</p>
 <ul>
@@ -1466,8 +1426,7 @@ impl Query {
 <span class="boring">        todo!()
 </span>    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="check-every-member-of-the-list"><a class="header" href="#check-every-member-of-the-list">Check every member of the list</a></h2>
 <p>You can enable the <code>list</code> attribute, and the validator will check all members in list:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1483,8 +1442,7 @@ impl Query {
 <span class="boring">       todo!()
 </span>    }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="custom-validator"><a class="header" href="#custom-validator">Custom validator</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1501,11 +1459,11 @@ impl MyValidator {
 }
 
 impl CustomValidator&lt;i32&gt; for MyValidator {
-    fn check(&amp;self, value: &amp;i32) -&gt; Result&lt;(), String&gt; {
+    fn check(&amp;self, value: &amp;i32) -&gt; Result&lt;(), InputValueError&lt;i32&gt;&gt; {
         if *value == self.expect {
             Ok(())
         } else {
-            Err(format!(&quot;expect 100, actual {}&quot;, value))
+            Err(InputValueError::custom(format!(&quot;expect 100, actual {}&quot;, value)))
         }
     }
 }
@@ -1522,8 +1480,7 @@ impl Query {
         n
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cache-control"><a class="header" href="#cache-control">Cache control</a></h1>
 <p>Production environments often rely on caching to improve performance.</p>
 <p>A GraphQL query will call multiple resolver functions and each resolver can have a different cache definition. Some may cache for a few seconds, some may cache for a few hours, some may be the same for all users, and some may be different for each session.</p>
@@ -1553,8 +1510,7 @@ impl Query {
         3
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The following are different queries corresponding to different cache control results:</p>
 <pre><code class="language-graphql"># max_age=30
 { value1 }
@@ -1607,8 +1563,7 @@ impl Query {
     }
 }
 
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="error-extensions"><a class="header" href="#error-extensions">Error extensions</a></h1>
 <p>To quote the <a href="https://spec.graphql.org/June2018/#example-fce18">graphql-spec</a>:</p>
 <blockquote>
@@ -1634,8 +1589,7 @@ the error message exposed by <code>std::fmt::Display</code>. However, <code>Erro
     Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>may then return a response like this:</p>
 <pre><code class="language-json">{
   &quot;errors&quot;: [
@@ -1670,8 +1624,7 @@ This will on the fly convert any error into a <code>Error</code> with the given 
          .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="implementing-errorextensions-for-custom-errors"><a class="header" href="#implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
 <p>If you find yourself attaching extensions to your errors all over the place you might want to consider
 implementing the trait on your custom error type directly.</p>
@@ -1703,8 +1656,7 @@ impl ErrorExtensions for MyError {
           })
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>This way you only need to call <code>extend</code> on your error to deliver the error message alongside the provided extensions.
 Or further extend your error through <code>extend_with</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1732,8 +1684,7 @@ Or further extend your error through <code>extend_with</code>.</p>
     Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <pre><code class="language-json">{
   &quot;errors&quot;: [
     {
@@ -1761,8 +1712,7 @@ Or further extend your error through <code>extend_with</code>.</p>
          .parse()
          .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
 }
-<span class="boring">}
-</span></code></pre>
+<span class="boring">}</span></code></pre>
 <h3 id="chained-extensions"><a class="header" href="#chained-extensions">Chained extensions</a></h3>
 <p>Since <code>ErrorExtensions</code> and <code>ResultExt</code> are implemented for any type <code>&amp;E where E: std::fmt::Display</code>
 we can chain the extension together.</p>
@@ -1784,8 +1734,7 @@ we can chain the extension together.</p>
     }
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Expected response:</p>
 <pre><code class="language-json">{
   &quot;errors&quot;: [
@@ -1811,16 +1760,14 @@ The disadvantage is that the below code does <strong>NOT</strong> compile:</p>
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
     &quot;234a&quot;.parse().extend_err(|_, e| e.set(&quot;code&quot;, 404))
-}
-</code></pre>
+}</code></pre>
 <p>however this does:</p>
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
     &quot;234a&quot;
       .parse()
       .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
-}
-</code></pre>
+}</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-tracing"><a class="header" href="#apollo-tracing">Apollo Tracing</a></h1>
 <p>Apollo Tracing provides performance analysis results for each step of query. This is an extension to <code>Schema</code>, and the performance analysis results are stored in <code>QueryResponse</code>.</p>
 <p>To enable the Apollo Tracing extension, add the extension when the <code>Schema</code> is created.</p>
@@ -1837,8 +1784,7 @@ use async_graphql::extensions::ApolloTracing;
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .extension(ApolloTracing) // Enable ApolloTracing extension
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="query-complexity-and-depth"><a class="header" href="#query-complexity-and-depth">Query complexity and depth</a></h1>
 <p>⚠️GraphQL provides a powerful way to query your data, but putting great
 power in the hands of your API clients also exposes you to a risk of denial 
@@ -1893,8 +1839,7 @@ message <code>Query is nested too deep</code> will be returned.</p>
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_depth(5) // Limit the maximum depth to 5
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="limiting-query-complexity"><a class="header" href="#limiting-query-complexity">Limiting Query complexity</a></h2>
 <p>The complexity is the number of fields in the query. The default complexity of each field is <code>1</code>. Below is a 
 query with a complexity of <code>6</code>.</p>
@@ -1918,8 +1863,7 @@ and <code>Query is too complex</code> will be returned.</p>
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_complexity(5) // Limit the maximum complexity to 5
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="custom-complexity-calculation"><a class="header" href="#custom-complexity-calculation">Custom Complexity Calculation</a></h2>
 <p>There are two ways to customize the complexity for non-list type and list type fields.</p>
 <p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>, 
@@ -1943,8 +1887,7 @@ impl Query {
         todo!()
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p><strong>Note: The complexity calculation is done in the validation phase and not the execution phase,
 so you don't have to worry about partial execution of over-limit queries.</strong></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="hide-content-in-introspection"><a class="header" href="#hide-content-in-introspection">Hide content in introspection</a></h1>
@@ -1990,8 +1933,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
     ctx.data_unchecked::&lt;IsAdmin&gt;().0
 }
 
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="extensions"><a class="header" href="#extensions">Extensions</a></h1>
 <p><code>async-graphql</code> has the capability to be extended with extensions without having to modify the original source code. A lot of features can be added this way, and a lot of extensions already exists.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="how-extensions-are-defined"><a class="header" href="#how-extensions-are-defined">How extensions are defined</a></h1>
@@ -2008,8 +1950,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
    * the execution of the next middleware. It's like a `callback` in JavaScript.
    */
   next.run(ctx).await
-}
-</code></pre>
+}</code></pre>
 <p>As you have seen, a <code>Middleware</code> is only a function calling the next function at the end, but we could also do a middleware with the <code>next.run</code> function at the start. This is where it's becoming tricky: depending on where you put your logics and where is the <code>next.run</code> call, your logic won't have the same execution order.</p>
 <p>Depending on your logic code, you'll want to process it before or after the <code>next.run</code> call. If you need more information about middlewares, there are a lot of things in the web.</p>
 <h2 id="processing-of-a-query"><a class="header" href="#processing-of-a-query">Processing of a query</a></h2>
@@ -2029,8 +1970,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
     next.run(ctx).await
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <p>Depending on where you put your logic code, it'll be executed at the beginning or at the ending of the query being processed.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2047,8 +1987,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
     result
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="prepare_request"><a class="header" href="#prepare_request">prepare_request</a></h3>
 <p>Just after the <code>request</code>, we will have the <code>prepare_request</code> lifecycle, which will be hooked. </p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2072,8 +2011,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
     result
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="parse_query"><a class="header" href="#parse_query">parse_query</a></h3>
 <p>The <code>parse_query</code> will create a GraphQL <code>ExecutableDocument</code> on your query, it'll check if the query is valid for the GraphQL Spec. Usually the implemented spec in <code>async-graphql</code> tends to be the last stable one (October2021).</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2098,8 +2036,7 @@ async fn parse_query(
     next.run(ctx, query, variables).await
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="validation"><a class="header" href="#validation">validation</a></h3>
 <p>The <code>validation</code> step will check (depending on your <code>validation_mode</code>) rules the query should abide to and give the client data about why the query is not valid.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2119,8 +2056,7 @@ async fn validation(
   next.run(ctx).await
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="execute"><a class="header" href="#execute">execute</a></h3>
 <p>The <code>execution</code> step is a huge one, it'll start the execution of the query by calling each resolver concurrently for a <code>Query</code> and serially for a <code>Mutation</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2144,8 +2080,7 @@ async fn execute(
     result
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="resolve"><a class="header" href="#resolve">resolve</a></h3>
 <p>The <code>resolve</code> step is launched for each field.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2169,8 +2104,7 @@ async fn resolve(
     result
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h3 id="subscribe"><a class="header" href="#subscribe">subscribe</a></h3>
 <p>The <code>subscribe</code> lifecycle has the same behavior as the <code>request</code> but for a <code>Subscritpion</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2192,8 +2126,7 @@ fn subscribe&lt;'s&gt;(
     next.run(ctx, stream)
 }
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="extensions-available"><a class="header" href="#extensions-available">Extensions available</a></h1>
 <p>There are a lot of available extensions in the <code>async-graphql</code> to empower your GraphQL Server, some of these documentations are documented here.</p>
 <h2 id="analyzer"><a class="header" href="#analyzer">Analyzer</a></h2>
@@ -2214,8 +2147,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
     /// Save the query by `key`.
     async fn set(&amp;self, key: String, query: String);
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>References: <a href="https://www.apollographql.com/docs/react/api/link/persisted-queries/">Apollo doc - Persisted Queries</a></p>
 <h2 id="apollo-tracing-1"><a class="header" href="#apollo-tracing-1">Apollo Tracing</a></h2>
 <p><em>Available in the repository</em></p>
@@ -2258,8 +2190,7 @@ use async_graphql_poem::GraphQL;
 
 let app = Route::new()
     .at(&quot;/ws&quot;, GraphQL::new(schema));
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2275,8 +2206,7 @@ use async_graphql_poem::GraphQLSubscription;
 
 let app = Route::new()
     .at(&quot;/ws&quot;, get(GraphQLSubscription::new(schema)));
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/poem">https://github.com/async-graphql/examples/tree/master/poem</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="warp"><a class="header" href="#warp">Warp</a></h1>
@@ -2309,8 +2239,7 @@ let filter = async_graphql_warp::graphql(schema).and_then(|(schema, request): (M
 });
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example-1"><a class="header" href="#subscription-example-1">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2336,8 +2265,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 let filter = async_graphql_warp::graphql_subscription(schema);
 warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
-</span><span class="boring">}
-</span></code></pre></pre>
+</span><span class="boring">}</span></code></pre></pre>
 <h2 id="more-examples-1"><a class="header" href="#more-examples-1">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
@@ -2361,8 +2289,7 @@ async fn index(
 ) -&gt; web::Json&lt;GraphQLResponse&gt; {
     web::Json(schema.execute(request.into_inner()).await.into())
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example-2"><a class="header" href="#subscription-example-2">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2382,8 +2309,7 @@ async fn index_ws(
 ) -&gt; actix_web::Result&lt;HttpResponse&gt; {
     GraphQLSubscription::new(Schema::clone(&amp;*schema)).start(&amp;req, payload)
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="more-examples-2"><a class="header" href="#more-examples-2">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/actix-web">https://github.com/async-graphql/examples/tree/master/actix-web</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="advanced-topics"><a class="header" href="#advanced-topics">Advanced topics</a></h1>
@@ -2414,8 +2340,7 @@ impl ScalarType for StringNumber {
         Value::String(self.0.to_string())
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <h2 id="use-scalar-macro-to-define-scalar"><a class="header" href="#use-scalar-macro-to-define-scalar">Use <code>scalar!</code> macro to define scalar</a></h2>
 <p>If your type implemented <code>serde::Serialize</code> and <code>serde::Deserialize</code>, then you can use this macro to define a scalar more simply.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2438,8 +2363,7 @@ scalar!(MyValue);
 
 // Rename to `MV` and add description.
 // scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="optimizing-n1-queries"><a class="header" href="#optimizing-n1-queries">Optimizing N+1 queries</a></h1>
 <p>Have you noticed some GraphQL queries end can make hundreds of database queries, often with mostly repeated data? Lets take a look why and how to fix it.</p>
 <h2 id="query-resolution"><a class="header" href="#query-resolution">Query Resolution</a></h2>
@@ -2467,8 +2391,7 @@ impl User {
             .await?;
         Ok(name)
     }
-}
-</code></pre>
+}</code></pre>
 <p>The query executor will call the <code>Todos</code> resolver which does a <code>select * from todo and return N todos</code>. Then for each
 of the todos, concurrently, call the <code>User</code> resolver, <code>SELECT from USER where id = todo.user_id</code>.</p>
 <p>eg：</p>
@@ -2533,8 +2456,7 @@ impl User {
         let name: Option&lt;String&gt; = loader.load_one(self.id).await?;
         name.ok_or_else(|| &quot;Not found&quot;.into())
     }
-}
-</code></pre>
+}</code></pre>
 <p>In the end, only two SQLs are needed to query the results we want!</p>
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
@@ -2565,8 +2487,7 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
     async fn load(&amp;self, keys: &amp;[TodoId]) -&gt; Result&lt;HashMap&lt;TodoId, Self::Value&gt;, Self::Error&gt; {
         // Load todos from database
     }
-}
-</code></pre>
+}</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="custom-directive"><a class="header" href="#custom-directive">Custom directive</a></h1>
 <p><code>Async-graphql</code> can easily customize directives, which can extend the behavior of GraphQL.</p>
 <p>To create a custom directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to 
@@ -2596,8 +2517,7 @@ impl CustomDirective for ConcatDirective {
 fn concat(value: String) -&gt; impl CustomDirective {
     ConcatDirective { value }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Register the directive when building the schema:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2616,8 +2536,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)
     .finish();
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-federation"><a class="header" href="#apollo-federation">Apollo Federation</a></h1>
 <p>Apollo Federation is a GraphQL architecture for combining multiple GraphQL services, or subgraphs, into a single supergraph. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/">official documentation</a>.</p>
 <blockquote>
@@ -2637,8 +2556,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
     .enable_federation()
     .finish();
   // ... Start your server of choice
-}
-</code></pre></pre>
+}</code></pre></pre>
 <p>This will define the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#link"><code>@link</code> directive</a> on your schema to enable Federation v2.</p>
 <h2 id="entities-and-key"><a class="header" href="#entities-and-key">Entities and <code>@key</code></a></h2>
 <p><a href="https://www.apollographql.com/docs/federation/entities">Entities</a> are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL <code>type</code> with at least one <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code> directive</a>. To create a <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code></a> for a type, create a reference resolver using the <code>#[graphql(entity)]</code> attribute. This resolver should be defined on the <code>Query</code> struct, but will not appear as a field in the schema.</p>
@@ -2668,8 +2586,7 @@ impl Query {
         User { id }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p><strong>Notice the difference between these three lookup functions, which are all looking for the <code>User</code> object.</strong></p>
 <ul>
 <li>
@@ -2720,8 +2637,7 @@ impl Query {
     User { key: Key{a, b} }
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Query {
   # These fields will not be exposed to users, they are only used by the router to resolve entities
@@ -2759,8 +2675,7 @@ impl Position {
     0
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Position {
   x: Int! @shareable
@@ -2778,8 +2693,7 @@ struct Position {
   x: u64,
   y: u64,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Position @shareable {
   x: Int!
@@ -2800,8 +2714,7 @@ struct Position {
   #[graphql(inaccessible)]
   z: u32,
 } 
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Results in:</p>
 <pre><code class="language-graphql">type Position @shareable {
   x: Int!
@@ -2822,8 +2735,7 @@ struct Product {
   #[graphql(override_from = &quot;Products&quot;)]
   in_stock: bool,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Which results in:</p>
 <pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
   id: ID!
@@ -2843,8 +2755,7 @@ struct Product {
   name: String,
   in_stock: bool,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Results in:</p>
 <pre><code class="language-graphql">type Product {
   id: ID!
@@ -2895,8 +2806,7 @@ impl Query {
         }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note that the <code>#[graphql(provides)]</code> attribute takes the field name as it appears in the schema, not the Rust field name.</p>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
@@ -2942,8 +2852,7 @@ impl Product {
     format!(&quot;${}&quot;, price)
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note that we use the GraphQL field name <code>weightInPounds</code>, not the Rust field name <code>weight_in_pounds</code> in <code>requires</code>. To populate those external fields, we add them as arguments in the entity resolver:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2974,8 +2883,7 @@ impl Query {
     }
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The inputs are <code>Option&lt;&gt;</code> even though the fields are required. This is because the external fields are <em>only</em> passed to the subgraph when the field(s) that require them are being selected. If the <code>shippingEstimate</code> field is not selected, then the <code>size</code> and <code>weightInPounds</code> fields will not be passed to the subgraph. <strong>Always use optional types for external fields.</strong></p>
 <p>We have to put <em>something</em> in place for <code>size</code> and <code>weight_in_pounds</code> as they are still required fields on the type, so we use <code>unwrap_or_default()</code> to provide a default value. This looks a little funny, as we're populating the fields with nonsense values, but we have confidence that they will not be needed if they were not provided.  <strong>Make sure to use <code>@requires</code> if you are consuming <code>@external</code> fields, or your code will be wrong.</strong></p>
 <h3 id="nested-requires"><a class="header" href="#nested-requires">Nested <code>@requires</code></a></h3>
@@ -2994,8 +2902,7 @@ impl Query {
       Some(Order { id })
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>There are no inputs on this entity resolver, so how do we populate the <code>size</code> and <code>weight_in_pounds</code> fields on <code>Product</code> if a user has a query like <code>order { product { shippingEstimate } }</code>? The supergraph implementation will solve this for us by calling the <code>find_product_by_id</code> separately for any fields which have a <code>@requires</code> directive, so the subgraph code does not need to worry about how entities relate.</p>
 <h2 id="tag"><a class="header" href="#tag"><code>@tag</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#tag"><code>@tag</code> directive</a> is used to add metadata to a schema location for features like <a href="https://www.apollographql.com/docs/studio/contracts/">contracts</a>. To add a tag like this:</p>
@@ -3015,38 +2922,48 @@ struct User {
   id: ID,
   name: String,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script type="text/javascript">
+
+        <script>
         window.addEventListener('load', function() {
             window.setTimeout(window.print, 100);
         });
         </script>
+
     </body>
 </html>

@@ -4,8 +4,10 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Apollo Federation - Async-graphql Book</title>
+
+
         <!-- Custom HTML head -->
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
@@ -16,25 +18,28 @@
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
         <link rel="stylesheet" href="css/print.css" media="print">
+
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
         <link rel="stylesheet" href="fonts/fonts.css">
+
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+
     </head>
     <body>
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -50,7 +55,7 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
@@ -62,7 +67,7 @@
         </script>
 
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
+        <script>
             var html = document.querySelector('html');
             var sidebar = 'hidden';
             if (document.body.clientWidth >= 1080) {
@@ -83,7 +88,7 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
+                                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -93,7 +98,7 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
@@ -110,6 +115,7 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+
                     </div>
                 </div>
 
@@ -123,8 +129,9 @@
                         </ul>
                     </div>
                 </div>
+
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -153,8 +160,7 @@
     .enable_federation()
     .finish();
   // ... Start your server of choice
-}
-</code></pre></pre>
+}</code></pre></pre>
 <p>This will define the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#link"><code>@link</code> directive</a> on your schema to enable Federation v2.</p>
 <h2 id="entities-and-key"><a class="header" href="#entities-and-key">Entities and <code>@key</code></a></h2>
 <p><a href="https://www.apollographql.com/docs/federation/entities">Entities</a> are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL <code>type</code> with at least one <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code> directive</a>. To create a <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code></a> for a type, create a reference resolver using the <code>#[graphql(entity)]</code> attribute. This resolver should be defined on the <code>Query</code> struct, but will not appear as a field in the schema.</p>
@@ -184,8 +190,7 @@ impl Query {
         User { id }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p><strong>Notice the difference between these three lookup functions, which are all looking for the <code>User</code> object.</strong></p>
 <ul>
 <li>
@@ -236,8 +241,7 @@ impl Query {
     User { key: Key{a, b} }
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Query {
   # These fields will not be exposed to users, they are only used by the router to resolve entities
@@ -275,8 +279,7 @@ impl Position {
     0
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Position {
   x: Int! @shareable
@@ -294,8 +297,7 @@ struct Position {
   x: u64,
   y: u64,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Position @shareable {
   x: Int!
@@ -316,8 +318,7 @@ struct Position {
   #[graphql(inaccessible)]
   z: u32,
 } 
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Results in:</p>
 <pre><code class="language-graphql">type Position @shareable {
   x: Int!
@@ -338,8 +339,7 @@ struct Product {
   #[graphql(override_from = &quot;Products&quot;)]
   in_stock: bool,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Which results in:</p>
 <pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
   id: ID!
@@ -359,8 +359,7 @@ struct Product {
   name: String,
   in_stock: bool,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Results in:</p>
 <pre><code class="language-graphql">type Product {
   id: ID!
@@ -411,8 +410,7 @@ impl Query {
         }
     }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note that the <code>#[graphql(provides)]</code> attribute takes the field name as it appears in the schema, not the Rust field name.</p>
 <p>The resulting schema will look like this:</p>
 <pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
@@ -458,8 +456,7 @@ impl Product {
     format!(&quot;${}&quot;, price)
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>Note that we use the GraphQL field name <code>weightInPounds</code>, not the Rust field name <code>weight_in_pounds</code> in <code>requires</code>. To populate those external fields, we add them as arguments in the entity resolver:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -490,8 +487,7 @@ impl Query {
     }
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>The inputs are <code>Option&lt;&gt;</code> even though the fields are required. This is because the external fields are <em>only</em> passed to the subgraph when the field(s) that require them are being selected. If the <code>shippingEstimate</code> field is not selected, then the <code>size</code> and <code>weightInPounds</code> fields will not be passed to the subgraph. <strong>Always use optional types for external fields.</strong></p>
 <p>We have to put <em>something</em> in place for <code>size</code> and <code>weight_in_pounds</code> as they are still required fields on the type, so we use <code>unwrap_or_default()</code> to provide a default value. This looks a little funny, as we're populating the fields with nonsense values, but we have confidence that they will not be needed if they were not provided.  <strong>Make sure to use <code>@requires</code> if you are consuming <code>@external</code> fields, or your code will be wrong.</strong></p>
 <h3 id="nested-requires"><a class="header" href="#nested-requires">Nested <code>@requires</code></a></h3>
@@ -510,8 +506,7 @@ impl Query {
       Some(Order { id })
   }
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 <p>There are no inputs on this entity resolver, so how do we populate the <code>size</code> and <code>weight_in_pounds</code> fields on <code>Product</code> if a user has a query like <code>order { product { shippingEstimate } }</code>? The supergraph implementation will solve this for us by calling the <code>find_product_by_id</code> separately for any fields which have a <code>@requires</code> directive, so the subgraph code does not need to worry about how entities relate.</p>
 <h2 id="tag"><a class="header" href="#tag"><code>@tag</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#tag"><code>@tag</code> directive</a> is used to add metadata to a schema location for features like <a href="https://www.apollographql.com/docs/studio/contracts/">contracts</a>. To add a tag like this:</p>
@@ -531,8 +526,7 @@ struct User {
   id: ID,
   name: String,
 }
-<span class="boring">}
-</span></code></pre></pre>
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
@@ -541,6 +535,8 @@ struct User {
                             <a rel="prev" href="custom_directive.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
+
+
                         <div style="clear: both"></div>
                     </nav>
                 </div>
@@ -550,20 +546,29 @@ struct User {
                     <a rel="prev" href="custom_directive.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
+
             </nav>
 
         </div>
 
-        <script type="text/javascript">
+
+
+
+        <script>
             window.playground_copyable = true;
         </script>
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+
+
     </body>
 </html>
