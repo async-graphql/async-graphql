@@ -69,7 +69,6 @@ impl Validators {
         &self,
         crate_name: &TokenStream,
         value: TokenStream,
-        ty: TokenStream,
         map_err: Option<TokenStream>,
     ) -> Result<TokenStream> {
         let mut list_validators = Vec::new();
@@ -198,8 +197,7 @@ impl Validators {
                     if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
                         for __item in value {
                             if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
-                                #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
-                                    .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                                #crate_name::CustomValidator::check(&__custom_validator, __raw_value) #map_err ?;
                             }
                         }
                     }
@@ -208,8 +206,7 @@ impl Validators {
                 codes.push(quote! {
                     let __custom_validator = #__create_custom_validator;
                     if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
-                        #crate_name::CustomValidator::check(&__custom_validator, __raw_value)
-                            .map_err(|err_msg| #crate_name::InputValueError::<#ty>::custom(err_msg)) #map_err ?;
+                        #crate_name::CustomValidator::check(&__custom_validator, __raw_value) #map_err ?;
                     }
                 });
             }

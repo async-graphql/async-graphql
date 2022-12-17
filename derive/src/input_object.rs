@@ -111,7 +111,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .create_validators(
                 &crate_name,
                 quote!(&#ident),
-                quote!(#ty),
                 Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
             )?;
 
@@ -243,9 +242,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let obj_validator = if let Some(validator) = &object_args.validator {
         let expr: Expr = syn::parse_str(validator)
             .map_err(|err| Error::new(validator.span(), err.to_string()))?;
-        Some(
-            quote! { ::std::result::Result::map_err(#crate_name::CustomValidator::check(&#expr, &obj), #crate_name::InputValueError::custom)?; },
-        )
+        Some(quote! { #crate_name::CustomValidator::check(&#expr, &obj)?; })
     } else {
         None
     };

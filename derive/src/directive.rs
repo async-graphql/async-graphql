@@ -103,7 +103,6 @@ pub fn generate(
         let validators = validator.clone().unwrap_or_default().create_validators(
             &crate_name,
             quote!(&#arg_ident),
-            quote!(ty),
             Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
         )?;
 

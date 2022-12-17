@@ -111,7 +111,6 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 .create_validators(
                     &crate_name,
                     quote!(&value),
-                    quote!(#ty),
                     Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
                 )?;
 

@@ -65,11 +65,11 @@ impl MyValidator {
 }
 
 impl CustomValidator<i32> for MyValidator {
-    fn check(&self, value: &i32) -> Result<(), String> {
+    fn check(&self, value: &i32) -> Result<(), InputValueError<i32>> {
         if *value == self.expect {
             Ok(())
         } else {
-            Err(format!("expect 100, actual {}", value))
+            Err(InputValueError::custom(format!("expect 100, actual {}", value)))
         }
     }
 }
