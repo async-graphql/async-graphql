@@ -102,13 +102,6 @@ impl ScalarType for i64 {
                 let n = n
                     .as_i64()
                     .ok_or_else(|| InputValueError::from("Invalid number"))?;
-                if n < Self::MIN as i64 || n > Self::MAX as i64 {
-                    return Err(InputValueError::from(format!(
-                        "Only integers from {} to {} are accepted.",
-                        Self::MIN,
-                        Self::MAX
-                    )));
-                }
                 Ok(n as Self)
             }
             _ => Err(InputValueError::expected_type(value)),
@@ -120,7 +113,7 @@ impl ScalarType for i64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(Number::from(*self as i64))
+        Value::Number(Number::from(*self))
     }
 }
 
@@ -226,13 +219,6 @@ impl ScalarType for u64 {
                 let n = n
                     .as_u64()
                     .ok_or_else(|| InputValueError::from("Invalid number"))?;
-                if n > Self::MAX as u64 {
-                    return Err(InputValueError::from(format!(
-                        "Only integers from {} to {} are accepted.",
-                        0,
-                        Self::MAX
-                    )));
-                }
                 Ok(n as Self)
             }
             _ => Err(InputValueError::expected_type(value)),
@@ -244,7 +230,7 @@ impl ScalarType for u64 {
     }
 
     fn to_value(&self) -> Value {
-        Value::Number(Number::from(*self as u64))
+        Value::Number(Number::from(*self))
     }
 }
 
