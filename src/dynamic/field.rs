@@ -94,6 +94,12 @@ impl<'a> FieldValue<'a> {
         Self(FieldValueInner::OwnedAny(Box::new(obj)))
     }
 
+    /// Create a FieldValue from unsized any value
+    #[inline]
+    pub fn boxed_any(obj: Box<dyn Any + Send + Sync>) -> Self {
+        Self(FieldValueInner::OwnedAny(obj))
+    }
+
     /// Create a FieldValue from owned any value
     #[inline]
     pub fn borrowed_any(obj: &'a (impl Any + Send + Sync)) -> Self {
