@@ -102,7 +102,7 @@ impl<'a> FieldValue<'a> {
 
     /// Create a FieldValue from owned any value
     #[inline]
-    pub fn borrowed_any(obj: &'a (impl Any + Send + Sync)) -> Self {
+    pub fn borrowed_any(obj: &'a (dyn Any + Send + Sync)) -> Self {
         Self(FieldValueInner::BorrowedAny(obj))
     }
 
