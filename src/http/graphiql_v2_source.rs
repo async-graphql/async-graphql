@@ -3,12 +3,19 @@ use std::collections::HashMap;
 use handlebars::Handlebars;
 use serde::Serialize;
 
+/// Indicates whether the user agent should send or receive user credentials
+/// (cookies, basic http auth, etc.) from the other domain in the case of
+/// cross-origin requests.
 #[derive(Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Credentials {
+    /// Send user credentials if the URL is on the same origin as the calling
+    /// script. This is the default value.
     #[default]
     SameOrigin,
+    /// Always send user credentials, even for cross-origin calls.
     Include,
+    /// Never send or receive user credentials.
     Omit,
 }
 
