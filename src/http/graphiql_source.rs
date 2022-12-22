@@ -4,7 +4,7 @@ pub fn graphiql_source(graphql_endpoint_url: &str, subscription_endpoint: Option
     <html>
   <head>
     <title>Simple GraphiQL Example</title>
-    <link href="https://unpkg.com/graphiql/graphiql.min.css" rel="stylesheet" />
+    <link href="https://unpkg.com/graphiql@1/graphiql.min.css" rel="stylesheet" />
   </head>
   <body style="margin: 0;">
     <div id="graphiql" style="height: 100vh;"></div>
@@ -13,15 +13,15 @@ pub fn graphiql_source(graphql_endpoint_url: &str, subscription_endpoint: Option
     <script src="//unpkg.com/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>
     <script
       crossorigin
-      src="https://unpkg.com/react/umd/react.production.min.js"
+      src="https://unpkg.com/react@17/umd/react.production.min.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"
+      src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql/graphiql.min.js"
+      src="https://unpkg.com/graphiql@1/graphiql.min.js"
     ></script>
 
     <script>
