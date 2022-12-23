@@ -10,7 +10,7 @@ use std::io::ErrorKind;
 
 use futures_util::io::{AsyncRead, AsyncReadExt};
 pub use graphiql_source::graphiql_source;
-pub use graphiql_v2_source::GraphiQLSource;
+pub use graphiql_v2_source::{Credentials, GraphiQLSource};
 use mime;
 pub use multipart::MultipartOptions;
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
