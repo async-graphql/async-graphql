@@ -3,6 +3,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use async_graphql_value::ConstValue;
 #[cfg(feature = "bson")]
 use bson::oid::{self, ObjectId};
 use serde::{Deserialize, Serialize};
@@ -40,6 +41,12 @@ impl<T: std::fmt::Display> From<T> for ID {
 impl From<ID> for String {
     fn from(id: ID) -> Self {
         id.0
+    }
+}
+
+impl From<ID> for ConstValue {
+    fn from(id: ID) -> Self {
+        ConstValue::String(id.0)
     }
 }
 

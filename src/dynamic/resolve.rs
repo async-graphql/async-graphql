@@ -367,7 +367,7 @@ pub(crate) fn resolve<'a>(
             (TypeRefInner::List(_), Some(_)) => Err(ctx.set_error_path(
                 Error::new("internal: expects an array").into_server_error(ctx.item.pos),
             )),
-            (TypeRefInner::List(_), None) => Ok(Some(Value::List(vec![]))),
+            (TypeRefInner::List(_), None) => Ok(None),
         }
     }
     .boxed()

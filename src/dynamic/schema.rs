@@ -749,6 +749,11 @@ mod tests {
                         ])))
                     })
                 },
+            ))
+            .field(Field::new(
+                "values3",
+                TypeRef::named_nn_list(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(None::<Vec<Value>>) }),
             ));
         let schema = Schema::build("Query", None, None)
             .register(query)
@@ -757,7 +762,7 @@ mod tests {
 
         assert_eq!(
             schema
-                .execute("{ values values2 }")
+                .execute("{ values values2 values3 }")
                 .await
                 .into_result()
                 .unwrap()
@@ -765,6 +770,7 @@ mod tests {
             value!({
                 "values": [3, 6, 9],
                 "values2": [3, 6, 9],
+                "values3": null,
             })
         );
     }
