@@ -100,13 +100,13 @@ async fn test_oneof_object() {
 
     assert_eq!(
         schema
-            .execute(r#"{ __type(name: "MyOneofObj") { name oneOf } }"#)
+            .execute(r#"{ __type(name: "MyOneofObj") { name isOneOf } }"#)
             .await
             .into_result()
             .unwrap()
             .data,
         value!({
-            "__type": { "name": "MyOneofObj", "oneOf": true }
+            "__type": { "name": "MyOneofObj", "isOneOf": true }
         })
     );
 }
