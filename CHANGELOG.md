@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.5] 2023-01-03
+
+- dynamic schema: add boxed_any function [#1179](https://github.com/async-graphql/async-graphql/pull/1179)
+- Improve GraphiQL v2 [#1182](https://github.com/async-graphql/async-graphql/pull/1182)
+- Fix: __Type.oneOf to __Type.isOneOf [#1188](https://github.com/async-graphql/async-graphql/pull/1188)
+- Implemente From<ID> for ConstValue [#1169](https://github.com/async-graphql/async-graphql/pull/1169)
+- Fixes [#1192](https://github.com/async-graphql/async-graphql/issues/1192)
+
 # [5.0.4] 2022-12-17
 
 - Fix named_list_nn [#1172](https://github.com/async-graphql/async-graphql/pull/1172)
