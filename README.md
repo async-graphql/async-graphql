@@ -151,6 +151,7 @@ This crate offers the following features, all of which are not activated by defa
 | **`fast_chemail`**             | Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).                                                                                                             |
 | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
 | **`dynamic-schema`**           | Support dynamic schema                                                                                                                                                                        |
+| **`graphiql`**                 | Enables the [GraphiQL playground](https://github.com/graphql/graphiql)     |
 
 ### Observability
 
