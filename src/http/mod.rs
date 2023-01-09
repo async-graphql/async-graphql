@@ -5,7 +5,7 @@ mod graphiql_source;
 #[cfg(feature = "graphiql")]
 mod graphiql_v2_source;
 mod multipart;
-#[cfg(feature = "graphiql")]
+#[cfg(feature = "playground")]
 mod playground_source;
 mod websocket;
 
@@ -18,7 +18,7 @@ pub use graphiql_source::graphiql_source;
 pub use graphiql_v2_source::{Credentials, GraphiQLSource};
 use mime;
 pub use multipart::MultipartOptions;
-#[cfg(feature = "graphiql")]
+#[cfg(feature = "playground")]
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 use serde::Deserialize;
 pub use websocket::{

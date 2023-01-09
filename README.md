@@ -122,7 +122,7 @@ Integrations are what glue `async-graphql` with your web server, here are provid
 
 ## Crate features
 
-This crate offers the following features, all of which are not activated by default:
+This crate offers the following features. Most are not activated by default, except the integrations of GraphiQL (`graphiql`) and GraphQL Playground (`playground`):
 
 | feature                        | enables                                                                                                                                                                                       |
 |:-------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -151,7 +151,8 @@ This crate offers the following features, all of which are not activated by defa
 | **`fast_chemail`**             | Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).                                                                                                             |
 | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
 | **`dynamic-schema`**           | Support dynamic schema                                                                                                                                                                        |
-| **`graphiql`**                 | Enables the [GraphiQL playground](https://github.com/graphql/graphiql)     |
+| **`graphiql`**                 | Enables the [GraphiQL IDE](https://github.com/graphql/graphiql) integration    |
+| **`playground`**                 | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration    |
 
 ### Observability
 
