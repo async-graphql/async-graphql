@@ -20,13 +20,15 @@ cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601-duration"]
 dataloader = ["futures-timer", "futures-channel", "lru"]
 decimal = ["rust_decimal"]
-default = ["email-validator", "tempfile"]
+default = ["email-validator", "tempfile", "playground", "graphiql"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["tokio"]
 tracing = ["tracinglib", "tracing-futures"]
 unblock = ["blocking"]
 dynamic-schema = []
+graphiql = ["handlebars"]
+playground = []
 
 [dependencies]
 async-graphql-derive = { path = "derive", version = "5.0.5" }
@@ -104,7 +106,7 @@ lru = { version = "0.7.1", optional = true }
 serde_cbor = { version = "0.11.1", optional = true }
 sha2 = { version = "0.10.2", optional = true }
 zxcvbn = { version = "2.1.2", optional = true }
-handlebars = "4.3.6"
+handlebars = { version = "4.3.6", optional = true }
 
 [dev-dependencies]
 futures-channel = "0.3.13"
