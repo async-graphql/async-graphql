@@ -113,9 +113,12 @@ impl Registry {
 
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
-            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.0\",").ok();
+            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.1\",").ok();
             writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
             writeln!(sdl, ")").ok();
+            self.directives.values().for_each(|directive| {
+                writeln!(sdl, "{}", directive.sdl()).ok();
+            });
         } else {
             writeln!(sdl, "schema {{").ok();
             writeln!(sdl, "\tquery: {}", self.query_type).ok();
