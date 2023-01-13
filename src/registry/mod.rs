@@ -4,7 +4,7 @@ mod stringify_exec_doc;
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     sync::Arc,
 };
 
@@ -594,6 +594,29 @@ pub struct MetaDirective {
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
+}
+
+impl MetaDirective {
+    pub(crate) fn sdl(&self) -> String {
+        let mut sdl = format!("directive @{}", self.name);
+        if !self.args.is_empty() {
+            let args = self
+                .args
+                .values()
+                .map(|value| format!("{}: {}", value.name, value.ty))
+                .collect::<Vec<_>>()
+                .join(", ");
+            write!(sdl, "({})", args).ok();
+        }
+        let locations = self
+            .locations
+            .iter()
+            .map(|location| location.to_value().to_string())
+            .collect::<Vec<_>>()
+            .join(" | ");
+        write!(sdl, " on {}", locations).ok();
+        sdl
+    }
 }
 
 /// A type registry for build schemas
