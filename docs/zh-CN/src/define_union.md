@@ -1,4 +1,4 @@
-# 联合(Union)
+# 联合 (Union)
 
 联合的定义和接口非常像，**但不允许定义字段**。这两个类型的实现原理也差不多，对于`Async-graphql`来说，联合类型是接口类型的子集。
 
@@ -47,7 +47,7 @@ enum Shape {
 
 ## 展平嵌套联合
 
-GraphQL的有个限制是`Union`类型内不能包含其它联合类型。 所有成员必须为`Object`。 
+GraphQL 的有个限制是`Union`类型内不能包含其它联合类型。所有成员必须为`Object`。 
 位置支持嵌套`Union`，我们可以用`#graphql(flatten)`，是它们合并到上级`Union`类型。
 ```rust
 # extern crate async_graphql;

@@ -1,8 +1,8 @@
-# 游标连接(Cursor Connections)
+# 游标连接 (Cursor Connections)
 
-Relay定义了一套游标连接规范，以提供一致性的分页查询方式，具体的规范文档请参考[GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)。
+Relay 定义了一套游标连接规范，以提供一致性的分页查询方式，具体的规范文档请参考[GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)。
 
-在`Async-graphql`中定义一个游标连接非常简单，你只需要调用connection::query函数，并在闭包中查询数据。
+在`Async-graphql`中定义一个游标连接非常简单，你只需要调用 connection::query 函数，并在闭包中查询数据。
 
 下面是一个简单的获取连续整数的数据源：
 

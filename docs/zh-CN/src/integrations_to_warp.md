@@ -2,9 +2,9 @@
 
 `Async-graphql-warp`提供了两个`Filter`，`graphql`和`graphql_subscription`。
 
-`graphql`用于执行`Query`和`Mutation`请求，它提取GraphQL请求，然后输出一个包含`async_graphql::Schema`和`async_graphql::Request`元组，你可以在之后组合其它Filter，或者直接调用`Schema::execute`执行查询。
+`graphql`用于执行`Query`和`Mutation`请求，它提取 GraphQL 请求，然后输出一个包含`async_graphql::Schema`和`async_graphql::Request`元组，你可以在之后组合其它 Filter，或者直接调用`Schema::execute`执行查询。
 
-`graphql_subscription`用于实现基于Web Socket的订阅，它输出`warp::Reply`。
+`graphql_subscription`用于实现基于 Web Socket 的订阅，它输出`warp::Reply`。
 
 ## 请求例子
 
