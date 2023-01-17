@@ -173,4 +173,4 @@ jobs:
       - name: AutoCorrect
         uses: huacnlee/autocorrect-action@v2
         with:
-          args: --lint docs/
+          args: --lint --no-diff-bg-color docs/
