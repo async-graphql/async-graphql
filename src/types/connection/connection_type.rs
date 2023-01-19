@@ -117,6 +117,7 @@ where
         &self.edges
     }
 
+    #[cfg(feature = "connection-type-with-nodes-field")]
     /// A list of nodes.
     async fn nodes(&self) -> Vec<&Node> {
         self.edges.iter().map(|e| &e.node).collect()
