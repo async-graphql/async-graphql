@@ -61,7 +61,7 @@ let schema = Schema::new(
 );
 ```
 
-> ⚠️ **MergedObject cannot be used in Interface。**
+> ⚠️ **MergedObject cannot be used in Interface.**
 
 # Merging Subscriptions
 

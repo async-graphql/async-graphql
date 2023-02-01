@@ -21,7 +21,7 @@ type Post {
 }
 ```
 
-It’s not too hard to craft a query that will cause a very large response:
+It's not too hard to craft a query that will cause a very large response:
 
 ```graphql
 {

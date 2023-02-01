@@ -1,14 +1,14 @@
-# 接口(Interface)
+# 接口 (Interface)
 
-接口用于抽象具有特定字段集合的对象，`Async-graphql`内部实现实际上是一个包装器，包装器转发接口上定义的Resolver函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。
+接口用于抽象具有特定字段集合的对象，`Async-graphql`内部实现实际上是一个包装器，包装器转发接口上定义的 Resolver 函数到实现该接口的对象，所以接口类型所包含的字段类型，参数都必须和实现该接口的对象完全匹配。
 
 `Async-graphql`自动实现了对象到接口的转换，把一个对象类型转换为接口类型只需要调用`Into::into`。
 
-接口字段的`name`属性表示转发的Resolver函数，并且它将被转换为驼峰命名作为字段名称。
-如果你需要自定义GraphQL接口字段名称，可以同时使用`name`和`method`属性。
+接口字段的`name`属性表示转发的 Resolver 函数，并且它将被转换为驼峰命名作为字段名称。
+如果你需要自定义 GraphQL 接口字段名称，可以同时使用`name`和`method`属性。
 
-- 当`name`和`method`属性同时存在时，`name`是GraphQL接口字段名，而`method`是Resolver函数名。
-- 当只有`name`存在时, 转换为驼峰命名后的`name`是GraphQL接口字段名，而`name`是Resolver函数名。
+- 当`name`和`method`属性同时存在时，`name`是 GraphQL 接口字段名，而`method`是 Resolver 函数名。
+- 当只有`name`存在时，转换为驼峰命名后的`name`是 GraphQL 接口字段名，而`name`是 Resolver 函数名。
 
 
 ```rust
@@ -100,7 +100,7 @@ impl Query {
 type MySchema = Schema<Query, EmptyMutation, EmptySubscription>;
 ```
 
-你需要在构造Schema时手工注册`MyInterface`类型：
+你需要在构造 Schema 时手工注册`MyInterface`类型：
 
 ```rust
 # extern crate async_graphql;

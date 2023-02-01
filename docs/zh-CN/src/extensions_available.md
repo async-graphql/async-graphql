@@ -10,7 +10,7 @@
 ## Apollo Persisted Queries
 *Available in the repository*
 
-要提高大型查询的性能，你可以启用此扩展，每个查询语句都将与一个唯一ID相关联，因此客户端可以直接发送此ID查询以减少请求的大小。
+要提高大型查询的性能，你可以启用此扩展，每个查询语句都将与一个唯一 ID 相关联，因此客户端可以直接发送此 ID 查询以减少请求的大小。
 
 这个扩展不会强迫你使用一些缓存策略，你可以选择你想要的缓存策略，你只需要实现 `CacheStorage` trait：
 
@@ -31,7 +31,7 @@ References: [Apollo doc - Persisted Queries](https://www.apollographql.com/docs/
 ## Apollo Tracing
 *Available in the repository*
 
-`Apollo Tracing` 扩展用于在响应中包含此查询分析数据。 此扩展程序遵循旧的且现已弃用的 [Apollo Tracing Spec](https://github.com/apollographql/apollo-tracing) 。 
+`Apollo Tracing` 扩展用于在响应中包含此查询分析数据。此扩展程序遵循旧的且现已弃用的 [Apollo Tracing Spec](https://github.com/apollographql/apollo-tracing) 。 
 如果你想支持更新的 Apollo Reporting Protocol，推荐使用 [async-graphql Apollo studio extension](https://github.com/async-graphql/async_graphql_apollo_studio_extension) 。
 
 ## Apollo Studio

@@ -162,3 +162,15 @@ jobs:
       - name: Clean examples
         run: cargo clean
         working-directory: ./examples
+
+  autocorrect:
+    name: AutoCorrect Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source code
+        uses: actions/checkout@v3
+
+      - name: AutoCorrect
+        uses: huacnlee/autocorrect-action@v2
+        with:
+          args: --lint --no-diff-bg-color docs/
