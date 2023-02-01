@@ -1,5 +1,6 @@
 use std::{borrow::Cow, pin::Pin};
 
+use async_graphql_derive::SimpleObject;
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
@@ -14,6 +15,13 @@ use crate::{
     Context, ContextSelectionSet, Error, IntrospectionMode, Name, SDLExportOptions, ServerError,
     ServerResult, Value,
 };
+
+/// Federation service
+#[derive(SimpleObject)]
+#[graphql(internal, name = "_Service")]
+struct Service {
+    sdl: Option<String>,
+}
 
 type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
 
@@ -147,13 +155,28 @@ fn collect_fields<'a>(
                     } else if ctx.schema_env.registry.enable_federation
                         && field.node.name.node == "_service"
                     {
-                        let sdl = ctx
-                            .schema_env
-                            .registry
-                            .export_sdl(SDLExportOptions::new().federation());
+                        let ctx = ctx.clone();
                         fields.push(
                             async move {
-                                Ok((field.node.response_key().node.clone(), Value::from(sdl)))
+                                let ctx_field = ctx.with_field(field);
+                                let mut ctx_obj =
+                                    ctx.with_selection_set(&ctx_field.item.node.selection_set);
+                                ctx_obj.is_for_introspection = true;
+
+                                let output_type = crate::OutputType::resolve(
+                                    &Service {
+                                        sdl: Some(
+                                            ctx.schema_env
+                                                .registry
+                                                .export_sdl(SDLExportOptions::new().federation()),
+                                        ),
+                                    },
+                                    &ctx_obj,
+                                    ctx_field.item,
+                                )
+                                .await?;
+
+                                Ok((field.node.response_key().node.clone(), output_type))
                             }
                             .boxed(),
                         );
