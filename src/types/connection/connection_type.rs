@@ -9,6 +9,8 @@ use crate::{
     Object, ObjectType, OutputType, TypeName,
 };
 
+use super::{DisableNodesField, EnableNodesField, NodesFieldSwitcherSealed};
+
 /// Connection type
 ///
 /// Connection is the result of a query for `connection::query`.
@@ -19,6 +21,7 @@ pub struct Connection<
     EdgeFields = EmptyFields,
     Name = DefaultConnectionName,
     EdgeName = DefaultEdgeName,
+    NodesField = EnableNodesField,
 > where
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
@@ -26,9 +29,11 @@ pub struct Connection<
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
+    NodesField: NodesFieldSwitcherSealed,
 {
     _mark1: PhantomData<Name>,
     _mark2: PhantomData<EdgeName>,
+    _mark3: PhantomData<NodesField>,
     /// All edges of the current page.
     pub edges: Vec<Edge<Cursor, Node, EdgeFields, EdgeName>>,
     /// Additional fields for connection object.
@@ -39,14 +44,15 @@ pub struct Connection<
     pub has_next_page: bool,
 }
 
-impl<Cursor, Node, EdgeFields, Name, EdgeName>
-    Connection<Cursor, Node, EmptyFields, EdgeFields, Name, EdgeName>
+impl<Cursor, Node, NodesField, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, EmptyFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
+    NodesField: NodesFieldSwitcherSealed,
 {
     /// Create a new connection.
     #[inline]
@@ -54,6 +60,7 @@ where
         Connection {
             _mark1: PhantomData,
             _mark2: PhantomData,
+            _mark3: PhantomData,
             additional_fields: EmptyFields,
             has_previous_page,
             has_next_page,
@@ -62,8 +69,8 @@ where
     }
 }
 
-impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
-    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+impl<Cursor, Node, NodesField, ConnectionFields, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
@@ -71,6 +78,7 @@ where
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
+    NodesField: NodesFieldSwitcherSealed,
 {
     /// Create a new connection, it can have some additional fields.
     #[inline]
@@ -82,6 +90,7 @@ where
         Connection {
             _mark1: PhantomData,
             _mark2: PhantomData,
+            _mark3: PhantomData,
             additional_fields,
             has_previous_page,
             has_next_page,
@@ -92,7 +101,41 @@ where
 
 #[Object(internal, name_type)]
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
-    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, DisableNodesField>
+where
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
+    Name: ConnectionNameType,
+    EdgeName: EdgeNameType,
+{
+    /// Information to aid in pagination.
+    async fn page_info(&self) -> PageInfo {
+        PageInfo {
+            has_previous_page: self.has_previous_page,
+            has_next_page: self.has_next_page,
+            start_cursor: self.edges.first().map(|edge| edge.cursor.0.encode_cursor()),
+            end_cursor: self.edges.last().map(|edge| edge.cursor.0.encode_cursor()),
+        }
+    }
+
+    /// A list of edges.
+    #[inline]
+    async fn edges(&self) -> &[Edge<Cursor, Node, EdgeFields, EdgeName>] {
+        &self.edges
+    }
+
+    #[graphql(flatten)]
+    #[inline]
+    async fn additional_fields(&self) -> &ConnectionFields {
+        &self.additional_fields
+    }
+}
+
+#[Object(internal, name_type)]
+impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+    Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, EnableNodesField>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
@@ -129,8 +172,8 @@ where
     }
 }
 
-impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName> TypeName
-    for Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
+impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField> TypeName
+    for Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType,
@@ -138,6 +181,7 @@ where
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
+    NodesField: NodesFieldSwitcherSealed,
 {
     #[inline]
     fn type_name() -> Cow<'static, str> {
