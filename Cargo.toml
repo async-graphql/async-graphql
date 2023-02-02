@@ -17,17 +17,10 @@ apollo_persisted_queries = ["lru", "sha2"]
 apollo_tracing = ["chrono"]
 email-validator = ["fast_chemail"]
 cbor = ["serde_cbor"]
-connection-type-with-nodes-field = [] # modify types::connection::Connection
 chrono-duration = ["chrono", "iso8601-duration"]
 dataloader = ["futures-timer", "futures-channel", "lru"]
 decimal = ["rust_decimal"]
-default = [
-  "email-validator",
-  "tempfile",
-  "playground",
-  "graphiql",
-  "connection-type-with-nodes-field",
-]
+default = ["email-validator", "tempfile", "playground", "graphiql"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["tokio"]
