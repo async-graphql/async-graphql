@@ -623,7 +623,7 @@ impl MetaDirective {
 #[derive(Default)]
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
-    pub directives: HashMap<String, MetaDirective>,
+    pub directives: BTreeMap<String, MetaDirective>,
     pub implements: HashMap<String, IndexSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
