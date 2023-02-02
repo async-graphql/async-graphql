@@ -1,5 +1,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
+use super::{DisableNodesField, EnableNodesField, NodesFieldSwitcherSealed};
 use crate::{
     connection::{
         edge::Edge, ConnectionNameType, DefaultConnectionName, DefaultEdgeName, EdgeNameType,
@@ -8,8 +9,6 @@ use crate::{
     types::connection::{CursorType, EmptyFields},
     Object, ObjectType, OutputType, TypeName,
 };
-
-use super::{DisableNodesField, EnableNodesField, NodesFieldSwitcherSealed};
 
 /// Connection type
 ///
