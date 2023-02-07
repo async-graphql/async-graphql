@@ -336,7 +336,13 @@ fn collect_fields<'a>(
                     type_condition.map(|condition| condition.node.on.node.as_str());
                 let introspection_type_name = &object.name;
 
-                if type_condition.is_none() || type_condition == Some(introspection_type_name) {
+                let type_condition_matched = match type_condition {
+                    None => true,
+                    Some(type_condition) if type_condition == introspection_type_name => true,
+                    Some(type_condition) if object.implements.contains(type_condition) => true,
+                    _ => false,
+                };
+                if type_condition_matched {
                     collect_fields(
                         fields,
                         schema,
