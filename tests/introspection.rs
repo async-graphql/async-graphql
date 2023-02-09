@@ -1,3 +1,5 @@
+#![allow(clippy::uninlined_format_args)]
+
 use async_graphql::*;
 use chrono::{NaiveDate, NaiveDateTime};
 use futures_util::stream::{self, Stream};

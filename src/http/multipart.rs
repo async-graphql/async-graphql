@@ -118,14 +118,14 @@ pub(super) async fn receive_batch_multipart(
 
                         #[cfg(feature = "tempfile")]
                         let content = {
-                            use std::io::{Seek, SeekFrom, Write};
+                            use std::io::{Seek, Write};
 
                             let mut field = field;
                             let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
                             while let Some(chunk) = field.chunk().await? {
                                 file.write(&chunk).map_err(ParseRequestError::Io)?;
                             }
-                            file.seek(SeekFrom::Start(0))?;
+                            file.rewind()?;
                             file
                         };
 

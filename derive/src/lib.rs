@@ -1,5 +1,6 @@
 #![allow(clippy::cognitive_complexity)]
 #![allow(clippy::vec_init_then_push)]
+#![allow(clippy::uninlined_format_args)]
 #![forbid(unsafe_code)]
 
 extern crate proc_macro;
