@@ -12,7 +12,9 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "5.0.5"
 
 [dependencies]
-async-graphql = { path = "../..", version = "5.0.5", default-features = false, features = ["playground"] }
+async-graphql = { workspace = true, default-features = false, features = [
+    "playground",
+] }
 
 actix = "0.13.0"
 actix-http = "3.1.0"
@@ -22,8 +24,8 @@ async-channel = "1.6.1"
 futures-channel = "0.3.13"
 futures-util = { version = "0.3.0", default-features = false }
 serde_cbor = { version = "0.11.2", optional = true }
-serde_json = "1.0.64"
-thiserror = "1.0.30"
+serde_json.workspace = true
+thiserror.workspace = true
 
 [features]
 cbor = ["serde_cbor"]

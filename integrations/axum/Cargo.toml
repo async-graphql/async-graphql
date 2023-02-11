@@ -12,13 +12,16 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "5.0.5"
 
 [dependencies]
-async-graphql = { path = "../..", version = "5.0.5", default-features = false }
+async-graphql = { workspace = true, default-features = false }
 
-async-trait = "0.1.51"
+async-trait.workspace = true
 axum = { version = "0.6.0", features = ["ws", "headers"] }
-bytes = "1.0.1"
-futures-util = "0.3.0"
+bytes.workspace = true
+futures-util.workspace = true
 http-body = "0.4.2"
-serde_json = "1.0.66"
-tokio-util = { version = "0.7.1", default-features = false, features = ["io", "compat"] }
+serde_json.workspace = true
+tokio-util = { workspace = true, default-features = false, features = [
+    "io",
+    "compat",
+] }
 tower-service = "0.3"

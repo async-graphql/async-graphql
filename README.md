@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - Apollo Tracing extension
 - Apollo Federation(v2)
 
-> **Note**: Minimum supported Rust version: 1.60.0 or later
+> **Note**: Minimum supported Rust version: 1.64.0 or later
 
 ## Examples
 
@@ -151,8 +151,8 @@ This crate offers the following features. Most are not activated by default, exc
 | **`fast_chemail`**             | Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).                                                                                                             |
 | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
 | **`dynamic-schema`**           | Support dynamic schema                                                                                                                                                                        |
-| **`graphiql`**                 | Enables the [GraphiQL IDE](https://github.com/graphql/graphiql) integration    |
-| **`playground`**                 | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration    |
+| **`graphiql`**                 | Enables the [GraphiQL IDE](https://github.com/graphql/graphiql) integration                                                                                                                   |
+| **`playground`**               | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration                                                                                               |
 
 ### Observability
 

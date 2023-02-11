@@ -15,7 +15,7 @@ version = "5.0.5"
 proc-macro = true
 
 [dependencies]
-async-graphql-parser = { path = "../parser", version = "5.0.5" }
+async-graphql-parser.workspace = true
 
 Inflector = "0.11.4"
 darling = "0.14.0"
@@ -28,4 +28,4 @@ syn = { version = "1.0.64", features = [
   "visit-mut",
   "visit",
 ] }
-thiserror = "1.0.24"
+thiserror.workspace = true
