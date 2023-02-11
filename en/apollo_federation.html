@@ -32,6 +32,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -164,6 +165,9 @@
 <p>This will define the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#link"><code>@link</code> directive</a> on your schema to enable Federation v2.</p>
 <h2 id="entities-and-key"><a class="header" href="#entities-and-key">Entities and <code>@key</code></a></h2>
 <p><a href="https://www.apollographql.com/docs/federation/entities">Entities</a> are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL <code>type</code> with at least one <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code> directive</a>. To create a <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code></a> for a type, create a reference resolver using the <code>#[graphql(entity)]</code> attribute. This resolver should be defined on the <code>Query</code> struct, but will not appear as a field in the schema.</p>
+<blockquote>
+<p>Even though a reference resolver looks up an individual entity, it is <strong>crucial that you use a <a href="dataloader.html">dataloader</a></strong> in the implementation. The federation router will look up entities in batches, which can quickly lead the N+1 performance issues.</p>
+</blockquote>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -570,5 +574,6 @@ struct User {
         <!-- Custom JS scripts -->
 
 
+    </div>
     </body>
 </html>

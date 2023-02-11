@@ -33,6 +33,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -581,7 +582,7 @@ let schema = Schema::new(
 );
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p>⚠️ <strong>MergedObject cannot be used in Interface。</strong></p>
+<p>⚠️ <strong>MergedObject cannot be used in Interface.</strong></p>
 </blockquote>
 <h1 id="merging-subscriptions"><a class="header" href="#merging-subscriptions">Merging Subscriptions</a></h1>
 <p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
@@ -1802,7 +1803,7 @@ type Post {
 	related(count: Int = 10): [Post!]!
 }
 </code></pre>
-<p>It’s not too hard to craft a query that will cause a very large response:</p>
+<p>It's not too hard to craft a query that will cause a very large response:</p>
 <pre><code class="language-graphql">{
     posts(count: 100) {
         related(count: 100) {
@@ -2418,14 +2419,13 @@ need to optimize these codes!</p>
 <h2 id="dataloader"><a class="header" href="#dataloader">Dataloader</a></h2>
 <p>We need to group queries and exclude duplicate queries. <code>Dataloader</code> can do this.
 <a href="https://github.com/facebook/dataloader">facebook</a> gives a request-scope batch and caching solution.</p>
-<p>The following is an example of using <code>DataLoader</code> to optimize queries::</p>
+<p>The following is a simplified example of using <code>DataLoader</code> to optimize queries, there is also a <a href="https://github.com/async-graphql/examples/tree/master/tide/dataloader-postgres">full code example available in GitHub</a>.</p>
 <pre><code class="language-rust ignore">use async_graphql::*;
 use async_graphql::dataloader::*;
-use itertools::Itertools;
 use std::sync::Arc;
 
 struct UserNameLoader {
-    pool: sqlx::Pool&lt;Postgres&gt;,
+    pool: sqlx::PgPool,
 }
 
 #[async_trait::async_trait]
@@ -2434,8 +2434,8 @@ impl Loader&lt;u64&gt; for UserNameLoader {
     type Error = Arc&lt;sqlx::Error&gt;;
 
     async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
-        let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
-        Ok(sqlx::query_as(query)
+        Ok(sqlx::query_as(&quot;SELECT name FROM user WHERE id = ANY($1)&quot;)
+            .bind(keys)
             .fetch(&amp;self.pool)
             .map_ok(|name: String| name)
             .map_err(Arc::new)
@@ -2466,7 +2466,7 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
 <pre><code class="language-rust ignore"><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>struct PostgresLoader {
-    pool: sqlx::Pool&lt;Postgres&gt;,
+    pool: sqlx::PgPool,
 }
 
 #[async_trait::async_trait]
@@ -2560,6 +2560,9 @@ fn concat(value: String) -&gt; impl CustomDirective {
 <p>This will define the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#link"><code>@link</code> directive</a> on your schema to enable Federation v2.</p>
 <h2 id="entities-and-key"><a class="header" href="#entities-and-key">Entities and <code>@key</code></a></h2>
 <p><a href="https://www.apollographql.com/docs/federation/entities">Entities</a> are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL <code>type</code> with at least one <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code> directive</a>. To create a <a href="https://www.apollographql.com/docs/federation/entities#1-define-a-key"><code>@key</code></a> for a type, create a reference resolver using the <code>#[graphql(entity)]</code> attribute. This resolver should be defined on the <code>Query</code> struct, but will not appear as a field in the schema.</p>
+<blockquote>
+<p>Even though a reference resolver looks up an individual entity, it is <strong>crucial that you use a <a href="dataloader.html">dataloader</a></strong> in the implementation. The federation router will look up entities in batches, which can quickly lead the N+1 performance issues.</p>
+</blockquote>
 <h3 id="example-2"><a class="header" href="#example-2">Example</a></h3>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2965,5 +2968,6 @@ struct User {
         });
         </script>
 
+    </div>
     </body>
 </html>
