@@ -28,7 +28,6 @@
 //!
 //! ## Documentation
 //!
-//! * [Feature Comparison](https://github.com/async-graphql/async-graphql/blob/master/feature-comparison.md)
 //! * [Book](https://async-graphql.github.io/async-graphql/en/index.html)
 //! * [中文文档](https://async-graphql.github.io/async-graphql/zh-CN/index.html)
 //! * [Docs](https://docs.rs/async-graphql)
