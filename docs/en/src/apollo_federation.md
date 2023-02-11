@@ -30,6 +30,8 @@ This will define the [`@link` directive](https://www.apollographql.com/docs/fede
 
 [Entities](https://www.apollographql.com/docs/federation/entities) are a core feature of federation, they allow multiple subgraphs to contribute fields to the same type. An entity is a GraphQL `type` with at least one [`@key` directive][`@key`]. To create a [`@key`] for a type, create a reference resolver using the `#[graphql(entity)]` attribute. This resolver should be defined on the `Query` struct, but will not appear as a field in the schema.
 
+> Even though a reference resolver looks up an individual entity, it is **crucial that you use a [dataloader](dataloader.md)** in the implementation. The federation router will look up entities in batches, which can quickly lead the N+1 performance issues.
+
 ### Example
 
 ```rust

@@ -103,6 +103,32 @@ fn merged_object() {
 
 #[test]
 #[should_panic]
+fn merged_object_root() {
+    mod example {
+        use async_graphql::{MergedObject, SimpleObject};
+
+        #[derive(SimpleObject, Default)]
+        pub struct Obj {
+            i: i32,
+        }
+
+        #[derive(MergedObject, Default)]
+        pub struct Merged(Obj);
+    }
+
+    #[derive(SimpleObject, Default)]
+    pub struct Obj2 {
+        j: i32,
+    }
+
+    #[derive(MergedObject, Default)]
+    pub struct Merged(example::Merged, Obj2);
+
+    Schema::new(Merged::default(), EmptyMutation, EmptySubscription);
+}
+
+#[test]
+#[should_panic]
 fn enum_type() {
     mod t {
         use async_graphql::*;

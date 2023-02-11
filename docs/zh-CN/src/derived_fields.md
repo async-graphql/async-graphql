@@ -47,7 +47,7 @@ impl Query {
 }
 ```
 
-它将呈现为如下GraphQL：
+它将呈现为如下 GraphQL：
 
 ```graphql
 type Query {

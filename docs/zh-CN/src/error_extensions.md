@@ -2,7 +2,7 @@
 
 引用 [graphql-spec](https://spec.graphql.org/June2018/#example-fce18)
 
-> GraphQL服务可以通过扩展提供错误的附加条目。
+> GraphQL 服务可以通过扩展提供错误的附加条目。
 > 该条目（如果设置）必须是一个映射作为其值，用于附加错误的其它信息。
 
 ## 示例
@@ -14,7 +14,7 @@
 在`Async-graphql`中，所有面向用户的错误都强制转换为`Error`类型，默认情况下会提供
 由`std:::fmt::Display`暴露的错误消息。但是，`Error`实际上提供了一个额外的可以扩展错误的信息。
 
-Resolver函数类似这样：
+Resolver 函数类似这样：
 
 ```rust
 # extern crate async_graphql;
@@ -69,7 +69,7 @@ async fn parse_with_extensions(&self) -> Result<i32> {
 # }
 ```
 
-### 为自定义错误实现ErrorExtensions
+### 为自定义错误实现 ErrorExtensions
 
 你也可以给自己的错误类型实现`ErrorExtensions`:
 
@@ -208,7 +208,7 @@ async fn parse_with_extensions(&self) -> Result<i32> {
 
 ### 缺陷
 
-Rust的稳定版本还未提供特化功能，这就是为什么`ErrorExtensions`为`&E where E: std::fmt::Display`实现，代替`E：std::fmt::Display`通过提供一些特化功能。
+Rust 的稳定版本还未提供特化功能，这就是为什么`ErrorExtensions`为`&E where E: std::fmt::Display`实现，代替`E：std::fmt::Display`通过提供一些特化功能。
 
 [Autoref-based stable specialization](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md).
 

@@ -4,7 +4,7 @@ mod stringify_exec_doc;
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     sync::Arc,
 };
 
@@ -236,6 +236,76 @@ pub enum MetaTypeId {
     Union,
     Enum,
     InputObject,
+}
+
+impl MetaTypeId {
+    fn create_fake_type(&self, rust_typename: &'static str) -> MetaType {
+        match self {
+            MetaTypeId::Scalar => MetaType::Scalar {
+                name: "".to_string(),
+                description: None,
+                is_valid: None,
+                visible: None,
+                inaccessible: false,
+                tags: vec![],
+                specified_by_url: None,
+            },
+            MetaTypeId::Object => MetaType::Object {
+                name: "".to_string(),
+                description: None,
+                fields: Default::default(),
+                cache_control: Default::default(),
+                extends: false,
+                shareable: false,
+                inaccessible: false,
+                tags: vec![],
+                keys: None,
+                visible: None,
+                is_subscription: false,
+                rust_typename: Some(rust_typename),
+            },
+            MetaTypeId::Interface => MetaType::Interface {
+                name: "".to_string(),
+                description: None,
+                fields: Default::default(),
+                possible_types: Default::default(),
+                extends: false,
+                inaccessible: false,
+                tags: vec![],
+                keys: None,
+                visible: None,
+                rust_typename: Some(rust_typename),
+            },
+            MetaTypeId::Union => MetaType::Union {
+                name: "".to_string(),
+                description: None,
+                possible_types: Default::default(),
+                visible: None,
+                inaccessible: false,
+                tags: vec![],
+                rust_typename: Some(rust_typename),
+            },
+            MetaTypeId::Enum => MetaType::Enum {
+                name: "".to_string(),
+                description: None,
+                enum_values: Default::default(),
+                visible: None,
+                inaccessible: false,
+                tags: vec![],
+                rust_typename: Some(rust_typename),
+            },
+            MetaTypeId::InputObject => MetaType::InputObject {
+                name: "".to_string(),
+                description: None,
+                input_fields: Default::default(),
+                visible: None,
+                inaccessible: false,
+                tags: vec![],
+                rust_typename: Some(rust_typename),
+                oneof: false,
+            },
+        }
+    }
 }
 
 impl Display for MetaTypeId {
@@ -596,11 +666,34 @@ pub struct MetaDirective {
     pub visible: Option<MetaVisibleFn>,
 }
 
+impl MetaDirective {
+    pub(crate) fn sdl(&self) -> String {
+        let mut sdl = format!("directive @{}", self.name);
+        if !self.args.is_empty() {
+            let args = self
+                .args
+                .values()
+                .map(|value| format!("{}: {}", value.name, value.ty))
+                .collect::<Vec<_>>()
+                .join(", ");
+            write!(sdl, "({})", args).ok();
+        }
+        let locations = self
+            .locations
+            .iter()
+            .map(|location| location.to_value().to_string())
+            .collect::<Vec<_>>()
+            .join(" | ");
+        write!(sdl, " on {}", locations).ok();
+        sdl
+    }
+}
+
 /// A type registry for build schemas
 #[derive(Default)]
 pub struct Registry {
     pub types: BTreeMap<String, MetaType>,
-    pub directives: HashMap<String, MetaDirective>,
+    pub directives: BTreeMap<String, MetaDirective>,
     pub implements: HashMap<String, IndexSet<String>>,
     pub query_type: String,
     pub mutation_type: Option<String>,
@@ -710,7 +803,7 @@ impl Registry {
         &mut self,
         f: &mut F,
         name: &str,
-        rust_typename: &str,
+        rust_typename: &'static str,
         type_id: MetaTypeId,
     ) {
         match self.types.get(name) {
@@ -741,23 +834,8 @@ impl Registry {
             None => {
                 // Inserting a fake type before calling the function allows recursive types to
                 // exist.
-                self.types.insert(
-                    name.to_string(),
-                    MetaType::Object {
-                        name: "".to_string(),
-                        description: None,
-                        fields: Default::default(),
-                        cache_control: Default::default(),
-                        extends: false,
-                        shareable: false,
-                        inaccessible: false,
-                        tags: Default::default(),
-                        keys: None,
-                        visible: None,
-                        is_subscription: false,
-                        rust_typename: None,
-                    },
-                );
+                self.types
+                    .insert(name.to_string(), type_id.create_fake_type(rust_typename));
                 let ty = f(self);
                 *self.types.get_mut(name).unwrap() = ty;
             }

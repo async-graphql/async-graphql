@@ -9,11 +9,11 @@
 - **min_items=N** 指定列表的长度不能小于`N`
 - **max_length=N** 字符串的长度不能大于`N`
 - **min_length=N** 字符串的长度不能小于`N`
-- **chars_max_length=N** 字符串中unicode字符的的数量不能小于`N`
-- **chars_min_length=N** 字符串中unicode字符的的数量不能大于`N`
-- **email** 有效的email
-- **url** 有效的url
-- **ip** 有效的ip地址
+- **chars_max_length=N** 字符串中 unicode 字符的的数量不能小于`N`
+- **chars_min_length=N** 字符串中 unicode 字符的的数量不能大于`N`
+- **email** 有效的 email
+- **url** 有效的 url
+- **ip** 有效的 ip 地址
 - **regex=RE** 匹配正则表达式
 
 ```rust
@@ -24,7 +24,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    /// name参数的长度必须大于等于5，小于等于10
+    /// name 参数的长度必须大于等于 5，小于等于 10
     async fn input(&self, #[graphql(validator(min_length = 5, max_length = 10))] name: String) -> Result<i32> {
 #        todo!()    
     }
@@ -33,7 +33,7 @@ impl Query {
 
 ## 校验列表成员
 
-你可以打开`list`属性表示校验器作用于一个列表内的所有成员:
+你可以打开`list`属性表示校验器作用于一个列表内的所有成员：
 
 ```rust
 # extern crate async_graphql;
@@ -78,7 +78,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    /// n的值必须等于100
+    /// n 的值必须等于 100
     async fn value(
         &self,
         #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,

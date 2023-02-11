@@ -49,6 +49,27 @@ impl ConnectionNameType for DefaultConnectionName {
     }
 }
 
+mod private {
+    pub trait NodesFieldSwitcher: Send + Sync {}
+
+    impl NodesFieldSwitcher for super::DisableNodesField {}
+    impl NodesFieldSwitcher for super::EnableNodesField {}
+}
+
+/// Allow switch if [`Connection`] contains `nodes` field in GQL output
+///
+/// This trait is sealed and can not be implemented outside of this crate.
+pub trait NodesFieldSwitcherSealed: private::NodesFieldSwitcher {}
+
+impl NodesFieldSwitcherSealed for DisableNodesField {}
+impl NodesFieldSwitcherSealed for EnableNodesField {}
+
+/// Enable (at compile time) `nodes` field in GQL output of [`Connection`]
+pub struct EnableNodesField;
+
+/// Disable (at compile time) `nodes` field in GQL output of [`Connection`]
+pub struct DisableNodesField;
+
 /// Parses the parameters and executes the query.
 ///
 /// # Examples
@@ -188,24 +209,39 @@ impl ConnectionNameType for DefaultConnectionName {
 /// }));
 /// # });
 /// ```
-pub async fn query<Name, EdgeName, Cursor, Node, ConnectionFields, EdgeFields, F, R, E>(
+pub async fn query<
+    Name,
+    EdgeName,
+    Cursor,
+    Node,
+    NodesVersion,
+    ConnectionFields,
+    EdgeFields,
+    F,
+    R,
+    E,
+>(
     after: Option<String>,
     before: Option<String>,
     first: Option<i32>,
     last: Option<i32>,
     f: F,
-) -> Result<Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>>
+) -> Result<Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesVersion>>
 where
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
     Node: OutputType,
+    NodesVersion: NodesFieldSwitcherSealed,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
     R: Future<
-        Output = Result<Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>, E>,
+        Output = Result<
+            Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesVersion>,
+            E,
+        >,
     >,
     E: Into<Error>,
 {

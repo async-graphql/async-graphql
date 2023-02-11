@@ -1,6 +1,6 @@
 # 错误处理
 
-Resolver函数可以返回一个Result类型，以下是Result的定义：
+Resolver 函数可以返回一个 Result 类型，以下是 Result 的定义：
 
 ```rust,ignore
 type Result<T> = std::result::Result<T, Error>;

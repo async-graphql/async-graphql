@@ -1,5 +1,6 @@
 //! Async-graphql integration with Axum
 #![forbid(unsafe_code)]
+#![allow(clippy::uninlined_format_args)]
 #![warn(missing_docs)]
 
 mod extract;

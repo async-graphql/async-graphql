@@ -6,22 +6,22 @@
 
 ## 一句话解释什么是中间件
 
-让我们了解什么是中间件:
+让我们了解什么是中间件：
 
 ```rust,ignore
 async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>) -> MiddlewareResult {
   // 你的中间件代码
 
   /*
-   * 调用next.run函数执行下个中间件的逻辑
+   * 调用 next.run 函数执行下个中间件的逻辑
    */
   next.run(ctx).await
 }
 ```
 
-如你所见，`middleware` 只是在末尾调用 next 函数的函数。但我们也可以在开头使用 `next.run` 来实现中间件。 这就是它变得棘手的地方：根据你放置逻辑的位置以及`next.run`调用的位置，你的逻辑将不会具有相同的执行顺序。
+如你所见，`middleware` 只是在末尾调用 next 函数的函数。但我们也可以在开头使用 `next.run` 来实现中间件。这就是它变得棘手的地方：根据你放置逻辑的位置以及`next.run`调用的位置，你的逻辑将不会具有相同的执行顺序。
 
-根据你代码，你需要在 `next.run` 调用之前或之后处理它。 如果你需要更多关于中间件的信息，网上有很多。
+根据你代码，你需要在 `next.run` 调用之前或之后处理它。如果你需要更多关于中间件的信息，网上有很多。
 
 ## 查询的处理
 
@@ -93,7 +93,7 @@ async fn prepare_request(
 
 ### 解析查询
 
-`parse_query` 将解析查询语句并生成 GraphQL `ExecutableDocument`，并且检查查询是否遵循 GraphQL 规范。 通常，`async-graphql` 遵循最后一个稳定的规范（October2021）。
+`parse_query` 将解析查询语句并生成 GraphQL `ExecutableDocument`，并且检查查询是否遵循 GraphQL 规范。通常，`async-graphql` 遵循最后一个稳定的规范（October2021）。
 
 ```rust
 # extern crate async_graphql;
@@ -184,9 +184,9 @@ async fn resolve(
     info: ResolveInfo<'_>,
     next: NextResolve<'_>,
 ) -> ServerResult<Option<Value>> {
-    // resolve字段之前
+    // resolve 字段之前
     let result = next.run(ctx, info).await;
-    // resolve字段之后
+    // resolve 字段之后
     result
 }
 # }

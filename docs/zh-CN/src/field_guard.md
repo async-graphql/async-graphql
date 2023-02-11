@@ -1,4 +1,4 @@
-# 字段守卫(Field Guard)
+# 字段守卫 (Field Guard)
 
 你可以为`Object`, `SimpleObject`, `ComplexObject`和`Subscription`的字段定义`守卫`，它将在调用字段的 Resolver 函数前执行，如果失败则返回一个错误。
 
@@ -46,10 +46,10 @@ impl Guard for RoleGuard {
 # impl Guard for RoleGuard { async fn check(&self, ctx: &Context<'_>) -> Result<()> { todo!() } }
 #[derive(SimpleObject)]
 struct Query {
-    /// 只允许Admin访问
+    /// 只允许 Admin 访问
     #[graphql(guard = "RoleGuard::new(Role::Admin)")]
     value1: i32,
-    /// 允许Admin或者Guest访问
+    /// 允许 Admin 或者 Guest 访问
     #[graphql(guard = "RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))")]
     value2: i32,
 }

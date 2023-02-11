@@ -195,8 +195,8 @@ fn parse_enum_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Pos
     parse_name(exactly_one(pair.into_inner()), pc)
 }
 
-fn parse_opt_const_directives<'a>(
-    pairs: &mut Pairs<'a, Rule>,
+fn parse_opt_const_directives(
+    pairs: &mut Pairs<'_, Rule>,
     pc: &mut PositionCalculator,
 ) -> Result<Vec<Positioned<ConstDirective>>> {
     Ok(parse_if_rule(pairs, Rule::const_directives, |pair| {
@@ -204,8 +204,8 @@ fn parse_opt_const_directives<'a>(
     })?
     .unwrap_or_default())
 }
-fn parse_opt_directives<'a>(
-    pairs: &mut Pairs<'a, Rule>,
+fn parse_opt_directives(
+    pairs: &mut Pairs<'_, Rule>,
     pc: &mut PositionCalculator,
 ) -> Result<Vec<Positioned<Directive>>> {
     Ok(

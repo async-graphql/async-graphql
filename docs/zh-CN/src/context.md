@@ -1,4 +1,4 @@
-# 查询上下文(Context)
+# 查询上下文 (Context)
 
 `Context`的主要目标是获取附加到`Schema`的全局数据或者与正在处理的实际查询相关的数据。
 
@@ -10,7 +10,7 @@
 
 你可以通过调用`ctx.data::<TypeOfYourData>()`来获取查询中的数据。
 
-**主意：如果Resolver函数的返回值是从`Context`中借用的，则需要明确说明参数的生命周期。**
+**主意：如果 Resolver 函数的返回值是从`Context`中借用的，则需要明确说明参数的生命周期。**
 
 下面的例子展示了如何从`Context`中借用数据。
 
@@ -31,7 +31,7 @@ impl Query {
 }
 ```
 
-### Schema数据
+### Schema 数据
 
 你可以在创建`Schema`时将数据放入上下文中，这对于不会更改的数据非常有用，例如连接池。
 
@@ -88,9 +88,9 @@ let graphql_post = warp::post()
   });
 ```
 
-## HTTP头
+## HTTP 头
 
-使用`Context`你还可以插入或添加HTTP头。
+使用`Context`你还可以插入或添加 HTTP 头。
 
 ```rust
 # extern crate async_graphql;

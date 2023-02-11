@@ -1,6 +1,6 @@
-# 输入对象(InputObject)
+# 输入对象 (InputObject)
 
-你可以定义一个对象作为参数类型，GraphQL称之为`Input Object`，输入对象的定义方式和[简单对象](define_simple_object.md)很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。
+你可以定义一个对象作为参数类型，GraphQL 称之为`Input Object`，输入对象的定义方式和[简单对象](define_simple_object.md)很像，不同的是，简单对象只能用于输出，而输入对象只能用于输入。
 
 你也通过可选的`#[graphql]`属性来给字段添加描述，重命名。
 
@@ -52,7 +52,7 @@ pub struct SomeGenericInput<T: InputType> {
 
 注意：每个泛型参数必须实现`InputType`，如上所示。
 
-生成的SDL如下:
+生成的 SDL 如下：
 
 ```gql
 input SomeName {

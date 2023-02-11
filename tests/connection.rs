@@ -167,3 +167,61 @@ pub async fn test_connection_nodes() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_connection_nodes_disabled() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn numbers(
+            &self,
+            after: Option<String>,
+            before: Option<String>,
+            first: Option<i32>,
+            last: Option<i32>,
+        ) -> Result<
+            Connection<
+                usize,
+                i32,
+                EmptyFields,
+                EmptyFields,
+                DefaultConnectionName,
+                DefaultEdgeName,
+                DisableNodesField,
+            >,
+        > {
+            connection::query(
+                after,
+                before,
+                first,
+                last,
+                |after, before, first, last| async move {
+                    let mut start = after.map(|after| after + 1).unwrap_or(0);
+                    let mut end = before.unwrap_or(10000);
+                    if let Some(first) = first {
+                        end = (start + first).min(end);
+                    }
+                    if let Some(last) = last {
+                        start = if last > end - start { end } else { end - last };
+                    }
+                    let mut connection = Connection::new(start > 0, end < 10000);
+                    connection
+                        .edges
+                        .extend((start..end).map(|n| Edge::new(n, n as i32)));
+                    Ok::<_, Error>(connection)
+                },
+            )
+            .await
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let r = schema.execute("{ numbers(last: 2) { nodes } }").await;
+
+    assert_eq!(
+        r.errors[0].message,
+        "Unknown field \"nodes\" on type \"IntConnection\"."
+    );
+}

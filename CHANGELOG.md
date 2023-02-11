@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [5.0.6] 2023-02-11
+
+- docs: Tweak dataloader example and link to full example [#1194](https://github.com/async-graphql/async-graphql/pull/1194)
+- docs: Mention the importance of using dataloader with federation/entities [#1194](https://github.com/async-graphql/async-graphql/pull/1194)
+- chore: enable GraphiQL/Playground via feature flag [#1202](https://github.com/async-graphql/async-graphql/pull/1202)
+- fix: Export directives to federation SDL so they can be composed. [#1209](https://github.com/async-graphql/async-graphql/pull/1209)
+- Fix doc contents details and add AutoCorrect lint to CI. [#1210](https://github.com/async-graphql/async-graphql/pull/1210)
+- fix: provide correct type for _service with dynamic schema [#1212](https://github.com/async-graphql/async-graphql/pull/1212)
+- feat(subscription): support generics in MergedSubscription types [#1222](https://github.com/async-graphql/async-graphql/pull/1222)
+- feat: modify Connection to allow optionally disable nodes field in gql output. [#1218](https://github.com/async-graphql/async-graphql/pull/1218)
+- fixes interface type condition query [#1228](https://github.com/async-graphql/async-graphql/pull/1228)
+- fixes [#1226](https://github.com/async-graphql/async-graphql/issues/1226)
+- update MSRV to `1.64.0`
+
 # [5.0.5] 2023-01-03
 
 - dynamic schema: add boxed_any function [#1179](https://github.com/async-graphql/async-graphql/pull/1179)

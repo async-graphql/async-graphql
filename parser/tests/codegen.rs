@@ -38,14 +38,9 @@ struct GraphQLParser;
         return;
     }
 
-    let code = format!("{}\n{}", PREAMBLE, reformat(&new));
+    let code = format!("{PREAMBLE}\n{new}");
     fs::write("./src/parse/generated.rs", code).unwrap();
     panic!("Generated code in the repository is outdated, updating...");
-}
-
-fn reformat(code: &str) -> String {
-    let syntax_tree = syn::parse_file(code).unwrap();
-    prettyplease::unparse(&syntax_tree)
 }
 
 fn normalize(code: &str) -> String {

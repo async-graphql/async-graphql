@@ -1,8 +1,8 @@
-# 简单对象(SimpleObject)
+# 简单对象 (SimpleObject)
 
-简单对象是把Rust结构的所有字段都直接映射到GraphQL对象，不支持定义单独的Resolver函数。
+简单对象是把 Rust 结构的所有字段都直接映射到 GraphQL 对象，不支持定义单独的 Resolver 函数。
 
-下面的例子定义了一个名称为MyObject的对象，包含字段`a`和`b`，`c`由于标记为`#[graphql(skip)]`，所以不会映射到GraphQL。
+下面的例子定义了一个名称为 MyObject 的对象，包含字段`a`和`b`，`c`由于标记为`#[graphql(skip)]`，所以不会映射到 GraphQL。
 
 ```rust
 # extern crate async_graphql;
@@ -45,7 +45,7 @@ pub struct SomeGenericObject<T: OutputType> {
 
 注意：每个泛型参数必须实现`OutputType`，如上所示。
 
-生成的SDL如下:
+生成的 SDL 如下：
 
 ```gql
 type SomeName {
@@ -86,7 +86,7 @@ pub struct YetAnotherObject {
 
 ## 复杂字段
 
-有时GraphQL对象的大多数字段仅返回结构成员的值，但是少数字段需要计算。 通常我们使用`Object`宏来定义这样一个GraphQL对象。
+有时 GraphQL 对象的大多数字段仅返回结构成员的值，但是少数字段需要计算。通常我们使用`Object`宏来定义这样一个 GraphQL 对象。
 
 用`ComplexObject`宏可以更漂亮的完成这件事，我们可以使用`SimpleObject`宏来定义
 一些简单的字段，并使用`ComplexObject`宏来定义其他一些需要计算的字段。
@@ -95,7 +95,7 @@ pub struct YetAnotherObject {
 # extern crate async_graphql;
 # use async_graphql::*;
 #[derive(SimpleObject)]
-#[graphql(complex)] // 注意: 如果你希望ComplexObject宏生效，complex属性是必须的
+#[graphql(complex)] // 注意：如果你希望 ComplexObject 宏生效，complex 属性是必须的
 struct MyObj {
     a: i32,
     b: i32,
@@ -115,7 +115,7 @@ impl MyObj {
 # extern crate async_graphql;
 # use async_graphql::*;
 #[derive(SimpleObject, InputObject)]
-#[graphql(input_name = "MyObjInput")] // 注意: 你必须用input_name属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
+#[graphql(input_name = "MyObjInput")] // 注意：你必须用 input_name 属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
 struct MyObj {
     a: i32,
     b: i32,
