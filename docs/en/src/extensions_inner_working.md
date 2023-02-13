@@ -1,8 +1,8 @@
 # How extensions are defined
 
-An `async-graphql` extension is defined by implementing the trait `Extension` associated. The `Extension` trait allow you to insert custom code to some several steps used to respond to GraphQL's queries through `async-graphql`. With `Extensions`, your application can hook into the GraphQL's requests lifecycle to add behaviors about incoming requests or outgoing response.
+An `async-graphql` extension is defined by implementing the trait `Extension` associated. The `Extension` trait allows you to insert custom code to some several steps used to respond to GraphQL's queries through `async-graphql`. With `Extensions`, your application can hook into the GraphQL's requests lifecycle to add behaviors about incoming requests or outgoing response.
 
-`Extensions` are a lot like middleware from other frameworks, be careful when using those: when you use an extension **it'll be run for every GraphQL requests**.
+`Extensions` are a lot like middleware from other frameworks, be careful when using those: when you use an extension **it'll be run for every GraphQL request**.
 
 Across every step, you'll have the `ExtensionContext` supplied with data about your current request execution. Feel free to check how it's constructed in the code, documentation about it will soon come.
 
@@ -22,10 +22,10 @@ async fn middleware(&self, ctx: &ExtensionContext<'_>, next: NextMiddleware<'_>)
 }
 ```
 
-As you have seen, a `Middleware` is only a function calling the next function at the end, but we could also do a middleware with the `next.run` function at the start. This is where it's becoming tricky: depending on where you put your logics and where is the `next.run` call, your logic won't have the same execution order.
+As you have seen, a `Middleware` is only a function calling the next function at the end, but we could also do a middleware with the `next.run` function at the start. This is where it's becoming tricky: depending on where you put your logic and where is the `next.run` call, your logic won't have the same execution order.
 
 
-Depending on your logic code, you'll want to process it before or after the `next.run` call. If you need more information about middlewares, there are a lot of things in the web.
+Depending on your logic code, you'll want to process it before or after the `next.run` call. If you need more information about middlewares, there are a lot of things on the web.
 
 ## Processing of a query
 
@@ -50,7 +50,7 @@ async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Re
 # }
 ```
 
-Depending on where you put your logic code, it'll be executed at the beginning or at the ending of the query being processed.
+Depending on where you put your logic code, it'll be executed at the beginning or at the end of the query being processed.
 
 
 ```rust
