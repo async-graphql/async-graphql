@@ -135,7 +135,7 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "5.0.6" }
+async-graphql = { path = ".", version = "5.0.6", default-features = false }
 async-graphql-derive = { path = "derive", version = "5.0.6" }
 async-graphql-parser = { path = "parser", version = "5.0.6" }
 async-graphql-value = { path = "value", version = "5.0.6" }
