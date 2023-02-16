@@ -39,7 +39,7 @@ async-stream = "0.3.0"
 async-trait.workspace = true
 bytes.workspace = true
 fnv = "1.0.7"
-futures-util = { workspace = true, default-features = false, features = [
+futures-util = { workspace = true, features = [
   "io",
   "sink",
 ] }
@@ -135,7 +135,7 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "5.0.6" }
+async-graphql = { path = ".", version = "5.0.6", default-features = false }
 async-graphql-derive = { path = "derive", version = "5.0.6" }
 async-graphql-parser = { path = "parser", version = "5.0.6" }
 async-graphql-value = { path = "value", version = "5.0.6" }
@@ -146,5 +146,5 @@ indexmap = { version = "1.6.2", features = ["serde"] }
 bytes = { version = "1.0.1", features = ["serde"] }
 thiserror = "1.0.24"
 async-trait = "0.1.51"
-futures-util = "0.3.0"
-tokio-util = "0.7.1"
+futures-util = { version = "0.3.0", default-features = false }
+tokio-util = { version = "0.7.1", default-features = false }
