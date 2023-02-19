@@ -461,6 +461,27 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
             .unwrap();
         typed_requests.cache_storage.clear();
     }
+
+    /// Gets all values in the cache.
+    pub fn get_cached_values<K>(&self) -> HashMap<K, T::Value>
+    where
+        K: Send + Sync + Hash + Eq + Clone + 'static,
+        T: Loader<K>,
+    {
+        let tid = TypeId::of::<K>();
+        let requests = self.inner.requests.lock().unwrap();
+        match requests.get(&tid) {
+            None => HashMap::new(),
+            Some(requests) => {
+                let typed_requests = requests.downcast_ref::<Requests<K, T>>().unwrap();
+                typed_requests
+                    .cache_storage
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect()
+            }
+        }
+    }
 }
 
 #[cfg(test)]
