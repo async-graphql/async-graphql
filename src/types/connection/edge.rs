@@ -31,7 +31,7 @@ impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
 
 /// An edge in a connection.
 #[derive(SimpleObject)]
-#[graphql(internal, name_type)]
+#[graphql(internal, name_type, shareable)]
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
     Cursor: CursorType + Send + Sync,
