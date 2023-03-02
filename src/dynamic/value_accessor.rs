@@ -133,6 +133,24 @@ impl<'a> ObjectAccessor<'a> {
             .iter()
             .map(|(name, value)| (name, ValueAccessor(value)))
     }
+
+    /// Return an iterator over the keys of the object, in their order
+    #[inline]
+    pub fn keys(&'a self) -> impl Iterator<Item = &Name> + 'a {
+        self.0.keys()
+    }
+
+    /// Return an iterator over the values of the object, in their order
+    #[inline]
+    pub fn values(&'a self) -> impl Iterator<Item = ValueAccessor<'_>> + 'a {
+        self.0.values().map(|value| ValueAccessor(value))
+    }
+
+    /// Returns the number of elements in the object
+    #[inline]
+    pub fn len(&'a self) -> usize {
+        self.0.len()
+    }
 }
 
 /// A list accessor
