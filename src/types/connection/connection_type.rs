@@ -98,7 +98,7 @@ where
     }
 }
 
-#[Object(internal, name_type)]
+#[Object(internal, name_type, shareable)]
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, DisableNodesField>
 where
@@ -132,7 +132,7 @@ where
     }
 }
 
-#[Object(internal, name_type)]
+#[Object(internal, name_type, shareable)]
 impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, EnableNodesField>
 where
