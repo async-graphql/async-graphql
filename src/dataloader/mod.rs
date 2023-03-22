@@ -366,7 +366,10 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 let disable_cache = self.disable_cache.load(Ordering::SeqCst);
                 let task = async move { inner.do_load(disable_cache, keys).await };
                 #[cfg(feature = "tracing")]
-                let task = task.instrument(info_span!("immediate_load"));
+                let task = task
+                    .instrument(info_span!("immediate_load"))
+                    .in_current_span();
+                
                 (self.spawner)(Box::pin(task));
             }
             Action::StartFetch => {
@@ -392,7 +395,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                     }
                 };
                 #[cfg(feature = "tracing")]
-                let task = task.instrument(info_span!("start_fetch"));
+                let task = task.instrument(info_span!("start_fetch")).in_current_span();
                 (self.spawner)(Box::pin(task))
             }
             Action::Delay => {}
