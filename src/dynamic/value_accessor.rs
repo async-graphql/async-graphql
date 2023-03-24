@@ -86,7 +86,7 @@ impl<'a> ValueAccessor<'a> {
         if let Value::Object(obj) = self.0 {
             Ok(ObjectAccessor(Cow::Borrowed(obj)))
         } else {
-            Err(Error::new("internal: not a string"))
+            Err(Error::new("internal: not an object"))
         }
     }
 
