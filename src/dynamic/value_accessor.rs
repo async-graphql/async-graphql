@@ -143,13 +143,19 @@ impl<'a> ObjectAccessor<'a> {
     /// Return an iterator over the values of the object, in their order
     #[inline]
     pub fn values(&'a self) -> impl Iterator<Item = ValueAccessor<'_>> + 'a {
-        self.0.values().map(|value| ValueAccessor(value))
+        self.0.values().map(ValueAccessor)
     }
 
     /// Returns the number of elements in the object
     #[inline]
     pub fn len(&'a self) -> usize {
         self.0.len()
+    }
+
+    /// Returns `true` if the object has no members
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
