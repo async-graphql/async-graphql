@@ -70,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -143,8 +145,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="how-extensions-are-defined"><a class="header" href="#how-extensions-are-defined">How extensions are defined</a></h1>
-<p>An <code>async-graphql</code> extension is defined by implementing the trait <code>Extension</code> associated. The <code>Extension</code> trait allow you to insert custom code to some several steps used to respond to GraphQL's queries through <code>async-graphql</code>. With <code>Extensions</code>, your application can hook into the GraphQL's requests lifecycle to add behaviors about incoming requests or outgoing response.</p>
-<p><code>Extensions</code> are a lot like middleware from other frameworks, be careful when using those: when you use an extension <strong>it'll be run for every GraphQL requests</strong>.</p>
+<p>An <code>async-graphql</code> extension is defined by implementing the trait <code>Extension</code> associated. The <code>Extension</code> trait allows you to insert custom code to some several steps used to respond to GraphQL's queries through <code>async-graphql</code>. With <code>Extensions</code>, your application can hook into the GraphQL's requests lifecycle to add behaviors about incoming requests or outgoing response.</p>
+<p><code>Extensions</code> are a lot like middleware from other frameworks, be careful when using those: when you use an extension <strong>it'll be run for every GraphQL request</strong>.</p>
 <p>Across every step, you'll have the <code>ExtensionContext</code> supplied with data about your current request execution. Feel free to check how it's constructed in the code, documentation about it will soon come.</p>
 <h2 id="a-word-about-middleware"><a class="header" href="#a-word-about-middleware">A word about middleware</a></h2>
 <p>For those who don't know, let's dig deeper into what is a middleware:</p>
@@ -157,8 +159,8 @@
    */
   next.run(ctx).await
 }</code></pre>
-<p>As you have seen, a <code>Middleware</code> is only a function calling the next function at the end, but we could also do a middleware with the <code>next.run</code> function at the start. This is where it's becoming tricky: depending on where you put your logics and where is the <code>next.run</code> call, your logic won't have the same execution order.</p>
-<p>Depending on your logic code, you'll want to process it before or after the <code>next.run</code> call. If you need more information about middlewares, there are a lot of things in the web.</p>
+<p>As you have seen, a <code>Middleware</code> is only a function calling the next function at the end, but we could also do a middleware with the <code>next.run</code> function at the start. This is where it's becoming tricky: depending on where you put your logic and where is the <code>next.run</code> call, your logic won't have the same execution order.</p>
+<p>Depending on your logic code, you'll want to process it before or after the <code>next.run</code> call. If you need more information about middlewares, there are a lot of things on the web.</p>
 <h2 id="processing-of-a-query"><a class="header" href="#processing-of-a-query">Processing of a query</a></h2>
 <p>There are several steps to go to process a query to completion, you'll be able to create extension based on these hooks.</p>
 <h3 id="request"><a class="header" href="#request">request</a></h3>
@@ -177,7 +179,7 @@
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
-<p>Depending on where you put your logic code, it'll be executed at the beginning or at the ending of the query being processed.</p>
+<p>Depending on where you put your logic code, it'll be executed at the beginning or at the end of the query being processed.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;

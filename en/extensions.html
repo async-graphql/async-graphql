@@ -70,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -143,7 +145,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="extensions"><a class="header" href="#extensions">Extensions</a></h1>
-<p><code>async-graphql</code> has the capability to be extended with extensions without having to modify the original source code. A lot of features can be added this way, and a lot of extensions already exists.</p>
+<p><code>async-graphql</code> has the capability to be extended with extensions without having to modify the original source code. A lot of features can be added this way, and a lot of extensions already exist.</p>
 
                     </main>
 
