@@ -1,5 +1,6 @@
+use std::str::FromStr;
+
 use chrono::Duration;
-use iso8601_duration as iso8601;
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -14,7 +15,9 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 impl ScalarType for Duration {
     fn parse(value: Value) -> InputValueResult<Self> {
         match &value {
-            Value::String(s) => Ok(Duration::from_std(iso8601::Duration::parse(s)?.to_std())?),
+            Value::String(s) => Ok(Duration::from_std(std::time::Duration::from(
+                iso8601::Duration::from_str(s)?,
+            ))?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }

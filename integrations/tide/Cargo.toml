@@ -9,14 +9,14 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT/Apache-2.0"
 name = "async-graphql-tide"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "5.0.6"
+version = "5.0.7"
 
 [features]
 default = ["websocket"]
 websocket = ["tide-websockets"]
 
 [dependencies]
-async-graphql = { workspace = true, default-features = false }
+async-graphql = { workspace = true }
 
 async-trait.workspace = true
 futures-util.workspace = true

@@ -94,16 +94,13 @@ pub struct ConcreteType {
     pub params: PathList,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum Deprecation {
+    #[default]
     NoDeprecated,
-    Deprecated { reason: Option<String> },
-}
-
-impl Default for Deprecation {
-    fn default() -> Self {
-        Deprecation::NoDeprecated
-    }
+    Deprecated {
+        reason: Option<String>,
+    },
 }
 
 impl FromMeta for Deprecation {
