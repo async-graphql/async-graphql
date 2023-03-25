@@ -369,7 +369,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 let task = task
                     .instrument(info_span!("immediate_load"))
                     .in_current_span();
-                
+
                 (self.spawner)(Box::pin(task));
             }
             Action::StartFetch => {

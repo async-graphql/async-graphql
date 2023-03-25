@@ -28,20 +28,15 @@ use crate::{
 };
 
 /// Introspection mode
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum IntrospectionMode {
     /// Introspection only
     IntrospectionOnly,
     /// Enables introspection
+    #[default]
     Enabled,
     /// Disables introspection
     Disabled,
-}
-
-impl Default for IntrospectionMode {
-    fn default() -> Self {
-        IntrospectionMode::Enabled
-    }
 }
 
 /// Schema builder
