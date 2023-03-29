@@ -236,16 +236,16 @@ impl SchemaInner {
         obj: &InputObject,
     ) -> Result<(), SchemaError> {
         for field in obj.fields.values() {
-            if field.ty.type_name() == current {
-                if !field.ty.is_named() && !field.ty.is_list() {
+            if !field.ty.is_named() && !field.ty.is_list() {
+                if field.ty.type_name() == current {
                     return Err(format!("\"{}\" references itself either directly or through referenced Input Objects, at least one of the fields in the chain of references must be either a nullable or a List type.", current).into());
+                } else if let Some(obj) = self
+                    .types
+                    .get(field.ty.type_name())
+                    .and_then(Type::as_input_object)
+                {
+                    self.check_input_object_reference(current, obj)?;
                 }
-            } else if let Some(obj) = self
-                .types
-                .get(field.ty.type_name())
-                .and_then(Type::as_input_object)
-            {
-                self.check_input_object_reference(current, obj)?;
             }
         }
 
