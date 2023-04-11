@@ -52,7 +52,7 @@ impl MyObj {
 
 ## Generic `SimpleObject`s
 
-If you want to reuse an `SimpleObject` for other types, you can define a generic SimpleObject
+If you want to reuse a `SimpleObject` for other types, you can define a generic SimpleObject
 and specify how its concrete types should be implemented.
 
 In the following example, two `SimpleObject` types are created:
