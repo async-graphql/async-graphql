@@ -102,6 +102,17 @@ impl User {
 }
 ```
 
+要在 `ctx` 中获取 `UserNameLoader`，您必须将其和任务生成器（例如 `async_std::task::spawn`）注册到 `Schema` 中：
+
+```rust,ignore
+let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(DataLoader::new(
+        UserNameLoader,
+        async_std::task::spawn, // 或者 `tokio::spawn`
+    ))
+    .finish();
+```
+
 最终只需要两个查询语句，就查询出了我们想要的结果！
 
 ```sql
