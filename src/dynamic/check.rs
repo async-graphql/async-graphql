@@ -4,6 +4,7 @@ use crate::dynamic::{
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
     InputObject, Interface, SchemaError, Type,
+    type_ref::{TypeRef, TypeRefInner},
 };
 
 impl SchemaInner {
@@ -235,9 +236,21 @@ impl SchemaInner {
         current: &str,
         obj: &InputObject,
     ) -> Result<(), SchemaError> {
+        fn typeref_nonnullable_name(ty: &TypeRef) -> Option<&str> {
+            match &ty.0 {
+                TypeRefInner::NonNull(inner) => {
+                    match inner.as_ref() {
+                        TypeRefInner::Named(name) => Some(name),
+                        _ => None,
+                    }
+                },
+                _ => None,
+            }
+        }
+
         for field in obj.fields.values() {
-            if !field.ty.is_named() && !field.ty.is_list() {
-                if field.ty.type_name() == current {
+            if let Some(this_name) = typeref_nonnullable_name(&field.ty) {
+                if this_name == current {
                     return Err(format!("\"{}\" references itself either directly or through referenced Input Objects, at least one of the fields in the chain of references must be either a nullable or a List type.", current).into());
                 } else if let Some(obj) = self
                     .types
@@ -419,4 +432,60 @@ fn check_is_valid_implementation(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dynamic::{
+        Schema,
+        InputObject,
+        InputValue,
+        Object,
+        TypeRef,
+        Field,
+        FieldFuture,
+        SchemaBuilder,
+    };
+    use crate::Value;
+
+    fn base_schema() -> SchemaBuilder {
+        let query = Object::new("Query")
+            .field(Field::new("dummy", TypeRef::named("Int"), |_| FieldFuture::new(async { Ok(Some(Value::from(42))) })));
+        let schema = Schema::build("Query", None, None)
+            .register(query);
+
+        schema
+    }
+
+    #[test]
+    fn test_recursive_input_objects() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named("BotLevel")))
+            .field(InputValue::new("list_bottom", TypeRef::named_nn_list_nn("BotLevel")));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("top", TypeRef::named_nn("TopLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap();
+    }
+
+    #[test]
+    fn test_recursive_input_objects_bad() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named_nn("BotLevel")));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("top", TypeRef::named_nn("TopLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap_err();
+    }
 }
