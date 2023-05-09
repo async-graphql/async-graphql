@@ -111,6 +111,17 @@ impl User {
 }
 ```
 
+To expose `UserNameLoader` in the `ctx`, you have to register it with the schema, along with a task spawner, e.g. `async_std::task::spawn`:
+
+```rust,ignore
+let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(DataLoader::new(
+        UserNameLoader,
+        async_std::task::spawn, // or `tokio::spawn`
+    ))
+    .finish();
+```
+
 In the end, only two SQLs are needed to query the results we want!
 
 ```sql
