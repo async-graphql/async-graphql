@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - Apollo Tracing extension
 - Apollo Federation(v2)
 
-> **Note**: Minimum supported Rust version: 1.64.0 or later
+> **Note**: Minimum supported Rust version: 1.65.0 or later
 
 ## Examples
 
