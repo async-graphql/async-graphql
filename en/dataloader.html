@@ -236,6 +236,13 @@ impl User {
         name.ok_or_else(|| &quot;Not found&quot;.into())
     }
 }</code></pre>
+<p>To expose <code>UserNameLoader</code> in the <code>ctx</code>, you have to register it with the schema, along with a task spawner, e.g. <code>async_std::task::spawn</code>:</p>
+<pre><code class="language-rust ignore">let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(DataLoader::new(
+        UserNameLoader,
+        async_std::task::spawn, // or `tokio::spawn`
+    ))
+    .finish();</code></pre>
 <p>In the end, only two SQLs are needed to query the results we want!</p>
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)

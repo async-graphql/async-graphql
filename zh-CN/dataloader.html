@@ -227,6 +227,13 @@ impl User {
         name.ok_or_else(|| &quot;Not found&quot;.into())
     }
 }</code></pre>
+<p>要在 <code>ctx</code> 中获取 <code>UserNameLoader</code>，您必须将其和任务生成器（例如 <code>async_std::task::spawn</code>）注册到 <code>Schema</code> 中：</p>
+<pre><code class="language-rust ignore">let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(DataLoader::new(
+        UserNameLoader,
+        async_std::task::spawn, // 或者 `tokio::spawn`
+    ))
+    .finish();</code></pre>
 <p>最终只需要两个查询语句，就查询出了我们想要的结果！</p>
 <pre><code class="language-sql">SELECT id, todo, user_id FROM todo
 SELECT name FROM user WHERE id IN (1, 2, 3, 4)
