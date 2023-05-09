@@ -130,24 +130,6 @@ impl TypeRef {
         }
     }
 
-    #[inline]
-    pub(crate) fn is_named(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => false,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_list(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => false,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => true,
-        }
-    }
-
     pub(crate) fn is_subtype(&self, sub: &TypeRef) -> bool {
         fn is_subtype(cur: &TypeRefInner, sub: &TypeRefInner) -> bool {
             match (cur, sub) {

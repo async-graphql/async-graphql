@@ -3,8 +3,8 @@ use indexmap::IndexMap;
 use crate::dynamic::{
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
-    InputObject, Interface, SchemaError, Type,
     type_ref::{TypeRef, TypeRefInner},
+    InputObject, Interface, SchemaError, Type,
 };
 
 impl SchemaInner {
@@ -238,11 +238,9 @@ impl SchemaInner {
     ) -> Result<(), SchemaError> {
         fn typeref_nonnullable_name(ty: &TypeRef) -> Option<&str> {
             match &ty.0 {
-                TypeRefInner::NonNull(inner) => {
-                    match inner.as_ref() {
-                        TypeRefInner::Named(name) => Some(name),
-                        _ => None,
-                    }
+                TypeRefInner::NonNull(inner) => match inner.as_ref() {
+                    TypeRefInner::Named(name) => Some(name),
+                    _ => None,
                 },
                 _ => None,
             }
@@ -436,26 +434,18 @@ fn check_is_valid_implementation(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::dynamic::{
-        Schema,
-        InputObject,
-        InputValue,
-        Object,
-        TypeRef,
-        Field,
-        FieldFuture,
-        SchemaBuilder,
+    use crate::{
+        dynamic::{
+            Field, FieldFuture, InputObject, InputValue, Object, Schema, SchemaBuilder, TypeRef,
+        },
+        Value,
     };
-    use crate::Value;
 
     fn base_schema() -> SchemaBuilder {
-        let query = Object::new("Query")
-            .field(Field::new("dummy", TypeRef::named("Int"), |_| FieldFuture::new(async { Ok(Some(Value::from(42))) })));
-        let schema = Schema::build("Query", None, None)
-            .register(query);
-
-        schema
+        let query = Object::new("Query").field(Field::new("dummy", TypeRef::named("Int"), |_| {
+            FieldFuture::new(async { Ok(Some(Value::from(42))) })
+        }));
+        Schema::build("Query", None, None).register(query)
     }
 
     #[test]
@@ -464,7 +454,10 @@ mod tests {
             .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
         let mid_level = InputObject::new("MidLevel")
             .field(InputValue::new("bottom", TypeRef::named("BotLevel")))
-            .field(InputValue::new("list_bottom", TypeRef::named_nn_list_nn("BotLevel")));
+            .field(InputValue::new(
+                "list_bottom",
+                TypeRef::named_nn_list_nn("BotLevel"),
+            ));
         let bot_level = InputObject::new("BotLevel")
             .field(InputValue::new("top", TypeRef::named_nn("TopLevel")));
         let schema = base_schema()
