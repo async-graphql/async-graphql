@@ -481,4 +481,19 @@ mod tests {
             .register(bot_level);
         schema.finish().unwrap_err();
     }
+
+    #[test]
+    fn test_recursive_input_objects_local_cycle() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named_nn("BotLevel")));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap_err();
+    }
 }
