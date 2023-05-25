@@ -261,7 +261,7 @@ impl SchemaInner {
                     // don't visit the reference if we've already visited it in this call chain
                     //  (prevents getting stuck in local cycles and overflowing stack)
                     //  true return from insert indicates the value was not previously there
-                    if ref_chain.insert(this_name.into()) {
+                    if ref_chain.insert(this_name) {
                         self.check_input_object_reference(current, obj, ref_chain)?;
                         ref_chain.remove(this_name);
                     }
