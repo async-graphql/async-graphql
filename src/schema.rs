@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::stream::{self, BoxStream, Stream, StreamExt};
+use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
 
 use crate::{
     context::{Data, QueryEnvInner},
@@ -516,10 +516,11 @@ where
         match batch_request {
             BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
             BatchRequest::Batch(requests) => BatchResponse::Batch(
-                futures_util::stream::iter(requests.into_iter())
-                    .then(|request| self.execute(request))
-                    .collect()
-                    .await,
+                FuturesOrdered::from_iter(
+                    requests.into_iter().map(|request| self.execute(request)),
+                )
+                .collect()
+                .await,
             ),
         }
     }
