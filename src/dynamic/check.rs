@@ -1,5 +1,6 @@
-use indexmap::IndexMap;
 use std::collections::HashSet;
+
+use indexmap::IndexMap;
 
 use crate::dynamic::{
     base::{BaseContainer, BaseField},
@@ -263,7 +264,7 @@ impl SchemaInner {
                     if ref_chain.insert(this_name.into()) {
                         self.check_input_object_reference(current, obj, ref_chain)?;
                         ref_chain.remove(this_name);
-                    }                    
+                    }
                 }
             }
         }
