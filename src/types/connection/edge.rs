@@ -1,4 +1,4 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::{borrow::Cow, marker::PhantomData, ops::Deref};
 
 use crate::{
     connection::{DefaultEdgeName, EmptyFields},
@@ -7,7 +7,7 @@ use crate::{
     TypeName, Value,
 };
 
-pub(crate) struct CursorScalar<T: CursorType>(pub(crate) T);
+pub struct CursorScalar<T: CursorType>(pub(crate) T);
 
 #[Scalar(internal, name = "String")]
 impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
@@ -29,6 +29,14 @@ impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
     }
 }
 
+impl<T: CursorType> Deref for CursorScalar<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 /// An edge in a connection.
 #[derive(SimpleObject)]
 #[graphql(internal, name_type, shareable)]
@@ -42,7 +50,7 @@ where
     #[graphql(skip)]
     _mark: PhantomData<Name>,
     /// A cursor for use in pagination
-    pub(crate) cursor: CursorScalar<Cursor>,
+    pub cursor: CursorScalar<Cursor>,
     /// The item at the end of the edge
     pub node: Node,
     #[graphql(flatten)]
