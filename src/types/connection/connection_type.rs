@@ -114,8 +114,8 @@ where
         PageInfo {
             has_previous_page: self.has_previous_page,
             has_next_page: self.has_next_page,
-            start_cursor: self.edges.first().map(|edge| edge.cursor.0.encode_cursor()),
-            end_cursor: self.edges.last().map(|edge| edge.cursor.0.encode_cursor()),
+            start_cursor: self.edges.first().map(|edge| edge.cursor.encode_cursor()),
+            end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
         }
     }
 
@@ -148,8 +148,8 @@ where
         PageInfo {
             has_previous_page: self.has_previous_page,
             has_next_page: self.has_next_page,
-            start_cursor: self.edges.first().map(|edge| edge.cursor.0.encode_cursor()),
-            end_cursor: self.edges.last().map(|edge| edge.cursor.0.encode_cursor()),
+            start_cursor: self.edges.first().map(|edge| edge.cursor.encode_cursor()),
+            end_cursor: self.edges.last().map(|edge| edge.cursor.encode_cursor()),
         }
     }
 
