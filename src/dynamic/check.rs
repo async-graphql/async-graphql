@@ -294,17 +294,6 @@ impl SchemaInner {
                         }
                     }
 
-                    // The field must return a type where IsOutputType(fieldType) returns true.
-                    if let Some(ty) = self.types.get(field.ty.type_name()) {
-                        if !ty.is_output_type() {
-                            return Err(format!(
-                                "Field \"{}.{}\" must return a output type",
-                                interface.name, field.name
-                            )
-                            .into());
-                        }
-                    }
-
                     for arg in field.arguments.values() {
                         // The argument must not have a name which begins with the characters "__"
                         // (two underscores).
