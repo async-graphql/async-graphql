@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [6.0.0] 2023-06-11
+
+- Bump `syn` from `1.0` to `2.0`
+- Bump `darling` from `0.14` to `0.20`
+
+## Breaking Changes
+
+- Since `syn 2.0` no longer supports keywords as meta path, rename the parameter used to specify interface field types from `type` to `ty`.
+
+    https://github.com/dtolnay/syn/issues/1458
+    https://github.com/TedDriggs/darling/issues/238
+
+```rust
+    #[derive(Interface)]
+    #[graphql(field(name = "id", ty = "&i32"))] // rename from type to ty
+    enum Node {
+        MyObj(MyObj),
+    }
+```
+
+
 # [5.0.10] 2023-06-07
 
 - Upgrade opentelemetry to 0.19.0 [#1252](https://github.com/async-graphql/async-graphql/pull/1262)

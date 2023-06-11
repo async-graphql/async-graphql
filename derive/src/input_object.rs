@@ -35,13 +35,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             Some(ident) => ident,
             None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
         };
-        let attrs = field
-            .attrs
-            .iter()
-            .filter(|attr| !attr.path.is_ident("field"))
-            .collect::<Vec<_>>();
         struct_fields.push(quote! {
-            #(#attrs)*
             #vis #ident: #ty
         });
     }

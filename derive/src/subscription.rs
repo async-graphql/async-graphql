@@ -47,7 +47,7 @@ pub fn generate(
     let mut schema_fields = Vec::new();
 
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let field: SubscriptionField = parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
             if field.skip {
                 remove_graphql_attrs(&mut method.attrs);

@@ -22,7 +22,7 @@ Define a GraphQL interface
 | Attribute     | description                                                                                                                                                                                                                              | Type                   | Optional |
 |---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|----------|
 | name          | Field name                                                                                                                                                                                                                               | string                 | N        |
-| type          | Field type                                                                                                                                                                                                                               | string                 | N        |
+| ty            | Field type                                                                                                                                                                                                                               | string                 | N        |
 | method        | Rust resolver method name. If specified, `name` will not be camelCased in schema definition                                                                                                                                              | string                 | Y        |
 | desc          | Field description                                                                                                                                                                                                                        | string                 | Y        |
 | deprecation   | Field deprecated                                                                                                                                                                                                                         | bool                   | Y        |
@@ -42,7 +42,7 @@ Define a GraphQL interface
 | Attribute    | description                                                                                                                                     | Type        | Optional |
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-------------|----------|
 | name         | Argument name                                                                                                                                   | string      | N        |
-| type         | Argument type                                                                                                                                   | string      | N        |
+| ty           | Argument type                                                                                                                                   | string      | N        |
 | desc         | Argument description                                                                                                                            | string      | Y        |
 | default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
 | default      | Argument default value                                                                                                                          | literal     | Y        |
@@ -106,12 +106,12 @@ impl TypeA {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = "value_a", type = "&'ctx str"),
-    field(name = "value_b", type = "&i32"),
-    field(name = "value_c", type = "i32",
-        arg(name = "a", type = "i32"),
-        arg(name = "b", type = "i32")),
-    field(name = "value_d", method = "value_d", type = "i32"),
+    field(name = "value_a", ty = "&'ctx str"),
+    field(name = "value_b", ty = "&i32"),
+    field(name = "value_c", ty = "i32",
+        arg(name = "a", ty = "i32"),
+        arg(name = "b", ty = "i32")),
+    field(name = "value_d", method = "value_d", ty = "i32"),
 )]
 enum MyInterface {
     TypeA(TypeA)

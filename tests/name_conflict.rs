@@ -233,7 +233,7 @@ fn interface() {
         }
 
         #[derive(Interface)]
-        #[graphql(field(name = "a", type = "&i32"))]
+        #[graphql(field(name = "a", ty = "&i32"))]
         pub enum MyInterface {
             ObjA(ObjA),
             ObjB(ObjB),
@@ -242,7 +242,7 @@ fn interface() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "a", type = "&i32"))]
+    #[graphql(field(name = "a", ty = "&i32"))]
     enum MyInterface {
         ObjA(t::ObjA),
         ObjB(t::ObjB),

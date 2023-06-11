@@ -351,14 +351,14 @@ pub async fn test_indirect_hiding_type() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "a", type = "&i32"))]
+    #[graphql(field(name = "a", ty = "&i32"))]
     enum MyInterface {
         MyObj3(MyObj3),
         MyObj4(MyObj4),
     }
 
     #[derive(Interface)]
-    #[graphql(visible = false, field(name = "a", type = "&i32"))]
+    #[graphql(visible = false, field(name = "a", ty = "&i32"))]
     enum MyInterface2 {
         MyObj3(MyObj3),
         MyObj4(MyObj4),

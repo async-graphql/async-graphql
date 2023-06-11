@@ -5,8 +5,8 @@ use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::{
-    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprPath, FnArg, Ident,
-    ImplItemMethod, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
+    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprLit, ExprPath, FnArg,
+    Ident, ImplItemFn, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
     TypeReference,
 };
 use thiserror::Error;
@@ -64,9 +64,12 @@ pub fn generate_guards(
 pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<String>> {
     let mut full_docs = String::new();
     for attr in attrs {
-        match attr.parse_meta()? {
-            Meta::NameValue(nv) if nv.path.is_ident("doc") => {
-                if let Lit::Str(doc) = nv.lit {
+        if let Meta::NameValue(nv) = &attr.meta {
+            if nv.path.is_ident("doc") {
+                if let Expr::Lit(ExprLit {
+                    lit: Lit::Str(doc), ..
+                }) = &nv.value
+                {
                     let doc = doc.value();
                     let doc_str = doc.trim();
                     if !full_docs.is_empty() {
@@ -75,7 +78,6 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<String>> {
                     full_docs += doc_str;
                 }
             }
-            _ => {}
         }
     }
     Ok(if full_docs.is_empty() {
@@ -135,7 +137,7 @@ pub fn generate_default(
 pub fn get_cfg_attrs(attrs: &[Attribute]) -> Vec<Attribute> {
     attrs
         .iter()
-        .filter(|attr| !attr.path.segments.is_empty() && attr.path.segments[0].ident == "cfg")
+        .filter(|attr| !attr.path().segments.is_empty() && attr.path().segments[0].ident == "cfg")
         .cloned()
         .collect()
 }
@@ -144,9 +146,8 @@ pub fn parse_graphql_attrs<T: FromMeta + Default>(
     attrs: &[Attribute],
 ) -> GeneratorResult<Option<T>> {
     for attr in attrs {
-        if attr.path.is_ident("graphql") {
-            let meta = attr.parse_meta()?;
-            return Ok(Some(T::from_meta(&meta)?));
+        if attr.path().is_ident("graphql") {
+            return Ok(Some(T::from_meta(&attr.meta)?));
         }
     }
     Ok(None)
@@ -156,7 +157,7 @@ pub fn remove_graphql_attrs(attrs: &mut Vec<Attribute>) {
     if let Some((idx, _)) = attrs
         .iter()
         .enumerate()
-        .find(|(_, a)| a.path.is_ident("graphql"))
+        .find(|(_, a)| a.path().is_ident("graphql"))
     {
         attrs.remove(idx);
     }
@@ -240,7 +241,7 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
 
 pub fn extract_input_args<T: FromMeta + Default>(
     crate_name: &proc_macro2::TokenStream,
-    method: &mut ImplItemMethod,
+    method: &mut ImplItemFn,
 ) -> GeneratorResult<Vec<(PatIdent, Type, T)>> {
     let mut args = Vec::new();
     let mut create_ctx = true;

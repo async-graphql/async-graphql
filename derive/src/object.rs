@@ -63,7 +63,7 @@ pub fn generate(
     // Computation of the derivated fields
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let method_args: args::ObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
@@ -138,7 +138,7 @@ pub fn generate(
 
                     new_impl.block = syn::parse2::<Block>(new_block).expect("invalid block");
 
-                    derived_impls.push(ImplItem::Method(new_impl));
+                    derived_impls.push(ImplItem::Fn(new_impl));
                 }
             }
         }
@@ -146,7 +146,7 @@ pub fn generate(
     item_impl.items.append(&mut derived_impls);
 
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let method_args: args::ObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
