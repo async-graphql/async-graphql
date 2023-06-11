@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use darling::{util::SpannedValue, FromMeta};
+use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
@@ -47,11 +47,9 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
 
 pub fn generate_guards(
     crate_name: &TokenStream,
-    code: &SpannedValue<String>,
+    expr: &Expr,
     map_err: TokenStream,
 ) -> GeneratorResult<TokenStream> {
-    let expr: Expr =
-        syn::parse_str(code).map_err(|err| Error::new(code.span(), err.to_string()))?;
     let code = quote! {{
         use #crate_name::GuardExt;
         #expr
@@ -201,7 +199,7 @@ pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
     }
 }
 
-pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)> {
+pub fn parse_complexity_expr(expr: Expr) -> GeneratorResult<(HashSet<String>, Expr)> {
     #[derive(Default)]
     struct VisitComplexityExpr {
         variables: HashSet<String>,
@@ -217,7 +215,6 @@ pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)
         }
     }
 
-    let expr: Expr = syn::parse_str(s)?;
     let mut visit = VisitComplexityExpr::default();
     visit.visit_expr(&expr);
     Ok((visit.variables, expr))

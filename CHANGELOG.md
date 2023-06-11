@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump `syn` from `1.0` to `2.0`
 - Bump `darling` from `0.14` to `0.20`
+- Attributes `guard`, `process_with`, `complexity` support expression or string as value [#1295](https://github.com/async-graphql/async-graphql/issues/1295)
 
 ## Breaking Changes
 
@@ -17,11 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     https://github.com/TedDriggs/darling/issues/238
 
 ```rust
-    #[derive(Interface)]
-    #[graphql(field(name = "id", ty = "&i32"))] // rename from type to ty
-    enum Node {
-        MyObj(MyObj),
-    }
+#[derive(Interface)]
+#[graphql(field(name = "id", ty = "&i32"))] // rename from type to ty
+enum Node {
+    MyObj(MyObj),
+}
 ```
 
 

@@ -137,12 +137,6 @@ type ComputeComplexityFn = fn(
     usize,
 ) -> ServerResult<usize>;
 
-#[derive(Clone)]
-pub enum ComplexityType {
-    Const(usize),
-    Fn(ComputeComplexityFn),
-}
-
 #[derive(Debug, Clone, Default)]
 pub enum Deprecation {
     #[default]
@@ -210,7 +204,7 @@ pub struct MetaField {
     /// subgraph. It is used to migrate fields between subgraphs.
     pub override_from: Option<String>,
     /// A constant or function to get the complexity
-    pub compute_complexity: Option<ComplexityType>,
+    pub compute_complexity: Option<ComputeComplexityFn>,
 }
 
 #[derive(Clone)]

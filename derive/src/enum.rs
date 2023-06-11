@@ -90,11 +90,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         });
     }
 
-    let remote_conversion = if let Some(remote) = &enum_args.remote {
-        let remote_ty = syn::parse_str::<syn::Type>(remote).map_err(|_| {
-            Error::new_spanned(remote, format!("Invalid remote type: '{}'", remote))
-        })?;
-
+    let remote_conversion = if let Some(remote_ty) = &enum_args.remote {
         let local_to_remote_items = enum_items.iter().map(|item| {
             quote! {
                 #ident::#item => #remote_ty::#item,

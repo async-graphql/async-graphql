@@ -6,7 +6,7 @@ use darling::{
     FromDeriveInput, FromField, FromMeta, FromVariant,
 };
 use inflector::Inflector;
-use syn::{Attribute, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type, Visibility};
+use syn::{Attribute, Expr, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type, Visibility};
 
 use crate::validators::Validators;
 
@@ -156,13 +156,13 @@ pub struct SimpleObjectField {
     #[darling(default)]
     pub override_from: Option<String>,
     #[darling(default)]
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     #[darling(default)]
-    pub process_with: Option<String>,
+    pub process_with: Option<Expr>,
     // for InputObject
     #[darling(default)]
     pub default: Option<DefaultValue>,
@@ -218,7 +218,7 @@ pub struct SimpleObject {
     #[darling(default)]
     pub input_name: Option<String>,
     #[darling(default)]
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -230,7 +230,7 @@ pub struct Argument {
     pub default_with: Option<LitStr>,
     pub validator: Option<Validators>,
     #[darling(default)]
-    pub process_with: Option<String>,
+    pub process_with: Option<Expr>,
     pub key: bool, // for entity
     pub visible: Option<Visible>,
     pub inaccessible: bool,
@@ -259,30 +259,7 @@ pub struct Object {
     #[darling(multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
-    pub guard: Option<SpannedValue<String>>,
-}
-
-pub enum ComplexityType {
-    Const(usize),
-    Fn(String),
-}
-
-impl FromMeta for ComplexityType {
-    fn from_value(value: &Lit) -> darling::Result<Self> {
-        match value {
-            Lit::Int(n) => {
-                let n = n.base10_parse::<i32>().unwrap();
-                if n < 0 {
-                    return Err(darling::Error::custom(
-                        "The complexity must be greater than or equal to 0.",
-                    ));
-                }
-                Ok(ComplexityType::Const(n as usize))
-            }
-            Lit::Str(s) => Ok(ComplexityType::Fn(s.value())),
-            _ => Err(darling::Error::unexpected_lit_type(value)),
-        }
-    }
+    pub guard: Option<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -301,9 +278,9 @@ pub struct ObjectField {
     #[darling(multiple, rename = "tag")]
     pub tags: Vec<String>,
     pub override_from: Option<String>,
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
     pub visible: Option<Visible>,
-    pub complexity: Option<ComplexityType>,
+    pub complexity: Option<Expr>,
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
@@ -337,7 +314,7 @@ pub struct Enum {
     #[darling(default)]
     pub rename_items: Option<RenameRule>,
     #[darling(default)]
-    pub remote: Option<String>,
+    pub remote: Option<Type>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default)]
@@ -423,7 +400,7 @@ pub struct InputObjectField {
     #[darling(default)]
     pub skip_input: bool,
     #[darling(default)]
-    pub process_with: Option<String>,
+    pub process_with: Option<Expr>,
     // for SimpleObject
     #[darling(default)]
     pub skip_output: bool,
@@ -464,7 +441,7 @@ pub struct InputObject {
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
-    pub validator: Option<SpannedValue<String>>,
+    pub validator: Option<Expr>,
     // for SimpleObject
     #[darling(default)]
     pub complex: bool,
@@ -524,7 +501,7 @@ pub struct InterfaceFieldArgument {
     pub name: String,
     #[darling(default)]
     pub desc: Option<String>,
-    pub ty: LitStr,
+    pub ty: Type,
     #[darling(default)]
     pub default: Option<DefaultValue>,
     #[darling(default)]
@@ -542,7 +519,7 @@ pub struct InterfaceFieldArgument {
 #[derive(FromMeta)]
 pub struct InterfaceField {
     pub name: SpannedValue<String>,
-    pub ty: LitStr,
+    pub ty: Type,
     #[darling(default)]
     pub method: Option<String>,
     #[darling(default)]
@@ -633,7 +610,7 @@ pub struct Subscription {
     pub extends: bool,
     pub visible: Option<Visible>,
     #[darling(default)]
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -645,7 +622,7 @@ pub struct SubscriptionFieldArgument {
     pub default_with: Option<LitStr>,
     pub validator: Option<Validators>,
     #[darling(default)]
-    pub process_with: Option<String>,
+    pub process_with: Option<Expr>,
     pub visible: Option<Visible>,
     pub secret: bool,
 }
@@ -656,9 +633,9 @@ pub struct SubscriptionField {
     pub skip: bool,
     pub name: Option<String>,
     pub deprecation: Deprecation,
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
     pub visible: Option<Visible>,
-    pub complexity: Option<ComplexityType>,
+    pub complexity: Option<Expr>,
 }
 
 #[derive(FromField)]
@@ -853,7 +830,7 @@ pub struct ComplexObject {
     pub internal: bool,
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -871,9 +848,9 @@ pub struct ComplexObjectField {
     #[darling(multiple, rename = "tag")]
     pub tags: Vec<String>,
     pub override_from: Option<String>,
-    pub guard: Option<SpannedValue<String>>,
+    pub guard: Option<Expr>,
     pub visible: Option<Visible>,
-    pub complexity: Option<ComplexityType>,
+    pub complexity: Option<Expr>,
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
