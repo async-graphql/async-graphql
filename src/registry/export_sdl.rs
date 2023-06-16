@@ -14,6 +14,7 @@ pub struct SDLExportOptions {
     federation: bool,
     prefer_single_line_descriptions: bool,
     include_specified_by: bool,
+    enable_compose: bool,
 }
 
 impl SDLExportOptions {
@@ -80,6 +81,14 @@ impl SDLExportOptions {
             ..self
         }
     }
+
+    /// Enable `composeDirective` if federation is enabled
+    pub fn enable_compose_directive(self) -> Self {
+        Self {
+            enable_compose: true,
+            ..self
+        }
+    }
 }
 
 impl Registry {
@@ -114,8 +123,28 @@ impl Registry {
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
             writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.1\",").ok();
-            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\"]").ok();
+            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\"]").ok();
             writeln!(sdl, ")").ok();
+
+            if options.enable_compose {
+                writeln!(sdl).ok();
+                let compose_directives_names = self
+                    .directives
+                    .values()
+                    .filter(|d| d.composable)
+                    .map(|d| format!("\"@{}\"", d.name))
+                    .collect::<Vec<_>>();
+
+                writeln!(sdl, "extend schema @link(").ok();
+                writeln!(sdl, "\turl: \"https://custom_schema_extension/v1.0\"").ok();
+                writeln!(sdl, "\timport: [{}]", compose_directives_names.join(",")).ok();
+                writeln!(sdl, ")").ok();
+                for name in compose_directives_names {
+                    writeln!(sdl, "\t@composeDirective(name: {})", name).ok();
+                }
+                writeln!(sdl).ok();
+            }
+
             self.directives.values().for_each(|directive| {
                 writeln!(sdl, "{}", directive.sdl()).ok();
             });
@@ -585,6 +614,8 @@ fn escape_string(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::__DirectiveLocation;
+    use crate::registry::MetaDirective;
 
     #[test]
     fn test_escape_string() {
@@ -592,5 +623,38 @@ mod tests {
             escape_string("1\\\x08d\x0c3\n4\r5\t6"),
             "1\\\\\\bd\\f3\\n4\\r5\\t6"
         );
+    }
+
+    #[test]
+    fn test_compose_directive_dsl() {
+        let expected = r#"extend schema @link(
+	url: "https://specs.apollo.dev/federation/v2.1",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
+)
+
+extend schema @link(
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@abc"]
+)
+	@composeDirective(name: "@abc")
+
+directive @abc on FIELD_DEFINITION
+"#;
+        let mut registry = Registry::default();
+        registry.add_directive(MetaDirective {
+            name: "abc".to_string(),
+            description: None,
+            locations: vec![__DirectiveLocation::FIELD_DEFINITION],
+            args: Default::default(),
+            is_repeatable: false,
+            visible: None,
+            composable: true,
+        });
+        let dsl = registry.export_sdl(
+            SDLExportOptions::new()
+                .federation()
+                .enable_compose_directive(),
+        );
+        assert_eq!(dsl, expected)
     }
 }

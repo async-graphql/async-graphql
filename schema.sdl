@@ -1,0 +1,12 @@
+extend schema @link(
+	url: "https://specs.apollo.dev/federation/v2.1",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
+)
+
+extend schema @link(
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@abc"]
+)
+	@composeDirective(name: "@abc")
+
+directive @abc on FIELD_DEFINITION

@@ -655,6 +655,7 @@ pub struct MetaDirective {
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
+    pub composable: bool,
 }
 
 impl MetaDirective {
@@ -722,6 +723,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
+            composable: false,
         });
 
         self.add_directive(MetaDirective {
@@ -748,6 +750,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
+            composable: false,
         });
 
         // create system scalars
