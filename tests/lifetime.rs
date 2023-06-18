@@ -22,7 +22,7 @@ enum MyUnion1<'a> {
 }
 
 #[derive(Interface)]
-#[graphql(field(name = "value", type = "&&'a i32"))]
+#[graphql(field(name = "value", ty = "&&'a i32"))]
 enum MyInterface<'a> {
     ObjA(ObjA<'a>),
 }

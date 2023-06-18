@@ -1,3 +1,5 @@
+#![allow(clippy::uninlined_format_args)]
+
 use std::sync::Arc;
 
 use async_graphql::*;
@@ -313,11 +315,14 @@ pub async fn test_custom_validator() {
     }
 
     impl CustomValidator<i32> for MyValidator {
-        fn check(&self, value: &i32) -> Result<(), String> {
+        fn check(&self, value: &i32) -> Result<(), InputValueError<i32>> {
             if *value == self.expect {
                 Ok(())
             } else {
-                Err(format!("expect 100, actual {}", value))
+                Err(InputValueError::custom(format!(
+                    "expect 100, actual {}",
+                    value
+                )))
             }
         }
     }
@@ -467,7 +472,7 @@ pub async fn test_custom_validator() {
             .into_result()
             .unwrap_err(),
         vec![ServerError {
-            message: r#"Failed to parse "[Int!]": expect 100, actual 77"#.to_string(),
+            message: r#"Failed to parse "Int": expect 100, actual 77"#.to_string(),
             source: None,
             locations: vec![Pos {
                 line: 1,
@@ -485,7 +490,7 @@ pub async fn test_custom_validator() {
             .into_result()
             .unwrap_err(),
         vec![ServerError {
-            message: r#"Failed to parse "[Int!]": expect 100, actual 77"#.to_string(),
+            message: r#"Failed to parse "Int": expect 100, actual 77"#.to_string(),
             source: None,
             locations: vec![Pos {
                 line: 1,
@@ -554,6 +559,75 @@ pub async fn test_custom_validator_with_fn() {
             }],
             path: vec![PathSegment::Field("value".to_string())],
             extensions: None
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_custom_validator_with_extensions() {
+    struct MyValidator {
+        expect: i32,
+    }
+
+    impl MyValidator {
+        pub fn new(n: i32) -> Self {
+            MyValidator { expect: n }
+        }
+    }
+
+    impl CustomValidator<i32> for MyValidator {
+        fn check(&self, value: &i32) -> Result<(), InputValueError<i32>> {
+            if *value == self.expect {
+                Ok(())
+            } else {
+                Err(
+                    InputValueError::custom(format!("expect 100, actual {}", value))
+                        .with_extension("code", 99),
+                )
+            }
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(
+            &self,
+            #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
+        ) -> i32 {
+            n
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value(n: 100) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 100 })
+    );
+
+    let mut error_extensions = ErrorExtensionValues::default();
+    error_extensions.set("code", 99);
+    assert_eq!(
+        schema
+            .execute("{ value(n: 11) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": expect 100, actual 11"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 12
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: Some(error_extensions)
         }]
     );
 }
@@ -846,7 +920,7 @@ pub async fn test_issue_1164() {
 
     impl CustomValidator<String> for PasswordValidator {
         /// Check if `value` only contains allowed chars
-        fn check(&self, value: &String) -> Result<(), String> {
+        fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
             let allowed_chars = ['1', '2', '3', '4', '5', '6'];
 
             if value
@@ -855,7 +929,10 @@ pub async fn test_issue_1164() {
             {
                 Ok(())
             } else {
-                Err(format!("illegal char in password: `{}`", value))
+                Err(InputValueError::custom(format!(
+                    "illegal char in password: `{}`",
+                    value
+                )))
             }
         }
     }

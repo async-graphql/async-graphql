@@ -181,7 +181,7 @@ impl<'de> de::Deserializer<'de> for ConstValue {
                 }
                 (variant, Some(value))
             }
-            ConstValue::String(variant) => (Name::new(&variant), None),
+            ConstValue::String(variant) => (Name::new(variant), None),
             ConstValue::Enum(variant) => (variant, None),
             other => {
                 return Err(DeserializerError::invalid_type(

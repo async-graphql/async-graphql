@@ -186,6 +186,92 @@ pub async fn test_merged_subscription() {
 }
 
 #[tokio::test]
+pub async fn test_generic_merged_subscription() {
+    struct Subscription1<T> {
+        values: Vec<T>,
+    }
+
+    #[Subscription]
+    impl<T> Subscription1<T>
+    where
+        T: Clone + OutputType,
+    {
+        async fn events1(&self) -> impl Stream<Item = T> {
+            futures_util::stream::iter(self.values.clone())
+        }
+    }
+
+    struct Subscription2<T> {
+        values: Vec<T>,
+    }
+
+    #[Subscription]
+    impl<T> Subscription2<T>
+    where
+        T: Clone + OutputType,
+    {
+        async fn events2(&self) -> impl Stream<Item = T> {
+            futures_util::stream::iter(self.values.clone())
+        }
+    }
+
+    #[derive(MergedSubscription)]
+    struct Subscription<T1, T2>(Subscription1<T1>, Subscription2<T2>)
+    where
+        T1: Clone + OutputType,
+        T2: Clone + OutputType;
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    let subscription = Subscription(
+        Subscription1 {
+            values: vec![1, 2, 3],
+        },
+        Subscription2 {
+            values: vec!["a", "b", "c"],
+        },
+    );
+    let schema = Schema::new(Query, EmptyMutation, subscription);
+
+    {
+        let mut stream = schema
+            .execute_stream("subscription { events1 }")
+            .map(|resp| resp.into_result().unwrap().data);
+        for i in &[1, 2, 3] {
+            assert_eq!(
+                value!({
+                    "events1": i,
+                }),
+                stream.next().await.unwrap()
+            );
+        }
+        assert!(stream.next().await.is_none());
+    }
+
+    {
+        let mut stream = schema
+            .execute_stream("subscription { events2 }")
+            .map(|resp| resp.into_result().unwrap().data);
+        for i in ["a", "b", "c"] {
+            assert_eq!(
+                value!({
+                    "events2": i,
+                }),
+                stream.next().await.unwrap()
+            );
+        }
+        assert!(stream.next().await.is_none());
+    }
+}
+
+#[tokio::test]
 pub async fn test_merged_entity() {
     #[derive(SimpleObject)]
     struct Fruit {

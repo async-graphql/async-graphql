@@ -1,7 +1,7 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error, Expr};
+use syn::{ext::IdentExt, Error};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget},
@@ -35,13 +35,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             Some(ident) => ident,
             None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
         };
-        let attrs = field
-            .attrs
-            .iter()
-            .filter(|attr| !attr.path.is_ident("field"))
-            .collect::<Vec<_>>();
         struct_fields.push(quote! {
-            #(#attrs)*
             #vis #ident: #ty
         });
     }
@@ -95,12 +89,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         federation_fields.push((ty, name.clone()));
 
         let process_with = match field.process_with.as_ref() {
-            Some(fn_path) => {
-                let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                quote! {
-                    #fn_path(&mut #ident);
-                }
-            }
+            Some(fn_path) => quote! { #fn_path(&mut #ident); },
             None => Default::default(),
         };
 
@@ -111,7 +100,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .create_validators(
                 &crate_name,
                 quote!(&#ident),
-                quote!(#ty),
                 Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
             )?;
 
@@ -240,15 +228,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
-    let obj_validator = if let Some(validator) = &object_args.validator {
-        let expr: Expr = syn::parse_str(validator)
-            .map_err(|err| Error::new(validator.span(), err.to_string()))?;
-        Some(
-            quote! { ::std::result::Result::map_err(#crate_name::CustomValidator::check(&#expr, &obj), #crate_name::InputValueError::custom)?; },
-        )
-    } else {
-        None
-    };
+    let obj_validator = object_args
+        .validator
+        .as_ref()
+        .map(|expr| quote! { #crate_name::CustomValidator::check(&#expr, &obj)?; });
 
     let expanded = if object_args.concretes.is_empty() {
         quote! {

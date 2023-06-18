@@ -1,5 +1,24 @@
 use std::collections::HashMap;
 
+use handlebars::Handlebars;
+use serde::Serialize;
+
+/// Indicates whether the user agent should send or receive user credentials
+/// (cookies, basic http auth, etc.) from the other domain in the case of
+/// cross-origin requests.
+#[derive(Debug, Serialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum Credentials {
+    /// Send user credentials if the URL is on the same origin as the calling
+    /// script. This is the default value.
+    #[default]
+    SameOrigin,
+    /// Always send user credentials, even for cross-origin calls.
+    Include,
+    /// Never send or receive user credentials.
+    Omit,
+}
+
 /// A builder for constructing a GraphiQL (v2) HTML page.
 ///
 /// # Example
@@ -8,19 +27,19 @@ use std::collections::HashMap;
 /// use async_graphql::http::*;
 ///
 /// GraphiQLSource::build()
-///     .endpoint("http://localhost:8000")
-///     .subscription_endpoint("ws://localhost:8000/ws")
-///     .header("Authorization", "Bearer <token>")
-///     .credentials("include")
+///     .endpoint("/")
+///     .subscription_endpoint("/ws")
+///     .header("Authorization", "Bearer [token]")
+///     .credentials(Credentials::Include)
 ///     .finish();
 /// ```
-#[derive(Default)]
+#[derive(Default, Serialize)]
 pub struct GraphiQLSource<'a> {
     endpoint: &'a str,
     subscription_endpoint: Option<&'a str>,
     headers: Option<HashMap<&'a str, &'a str>>,
     title: Option<&'a str>,
-    credentials: Option<&'a str>,
+    credentials: Credentials,
 }
 
 impl<'a> GraphiQLSource<'a> {
@@ -65,94 +84,26 @@ impl<'a> GraphiQLSource<'a> {
     }
 
     /// Sets credentials option for the fetch requests.
-    pub fn credentials(self, credentials: &'a str) -> GraphiQLSource<'a> {
+    pub fn credentials(self, credentials: Credentials) -> GraphiQLSource<'a> {
         GraphiQLSource {
-            credentials: Some(credentials),
+            credentials,
             ..self
         }
     }
 
     /// Returns a GraphiQL (v2) HTML page.
     pub fn finish(self) -> String {
-        let graphiql_url = format!("'{}'", self.endpoint);
-        let graphiql_subscription_url = self
-            .subscription_endpoint
-            .map(|endpoint| format!("'{}'", endpoint))
-            .unwrap_or_else(|| "undefined".into());
-        let graphiql_headers = match self.headers {
-            Some(headers) => serde_json::to_string(&headers).unwrap(),
-            None => "undefined".into(),
-        };
-        let graphiql_title = self.title.unwrap_or("GraphiQL IDE");
-        let graphiql_credentials = self.credentials.unwrap_or("same-origin");
+        let mut handlebars = Handlebars::new();
+        handlebars
+            .register_template_string(
+                "graphiql_v2_source",
+                include_str!("./graphiql_v2_source.hbs"),
+            )
+            .expect("Failed to register template");
 
-        r#"
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="origin">
-
-    <title>%GRAPHIQL_TITLE%</title>
-
-    <style>
-      body {
-        height: 100%;
-        margin: 0;
-        width: 100%;
-        overflow: hidden;
-      }
-
-      #graphiql {
-        height: 100vh;
-      }
-    </style>
-    <script
-      crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
-    ></script>
-    <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
-  </head>
-
-  <body>
-    <div id="graphiql">Loading...</div>
-    <script
-      src="https://unpkg.com/graphiql/graphiql.min.js"
-      type="application/javascript"
-    ></script>
-    <script>
-      customFetch = (url, opts = {}) => {
-        return fetch(url, {...opts, credentials: '%GRAPHIQL_CREDENTIALS%'})
-      }
-
-      ReactDOM.render(
-        React.createElement(GraphiQL, {
-          fetcher: GraphiQL.createFetcher({
-            url: %GRAPHIQL_URL%,
-            fetch: customFetch,
-            subscriptionUrl: %GRAPHIQL_SUBSCRIPTION_URL%,
-            headers: %GRAPHIQL_HEADERS%,
-          }),
-          defaultEditorToolsVisibility: true,
-        }),
-        document.getElementById("graphiql")
-      );
-    </script>
-  </body>
-</html>
-"#
-        .replace("%GRAPHIQL_URL%", &graphiql_url)
-        .replace("%GRAPHIQL_SUBSCRIPTION_URL%", &graphiql_subscription_url)
-        .replace("%GRAPHIQL_HEADERS%", &graphiql_headers)
-        .replace("%GRAPHIQL_TITLE%", &graphiql_title)
-        .replace("%GRAPHIQL_CREDENTIALS%", &graphiql_credentials)
+        handlebars
+            .render("graphiql_v2_source", &self)
+            .expect("Failed to render template")
     }
 }
 
@@ -162,15 +113,12 @@ mod tests {
 
     #[test]
     fn test_with_only_url() {
-        let graphiql_source = GraphiQLSource::build()
-            .endpoint("http://localhost:8000")
-            .finish();
+        let graphiql_source = GraphiQLSource::build().endpoint("/").finish();
 
         assert_eq!(
             graphiql_source,
-            r#"
-<!DOCTYPE html>
-<html>
+            r#"<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex">
@@ -214,13 +162,19 @@ mod tests {
         return fetch(url, {...opts, credentials: 'same-origin'})
       }
 
+      createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
-            url: 'http://localhost:8000',
+            url: createUrl('/'),
             fetch: customFetch,
-            subscriptionUrl: undefined,
-            headers: undefined,
           }),
           defaultEditorToolsVisibility: true,
         }),
@@ -228,23 +182,21 @@ mod tests {
       );
     </script>
   </body>
-</html>
-"#
+</html>"#
         )
     }
 
     #[test]
     fn test_with_both_urls() {
         let graphiql_source = GraphiQLSource::build()
-            .endpoint("http://localhost:8000")
-            .subscription_endpoint("ws://localhost:8000/ws")
+            .endpoint("/")
+            .subscription_endpoint("/ws")
             .finish();
 
         assert_eq!(
             graphiql_source,
-            r#"
-<!DOCTYPE html>
-<html>
+            r#"<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex">
@@ -288,13 +240,20 @@ mod tests {
         return fetch(url, {...opts, credentials: 'same-origin'})
       }
 
+      createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
-            url: 'http://localhost:8000',
+            url: createUrl('/'),
             fetch: customFetch,
-            subscriptionUrl: 'ws://localhost:8000/ws',
-            headers: undefined,
+            subscriptionUrl: createUrl('/ws', true),
           }),
           defaultEditorToolsVisibility: true,
         }),
@@ -302,26 +261,24 @@ mod tests {
       );
     </script>
   </body>
-</html>
-"#
+</html>"#
         )
     }
 
     #[test]
     fn test_with_all_options() {
         let graphiql_source = GraphiQLSource::build()
-            .endpoint("http://localhost:8000")
-            .subscription_endpoint("ws://localhost:8000/ws")
-            .header("Authorization", "Bearer <token>")
+            .endpoint("/")
+            .subscription_endpoint("/ws")
+            .header("Authorization", "Bearer [token]")
             .title("Awesome GraphiQL IDE Test")
-            .credentials("include")
+            .credentials(Credentials::Include)
             .finish();
 
         assert_eq!(
             graphiql_source,
-            r#"
-<!DOCTYPE html>
-<html>
+            r#"<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex">
@@ -365,13 +322,23 @@ mod tests {
         return fetch(url, {...opts, credentials: 'include'})
       }
 
+      createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
+
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
-            url: 'http://localhost:8000',
+            url: createUrl('/'),
             fetch: customFetch,
-            subscriptionUrl: 'ws://localhost:8000/ws',
-            headers: {"Authorization":"Bearer <token>"},
+            subscriptionUrl: createUrl('/ws', true),
+            headers: { 
+              'Authorization': 'Bearer [token]', 
+            },
           }),
           defaultEditorToolsVisibility: true,
         }),
@@ -379,8 +346,7 @@ mod tests {
       );
     </script>
   </body>
-</html>
-"#
+</html>"#
         )
     }
 }

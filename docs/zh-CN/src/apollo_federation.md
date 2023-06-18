@@ -1,6 +1,6 @@
-# Apollo Federation集成
+# Apollo Federation 集成
  
-`Apollo Federation`是一个`GraphQL`网关，它可以组合多个GraphQL服务，允许每服务仅实现它负责的那一部分数据，参考[官方文档](https://www.apollographql.com/docs/apollo-server/federation/introduction)。
+`Apollo Federation`是一个`GraphQL`网关，它可以组合多个 GraphQL 服务，允许每服务仅实现它负责的那一部分数据，参考[官方文档](https://www.apollographql.com/docs/apollo-server/federation/introduction)。
 
 `Async-graphql`可以完全支持`Apollo Federation`的所有功能，但需要对`Schema`定义做一些小小的改造。
 
@@ -40,25 +40,25 @@ impl Query {
 }
 ```
 
-**注意这三个查找函数的不同，他们都是查找User对象。**
+**注意这三个查找函数的不同，他们都是查找 User 对象。**
 
 - find_user_by_id
 
-    使用`id`查找`User`对象，`User`对象的key是`id`。
+    使用`id`查找`User`对象，`User`对象的 key 是`id`。
 
 - find_user_by_id_with_username
 
-    使用`id`查找`User`对象，`User`对象的key是`id`，并且请求`User`对象的`username`字段值。
+    使用`id`查找`User`对象，`User`对象的 key 是`id`，并且请求`User`对象的`username`字段值。
 
 - find_user_by_id_and_username
 
-    使用`id`和`username`查找`User`对象，`User`对象的key是`id`和`username`。
+    使用`id`和`username`查找`User`对象，`User`对象的 key 是`id`和`username`。
 
-完整的例子请参考https://github.com/async-graphql/examples/tree/master/federation
+完整的例子请参考 https://github.com/async-graphql/examples/tree/master/federation
 
 ## 定义复合主键
 
-一个主键可以包含多个字段，什么包含嵌套字段，你可以用`InputObject`来实现一个嵌套字段的Key类型。
+一个主键可以包含多个字段，什么包含嵌套字段，你可以用`InputObject`来实现一个嵌套字段的 Key 类型。
 
 下面的例子中`User`对象的主键是`key { a b }`。
 

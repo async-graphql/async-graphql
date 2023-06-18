@@ -87,8 +87,8 @@ struct MyInputObject {
 
 #[derive(async_graphql::Interface)]
 #[graphql(
-    field(name = "value", type = "::std::primitive::i32"),
-    field(name = "other_value", type = "&::std::primitive::i16")
+    field(name = "value", ty = "::std::primitive::i32"),
+    field(name = "other_value", ty = "&::std::primitive::i16")
 )]
 enum MyInterface {
     First(MyObject),

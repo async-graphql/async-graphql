@@ -7,6 +7,7 @@
 #![allow(clippy::unnecessary_wraps)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::needless_question_mark)]
+#![allow(clippy::uninlined_format_args)]
 #![forbid(unsafe_code)]
 
 use std::fmt::{self, Display, Formatter};

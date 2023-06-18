@@ -192,6 +192,7 @@ impl Subscription {
         schema: &Schema,
         ctx: &ContextSelectionSet<'a>,
         streams: &mut Vec<BoxFieldStream<'a>>,
+        root_value: &'a FieldValue<'static>,
     ) {
         for selection in &ctx.item.node.items {
             if let Selection::Field(field) = &selection.node {
@@ -221,7 +222,7 @@ impl Subscription {
                             let mut stream = resolver_fn(ResolverContext {
                                 ctx: &ctx_field,
                                 args: arguments,
-                                parent_value: &FieldValue::NULL,
+                                parent_value: root_value,
                             })
                             .0
                             .await

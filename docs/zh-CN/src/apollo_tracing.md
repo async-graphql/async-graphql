@@ -1,4 +1,4 @@
-# Apollo Tracing支持
+# Apollo Tracing 支持
 
 `Apollo Tracing`提供了查询每个步骤的性能分析结果，它是一个`Schema`扩展，性能分析结果保存在`QueryResponse`中。
 
@@ -14,7 +14,7 @@ use async_graphql::extensions::ApolloTracing;
 # impl Query { async fn version(&self) -> &str { "1.0" } }
 
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    .extension(ApolloTracing) // 启用ApolloTracing扩展
+    .extension(ApolloTracing) // 启用 ApolloTracing 扩展
     .finish();
 
 ```

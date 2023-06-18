@@ -14,14 +14,14 @@ struct ObjectB {
 }
 
 #[derive(Interface)]
-#[graphql(field(name = "id", type = "&i32"))]
+#[graphql(field(name = "id", ty = "&i32"))]
 enum ImplicitInterface {
     ObjectA(ObjectA),
     ObjectB(ObjectB),
 }
 
 #[derive(Interface)]
-#[graphql(field(name = "title", type = "String"))]
+#[graphql(field(name = "title", ty = "String"))]
 enum ExplicitInterface {
     ObjectA(ObjectA),
     ObjectB(ObjectB),
@@ -29,7 +29,7 @@ enum ExplicitInterface {
 
 #[derive(Interface)]
 #[graphql(visible = false)]
-#[graphql(field(name = "title", type = "String"))]
+#[graphql(field(name = "title", ty = "String"))]
 enum InvisibleInterface {
     ObjectA(ObjectA),
     ObjectB(ObjectB),
@@ -42,7 +42,7 @@ struct ObjectC {
 }
 
 #[derive(Interface)]
-#[graphql(field(name = "id", type = "&i32"))]
+#[graphql(field(name = "id", ty = "&i32"))]
 enum UnreferencedInterface {
     ObjectC(ObjectC),
 }

@@ -3,7 +3,7 @@ use std::str::FromStr;
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeDef, Path, Type};
+use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
@@ -385,11 +385,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         #[derive(Default)]
         struct GetLifetimes<'a> {
-            lifetimes: Vec<&'a LifetimeDef>,
+            lifetimes: Vec<&'a LifetimeParam>,
         }
 
         impl<'a> Visit<'a> for GetLifetimes<'a> {
-            fn visit_lifetime_def(&mut self, i: &'a LifetimeDef) {
+            fn visit_lifetime_param(&mut self, i: &'a LifetimeParam) {
                 self.lifetimes.push(i);
             }
         }

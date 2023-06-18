@@ -54,7 +54,7 @@ impl<'a> NoUndefinedVariables<'a> {
 
 impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
     fn exit_document(&mut self, ctx: &mut VisitorContext<'a>, _doc: &'a ExecutableDocument) {
-        for (op_name, &(ref def_pos, ref def_vars)) in &self.defined_variables {
+        for (op_name, (def_pos, def_vars)) in &self.defined_variables {
             let mut undef = Vec::new();
             let mut visited = HashSet::new();
             self.find_undef_vars(

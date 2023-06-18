@@ -6,8 +6,8 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::{
-        field::BoxResolverFn, r#type::Type, resolve::resolve_container, FieldFuture, FieldValue,
-        Object, ResolverContext, Scalar, SchemaError, Subscription,
+        field::BoxResolverFn, r#type::Type, resolve::resolve_container, DynamicRequest,
+        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription,
     },
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
@@ -192,7 +192,7 @@ impl SchemaBuilder {
     }
 }
 
-/// Dyanmic GraphQL schema.
+/// Dynamic GraphQL schema.
 ///
 /// Cloning a schema is cheap, so it can be easily shared.
 #[derive(Clone)]
@@ -284,21 +284,21 @@ impl Schema {
         self.0.env.registry.export_sdl(options)
     }
 
-    async fn execute_once(&self, env: QueryEnv) -> Response {
+    async fn execute_once(&self, env: QueryEnv, root_value: &FieldValue<'static>) -> Response {
         // execute
         let ctx = env.create_context(&self.0.env, None, &env.operation.node.selection_set);
         let res = match &env.operation.node.ty {
             OperationType::Query => {
                 async move { self.query_root() }
                     .and_then(|query_root| {
-                        resolve_container(self, query_root, &ctx, &FieldValue::NULL, false)
+                        resolve_container(self, query_root, &ctx, root_value, false)
                     })
                     .await
             }
             OperationType::Mutation => {
                 async move { self.mutation_root() }
                     .and_then(|query_root| {
-                        resolve_container(self, query_root, &ctx, &FieldValue::NULL, true)
+                        resolve_container(self, query_root, &ctx, root_value, true)
                     })
                     .await
             }
@@ -320,7 +320,7 @@ impl Schema {
     }
 
     /// Execute a GraphQL query.
-    pub async fn execute(&self, request: impl Into<Request>) -> Response {
+    pub async fn execute(&self, request: impl Into<DynamicRequest>) -> Response {
         let request = request.into();
         let extensions = self.create_extensions(Default::default());
         let request_fut = {
@@ -328,7 +328,7 @@ impl Schema {
             async move {
                 match prepare_request(
                     extensions,
-                    request,
+                    request.inner,
                     Default::default(),
                     &self.0.env.registry,
                     self.0.validation_mode,
@@ -340,7 +340,7 @@ impl Schema {
                 {
                     Ok((env, cache_control)) => {
                         let fut = async {
-                            self.execute_once(env.clone())
+                            self.execute_once(env.clone(), &request.root_value)
                                 .await
                                 .cache_control(cache_control)
                         };
@@ -360,7 +360,7 @@ impl Schema {
     /// Execute a GraphQL subscription with session data.
     pub fn execute_stream_with_session_data(
         &self,
-        request: impl Into<Request>,
+        request: impl Into<DynamicRequest>,
         session_data: Arc<Data>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         let schema = self.clone();
@@ -381,7 +381,7 @@ impl Schema {
 
                 let (env, _) = match prepare_request(
                     extensions,
-                    request,
+                    request.inner,
                     session_data,
                     &schema.0.env.registry,
                     schema.0.validation_mode,
@@ -398,7 +398,7 @@ impl Schema {
                 };
 
                 if env.operation.node.ty != OperationType::Subscription {
-                    yield schema.execute_once(env).await;
+                    yield schema.execute_once(env, &request.root_value).await;
                     return;
                 }
 
@@ -408,7 +408,7 @@ impl Schema {
                     &env.operation.node.selection_set,
                 );
                 let mut streams = Vec::new();
-                subscription.collect_streams(&schema, &ctx, &mut streams);
+                subscription.collect_streams(&schema, &ctx, &mut streams, &request.root_value);
 
                 let mut stream = futures_util::stream::select_all(streams);
                 while let Some(resp) = stream.next().await {
@@ -422,7 +422,7 @@ impl Schema {
     /// Execute a GraphQL subscription.
     pub fn execute_stream(
         &self,
-        request: impl Into<Request>,
+        request: impl Into<DynamicRequest>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         self.execute_stream_with_session_data(request, Default::default())
     }
@@ -482,8 +482,9 @@ mod tests {
     use tokio::sync::Mutex;
 
     use crate::{
-        dynamic::*, extensions::*, value, PathSegment, Request, Response, ServerError,
-        ServerResult, ValidationResult, Value,
+        dynamic::{DynamicRequestExt, *},
+        extensions::*,
+        value, PathSegment, Request, Response, ServerError, ServerResult, ValidationResult, Value,
     };
 
     #[tokio::test]
@@ -525,6 +526,32 @@ mod tests {
                     "b": "abc",
                 }
             })
+        );
+    }
+
+    #[tokio::test]
+    async fn root_value() {
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |ctx| {
+                FieldFuture::new(async {
+                    Ok(Some(Value::Number(
+                        (*ctx.parent_value.try_downcast_ref::<i32>()?).into(),
+                    )))
+                })
+            }));
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .finish()
+            .unwrap();
+        assert_eq!(
+            schema
+                .execute("{ value }".root_value(FieldValue::owned_any(100)))
+                .await
+                .into_result()
+                .unwrap()
+                .data,
+            value!({ "value": 100, })
         );
     }
 
@@ -722,6 +749,11 @@ mod tests {
                         ])))
                     })
                 },
+            ))
+            .field(Field::new(
+                "values3",
+                TypeRef::named_nn_list(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(None::<Vec<Value>>) }),
             ));
         let schema = Schema::build("Query", None, None)
             .register(query)
@@ -730,7 +762,7 @@ mod tests {
 
         assert_eq!(
             schema
-                .execute("{ values values2 }")
+                .execute("{ values values2 values3 }")
                 .await
                 .into_result()
                 .unwrap()
@@ -738,6 +770,7 @@ mod tests {
             value!({
                 "values": [3, 6, 9],
                 "values2": [3, 6, 9],
+                "values3": null,
             })
         );
     }

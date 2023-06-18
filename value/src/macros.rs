@@ -238,21 +238,11 @@ mod tests {
         assert_eq!(value!(true), ConstValue::Boolean(true));
         assert_eq!(
             value!([1, 2, 3]),
-            ConstValue::List(
-                (1..=3)
-                    .into_iter()
-                    .map(|n| ConstValue::Number(n.into()))
-                    .collect()
-            )
+            ConstValue::List((1..=3).map(|n| ConstValue::Number(n.into())).collect())
         );
         assert_eq!(
             value!([1, 2, 3,]),
-            ConstValue::List(
-                (1..=3)
-                    .into_iter()
-                    .map(|n| ConstValue::Number(n.into()))
-                    .collect()
-            )
+            ConstValue::List((1..=3).map(|n| ConstValue::Number(n.into())).collect())
         );
         assert_eq!(value!({"a": 10, "b": true}), {
             let mut map = IndexMap::new();

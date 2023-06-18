@@ -2,11 +2,11 @@
 
 `Async-graphql-actix-web`提供了`GraphQLRequest`提取器用于提取`GraphQL`请求，和`GraphQLResponse`用于输出`GraphQL`响应。
 
-`GraphQLSubscription`用于创建一个支持Web Socket订阅的Actor。
+`GraphQLSubscription`用于创建一个支持 Web Socket 订阅的 Actor。
 
 ## 请求例子
 
-你需要把Schema传入`actix_web::App`作为全局数据。
+你需要把 Schema 传入`actix_web::App`作为全局数据。
 
 ```rust
 # extern crate async_graphql_actix_web;

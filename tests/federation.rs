@@ -413,7 +413,7 @@ pub async fn test_entity_inaccessible() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "inaccessible_interface_value", type = "String", inaccessible))]
+    #[graphql(field(name = "inaccessible_interface_value", ty = "String", inaccessible))]
     #[graphql(inaccessible)]
     enum MyInterfaceInaccessible {
         MyInterfaceObjA(MyInterfaceObjA),
@@ -693,7 +693,7 @@ pub async fn test_entity_tag() {
     #[derive(Interface)]
     #[graphql(field(
         name = "tagged_interface_value",
-        type = "String",
+        ty = "String",
         tag = "tagged_interface_field"
     ))]
     #[graphql(tag = "tagged_interface")]

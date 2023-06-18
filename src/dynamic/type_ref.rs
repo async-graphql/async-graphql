@@ -100,9 +100,7 @@ impl TypeRef {
     #[inline]
     pub fn named_list_nn(type_name: impl Into<String>) -> TypeRef {
         TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
-            Box::new(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
-                type_name.into().into(),
-            )))),
+            Box::new(TypeRefInner::Named(type_name.into().into())),
         ))))
     }
 
@@ -119,7 +117,7 @@ impl TypeRef {
     }
 
     #[inline(always)]
-    pub(crate) fn type_name(&self) -> &str {
+    pub fn type_name(&self) -> &str {
         self.0.type_name()
     }
 
@@ -127,24 +125,6 @@ impl TypeRef {
     pub(crate) fn is_nullable(&self) -> bool {
         match &self.0 {
             TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => true,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_named(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => false,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_list(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => false,
             TypeRefInner::NonNull(_) => false,
             TypeRefInner::List(_) => true,
         }
@@ -178,7 +158,9 @@ mod tests {
     #[test]
     fn create() {
         assert_eq!(TypeRef::named("MyObj").to_string(), "MyObj");
+        assert_eq!(TypeRef::named_nn("MyObj").to_string(), "MyObj!");
         assert_eq!(TypeRef::named_list("MyObj").to_string(), "[MyObj]");
+        assert_eq!(TypeRef::named_list_nn("MyObj").to_string(), "[MyObj]!");
         assert_eq!(TypeRef::named_nn_list("MyObj").to_string(), "[MyObj!]");
         assert_eq!(TypeRef::named_nn_list_nn("MyObj").to_string(), "[MyObj!]!");
     }

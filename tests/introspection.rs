@@ -1,3 +1,5 @@
+#![allow(clippy::uninlined_format_args)]
+
 use async_graphql::*;
 use chrono::{NaiveDate, NaiveDateTime};
 use futures_util::stream::{self, Stream};
@@ -36,7 +38,7 @@ impl Square {
 }
 
 #[derive(Clone, Debug, Interface)]
-#[graphql(field(name = "scale", type = "TestInterface", arg(name = "s", type = "f32")))]
+#[graphql(field(name = "scale", ty = "TestInterface", arg(name = "s", ty = "f32")))]
 enum TestInterface {
     Circle(Circle),
     Square(Square),

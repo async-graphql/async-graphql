@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
-          - { rust: 1.60.0, os: ubuntu-latest }
+          - { rust: stable, os: ubuntu-20.04 }
+          - { rust: 1.65.0, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: 1.60.0, os: ubuntu-latest }
+          - { rust: 1.65.0, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -72,7 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: nightly-2022-11-02, os: ubuntu-latest }
+          - { rust: nightly-2022-11-02, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -96,7 +96,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
+          - { rust: stable, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -112,7 +112,7 @@ jobs:
 
   book_examples:
     name: Test book examples
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -124,6 +124,8 @@ jobs:
           override: true
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: "0.4.22"
       - name: Build with all features
         run: cargo build --workspace --all-features
       - name: Run book tests for en language
@@ -140,7 +142,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest }
+          - { rust: stable, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -160,3 +162,15 @@ jobs:
       - name: Clean examples
         run: cargo clean
         working-directory: ./examples
+
+  autocorrect:
+    name: AutoCorrect Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source code
+        uses: actions/checkout@v3
+
+      - name: AutoCorrect
+        uses: huacnlee/autocorrect-action@v2
+        with:
+          args: --lint --no-diff-bg-color docs/

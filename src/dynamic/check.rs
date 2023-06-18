@@ -1,8 +1,11 @@
+use std::collections::HashSet;
+
 use indexmap::IndexMap;
 
 use crate::dynamic::{
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
+    type_ref::{TypeRef, TypeRefInner},
     InputObject, Interface, SchemaError, Type,
 };
 
@@ -223,29 +226,46 @@ impl SchemaInner {
                 // through referenced Input Objects, at least one of the
                 // fields in the chain of references must be either a
                 // nullable or a List type.
-                self.check_input_object_reference(&obj.name, &obj)?;
+                self.check_input_object_reference(&obj.name, &obj, &mut HashSet::new())?;
             }
         }
 
         Ok(())
     }
 
-    fn check_input_object_reference(
-        &self,
+    fn check_input_object_reference<'a>(
+        &'a self,
         current: &str,
-        obj: &InputObject,
+        obj: &'a InputObject,
+        ref_chain: &mut HashSet<&'a str>,
     ) -> Result<(), SchemaError> {
+        fn typeref_nonnullable_name(ty: &TypeRef) -> Option<&str> {
+            match &ty.0 {
+                TypeRefInner::NonNull(inner) => match inner.as_ref() {
+                    TypeRefInner::Named(name) => Some(name),
+                    _ => None,
+                },
+                _ => None,
+            }
+        }
+
         for field in obj.fields.values() {
-            if field.ty.type_name() == current {
-                if !field.ty.is_named() && !field.ty.is_list() {
+            if let Some(this_name) = typeref_nonnullable_name(&field.ty) {
+                if this_name == current {
                     return Err(format!("\"{}\" references itself either directly or through referenced Input Objects, at least one of the fields in the chain of references must be either a nullable or a List type.", current).into());
+                } else if let Some(obj) = self
+                    .types
+                    .get(field.ty.type_name())
+                    .and_then(Type::as_input_object)
+                {
+                    // don't visit the reference if we've already visited it in this call chain
+                    //  (prevents getting stuck in local cycles and overflowing stack)
+                    //  true return from insert indicates the value was not previously there
+                    if ref_chain.insert(this_name) {
+                        self.check_input_object_reference(current, obj, ref_chain)?;
+                        ref_chain.remove(this_name);
+                    }
                 }
-            } else if let Some(obj) = self
-                .types
-                .get(field.ty.type_name())
-                .and_then(Type::as_input_object)
-            {
-                self.check_input_object_reference(current, obj)?;
             }
         }
 
@@ -261,17 +281,6 @@ impl SchemaInner {
                     // underscores)
                     if field.name.starts_with("__") {
                         return Err(format!("Field \"{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", interface.name, field.name).into());
-                    }
-
-                    // The field must return a type where IsOutputType(fieldType) returns true.
-                    if let Some(ty) = self.types.get(field.ty.type_name()) {
-                        if !ty.is_output_type() {
-                            return Err(format!(
-                                "Field \"{}.{}\" must return a output type",
-                                interface.name, field.name
-                            )
-                            .into());
-                        }
                     }
 
                     // The field must return a type where IsOutputType(fieldType) returns true.
@@ -419,4 +428,70 @@ fn check_is_valid_implementation(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        dynamic::{
+            Field, FieldFuture, InputObject, InputValue, Object, Schema, SchemaBuilder, TypeRef,
+        },
+        Value,
+    };
+
+    fn base_schema() -> SchemaBuilder {
+        let query = Object::new("Query").field(Field::new("dummy", TypeRef::named("Int"), |_| {
+            FieldFuture::new(async { Ok(Some(Value::from(42))) })
+        }));
+        Schema::build("Query", None, None).register(query)
+    }
+
+    #[test]
+    fn test_recursive_input_objects() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named("BotLevel")))
+            .field(InputValue::new(
+                "list_bottom",
+                TypeRef::named_nn_list_nn("BotLevel"),
+            ));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("top", TypeRef::named_nn("TopLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap();
+    }
+
+    #[test]
+    fn test_recursive_input_objects_bad() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named_nn("BotLevel")));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("top", TypeRef::named_nn("TopLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap_err();
+    }
+
+    #[test]
+    fn test_recursive_input_objects_local_cycle() {
+        let top_level = InputObject::new("TopLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let mid_level = InputObject::new("MidLevel")
+            .field(InputValue::new("bottom", TypeRef::named_nn("BotLevel")));
+        let bot_level = InputObject::new("BotLevel")
+            .field(InputValue::new("mid", TypeRef::named_nn("MidLevel")));
+        let schema = base_schema()
+            .register(top_level)
+            .register(mid_level)
+            .register(bot_level);
+        schema.finish().unwrap_err();
+    }
 }

@@ -69,16 +69,15 @@ need to optimize these codes!
 We need to group queries and exclude duplicate queries. `Dataloader` can do this.
 [facebook](https://github.com/facebook/dataloader) gives a request-scope batch and caching solution.
 
-The following is an example of using `DataLoader` to optimize queries::
+The following is a simplified example of using `DataLoader` to optimize queries, there is also a [full code example available in GitHub](https://github.com/async-graphql/examples/tree/master/tide/dataloader-postgres).
 
 ```rust,ignore
 use async_graphql::*;
 use async_graphql::dataloader::*;
-use itertools::Itertools;
 use std::sync::Arc;
 
 struct UserNameLoader {
-    pool: sqlx::Pool<Postgres>,
+    pool: sqlx::PgPool,
 }
 
 #[async_trait::async_trait]
@@ -87,8 +86,8 @@ impl Loader<u64> for UserNameLoader {
     type Error = Arc<sqlx::Error>;
 
     async fn load(&self, keys: &[u64]) -> Result<HashMap<u64, Self::Value>, Self::Error> {
-        let query = format!("SELECT name FROM user WHERE id IN ({})", keys.iter().join(","));
-        Ok(sqlx::query_as(query)
+        Ok(sqlx::query_as("SELECT name FROM user WHERE id = ANY($1)")
+            .bind(keys)
             .fetch(&self.pool)
             .map_ok(|name: String| name)
             .map_err(Arc::new)
@@ -112,6 +111,17 @@ impl User {
 }
 ```
 
+To expose `UserNameLoader` in the `ctx`, you have to register it with the schema, along with a task spawner, e.g. `async_std::task::spawn`:
+
+```rust,ignore
+let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    .data(DataLoader::new(
+        UserNameLoader,
+        async_std::task::spawn, // or `tokio::spawn`
+    ))
+    .finish();
+```
+
 In the end, only two SQLs are needed to query the results we want!
 
 ```sql
@@ -127,7 +137,7 @@ You can implement multiple data types for the same `Loader`, like this:
 # extern crate async_graphql;
 # use async_graphql::*;
 struct PostgresLoader {
-    pool: sqlx::Pool<Postgres>,
+    pool: sqlx::PgPool,
 }
 
 #[async_trait::async_trait]

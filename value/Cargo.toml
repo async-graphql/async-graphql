@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-value"
-version = "5.0.3"
+version = "5.0.10"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 edition = "2021"
 description = "GraphQL value for async-graphql"
@@ -12,7 +12,7 @@ keywords = ["futures", "async", "graphql"]
 categories = ["network-programming", "asynchronous"]
 
 [dependencies]
-serde_json = "1.0.64"
-serde = { version = "1.0.125", features = ["derive"] }
-bytes = { version = "1.0.1", features = ["serde"] }
-indexmap = { version = "1.6.2", features = ["serde"] }
+serde_json.workspace = true
+serde.workspace = true
+bytes.workspace = true
+indexmap.workspace = true

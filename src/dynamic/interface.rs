@@ -389,4 +389,47 @@ mod tests {
             }]
         );
     }
+    #[tokio::test]
+    async fn query_type_condition() {
+        struct MyObjA;
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }))
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+        let query = Object::new("Query");
+        let query = query.field(Field::new(
+            "valueA",
+            TypeRef::named_nn(obj_a.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::owned_any(MyObjA))) }),
+        ));
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+        let query = r#"
+        {
+            valueA { __typename
+            b
+            ... on MyInterface { a } }
+        }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "valueA": {
+                    "__typename": "MyObjA",
+                    "b": 200,
+                    "a": 100,
+                }
+            })
+        );
+    }
 }

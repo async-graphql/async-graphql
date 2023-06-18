@@ -9,7 +9,7 @@ pub async fn test_interface_simple_object() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "id", type = "&i32"))]
+    #[graphql(field(name = "id", ty = "&i32"))]
     enum Node {
         MyObj(MyObj),
     }
@@ -54,7 +54,7 @@ pub async fn test_interface_simple_object2() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "id", type = "&i32"))]
+    #[graphql(field(name = "id", ty = "&i32"))]
     enum Node {
         MyObj(MyObj),
     }
@@ -110,13 +110,13 @@ pub async fn test_multiple_interfaces() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value_a", type = "i32"))]
+    #[graphql(field(name = "value_a", ty = "i32"))]
     enum InterfaceA {
         MyObj(MyObj),
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value_b", type = "i32"))]
+    #[graphql(field(name = "value_b", ty = "i32"))]
     enum InterfaceB {
         MyObj(MyObj),
     }
@@ -187,14 +187,14 @@ pub async fn test_multiple_objects_in_multiple_interfaces() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value_a", type = "i32"))]
+    #[graphql(field(name = "value_a", ty = "i32"))]
     enum InterfaceA {
         MyObjOne(MyObjOne),
         MyObjTwo(MyObjTwo),
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value_b", type = "i32"))]
+    #[graphql(field(name = "value_b", ty = "i32"))]
     enum InterfaceB {
         MyObjOne(MyObjOne),
     }
@@ -250,7 +250,7 @@ pub async fn test_interface_field_result() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value", type = "i32"))]
+    #[graphql(field(name = "value", ty = "i32"))]
     enum Node {
         MyObj(MyObj),
     }
@@ -305,7 +305,7 @@ pub async fn test_interface_field_method() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "created_at", method = "created_at", type = "i32"))]
+    #[graphql(field(name = "created_at", method = "created_at", ty = "i32"))]
     enum MyInterface {
         A(A),
         B(B),
@@ -335,14 +335,14 @@ pub async fn test_interface_field_method() {
 #[tokio::test]
 pub async fn test_interface_implement_other_interface() {
     #[derive(Interface)]
-    #[graphql(field(name = "id", type = "ID"))]
+    #[graphql(field(name = "id", ty = "ID"))]
     pub enum Entity {
         Company(Company),
         Organization(Organization),
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "id", type = "ID"))]
+    #[graphql(field(name = "id", ty = "ID"))]
     pub enum Node {
         Entity(Entity),
     }
@@ -404,7 +404,7 @@ pub async fn test_issue_330() {
     #[graphql(field(
         desc = "The code represented as a number.",
         name = "number",
-        type = "String"
+        ty = "String"
     ))]
     pub enum Code {
         Barcode(Barcode),
@@ -430,7 +430,7 @@ pub async fn test_issue_330() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(desc = "The article number.", name = "number", type = "Code"))]
+    #[graphql(field(desc = "The article number.", name = "number", ty = "Code"))]
     pub enum Article {
         Book(Book),
     }
