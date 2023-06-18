@@ -30,7 +30,7 @@ where
 #[ComplexObject(internal)]
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,

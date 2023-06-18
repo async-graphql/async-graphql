@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::stream::{self, BoxStream, FuturesOrdered, LocalBoxStream, Stream, StreamExt};
+use futures_util::stream::{self, FuturesOrdered, LocalBoxStream, Stream, StreamExt};
 
 use crate::{
     context::{Data, QueryEnvInner},
