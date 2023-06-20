@@ -205,6 +205,8 @@ pub struct MetaField {
     pub override_from: Option<String>,
     /// A constant or function to get the complexity
     pub compute_complexity: Option<ComputeComplexityFn>,
+    /// Custom type directives (if compose feature is enabled they will be propagated to supergraph)
+    pub directives: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -957,6 +959,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
+                    directives: vec![],
                 },
             );
         }
@@ -1010,6 +1013,7 @@ impl Registry {
                         tags: Default::default(),
                         override_from: None,
                         compute_complexity: None,
+                        directives: vec![],
                     },
                 );
             }
@@ -1038,6 +1042,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     override_from: None,
+                    directives: vec![],
                 },
             );
 
@@ -1075,6 +1080,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
+                    directives: vec![],
                 },
             );
         }
@@ -1108,6 +1114,7 @@ impl Registry {
                             tags: Default::default(),
                             override_from: None,
                             compute_complexity: None,
+                            directives: vec![],
                         },
                     );
                     fields

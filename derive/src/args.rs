@@ -284,6 +284,8 @@ pub struct ObjectField {
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<String>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -902,12 +904,14 @@ pub struct TypeDirective {
 #[darling(rename_all = "lowercase")]
 pub enum TypeDirectiveLocation {
     FieldDefinition,
+    Object,
 }
 
 impl Display for TypeDirectiveLocation {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             TypeDirectiveLocation::FieldDefinition => write!(f, "FIELD_DEFINITION"),
+            TypeDirectiveLocation::Object => write!(f, "OBJECT"),
         }
     }
 }

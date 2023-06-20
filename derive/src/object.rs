@@ -329,6 +329,13 @@ pub fn generate(
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+
+                let directives = method_args
+                    .directives
+                    .iter()
+                    .map(|directive| quote!(::std::string::ToString::to_string(#directive)))
+                    .collect::<Vec<_>>();
+
                 let override_from = match &method_args.override_from {
                     Some(from) => {
                         quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
@@ -536,6 +543,7 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
+                        directives: ::std::vec![ #(#directives),* ]
                     });
                 });
 

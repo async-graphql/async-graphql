@@ -238,6 +238,9 @@ impl Registry {
                 if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
                 }
+                for directive in &field.directives {
+                    write!(sdl, " {}", directive).ok();
+                }
             }
 
             writeln!(sdl).ok();

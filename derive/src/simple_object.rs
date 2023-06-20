@@ -206,6 +206,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
+                    directives: ::std::vec![],
                 });
             });
         } else {
