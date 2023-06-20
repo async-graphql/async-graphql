@@ -227,7 +227,7 @@ pub use base::{
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 pub use context::*;
-pub use custom_directive::{CustomDirective, CustomDirectiveFactory};
+pub use custom_directive::{CustomDirective, CustomDirectiveFactory, TypeDirective};
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,

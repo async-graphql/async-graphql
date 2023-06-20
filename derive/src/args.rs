@@ -883,3 +883,31 @@ impl Display for DirectiveLocation {
         }
     }
 }
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct TypeDirective {
+    pub internal: bool,
+    pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
+    pub visible: Option<Visible>,
+    pub repeatable: bool,
+    pub rename_args: Option<RenameRule>,
+    #[darling(multiple, rename = "location")]
+    pub locations: Vec<TypeDirectiveLocation>,
+}
+
+#[derive(Debug, Copy, Clone, FromMeta)]
+#[darling(rename_all = "lowercase")]
+pub enum TypeDirectiveLocation {
+    FieldDefinition,
+}
+
+impl Display for TypeDirectiveLocation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            TypeDirectiveLocation::FieldDefinition => write!(f, "FIELD_DEFINITION"),
+        }
+    }
+}

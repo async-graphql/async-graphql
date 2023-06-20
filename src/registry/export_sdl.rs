@@ -136,7 +136,7 @@ impl Registry {
                     .collect::<Vec<_>>();
 
                 writeln!(sdl, "extend schema @link(").ok();
-                writeln!(sdl, "\turl: \"https://custom_schema_extension/v1.0\"").ok();
+                writeln!(sdl, "\turl: \"https://custom.spec.dev/extension/v1.0\"").ok();
                 writeln!(sdl, "\timport: [{}]", compose_directives_names.join(",")).ok();
                 writeln!(sdl, ")").ok();
                 for name in compose_directives_names {
@@ -634,15 +634,15 @@ mod tests {
 
 extend schema @link(
 	url: "https://custom.spec.dev/extension/v1.0"
-	import: ["@abc"]
+	import: ["@custom_type_directive"]
 )
-	@composeDirective(name: "@abc")
+	@composeDirective(name: "@custom_type_directive")
 
-directive @abc on FIELD_DEFINITION
+directive @custom_type_directive on FIELD_DEFINITION
 "#;
         let mut registry = Registry::default();
         registry.add_directive(MetaDirective {
-            name: "abc".to_string(),
+            name: "custom_type_directive".to_string(),
             description: None,
             locations: vec![__DirectiveLocation::FIELD_DEFINITION],
             args: Default::default(),

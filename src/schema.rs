@@ -24,7 +24,7 @@ use crate::{
     validation::{check_rules, ValidationMode},
     BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
     Executor, InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
-    ServerResult, SubscriptionType, Variables,
+    ServerResult, SubscriptionType, TypeDirective, Variables,
 };
 
 /// Introspection mode
@@ -209,6 +209,16 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         {
             panic!("Directive `{}` already exists", name);
         }
+
+        self
+    }
+
+    /// Register a custom type directive
+    #[must_use]
+    pub fn type_directive<T: TypeDirective>(mut self, directive: T) -> Self {
+        let instance = Box::new(directive);
+
+        instance.register(&mut self.registry);
 
         self
     }
