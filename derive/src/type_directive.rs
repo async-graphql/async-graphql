@@ -35,6 +35,8 @@ pub fn generate(
     let mut use_params = Vec::new();
     let mut schema_args = Vec::new();
 
+    let input_args = item_fn.sig.inputs.clone();
+
     for arg in item_fn.sig.inputs.iter_mut() {
         let mut arg_info = None;
 
@@ -139,7 +141,6 @@ pub fn generate(
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
-        #[#crate_name::async_trait::async_trait]
         impl #crate_name::TypeDirective for #ident {
             fn name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #directive_name
@@ -161,6 +162,14 @@ pub fn generate(
                     composable: true,
                 };
                 registry.add_directive(meta);
+            }
+
+        }
+
+        impl #ident {
+            pub fn apply(#input_args) -> String {
+                let directive = #directive_name.to_owned();
+                format!("@{}", directive)
             }
         }
     };

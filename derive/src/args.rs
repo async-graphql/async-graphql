@@ -285,7 +285,7 @@ pub struct ObjectField {
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
     #[darling(default, multiple, rename = "directive")]
-    pub directives: Vec<String>,
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default, Clone)]

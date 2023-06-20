@@ -3,15 +3,15 @@ use async_graphql_derive::Object;
 use async_graphql_derive::TypeDirective;
 
 #[test]
-fn test_type_directive() {
+pub fn test_type_directive() {
     #[TypeDirective(location = "fielddefinition", location = "object")]
-    fn myTestDirective(string_input: String, int_input: u32, optional_int: Option<u64>) {}
+    fn myTestDirective(_string_input: String, _int_input: u32, _optional_int: Option<u64>) {}
 
     struct Query;
 
     #[Object]
     impl Query {
-        #[graphql(directive = "@myTestDirective(stringInput: \"abc\", intInput: 2345)")]
+        #[graphql(directive = myTestDirective::apply("123".to_string(), 3 + 2, Some(4)))]
         pub async fn value(&self) -> &'static str {
             "abc"
         }

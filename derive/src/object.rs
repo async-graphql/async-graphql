@@ -333,7 +333,7 @@ pub fn generate(
                 let directives = method_args
                     .directives
                     .iter()
-                    .map(|directive| quote!(::std::string::ToString::to_string(#directive)))
+                    .map(|directive| quote!(#directive))
                     .collect::<Vec<_>>();
 
                 let override_from = match &method_args.override_from {
