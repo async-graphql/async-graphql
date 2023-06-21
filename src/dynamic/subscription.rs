@@ -162,6 +162,7 @@ impl Subscription {
                     tags: vec![],
                     override_from: None,
                     compute_complexity: None,
+                    raw_directives: vec![],
                 },
             );
         }

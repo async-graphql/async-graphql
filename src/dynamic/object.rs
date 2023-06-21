@@ -155,6 +155,7 @@ impl Object {
                     tags: field.tags.clone(),
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
+                    raw_directives: vec![],
                 },
             );
         }
