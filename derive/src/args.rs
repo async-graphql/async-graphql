@@ -898,6 +898,8 @@ pub struct TypeDirective {
     pub rename_args: Option<RenameRule>,
     #[darling(multiple, rename = "location")]
     pub locations: Vec<TypeDirectiveLocation>,
+    #[darling(default)]
+    pub composable: Option<String>,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta)]

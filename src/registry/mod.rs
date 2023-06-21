@@ -205,8 +205,8 @@ pub struct MetaField {
     pub override_from: Option<String>,
     /// A constant or function to get the complexity
     pub compute_complexity: Option<ComputeComplexityFn>,
-    /// Custom type directives (if compose feature is enabled they will be propagated to supergraph)
-    pub directives: Vec<String>,
+    /// Custom type directives (if compose directive is enabled they will be propagated to supergraph)
+    pub raw_directives: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -657,7 +657,7 @@ pub struct MetaDirective {
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
-    pub composable: bool,
+    pub composable: Option<String>,
 }
 
 impl MetaDirective {
@@ -725,7 +725,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
-            composable: false,
+            composable: None,
         });
 
         self.add_directive(MetaDirective {
@@ -752,7 +752,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
-            composable: false,
+            composable: None,
         });
 
         // create system scalars
@@ -959,7 +959,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
-                    directives: vec![],
+                    raw_directives: vec![],
                 },
             );
         }
@@ -1013,7 +1013,7 @@ impl Registry {
                         tags: Default::default(),
                         override_from: None,
                         compute_complexity: None,
-                        directives: vec![],
+                        raw_directives: vec![],
                     },
                 );
             }
@@ -1042,7 +1042,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     override_from: None,
-                    directives: vec![],
+                    raw_directives: vec![],
                 },
             );
 
@@ -1080,7 +1080,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
-                    directives: vec![],
+                    raw_directives: vec![],
                 },
             );
         }
@@ -1114,7 +1114,7 @@ impl Registry {
                             tags: Default::default(),
                             override_from: None,
                             compute_complexity: None,
-                            directives: vec![],
+                            raw_directives: vec![],
                         },
                     );
                     fields

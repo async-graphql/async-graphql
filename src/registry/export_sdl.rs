@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Write;
 
 use crate::registry::{Deprecation, MetaField, MetaInputValue, MetaType, Registry};
@@ -14,7 +15,7 @@ pub struct SDLExportOptions {
     federation: bool,
     prefer_single_line_descriptions: bool,
     include_specified_by: bool,
-    enable_compose: bool,
+    compose_directive: bool,
 }
 
 impl SDLExportOptions {
@@ -83,9 +84,9 @@ impl SDLExportOptions {
     }
 
     /// Enable `composeDirective` if federation is enabled
-    pub fn enable_compose_directive(self) -> Self {
+    pub fn compose_directive(self) -> Self {
         Self {
-            enable_compose: true,
+            compose_directive: true,
             ..self
         }
     }
@@ -126,23 +127,32 @@ impl Registry {
             writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\"]").ok();
             writeln!(sdl, ")").ok();
 
-            if options.enable_compose {
+            if options.compose_directive {
                 writeln!(sdl).ok();
-                let compose_directives_names = self
-                    .directives
+                let mut compose_directives = HashMap::<&str, Vec<String>>::new();
+                self.directives
                     .values()
-                    .filter(|d| d.composable)
-                    .map(|d| format!("\"@{}\"", d.name))
-                    .collect::<Vec<_>>();
-
-                writeln!(sdl, "extend schema @link(").ok();
-                writeln!(sdl, "\turl: \"https://custom.spec.dev/extension/v1.0\"").ok();
-                writeln!(sdl, "\timport: [{}]", compose_directives_names.join(",")).ok();
-                writeln!(sdl, ")").ok();
-                for name in compose_directives_names {
-                    writeln!(sdl, "\t@composeDirective(name: {})", name).ok();
+                    .filter_map(|d| {
+                        d.composable
+                            .as_ref()
+                            .map(|ext_url| (ext_url, format!("\"@{}\"", d.name)))
+                    })
+                    .for_each(|(ext_url, name)| {
+                        compose_directives
+                            .entry(ext_url)
+                            .or_insert_with(Vec::new)
+                            .push(name)
+                    });
+                for (url, directives) in compose_directives {
+                    writeln!(sdl, "extend schema @link(").ok();
+                    writeln!(sdl, "\turl: \"{}\"", url).ok();
+                    writeln!(sdl, "\timport: [{}]", directives.join(",")).ok();
+                    writeln!(sdl, ")").ok();
+                    for name in directives {
+                        writeln!(sdl, "\t@composeDirective(name: {})", name).ok();
+                    }
+                    writeln!(sdl).ok();
                 }
-                writeln!(sdl).ok();
             }
 
             self.directives.values().for_each(|directive| {
@@ -238,7 +248,7 @@ impl Registry {
                 if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
                 }
-                for directive in &field.directives {
+                for directive in &field.raw_directives {
                     write!(sdl, " {}", directive).ok();
                 }
             }
@@ -651,13 +661,9 @@ directive @custom_type_directive on FIELD_DEFINITION
             args: Default::default(),
             is_repeatable: false,
             visible: None,
-            composable: true,
+            composable: Some("https://custom.spec.dev/extension/v1.0".to_string()),
         });
-        let dsl = registry.export_sdl(
-            SDLExportOptions::new()
-                .federation()
-                .enable_compose_directive(),
-        );
+        let dsl = registry.export_sdl(SDLExportOptions::new().federation().compose_directive());
         assert_eq!(dsl, expected)
     }
 }

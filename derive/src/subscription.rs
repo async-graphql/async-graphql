@@ -266,6 +266,7 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
+                    raw_directives: ::std::vec![],
                 });
             });
 

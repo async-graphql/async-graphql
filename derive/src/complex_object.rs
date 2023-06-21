@@ -386,7 +386,7 @@ pub fn generate(
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: #complexity,
-                    directives: ::std::vec![],
+                    raw_directives: ::std::vec![],
                 }));
             });
 

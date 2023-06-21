@@ -1,3 +1,9 @@
+type Query {
+	value: String! @myTestDirective(stringInput: "123", intInput: 5)
+	value2: Int! @noArgsDirective
+}
+
+
 extend schema @link(
 	url: "https://specs.apollo.dev/federation/v2.1",
 	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
@@ -5,8 +11,12 @@ extend schema @link(
 
 extend schema @link(
 	url: "https://custom.spec.dev/extension/v1.0"
-	import: ["@abc"]
+	import: ["@myTestDirective","@noArgsDirective"]
 )
-	@composeDirective(name: "@abc")
+	@composeDirective(name: "@myTestDirective")
+	@composeDirective(name: "@noArgsDirective")
 
-directive @abc on FIELD_DEFINITION
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @myTestDirective(stringInput: String!, intInput: Int!, optionalInt: Int) on FIELD_DEFINITION | OBJECT
+directive @noArgsDirective on FIELD_DEFINITION
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

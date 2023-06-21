@@ -31,11 +31,14 @@ pub fn generate(
     let visible = visible_fn(&directive_args.visible);
     let repeatable = directive_args.repeatable;
 
-    let mut get_params = Vec::new();
-    let mut use_params = Vec::new();
-    let mut schema_args = Vec::new();
+    let composable = match directive_args.composable.as_ref() {
+        Some(url) => quote!(::std::option::Option::Some(::std::string::ToString::to_string(#url))),
+        None => quote!(::std::option::Option::None),
+    };
 
-    let input_args = item_fn.sig.inputs.clone();
+    let mut schema_args = Vec::new();
+    let mut input_args = Vec::new();
+    let mut directive_input_args = Vec::new();
 
     for arg in item_fn.sig.inputs.iter_mut() {
         let mut arg_info = None;
@@ -59,7 +62,6 @@ pub fn generate(
             desc,
             default,
             default_with,
-            validator,
             visible,
             secret,
             ..
@@ -100,24 +102,13 @@ pub fn generate(
             });
         });
 
-        let validators = validator.clone().unwrap_or_default().create_validators(
-            &crate_name,
-            quote!(&#arg_ident),
-            Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-        )?;
+        input_args.push(quote! { #arg });
 
-        let default = match default {
-            Some(default) => {
-                quote! { ::std::option::Option::Some(|| -> #arg_ty { #default }) }
-            }
-            None => quote! { ::std::option::Option::None },
-        };
-        get_params.push(quote! {
-            let (__pos, #arg_ident) = ctx.param_value::<#arg_ty>(#name, #default)?;
-            #validators
+        directive_input_args.push(quote! {
+            if let Some(val) = #crate_name::InputType::as_raw_value(&#arg_ident) {
+                directive_args.push(format!("{}: {}" , #name, #crate_name::ScalarType::to_value(val)));
+            };
         });
-
-        use_params.push(quote! { #arg_ident });
     }
 
     let locations = directive_args
@@ -159,7 +150,7 @@ pub fn generate(
                     },
                     is_repeatable: #repeatable,
                     visible: #visible,
-                    composable: true,
+                    composable: #composable,
                 };
                 registry.add_directive(meta);
             }
@@ -167,9 +158,16 @@ pub fn generate(
         }
 
         impl #ident {
-            pub fn apply(#input_args) -> String {
+            pub fn apply(#(#input_args),*) -> ::std::string::String {
                 let directive = #directive_name.to_owned();
-                format!("@{}", directive)
+                let mut directive_args: Vec<::std::string::String> = vec![];
+                #(#directive_input_args)*;
+                let formatted_args = if directive_args.is_empty() {
+                    ::std::string::String::new()
+                }else {
+                    format!("({})", directive_args.join(", "))
+                };
+                format!("@{}{}", directive, formatted_args)
             }
         }
     };
