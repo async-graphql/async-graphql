@@ -55,5 +55,7 @@ pub fn test_type_directive() {
         .finish();
 
     let sdl = schema.sdl_with_options(SDLExportOptions::new().federation().compose_directive());
-    println!("{}", sdl)
+
+    let expected = include_str!("schemas/test_fed2_compose.schema.graphql");
+    assert_eq!(expected, &sdl)
 }

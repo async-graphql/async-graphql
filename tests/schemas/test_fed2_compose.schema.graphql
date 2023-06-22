@@ -1,3 +1,7 @@
+
+
+
+
 type Query @testDirective(scope: "object type", input: 3) {
 	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
 	anotherValue: SimpleValue!
