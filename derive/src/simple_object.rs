@@ -8,7 +8,8 @@ use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
     utils::{
-        gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+        gen_deprecation, gen_directive_call, generate_guards, get_crate_name, get_rustdoc,
+        visible_fn, GeneratorResult,
     },
 };
 
@@ -37,6 +38,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let object_directives = gen_directive_call(&object_args.directives);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -187,7 +189,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         let visible = visible_fn(&field.visible);
-
+        let directives = gen_directive_call(&field.directives);
         if !field.flatten {
             schema_fields.push(quote! {
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -206,7 +208,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
-                    raw_directives: ::std::vec![],
+                    raw_directives: ::std::vec![ #(#directives),* ],
                 });
             });
         } else {
@@ -371,6 +373,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        raw_directives: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 
@@ -438,6 +441,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        raw_directives: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 

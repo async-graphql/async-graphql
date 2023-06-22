@@ -256,6 +256,7 @@ impl MetaTypeId {
                 visible: None,
                 is_subscription: false,
                 rust_typename: Some(rust_typename),
+                raw_directives: vec![],
             },
             MetaTypeId::Interface => MetaType::Interface {
                 name: "".to_string(),
@@ -396,6 +397,8 @@ pub enum MetaType {
         is_subscription: bool,
         /// The Rust typename corresponding to the object
         rust_typename: Option<&'static str>,
+        /// raw directive "calls" or decorators
+        raw_directives: Vec<String>,
     },
     /// Interface
     ///
@@ -1128,6 +1131,7 @@ impl Registry {
                 tags: Default::default(),
                 is_subscription: false,
                 rust_typename: Some("async_graphql::federation::Service"),
+                raw_directives: vec![],
             },
         );
 

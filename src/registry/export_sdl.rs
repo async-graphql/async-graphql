@@ -308,6 +308,7 @@ impl Registry {
                 shareable,
                 inaccessible,
                 tags,
+                raw_directives,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -361,6 +362,10 @@ impl Registry {
 
                     for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                    }
+
+                    for raw_directive in raw_directives {
+                        write!(sdl, " {}", raw_directive).ok();
                     }
                 }
 

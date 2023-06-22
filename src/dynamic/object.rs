@@ -179,6 +179,7 @@ impl Object {
                 tags: self.tags.clone(),
                 is_subscription: false,
                 rust_typename: None,
+                raw_directives: vec![],
             },
         );
 

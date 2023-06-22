@@ -314,3 +314,10 @@ impl VisitMut for RemoveLifetime {
         visit_mut::visit_lifetime_mut(self, i);
     }
 }
+
+pub fn gen_directive_call(directives: &Vec<Expr>) -> Vec<TokenStream> {
+    directives
+        .iter()
+        .map(|directive| quote!(#directive))
+        .collect::<Vec<_>>()
+}

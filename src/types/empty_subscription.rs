@@ -30,6 +30,7 @@ impl SubscriptionType for EmptySubscription {
             tags: Default::default(),
             is_subscription: true,
             rust_typename: Some(std::any::type_name::<Self>()),
+            raw_directives: vec![],
         })
     }
 

@@ -1,6 +1,6 @@
 use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema};
-use async_graphql_derive::Object;
 use async_graphql_derive::TypeDirective;
+use async_graphql_derive::{Object, SimpleObject};
 
 #[test]
 pub fn test_type_directive() {
@@ -9,7 +9,7 @@ pub fn test_type_directive() {
         location = "object",
         composable = "https://custom.spec.dev/extension/v1.0"
     )]
-    fn myTestDirective(string_input: String, int_input: u32, optional_int: Option<u64>) {}
+    fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
 
     #[TypeDirective(
         location = "fielddefinition",
@@ -19,21 +19,38 @@ pub fn test_type_directive() {
 
     struct Query;
 
-    #[Object]
+    #[derive(SimpleObject)]
+    #[graphql(
+        directive = testDirective::apply("simple object type".to_string(), 1, Some(3))
+    )]
+    struct SimpleValue {
+        #[graphql(
+            directive = testDirective::apply("field and param with \" symbol".to_string(), 2, Some(3))
+        )]
+        some_data: String,
+    }
+
+    #[Object(
+        directive = testDirective::apply("object type".to_string(), 3, None),
+    )]
     impl Query {
-        #[graphql(directive = myTestDirective::apply("123".to_string(), 3 + 2, None))]
-        pub async fn value(&self) -> &'static str {
+        #[graphql(
+        directive = testDirective::apply("object field".to_string(), 4, None),
+        directive = noArgsDirective::apply())
+        ]
+        async fn value(&self) -> &'static str {
             "abc"
         }
 
-        #[graphql(directive = noArgsDirective::apply())]
-        pub async fn value2(&self) -> u32 {
-            123
+        async fn another_value(&self) -> SimpleValue {
+            SimpleValue {
+                some_data: "data".to_string(),
+            }
         }
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .type_directive(myTestDirective)
+        .type_directive(testDirective)
         .type_directive(noArgsDirective)
         .finish();
 

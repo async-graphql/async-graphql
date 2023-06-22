@@ -182,6 +182,7 @@ impl Subscription {
                 tags: vec![],
                 is_subscription: true,
                 rust_typename: None,
+                raw_directives: vec![],
             },
         );
 

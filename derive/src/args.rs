@@ -174,6 +174,8 @@ pub struct SimpleObjectField {
     pub flatten: bool,
     #[darling(default)]
     pub secret: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -219,6 +221,8 @@ pub struct SimpleObject {
     pub input_name: Option<String>,
     #[darling(default)]
     pub guard: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -260,6 +264,8 @@ pub struct Object {
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
     pub guard: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -673,6 +679,8 @@ pub struct MergedObject {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub serial: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromField)]

@@ -1,6 +1,10 @@
-type Query {
-	value: String! @myTestDirective(stringInput: "123", intInput: 5)
-	value2: Int! @noArgsDirective
+type Query @testDirective(scope: "object type", input: 3) {
+	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
+	anotherValue: SimpleValue!
+}
+
+type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
+	someData: String! @testDirective(scope: "field and param with \" symbol", input: 2, opt: 3)
 }
 
 
@@ -11,12 +15,12 @@ extend schema @link(
 
 extend schema @link(
 	url: "https://custom.spec.dev/extension/v1.0"
-	import: ["@myTestDirective","@noArgsDirective"]
+	import: ["@noArgsDirective","@testDirective"]
 )
-	@composeDirective(name: "@myTestDirective")
 	@composeDirective(name: "@noArgsDirective")
+	@composeDirective(name: "@testDirective")
 
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-directive @myTestDirective(stringInput: String!, intInput: Int!, optionalInt: Int) on FIELD_DEFINITION | OBJECT
 directive @noArgsDirective on FIELD_DEFINITION
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
