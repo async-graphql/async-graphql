@@ -12,9 +12,10 @@ use crate::{
     args::{self, RenameRuleExt, RenameTarget},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, gen_directive_call, generate_default, generate_guards,
-        get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
+        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
+        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
+        GeneratorResult,
     },
 };
 
@@ -33,7 +34,7 @@ pub fn generate(
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_call(&object_args.directives);
+    let directives = gen_directive_calls(&object_args.directives);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -331,7 +332,7 @@ pub fn generate(
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
 
-                let directives = gen_directive_call(&method_args.directives);
+                let directives = gen_directive_calls(&method_args.directives);
 
                 let override_from = match &method_args.override_from {
                     Some(from) => {

@@ -8,7 +8,7 @@ use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
     utils::{
-        gen_deprecation, gen_directive_call, generate_guards, get_crate_name, get_rustdoc,
+        gen_deprecation, gen_directive_calls, generate_guards, get_crate_name, get_rustdoc,
         visible_fn, GeneratorResult,
     },
 };
@@ -38,7 +38,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let object_directives = gen_directive_call(&object_args.directives);
+    let object_directives = gen_directive_calls(&object_args.directives);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -189,7 +189,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         let visible = visible_fn(&field.visible);
-        let directives = gen_directive_call(&field.directives);
+        let directives = gen_directive_calls(&field.directives);
         if !field.flatten {
             schema_fields.push(quote! {
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {

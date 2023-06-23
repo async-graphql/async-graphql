@@ -4,7 +4,7 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::{Error, LitInt};
 
-use crate::utils::gen_directive_call;
+use crate::utils::gen_directive_calls;
 use crate::{
     args::{self, RenameTarget},
     utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
@@ -32,7 +32,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
 
-    let directives = gen_directive_call(&object_args.directives);
+    let directives = gen_directive_calls(&object_args.directives);
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })

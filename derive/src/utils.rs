@@ -315,7 +315,7 @@ impl VisitMut for RemoveLifetime {
     }
 }
 
-pub fn gen_directive_call(directives: &Vec<Expr>) -> Vec<TokenStream> {
+pub fn gen_directive_calls(directives: &[Expr]) -> Vec<TokenStream> {
     directives
         .iter()
         .map(|directive| quote!(#directive))
