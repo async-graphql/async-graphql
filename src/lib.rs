@@ -291,5 +291,6 @@ pub use async_graphql_derive::Scalar;
 pub use async_graphql_derive::SimpleObject;
 #[doc = include_str!("docs/subscription.md")]
 pub use async_graphql_derive::Subscription;
+pub use async_graphql_derive::TypeDirective;
 #[doc = include_str!("docs/union.md")]
 pub use async_graphql_derive::Union;
