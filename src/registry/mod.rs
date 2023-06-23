@@ -205,7 +205,7 @@ pub struct MetaField {
     pub override_from: Option<String>,
     /// A constant or function to get the complexity
     pub compute_complexity: Option<ComputeComplexityFn>,
-    /// Custom type directives (if compose directive is enabled they will be propagated to supergraph)
+    /// Custom directives applied
     pub raw_directives: Vec<String>,
 }
 

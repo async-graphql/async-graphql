@@ -84,7 +84,7 @@ where
                 tags: Default::default(),
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
-                raw_directives: vec![],
+                raw_directives: Default::default(),
             }
         })
     }
@@ -146,7 +146,7 @@ where
                 tags: Default::default(),
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
-                raw_directives: vec![],
+                raw_directives: Default::default(),
             }
         })
     }
@@ -183,7 +183,7 @@ impl SubscriptionType for MergedObjectTail {
             tags: Default::default(),
             is_subscription: false,
             rust_typename: Some(std::any::type_name::<Self>()),
-            raw_directives: vec![],
+            raw_directives: Default::default(),
         })
     }
 

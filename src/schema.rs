@@ -216,10 +216,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Register a custom type directive
     #[must_use]
     pub fn type_directive<T: TypeDirective>(mut self, directive: T) -> Self {
-        let instance = Box::new(directive);
-
-        instance.register(&mut self.registry);
-
+        directive.register(&mut self.registry);
         self
     }
 
