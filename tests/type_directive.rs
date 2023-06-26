@@ -49,10 +49,7 @@ pub fn test_type_directive() {
         }
     }
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .type_directive(testDirective)
-        .type_directive(noArgsDirective)
-        .finish();
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
 
     let sdl = schema.sdl_with_options(SDLExportOptions::new().federation().compose_directive());
 

@@ -213,13 +213,6 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
-    /// Register a custom type directive
-    #[must_use]
-    pub fn type_directive<T: TypeDirective>(mut self, directive: T) -> Self {
-        directive.register(&mut self.registry);
-        self
-    }
-
     /// Disable field suggestions.
     #[must_use]
     pub fn disable_suggestions(mut self) -> Self {

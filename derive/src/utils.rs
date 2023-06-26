@@ -318,6 +318,24 @@ impl VisitMut for RemoveLifetime {
 pub fn gen_directive_calls(directives: &[Expr]) -> Vec<TokenStream> {
     directives
         .iter()
-        .map(|directive| quote!(#directive))
+        .map(|directive| {
+            let directive_name = if let Expr::Call(expr) = directive {
+                if let Expr::Path(ref expr) = *expr.func {
+                    expr.path.segments.first().map(|s| s.ident.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+            .expect(
+                "Directive invocation expression format must be <directive_name>::apply(<args>)",
+            );
+
+            quote!({
+            <#directive_name as async_graphql::TypeDirective>::register(&#directive_name, registry);
+            #directive
+            })
+        })
         .collect::<Vec<_>>()
 }
