@@ -266,7 +266,7 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    raw_directives: ::std::default::Default::default(),
+                    directive_invocations: ::std::default::Default::default(),
                 });
             });
 
@@ -413,7 +413,7 @@ pub fn generate(
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                    raw_directives: ::std::default::Default::default(),
+                    directive_invocations: ::std::default::Default::default(),
                 })
             }
 

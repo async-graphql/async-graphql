@@ -106,7 +106,7 @@ pub fn generate(
 
         directive_input_args.push(quote! {
             if let Some(val) = #crate_name::InputType::as_raw_value(&#arg_ident) {
-                directive_args.push(format!("{}: {}" , #name, #crate_name::ScalarType::to_value(val)));
+                args.insert(::std::string::ToString::to_string(#name), #crate_name::ScalarType::to_value(val));
             };
         });
     }
@@ -158,16 +158,14 @@ pub fn generate(
         }
 
         impl #ident {
-            pub fn apply(#(#input_args),*) -> ::std::string::String {
-                let directive = #directive_name.to_owned();
-                let mut directive_args: Vec<::std::string::String> = vec![];
+            pub fn apply(#(#input_args),*) -> #crate_name::registry::MetaDirectiveInvocation {
+                let directive = ::std::borrow::Cow::into_owned(#directive_name);
+                let mut args = #crate_name::indexmap::IndexMap::new();
                 #(#directive_input_args)*;
-                let formatted_args = if directive_args.is_empty() {
-                    ::std::string::String::new()
-                }else {
-                    format!("({})", directive_args.join(", "))
-                };
-                format!("@{}{}", directive, formatted_args)
+                #crate_name::registry::MetaDirectiveInvocation {
+                    name: directive,
+                    args,
+                }
             }
         }
     };

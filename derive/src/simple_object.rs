@@ -208,7 +208,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
-                    raw_directives: ::std::vec![ #(#directives),* ],
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                 });
             });
         } else {
@@ -373,7 +373,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        raw_directives: ::std::vec![ #(#object_directives),* ],
+                        directive_invocations: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 
@@ -441,7 +441,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        raw_directives: ::std::vec![ #(#object_directives),* ],
+                        directive_invocations: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 

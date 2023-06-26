@@ -541,7 +541,7 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
-                        raw_directives: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     });
                 });
 
@@ -684,7 +684,7 @@ pub fn generate(
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        raw_directives: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -727,7 +727,7 @@ pub fn generate(
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        raw_directives: ::std::vec![ #(#directives),* ],
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

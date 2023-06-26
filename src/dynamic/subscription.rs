@@ -162,7 +162,7 @@ impl Subscription {
                     tags: vec![],
                     override_from: None,
                     compute_complexity: None,
-                    raw_directives: vec![],
+                    directive_invocations: vec![],
                 },
             );
         }
@@ -182,7 +182,7 @@ impl Subscription {
                 tags: vec![],
                 is_subscription: true,
                 rust_typename: None,
-                raw_directives: vec![],
+                directive_invocations: vec![],
             },
         );
 

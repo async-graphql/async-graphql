@@ -248,8 +248,8 @@ impl Registry {
                 if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
                 }
-                for directive in &field.raw_directives {
-                    write!(sdl, " {}", directive).ok();
+                for directive in &field.directive_invocations {
+                    write!(sdl, " {}", directive.sdl()).ok();
                 }
             }
 
@@ -308,7 +308,7 @@ impl Registry {
                 shareable,
                 inaccessible,
                 tags,
-                raw_directives,
+                directive_invocations: raw_directives,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -364,8 +364,8 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
 
-                    for raw_directive in raw_directives {
-                        write!(sdl, " {}", raw_directive).ok();
+                    for directive_invocation in raw_directives {
+                        write!(sdl, " {}", directive_invocation.sdl()).ok();
                     }
                 }
 
