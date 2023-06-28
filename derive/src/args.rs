@@ -911,20 +911,12 @@ pub struct TypeDirective {
     pub composable: Option<String>,
 }
 
-#[derive(Debug, Copy, Clone, FromMeta)]
+#[derive(Debug, Copy, Clone, FromMeta, strum::Display)]
 #[darling(rename_all = "lowercase")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum TypeDirectiveLocation {
     FieldDefinition,
     Object,
-}
-
-impl Display for TypeDirectiveLocation {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            TypeDirectiveLocation::FieldDefinition => write!(f, "FIELD_DEFINITION"),
-            TypeDirectiveLocation::Object => write!(f, "OBJECT"),
-        }
-    }
 }
 
 impl TypeDirectiveLocation {
