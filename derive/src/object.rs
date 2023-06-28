@@ -8,6 +8,7 @@ use syn::{
     ReturnType, Token, Type, TypeReference,
 };
 
+use crate::args::TypeDirectiveLocation;
 use crate::{
     args::{self, RenameRuleExt, RenameTarget},
     output_type::OutputType,
@@ -34,7 +35,7 @@ pub fn generate(
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_calls(&object_args.directives);
+    let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -332,7 +333,10 @@ pub fn generate(
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
 
-                let directives = gen_directive_calls(&method_args.directives);
+                let directives = gen_directive_calls(
+                    &method_args.directives,
+                    TypeDirectiveLocation::FieldDefinition,
+                );
 
                 let override_from = match &method_args.override_from {
                     Some(from) => {

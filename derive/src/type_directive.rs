@@ -128,6 +128,12 @@ pub fn generate(
         .into());
     }
 
+    let location_traits = directive_args
+        .locations
+        .iter()
+        .map(|loc| loc.location_trait_identifier())
+        .collect::<Vec<_>>();
+
     let expanded = quote! {
         #[allow(non_camel_case_types)]
         #vis struct #ident;
@@ -156,6 +162,8 @@ pub fn generate(
             }
 
         }
+
+       #(impl #crate_name::registry::location_traits::#location_traits for #ident {})*
 
         impl #ident {
             pub fn apply(#(#input_args),*) -> #crate_name::registry::MetaDirectiveInvocation {

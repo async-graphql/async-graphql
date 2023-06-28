@@ -24,7 +24,7 @@ use crate::{
     validation::{check_rules, ValidationMode},
     BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
     Executor, InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
-    ServerResult, SubscriptionType, TypeDirective, Variables,
+    ServerResult, SubscriptionType, Variables,
 };
 
 /// Introspection mode

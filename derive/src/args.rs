@@ -6,6 +6,7 @@ use darling::{
     FromDeriveInput, FromField, FromMeta, FromVariant,
 };
 use inflector::Inflector;
+use quote::format_ident;
 use syn::{Attribute, Expr, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type, Visibility};
 
 use crate::validators::Validators;
@@ -923,5 +924,11 @@ impl Display for TypeDirectiveLocation {
             TypeDirectiveLocation::FieldDefinition => write!(f, "FIELD_DEFINITION"),
             TypeDirectiveLocation::Object => write!(f, "OBJECT"),
         }
+    }
+}
+
+impl TypeDirectiveLocation {
+    pub fn location_trait_identifier(&self) -> Ident {
+        format_ident!("Directive_At_{}", self.to_string())
     }
 }

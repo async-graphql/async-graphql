@@ -12,7 +12,7 @@ pub use cache_control::CacheControl;
 pub use export_sdl::SDLExportOptions;
 use indexmap::{map::IndexMap, set::IndexSet};
 
-pub use crate::model::__DirectiveLocation;
+pub use crate::model::{__DirectiveLocation, location_traits};
 use crate::{
     model::__Schema,
     parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
