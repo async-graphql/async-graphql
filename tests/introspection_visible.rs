@@ -275,12 +275,12 @@ pub async fn test_indirect_hiding_type() {
 
     impl CustomDirective for MyDirective {}
 
-    #[Directive(location = "field")]
+    #[Directive(location = "Field")]
     fn my_directive1(_a: MyEnum1) -> impl CustomDirective {
         MyDirective
     }
 
-    #[Directive(location = "field", visible = false)]
+    #[Directive(location = "Field", visible = false)]
     fn my_directive2(_a: MyEnum2) -> impl CustomDirective {
         MyDirective
     }

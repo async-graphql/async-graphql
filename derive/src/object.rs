@@ -8,9 +8,8 @@ use syn::{
     ReturnType, Token, Type, TypeReference,
 };
 
-use crate::args::TypeDirectiveLocation;
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
         extract_input_args, gen_deprecation, gen_directive_calls, generate_default,

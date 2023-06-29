@@ -1,18 +1,17 @@
 use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema};
-use async_graphql_derive::TypeDirective;
-use async_graphql_derive::{Object, SimpleObject};
+use async_graphql_derive::{Object, SimpleObject, TypeDirective};
 
 #[test]
 pub fn test_type_directive() {
     #[TypeDirective(
-        location = "fielddefinition",
-        location = "object",
+        location = "FieldDefinition",
+        location = "Object",
         composable = "https://custom.spec.dev/extension/v1.0"
     )]
     fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
 
     #[TypeDirective(
-        location = "fielddefinition",
+        location = "FieldDefinition",
         composable = "https://custom.spec.dev/extension/v1.0"
     )]
     pub fn noArgsDirective() {}

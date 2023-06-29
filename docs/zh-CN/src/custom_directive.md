@@ -25,7 +25,7 @@ impl CustomDirective for ConcatDirective {
     }
 }
 
-#[Directive(location = "field")]
+#[Directive(location = "Field")]
 fn concat(value: String) -> impl CustomDirective {
     ConcatDirective { value }
 }
@@ -44,7 +44,7 @@ fn concat(value: String) -> impl CustomDirective {
 # impl CustomDirective for ConcatDirective {
 #   async fn resolve_field(&self, _ctx: &Context<'_>, resolve: ResolveFut<'_>) -> ServerResult<Option<Value>> { todo!() }
 # }
-# #[Directive(location = "field")]
+# #[Directive(location = "Field")]
 # fn concat(value: String) -> impl CustomDirective { ConcatDirective { value } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)

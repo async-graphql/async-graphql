@@ -4,11 +4,9 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::{Error, LitInt};
 
-use crate::args::TypeDirectiveLocation;
-use crate::utils::gen_directive_calls;
 use crate::{
-    args::{self, RenameTarget},
-    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{self, RenameTarget, TypeDirectiveLocation},
+    utils::{gen_directive_calls, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
 };
 
 pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream> {

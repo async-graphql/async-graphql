@@ -5,9 +5,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 
-use crate::args::TypeDirectiveLocation;
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
+    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField, TypeDirectiveLocation},
     utils::{
         gen_deprecation, gen_directive_calls, generate_guards, get_crate_name, get_rustdoc,
         visible_fn, GeneratorResult,

@@ -66,8 +66,9 @@ pub enum __DirectiveLocation {
     INPUT_FIELD_DEFINITION,
 }
 
-// Traits for compile time checking if location at which directive is called is supported by directives definition
-// Would be nice to auto generate traits from variants of __DirectiveLocation
+// Traits for compile time checking if location at which directive is called is
+// supported by directives definition Would be nice to auto generate traits from
+// variants of __DirectiveLocation
 #[doc(hidden)]
 #[allow(non_camel_case_types)]
 pub mod location_traits {

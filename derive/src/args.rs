@@ -1,5 +1,3 @@
-use std::fmt::{self, Display, Formatter};
-
 use darling::{
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
@@ -881,18 +879,11 @@ pub struct Directive {
     pub locations: Vec<DirectiveLocation>,
 }
 
-#[derive(Debug, Copy, Clone, FromMeta)]
-#[darling(rename_all = "lowercase")]
+#[derive(Debug, Copy, Clone, FromMeta, strum::Display)]
+#[darling(rename_all = "PascalCase")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum DirectiveLocation {
     Field,
-}
-
-impl Display for DirectiveLocation {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            DirectiveLocation::Field => write!(f, "FIELD"),
-        }
-    }
 }
 
 #[derive(FromMeta, Default)]
@@ -912,7 +903,7 @@ pub struct TypeDirective {
 }
 
 #[derive(Debug, Copy, Clone, FromMeta, strum::Display)]
-#[darling(rename_all = "lowercase")]
+#[darling(rename_all = "PascalCase")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum TypeDirectiveLocation {
     FieldDefinition,

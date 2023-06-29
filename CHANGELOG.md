@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `syn` from `1.0` to `2.0`
 - Bump `darling` from `0.14` to `0.20`
 - Attributes `guard`, `process_with`, `complexity` support expression or string as value [#1295](https://github.com/async-graphql/async-graphql/issues/1295)
+- Schema (type) level directive support with optional support of federation composeDirective [#1308](https://github.com/async-graphql/async-graphql/pull/1308)
 
 ## Breaking Changes
 
@@ -25,6 +26,15 @@ enum Node {
 }
 ```
 
+- Change the parameter `location` of the macro `Directive` to *PascalCase*
+
+```rust
+// #[Directive(location = "field")]
+#[Directive(location = "Field")]
+pub fn lowercase() -> impl CustomDirective {
+    LowercaseDirective
+}
+```
 
 # [5.0.10] 2023-06-07
 

@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use crate::registry::{Deprecation, MetaField, MetaInputValue, MetaType, Registry};
 
@@ -632,8 +631,7 @@ fn escape_string(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::__DirectiveLocation;
-    use crate::registry::MetaDirective;
+    use crate::{model::__DirectiveLocation, registry::MetaDirective};
 
     #[test]
     fn test_escape_string() {
