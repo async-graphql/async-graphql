@@ -4,6 +4,8 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::{Error, LitInt};
 
+use crate::args::TypeDirectiveLocation;
+use crate::utils::gen_directive_calls;
 use crate::{
     args::{self, RenameTarget},
     utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
@@ -30,6 +32,8 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+
+    let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
@@ -122,6 +126,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     }
                 })
             }

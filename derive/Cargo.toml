@@ -29,3 +29,4 @@ syn = { version = "2.0", features = [
   "visit",
 ] }
 thiserror.workspace = true
+strum= { version ="0.25.0", features=["derive"]}

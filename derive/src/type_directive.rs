@@ -1,18 +1,16 @@
+use crate::args;
+use crate::args::{Argument, RenameRuleExt, RenameTarget};
+use crate::utils::{
+    generate_default, get_crate_name, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
+    visible_fn, GeneratorResult,
+};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error, FnArg, ItemFn, Pat};
-
-use crate::{
-    args,
-    args::{Argument, RenameRuleExt, RenameTarget},
-    utils::{
-        generate_default, get_crate_name, get_rustdoc, parse_graphql_attrs, remove_graphql_attrs,
-        visible_fn, GeneratorResult,
-    },
-};
+use syn::ext::IdentExt;
+use syn::{FnArg, ItemFn, Pat};
 
 pub fn generate(
-    directive_args: &args::Directive,
+    directive_args: &args::TypeDirective,
     item_fn: &mut ItemFn,
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(directive_args.internal);
@@ -33,9 +31,14 @@ pub fn generate(
     let visible = visible_fn(&directive_args.visible);
     let repeatable = directive_args.repeatable;
 
-    let mut get_params = Vec::new();
-    let mut use_params = Vec::new();
+    let composable = match directive_args.composable.as_ref() {
+        Some(url) => quote!(::std::option::Option::Some(::std::string::ToString::to_string(#url))),
+        None => quote!(::std::option::Option::None),
+    };
+
     let mut schema_args = Vec::new();
+    let mut input_args = Vec::new();
+    let mut directive_input_args = Vec::new();
 
     for arg in item_fn.sig.inputs.iter_mut() {
         let mut arg_info = None;
@@ -50,7 +53,7 @@ pub fn generate(
         let (arg_ident, arg_ty, arg_attrs) = match arg_info {
             Some(info) => info,
             None => {
-                return Err(Error::new_spanned(arg, "Invalid argument type.").into());
+                return Err(syn::Error::new_spanned(arg, "Invalid argument type.").into());
             }
         };
 
@@ -59,7 +62,6 @@ pub fn generate(
             desc,
             default,
             default_with,
-            validator,
             visible,
             secret,
             ..
@@ -100,24 +102,13 @@ pub fn generate(
             });
         });
 
-        let validators = validator.clone().unwrap_or_default().create_validators(
-            &crate_name,
-            quote!(&#arg_ident),
-            Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-        )?;
+        input_args.push(quote! { #arg });
 
-        let default = match default {
-            Some(default) => {
-                quote! { ::std::option::Option::Some(|| -> #arg_ty { #default }) }
-            }
-            None => quote! { ::std::option::Option::None },
-        };
-        get_params.push(quote! {
-            let (__pos, #arg_ident) = ctx.param_value::<#arg_ty>(#name, #default)?;
-            #validators
+        directive_input_args.push(quote! {
+            if let Some(val) = #crate_name::InputType::as_raw_value(&#arg_ident) {
+                args.insert(::std::string::ToString::to_string(#name), #crate_name::ScalarType::to_value(val));
+            };
         });
-
-        use_params.push(quote! { #arg_ident });
     }
 
     let locations = directive_args
@@ -130,19 +121,24 @@ pub fn generate(
         .collect::<Vec<_>>();
 
     if locations.is_empty() {
-        return Err(Error::new(
+        return Err(syn::Error::new(
             ident.span(),
             "At least one location is required for the directive.",
         )
         .into());
     }
 
+    let location_traits = directive_args
+        .locations
+        .iter()
+        .map(|loc| loc.location_trait_identifier())
+        .collect::<Vec<_>>();
+
     let expanded = quote! {
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
-        #[#crate_name::async_trait::async_trait]
-        impl #crate_name::CustomDirectiveFactory for #ident {
+        impl #crate_name::TypeDirective for #ident {
             fn name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #directive_name
             }
@@ -160,20 +156,24 @@ pub fn generate(
                     },
                     is_repeatable: #repeatable,
                     visible: #visible,
-                    composable: None,
+                    composable: #composable,
                 };
                 registry.add_directive(meta);
             }
 
-            fn create(
-                &self,
-                ctx: &#crate_name::ContextDirective<'_>,
-                directive: &#crate_name::parser::types::Directive,
-            ) -> #crate_name::ServerResult<::std::boxed::Box<dyn #crate_name::CustomDirective>> {
-                #item_fn
+        }
 
-                #(#get_params)*
-                Ok(::std::boxed::Box::new(#ident(#(#use_params),*)))
+       #(impl #crate_name::registry::location_traits::#location_traits for #ident {})*
+
+        impl #ident {
+            pub fn apply(#(#input_args),*) -> #crate_name::registry::MetaDirectiveInvocation {
+                let directive = ::std::borrow::Cow::into_owned(#directive_name);
+                let mut args = #crate_name::indexmap::IndexMap::new();
+                #(#directive_input_args)*;
+                #crate_name::registry::MetaDirectiveInvocation {
+                    name: directive,
+                    args,
+                }
             }
         }
     };

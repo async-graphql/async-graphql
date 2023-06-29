@@ -6,6 +6,7 @@ use darling::{
     FromDeriveInput, FromField, FromMeta, FromVariant,
 };
 use inflector::Inflector;
+use quote::format_ident;
 use syn::{Attribute, Expr, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type, Visibility};
 
 use crate::validators::Validators;
@@ -174,6 +175,8 @@ pub struct SimpleObjectField {
     pub flatten: bool,
     #[darling(default)]
     pub secret: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -219,6 +222,8 @@ pub struct SimpleObject {
     pub input_name: Option<String>,
     #[darling(default)]
     pub guard: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -260,6 +265,8 @@ pub struct Object {
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
     pub guard: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -284,6 +291,8 @@ pub struct ObjectField {
     #[darling(default, multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -671,6 +680,8 @@ pub struct MergedObject {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub serial: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromField)]
@@ -881,5 +892,35 @@ impl Display for DirectiveLocation {
         match self {
             DirectiveLocation::Field => write!(f, "FIELD"),
         }
+    }
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct TypeDirective {
+    pub internal: bool,
+    pub name: Option<String>,
+    #[darling(default)]
+    pub name_type: bool,
+    pub visible: Option<Visible>,
+    pub repeatable: bool,
+    pub rename_args: Option<RenameRule>,
+    #[darling(multiple, rename = "location")]
+    pub locations: Vec<TypeDirectiveLocation>,
+    #[darling(default)]
+    pub composable: Option<String>,
+}
+
+#[derive(Debug, Copy, Clone, FromMeta, strum::Display)]
+#[darling(rename_all = "lowercase")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum TypeDirectiveLocation {
+    FieldDefinition,
+    Object,
+}
+
+impl TypeDirectiveLocation {
+    pub fn location_trait_identifier(&self) -> Ident {
+        format_ident!("Directive_At_{}", self.to_string())
     }
 }
