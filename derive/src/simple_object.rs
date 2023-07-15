@@ -420,7 +420,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             impl #impl_generics #ident #ty_generics #where_clause {
                 #(#getters)*
 
-                fn __internal_create_type_info(
+                fn __internal_create_type_info_simple_object(
                     registry: &mut #crate_name::registry::Registry,
                     name: &str,
                     complex_fields: #crate_name::indexmap::IndexMap<::std::string::String, #crate_name::registry::MetaField>,
@@ -479,7 +479,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                         let mut fields = #crate_name::indexmap::IndexMap::new();
                         #concat_complex_fields
-                        Self::__internal_create_type_info(registry, #gql_typename, fields)
+                        Self::__internal_create_type_info_simple_object(registry, #gql_typename, fields)
                     }
 
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
