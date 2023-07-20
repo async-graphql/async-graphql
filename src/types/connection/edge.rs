@@ -3,35 +3,12 @@ use std::{borrow::Cow, marker::PhantomData};
 use crate::{
     connection::{DefaultEdgeName, EmptyFields},
     types::connection::{CursorType, EdgeNameType},
-    InputValueError, InputValueResult, ObjectType, OutputType, Scalar, ScalarType, SimpleObject,
-    TypeName, Value,
+    ComplexObject, ObjectType, OutputType, SimpleObject, TypeName,
 };
-
-pub(crate) struct CursorScalar<T: CursorType>(pub(crate) T);
-
-#[Scalar(internal, name = "String")]
-impl<T: CursorType + Send + Sync> ScalarType for CursorScalar<T> {
-    fn parse(value: Value) -> InputValueResult<Self> {
-        match value {
-            Value::String(s) => T::decode_cursor(&s)
-                .map(Self)
-                .map_err(InputValueError::custom),
-            _ => Err(InputValueError::expected_type(value)),
-        }
-    }
-
-    fn is_valid(value: &Value) -> bool {
-        matches!(value, Value::String(_))
-    }
-
-    fn to_value(&self) -> Value {
-        Value::String(self.0.encode_cursor())
-    }
-}
 
 /// An edge in a connection.
 #[derive(SimpleObject)]
-#[graphql(internal, name_type, shareable)]
+#[graphql(internal, name_type, shareable, complex)]
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
     Cursor: CursorType + Send + Sync,
@@ -42,11 +19,26 @@ where
     #[graphql(skip)]
     _mark: PhantomData<Name>,
     /// A cursor for use in pagination
-    pub(crate) cursor: CursorScalar<Cursor>,
+    #[graphql(skip)]
+    pub cursor: Cursor,
     /// The item at the end of the edge
     pub node: Node,
     #[graphql(flatten)]
     pub(crate) additional_fields: EdgeFields,
+}
+
+#[ComplexObject(internal)]
+impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
+where
+    Cursor: CursorType + Send + Sync,
+    Node: OutputType,
+    EdgeFields: ObjectType,
+    Name: EdgeNameType,
+{
+    /// A cursor for use in pagination
+    async fn cursor(&self) -> String {
+        self.cursor.encode_cursor()
+    }
 }
 
 impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
@@ -78,7 +70,7 @@ where
     ) -> Self {
         Self {
             _mark: PhantomData,
-            cursor: CursorScalar(cursor),
+            cursor,
             node,
             additional_fields,
         }
@@ -96,7 +88,7 @@ where
     pub fn new(cursor: Cursor, node: Node) -> Self {
         Self {
             _mark: PhantomData,
-            cursor: CursorScalar(cursor),
+            cursor,
             node,
             additional_fields: EmptyFields,
         }

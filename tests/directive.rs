@@ -100,7 +100,7 @@ pub async fn test_custom_directive() {
         }
     }
 
-    #[Directive(location = "field")]
+    #[Directive(location = "Field")]
     fn concat(prefix: String, suffix: String) -> impl CustomDirective {
         Concat { prefix, suffix }
     }

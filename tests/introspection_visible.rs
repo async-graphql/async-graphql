@@ -275,12 +275,12 @@ pub async fn test_indirect_hiding_type() {
 
     impl CustomDirective for MyDirective {}
 
-    #[Directive(location = "field")]
+    #[Directive(location = "Field")]
     fn my_directive1(_a: MyEnum1) -> impl CustomDirective {
         MyDirective
     }
 
-    #[Directive(location = "field", visible = false)]
+    #[Directive(location = "Field", visible = false)]
     fn my_directive2(_a: MyEnum2) -> impl CustomDirective {
         MyDirective
     }
@@ -351,14 +351,14 @@ pub async fn test_indirect_hiding_type() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "a", type = "&i32"))]
+    #[graphql(field(name = "a", ty = "&i32"))]
     enum MyInterface {
         MyObj3(MyObj3),
         MyObj4(MyObj4),
     }
 
     #[derive(Interface)]
-    #[graphql(visible = false, field(name = "a", type = "&i32"))]
+    #[graphql(visible = false, field(name = "a", ty = "&i32"))]
     enum MyInterface2 {
         MyObj3(MyObj3),
         MyObj4(MyObj4),

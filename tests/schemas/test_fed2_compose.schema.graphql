@@ -1,0 +1,30 @@
+
+
+
+
+type Query @testDirective(scope: "object type", input: 3) {
+	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
+	anotherValue: SimpleValue!
+}
+
+type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
+	someData: String! @testDirective(scope: "field and param with \" symbol", input: 2, opt: 3)
+}
+
+
+extend schema @link(
+	url: "https://specs.apollo.dev/federation/v2.1",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
+)
+
+extend schema @link(
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@noArgsDirective","@testDirective"]
+)
+	@composeDirective(name: "@noArgsDirective")
+	@composeDirective(name: "@testDirective")
+
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @noArgsDirective on FIELD_DEFINITION
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT

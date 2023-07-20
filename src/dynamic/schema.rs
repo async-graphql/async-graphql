@@ -192,7 +192,7 @@ impl SchemaBuilder {
     }
 }
 
-/// Dyanmic GraphQL schema.
+/// Dynamic GraphQL schema.
 ///
 /// Cloning a schema is cheap, so it can be easily shared.
 #[derive(Clone)]

@@ -408,6 +408,54 @@ pub async fn test_both_input_output() {
 }
 
 #[tokio::test]
+pub async fn test_both_input_output_generic() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(concrete(name = "MyObjectU32", params(u32)))]
+    #[graphql(concrete(name = "MyObjectString", params(String)))]
+    #[allow(dead_code)]
+    struct MyObject<T: InputType + OutputType> {
+        a: T,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject<u32>) -> MyObject<String> {
+            MyObject::<String> {
+                a: format!("{}", input.a),
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: {a: 123}) { a } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": "123",
+            }
+        })
+    );
+
+    assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
+    assert_eq!(<MyObject<u32> as OutputType>::type_name(), "MyObjectU32");
+    assert_eq!(
+        <MyObject<String> as InputType>::type_name(),
+        "MyObjectString"
+    );
+    assert_eq!(
+        <MyObject<String> as InputType>::type_name(),
+        "MyObjectString"
+    );
+}
+
+#[tokio::test]
 pub async fn test_both_input_output_2() {
     #[derive(SimpleObject, InputObject)]
     #[graphql(name = "MyObj", input_name = "MyObjectInput")]
@@ -746,6 +794,78 @@ pub async fn test_input_object_validator() {
             }],
             path: vec![PathSegment::Field("a".to_string())],
             extensions: None
+        }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_custom_validator_with_extensions_input() {
+    struct MyValidator {
+        expect: i32,
+    }
+
+    impl MyValidator {
+        pub fn new(n: i32) -> Self {
+            MyValidator { expect: n }
+        }
+    }
+
+    impl CustomValidator<i32> for MyValidator {
+        fn check(&self, value: &i32) -> Result<(), InputValueError<i32>> {
+            if *value == self.expect {
+                Ok(())
+            } else {
+                Err(
+                    InputValueError::custom(format!("expect 100, actual {}", value))
+                        .with_extension("code", 99),
+                )
+            }
+        }
+    }
+
+    #[derive(InputObject, Debug)]
+    struct ValueInput {
+        #[graphql(validator(custom = "MyValidator::new(100)"))]
+        v: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self, n: ValueInput) -> i32 {
+            n.v
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ value(n: {v: 100}) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({ "value": 100 })
+    );
+
+    let mut error_extensions = ErrorExtensionValues::default();
+    error_extensions.set("code", 99);
+    assert_eq!(
+        schema
+            .execute("{ value(n: {v: 11}) }")
+            .await
+            .into_result()
+            .unwrap_err(),
+        vec![ServerError {
+            message: r#"Failed to parse "Int": expect 100, actual 11 (occurred while parsing "ValueInput")"#.to_string(),
+            source: None,
+            locations: vec![Pos {
+                line: 1,
+                column: 12
+            }],
+            path: vec![PathSegment::Field("value".to_string())],
+            extensions: Some(error_extensions)
         }]
     );
 }

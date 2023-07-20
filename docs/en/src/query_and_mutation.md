@@ -39,7 +39,7 @@ impl Mutation {
     async fn signup(&self, username: String, password: String) -> Result<bool> {
         // User signup
 #        todo!()
-}
+    }
 
     async fn login(&self, username: String, password: String) -> Result<String> {
         // User login (generate token)

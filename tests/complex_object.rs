@@ -66,10 +66,10 @@ pub async fn test_complex_object() {
 
     #[derive(Interface)]
     #[graphql(
-        field(name = "a", type = "&i32"),
-        field(name = "b", type = "&i32"),
-        field(name = "c", type = "i32"),
-        field(name = "d", type = "i32", arg(name = "v", type = "i32"))
+        field(name = "a", ty = "&i32"),
+        field(name = "b", ty = "&i32"),
+        field(name = "c", ty = "i32"),
+        field(name = "d", ty = "i32", arg(name = "v", ty = "i32"))
     )]
     enum ObjInterface {
         MyObj(MyObj),

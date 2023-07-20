@@ -28,54 +28,72 @@ _This crate uses `#![forbid(unsafe_code)]` to ensure everything is implemented i
 ```rs
 use std::error::Error;
 
-use async_graphql::*;
+use async_graphql::{http::GraphiQLSource, EmptyMutation, EmptySubscription, Object, Schema};
 use async_graphql_poem::*;
-use poem::{*, listener::TcpListener};
+use poem::{listener::TcpListener, web::Html, *};
 
 struct Query;
 
 #[Object]
 impl Query {
-  async fn howdy(&self) -> &'static str {
-    "partner"
-  }
+    async fn howdy(&self) -> &'static str {
+        "partner"
+    }
 }
 
-async fn main() -> Result<(), Box<dyn Error>> {
-  // create the schema
-  let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+#[handler]
+async fn graphiql() -> impl IntoResponse {
+    Html(GraphiQLSource::build().finish())
+}
 
-  // start the http server
-  let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
-  println!("GraphiQL: http://localhost:8000");
-  Server::new(TcpListener::bind("0.0.0.0:8000")).run(app).await?;
-  Ok(())
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    // create the schema
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+
+    // start the http server
+    let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
+    println!("GraphiQL: http://localhost:8000");
+    Server::new(TcpListener::bind("0.0.0.0:8000"))
+        .run(app)
+        .await?;
+    Ok(())
 }
 ```
 
 ## Dynamic schema
+Requires the `dynamic-schema` feature to be enabled.
 
 ```rs
 use std::error::Error;
 
-use async_graphql::dynamic::*;
+use async_graphql::{dynamic::*, http::GraphiQLSource};
 use async_graphql_poem::*;
-use poem::{*, listener::TcpListener};
+use poem::{listener::TcpListener, web::Html, *};
 
-let query = Object::new("Query")
-  .field(Field::new("howdy", TypeRef::named_nn(TypeRef::STRING), |_| FieldFuture::new(async { "partner" })));
+#[handler]
+async fn graphiql() -> impl IntoResponse {
+    Html(GraphiQLSource::build().finish())
+}
 
+#[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-  // create the schema
-  let schema = Schema::build(query, None, None)
-    .register(query)
-    .finish()?;
+    let query = Object::new("Query").field(Field::new(
+        "howdy",
+        TypeRef::named_nn(TypeRef::STRING),
+        |_| FieldFuture::new(async { "partner" }),
+    ));
 
-  // start the http server
-  let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
-  println!("GraphiQL: http://localhost:8000");
-  Server::new(TcpListener::bind("0.0.0.0:8000")).run(app).await?;
-  Ok(())
+    // create the schema
+    let schema = Schema::build(query, None, None).register(query).finish()?;
+
+    // start the http server
+    let app = Route::new().at("/", get(graphiql).post(GraphQL::new(schema)));
+    println!("GraphiQL: http://localhost:8000");
+    Server::new(TcpListener::bind("0.0.0.0:8000"))
+        .run(app)
+        .await?;
+    Ok(())
 }
 ```
 
@@ -98,7 +116,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - Apollo Tracing extension
 - Apollo Federation(v2)
 
-> **Note**: Minimum supported Rust version: 1.64.0 or later
+> **Note**: Minimum supported Rust version: 1.65.0 or later
 
 ## Examples
 

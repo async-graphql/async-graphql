@@ -1,7 +1,7 @@
-use darling::{util::SpannedValue, FromMeta};
+use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Error, Expr, Lit, Result};
+use syn::{Expr, Lit, Result};
 
 #[derive(Clone)]
 pub enum Number {
@@ -59,7 +59,7 @@ pub struct Validators {
     #[darling(default)]
     regex: Option<String>,
     #[darling(default, multiple)]
-    custom: Vec<SpannedValue<String>>,
+    custom: Vec<Expr>,
     #[darling(default)]
     list: bool,
 }
@@ -187,26 +187,21 @@ impl Validators {
             }
         }
 
-        for s in &self.custom {
-            let __create_custom_validator: Expr =
-                syn::parse_str(s).map_err(|err| Error::new(s.span(), err.to_string()))?;
-
+        for expr in &self.custom {
             if self.list {
                 codes.push(quote! {
-                    let __custom_validator = #__create_custom_validator;
                     if let ::std::option::Option::Some(value) = #crate_name::InputType::as_raw_value(#value) {
                         for __item in value {
                             if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(__item) {
-                                #crate_name::CustomValidator::check(&__custom_validator, __raw_value) #map_err ?;
+                                #crate_name::CustomValidator::check(&(#expr), __raw_value) #map_err ?;
                             }
                         }
                     }
                 });
             } else {
                 codes.push(quote! {
-                    let __custom_validator = #__create_custom_validator;
                     if let ::std::option::Option::Some(__raw_value) = #crate_name::InputType::as_raw_value(#value) {
-                        #crate_name::CustomValidator::check(&__custom_validator, __raw_value) #map_err ?;
+                        #crate_name::CustomValidator::check(&(#expr), __raw_value) #map_err ?;
                     }
                 });
             }

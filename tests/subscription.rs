@@ -214,7 +214,7 @@ pub async fn test_subscription_fragment() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "a", type = "&i32"))]
+    #[graphql(field(name = "a", ty = "&i32"))]
     enum MyInterface {
         Event(Event),
     }
@@ -263,7 +263,7 @@ pub async fn test_subscription_fragment2() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "a", type = "&i32"))]
+    #[graphql(field(name = "a", ty = "&i32"))]
     enum MyInterface {
         Event(Event),
     }

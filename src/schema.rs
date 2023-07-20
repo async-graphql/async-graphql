@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::stream::{self, BoxStream, Stream, StreamExt};
+use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
 
 use crate::{
     context::{Data, QueryEnvInner},
@@ -28,20 +28,15 @@ use crate::{
 };
 
 /// Introspection mode
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum IntrospectionMode {
     /// Introspection only
     IntrospectionOnly,
     /// Enables introspection
+    #[default]
     Enabled,
     /// Disables introspection
     Disabled,
-}
-
-impl Default for IntrospectionMode {
-    fn default() -> Self {
-        IntrospectionMode::Enabled
-    }
 }
 
 /// Schema builder
@@ -521,10 +516,11 @@ where
         match batch_request {
             BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
             BatchRequest::Batch(requests) => BatchResponse::Batch(
-                futures_util::stream::iter(requests.into_iter())
-                    .then(|request| self.execute(request))
-                    .collect()
-                    .await,
+                FuturesOrdered::from_iter(
+                    requests.into_iter().map(|request| self.execute(request)),
+                )
+                .collect()
+                .await,
             ),
         }
     }

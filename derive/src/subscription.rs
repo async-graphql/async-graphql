@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    args::{self, ComplexityType, RenameRuleExt, RenameTarget, SubscriptionField},
+    args::{self, RenameRuleExt, RenameTarget, SubscriptionField},
     output_type::OutputType,
     utils::{
         extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
@@ -47,7 +47,7 @@ pub fn generate(
     let mut schema_fields = Vec::new();
 
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let field: SubscriptionField = parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
             if field.skip {
                 remove_graphql_attrs(&mut method.attrs);
@@ -141,12 +141,7 @@ pub fn generate(
 
                 let param_ident = &ident.ident;
                 let process_with = match process_with.as_ref() {
-                    Some(fn_path) => {
-                        let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                        quote! {
-                            #fn_path(&mut #param_ident);
-                        }
-                    }
+                    Some(fn_path) => quote! { #fn_path(&mut #param_ident); },
                     None => Default::default(),
                 };
 
@@ -207,51 +202,43 @@ pub fn generate(
 
             let visible = visible_fn(&field.visible);
             let complexity = if let Some(complexity) = &field.complexity {
-                match complexity {
-                    ComplexityType::Const(n) => {
-                        quote! { ::std::option::Option::Some(#crate_name::registry::ComplexityType::Const(#n)) }
-                    }
-                    ComplexityType::Fn(s) => {
-                        let (variables, expr) = parse_complexity_expr(s)?;
-                        let mut parse_args = Vec::new();
-                        for variable in variables {
-                            if let Some((
-                                ident,
-                                ty,
-                                args::SubscriptionFieldArgument {
-                                    name,
-                                    default,
-                                    default_with,
-                                    ..
-                                },
-                            )) = args
-                                .iter()
-                                .find(|(pat_ident, _, _)| pat_ident.ident == variable)
-                            {
-                                let default = match generate_default(default, default_with)? {
-                                    Some(default) => {
-                                        quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
-                                    }
-                                    None => quote! { ::std::option::Option::None },
-                                };
-                                let name = name.clone().unwrap_or_else(|| {
-                                    subscription_args.rename_args.rename(
-                                        ident.ident.unraw().to_string(),
-                                        RenameTarget::Argument,
-                                    )
-                                });
-                                parse_args.push(quote! {
-                                    let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
-                                });
+                let (variables, expr) = parse_complexity_expr(complexity.clone())?;
+                let mut parse_args = Vec::new();
+                for variable in variables {
+                    if let Some((
+                        ident,
+                        ty,
+                        args::SubscriptionFieldArgument {
+                            name,
+                            default,
+                            default_with,
+                            ..
+                        },
+                    )) = args
+                        .iter()
+                        .find(|(pat_ident, _, _)| pat_ident.ident == variable)
+                    {
+                        let default = match generate_default(default, default_with)? {
+                            Some(default) => {
+                                quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
                             }
-                        }
-                        quote! {
-                            Some(#crate_name::registry::ComplexityType::Fn(|__ctx, __variables_definition, __field, child_complexity| {
-                                #(#parse_args)*
-                                ::std::result::Result::Ok(#expr)
-                            }))
-                        }
+                            None => quote! { ::std::option::Option::None },
+                        };
+                        let name = name.clone().unwrap_or_else(|| {
+                            subscription_args
+                                .rename_args
+                                .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
+                        });
+                        parse_args.push(quote! {
+                            let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
+                        });
                     }
+                }
+                quote! {
+                    Some(|__ctx, __variables_definition, __field, child_complexity| {
+                        #(#parse_args)*
+                        ::std::result::Result::Ok(#expr)
+                    })
                 }
             } else {
                 quote! { ::std::option::Option::None }
@@ -279,6 +266,7 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
+                    directive_invocations: ::std::default::Default::default(),
                 });
             });
 
@@ -425,6 +413,7 @@ pub fn generate(
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                    directive_invocations: ::std::default::Default::default(),
                 })
             }
 

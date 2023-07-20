@@ -9,7 +9,7 @@ use syn::{
 };
 
 use crate::{
-    args::{self, ComplexityType, RenameRuleExt, RenameTarget},
+    args::{self, RenameRuleExt, RenameTarget},
     output_type::OutputType,
     utils::{
         extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
@@ -33,7 +33,7 @@ pub fn generate(
     // Computation of the derivated fields
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let method_args: args::ComplexObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
@@ -108,7 +108,7 @@ pub fn generate(
 
                     new_impl.block = syn::parse2::<Block>(new_block).expect("invalid block");
 
-                    derived_impls.push(ImplItem::Method(new_impl));
+                    derived_impls.push(ImplItem::Fn(new_impl));
                 }
             }
         }
@@ -116,7 +116,7 @@ pub fn generate(
     item_impl.items.append(&mut derived_impls);
 
     for item in &mut item_impl.items {
-        if let ImplItem::Method(method) = item {
+        if let ImplItem::Fn(method) = item {
             let method_args: args::ComplexObjectField =
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
             if method_args.skip {
@@ -286,12 +286,7 @@ pub fn generate(
 
                 let param_ident = &ident.ident;
                 let process_with = match process_with.as_ref() {
-                    Some(fn_path) => {
-                        let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                        quote! {
-                            #fn_path(&mut #param_ident);
-                        }
-                    }
+                    Some(fn_path) => quote! { #fn_path(&mut #param_ident); },
                     None => Default::default(),
                 };
 
@@ -327,51 +322,43 @@ pub fn generate(
             let visible = visible_fn(&method_args.visible);
 
             let complexity = if let Some(complexity) = &method_args.complexity {
-                match complexity {
-                    ComplexityType::Const(n) => {
-                        quote! { ::std::option::Option::Some(#crate_name::registry::ComplexityType::Const(#n)) }
-                    }
-                    ComplexityType::Fn(s) => {
-                        let (variables, expr) = parse_complexity_expr(s)?;
-                        let mut parse_args = Vec::new();
-                        for variable in variables {
-                            if let Some((
-                                ident,
-                                ty,
-                                args::Argument {
-                                    name,
-                                    default,
-                                    default_with,
-                                    ..
-                                },
-                            )) = args
-                                .iter()
-                                .find(|(pat_ident, _, _)| pat_ident.ident == variable)
-                            {
-                                let default = match generate_default(default, default_with)? {
-                                    Some(default) => {
-                                        quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
-                                    }
-                                    None => quote! { ::std::option::Option::None },
-                                };
-                                let name = name.clone().unwrap_or_else(|| {
-                                    object_args.rename_args.rename(
-                                        ident.ident.unraw().to_string(),
-                                        RenameTarget::Argument,
-                                    )
-                                });
-                                parse_args.push(quote! {
-                                        let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
-                                    });
+                let (variables, expr) = parse_complexity_expr(complexity.clone())?;
+                let mut parse_args = Vec::new();
+                for variable in variables {
+                    if let Some((
+                        ident,
+                        ty,
+                        args::Argument {
+                            name,
+                            default,
+                            default_with,
+                            ..
+                        },
+                    )) = args
+                        .iter()
+                        .find(|(pat_ident, _, _)| pat_ident.ident == variable)
+                    {
+                        let default = match generate_default(default, default_with)? {
+                            Some(default) => {
+                                quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
                             }
-                        }
-                        quote! {
-                            Some(#crate_name::registry::ComplexityType::Fn(|__ctx, __variables_definition, __field, child_complexity| {
-                                #(#parse_args)*
-                                Ok(#expr)
-                            }))
-                        }
+                            None => quote! { ::std::option::Option::None },
+                        };
+                        let name = name.clone().unwrap_or_else(|| {
+                            object_args
+                                .rename_args
+                                .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
+                        });
+                        parse_args.push(quote! {
+                            let #ident: #ty = __ctx.param_value(__variables_definition, __field, #name, #default)?;
+                        });
                     }
+                }
+                quote! {
+                    Some(|__ctx, __variables_definition, __field, child_complexity| {
+                        #(#parse_args)*
+                        Ok(#expr)
+                    })
                 }
             } else {
                 quote! { ::std::option::Option::None }
@@ -399,6 +386,7 @@ pub fn generate(
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: #complexity,
+                    directive_invocations: ::std::vec![],
                 }));
             });
 

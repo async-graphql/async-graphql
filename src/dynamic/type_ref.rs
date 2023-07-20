@@ -116,8 +116,11 @@ impl TypeRef {
         ))))
     }
 
+    /// Returns the type name
+    ///
+    /// `[Foo!]` -> `Foo`
     #[inline(always)]
-    pub(crate) fn type_name(&self) -> &str {
+    pub fn type_name(&self) -> &str {
         self.0.type_name()
     }
 
@@ -125,24 +128,6 @@ impl TypeRef {
     pub(crate) fn is_nullable(&self) -> bool {
         match &self.0 {
             TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => true,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_named(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => false,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn is_list(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => false,
             TypeRefInner::NonNull(_) => false,
             TypeRefInner::List(_) => true,
         }
