@@ -27,17 +27,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
-    let mut struct_fields = Vec::new();
     for field in &s.fields {
-        let vis = &field.vis;
-        let ty = &field.ty;
-        let ident = match &field.ident {
-            Some(ident) => ident,
-            None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
-        };
-        struct_fields.push(quote! {
-            #vis #ident: #ty
-        });
+        if field.ident.is_none() {
+            return Err(Error::new_spanned(ident, "All fields must be named.").into());
+        }
     }
 
     let gql_typename = if !object_args.name_type {
