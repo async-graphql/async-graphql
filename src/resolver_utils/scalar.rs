@@ -157,6 +157,7 @@ macro_rules! scalar_internal {
 
             fn create_type_info(
                 registry: &mut $crate::registry::Registry,
+                has_schema_default: bool,
             ) -> ::std::string::String {
                 registry.create_input_type::<$ty, _>($crate::registry::MetaTypeId::Scalar, |_| {
                     $crate::registry::MetaType::Scalar {
@@ -165,6 +166,7 @@ macro_rules! scalar_internal {
                         is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| {
                             <$ty as $crate::ScalarType>::is_valid(value)
                         })),
+                        has_schema_default,
                         visible: ::std::option::Option::None,
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
@@ -204,6 +206,7 @@ macro_rules! scalar_internal {
                         is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| {
                             <$ty as $crate::ScalarType>::is_valid(value)
                         })),
+                        has_schema_default: false,
                         visible: ::std::option::Option::None,
                         inaccessible: false,
                         tags: ::std::default::Default::default(),

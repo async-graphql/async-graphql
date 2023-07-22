@@ -57,13 +57,14 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 description: #desc,
                 is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#ident as #crate_name::ScalarType>::is_valid(value))),
                 visible: #visible,
+                has_schema_default: false,
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],
                 specified_by_url: #specified_by_url,
             })
         }
     } else {
-        quote! { <#inner_ty as #crate_name::InputType>::create_type_info(registry) }
+        quote! { <#inner_ty as #crate_name::InputType>::create_type_info(registry, false) }
     };
 
     let expanded = quote! {
@@ -99,7 +100,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 #type_name
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
                 #create_type_info
             }
 

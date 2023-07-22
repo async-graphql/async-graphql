@@ -95,7 +95,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaInputValue {
                     name: ::std::string::ToString::to_string(#field_name),
                     description: #desc,
-                    ty: <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry),
+                    ty: <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry, false),
                     default_value: ::std::option::Option::None,
                     visible: #visible,
                     inaccessible: #inaccessible,
@@ -142,7 +142,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     #gql_typename
                 }
 
-                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
@@ -152,6 +152,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                             fields
                         },
                         visible: #visible,
+                        has_schema_default,
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
@@ -194,7 +195,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
         code.push(quote! {
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
+                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str, has_schema_default: bool) -> ::std::string::String where Self: #crate_name::InputType {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
@@ -203,6 +204,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                             #(#schema_fields)*
                             fields
                         },
+                        has_schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
@@ -244,8 +246,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
 
-                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry, #gql_typename)
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
+                        Self::__internal_create_type_info(registry, #gql_typename, has_schema_default)
                     }
 
                     fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {

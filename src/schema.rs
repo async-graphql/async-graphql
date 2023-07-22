@@ -60,8 +60,8 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// You can use this function to register schema types that are not directly
     /// referenced.
     #[must_use]
-    pub fn register_input_type<T: InputType>(mut self) -> Self {
-        T::create_type_info(&mut self.registry);
+    pub fn register_input_type<T: InputType>(mut self, has_schema_default: bool) -> Self {
+        T::create_type_info(&mut self.registry, has_schema_default);
         self
     }
 

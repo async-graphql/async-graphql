@@ -145,7 +145,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 #gql_typename
             }
 
-            fn __create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+            fn __create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
                 registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::Enum, |registry| {
                     #crate_name::registry::MetaType::Enum {
                         name: ::std::borrow::Cow::into_owned(#gql_typename),
@@ -155,6 +155,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                             #(#schema_enum_items)*
                             enum_items
                         },
+                        has_schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
@@ -172,8 +173,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 Self::__type_name()
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                Self::__create_type_info(registry)
+            fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
+                Self::__create_type_info(registry, has_schema_default)
             }
 
             fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {
@@ -196,7 +197,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                Self::__create_type_info(registry)
+                Self::__create_type_info(registry, false)
             }
 
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {

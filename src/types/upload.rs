@@ -147,12 +147,13 @@ impl InputType for Upload {
         Cow::Borrowed("Upload")
     }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
+    fn create_type_info(registry: &mut registry::Registry, has_schema_default: bool) -> String {
         registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
             description: None,
             is_valid: Some(Arc::new(|value| matches!(value, Value::String(_)))),
             visible: None,
+            has_schema_default,
             inaccessible: false,
             tags: Default::default(),
             specified_by_url: Some(

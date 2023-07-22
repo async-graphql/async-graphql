@@ -40,8 +40,13 @@ pub trait InputType: Send + Sync + Sized {
         format!("{}!", Self::type_name())
     }
 
+    /// Optional version of the Qualified typename
+    fn qualified_type_name_optional() -> String {
+        Self::type_name().to_string()
+    }
+
     /// Create type information in the registry and return qualified typename.
-    fn create_type_info(registry: &mut registry::Registry) -> String;
+    fn create_type_info(registry: &mut registry::Registry, has_schema_default: bool) -> String;
 
     /// Parse from `Value`. None represents undefined.
     fn parse(value: Option<Value>) -> InputValueResult<Self>;
@@ -185,8 +190,8 @@ impl<T: InputType> InputType for Box<T> {
         T::type_name()
     }
 
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
+    fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
+        T::create_type_info(registry, has_schema_default)
     }
 
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {
@@ -231,8 +236,8 @@ impl<T: InputType> InputType for Arc<T> {
         T::type_name()
     }
 
-    fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
+    fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
+        T::create_type_info(registry, has_schema_default)
     }
 
     fn parse(value: Option<ConstValue>) -> InputValueResult<Self> {

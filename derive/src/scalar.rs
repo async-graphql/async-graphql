@@ -59,11 +59,12 @@ pub fn generate(
                 #gql_typename
             }
 
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+            fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
                 registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
                     name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
                     is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
+                    has_schema_default,
                     visible: #visible,
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
@@ -96,6 +97,7 @@ pub fn generate(
                     name: ::std::borrow::Cow::into_owned(#gql_typename),
                     description: #desc,
                     is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
+                    has_schema_default: false,
                     visible: #visible,
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],

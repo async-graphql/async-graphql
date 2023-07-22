@@ -214,8 +214,8 @@ impl<T: InputType> InputType for MaybeUndefined<T> {
         T::type_name().to_string()
     }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
+    fn create_type_info(registry: &mut registry::Registry, has_schema_default: bool) -> String {
+        T::create_type_info(registry, has_schema_default);
         T::type_name().to_string()
     }
 

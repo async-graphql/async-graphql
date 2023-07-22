@@ -37,8 +37,8 @@ macro_rules! impl_input_string_for_smart_ptr {
                 Cow::Borrowed("String")
             }
 
-            fn create_type_info(registry: &mut Registry) -> String {
-                <String as OutputType>::create_type_info(registry)
+            fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
+                <String as InputType>::create_type_info(registry, has_schema_default)
             }
 
             fn parse(value: Option<Value>) -> InputValueResult<Self> {
