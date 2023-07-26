@@ -37,6 +37,9 @@ pub trait CacheStorage: Send + Sync + 'static {
 
     /// Clears the cache, removing all key-value pairs.
     fn clear(&mut self);
+
+    /// Returns an iterator over the key-value pairs in the cache.
+    fn iter(&self) -> Box<dyn Iterator<Item = (&'_ Self::Key, &'_ Self::Value)> + '_>;
 }
 
 /// No cache.
@@ -81,6 +84,10 @@ where
 
     #[inline]
     fn clear(&mut self) {}
+
+    fn iter(&self) -> Box<dyn Iterator<Item = (&'_ Self::Key, &'_ Self::Value)> + '_> {
+        Box::new(std::iter::empty())
+    }
 }
 
 /// [std::collections::HashMap] cache.
@@ -141,6 +148,10 @@ where
     fn clear(&mut self) {
         self.0.clear();
     }
+
+    fn iter(&self) -> Box<dyn Iterator<Item = (&'_ Self::Key, &'_ Self::Value)> + '_> {
+        Box::new(self.0.iter())
+    }
 }
 
 /// LRU cache.
@@ -193,5 +204,9 @@ where
     #[inline]
     fn clear(&mut self) {
         self.0.clear();
+    }
+
+    fn iter(&self) -> Box<dyn Iterator<Item = (&'_ Self::Key, &'_ Self::Value)> + '_> {
+        Box::new(self.0.iter())
     }
 }
