@@ -53,6 +53,7 @@ mod value_accessor;
 
 pub use error::SchemaError;
 pub use field::{Field, FieldFuture, FieldValue, ResolverContext};
+pub use indexmap;
 pub use input_object::InputObject;
 pub use input_value::InputValue;
 pub use interface::{Interface, InterfaceField};
