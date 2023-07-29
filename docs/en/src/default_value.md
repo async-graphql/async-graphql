@@ -44,9 +44,9 @@ use async_graphql::*;
 
 #[derive(Interface)]
 #[graphql(
-    field(name = "test1", type = "i32", arg(name = "value", type = "i32", default)),
-    field(name = "test2", type = "i32", arg(name = "value", type = "i32", default = 10)),
-    field(name = "test3", type = "i32", arg(name = "value", type = "i32", default_with = "my_default()")),
+    field(name = "test1", ty = "i32", arg(name = "value", ty = "i32", default)),
+    field(name = "test2", ty = "i32", arg(name = "value", ty = "i32", default = 10)),
+    field(name = "test3", ty = "i32", arg(name = "value", ty = "i32", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),

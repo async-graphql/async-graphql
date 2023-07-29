@@ -155,6 +155,7 @@ impl Object {
                     tags: field.tags.clone(),
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
+                    directive_invocations: vec![],
                 },
             );
         }
@@ -178,6 +179,7 @@ impl Object {
                 tags: self.tags.clone(),
                 is_subscription: false,
                 rust_typename: None,
+                directive_invocations: vec![],
             },
         );
 

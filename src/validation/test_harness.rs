@@ -169,8 +169,8 @@ enum HumanOrAlien {
     internal,
     field(
         name = "name",
-        type = "Option<String>",
-        arg(name = "surname", type = "Option<bool>")
+        ty = "Option<String>",
+        arg(name = "surname", ty = "Option<bool>")
     )
 )]
 enum Being {
@@ -185,8 +185,8 @@ enum Being {
     internal,
     field(
         name = "name",
-        type = "Option<String>",
-        arg(name = "surname", type = "Option<bool>")
+        ty = "Option<String>",
+        arg(name = "surname", ty = "Option<bool>")
     )
 )]
 enum Pet {
@@ -199,8 +199,8 @@ enum Pet {
     internal,
     field(
         name = "name",
-        type = "Option<String>",
-        arg(name = "surname", type = "Option<bool>")
+        ty = "Option<String>",
+        arg(name = "surname", ty = "Option<bool>")
     )
 )]
 enum Canine {
@@ -208,7 +208,7 @@ enum Canine {
 }
 
 #[derive(Interface)]
-#[graphql(internal, field(name = "iq", type = "Option<i32>"))]
+#[graphql(internal, field(name = "iq", ty = "Option<i32>"))]
 enum Intelligent {
     Human(Human),
     Alien(Alien),

@@ -59,9 +59,9 @@ impl Square {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = "area", type = "f32"),
-    field(name = "scale", type = "Shape", arg(name = "s", type = "f32")),
-    field(name = "short_description", method = "short_description", type = "String")
+    field(name = "area", ty = "f32"),
+    field(name = "scale", ty = "Shape", arg(name = "s", ty = "f32")),
+    field(name = "short_description", method = "short_description", ty = "String")
 )]
 enum Shape {
     Circle(Circle),
@@ -80,7 +80,7 @@ because `MyInterface` is not referenced in `Schema`, the `MyInterface` type will
 # use async_graphql::*;
 #[derive(Interface)]
 #[graphql(
-    field(name = "name", type = "String"),
+    field(name = "name", ty = "String"),
 )]
 enum MyInterface {
     MyObject(MyObject),
@@ -109,7 +109,7 @@ You need to manually register the `MyInterface` type when constructing the `Sche
 # extern crate async_graphql;
 # use async_graphql::*;
 # #[derive(Interface)]
-# #[graphql(field(name = "name", type = "String"))]
+# #[graphql(field(name = "name", ty = "String"))]
 # enum MyInterface { MyObject(MyObject) }
 # #[derive(SimpleObject)]
 # struct MyObject { name: String, }

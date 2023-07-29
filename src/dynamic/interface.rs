@@ -235,6 +235,7 @@ impl Interface {
                     tags: field.tags.clone(),
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
+                    directive_invocations: vec![],
                 },
             );
         }

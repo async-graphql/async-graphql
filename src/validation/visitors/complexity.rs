@@ -3,7 +3,7 @@ use async_graphql_value::Name;
 
 use crate::{
     parser::types::Field,
-    registry::{ComplexityType, MetaType, MetaTypeName},
+    registry::{MetaType, MetaTypeName},
     validation::visitor::{VisitMode, Visitor, VisitorContext},
     Positioned,
 };
@@ -57,26 +57,18 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
             if let Some(meta_field) = fields.get(MetaTypeName::concrete_typename(
                 field.node.name.node.as_str(),
             )) {
-                if let Some(compute_complexity) = &meta_field.compute_complexity {
-                    match compute_complexity {
-                        ComplexityType::Const(n) => {
+                if let Some(f) = &meta_field.compute_complexity {
+                    match f(
+                        ctx,
+                        self.variable_definition.unwrap(),
+                        &field.node,
+                        children_complex,
+                    ) {
+                        Ok(n) => {
                             *self.complexity_stack.last_mut().unwrap() += n;
                         }
-                        ComplexityType::Fn(f) => {
-                            match f(
-                                ctx,
-                                self.variable_definition.unwrap(),
-                                &field.node,
-                                children_complex,
-                            ) {
-                                Ok(n) => {
-                                    *self.complexity_stack.last_mut().unwrap() += n;
-                                }
-                                Err(err) => ctx.report_error(vec![field.pos], err.to_string()),
-                            }
-                        }
+                        Err(err) => ctx.report_error(vec![field.pos], err.to_string()),
                     }
-
                     return;
                 }
             }

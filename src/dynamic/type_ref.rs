@@ -116,8 +116,11 @@ impl TypeRef {
         ))))
     }
 
+    /// Returns the type name
+    ///
+    /// `[Foo!]` -> `Foo`
     #[inline(always)]
-    pub(crate) fn type_name(&self) -> &str {
+    pub fn type_name(&self) -> &str {
         self.0.type_name()
     }
 

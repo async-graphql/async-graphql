@@ -408,6 +408,54 @@ pub async fn test_both_input_output() {
 }
 
 #[tokio::test]
+pub async fn test_both_input_output_generic() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(concrete(name = "MyObjectU32", params(u32)))]
+    #[graphql(concrete(name = "MyObjectString", params(String)))]
+    #[allow(dead_code)]
+    struct MyObject<T: InputType + OutputType> {
+        a: T,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject<u32>) -> MyObject<String> {
+            MyObject::<String> {
+                a: format!("{}", input.a),
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: {a: 123}) { a } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": "123",
+            }
+        })
+    );
+
+    assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
+    assert_eq!(<MyObject<u32> as OutputType>::type_name(), "MyObjectU32");
+    assert_eq!(
+        <MyObject<String> as InputType>::type_name(),
+        "MyObjectString"
+    );
+    assert_eq!(
+        <MyObject<String> as InputType>::type_name(),
+        "MyObjectString"
+    );
+}
+
+#[tokio::test]
 pub async fn test_both_input_output_2() {
     #[derive(SimpleObject, InputObject)]
     #[graphql(name = "MyObj", input_name = "MyObjectInput")]

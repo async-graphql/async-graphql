@@ -1,7 +1,7 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error, Expr};
+use syn::{ext::IdentExt, Error};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget},
@@ -27,23 +27,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
-    let mut struct_fields = Vec::new();
     for field in &s.fields {
-        let vis = &field.vis;
-        let ty = &field.ty;
-        let ident = match &field.ident {
-            Some(ident) => ident,
-            None => return Err(Error::new_spanned(ident, "All fields must be named.").into()),
-        };
-        let attrs = field
-            .attrs
-            .iter()
-            .filter(|attr| !attr.path.is_ident("field"))
-            .collect::<Vec<_>>();
-        struct_fields.push(quote! {
-            #(#attrs)*
-            #vis #ident: #ty
-        });
+        if field.ident.is_none() {
+            return Err(Error::new_spanned(ident, "All fields must be named.").into());
+        }
     }
 
     let gql_typename = if !object_args.name_type {
@@ -95,12 +82,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         federation_fields.push((ty, name.clone()));
 
         let process_with = match field.process_with.as_ref() {
-            Some(fn_path) => {
-                let fn_path: syn::ExprPath = syn::parse_str(fn_path)?;
-                quote! {
-                    #fn_path(&mut #ident);
-                }
-            }
+            Some(fn_path) => quote! { #fn_path(&mut #ident); },
             None => Default::default(),
         };
 
@@ -239,13 +221,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         }
     };
 
-    let obj_validator = if let Some(validator) = &object_args.validator {
-        let expr: Expr = syn::parse_str(validator)
-            .map_err(|err| Error::new(validator.span(), err.to_string()))?;
-        Some(quote! { #crate_name::CustomValidator::check(&#expr, &obj)?; })
-    } else {
-        None
-    };
+    let obj_validator = object_args
+        .validator
+        .as_ref()
+        .map(|expr| quote! { #crate_name::CustomValidator::check(&#expr, &obj)?; });
 
     let expanded = if object_args.concretes.is_empty() {
         quote! {
@@ -308,7 +287,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         code.push(quote! {
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
+                fn __internal_create_type_info_input_object(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
@@ -363,7 +342,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info(registry, #gql_typename)
+                        Self::__internal_create_type_info_input_object(registry, #gql_typename)
                     }
 
                     fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {

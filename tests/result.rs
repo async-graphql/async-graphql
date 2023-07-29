@@ -112,7 +112,7 @@ pub async fn test_custom_error() {
     }
 
     #[derive(Interface)]
-    #[graphql(field(name = "value2", type = "i32"))]
+    #[graphql(field(name = "value2", ty = "i32"))]
     enum MyInterface {
         MyObj(MyObj),
     }

@@ -42,11 +42,10 @@ pub struct Tracing;
 
 impl ExtensionFactory for Tracing {
     fn create(&self) -> Arc<dyn Extension> {
-        Arc::new(TracingExtension::default())
+        Arc::new(TracingExtension)
     }
 }
 
-#[derive(Default)]
 struct TracingExtension;
 
 #[async_trait::async_trait]

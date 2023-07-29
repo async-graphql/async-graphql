@@ -6,10 +6,10 @@ documentation = "https://docs.rs/async-graphql/"
 edition = "2021"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 name = "async-graphql-derive"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "5.0.10"
+version = "6.0.0"
 
 [lib]
 proc-macro = true
@@ -18,14 +18,15 @@ proc-macro = true
 async-graphql-parser.workspace = true
 
 Inflector = "0.11.4"
-darling = "0.14.0"
+darling = "0.20.1"
 proc-macro-crate = "1.0.0"
 proc-macro2 = "1.0.24"
 quote = "1.0.9"
-syn = { version = "1.0.64", features = [
+syn = { version = "2.0", features = [
   "full",
   "extra-traits",
   "visit-mut",
   "visit",
 ] }
 thiserror.workspace = true
+strum= { version ="0.25.0", features=["derive"]}

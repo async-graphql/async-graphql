@@ -3,12 +3,13 @@ use std::str::FromStr;
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeDef, Path, Type};
+use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField},
+    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField, TypeDirectiveLocation},
     utils::{
-        gen_deprecation, generate_guards, get_crate_name, get_rustdoc, visible_fn, GeneratorResult,
+        gen_deprecation, gen_directive_calls, generate_guards, get_crate_name, get_rustdoc,
+        visible_fn, GeneratorResult,
     },
 };
 
@@ -37,6 +38,8 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let object_directives =
+        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -187,7 +190,8 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         let visible = visible_fn(&field.visible);
-
+        let directives =
+            gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
         if !field.flatten {
             schema_fields.push(quote! {
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -206,6 +210,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: ::std::option::Option::None,
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                 });
             });
         } else {
@@ -370,6 +375,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 
@@ -385,11 +391,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
         #[derive(Default)]
         struct GetLifetimes<'a> {
-            lifetimes: Vec<&'a LifetimeDef>,
+            lifetimes: Vec<&'a LifetimeParam>,
         }
 
         impl<'a> Visit<'a> for GetLifetimes<'a> {
-            fn visit_lifetime_def(&mut self, i: &'a LifetimeDef) {
+            fn visit_lifetime_param(&mut self, i: &'a LifetimeParam) {
                 self.lifetimes.push(i);
             }
         }
@@ -414,7 +420,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             impl #impl_generics #ident #ty_generics #where_clause {
                 #(#getters)*
 
-                fn __internal_create_type_info(
+                fn __internal_create_type_info_simple_object(
                     registry: &mut #crate_name::registry::Registry,
                     name: &str,
                     complex_fields: #crate_name::indexmap::IndexMap<::std::string::String, #crate_name::registry::MetaField>,
@@ -437,6 +443,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#object_directives),* ],
                     })
                 }
 
@@ -472,7 +479,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                         let mut fields = #crate_name::indexmap::IndexMap::new();
                         #concat_complex_fields
-                        Self::__internal_create_type_info(registry, #gql_typename, fields)
+                        Self::__internal_create_type_info_simple_object(registry, #gql_typename, fields)
                     }
 
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {

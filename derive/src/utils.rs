@@ -1,17 +1,17 @@
 use std::collections::HashSet;
 
-use darling::{util::SpannedValue, FromMeta};
+use darling::FromMeta;
 use proc_macro2::{Span, TokenStream, TokenTree};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::{
-    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprPath, FnArg, Ident,
-    ImplItemMethod, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
+    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprLit, ExprPath, FnArg,
+    Ident, ImplItemFn, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
     TypeReference,
 };
 use thiserror::Error;
 
-use crate::args::{self, Deprecation, Visible};
+use crate::args::{self, Deprecation, TypeDirectiveLocation, Visible};
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -47,11 +47,9 @@ pub fn get_crate_name(internal: bool) -> TokenStream {
 
 pub fn generate_guards(
     crate_name: &TokenStream,
-    code: &SpannedValue<String>,
+    expr: &Expr,
     map_err: TokenStream,
 ) -> GeneratorResult<TokenStream> {
-    let expr: Expr =
-        syn::parse_str(code).map_err(|err| Error::new(code.span(), err.to_string()))?;
     let code = quote! {{
         use #crate_name::GuardExt;
         #expr
@@ -64,9 +62,12 @@ pub fn generate_guards(
 pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<String>> {
     let mut full_docs = String::new();
     for attr in attrs {
-        match attr.parse_meta()? {
-            Meta::NameValue(nv) if nv.path.is_ident("doc") => {
-                if let Lit::Str(doc) = nv.lit {
+        if let Meta::NameValue(nv) = &attr.meta {
+            if nv.path.is_ident("doc") {
+                if let Expr::Lit(ExprLit {
+                    lit: Lit::Str(doc), ..
+                }) = &nv.value
+                {
                     let doc = doc.value();
                     let doc_str = doc.trim();
                     if !full_docs.is_empty() {
@@ -75,7 +76,6 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<String>> {
                     full_docs += doc_str;
                 }
             }
-            _ => {}
         }
     }
     Ok(if full_docs.is_empty() {
@@ -135,7 +135,7 @@ pub fn generate_default(
 pub fn get_cfg_attrs(attrs: &[Attribute]) -> Vec<Attribute> {
     attrs
         .iter()
-        .filter(|attr| !attr.path.segments.is_empty() && attr.path.segments[0].ident == "cfg")
+        .filter(|attr| !attr.path().segments.is_empty() && attr.path().segments[0].ident == "cfg")
         .cloned()
         .collect()
 }
@@ -144,9 +144,8 @@ pub fn parse_graphql_attrs<T: FromMeta + Default>(
     attrs: &[Attribute],
 ) -> GeneratorResult<Option<T>> {
     for attr in attrs {
-        if attr.path.is_ident("graphql") {
-            let meta = attr.parse_meta()?;
-            return Ok(Some(T::from_meta(&meta)?));
+        if attr.path().is_ident("graphql") {
+            return Ok(Some(T::from_meta(&attr.meta)?));
         }
     }
     Ok(None)
@@ -156,7 +155,7 @@ pub fn remove_graphql_attrs(attrs: &mut Vec<Attribute>) {
     if let Some((idx, _)) = attrs
         .iter()
         .enumerate()
-        .find(|(_, a)| a.path.is_ident("graphql"))
+        .find(|(_, a)| a.path().is_ident("graphql"))
     {
         attrs.remove(idx);
     }
@@ -200,7 +199,7 @@ pub fn visible_fn(visible: &Option<Visible>) -> TokenStream {
     }
 }
 
-pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)> {
+pub fn parse_complexity_expr(expr: Expr) -> GeneratorResult<(HashSet<String>, Expr)> {
     #[derive(Default)]
     struct VisitComplexityExpr {
         variables: HashSet<String>,
@@ -216,7 +215,6 @@ pub fn parse_complexity_expr(s: &str) -> GeneratorResult<(HashSet<String>, Expr)
         }
     }
 
-    let expr: Expr = syn::parse_str(s)?;
     let mut visit = VisitComplexityExpr::default();
     visit.visit_expr(&expr);
     Ok((visit.variables, expr))
@@ -240,7 +238,7 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
 
 pub fn extract_input_args<T: FromMeta + Default>(
     crate_name: &proc_macro2::TokenStream,
-    method: &mut ImplItemMethod,
+    method: &mut ImplItemFn,
 ) -> GeneratorResult<Vec<(PatIdent, Type, T)>> {
     let mut args = Vec::new();
     let mut create_ctx = true;
@@ -315,4 +313,33 @@ impl VisitMut for RemoveLifetime {
         i.ident = Ident::new("_", Span::call_site());
         visit_mut::visit_lifetime_mut(self, i);
     }
+}
+
+pub fn gen_directive_calls(
+    directive_calls: &[Expr],
+    location: TypeDirectiveLocation,
+) -> Vec<TokenStream> {
+    directive_calls
+        .iter()
+        .map(|directive| {
+            let directive_name = if let Expr::Call(expr) = directive {
+                if let Expr::Path(ref expr) = *expr.func {
+                    expr.path.segments.first().map(|s| s.ident.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+            .expect(
+                "Directive invocation expression format must be <directive_name>::apply(<args>)",
+            );
+            let identifier = location.location_trait_identifier();
+            quote!({
+                <#directive_name as async_graphql::registry::location_traits::#identifier>::check();
+                <#directive_name as async_graphql::TypeDirective>::register(&#directive_name, registry);
+                #directive
+            })
+        })
+        .collect::<Vec<_>>()
 }
