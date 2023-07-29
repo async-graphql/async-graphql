@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `indexmap` from `1.6.2` to `2`
 - Attributes `guard`, `process_with`, `complexity` support expression or string as value [#1295](https://github.com/async-graphql/async-graphql/issues/1295)
 - Schema (type) level directive support with optional support of federation composeDirective [#1308](https://github.com/async-graphql/async-graphql/pull/1308)
+- Add support for generic structs derriving InputObject and SimpleObject [#1313](https://github.com/async-graphql/async-graphql/pull/1313)
+- chore: trim up some unnecessary code [#1324](https://github.com/async-graphql/async-graphql/pull/1324)
+- Adds `Dataloader::get_cached_values` method to the dataloader cache so that callers can access the contents of the cache without knowing the keys. [#1326](https://github.com/async-graphql/async-graphql/pull/1326)
 
 ## Breaking Changes
 
