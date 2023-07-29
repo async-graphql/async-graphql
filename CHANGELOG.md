@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [6.0.0] 2023-06-11
+# [6.0.0] 2023-07-29
 
 - Bump `syn` from `1.0` to `2.0`
 - Bump `darling` from `0.14` to `0.20`
