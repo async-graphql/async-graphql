@@ -89,11 +89,33 @@
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
                                 <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
@@ -819,9 +841,9 @@ impl Square {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;area&quot;, type = &quot;f32&quot;),
-    field(name = &quot;scale&quot;, type = &quot;Shape&quot;, arg(name = &quot;s&quot;, type = &quot;f32&quot;)),
-    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, type = &quot;String&quot;)
+    field(name = &quot;area&quot;, ty = &quot;f32&quot;),
+    field(name = &quot;scale&quot;, ty = &quot;Shape&quot;, arg(name = &quot;s&quot;, ty = &quot;f32&quot;)),
+    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, ty = &quot;String&quot;)
 )]
 enum Shape {
     Circle(Circle),
@@ -837,7 +859,7 @@ enum Shape {
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Interface)]
 #[graphql(
-    field(name = &quot;name&quot;, type = &quot;String&quot;),
+    field(name = &quot;name&quot;, ty = &quot;String&quot;),
 )]
 enum MyInterface {
     MyObject(MyObject),
@@ -865,7 +887,7 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Interface)]
-</span><span class="boring">#[graphql(field(name = &quot;name&quot;, type = &quot;String&quot;))]
+</span><span class="boring">#[graphql(field(name = &quot;name&quot;, ty = &quot;String&quot;))]
 </span><span class="boring">enum MyInterface { MyObject(MyObject) }
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct MyObject { name: String, }
@@ -1100,9 +1122,9 @@ impl Query {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;test1&quot;, type = &quot;i32&quot;, arg(name = &quot;value&quot;, type = &quot;i32&quot;, default)),
-    field(name = &quot;test2&quot;, type = &quot;i32&quot;, arg(name = &quot;value&quot;, type = &quot;i32&quot;, default = 10)),
-    field(name = &quot;test3&quot;, type = &quot;i32&quot;, arg(name = &quot;value&quot;, type = &quot;i32&quot;, default_with = &quot;my_default()&quot;)),
+    field(name = &quot;test1&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default)),
+    field(name = &quot;test2&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default = 10)),
+    field(name = &quot;test3&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default_with = &quot;my_default()&quot;)),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -2390,7 +2412,7 @@ impl CustomDirective for ConcatDirective {
     }
 }
 
-#[Directive(location = &quot;field&quot;)]
+#[Directive(location = &quot;Field&quot;)]
 fn concat(value: String) -&gt; impl CustomDirective {
     ConcatDirective { value }
 }
@@ -2408,7 +2430,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">impl CustomDirective for ConcatDirective {
 </span><span class="boring">  async fn resolve_field(&amp;self, _ctx: &amp;Context&lt;'_&gt;, resolve: ResolveFut&lt;'_&gt;) -&gt; ServerResult&lt;Option&lt;Value&gt;&gt; { todo!() }
 </span><span class="boring">}
-</span><span class="boring">#[Directive(location = &quot;field&quot;)]
+</span><span class="boring">#[Directive(location = &quot;Field&quot;)]
 </span><span class="boring">fn concat(value: String) -&gt; impl CustomDirective { ConcatDirective { value } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)
