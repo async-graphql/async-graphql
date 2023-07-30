@@ -40,7 +40,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
+    #[graphql(derived(name = "duration_rfc3339", into = "DateRFC3339"))]
     async fn duration_rfc2822(&self, arg: String) -> DateRFC2822 {
         todo!()
     }
