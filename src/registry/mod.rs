@@ -12,7 +12,7 @@ pub use cache_control::CacheControl;
 pub use export_sdl::SDLExportOptions;
 use indexmap::{map::IndexMap, set::IndexSet};
 
-pub use crate::model::__DirectiveLocation;
+pub use crate::model::{__DirectiveLocation, location_traits};
 use crate::{
     model::__Schema,
     parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
@@ -103,6 +103,33 @@ impl<'a> MetaTypeName<'a> {
             MetaTypeName::NonNull(ty) => MetaTypeName::create(ty).is_list(),
             MetaTypeName::Named(name) => name.ends_with(']'),
         }
+    }
+}
+
+/// actual directive invocation on SDL definitions
+#[derive(Clone)]
+pub struct MetaDirectiveInvocation {
+    /// name of directive to invoke
+    pub name: String,
+    /// actual arguments passed to directive
+    pub args: IndexMap<String, Value>,
+}
+
+impl MetaDirectiveInvocation {
+    pub fn sdl(&self) -> String {
+        let formatted_args = if self.args.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "({})",
+                self.args
+                    .iter()
+                    .map(|(name, value)| format!("{}: {}", name, value))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+        format!("@{}{}", self.name, formatted_args)
     }
 }
 
@@ -205,6 +232,8 @@ pub struct MetaField {
     pub override_from: Option<String>,
     /// A constant or function to get the complexity
     pub compute_complexity: Option<ComputeComplexityFn>,
+    /// Custom directive invocations
+    pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
 #[derive(Clone)]
@@ -254,6 +283,7 @@ impl MetaTypeId {
                 visible: None,
                 is_subscription: false,
                 rust_typename: Some(rust_typename),
+                directive_invocations: vec![],
             },
             MetaTypeId::Interface => MetaType::Interface {
                 name: "".to_string(),
@@ -394,6 +424,8 @@ pub enum MetaType {
         is_subscription: bool,
         /// The Rust typename corresponding to the object
         rust_typename: Option<&'static str>,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Interface
     ///
@@ -655,6 +687,7 @@ pub struct MetaDirective {
     pub args: IndexMap<String, MetaInputValue>,
     pub is_repeatable: bool,
     pub visible: Option<MetaVisibleFn>,
+    pub composable: Option<String>,
 }
 
 impl MetaDirective {
@@ -722,6 +755,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
+            composable: None,
         });
 
         self.add_directive(MetaDirective {
@@ -748,6 +782,7 @@ impl Registry {
             },
             is_repeatable: false,
             visible: None,
+            composable: None,
         });
 
         // create system scalars
@@ -954,6 +989,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
+                    directive_invocations: vec![],
                 },
             );
         }
@@ -1007,6 +1043,7 @@ impl Registry {
                         tags: Default::default(),
                         override_from: None,
                         compute_complexity: None,
+                        directive_invocations: vec![],
                     },
                 );
             }
@@ -1035,6 +1072,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     override_from: None,
+                    directive_invocations: vec![],
                 },
             );
 
@@ -1072,6 +1110,7 @@ impl Registry {
                     override_from: None,
                     visible: None,
                     compute_complexity: None,
+                    directive_invocations: vec![],
                 },
             );
         }
@@ -1105,6 +1144,7 @@ impl Registry {
                             tags: Default::default(),
                             override_from: None,
                             compute_complexity: None,
+                            directive_invocations: vec![],
                         },
                     );
                     fields
@@ -1118,6 +1158,7 @@ impl Registry {
                 tags: Default::default(),
                 is_subscription: false,
                 rust_typename: Some("async_graphql::federation::Service"),
+                directive_invocations: vec![],
             },
         );
 
@@ -1453,4 +1494,26 @@ fn is_system_type(name: &str) -> bool {
     }
 
     name == "Boolean" || name == "Int" || name == "Float" || name == "String" || name == "ID"
+}
+
+#[cfg(test)]
+mod test {
+    use crate::registry::MetaDirectiveInvocation;
+
+    #[test]
+    fn test_directive_invocation_dsl() {
+        let expected = r#"@testDirective(int_value: 1, str_value: "abc")"#;
+        assert_eq!(
+            expected.to_string(),
+            MetaDirectiveInvocation {
+                name: "testDirective".to_string(),
+                args: [
+                    ("int_value".to_string(), 1u32.into()),
+                    ("str_value".to_string(), "abc".into())
+                ]
+                .into(),
+            }
+            .sdl()
+        )
+    }
 }

@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [6.0.0] 2023-06-11
+# [6.0.0] 2023-07-29
 
 - Bump `syn` from `1.0` to `2.0`
 - Bump `darling` from `0.14` to `0.20`
+- Bump `indexmap` from `1.6.2` to `2`
 - Attributes `guard`, `process_with`, `complexity` support expression or string as value [#1295](https://github.com/async-graphql/async-graphql/issues/1295)
+- Schema (type) level directive support with optional support of federation composeDirective [#1308](https://github.com/async-graphql/async-graphql/pull/1308)
+- Add support for generic structs derriving InputObject and SimpleObject [#1313](https://github.com/async-graphql/async-graphql/pull/1313)
+- chore: trim up some unnecessary code [#1324](https://github.com/async-graphql/async-graphql/pull/1324)
+- Adds `Dataloader::get_cached_values` method to the dataloader cache so that callers can access the contents of the cache without knowing the keys. [#1326](https://github.com/async-graphql/async-graphql/pull/1326)
 
 ## Breaking Changes
 
@@ -25,6 +30,15 @@ enum Node {
 }
 ```
 
+- Change the parameter `location` of the macro `Directive` to *PascalCase*
+
+```rust
+// #[Directive(location = "field")]
+#[Directive(location = "Field")]
+pub fn lowercase() -> impl CustomDirective {
+    LowercaseDirective
+}
+```
 
 # [5.0.10] 2023-06-07
 

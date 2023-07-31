@@ -49,7 +49,7 @@ impl CustomDirective for ConcatDirective {
     }
 }
 
-#[Directive(location = "field")]
+#[Directive(location = "Field")]
 fn concat(value: String) -> impl CustomDirective {
     ConcatDirective { value }
 }

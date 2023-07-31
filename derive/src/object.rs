@@ -9,12 +9,13 @@ use syn::{
 };
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
+        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
+        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
+        GeneratorResult,
     },
 };
 
@@ -33,6 +34,7 @@ pub fn generate(
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -329,6 +331,12 @@ pub fn generate(
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+
+                let directives = gen_directive_calls(
+                    &method_args.directives,
+                    TypeDirectiveLocation::FieldDefinition,
+                );
+
                 let override_from = match &method_args.override_from {
                     Some(from) => {
                         quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
@@ -536,6 +544,7 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     });
                 });
 
@@ -678,6 +687,7 @@ pub fn generate(
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*
@@ -720,6 +730,7 @@ pub fn generate(
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     });
                     #(#create_entity_types)*
                     #(#add_keys)*

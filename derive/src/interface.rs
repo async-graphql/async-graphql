@@ -311,6 +311,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 override_from: #override_from,
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
+                directive_invocations: ::std::vec![],
             });
         });
 
