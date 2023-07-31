@@ -2,7 +2,7 @@
 
 Sometimes two fields have the same query logic, but the output type is different. In `async-graphql`, you can create a derived field for it.
 
-In the following example, you already have a `duration_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `date_rfc3339` field.
+In the following example, you already have a `duration_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `duration_rfc3339` field.
 
 ```rust
 # extern crate chrono;
