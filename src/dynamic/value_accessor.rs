@@ -157,6 +157,12 @@ impl<'a> ObjectAccessor<'a> {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Returns a reference to the underlying IndexMap
+    #[inline]
+    pub fn as_index_map(&'a self) -> &'a IndexMap<Name, Value> {
+        &self.0
+    }
 }
 
 /// A list accessor
@@ -192,5 +198,15 @@ impl<'a> ListAccessor<'a> {
     pub fn try_get(&self, idx: usize) -> Result<ValueAccessor<'a>> {
         self.get(idx)
             .ok_or_else(|| Error::new(format!("internal: index \"{}\" not found", idx)))
+    }
+
+    /// Returns a new ListAccessor that represents a slice of the original
+    #[inline]
+    pub fn as_slice(&self, start: usize, end: usize) -> Result<ListAccessor<'a>> {
+        if start <= end && end <= self.len() {
+            Ok(ListAccessor(&self.0[start..end]))
+        } else {
+            Err(Error::new("internal: invalid slice indices"))
+        }
     }
 }
