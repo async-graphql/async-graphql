@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use crate::dynamic::{
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
-    type_ref::{TypeRef, TypeRefInner},
+    type_ref::TypeRef,
     InputObject, Interface, SchemaError, Type,
 };
 
@@ -240,9 +240,9 @@ impl SchemaInner {
         ref_chain: &mut HashSet<&'a str>,
     ) -> Result<(), SchemaError> {
         fn typeref_nonnullable_name(ty: &TypeRef) -> Option<&str> {
-            match &ty.0 {
-                TypeRefInner::NonNull(inner) => match inner.as_ref() {
-                    TypeRefInner::Named(name) => Some(name),
+            match ty {
+                TypeRef::NonNull(inner) => match inner.as_ref() {
+                    TypeRef::Named(name) => Some(name),
                     _ => None,
                 },
                 _ => None,

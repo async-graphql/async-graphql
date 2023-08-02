@@ -6,8 +6,8 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::{
-        field::FieldValueInner, type_ref::TypeRefInner, FieldValue, Object, ObjectAccessor,
-        ResolverContext, Schema, Type, TypeRef,
+        field::FieldValueInner, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type,
+        TypeRef,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
@@ -218,14 +218,10 @@ fn collect_fields<'a>(
                                 .0
                                 .await
                                 .map_err(|err| err.into_server_error(field.pos))?;
-                                let value = resolve(
-                                    schema,
-                                    &ctx_field,
-                                    &entity_type.0,
-                                    field_value.as_ref(),
-                                )
-                                .await?
-                                .unwrap_or_default();
+                                let value =
+                                    resolve(schema, &ctx_field, &entity_type, field_value.as_ref())
+                                        .await?
+                                        .unwrap_or_default();
                                 Ok((field.node.response_key().node.clone(), value))
                             }
                             .boxed(),
@@ -284,7 +280,7 @@ fn collect_fields<'a>(
                                 let value = resolve(
                                     schema,
                                     &ctx_field,
-                                    &field_def.ty.0,
+                                    &field_def.ty,
                                     field_value.as_ref(),
                                 )
                                 .await?;
@@ -361,29 +357,29 @@ fn collect_fields<'a>(
 pub(crate) fn resolve<'a>(
     schema: &'a Schema,
     ctx: &'a Context<'a>,
-    type_ref: &'a TypeRefInner,
+    type_ref: &'a TypeRef,
     value: Option<&'a FieldValue>,
 ) -> BoxFuture<'a, ServerResult<Option<Value>>> {
     async move {
         match (type_ref, value) {
-            (TypeRefInner::Named(type_name), Some(value)) => {
+            (TypeRef::Named(type_name), Some(value)) => {
                 resolve_value(schema, ctx, &schema.0.types[type_name.as_ref()], value).await
             }
-            (TypeRefInner::Named(_), None) => Ok(None),
+            (TypeRef::Named(_), None) => Ok(None),
 
-            (TypeRefInner::NonNull(type_ref), Some(value)) => {
+            (TypeRef::NonNull(type_ref), Some(value)) => {
                 resolve(schema, ctx, type_ref, Some(value)).await
             }
-            (TypeRefInner::NonNull(_), None) => Err(ctx.set_error_path(
+            (TypeRef::NonNull(_), None) => Err(ctx.set_error_path(
                 Error::new("internal: non-null types require a return value")
                     .into_server_error(ctx.item.pos),
             )),
 
-            (TypeRefInner::List(type_ref), Some(FieldValue(FieldValueInner::List(values)))) => {
+            (TypeRef::List(type_ref), Some(FieldValue(FieldValueInner::List(values)))) => {
                 resolve_list(schema, ctx, type_ref, values).await
             }
             (
-                TypeRefInner::List(type_ref),
+                TypeRef::List(type_ref),
                 Some(FieldValue(FieldValueInner::Value(Value::List(values)))),
             ) => {
                 let values = values
@@ -393,10 +389,10 @@ pub(crate) fn resolve<'a>(
                     .collect::<Vec<_>>();
                 resolve_list(schema, ctx, type_ref, &values).await
             }
-            (TypeRefInner::List(_), Some(_)) => Err(ctx.set_error_path(
+            (TypeRef::List(_), Some(_)) => Err(ctx.set_error_path(
                 Error::new("internal: expects an array").into_server_error(ctx.item.pos),
             )),
-            (TypeRefInner::List(_), None) => Ok(None),
+            (TypeRef::List(_), None) => Ok(None),
         }
     }
     .boxed()
@@ -405,7 +401,7 @@ pub(crate) fn resolve<'a>(
 async fn resolve_list<'a>(
     schema: &'a Schema,
     ctx: &'a Context<'a>,
-    type_ref: &'a TypeRefInner,
+    type_ref: &'a TypeRef,
     values: &[FieldValue<'_>],
 ) -> ServerResult<Option<Value>> {
     let mut futures = Vec::with_capacity(values.len());
