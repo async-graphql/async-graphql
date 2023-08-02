@@ -3,40 +3,21 @@ use std::{
     fmt::{self, Display},
 };
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub(crate) enum TypeRefInner {
-    Named(Cow<'static, str>),
-    NonNull(Box<TypeRefInner>),
-    List(Box<TypeRefInner>),
-}
-
-impl Display for TypeRefInner {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TypeRefInner::Named(name) => write!(f, "{}", name),
-            TypeRefInner::NonNull(ty) => write!(f, "{}!", ty),
-            TypeRefInner::List(ty) => write!(f, "[{}]", ty),
-        }
-    }
-}
-
-impl TypeRefInner {
-    fn type_name(&self) -> &str {
-        match self {
-            TypeRefInner::Named(name) => name,
-            TypeRefInner::NonNull(inner) => inner.type_name(),
-            TypeRefInner::List(inner) => inner.type_name(),
-        }
-    }
-}
-
 /// A type reference
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TypeRef(pub(crate) TypeRefInner);
+pub enum TypeRef {
+    Named(Cow<'static, str>),
+    NonNull(Box<TypeRef>),
+    List(Box<TypeRef>),
+}
 
 impl Display for TypeRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        match self {
+            TypeRef::Named(name) => write!(f, "{}", name),
+            TypeRef::NonNull(ty) => write!(f, "{}!", ty),
+            TypeRef::List(ty) => write!(f, "[{}]", ty),
+        }
     }
 }
 
@@ -61,7 +42,7 @@ impl TypeRef {
     /// GraphQL Type: `T`
     #[inline]
     pub fn named(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::Named(type_name.into().into()))
+        TypeRef::Named(type_name.into().into())
     }
 
     /// Returns the non-null type reference
@@ -69,9 +50,7 @@ impl TypeRef {
     /// GraphQL Type: `T!`
     #[inline]
     pub fn named_nn(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
-            type_name.into().into(),
-        ))))
+        TypeRef::NonNull(Box::new(TypeRef::Named(type_name.into().into())))
     }
 
     /// Returns a nullable list of nullable members type reference
@@ -79,9 +58,7 @@ impl TypeRef {
     /// GraphQL Type: `[T]`
     #[inline]
     pub fn named_list(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::List(Box::new(TypeRefInner::Named(
-            type_name.into().into(),
-        ))))
+        TypeRef::List(Box::new(TypeRef::Named(type_name.into().into())))
     }
 
     /// Returns a nullable list of non-null members type reference
@@ -89,9 +66,9 @@ impl TypeRef {
     /// GraphQL Type: `[T!]`
     #[inline]
     pub fn named_nn_list(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::List(Box::new(TypeRefInner::NonNull(
-            Box::new(TypeRefInner::Named(type_name.into().into())),
-        ))))
+        TypeRef::List(Box::new(TypeRef::NonNull(Box::new(TypeRef::Named(
+            type_name.into().into(),
+        )))))
     }
 
     /// Returns a non-null list of nullable members type reference
@@ -99,9 +76,9 @@ impl TypeRef {
     /// GraphQL Type: `[T]!`
     #[inline]
     pub fn named_list_nn(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
-            Box::new(TypeRefInner::Named(type_name.into().into())),
-        ))))
+        TypeRef::NonNull(Box::new(TypeRef::List(Box::new(TypeRef::Named(
+            type_name.into().into(),
+        )))))
     }
 
     /// Returns a non-null list of non-null members type reference
@@ -109,11 +86,9 @@ impl TypeRef {
     /// GraphQL Type: `[T!]!`
     #[inline]
     pub fn named_nn_list_nn(type_name: impl Into<String>) -> TypeRef {
-        TypeRef(TypeRefInner::NonNull(Box::new(TypeRefInner::List(
-            Box::new(TypeRefInner::NonNull(Box::new(TypeRefInner::Named(
-                type_name.into().into(),
-            )))),
-        ))))
+        TypeRef::NonNull(Box::new(TypeRef::List(Box::new(TypeRef::NonNull(
+            Box::new(TypeRef::Named(type_name.into().into())),
+        )))))
     }
 
     /// Returns the type name
@@ -121,36 +96,38 @@ impl TypeRef {
     /// `[Foo!]` -> `Foo`
     #[inline(always)]
     pub fn type_name(&self) -> &str {
-        self.0.type_name()
+        match self {
+            TypeRef::Named(name) => name,
+            TypeRef::NonNull(inner) => inner.type_name(),
+            TypeRef::List(inner) => inner.type_name(),
+        }
     }
 
     #[inline]
     pub(crate) fn is_nullable(&self) -> bool {
-        match &self.0 {
-            TypeRefInner::Named(_) => true,
-            TypeRefInner::NonNull(_) => false,
-            TypeRefInner::List(_) => true,
+        match self {
+            TypeRef::Named(_) => true,
+            TypeRef::NonNull(_) => false,
+            TypeRef::List(_) => true,
         }
     }
 
     pub(crate) fn is_subtype(&self, sub: &TypeRef) -> bool {
-        fn is_subtype(cur: &TypeRefInner, sub: &TypeRefInner) -> bool {
+        fn is_subtype(cur: &TypeRef, sub: &TypeRef) -> bool {
             match (cur, sub) {
-                (TypeRefInner::NonNull(super_type), TypeRefInner::NonNull(sub_type)) => {
+                (TypeRef::NonNull(super_type), TypeRef::NonNull(sub_type)) => {
                     is_subtype(&super_type, &sub_type)
                 }
-                (_, TypeRefInner::NonNull(sub_type)) => is_subtype(cur, &sub_type),
-                (TypeRefInner::Named(super_type), TypeRefInner::Named(sub_type)) => {
-                    super_type == sub_type
-                }
-                (TypeRefInner::List(super_type), TypeRefInner::List(sub_type)) => {
+                (_, TypeRef::NonNull(sub_type)) => is_subtype(cur, &sub_type),
+                (TypeRef::Named(super_type), TypeRef::Named(sub_type)) => super_type == sub_type,
+                (TypeRef::List(super_type), TypeRef::List(sub_type)) => {
                     is_subtype(super_type, sub_type)
                 }
                 _ => false,
             }
         }
 
-        is_subtype(&self.0, &sub.0)
+        is_subtype(self, sub)
     }
 }
 

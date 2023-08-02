@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.0"
+version = "6.0.1"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -132,10 +132,10 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "6.0.0", default-features = false }
-async-graphql-derive = { path = "derive", version = "6.0.0" }
-async-graphql-parser = { path = "parser", version = "6.0.0" }
-async-graphql-value = { path = "value", version = "6.0.0" }
+async-graphql = { path = ".", version = "6.0.1", default-features = false }
+async-graphql-derive = { path = "derive", version = "6.0.1" }
+async-graphql-parser = { path = "parser", version = "6.0.1" }
+async-graphql-value = { path = "value", version = "6.0.1" }
 
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
