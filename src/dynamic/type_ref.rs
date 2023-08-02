@@ -4,7 +4,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub(crate) enum TypeRefInner {
+pub enum TypeRefInner {
     Named(Cow<'static, str>),
     NonNull(Box<TypeRefInner>),
     List(Box<TypeRefInner>),
@@ -32,7 +32,7 @@ impl TypeRefInner {
 
 /// A type reference
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TypeRef(pub(crate) TypeRefInner);
+pub struct TypeRef(pub TypeRefInner);
 
 impl Display for TypeRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

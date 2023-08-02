@@ -63,6 +63,6 @@ pub use request::{DynamicRequest, DynamicRequestExt};
 pub use scalar::Scalar;
 pub use schema::{Schema, SchemaBuilder};
 pub use subscription::{Subscription, SubscriptionField, SubscriptionFieldFuture};
-pub use type_ref::TypeRef;
+pub use type_ref::{TypeRef, TypeRefInner};
 pub use union::Union;
 pub use value_accessor::{ListAccessor, ObjectAccessor, ValueAccessor};
