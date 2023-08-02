@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - { rust: stable, os: ubuntu-20.04 }
-          - { rust: 1.65.0, os: ubuntu-20.04 }
+          - { rust: 1.67.0, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2

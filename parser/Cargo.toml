@@ -9,10 +9,10 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-parser"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.0"
+version = "6.0.1"
 
 [dependencies]
-async-graphql-value = { path = "../value", version = "6.0.0" }
+async-graphql-value = { path = "../value", version = "6.0.1" }
 pest = "2.5.5"
 serde.workspace = true
 serde_json.workspace = true

@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-warp"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.0"
+version = "6.0.1"
 
 [dependencies]
 async-graphql = { workspace = true }
