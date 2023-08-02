@@ -7,6 +7,7 @@ mod graphiql_v2_source;
 mod multipart;
 #[cfg(feature = "playground")]
 mod playground_source;
+mod timer;
 mod websocket;
 
 use std::io::ErrorKind;
@@ -21,6 +22,7 @@ pub use multipart::MultipartOptions;
 #[cfg(feature = "playground")]
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 use serde::Deserialize;
+pub use timer::Timer;
 pub use websocket::{
     ClientMessage, Protocols as WebSocketProtocols, WebSocket, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
 };

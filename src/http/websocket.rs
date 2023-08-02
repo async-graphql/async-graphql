@@ -6,6 +6,7 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
+    time::Duration,
 };
 
 use futures_util::{
@@ -16,51 +17,25 @@ use futures_util::{
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Error, Executor, Request, Response, Result};
+use crate::{http::Timer, Data, Error, Executor, Request, Response, Result};
 
 /// All known protocols based on WebSocket.
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
 
 /// An enum representing the various forms of a WebSocket message.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WsMessage {
     /// A text WebSocket message
     Text(String),
 
-    /// A close message with the close frame.
+    /// A close message with the close frame
     Close(u16, String),
-}
 
-impl WsMessage {
-    /// Returns the contained [WsMessage::Text] value, consuming the `self`
-    /// value.
-    ///
-    /// Because this function may panic, its use is generally discouraged.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the self value not equals [WsMessage::Text].
-    pub fn unwrap_text(self) -> String {
-        match self {
-            Self::Text(text) => text,
-            Self::Close(_, _) => panic!("Not a text message"),
-        }
-    }
+    /// A ping message with the specified payload
+    Ping(Vec<u8>),
 
-    /// Returns the contained [WsMessage::Close] value, consuming the `self`
-    /// value.
-    ///
-    /// Because this function may panic, its use is generally discouraged.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the self value not equals [WsMessage::Close].
-    pub fn unwrap_close(self) -> (u16, String) {
-        match self {
-            Self::Close(code, msg) => (code, msg),
-            Self::Text(_) => panic!("Not a close message"),
-        }
-    }
+    /// A pong message with the specified payload
+    Pong(Vec<u8>),
 }
 
 pin_project! {
@@ -164,6 +139,13 @@ where
             stream: self.stream,
             protocol: self.protocol,
         }
+    }
+
+    pub fn with_keep_alive<T>(self, timeout: Duration)
+    where
+        T: Timer,
+    {
+        let timer = Timer::new(timeout);
     }
 }
 
@@ -439,7 +421,4 @@ enum ServerMessage<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         payload: Option<serde_json::Value>,
     },
-    // Not used by this library
-    // #[serde(rename = "ka")]
-    // KeepAlive
 }
