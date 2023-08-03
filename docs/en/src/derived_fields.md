@@ -2,7 +2,7 @@
 
 Sometimes two fields have the same query logic, but the output type is different. In `async-graphql`, you can create a derived field for it.
 
-In the following example, you already have a `duration_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `date_rfc3339` field.
+In the following example, you already have a `date_rfc2822` field outputting the time format in `RFC2822` format, and then reuse it to derive a new `date_rfc3339` field.
 
 ```rust
 # extern crate chrono;
@@ -41,7 +41,7 @@ struct Query;
 #[Object]
 impl Query {
     #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
-    async fn duration_rfc2822(&self, arg: String) -> DateRFC2822 {
+    async fn date_rfc2822(&self, arg: String) -> DateRFC2822 {
         todo!()
     }
 }
@@ -51,8 +51,8 @@ It will render a GraphQL like:
 
 ```graphql
 type Query {
-	duration_rfc2822(arg: String): DateRFC2822!
-	duration_rfc3339(arg: String): DateRFC3339!
+	date_rfc2822(arg: String): DateRFC2822!
+	date_rfc3339(arg: String): DateRFC3339!
 }
 ```
 
