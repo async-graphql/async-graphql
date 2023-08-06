@@ -18,6 +18,14 @@ pub trait CustomDirectiveFactory: 'static {
     ) -> ServerResult<Box<dyn CustomDirective>>;
 }
 
+#[doc(hidden)]
+// minimal amount required to register directive into registry
+pub trait TypeDirective {
+    fn name(&self) -> Cow<'static, str>;
+
+    fn register(&self, registry: &mut Registry);
+}
+
 /// Represents a custom directive.
 #[async_trait::async_trait(?Send)]
 #[allow(unused_variables)]

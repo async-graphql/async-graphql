@@ -21,6 +21,7 @@ mod output_type;
 mod scalar;
 mod simple_object;
 mod subscription;
+mod type_directive;
 mod union;
 mod utils;
 mod validators;
@@ -214,6 +215,17 @@ pub fn Directive(args: TokenStream, input: TokenStream) -> TokenStream {
     let directive_args = parse_nested_meta!(args::Directive, args);
     let mut item_fn = parse_macro_input!(input as ItemFn);
     match directive::generate(&directive_args, &mut item_fn) {
+        Ok(expanded) => expanded,
+        Err(err) => err.write_errors().into(),
+    }
+}
+
+#[proc_macro_attribute]
+#[allow(non_snake_case)]
+pub fn TypeDirective(args: TokenStream, input: TokenStream) -> TokenStream {
+    let directive_args = parse_nested_meta!(args::TypeDirective, args);
+    let mut item_fn = parse_macro_input!(input as ItemFn);
+    match type_directive::generate(&directive_args, &mut item_fn) {
         Ok(expanded) => expanded,
         Err(err) => err.write_errors().into(),
     }

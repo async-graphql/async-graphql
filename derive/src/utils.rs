@@ -11,7 +11,7 @@ use syn::{
 };
 use thiserror::Error;
 
-use crate::args::{self, Deprecation, Visible};
+use crate::args::{self, Deprecation, TypeDirectiveLocation, Visible};
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
@@ -313,4 +313,33 @@ impl VisitMut for RemoveLifetime {
         i.ident = Ident::new("_", Span::call_site());
         visit_mut::visit_lifetime_mut(self, i);
     }
+}
+
+pub fn gen_directive_calls(
+    directive_calls: &[Expr],
+    location: TypeDirectiveLocation,
+) -> Vec<TokenStream> {
+    directive_calls
+        .iter()
+        .map(|directive| {
+            let directive_name = if let Expr::Call(expr) = directive {
+                if let Expr::Path(ref expr) = *expr.func {
+                    expr.path.segments.first().map(|s| s.ident.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+            .expect(
+                "Directive invocation expression format must be <directive_name>::apply(<args>)",
+            );
+            let identifier = location.location_trait_identifier();
+            quote!({
+                <#directive_name as async_graphql::registry::location_traits::#identifier>::check();
+                <#directive_name as async_graphql::TypeDirective>::register(&#directive_name, registry);
+                #directive
+            })
+        })
+        .collect::<Vec<_>>()
 }

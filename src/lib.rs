@@ -227,7 +227,7 @@ pub use base::{
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 pub use context::*;
-pub use custom_directive::{CustomDirective, CustomDirectiveFactory};
+pub use custom_directive::{CustomDirective, CustomDirectiveFactory, TypeDirective};
 pub use error::{
     Error, ErrorExtensionValues, ErrorExtensions, InputValueError, InputValueResult,
     ParseRequestError, PathSegment, Result, ResultExt, ServerError, ServerResult,
@@ -291,5 +291,6 @@ pub use async_graphql_derive::Scalar;
 pub use async_graphql_derive::SimpleObject;
 #[doc = include_str!("docs/subscription.md")]
 pub use async_graphql_derive::Subscription;
+pub use async_graphql_derive::TypeDirective;
 #[doc = include_str!("docs/union.md")]
 pub use async_graphql_derive::Union;
