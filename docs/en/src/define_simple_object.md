@@ -126,3 +126,33 @@ struct MyObj {
     b: i32,
 }
 ```
+
+## Flatten fields
+
+You can flatten fields by adding `#[graphql(flatten)]`, i.e.:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[derive(SimpleObject)]
+pub struct ChildObject {
+    b: String,
+    c: String,
+}
+
+#[derive(SimpleObject)]
+pub struct ParentObject {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildObject,
+}
+
+// Is the same as
+
+#[derive(SimpleObject)]
+pub struct Object {
+    a: String,
+    b: String,
+    c: String,
+}
+```
