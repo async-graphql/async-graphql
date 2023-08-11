@@ -109,3 +109,33 @@ pub struct CredentialsInput {
     password: String,
 }
 ```
+
+## Flattening fields
+
+You can add `#[graphql(flatten)]` to a field to inline keys from the field type into it's parent. For example:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[derive(InputObject)]
+pub struct ChildInput {
+    b: String,
+    c: String,
+}
+
+#[derive(InputObject)]
+pub struct ParentInput {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildInput,
+}
+
+// Is the same as
+
+#[derive(InputObject)]
+pub struct Input {
+    a: String,
+    b: String,
+    c: String,
+}
+```
