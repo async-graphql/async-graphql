@@ -116,6 +116,20 @@ impl CursorType for ID {
     }
 }
 
+#[cfg(feature = "chrono")]
+impl<Tz: chrono::TimeZone> CursorType for chrono::DateTime<Tz> {
+    type Error = chrono::ParseError;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+    }
+}
+
+
 /// A opaque cursor that encode/decode the value to base64
 pub struct OpaqueCursor<T>(pub T);
 
