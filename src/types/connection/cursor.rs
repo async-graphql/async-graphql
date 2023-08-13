@@ -117,11 +117,11 @@ impl CursorType for ID {
 }
 
 #[cfg(feature = "chrono")]
-impl<Tz: chrono::TimeZone> CursorType for chrono::DateTime<Tz> {
+impl CursorType for chrono::DateTime<chrono::Utc> {
     type Error = chrono::ParseError;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
-        s.parse()
+        Ok(chrono::DateTime::parse_from_rfc3339(s)?.with_timezone::<chrono::Utc>(&chrono::Utc{}))
     }
 
     fn encode_cursor(&self) -> String {
