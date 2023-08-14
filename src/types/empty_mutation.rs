@@ -58,6 +58,7 @@ impl OutputType for EmptyMutation {
             keys: None,
             visible: None,
             inaccessible: false,
+            interface_object: false,
             tags: Default::default(),
             is_subscription: false,
             rust_typename: Some(std::any::type_name::<Self>()),

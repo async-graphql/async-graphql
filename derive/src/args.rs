@@ -207,6 +207,8 @@ pub struct SimpleObject {
     pub shareable: bool,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default)]
+    pub interface_object: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
     #[darling(default)]
@@ -254,6 +256,7 @@ pub struct Object {
     pub extends: bool,
     pub shareable: bool,
     pub inaccessible: bool,
+    pub interface_object: bool,
     #[darling(multiple, rename = "tag")]
     pub tags: Vec<String>,
     pub use_type_description: bool,
@@ -672,6 +675,8 @@ pub struct MergedObject {
     pub shareable: bool,
     #[darling(default)]
     pub inaccessible: bool,
+    #[darling(default)]
+    pub interface_object: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
     #[darling(default)]

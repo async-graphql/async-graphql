@@ -33,6 +33,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let extends = object_args.extends;
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
+    let interface_object = object_args.interface_object;
     let tags = object_args
         .tags
         .iter()
@@ -370,6 +371,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,
@@ -438,6 +440,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         extends: #extends,
                         shareable: #shareable,
                         inaccessible: #inaccessible,
+                        interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
                         keys: ::std::option::Option::None,
                         visible: #visible,

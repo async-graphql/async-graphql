@@ -826,3 +826,62 @@ pub async fn test_entity_tag() {
         panic!("schema was not up-to-date. rerun")
     }
 }
+
+#[tokio::test]
+pub async fn test_interface_object() {
+    #[derive(SimpleObject)]
+    struct VariantA {
+        pub id: u64,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = "id", ty = "&u64"))]
+    enum MyInterface {
+        VariantA(VariantA),
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(interface_object)]
+    struct MyInterfaceObject1 {
+        pub id: u64,
+    }
+
+    struct MyInterfaceObject2;
+
+    #[Object(interface_object)]
+    impl MyInterfaceObject2 {
+        pub async fn id(&self) -> u64 {
+            todo!()
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(entity)]
+        async fn my_interface(&self, _id: u64) -> MyInterface {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn my_interface_object1(&self, _id: u64) -> MyInterfaceObject1 {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn my_interface_object2(&self, _id: u64) -> MyInterfaceObject2 {
+            todo!()
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    // Interface with @key directive
+    assert!(schema_sdl.contains("interface MyInterface @key(fields: \"id\")"));
+
+    // Object with @interfaceObject directive
+    assert!(schema_sdl.contains("type MyInterfaceObject1 @key(fields: \"id\") @interfaceObject"));
+    assert!(schema_sdl.contains("type MyInterfaceObject2 @key(fields: \"id\") @interfaceObject"));
+}
