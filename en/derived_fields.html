@@ -168,7 +168,7 @@
                     <main>
                         <h1 id="derived-fields"><a class="header" href="#derived-fields">Derived fields</a></h1>
 <p>Sometimes two fields have the same query logic, but the output type is different. In <code>async-graphql</code>, you can create a derived field for it.</p>
-<p>In the following example, you already have a <code>duration_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
+<p>In the following example, you already have a <code>date_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate chrono;
@@ -207,15 +207,15 @@ struct Query;
 #[Object]
 impl Query {
     #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
-    async fn duration_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
+    async fn date_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
 }
 <span class="boring">}</span></code></pre></pre>
 <p>It will render a GraphQL like:</p>
 <pre><code class="language-graphql">type Query {
-	duration_rfc2822(arg: String): DateRFC2822!
-	duration_rfc3339(arg: String): DateRFC3339!
+	date_rfc2822(arg: String): DateRFC2822!
+	date_rfc3339(arg: String): DateRFC3339!
 }
 </code></pre>
 <h2 id="wrapper-types"><a class="header" href="#wrapper-types">Wrapper types</a></h2>

@@ -340,6 +340,34 @@ struct MyObj {
     b: i32,
 }
 <span class="boring">}</span></code></pre></pre>
+<h2 id="flatten-fields"><a class="header" href="#flatten-fields">Flatten fields</a></h2>
+<p>You can flatten fields by adding <code>#[graphql(flatten)]</code>, i.e.:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(SimpleObject)]
+pub struct ChildObject {
+    b: String,
+    c: String,
+}
+
+#[derive(SimpleObject)]
+pub struct ParentObject {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildObject,
+}
+
+// Is the same as
+
+#[derive(SimpleObject)]
+pub struct Object {
+    a: String,
+    b: String,
+    c: String,
+}
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object"><a class="header" href="#object">Object</a></h1>
 <p>Different from <code>SimpleObject</code>, <code>Object</code> must have a resolver defined for each field in its <code>impl</code>.</p>
 <p><strong>A resolver function has to be asynchronous. The first argument has to be <code>&amp;self</code>, the second is an optional <code>Context</code> and it is followed by field arguments.</strong></p>
@@ -650,7 +678,7 @@ let schema = Schema::new(
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="derived-fields"><a class="header" href="#derived-fields">Derived fields</a></h1>
 <p>Sometimes two fields have the same query logic, but the output type is different. In <code>async-graphql</code>, you can create a derived field for it.</p>
-<p>In the following example, you already have a <code>duration_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
+<p>In the following example, you already have a <code>date_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate chrono;
@@ -689,15 +717,15 @@ struct Query;
 #[Object]
 impl Query {
     #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
-    async fn duration_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
+    async fn date_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
 }
 <span class="boring">}</span></code></pre></pre>
 <p>It will render a GraphQL like:</p>
 <pre><code class="language-graphql">type Query {
-	duration_rfc2822(arg: String): DateRFC2822!
-	duration_rfc3339(arg: String): DateRFC3339!
+	date_rfc2822(arg: String): DateRFC2822!
+	date_rfc3339(arg: String): DateRFC3339!
 }
 </code></pre>
 <h2 id="wrapper-types"><a class="header" href="#wrapper-types">Wrapper types</a></h2>
@@ -1123,6 +1151,34 @@ pub struct CredentialsInput {
     username: String,
     #[graphql(secret)]
     password: String,
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="flattening-fields"><a class="header" href="#flattening-fields">Flattening fields</a></h2>
+<p>You can add <code>#[graphql(flatten)]</code> to a field to inline keys from the field type into it's parent. For example:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(InputObject)]
+pub struct ChildInput {
+    b: String,
+    c: String,
+}
+
+#[derive(InputObject)]
+pub struct ParentInput {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildInput,
+}
+
+// Is the same as
+
+#[derive(InputObject)]
+pub struct Input {
+    a: String,
+    b: String,
+    c: String,
 }
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="oneofobject"><a class="header" href="#oneofobject">OneofObject</a></h1>

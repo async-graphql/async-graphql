@@ -278,6 +278,34 @@ struct MyObj {
     b: i32,
 }
 <span class="boring">}</span></code></pre></pre>
+<h2 id="flatten-fields"><a class="header" href="#flatten-fields">Flatten fields</a></h2>
+<p>You can flatten fields by adding <code>#[graphql(flatten)]</code>, i.e.:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(SimpleObject)]
+pub struct ChildObject {
+    b: String,
+    c: String,
+}
+
+#[derive(SimpleObject)]
+pub struct ParentObject {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildObject,
+}
+
+// Is the same as
+
+#[derive(SimpleObject)]
+pub struct Object {
+    a: String,
+    b: String,
+    c: String,
+}
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 

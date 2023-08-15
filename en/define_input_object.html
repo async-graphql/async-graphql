@@ -263,6 +263,34 @@ pub struct CredentialsInput {
     password: String,
 }
 <span class="boring">}</span></code></pre></pre>
+<h2 id="flattening-fields"><a class="header" href="#flattening-fields">Flattening fields</a></h2>
+<p>You can add <code>#[graphql(flatten)]</code> to a field to inline keys from the field type into it's parent. For example:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(InputObject)]
+pub struct ChildInput {
+    b: String,
+    c: String,
+}
+
+#[derive(InputObject)]
+pub struct ParentInput {
+    a: String,
+    #[graphql(flatten)]
+    child: ChildInput,
+}
+
+// Is the same as
+
+#[derive(InputObject)]
+pub struct Input {
+    a: String,
+    b: String,
+    c: String,
+}
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
