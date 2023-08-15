@@ -6,7 +6,7 @@ use crate::dynamic::{
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
     type_ref::TypeRef,
-    InputObject, Interface, SchemaError, Type,
+    InputObject, Interface, Object, SchemaError, Type,
 };
 
 impl SchemaInner {
@@ -115,11 +115,19 @@ impl SchemaInner {
     }
 
     fn check_objects(&self) -> Result<(), SchemaError> {
+        let has_entities = self
+            .types
+            .iter()
+            .filter_map(|(_, ty)| ty.as_object())
+            .any(Object::is_entity);
+
         // https://spec.graphql.org/October2021/#sec-Objects.Type-Validation
         for ty in self.types.values() {
             if let Type::Object(obj) = ty {
                 // An Object type must define one or more fields.
-                if obj.fields.is_empty() {
+                if obj.fields.is_empty()
+                    && !(obj.type_name() == self.env.registry.query_type && has_entities)
+                {
                     return Err(
                         format!("Object \"{}\" must define one or more fields", obj.name).into(),
                     );

@@ -74,6 +74,15 @@ impl Enum {
         self
     }
 
+    /// Add items
+    pub fn items(mut self, items: impl IntoIterator<Item = impl Into<EnumItem>>) -> Self {
+        for item in items {
+            let item = item.into();
+            self.enum_values.insert(item.name.clone(), item);
+        }
+        self
+    }
+
     impl_set_inaccessible!();
     impl_set_tags!();
 

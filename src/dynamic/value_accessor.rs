@@ -73,7 +73,7 @@ impl<'a> ValueAccessor<'a> {
     }
 
     /// Returns the string value
-    pub fn string(&self) -> Result<&str> {
+    pub fn string(&self) -> Result<&'a str> {
         if let Value::String(value) = self.0 {
             Ok(value)
         } else {
@@ -82,7 +82,7 @@ impl<'a> ValueAccessor<'a> {
     }
 
     /// Returns the object accessor
-    pub fn object(&self) -> Result<ObjectAccessor<'_>> {
+    pub fn object(&self) -> Result<ObjectAccessor<'a>> {
         if let Value::Object(obj) = self.0 {
             Ok(ObjectAccessor(Cow::Borrowed(obj)))
         } else {
@@ -91,7 +91,7 @@ impl<'a> ValueAccessor<'a> {
     }
 
     /// Returns the list accessor
-    pub fn list(&self) -> Result<ListAccessor<'_>> {
+    pub fn list(&self) -> Result<ListAccessor<'a>> {
         if let Value::List(list) = self.0 {
             Ok(ListAccessor(list))
         } else {
@@ -112,13 +112,13 @@ impl<'a> ObjectAccessor<'a> {
     /// Return a reference to the value stored for `key`, if it is present,
     /// else `None`.
     #[inline]
-    pub fn get(&'a self, name: &str) -> Option<ValueAccessor<'a>> {
+    pub fn get(&self, name: &str) -> Option<ValueAccessor<'_>> {
         self.0.get(name).map(ValueAccessor)
     }
 
     /// Like [`ObjectAccessor::get`], returns `Err` if the index does not exist
     #[inline]
-    pub fn try_get(&'a self, name: &str) -> Result<ValueAccessor<'a>> {
+    pub fn try_get(&self, name: &str) -> Result<ValueAccessor<'_>> {
         self.0
             .get(name)
             .map(ValueAccessor)
@@ -128,7 +128,7 @@ impl<'a> ObjectAccessor<'a> {
     /// Return an iterator over the key-value pairs of the object, in their
     /// order
     #[inline]
-    pub fn iter(&'a self) -> impl Iterator<Item = (&Name, ValueAccessor<'_>)> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = (&Name, ValueAccessor<'_>)> + '_ {
         self.0
             .iter()
             .map(|(name, value)| (name, ValueAccessor(value)))
@@ -136,19 +136,19 @@ impl<'a> ObjectAccessor<'a> {
 
     /// Return an iterator over the keys of the object, in their order
     #[inline]
-    pub fn keys(&'a self) -> impl Iterator<Item = &Name> + 'a {
+    pub fn keys(&self) -> impl Iterator<Item = &Name> + '_ {
         self.0.keys()
     }
 
     /// Return an iterator over the values of the object, in their order
     #[inline]
-    pub fn values(&'a self) -> impl Iterator<Item = ValueAccessor<'_>> + 'a {
+    pub fn values(&self) -> impl Iterator<Item = ValueAccessor<'_>> + '_ {
         self.0.values().map(ValueAccessor)
     }
 
     /// Returns the number of elements in the object
     #[inline]
-    pub fn len(&'a self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
@@ -177,19 +177,19 @@ impl<'a> ListAccessor<'a> {
 
     /// Returns an iterator over the list
     #[inline]
-    pub fn iter(&'a self) -> impl Iterator<Item = ValueAccessor<'_>> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = ValueAccessor<'_>> + '_ {
         self.0.iter().map(ValueAccessor)
     }
 
     /// Returns a reference to an element depending on the index
     #[inline]
-    pub fn get(&self, idx: usize) -> Option<ValueAccessor<'a>> {
+    pub fn get(&self, idx: usize) -> Option<ValueAccessor<'_>> {
         self.0.get(idx).map(ValueAccessor)
     }
 
     /// Like [`ListAccessor::get`], returns `Err` if the index does not exist
     #[inline]
-    pub fn try_get(&self, idx: usize) -> Result<ValueAccessor<'a>> {
+    pub fn try_get(&self, idx: usize) -> Result<ValueAccessor<'_>> {
         self.get(idx)
             .ok_or_else(|| Error::new(format!("internal: index \"{}\" not found", idx)))
     }

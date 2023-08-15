@@ -193,6 +193,11 @@ impl Object {
 
         Ok(())
     }
+
+    #[inline]
+    pub(crate) fn is_entity(&self) -> bool {
+        !self.keys.is_empty()
+    }
 }
 
 #[cfg(test)]

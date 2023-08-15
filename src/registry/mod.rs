@@ -977,7 +977,11 @@ impl Registry {
             })
             .collect();
 
-        if let MetaType::Object { fields, .. } = self.types.get_mut(&self.query_type).unwrap() {
+        if let MetaType::Object { fields, .. } = self
+            .types
+            .get_mut(&self.query_type)
+            .expect("missing query type")
+        {
             fields.insert(
                 "_service".to_string(),
                 MetaField {
