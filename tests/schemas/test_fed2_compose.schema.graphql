@@ -13,8 +13,8 @@ type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
 
 
 extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.1",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
+	url: "https://specs.apollo.dev/federation/v2.3",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
 )
 
 extend schema @link(

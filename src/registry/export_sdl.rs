@@ -122,8 +122,8 @@ impl Registry {
 
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
-            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.1\",").ok();
-            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\"]").ok();
+            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.3\",").ok();
+            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\"]").ok();
             writeln!(sdl, ")").ok();
 
             if options.compose_directive {
@@ -306,6 +306,7 @@ impl Registry {
                 description,
                 shareable,
                 inaccessible,
+                interface_object,
                 tags,
                 directive_invocations: raw_directives,
                 ..
@@ -357,6 +358,10 @@ impl Registry {
 
                     if *inaccessible {
                         write!(sdl, " @inaccessible").ok();
+                    }
+
+                    if *interface_object {
+                        write!(sdl, " @interfaceObject").ok();
                     }
 
                     for tag in tags {
@@ -644,8 +649,8 @@ mod tests {
     #[test]
     fn test_compose_directive_dsl() {
         let expected = r#"extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.1",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective"]
+	url: "https://specs.apollo.dev/federation/v2.3",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
 )
 
 extend schema @link(

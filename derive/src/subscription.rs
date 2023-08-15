@@ -410,6 +410,7 @@ pub fn generate(
                     visible: #visible,
                     shareable: false,
                     inaccessible: false,
+                    interface_object: false,
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),

@@ -45,6 +45,7 @@ pub struct Object {
     extends: bool,
     shareable: bool,
     inaccessible: bool,
+    interface_object: bool,
     tags: Vec<String>,
 }
 
@@ -61,6 +62,7 @@ impl Object {
             extends: false,
             shareable: false,
             inaccessible: false,
+            interface_object: false,
             tags: Vec::new(),
         }
     }
@@ -69,6 +71,7 @@ impl Object {
     impl_set_extends!();
     impl_set_shareable!();
     impl_set_inaccessible!();
+    impl_set_interface_object!();
     impl_set_tags!();
 
     /// Add an field to the object
@@ -176,6 +179,7 @@ impl Object {
                 },
                 visible: None,
                 inaccessible: self.inaccessible,
+                interface_object: self.interface_object,
                 tags: self.tags.clone(),
                 is_subscription: false,
                 rust_typename: None,

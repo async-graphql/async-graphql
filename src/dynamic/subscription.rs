@@ -179,6 +179,7 @@ impl Subscription {
                 keys: None,
                 visible: None,
                 inaccessible: false,
+                interface_object: false,
                 tags: vec![],
                 is_subscription: true,
                 rust_typename: None,
