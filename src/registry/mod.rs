@@ -278,6 +278,7 @@ impl MetaTypeId {
                 extends: false,
                 shareable: false,
                 inaccessible: false,
+                interface_object: false,
                 tags: vec![],
                 keys: None,
                 visible: None,
@@ -415,6 +416,12 @@ pub enum MetaType {
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#inaccessible>
         inaccessible: bool,
+        /// During composition, the fields of every `@interfaceObject` are added
+        /// both to their corresponding interface definition and to all
+        /// entity types that implement that interface.
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#interfaceobject>
+        interface_object: bool,
         /// Arbitrary string metadata that will be propagated to the supergraph
         /// when using Apollo Federation. This attribute is repeatable
         ///
@@ -970,7 +977,11 @@ impl Registry {
             })
             .collect();
 
-        if let MetaType::Object { fields, .. } = self.types.get_mut(&self.query_type).unwrap() {
+        if let MetaType::Object { fields, .. } = self
+            .types
+            .get_mut(&self.query_type)
+            .expect("missing query type")
+        {
             fields.insert(
                 "_service".to_string(),
                 MetaField {
@@ -1152,6 +1163,7 @@ impl Registry {
                 cache_control: Default::default(),
                 extends: false,
                 shareable: false,
+                interface_object: false,
                 keys: None,
                 visible: None,
                 inaccessible: false,

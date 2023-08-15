@@ -56,6 +56,23 @@ macro_rules! impl_set_inaccessible {
     };
 }
 
+macro_rules! impl_set_interface_object {
+    () => {
+        /// During composition, the fields of every `@interfaceObject` are added
+        /// both to their corresponding interface definition and to all
+        /// entity types that implement that interface.
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#interfaceobject>
+        #[inline]
+        pub fn interface_object(self) -> Self {
+            Self {
+                interface_object: true,
+                ..self
+            }
+        }
+    };
+}
+
 macro_rules! impl_set_tags {
     () => {
         /// Arbitrary string metadata that will be propagated to the supergraph

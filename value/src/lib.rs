@@ -231,6 +231,13 @@ impl From<String> for ConstValue {
     }
 }
 
+impl From<&String> for ConstValue {
+    #[inline]
+    fn from(value: &String) -> Self {
+        ConstValue::String(value.clone())
+    }
+}
+
 impl From<Name> for ConstValue {
     #[inline]
     fn from(value: Name) -> Self {

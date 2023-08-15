@@ -6,8 +6,11 @@ use std::{
 /// A type reference
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TypeRef {
+    /// Named type
     Named(Cow<'static, str>),
+    /// Non-null type
     NonNull(Box<TypeRef>),
+    /// List type
     List(Box<TypeRef>),
 }
 
