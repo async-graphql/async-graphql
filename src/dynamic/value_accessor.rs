@@ -106,7 +106,7 @@ impl<'a> ValueAccessor<'a> {
 }
 
 /// A object accessor
-pub struct ObjectAccessor<'a>(pub(crate) Cow<'a, IndexMap<Name, Value>>);
+pub struct ObjectAccessor<'a>(pub Cow<'a, IndexMap<Name, Value>>);
 
 impl<'a> ObjectAccessor<'a> {
     /// Return a reference to the value stored for `key`, if it is present,
@@ -157,10 +157,16 @@ impl<'a> ObjectAccessor<'a> {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Returns a reference to the underlying IndexMap
+    #[inline]
+    pub fn as_index_map(&'a self) -> &'a IndexMap<Name, Value> {
+        &self.0
+    }
 }
 
 /// A list accessor
-pub struct ListAccessor<'a>(pub(crate) &'a [Value]);
+pub struct ListAccessor<'a>(pub &'a [Value]);
 
 impl<'a> ListAccessor<'a> {
     /// Returns the number of elements in the list
@@ -192,5 +198,15 @@ impl<'a> ListAccessor<'a> {
     pub fn try_get(&self, idx: usize) -> Result<ValueAccessor<'_>> {
         self.get(idx)
             .ok_or_else(|| Error::new(format!("internal: index \"{}\" not found", idx)))
+    }
+
+    /// Returns a new ListAccessor that represents a slice of the original
+    #[inline]
+    pub fn as_slice(&self, start: usize, end: usize) -> Result<ListAccessor<'a>> {
+        if start <= end && end <= self.len() {
+            Ok(ListAccessor(&self.0[start..end]))
+        } else {
+            Err(Error::new("internal: invalid slice indices"))
+        }
     }
 }
