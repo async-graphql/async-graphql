@@ -1,4 +1,7 @@
-use std::{borrow::Cow, sync::Arc, sync::Weak};
+use std::{
+    borrow::Cow,
+    sync::{Arc, Weak},
+};
 
 use async_graphql_value::ConstValue;
 
