@@ -106,7 +106,7 @@ impl<'a> ValueAccessor<'a> {
 }
 
 /// A object accessor
-pub struct ObjectAccessor<'a>(pub Cow<'a, IndexMap<Name, Value>>);
+pub struct ObjectAccessor<'a>(pub(crate) Cow<'a, IndexMap<Name, Value>>);
 
 impl<'a> ObjectAccessor<'a> {
     /// Return a reference to the value stored for `key`, if it is present,
@@ -166,7 +166,7 @@ impl<'a> ObjectAccessor<'a> {
 }
 
 /// A list accessor
-pub struct ListAccessor<'a>(pub &'a [Value]);
+pub struct ListAccessor<'a>(pub(crate) &'a [Value]);
 
 impl<'a> ListAccessor<'a> {
     /// Returns the number of elements in the list
