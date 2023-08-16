@@ -64,7 +64,7 @@ pub fn lowercase() -> impl CustomDirective {
 
 # [5.0.8] 2023-05-09
 
-- Improve documentation about DataloaderImprove documentation about Dataloader [#1282](https://github.com/async-graphql/async-graphql/pull/1282)
+- Improve documentation on Dataloader [#1282](https://github.com/async-graphql/async-graphql/pull/1282)
 - Prevent recursive input type checking from hitting stack overflow [#1284](https://github.com/async-graphql/async-graphql/pull/1284)
 - update MSRV to `1.65.0`
 
