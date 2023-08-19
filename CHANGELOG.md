@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [6.0.4] 2023-08-18
+
+- add support `multipart/mixed` request. [#1348](https://github.com/async-graphql/async-graphql/issues/1348)
+- async-graphql-actix-web: add `GraphQL` handler.
+- async-graphql-axum: add `GraphQL` service.
+
 # [6.0.3] 2023-08-15
 
 - dynamic: fix the error that some methods of `XXXAccessor` return reference lifetimes that are smaller than expected.

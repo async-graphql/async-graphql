@@ -18,10 +18,11 @@ async-trait.workspace = true
 axum = { version = "0.6.0", features = ["ws", "headers"] }
 bytes.workspace = true
 futures-util.workspace = true
-http-body = "0.4.2"
 serde_json.workspace = true
+tokio = { version = "1.17.0", features = ["time"] }
 tokio-util = { workspace = true, default-features = false, features = [
     "io",
     "compat",
 ] }
+tokio-stream = "0.1.14"
 tower-service = "0.3"

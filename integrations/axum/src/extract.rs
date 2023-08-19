@@ -2,6 +2,7 @@ use std::{io::ErrorKind, marker::PhantomData};
 
 use async_graphql::{futures_util::TryStreamExt, http::MultipartOptions, ParseRequestError};
 use axum::{
+    body::HttpBody,
     extract::{BodyStream, FromRequest},
     http::{self, Method, Request},
     response::IntoResponse,
@@ -62,7 +63,7 @@ pub mod rejection {
 #[async_trait::async_trait]
 impl<S, B, R> FromRequest<S, B> for GraphQLRequest<R>
 where
-    B: http_body::Body + Unpin + Send + Sync + 'static,
+    B: HttpBody + Send + Sync + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
     S: Send + Sync,
@@ -98,7 +99,7 @@ impl<R> GraphQLBatchRequest<R> {
 #[async_trait::async_trait]
 impl<S, B, R> FromRequest<S, B> for GraphQLBatchRequest<R>
 where
-    B: http_body::Body + Unpin + Send + Sync + 'static,
+    B: HttpBody + Send + Sync + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
     S: Send + Sync,

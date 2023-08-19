@@ -212,6 +212,7 @@ Add the extension crate [`async_graphql_apollo_studio_extension`](https://github
 
 - [GraphQL](https://graphql.org)
 - [GraphQL Multipart Request](https://github.com/jaydenseric/graphql-multipart-request-spec)
+- [Multipart HTTP protocol for GraphQL subscriptions](https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/)
 - [GraphQL Cursor Connections Specification](https://facebook.github.io/relay/graphql/connections.htm)
 - [GraphQL over WebSocket Protocol](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
 - [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
