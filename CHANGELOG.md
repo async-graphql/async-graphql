@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [6.0.4] 2023-08-18
 
+- Parse "repeatable" in directive definitions. [#1336](https://github.com/async-graphql/async-graphql/pull/1336)
 - add support `multipart/mixed` request. [#1348](https://github.com/async-graphql/async-graphql/issues/1348)
 - async-graphql-actix-web: add `GraphQL` handler.
 - async-graphql-axum: add `GraphQL` service.
