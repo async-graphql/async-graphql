@@ -307,6 +307,12 @@ fn parse_directive_definition(
             .collect()
     })?
     .unwrap_or_default();
+    let is_repeatable = parse_if_rule(&mut pairs, Rule::repeatable, |pair| {
+        debug_assert_eq!(pair.as_rule(), Rule::repeatable);
+        Ok(())
+    })
+    .unwrap_or_default()
+    .is_some();
     let locations = {
         let pair = pairs.next().unwrap();
         debug_assert_eq!(pair.as_rule(), Rule::directive_locations);
@@ -350,6 +356,7 @@ fn parse_directive_definition(
             description,
             name,
             arguments,
+            is_repeatable,
             locations,
         },
         pos,

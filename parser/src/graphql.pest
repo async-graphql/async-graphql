@@ -75,7 +75,8 @@ input_fields_definition = { "{" ~ input_value_definition+ ~ "}" }
 
 extend = { "extend" }
 
-directive_definition = { string? ~ "directive" ~ "@" ~ name ~ arguments_definition? ~ "on" ~ directive_locations }
+directive_definition = { string? ~ "directive" ~ "@" ~ name ~ arguments_definition? ~ repeatable ~ "on" ~ directive_locations }
+repeatable = { "repeatable"? }
 directive_locations = { "|"? ~ directive_location ~ ("|" ~ directive_location)* }
 directive_location = {
 	"QUERY"
