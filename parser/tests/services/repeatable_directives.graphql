@@ -1,0 +1,10 @@
+directive @skip(
+  if: Boolean!
+) repeatable on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @test1(service: String!) repeatable on FIELD_DEFINITION
+directive @test2(service: String!) repeatable on FIELD
+directive @test3(service: String!) repeatable on ENUM_VALUE
+directive @test4(service: String!) repeatable on ENUM
+
+directive @test5(service: String!) repeatable on VARIABLE_DEFINITION

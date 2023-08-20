@@ -188,6 +188,8 @@ pub struct DirectiveDefinition {
     pub name: Positioned<Name>,
     /// The arguments of the directive.
     pub arguments: Vec<Positioned<InputValueDefinition>>,
+    /// Whether the directive can be repeated.
+    pub is_repeatable: bool,
     /// The locations the directive applies to.
     pub locations: Vec<Positioned<DirectiveLocation>>,
 }
