@@ -39,7 +39,13 @@ async-stream = "0.3.0"
 async-trait.workspace = true
 bytes.workspace = true
 fnv = "1.0.7"
-futures-util = { workspace = true, features = ["std", "io", "sink"] }
+futures-util = { workspace = true, features = [
+  "std",
+  "io",
+  "sink",
+  "async-await",
+  "async-await-macro",
+] }
 http = "0.2.3"
 indexmap.workspace = true
 mime = "0.3.15"
