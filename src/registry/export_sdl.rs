@@ -191,7 +191,7 @@ impl Registry {
             }
 
             if let Some(description) = &field.description {
-                export_description(sdl, options, false, description);
+                export_description(sdl, options, 1, description);
             }
 
             if !field.args.is_empty() {
@@ -202,10 +202,24 @@ impl Registry {
                     args.sort_by_key(|value| &value.name);
                 }
 
+                let need_multiline = args.iter().any(|x| x.description.is_some());
+
                 for (i, arg) in args.into_iter().enumerate() {
                     if i != 0 {
-                        sdl.push_str(", ");
+                        sdl.push(',');
                     }
+
+                    if let Some(description) = &arg.description {
+                        writeln!(sdl).ok();
+                        export_description(sdl, options, 2, description);
+                    }
+
+                    if need_multiline {
+                        write!(sdl, "\t\t").ok();
+                    } else if i != 0 {
+                        sdl.push(' ');
+                    }
+
                     sdl.push_str(&export_input_value(arg));
 
                     if options.federation {
@@ -217,6 +231,10 @@ impl Registry {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
+                }
+
+                if need_multiline {
+                    sdl.push_str("\n\t");
                 }
                 write!(sdl, "): {}", field.ty).ok();
             } else {
@@ -272,7 +290,7 @@ impl Registry {
                 }
                 if export_scalar {
                     if let Some(description) = description {
-                        export_description(sdl, options, true, description);
+                        export_description(sdl, options, 0, description);
                     }
                     write!(sdl, "scalar {}", name).ok();
 
@@ -336,7 +354,7 @@ impl Registry {
                 }
 
                 if let Some(description) = description {
-                    export_description(sdl, options, true, description);
+                    export_description(sdl, options, 0, description);
                 }
 
                 if options.federation && *extends {
@@ -388,7 +406,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, true, description);
+                    export_description(sdl, options, 0, description);
                 }
 
                 if options.federation && *extends {
@@ -425,7 +443,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, true, description);
+                    export_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "enum {}", name).ok();
@@ -446,7 +464,7 @@ impl Registry {
 
                 for value in values {
                     if let Some(description) = &value.description {
-                        export_description(sdl, options, false, description);
+                        export_description(sdl, options, 1, description);
                     }
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
@@ -475,7 +493,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, true, description);
+                    export_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "input {}", name).ok();
@@ -499,8 +517,8 @@ impl Registry {
                 }
 
                 for field in fields {
-                    if let Some(description) = &field.description {
-                        export_description(sdl, options, false, description);
+                    if let Some(ref description) = &field.description {
+                        export_description(sdl, options, 2, description);
                     }
                     write!(sdl, "\t{}", export_input_value(&field)).ok();
                     if options.federation {
@@ -525,7 +543,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, true, description);
+                    export_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "union {}", name).ok();
@@ -572,18 +590,17 @@ impl Registry {
 fn export_description(
     sdl: &mut String,
     options: &SDLExportOptions,
-    top_level: bool,
+    level: usize,
     description: &str,
 ) {
+    let tabs = "\t".repeat(level);
+
     if options.prefer_single_line_descriptions && !description.contains('\n') {
-        let tab = if top_level { "" } else { "\t" };
         let description = description.replace('"', r#"\""#);
-        writeln!(sdl, "{}\"{}\"", tab, description).ok();
-    } else if top_level {
-        writeln!(sdl, "\"\"\"\n{}\n\"\"\"", description).ok();
+        writeln!(sdl, "{tabs}\"{description}\"").ok();
     } else {
-        let description = description.replace('\n', "\n\t");
-        writeln!(sdl, "\t\"\"\"\n\t{}\n\t\"\"\"", description).ok();
+        let description = description.replace('\n', &format!("\n{tabs}"));
+        writeln!(sdl, "{tabs}\"\"\"\n{tabs}{description}\n{tabs}\"\"\"").ok();
     }
 }
 
