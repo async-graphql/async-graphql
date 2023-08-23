@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use crate::{Error, Name, Result, Value};
 
 /// A value accessor
-pub struct ValueAccessor<'a>(pub &'a Value);
+pub struct ValueAccessor<'a>(&'a Value);
 
 impl<'a> ValueAccessor<'a> {
     /// Returns `true` if the value is null, otherwise returns `false`
@@ -208,5 +208,11 @@ impl<'a> ListAccessor<'a> {
         } else {
             Err(Error::new("internal: invalid slice indices"))
         }
+    }
+
+    /// Returns a reference to the underlying `Value`
+    #[inline]
+    pub fn as_value(&self) -> &Value {
+        self.0
     }
 }
