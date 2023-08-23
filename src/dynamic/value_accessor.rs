@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use crate::{Error, Name, Result, Value};
 
 /// A value accessor
-pub struct ValueAccessor<'a>(&'a Value);
+pub struct ValueAccessor<'a>(pub &'a Value);
 
 impl<'a> ValueAccessor<'a> {
     /// Returns `true` if the value is null, otherwise returns `false`
