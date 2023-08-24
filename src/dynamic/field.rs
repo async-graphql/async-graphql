@@ -5,13 +5,13 @@ use std::{
     ops::Deref,
 };
 
-use futures_util::{Future, future::BoxFuture, FutureExt};
+use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
 use crate::{
-    Context,
     dynamic::{InputValue, ObjectAccessor, TypeRef},
-    Error, registry::Deprecation, Result, Value,
+    registry::Deprecation,
+    Context, Error, Result, Value,
 };
 
 /// A value returned from the resolver function
@@ -109,9 +109,9 @@ impl<'a> FieldValue<'a> {
     /// Create a FieldValue from list
     #[inline]
     pub fn list<I, T>(values: I) -> Self
-        where
-            I: IntoIterator<Item=T>,
-            T: Into<FieldValue<'a>>,
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<FieldValue<'a>>,
     {
         Self(FieldValueInner::List(
             values.into_iter().map(Into::into).collect(),
@@ -266,22 +266,22 @@ pub enum FieldFuture<'a> {
 impl<'a> FieldFuture<'a> {
     /// Create a ResolverFuture
     pub fn new<Fut, R>(future: Fut) -> Self
-        where
-            Fut: Future<Output=Result<Option<R>>> + Send + 'a,
-            R: Into<FieldValue<'a>> + Send,
+    where
+        Fut: Future<Output = Result<Option<R>>> + Send + 'a,
+        R: Into<FieldValue<'a>> + Send,
     {
         FieldFuture::Future(
             async move {
                 let res = future.await?;
                 Ok(res.map(Into::into))
             }
-                .boxed(),
+            .boxed(),
         )
     }
 }
 
 pub(crate) type BoxResolverFn =
-Box<(dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync)>;
+    Box<(dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync)>;
 
 /// A GraphQL field
 pub struct Field {
@@ -315,10 +315,10 @@ impl Debug for Field {
 impl Field {
     /// Create a GraphQL field
     pub fn new<N, T, F>(name: N, ty: T, resolver_fn: F) -> Self
-        where
-            N: Into<String>,
-            T: Into<TypeRef>,
-            F: for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync + 'static,
+    where
+        N: Into<String>,
+        T: Into<TypeRef>,
+        F: for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync + 'static,
     {
         Self {
             name: name.into(),

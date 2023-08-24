@@ -1,22 +1,22 @@
 use std::{borrow::Cow, pin::Pin};
 
-use futures_util::{Future, future::BoxFuture, FutureExt};
+use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
 use async_graphql_derive::SimpleObject;
 
+use crate::dynamic::FieldFuture;
 use crate::{
-    Context,
-    ContextSelectionSet,
     dynamic::{
         field::FieldValueInner, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type,
         TypeRef,
     },
-    Error,
-    extensions::ResolveInfo, IntrospectionMode, Name, parser::types::Selection, resolver_utils::create_value_object, SDLExportOptions, ServerError,
+    extensions::ResolveInfo,
+    parser::types::Selection,
+    resolver_utils::create_value_object,
+    Context, ContextSelectionSet, Error, IntrospectionMode, Name, SDLExportOptions, ServerError,
     ServerResult, Value,
 };
-use crate::dynamic::FieldFuture;
 
 /// Federation service
 #[derive(SimpleObject)]
@@ -25,7 +25,7 @@ struct Service {
     sdl: Option<String>,
 }
 
-type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output=ServerResult<(Name, Value)>> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
 
 pub(crate) async fn resolve_container(
     schema: &Schema,
@@ -75,7 +75,7 @@ fn collect_fields<'a>(
                                     Value::from(object.name.as_str()),
                                 ))
                             }
-                                .boxed(),
+                            .boxed(),
                         )
                     } else {
                         fields.push(
@@ -114,10 +114,10 @@ fn collect_fields<'a>(
                                     &ctx_obj,
                                     ctx_field.item,
                                 )
-                                    .await?;
+                                .await?;
                                 Ok((field.node.response_key().node.clone(), value))
                             }
-                                .boxed(),
+                            .boxed(),
                         );
                         continue;
                     } else if field.node.name.node == "__type" {
@@ -148,10 +148,10 @@ fn collect_fields<'a>(
                                     &ctx_obj,
                                     ctx_field.item,
                                 )
-                                    .await?;
+                                .await?;
                                 Ok((field.node.response_key().node.clone(), value))
                             }
-                                .boxed(),
+                            .boxed(),
                         );
                         continue;
                     } else if ctx.schema_env.registry.enable_federation
@@ -176,11 +176,11 @@ fn collect_fields<'a>(
                                     &ctx_obj,
                                     ctx_field.item,
                                 )
-                                    .await?;
+                                .await?;
 
                                 Ok((field.node.response_key().node.clone(), output_type))
                             }
-                                .boxed(),
+                            .boxed(),
                         );
                         continue;
                     } else if ctx.schema_env.registry.enable_federation
@@ -219,8 +219,9 @@ fn collect_fields<'a>(
                                 });
 
                                 let field_value = match field_future {
-                                    FieldFuture::Future(fut) => fut.await
-                                        .map_err(|err| err.into_server_error(field.pos))?,
+                                    FieldFuture::Future(fut) => {
+                                        fut.await.map_err(|err| err.into_server_error(field.pos))?
+                                    }
                                     FieldFuture::Value(value) => value,
                                 };
                                 let value =
@@ -229,7 +230,7 @@ fn collect_fields<'a>(
                                         .unwrap_or_default();
                                 Ok((field.node.response_key().node.clone(), value))
                             }
-                                .boxed(),
+                            .boxed(),
                         );
                         continue;
                     }
@@ -280,13 +281,11 @@ fn collect_fields<'a>(
                                     parent_value,
                                 });
 
-
                                 let field_value = match field_future {
                                     FieldFuture::Value(field_value) => field_value,
-                                    FieldFuture::Future(future) =>
-                                        future
-                                            .await
-                                            .map_err(|err| err.into_server_error(field.pos))?
+                                    FieldFuture::Future(future) => future
+                                        .await
+                                        .map_err(|err| err.into_server_error(field.pos))?,
                                 };
 
                                 let value = resolve(
@@ -295,7 +294,7 @@ fn collect_fields<'a>(
                                     &field_def.ty,
                                     field_value.as_ref(),
                                 )
-                                    .await?;
+                                .await?;
 
                                 Ok(value)
                             };
@@ -309,7 +308,7 @@ fn collect_fields<'a>(
                                 .unwrap_or_default();
                             Ok((field.node.response_key().node.clone(), res_value))
                         }
-                            .boxed(),
+                        .boxed(),
                     );
                 }
             }
@@ -408,7 +407,7 @@ pub(crate) fn resolve<'a>(
             (TypeRef::List(_), None) => Ok(None),
         }
     }
-        .boxed()
+    .boxed()
 }
 
 async fn resolve_list<'a>(
@@ -468,7 +467,7 @@ async fn resolve_value(
                 "internal: invalid value for scalar \"{}\", expected \"FieldValue::Value\"",
                 scalar.name
             ))
-                .into_server_error(ctx.item.pos),
+            .into_server_error(ctx.item.pos),
         )),
 
         (Type::Object(object), _) => {
@@ -479,7 +478,7 @@ async fn resolve_value(
                 value,
                 true,
             )
-                .await
+            .await
         }
 
         (Type::InputObject(obj), _) => Err(ctx.set_error_path(
@@ -487,7 +486,7 @@ async fn resolve_value(
                 "internal: cannot use input object \"{}\" as output value",
                 obj.name
             ))
-                .into_server_error(ctx.item.pos),
+            .into_server_error(ctx.item.pos),
         )),
 
         (Type::Enum(e), FieldValueInner::Value(Value::Enum(name))) => {
@@ -532,7 +531,7 @@ async fn resolve_value(
                         "internal: object \"{}\" does not implement interface \"{}\"",
                         ty, interface.name,
                     ))
-                        .into_server_error(ctx.item.pos),
+                    .into_server_error(ctx.item.pos),
                 ));
             }
 
@@ -561,14 +560,14 @@ async fn resolve_value(
                 value,
                 true,
             )
-                .await
+            .await
         }
         (Type::Interface(interface), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: invalid value for interface \"{}\", expected \"FieldValue::WithType\"",
                 interface.name
             ))
-                .into_server_error(ctx.item.pos),
+            .into_server_error(ctx.item.pos),
         )),
 
         (Type::Union(union), FieldValueInner::WithType { value, ty }) => {
@@ -578,7 +577,7 @@ async fn resolve_value(
                         "internal: union \"{}\" does not contain object \"{}\"",
                         union.name, ty,
                     ))
-                        .into_server_error(ctx.item.pos),
+                    .into_server_error(ctx.item.pos),
                 ));
             }
 
@@ -607,14 +606,14 @@ async fn resolve_value(
                 value,
                 true,
             )
-                .await
+            .await
         }
         (Type::Union(union), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: invalid value for union \"{}\", expected \"FieldValue::WithType\"",
                 union.name
             ))
-                .into_server_error(ctx.item.pos),
+            .into_server_error(ctx.item.pos),
         )),
 
         (Type::Subscription(subscription), _) => Err(ctx.set_error_path(
@@ -622,7 +621,7 @@ async fn resolve_value(
                 "internal: cannot use subscription \"{}\" as output value",
                 subscription.name
             ))
-                .into_server_error(ctx.item.pos),
+            .into_server_error(ctx.item.pos),
         )),
     }
 }
