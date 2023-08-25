@@ -264,7 +264,7 @@ pub enum FieldFuture<'a> {
 }
 
 impl<'a> FieldFuture<'a> {
-    /// Create a ResolverFuture
+    /// Create a `FieldFuture` from a `Future`
     pub fn new<Fut, R>(future: Fut) -> Self
     where
         Fut: Future<Output = Result<Option<R>>> + Send + 'a,
@@ -277,6 +277,11 @@ impl<'a> FieldFuture<'a> {
             }
             .boxed(),
         )
+    }
+
+    /// Create a `FieldFuture` from a `Value`
+    pub fn from_value(value: Option<Value>) -> Self {
+        FieldFuture::Value(value.map(|value| FieldValue::from(value)))
     }
 }
 
