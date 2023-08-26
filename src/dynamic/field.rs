@@ -255,22 +255,33 @@ impl<'a> Deref for ResolverContext<'a> {
 }
 
 /// A future that returned from field resolver
-pub struct FieldFuture<'a>(pub(crate) BoxResolveFut<'a>);
+pub enum FieldFuture<'a> {
+    /// A pure value without any async operation
+    Value(Option<FieldValue<'a>>),
+
+    /// A future that returned from field resolver
+    Future(BoxResolveFut<'a>),
+}
 
 impl<'a> FieldFuture<'a> {
-    /// Create a ResolverFuture
+    /// Create a `FieldFuture` from a `Future`
     pub fn new<Fut, R>(future: Fut) -> Self
     where
         Fut: Future<Output = Result<Option<R>>> + Send + 'a,
         R: Into<FieldValue<'a>> + Send,
     {
-        Self(
+        FieldFuture::Future(
             async move {
                 let res = future.await?;
                 Ok(res.map(Into::into))
             }
             .boxed(),
         )
+    }
+
+    /// Create a `FieldFuture` from a `Value`
+    pub fn from_value(value: Option<Value>) -> Self {
+        FieldFuture::Value(value.map(|value| FieldValue::from(value)))
     }
 }
 

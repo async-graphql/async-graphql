@@ -1,9 +1,11 @@
 use std::{borrow::Cow, pin::Pin};
 
-use async_graphql_derive::SimpleObject;
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
+use async_graphql_derive::SimpleObject;
+
+use crate::dynamic::FieldFuture;
 use crate::{
     dynamic::{
         field::FieldValueInner, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type,
@@ -210,14 +212,18 @@ fn collect_fields<'a>(
                                         .collect::<ServerResult<IndexMap<Name, Value>>>()?,
                                 ));
 
-                                let field_value = (entity_resolver)(ResolverContext {
+                                let field_future = (entity_resolver)(ResolverContext {
                                     ctx: &ctx_field,
                                     args: arguments,
                                     parent_value,
-                                })
-                                .0
-                                .await
-                                .map_err(|err| err.into_server_error(field.pos))?;
+                                });
+
+                                let field_value = match field_future {
+                                    FieldFuture::Future(fut) => {
+                                        fut.await.map_err(|err| err.into_server_error(field.pos))?
+                                    }
+                                    FieldFuture::Value(value) => value,
+                                };
                                 let value =
                                     resolve(schema, &ctx_field, &entity_type, field_value.as_ref())
                                         .await?
@@ -269,14 +275,19 @@ fn collect_fields<'a>(
                             };
 
                             let resolve_fut = async {
-                                let field_value = (field_def.resolver_fn)(ResolverContext {
+                                let field_future = (field_def.resolver_fn)(ResolverContext {
                                     ctx: &ctx_field,
                                     args: arguments,
                                     parent_value,
-                                })
-                                .0
-                                .await
-                                .map_err(|err| err.into_server_error(field.pos))?;
+                                });
+
+                                let field_value = match field_future {
+                                    FieldFuture::Value(field_value) => field_value,
+                                    FieldFuture::Future(future) => future
+                                        .await
+                                        .map_err(|err| err.into_server_error(field.pos))?,
+                                };
+
                                 let value = resolve(
                                     schema,
                                     &ctx_field,
@@ -284,6 +295,7 @@ fn collect_fields<'a>(
                                     field_value.as_ref(),
                                 )
                                 .await?;
+
                                 Ok(value)
                             };
                             futures_util::pin_mut!(resolve_fut);
