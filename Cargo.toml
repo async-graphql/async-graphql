@@ -30,6 +30,10 @@ dynamic-schema = []
 graphiql = ["handlebars"]
 playground = []
 
+[[bench]]
+harness = false
+name = "static_schema"
+
 [dependencies]
 async-graphql-derive.workspace = true
 async-graphql-parser.workspace = true
@@ -119,6 +123,8 @@ tokio = { version = "1.4.0", features = [
   "sync",
   "time",
 ] }
+criterion = { version = "0.3.6", features = ["html_reports", "async_tokio"] }
+slab = "0.4.2"
 
 [package.metadata.docs.rs]
 all-features = true

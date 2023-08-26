@@ -281,7 +281,7 @@ impl<'a> FieldFuture<'a> {
 
     /// Create a `FieldFuture` from a `Value`
     pub fn from_value(value: Option<Value>) -> Self {
-        FieldFuture::Value(value.map(|value| FieldValue::from(value)))
+        FieldFuture::Value(value.map(FieldValue::from))
     }
 }
 
@@ -294,6 +294,7 @@ pub struct Field {
     pub(crate) description: Option<String>,
     pub(crate) arguments: IndexMap<String, InputValue>,
     pub(crate) ty: TypeRef,
+    pub(crate) ty_str: String,
     pub(crate) resolver_fn: BoxResolverFn,
     pub(crate) deprecation: Deprecation,
     pub(crate) external: bool,
@@ -325,11 +326,13 @@ impl Field {
         T: Into<TypeRef>,
         F: for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync + 'static,
     {
+        let ty = ty.into();
         Self {
             name: name.into(),
             description: None,
             arguments: Default::default(),
-            ty: ty.into(),
+            ty_str: ty.to_string(),
+            ty,
             resolver_fn: Box::new(resolver_fn),
             deprecation: Deprecation::NoDeprecated,
             external: false,
