@@ -1,15 +1,13 @@
 use std::{borrow::Cow, pin::Pin};
 
+use async_graphql_derive::SimpleObject;
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
-use async_graphql_derive::SimpleObject;
-
-use crate::dynamic::FieldFuture;
 use crate::{
     dynamic::{
-        field::FieldValueInner, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type,
-        TypeRef,
+        field::FieldValueInner, FieldFuture, FieldValue, Object, ObjectAccessor, ResolverContext,
+        Schema, Type, TypeRef,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
