@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.4"
+version = "6.0.5"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -131,6 +131,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
+resolver = "2"
 members = [
   "value",
   "parser",
@@ -144,10 +145,10 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "6.0.4", default-features = false }
-async-graphql-derive = { path = "derive", version = "6.0.4" }
-async-graphql-parser = { path = "parser", version = "6.0.4" }
-async-graphql-value = { path = "value", version = "6.0.4" }
+async-graphql = { path = ".", version = "6.0.5", default-features = false }
+async-graphql-derive = { path = "derive", version = "6.0.5" }
+async-graphql-parser = { path = "parser", version = "6.0.5" }
+async-graphql-value = { path = "value", version = "6.0.5" }
 
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"

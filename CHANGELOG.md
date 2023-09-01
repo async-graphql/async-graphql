@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `ValueAccessor::as_value` and `ListAccessor::as_values_slice` methods [#1353](https://github.com/async-graphql/async-graphql/pull/1353)
 - dynamic: fixes key not found when using entity resolver [#1362](https://github.com/async-graphql/async-graphql/issues/1362)
 - fix panic in complexity visitor [#1359](https://github.com/async-graphql/async-graphql/pull/1359)
+- update MSRV to `1.68.0`
 
 # [6.0.4] 2023-08-18
 
