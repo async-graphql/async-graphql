@@ -141,7 +141,7 @@ pub struct Interface {
     pub(crate) description: Option<String>,
     pub(crate) fields: IndexMap<String, InterfaceField>,
     pub(crate) implements: IndexSet<String>,
-    pub(crate) keys: Vec<String>,
+    keys: Vec<String>,
     extends: bool,
     inaccessible: bool,
     tags: Vec<String>,
@@ -205,6 +205,11 @@ impl Interface {
     #[inline]
     pub fn type_name(&self) -> &str {
         &self.name
+    }
+
+    #[inline]
+    pub(crate) fn is_entity(&self) -> bool {
+        !self.keys.is_empty()
     }
 
     pub(crate) fn register(&self, registry: &mut Registry) -> Result<(), SchemaError> {
