@@ -9,14 +9,16 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-actix-web"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.4"
+version = "6.0.5"
 
 [dependencies]
 async-graphql = { workspace = true, features = ["playground"] }
 
 actix = "0.13.0"
 actix-http = "3.1.0"
-actix-web = { version = "4.1.0", default-features = false }
+actix-web = { version = "4.1.0", default-features = false, features = [
+    "http2",
+] }
 actix-web-actors = "4.1.0"
 async-channel = "1.6.1"
 futures-channel = "0.3.13"

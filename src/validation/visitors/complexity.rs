@@ -60,7 +60,7 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
                 if let Some(f) = &meta_field.compute_complexity {
                     match f(
                         ctx,
-                        self.variable_definition.unwrap(),
+                        self.variable_definition.unwrap_or(&[]),
                         &field.node,
                         children_complex,
                     ) {

@@ -103,6 +103,12 @@ impl<'a> ValueAccessor<'a> {
     pub fn deserialize<T: DeserializeOwned>(&self) -> Result<T> {
         T::deserialize(self.0.clone()).map_err(|err| format!("internal: {}", err).into())
     }
+
+    /// Returns a reference to the underlying `Value`
+    #[inline]
+    pub fn as_value(&self) -> &'a Value {
+        self.0
+    }
 }
 
 /// A object accessor
@@ -208,5 +214,11 @@ impl<'a> ListAccessor<'a> {
         } else {
             Err(Error::new("internal: invalid slice indices"))
         }
+    }
+
+    /// Returns a reference to the underlying `&[Value]`
+    #[inline]
+    pub fn as_values_slice(&self) -> &'a [Value] {
+        self.0
     }
 }

@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.4"
+version = "6.0.5"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -29,6 +29,10 @@ unblock = ["blocking"]
 dynamic-schema = []
 graphiql = ["handlebars"]
 playground = []
+
+[[bench]]
+harness = false
+name = "static_schema"
 
 [dependencies]
 async-graphql-derive.workspace = true
@@ -119,12 +123,15 @@ tokio = { version = "1.4.0", features = [
   "sync",
   "time",
 ] }
+criterion = { version = "0.3.6", features = ["html_reports", "async_tokio"] }
+slab = "0.4.2"
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
+resolver = "2"
 members = [
   "value",
   "parser",
@@ -138,10 +145,10 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "6.0.4", default-features = false }
-async-graphql-derive = { path = "derive", version = "6.0.4" }
-async-graphql-parser = { path = "parser", version = "6.0.4" }
-async-graphql-value = { path = "value", version = "6.0.4" }
+async-graphql = { path = ".", version = "6.0.5", default-features = false }
+async-graphql-derive = { path = "derive", version = "6.0.5" }
+async-graphql-parser = { path = "parser", version = "6.0.5" }
+async-graphql-value = { path = "value", version = "6.0.5" }
 
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"

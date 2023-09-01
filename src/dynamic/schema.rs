@@ -7,7 +7,7 @@ use indexmap::IndexMap;
 use crate::{
     dynamic::{
         field::BoxResolverFn, r#type::Type, resolve::resolve_container, DynamicRequest,
-        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription,
+        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription, Union,
     },
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
@@ -171,6 +171,21 @@ impl SchemaBuilder {
         if self.enable_federation || registry.has_entities() {
             registry.enable_federation = true;
             registry.create_federation_types();
+
+            // create _Entity type
+            let entity = self
+                .types
+                .values()
+                .filter(|ty| match ty {
+                    Type::Object(obj) => obj.is_entity(),
+                    Type::Interface(interface) => interface.is_entity(),
+                    _ => false,
+                })
+                .fold(Union::new("_Entity"), |entity, ty| {
+                    entity.possible_type(ty.name())
+                });
+            self.types
+                .insert("_Entity".to_string(), Type::Union(entity));
         }
 
         let inner = SchemaInner {
@@ -994,5 +1009,72 @@ mod tests {
                 ]
             );
         }
+    }
+
+    #[tokio::test]
+    async fn federation() {
+        let user = Object::new("User")
+            .field(Field::new(
+                "name",
+                TypeRef::named_nn(TypeRef::STRING),
+                |_| FieldFuture::new(async { Ok(Some(FieldValue::value("test"))) }),
+            ))
+            .key("name");
+
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .register(user)
+            .entity_resolver(|ctx| {
+                FieldFuture::new(async move {
+                    let representations = ctx.args.try_get("representations")?.list()?;
+                    let mut values = Vec::new();
+
+                    for item in representations.iter() {
+                        let item = item.object()?;
+                        let typename = item
+                            .try_get("__typename")
+                            .and_then(|value| value.string())?;
+
+                        if typename == "User" {
+                            values.push(FieldValue::borrowed_any(&()).with_type("User"));
+                        }
+                    }
+
+                    Ok(Some(FieldValue::list(values)))
+                })
+            })
+            .finish()
+            .unwrap();
+
+        assert_eq!(
+            schema
+                .execute(
+                    r#"
+                {
+                    _entities(representations: [{__typename: "User", name: "test"}]) {
+                        __typename
+                        ... on User {
+                            name
+                        }
+                    }
+                }
+                "#
+                )
+                .await
+                .into_result()
+                .unwrap()
+                .data,
+            value!({
+                "_entities": [{
+                    "__typename": "User",
+                    "name": "test",
+                }],
+            })
+        );
     }
 }
