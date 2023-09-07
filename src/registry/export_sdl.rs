@@ -518,7 +518,7 @@ impl Registry {
 
                 for field in fields {
                     if let Some(ref description) = &field.description {
-                        export_description(sdl, options, 2, description);
+                        export_description(sdl, options, 1, description);
                     }
                     write!(sdl, "\t{}", export_input_value(&field)).ok();
                     if options.federation {
