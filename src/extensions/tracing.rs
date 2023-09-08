@@ -84,6 +84,7 @@ impl Extension for TracingExtension {
             target: "async_graphql::graphql",
             Level::INFO,
             "parse",
+            source = tracinglib::field::Empty
         );
         async move {
             let res = next.run(ctx, query, variables).await;
