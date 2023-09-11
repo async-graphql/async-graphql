@@ -59,7 +59,7 @@ struct OpenTelemetryExtension<T> {
     tracer: Arc<T>,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T> Extension for OpenTelemetryExtension<T>
 where
     T: Tracer + Send + Sync + 'static,

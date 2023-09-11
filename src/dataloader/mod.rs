@@ -114,7 +114,7 @@ impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> 
 }
 
 /// Trait for batch loading.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 'static {
     /// type of value.
     type Value: Send + Sync + Clone + 'static;
@@ -494,7 +494,7 @@ mod tests {
 
     struct MyLoader;
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl Loader<i32> for MyLoader {
         type Value = i32;
         type Error = ();
@@ -505,7 +505,7 @@ mod tests {
         }
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl Loader<i64> for MyLoader {
         type Value = i64;
         type Error = ();
@@ -683,7 +683,7 @@ mod tests {
     async fn test_dataloader_dead_lock() {
         struct MyDelayLoader;
 
-        #[async_trait::async_trait]
+        #[async_trait::async_trait(?Send)]
         impl Loader<i32> for MyDelayLoader {
             type Value = i32;
             type Error = ();

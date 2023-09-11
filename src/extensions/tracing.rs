@@ -48,7 +48,7 @@ impl ExtensionFactory for Tracing {
 
 struct TracingExtension;
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Extension for TracingExtension {
     async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
         next.run(ctx)

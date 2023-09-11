@@ -20,7 +20,7 @@ struct PersistedQuery {
 }
 
 /// Cache storage for persisted queries.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait CacheStorage: Send + Sync + Clone + 'static {
     /// Load the query by `key`.
     async fn get(&self, key: String) -> Option<ExecutableDocument>;
@@ -40,7 +40,7 @@ impl LruCacheStorage {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl CacheStorage for LruCacheStorage {
     async fn get(&self, key: String) -> Option<ExecutableDocument> {
         let mut cache = self.0.lock().await;
@@ -78,7 +78,7 @@ struct ApolloPersistedQueriesExtension<T> {
     storage: T,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
     async fn prepare_request(
         &self,

@@ -38,7 +38,7 @@ pub async fn test_extension_ctx() {
 
     struct MyExtensionImpl;
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl Extension for MyExtensionImpl {
         async fn parse_query(
             &self,
@@ -129,7 +129,7 @@ pub async fn test_extension_call_order() {
         calls: Arc<Mutex<Vec<&'static str>>>,
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     #[allow(unused_variables)]
     impl Extension for MyExtensionImpl {
         async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {

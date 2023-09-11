@@ -76,7 +76,7 @@ pin_project! {
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
         executor: E,
-        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
+        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> >>>,
         #[pin]
         stream: S,
         protocol: Protocols,

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use futures_util::{stream::BoxStream, StreamExt};
+use futures_util::{stream::LocalBoxStream, StreamExt};
 
 use crate::{BatchRequest, BatchResponse, Data, Request, Response};
 
 /// Represents a GraphQL executor
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Executor: Unpin + Clone + Send + Sync + 'static {
     /// Execute a GraphQL query.
     async fn execute(&self, request: Request) -> Response;
@@ -28,5 +28,5 @@ pub trait Executor: Unpin + Clone + Send + Sync + 'static {
         &self,
         request: Request,
         session_data: Option<Arc<Data>>,
-    ) -> BoxStream<'static, Response>;
+    ) -> LocalBoxStream<'static, Response>;
 }

@@ -38,7 +38,7 @@ Default implementation for `request`:
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     next.run(ctx).await
@@ -54,7 +54,7 @@ async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Re
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     // 此处的代码将在执行 prepare_request 之前运行。
@@ -75,7 +75,7 @@ async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Re
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn prepare_request(
     &self,
@@ -101,7 +101,7 @@ async fn prepare_request(
 # use async_graphql::extensions::*;
 # use async_graphql::parser::types::ExecutableDocument;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at parse query.
 async fn parse_query(
@@ -127,7 +127,7 @@ async fn parse_query(
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at validation query.
 async fn validation(
@@ -149,7 +149,7 @@ async fn validation(
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at execute query.
 async fn execute(
@@ -175,7 +175,7 @@ async fn execute(
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware { 
 /// Called at resolve field.
 async fn resolve(
@@ -202,7 +202,7 @@ async fn resolve(
 # use async_graphql::extensions::*;
 # use futures_util::stream::BoxStream;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at subscribe request.
 fn subscribe<'s>(

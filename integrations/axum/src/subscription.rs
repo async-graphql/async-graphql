@@ -29,7 +29,7 @@ use tower_service::Service;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GraphQLProtocol(WebSocketProtocols);
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<S> FromRequestParts<S> for GraphQLProtocol
 where
     S: Send + Sync,

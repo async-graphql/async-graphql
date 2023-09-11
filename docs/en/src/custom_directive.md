@@ -14,7 +14,7 @@ struct ConcatDirective {
     value: String,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl CustomDirective for ConcatDirective {
     async fn resolve_field(&self, _ctx: &Context<'_>, resolve: ResolveFut<'_>) -> ServerResult<Option<Value>> {
         resolve.await.map(|value| {
@@ -41,7 +41,7 @@ Register the directive when building the schema:
 # #[Object]
 # impl Query { async fn version(&self) -> &str { "1.0" } }
 # struct ConcatDirective { value: String, }
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl CustomDirective for ConcatDirective {
 #   async fn resolve_field(&self, _ctx: &Context<'_>, resolve: ResolveFut<'_>) -> ServerResult<Option<Value>> { todo!() }
 # }

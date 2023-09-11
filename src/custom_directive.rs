@@ -27,7 +27,7 @@ pub trait TypeDirective {
 }
 
 /// Represents a custom directive.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 #[allow(unused_variables)]
 pub trait CustomDirective: Sync + Send + 'static {
     /// Called at resolve field.

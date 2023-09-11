@@ -42,7 +42,7 @@ Default implementation for `request`:
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     next.run(ctx).await
@@ -58,7 +58,7 @@ Depending on where you put your logic code, it'll be executed at the beginning o
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
     // The code here will be run before the prepare_request is executed.
@@ -79,7 +79,7 @@ Just after the `request`, we will have the `prepare_request` lifecycle, which wi
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 async fn prepare_request(
     &self,
@@ -105,7 +105,7 @@ The `parse_query` will create a GraphQL `ExecutableDocument` on your query, it'l
 # use async_graphql::extensions::*;
 # use async_graphql::parser::types::ExecutableDocument;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at parse query.
 async fn parse_query(
@@ -131,7 +131,7 @@ The `validation` step will check (depending on your `validation_mode`) rules the
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at validation query.
 async fn validation(
@@ -153,7 +153,7 @@ The `execution` step is a huge one, it'll start the execution of the query by ca
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at execute query.
 async fn execute(
@@ -179,7 +179,7 @@ The `resolve` step is launched for each field.
 # use async_graphql::*;
 # use async_graphql::extensions::*;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware { 
 /// Called at resolve field.
 async fn resolve(
@@ -206,7 +206,7 @@ The `subscribe` lifecycle has the same behavior as the `request` but for a `Subs
 # use async_graphql::extensions::*;
 # use futures_util::stream::BoxStream;
 # struct MyMiddleware;
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Extension for MyMiddleware {
 /// Called at subscribe request.
 fn subscribe<'s>(

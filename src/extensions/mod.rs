@@ -18,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::stream::BoxStream;
+use futures_util::stream::LocalBoxStream;
 
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
@@ -130,17 +130,17 @@ pub struct ResolveInfo<'a> {
     pub is_for_introspection: bool,
 }
 
-type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
+type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Unpin);
 
-type ParseFut<'a> = &'a mut (dyn Future<Output = ServerResult<ExecutableDocument>> + Send + Unpin);
+type ParseFut<'a> = &'a mut (dyn Future<Output = ServerResult<ExecutableDocument>> + Unpin);
 
 type ValidationFut<'a> =
-    &'a mut (dyn Future<Output = Result<ValidationResult, Vec<ServerError>>> + Send + Unpin);
+    &'a mut (dyn Future<Output = Result<ValidationResult, Vec<ServerError>>> + Unpin);
 
-type ExecuteFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
+type ExecuteFut<'a> = &'a mut (dyn Future<Output = Response> + Unpin);
 
 /// A future type used to resolve the field
-pub type ResolveFut<'a> = &'a mut (dyn Future<Output = ServerResult<Option<Value>>> + Send + Unpin);
+pub type ResolveFut<'a> = &'a mut (dyn Future<Output = ServerResult<Option<Value>>> + Unpin);
 
 /// The remainder of a extension chain for request.
 pub struct NextRequest<'a> {
@@ -177,8 +177,8 @@ impl<'a> NextSubscribe<'a> {
     pub fn run<'s>(
         self,
         ctx: &ExtensionContext<'_>,
-        stream: BoxStream<'s, Response>,
-    ) -> BoxStream<'s, Response> {
+        stream: LocalBoxStream<'s, Response>,
+    ) -> LocalBoxStream<'s, Response> {
         if let Some((first, next)) = self.chain.split_first() {
             first.subscribe(ctx, stream, NextSubscribe { chain: next })
         } else {
@@ -322,7 +322,7 @@ impl<'a> NextResolve<'a> {
 }
 
 /// Represents a GraphQL extension
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Extension: Sync + Send + 'static {
     /// Called at start query/mutation request.
     async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
@@ -333,9 +333,9 @@ pub trait Extension: Sync + Send + 'static {
     fn subscribe<'s>(
         &self,
         ctx: &ExtensionContext<'_>,
-        stream: BoxStream<'s, Response>,
+        stream: LocalBoxStream<'s, Response>,
         next: NextSubscribe<'_>,
-    ) -> BoxStream<'s, Response> {
+    ) -> LocalBoxStream<'s, Response> {
         next.run(ctx, stream)
     }
 
@@ -449,7 +449,10 @@ impl Extensions {
         next.run(&self.create_context()).await
     }
 
-    pub fn subscribe<'s>(&self, stream: BoxStream<'s, Response>) -> BoxStream<'s, Response> {
+    pub fn subscribe<'s>(
+        &self,
+        stream: LocalBoxStream<'s, Response>,
+    ) -> LocalBoxStream<'s, Response> {
         let next = NextSubscribe {
             chain: &self.extensions,
         };

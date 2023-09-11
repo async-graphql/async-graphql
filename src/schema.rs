@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
+use futures_util::stream::{self, FuturesOrdered, LocalBoxStream, Stream, StreamExt};
 
 use crate::{
     context::{Data, QueryEnvInner},
@@ -530,12 +530,12 @@ where
         &self,
         request: impl Into<Request>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Unpin {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
 
-        let stream = futures_util::stream::StreamExt::boxed({
+        let stream = futures_util::stream::StreamExt::boxed_local({
             let extensions = extensions.clone();
             let env = self.0.env.clone();
             async_stream::stream! {
@@ -587,12 +587,12 @@ where
     pub fn execute_stream(
         &self,
         request: impl Into<Request>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Unpin {
         self.execute_stream_with_session_data(request, Default::default())
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<Query, Mutation, Subscription> Executor for Schema<Query, Mutation, Subscription>
 where
     Query: ObjectType + 'static,
@@ -607,9 +607,9 @@ where
         &self,
         request: Request,
         session_data: Option<Arc<Data>>,
-    ) -> BoxStream<'static, Response> {
+    ) -> LocalBoxStream<'static, Response> {
         Schema::execute_stream_with_session_data(&self, request, session_data.unwrap_or_default())
-            .boxed()
+            .boxed_local()
     }
 }
 

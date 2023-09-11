@@ -24,7 +24,7 @@ struct Service {
     sdl: Option<String>,
 }
 
-type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a>>;
 
 pub(crate) async fn resolve_container(
     schema: &Schema,

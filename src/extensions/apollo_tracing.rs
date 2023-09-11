@@ -70,7 +70,7 @@ struct ApolloTracingExtension {
     inner: Mutex<Inner>,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Extension for ApolloTracingExtension {
     async fn execute(
         &self,

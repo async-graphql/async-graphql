@@ -117,7 +117,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
+        #[#crate_name::async_trait::async_trait(?Send)]
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #type_name

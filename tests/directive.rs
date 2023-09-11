@@ -84,7 +84,7 @@ pub async fn test_custom_directive() {
         suffix: String,
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl CustomDirective for Concat {
         async fn resolve_field(
             &self,

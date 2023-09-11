@@ -443,7 +443,7 @@ impl Schema {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Executor for Schema {
     async fn execute(&self, request: Request) -> Response {
         Schema::execute(self, request).await
@@ -796,7 +796,7 @@ mod tests {
             calls: Arc<Mutex<Vec<&'static str>>>,
         }
 
-        #[async_trait::async_trait]
+        #[async_trait::async_trait(?Send)]
         #[allow(unused_variables)]
         impl Extension for MyExtensionImpl {
             async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
