@@ -59,7 +59,7 @@ where
         if is_accept_multipart_mixed {
             let (req, mut body) = req.split();
             let req = GraphQLRequest::from_request(&req, &mut body).await?;
-            let stream = self.executor.execute_stream(req.0, None);
+            let stream = self.executor.execute_stream(req.0, None, None, None);
             Ok(Response::builder()
                 .header("content-type", "multipart/mixed; boundary=graphql")
                 .body(Body::from_bytes_stream(

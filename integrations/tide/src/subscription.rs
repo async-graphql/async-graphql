@@ -1,10 +1,14 @@
-use std::{future::Future, str::FromStr};
+use std::{future::Future, str::FromStr, sync::Arc};
 
 use async_graphql::{
     http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
-    Data, Executor, Result,
+    Data, Executor, PerMessagePostHook, PerMessagePreHook, Result,
 };
-use futures_util::{future, future::Ready, StreamExt};
+use futures_util::{
+    future::Ready,
+    future::{self, BoxFuture},
+    StreamExt,
+};
 use tide::Endpoint;
 use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 
@@ -13,6 +17,8 @@ use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 pub struct GraphQLSubscription<E, OnConnInit> {
     executor: E,
     on_connection_init: OnConnInit,
+    per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+    per_message_post_hook: Option<Arc<PerMessagePostHook>>,
 }
 
 type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
@@ -30,6 +36,8 @@ where
         GraphQLSubscription {
             executor,
             on_connection_init: default_on_connection_init,
+            per_message_pre_hook: None,
+            per_message_post_hook: None,
         }
     }
 }
@@ -57,6 +65,43 @@ where
         GraphQLSubscription {
             executor: self.executor,
             on_connection_init: callback,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message pre-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, before running
+    /// the resolvers. It can be used for starting a transaction, that all resolvers will use.
+    #[must_use]
+    pub fn per_message_pre_hook<F, Fut>(self, hook: F) -> Self
+    where
+        Fut: Future<Output = Result<Option<Data>>> + Send + 'static,
+        F: Fn() -> Fut + Send + Sync + 'static,
+    {
+        GraphQLSubscription {
+            executor: self.executor,
+            on_connection_init: self.on_connection_init,
+            per_message_pre_hook: Some(Arc::new(move || Box::pin(hook()))),
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message post-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, after running
+    /// the resolvers. It can be used for committing a transaction, that all resolvers will use.
+    #[must_use]
+    pub fn per_message_post_hook<F>(self, hook: F) -> Self
+    where
+        F: for<'a> Fn(&'a Data) -> BoxFuture<'a, Result<()>> + Send + Sync + 'static,
+    {
+        GraphQLSubscription {
+            executor: self.executor,
+            on_connection_init: self.on_connection_init,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook: Some(Arc::new(hook)),
         }
     }
 
@@ -65,6 +110,8 @@ where
         tide_websockets::WebSocket::<S, _>::new(move |request, connection| {
             let executor = self.executor.clone();
             let on_connection_init = self.on_connection_init.clone();
+            let per_message_pre_hook = self.per_message_pre_hook.clone();
+            let per_message_post_hook = self.per_message_post_hook.clone();
             async move {
                 let protocol = match request
                     .header("sec-websocket-protocol")
@@ -90,7 +137,9 @@ where
                         .map(Message::into_data),
                     protocol,
                 )
-                .on_connection_init(on_connection_init);
+                .on_connection_init(on_connection_init)
+                .per_message_pre_hook(per_message_pre_hook)
+                .per_message_post_hook(per_message_post_hook);
 
                 while let Some(data) = stream.next().await {
                     match data {

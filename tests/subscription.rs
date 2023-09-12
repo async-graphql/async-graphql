@@ -1,5 +1,10 @@
 use async_graphql::*;
-use futures_util::stream::{Stream, StreamExt, TryStreamExt};
+use futures_util::{
+    stream::{Stream, StreamExt, TryStreamExt},
+    FutureExt,
+};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 struct Query;
 
@@ -419,4 +424,132 @@ pub async fn test_subscription_fieldresult() {
     }
 
     assert!(stream.next().await.is_none());
+}
+
+#[tokio::test]
+pub async fn subscription_per_message_hooks() {
+    #[derive(Debug, Eq, PartialEq)]
+    enum LogElement {
+        PreHook(i32),
+        OuterAccess(i32),
+        InnerAccess(i32),
+        PostHook(i32),
+    }
+
+    type Log = Arc<Mutex<Vec<LogElement>>>;
+    let log: Log = Arc::new(Mutex::new(vec![]));
+    let message_counter = Arc::new(Mutex::new(0));
+
+    #[derive(Clone, Copy)]
+    struct Inner(i32);
+
+    #[Object]
+    impl Inner {
+        async fn value(&self, ctx: &Context<'_>) -> i32 {
+            if let Some(log) = ctx.data_opt::<Log>() {
+                log.lock().await.push(LogElement::InnerAccess(self.0));
+            }
+            self.0
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct Outer(Inner);
+
+    #[Object]
+    impl Outer {
+        async fn inner(&self, ctx: &Context<'_>) -> Inner {
+            if let Some(log) = ctx.data_opt::<Log>() {
+                log.lock().await.push(LogElement::OuterAccess(self.0 .0));
+            }
+            self.0
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn outers(&self, ctx: &Context<'_>) -> impl Stream<Item = Outer> {
+            assert!(
+                ctx.data_opt::<Log>().is_none(),
+                "Pre-hook ran before the first message"
+            );
+            futures_util::stream::iter(10..13).map(Inner).map(Outer)
+        }
+    }
+
+    let per_message_pre_hook = {
+        let log: Arc<Mutex<Vec<LogElement>>> = Arc::clone(&log);
+        let message_counter = Arc::clone(&message_counter);
+        Arc::new(move || {
+            let log = Arc::clone(&log);
+            let message_counter = Arc::clone(&message_counter);
+            async move {
+                let mut message_counter = message_counter.lock().await;
+                let mut data = Data::default();
+                log.lock().await.push(LogElement::PreHook(*message_counter));
+                data.insert(log);
+                data.insert(*message_counter);
+                *message_counter += 1;
+                Ok(Some(data))
+            }
+            .boxed()
+        })
+    };
+    let per_message_post_hook: Arc<PerMessagePostHook> = {
+        let log = Arc::clone(&log);
+        Arc::new(move |data| {
+            let message_counter = *data.get_data::<i32>().unwrap();
+            let log = Arc::clone(&log);
+            async move {
+                log.lock().await.push(LogElement::PostHook(message_counter));
+                Ok(())
+            }
+            .boxed()
+        })
+    };
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let mut stream = schema.execute_stream_with_session_data(
+        "subscription { outers { inner { value } } }",
+        Arc::new(Data::default()),
+        Some(per_message_pre_hook),
+        Some(per_message_post_hook),
+    );
+
+    for i in 10i32..13 {
+        assert_eq!(
+            Response::new(value!({
+                "outers": {
+                    "inner": {
+                        "value": i
+                    }
+                }
+            })),
+            stream.next().await.unwrap()
+        );
+    }
+
+    {
+        let log = log.lock().await;
+        assert_eq!(
+            *log,
+            vec![
+                LogElement::PreHook(0),
+                LogElement::OuterAccess(10),
+                LogElement::InnerAccess(10),
+                LogElement::PostHook(0),
+                LogElement::PreHook(1),
+                LogElement::OuterAccess(11),
+                LogElement::InnerAccess(11),
+                LogElement::PostHook(1),
+                LogElement::PreHook(2),
+                LogElement::OuterAccess(12),
+                LogElement::InnerAccess(12),
+                LogElement::PostHook(2),
+            ],
+            "Log mismatch"
+        );
+    }
 }

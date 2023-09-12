@@ -113,6 +113,8 @@ pub async fn test_extension_ctx() {
         let mut stream = schema.execute_stream_with_session_data(
             Request::new("subscription { value }"),
             Arc::new(data),
+            None,
+            None,
         );
         assert_eq!(
             stream.next().await.unwrap().into_result().unwrap().data,

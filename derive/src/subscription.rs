@@ -311,6 +311,29 @@ pub fn generate(
                         let field = ::std::clone::Clone::clone(&field);
                         let field_name = ::std::clone::Clone::clone(&field_name);
                         async move {
+                            let message_data = if let ::std::option::Option::Some(f) = query_env.per_message_pre_hook.as_ref() {
+                                match (*f)().await {
+                                    ::std::result::Result::Ok(md) => {
+                                        ::std::option::Option::unwrap_or_else(
+                                            md, || ::std::default::Default::default()
+                                        )
+                                    },
+                                    ::std::result::Result::Err(e) => {
+                                        return ::std::result::Result::Err(
+                                            e.into_server_error(pos)
+                                            .with_path(::std::vec![
+                                                #crate_name::PathSegment::Field(
+                                                    ::std::borrow::ToOwned::to_owned(
+                                                        &*field_name
+                                                    )
+                                                )
+                                            ])
+                                        )
+                                    },
+                                }
+                            } else {
+                                ::std::default::Default::default()
+                            };
                             let ctx_selection_set = query_env.create_context(
                                 &schema_env,
                                 ::std::option::Option::Some(#crate_name::QueryPathNode {
@@ -318,6 +341,7 @@ pub fn generate(
                                     segment: #crate_name::QueryPathSegment::Name(&field_name),
                                 }),
                                 &field.node.selection_set,
+                                &message_data,
                             );
 
                             let execute_fut = async {
@@ -347,6 +371,24 @@ pub fn generate(
 
                                 use ::std::iter::Extend;
                                 resp.errors.extend(::std::mem::take(&mut *query_env.errors.lock().unwrap()));
+                                if let ::std::option::Option::Some(f) = query_env.per_message_post_hook.as_ref() {
+                                    match (*f)(&message_data).await {
+                                        ::std::result::Result::Ok(md) => {
+                                        },
+                                        ::std::result::Result::Err(e) => {
+                                            resp.errors.push(
+                                                e.into_server_error(pos)
+                                                .with_path(::std::vec![
+                                                    #crate_name::PathSegment::Field(
+                                                        ::std::borrow::ToOwned::to_owned(
+                                                            &*field_name
+                                                        )
+                                                    )
+                                                ])
+                                            )
+                                        },
+                                    }
+                                }
                                 resp
                             };
                             #crate_name::futures_util::pin_mut!(execute_fut);

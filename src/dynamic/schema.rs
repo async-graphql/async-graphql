@@ -13,8 +13,8 @@ use crate::{
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
     schema::{prepare_request, SchemaEnvInner},
-    Data, Executor, IntrospectionMode, QueryEnv, Request, Response, SDLExportOptions, SchemaEnv,
-    ServerError, ServerResult, ValidationMode,
+    Data, Executor, IntrospectionMode, PerMessagePostHook, PerMessagePreHook, QueryEnv, Request,
+    Response, SDLExportOptions, SchemaEnv, ServerError, ServerResult, ValidationMode,
 };
 
 /// Dynamic schema builder
@@ -308,7 +308,13 @@ impl Schema {
 
     async fn execute_once(&self, env: QueryEnv, root_value: &FieldValue<'static>) -> Response {
         // execute
-        let ctx = env.create_context(&self.0.env, None, &env.operation.node.selection_set);
+        let message_data = Data::default();
+        let ctx = env.create_context(
+            &self.0.env,
+            None,
+            &env.operation.node.selection_set,
+            &message_data,
+        );
         let res = match &env.operation.node.ty {
             OperationType::Query => {
                 async move { self.query_root() }
@@ -357,6 +363,8 @@ impl Schema {
                     self.0.recursive_depth,
                     self.0.complexity,
                     self.0.depth,
+                    None,
+                    None,
                 )
                 .await
                 {
@@ -384,6 +392,8 @@ impl Schema {
         &self,
         request: impl Into<DynamicRequest>,
         session_data: Arc<Data>,
+        per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+        per_message_post_hook: Option<Arc<PerMessagePostHook>>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         let schema = self.clone();
         let request = request.into();
@@ -410,6 +420,8 @@ impl Schema {
                     schema.0.recursive_depth,
                     schema.0.complexity,
                     schema.0.depth,
+                    per_message_pre_hook,
+                    per_message_post_hook,
                 )
                 .await {
                     Ok(res) => res,
@@ -424,10 +436,12 @@ impl Schema {
                     return;
                 }
 
+                let message_data = Data::default();
                 let ctx = env.create_context(
                     &schema.0.env,
                     None,
                     &env.operation.node.selection_set,
+                    &message_data,
                 );
                 let mut streams = Vec::new();
                 subscription.collect_streams(&schema, &ctx, &mut streams, &request.root_value);
@@ -446,7 +460,7 @@ impl Schema {
         &self,
         request: impl Into<DynamicRequest>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
-        self.execute_stream_with_session_data(request, Default::default())
+        self.execute_stream_with_session_data(request, Default::default(), None, None)
     }
 }
 
@@ -460,9 +474,17 @@ impl Executor for Schema {
         &self,
         request: Request,
         session_data: Option<Arc<Data>>,
+        per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+        per_message_post_hook: Option<Arc<PerMessagePostHook>>,
     ) -> BoxStream<'static, Response> {
-        Schema::execute_stream_with_session_data(self, request, session_data.unwrap_or_default())
-            .boxed()
+        Schema::execute_stream_with_session_data(
+            self,
+            request,
+            session_data.unwrap_or_default(),
+            per_message_pre_hook,
+            per_message_post_hook,
+        )
+        .boxed()
     }
 }
 

@@ -16,7 +16,9 @@ use futures_util::{
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Error, Executor, Request, Response, Result};
+use crate::{
+    Data, Error, Executor, PerMessagePostHook, PerMessagePreHook, Request, Response, Result,
+};
 
 /// All known protocols based on WebSocket.
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
@@ -80,6 +82,8 @@ pin_project! {
         #[pin]
         stream: S,
         protocol: Protocols,
+        per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+        per_message_post_hook: Option<Arc<PerMessagePostHook>>,
     }
 }
 
@@ -108,6 +112,8 @@ where
             streams: HashMap::new(),
             stream,
             protocol,
+            per_message_pre_hook: None,
+            per_message_post_hook: None,
         }
     }
 }
@@ -163,6 +169,54 @@ where
             streams: self.streams,
             stream: self.stream,
             protocol: self.protocol,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message pre-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, before running
+    /// the resolvers. It can be used for starting a transaction, that all resolvers will use.
+    #[must_use]
+    pub fn per_message_pre_hook(
+        self,
+        per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+    ) -> Self {
+        Self {
+            on_connection_init: self.on_connection_init,
+            init_fut: self.init_fut,
+            connection_data: self.connection_data,
+            data: self.data,
+            executor: self.executor,
+            streams: self.streams,
+            stream: self.stream,
+            protocol: self.protocol,
+            per_message_pre_hook,
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message post-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, after running
+    /// the resolvers. It can be used for committing a transaction, that all resolvers used.
+    #[must_use]
+    pub fn per_message_post_hook(
+        self,
+        per_message_post_hook: Option<Arc<PerMessagePostHook>>,
+    ) -> Self {
+        Self {
+            on_connection_init: self.on_connection_init,
+            init_fut: self.init_fut,
+            connection_data: self.connection_data,
+            data: self.data,
+            executor: self.executor,
+            streams: self.streams,
+            stream: self.stream,
+            protocol: self.protocol,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook,
         }
     }
 }
@@ -226,7 +280,12 @@ where
                         if let Some(data) = this.data.clone() {
                             this.streams.insert(
                                 id,
-                                Box::pin(this.executor.execute_stream(request, Some(data))),
+                                Box::pin(this.executor.execute_stream(
+                                    request,
+                                    Some(data),
+                                    this.per_message_pre_hook.clone(),
+                                    this.per_message_post_hook.clone(),
+                                )),
                             );
                         } else {
                             return Poll::Ready(Some(WsMessage::Close(

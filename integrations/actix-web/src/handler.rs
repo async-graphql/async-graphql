@@ -38,7 +38,7 @@ impl<E: Executor> Handler<(HttpRequest, GraphQLRequest)> for GraphQL<E> {
                 .unwrap_or_default();
 
             if is_accept_multipart_mixed {
-                let stream = executor.execute_stream(graphql_req.0, None);
+                let stream = executor.execute_stream(graphql_req.0, None, None, None);
                 let interval = Box::pin(async_stream::stream! {
                     let mut interval = actix_web::rt::time::interval(Duration::from_secs(30));
                     loop {

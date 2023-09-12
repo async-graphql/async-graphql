@@ -10,6 +10,7 @@ use std::{
 
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
+use futures_util::future::BoxFuture;
 use serde::{
     ser::{SerializeSeq, Serializer},
     Serialize,
@@ -54,6 +55,15 @@ pub trait DataContext<'a> {
 /// This is a type map, allowing you to store anything inside it.
 #[derive(Default)]
 pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
+
+impl Data {
+    /// Get the data of the specified type, or `None` if it does not exist.
+    pub fn get_data<D: Any>(&self) -> Option<&D> {
+        self.0
+            .get(&TypeId::of::<D>())
+            .and_then(|data| data.downcast_ref::<D>())
+    }
+}
 
 impl Deref for Data {
     type Target = FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>;
@@ -240,7 +250,16 @@ pub struct ContextBase<'a, T> {
     pub schema_env: &'a SchemaEnv,
     #[doc(hidden)]
     pub query_env: &'a QueryEnv,
+    #[doc(hidden)]
+    pub message_data: &'a Data,
 }
+
+/// Hook that runs on every item in a subscription before it is resolved. This can be useful for
+/// starting a transaction for all resolvers to run within.
+pub type PerMessagePreHook = dyn Fn() -> BoxFuture<'static, Result<Option<Data>>> + Send + Sync;
+/// Hook that runs on every item in a subscription after it is resolved. This can be useful for
+/// committing a transaction for all resolvers to run within.
+pub type PerMessagePostHook = dyn for<'a> Fn(&'a Data) -> BoxFuture<'a, Result<()>> + Send + Sync;
 
 #[doc(hidden)]
 pub struct QueryEnvInner {
@@ -256,6 +275,8 @@ pub struct QueryEnvInner {
     pub http_headers: Mutex<http::HeaderMap>,
     pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
+    pub per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+    pub per_message_post_hook: Option<Arc<PerMessagePostHook>>,
 }
 
 #[doc(hidden)]
@@ -282,6 +303,7 @@ impl QueryEnv {
         schema_env: &'a SchemaEnv,
         path_node: Option<QueryPathNode<'a>>,
         item: T,
+        message_data: &'a Data,
     ) -> ContextBase<'a, T> {
         ContextBase {
             path_node,
@@ -289,6 +311,7 @@ impl QueryEnv {
             item,
             schema_env,
             query_env: self,
+            message_data,
         }
     }
 }
@@ -322,6 +345,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: field,
             schema_env: self.schema_env,
             query_env: self.query_env,
+            message_data: self.message_data,
         }
     }
 
@@ -336,6 +360,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: selection_set,
             schema_env: self.schema_env,
             query_env: self.query_env,
+            message_data: self.message_data,
         }
     }
 
@@ -393,13 +418,13 @@ impl<'a, T> ContextBase<'a, T> {
     /// Gets the global data defined in the `Context` or `Schema` or `None` if
     /// the specified type data does not exist.
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
-        self.query_env
-            .extension_data
-            .0
-            .get(&TypeId::of::<D>())
-            .or_else(|| self.query_env.ctx_data.0.get(&TypeId::of::<D>()))
-            .or_else(|| self.query_env.session_data.0.get(&TypeId::of::<D>()))
-            .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
+        let type_id = TypeId::of::<D>();
+        self.message_data
+            .get(&type_id)
+            .or_else(|| self.query_env.extension_data.0.get(&type_id))
+            .or_else(|| self.query_env.ctx_data.0.get(&type_id))
+            .or_else(|| self.query_env.session_data.0.get(&type_id))
+            .or_else(|| self.schema_env.data.0.get(&type_id))
             .and_then(|d| d.downcast_ref::<D>())
     }
 
@@ -611,6 +636,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: self.item,
             schema_env: self.schema_env,
             query_env: self.query_env,
+            message_data: self.message_data,
         }
     }
 }

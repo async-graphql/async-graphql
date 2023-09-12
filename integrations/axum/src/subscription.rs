@@ -1,9 +1,9 @@
-use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr, sync::Arc};
 
 use async_graphql::{
     futures_util::task::{Context, Poll},
     http::{WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
-    Data, Executor, Result,
+    Data, Executor, PerMessagePostHook, PerMessagePreHook, Result,
 };
 use axum::{
     body::{Body, HttpBody},
@@ -131,6 +131,8 @@ pub struct GraphQLWebSocket<Sink, Stream, E, OnConnInit> {
     data: Data,
     on_connection_init: OnConnInit,
     protocol: GraphQLProtocol,
+    per_message_pre_hook: Option<Arc<PerMessagePreHook>>,
+    per_message_post_hook: Option<Arc<PerMessagePostHook>>,
 }
 
 impl<S, E> GraphQLWebSocket<SplitSink<S, Message>, SplitStream<S>, E, DefaultOnConnInitType>
@@ -165,6 +167,8 @@ where
             data: Data::default(),
             on_connection_init: default_on_connection_init,
             protocol,
+            per_message_pre_hook: None,
+            per_message_post_hook: None,
         }
     }
 }
@@ -205,6 +209,51 @@ where
             data: self.data,
             on_connection_init: callback,
             protocol: self.protocol,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message pre-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, before running
+    /// the resolvers. It can be used for starting a transaction, that all resolvers will use.
+    #[must_use]
+    pub fn per_message_pre_hook<F, Fut>(self, hook: F) -> Self
+    where
+        Fut: Future<Output = Result<Option<Data>>> + Send + 'static,
+        F: Fn() -> Fut + Send + Sync + 'static,
+    {
+        GraphQLWebSocket {
+            sink: self.sink,
+            stream: self.stream,
+            executor: self.executor,
+            data: self.data,
+            on_connection_init: self.on_connection_init,
+            protocol: self.protocol,
+            per_message_pre_hook: Some(Arc::new(move || Box::pin(hook()))),
+            per_message_post_hook: self.per_message_post_hook,
+        }
+    }
+
+    /// Specify a per-message post-hook.
+    ///
+    /// This hook will run for each message that the subscription stream emits, after running
+    /// the resolvers. It can be used for committing a transaction, that all resolvers will use.
+    #[must_use]
+    pub fn per_message_post_hook<F>(self, hook: F) -> Self
+    where
+        F: for<'a> Fn(&'a Data) -> BoxFuture<'a, Result<()>> + Send + Sync + 'static,
+    {
+        GraphQLWebSocket {
+            sink: self.sink,
+            stream: self.stream,
+            executor: self.executor,
+            data: self.data,
+            on_connection_init: self.on_connection_init,
+            protocol: self.protocol,
+            per_message_pre_hook: self.per_message_pre_hook,
+            per_message_post_hook: Some(Arc::new(hook)),
         }
     }
 
@@ -225,6 +274,8 @@ where
 
         let stream =
             async_graphql::http::WebSocket::new(self.executor.clone(), input, self.protocol.0)
+                .per_message_pre_hook(self.per_message_pre_hook)
+                .per_message_post_hook(self.per_message_post_hook)
                 .connection_data(self.data)
                 .on_connection_init(self.on_connection_init)
                 .map(|msg| match msg {
