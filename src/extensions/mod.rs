@@ -47,15 +47,15 @@ pub struct ExtensionContext<'a> {
 }
 
 impl<'a> DataContext<'a> for ExtensionContext<'a> {
-    fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
+    fn data<D: Any>(&self) -> Result<&'a D> {
         ExtensionContext::data::<D>(self)
     }
 
-    fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
+    fn data_unchecked<D: Any>(&self) -> &'a D {
         ExtensionContext::data_unchecked::<D>(self)
     }
 
-    fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
+    fn data_opt<D: Any>(&self) -> Option<&'a D> {
         ExtensionContext::data_opt::<D>(self)
     }
 }
@@ -79,7 +79,7 @@ impl<'a> ExtensionContext<'a> {
     /// # Errors
     ///
     /// Returns a `Error` if the specified type data does not exist.
-    pub fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
+    pub fn data<D: Any>(&self) -> Result<&'a D> {
         self.data_opt::<D>().ok_or_else(|| {
             Error::new(format!(
                 "Data `{}` does not exist.",
@@ -93,14 +93,14 @@ impl<'a> ExtensionContext<'a> {
     /// # Panics
     ///
     /// It will panic if the specified data type does not exist.
-    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
+    pub fn data_unchecked<D: Any>(&self) -> &'a D {
         self.data_opt::<D>()
             .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
     }
 
     /// Gets the global data defined in the `Context` or `Schema` or `None` if
     /// the specified type data does not exist.
-    pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
+    pub fn data_opt<D: Any>(&self) -> Option<&'a D> {
         self.query_data
             .and_then(|query_data| query_data.get(&TypeId::of::<D>()))
             .or_else(|| self.session_data.get(&TypeId::of::<D>()))
@@ -323,7 +323,7 @@ impl<'a> NextResolve<'a> {
 
 /// Represents a GraphQL extension
 #[async_trait::async_trait(?Send)]
-pub trait Extension: Sync + Send + 'static {
+pub trait Extension: 'static {
     /// Called at start query/mutation request.
     async fn request(&self, ctx: &ExtensionContext<'_>, next: NextRequest<'_>) -> Response {
         next.run(ctx).await
@@ -393,7 +393,7 @@ pub trait Extension: Sync + Send + 'static {
 /// Extension factory
 ///
 /// Used to create an extension instance.
-pub trait ExtensionFactory: Send + Sync + 'static {
+pub trait ExtensionFactory: 'static {
     /// Create an extended instance.
     fn create(&self) -> Arc<dyn Extension>;
 }

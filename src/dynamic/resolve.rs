@@ -2,7 +2,7 @@ use std::{borrow::Cow, pin::Pin};
 
 use async_graphql_derive::SimpleObject;
 use async_graphql_parser::{types::Field, Positioned};
-use futures_util::{future::BoxFuture, Future, FutureExt};
+use futures_util::{future::LocalBoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
 use crate::{
@@ -97,7 +97,7 @@ fn collect_schema_field<'a>(
             .await?;
             Ok((field.node.response_key().node.clone(), value))
         }
-        .boxed(),
+        .boxed_local(),
     );
 }
 
@@ -133,7 +133,7 @@ fn collect_type_field<'a>(
             .await?;
             Ok((field.node.response_key().node.clone(), value))
         }
-        .boxed(),
+        .boxed_local(),
     );
 }
 
@@ -164,7 +164,7 @@ fn collect_service_field<'a>(
 
             Ok((field.node.response_key().node.clone(), output_type))
         }
-        .boxed(),
+        .boxed_local(),
     );
 }
 
@@ -217,7 +217,7 @@ fn collect_entities_field<'a>(
                 .unwrap_or_default();
             Ok((field.node.response_key().node.clone(), value))
         }
-        .boxed(),
+        .boxed_local(),
     );
 }
 
@@ -285,7 +285,7 @@ fn collect_field<'a>(
                 .unwrap_or_default();
             Ok((field.node.response_key().node.clone(), res_value))
         }
-        .boxed(),
+        .boxed_local(),
     );
 }
 
@@ -408,7 +408,7 @@ pub(crate) fn resolve<'a>(
     ctx: &'a Context<'a>,
     type_ref: &'a TypeRef,
     value: Option<&'a FieldValue>,
-) -> BoxFuture<'a, ServerResult<Option<Value>>> {
+) -> LocalBoxFuture<'a, ServerResult<Option<Value>>> {
     async move {
         match (type_ref, value) {
             (TypeRef::Named(type_name), Some(value)) => {
@@ -444,7 +444,7 @@ pub(crate) fn resolve<'a>(
             (TypeRef::List(_), None) => Ok(None),
         }
     }
-    .boxed()
+    .boxed_local()
 }
 
 async fn resolve_list<'a>(

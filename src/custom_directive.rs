@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub trait CustomDirectiveFactory: Send + Sync + 'static {
+pub trait CustomDirectiveFactory: 'static {
     fn name(&self) -> Cow<'static, str>;
 
     fn register(&self, registry: &mut Registry);

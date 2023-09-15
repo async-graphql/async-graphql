@@ -9,7 +9,7 @@ use std::{
 };
 
 use futures_util::{
-    future::{BoxFuture, Ready},
+    future::{LocalBoxFuture, Ready},
     stream::Stream,
     FutureExt, StreamExt,
 };
@@ -72,7 +72,7 @@ pin_project! {
     /// - [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
     pub struct WebSocket<S, E, OnInit> {
         on_connection_init: Option<OnInit>,
-        init_fut: Option<BoxFuture<'static, Result<Data>>>,
+        init_fut: Option<LocalBoxFuture<'static, Result<Data>>>,
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
         executor: E,
@@ -151,8 +151,8 @@ where
     #[must_use]
     pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F>
     where
-        F: FnOnce(serde_json::Value) -> R + Send + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        F: FnOnce(serde_json::Value) -> R + 'static,
+        R: Future<Output = Result<Data>> + 'static,
     {
         WebSocket {
             on_connection_init: Some(callback),
@@ -171,8 +171,8 @@ impl<S, E, OnInit, InitFut> Stream for WebSocket<S, E, OnInit>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
-    OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
-    InitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> InitFut + 'static,
+    InitFut: Future<Output = Result<Data>> + 'static,
 {
     type Item = WsMessage;
 

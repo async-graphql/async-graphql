@@ -6,7 +6,7 @@ use crate::{BatchRequest, BatchResponse, Data, Request, Response};
 
 /// Represents a GraphQL executor
 #[async_trait::async_trait(?Send)]
-pub trait Executor: Unpin + Clone + Send + Sync + 'static {
+pub trait Executor: Unpin + Clone + 'static {
     /// Execute a GraphQL query.
     async fn execute(&self, request: Request) -> Response;
 

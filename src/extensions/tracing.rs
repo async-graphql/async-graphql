@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use futures_util::{stream::BoxStream, TryFutureExt};
+use futures_util::{stream::LocalBoxStream, TryFutureExt};
 use tracing_futures::Instrument;
 use tracinglib::{span, Level};
 
@@ -63,9 +63,9 @@ impl Extension for TracingExtension {
     fn subscribe<'s>(
         &self,
         ctx: &ExtensionContext<'_>,
-        stream: BoxStream<'s, Response>,
+        stream: LocalBoxStream<'s, Response>,
         next: NextSubscribe<'_>,
-    ) -> BoxStream<'s, Response> {
+    ) -> LocalBoxStream<'s, Response> {
         Box::pin(next.run(ctx, stream).instrument(span!(
             target: "async_graphql::graphql",
             Level::INFO,

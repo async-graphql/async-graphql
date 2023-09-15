@@ -144,7 +144,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// Add a global data that can be accessed in the `Schema`. You access it
     /// with `Context::data`.
     #[must_use]
-    pub fn data<D: Any + Send + Sync>(mut self, data: D) -> Self {
+    pub fn data<D: Any>(mut self, data: D) -> Self {
         self.data.insert(data);
         self
     }

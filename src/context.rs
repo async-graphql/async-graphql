@@ -57,10 +57,10 @@ pub trait DataContext<'a> {
 ///
 /// This is a type map, allowing you to store anything inside it.
 #[derive(Default)]
-pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
+pub struct Data(FnvHashMap<TypeId, Box<dyn Any>>);
 
 impl Deref for Data {
-    type Target = FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>;
+    type Target = FnvHashMap<TypeId, Box<dyn Any>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -69,7 +69,7 @@ impl Deref for Data {
 
 impl Data {
     /// Insert data.
-    pub fn insert<D: Any + Send + Sync>(&mut self, data: D) {
+    pub fn insert<D: Any>(&mut self, data: D) {
         self.0.insert(TypeId::of::<D>(), Box::new(data));
     }
 

@@ -1,7 +1,8 @@
 use std::{borrow::Cow, fmt, fmt::Debug, sync::Arc};
 
 use futures_util::{
-    future::BoxFuture, stream::BoxStream, Future, FutureExt, Stream, StreamExt, TryStreamExt,
+    future::LocalBoxFuture, stream::LocalBoxStream, Future, FutureExt, Stream, StreamExt,
+    TryStreamExt,
 };
 use indexmap::IndexMap;
 
@@ -18,7 +19,7 @@ use crate::{
     Value,
 };
 
-type BoxResolveFut<'a> = BoxFuture<'a, Result<BoxStream<'a, Result<FieldValue<'a>>>>>;
+type BoxResolveFut<'a> = LocalBoxFuture<'a, Result<LocalBoxStream<'a, Result<FieldValue<'a>>>>>;
 
 /// A future that returned from field resolver
 pub struct SubscriptionFieldFuture<'a>(pub(crate) BoxResolveFut<'a>);
@@ -27,16 +28,16 @@ impl<'a> SubscriptionFieldFuture<'a> {
     /// Create a ResolverFuture
     pub fn new<Fut, S, T>(future: Fut) -> Self
     where
-        Fut: Future<Output = Result<S>> + Send + 'a,
-        S: Stream<Item = Result<T>> + Send + 'a,
-        T: Into<FieldValue<'a>> + Send + 'a,
+        Fut: Future<Output = Result<S>> + 'a,
+        S: Stream<Item = Result<T>> + 'a,
+        T: Into<FieldValue<'a>> + 'a,
     {
         Self(
             async move {
                 let res = future.await?.map_ok(Into::into);
-                Ok(res.boxed())
+                Ok(res.boxed_local())
             }
-            .boxed(),
+            .boxed_local(),
         )
     }
 }
@@ -268,7 +269,7 @@ impl Subscription {
                         }.map(|res| {
                             res.unwrap_or_else(|err| Response::from_errors(vec![err]))
                         })
-                        .boxed(),
+                        .boxed_local(),
                     );
                 }
             }

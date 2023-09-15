@@ -200,9 +200,10 @@ pub async fn test_find_entity_with_context() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .data(DataLoader::new(MyLoader, tokio::spawn))
+        .data(DataLoader::new(MyLoader, tokio::task::spawn_local))
         .finish();
-    let query = r#"{
+    tokio::task::LocalSet::new().run_until(async move {
+        let query = r#"{
             _entities(representations: [
                 {__typename: "MyObj", id: "1"},
                 {__typename: "MyObj", id: "2"},
@@ -216,9 +217,9 @@ pub async fn test_find_entity_with_context() {
                 }
             }
         }"#;
-    assert_eq!(
-        schema.execute(query).await.into_result().unwrap().data,
-        value!({
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
             "_entities": [
                 {"__typename": "MyObj", "id": "1", "value": 999 },
                 {"__typename": "MyObj", "id": "2", "value": 999 },
@@ -226,9 +227,9 @@ pub async fn test_find_entity_with_context() {
                 {"__typename": "MyObj", "id": "4", "value": 999 },
             ]
         })
-    );
+        );
 
-    let query = r#"{
+        let query = r#"{
             _entities(representations: [
                 {__typename: "MyObj", id: "999"}
             ]) {
@@ -239,19 +240,20 @@ pub async fn test_find_entity_with_context() {
                 }
             }
         }"#;
-    assert_eq!(
-        schema.execute(query).await.into_result().unwrap_err(),
-        vec![ServerError {
-            message: "Not found".to_string(),
-            source: None,
-            locations: vec![Pos {
-                line: 2,
-                column: 13
-            }],
-            path: vec![PathSegment::Field("_entities".to_owned())],
-            extensions: None,
-        }]
-    );
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap_err(),
+            vec![ServerError {
+                message: "Not found".to_string(),
+                source: None,
+                locations: vec![Pos {
+                    line: 2,
+                    column: 13
+                }],
+                path: vec![PathSegment::Field("_entities".to_owned())],
+                extensions: None,
+            }]
+        );
+    }).await;
 }
 
 #[tokio::test]

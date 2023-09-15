@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_graphql_parser::types::ExecutableDocument;
 use async_graphql_value::Variables;
-use futures_util::{stream::BoxStream, TryFutureExt};
+use futures_util::{stream::LocalBoxStream, TryFutureExt};
 use opentelemetry::{
     trace::{FutureExt, SpanKind, TraceContextExt, Tracer},
     Context as OpenTelemetryContext, Key,
@@ -79,9 +79,9 @@ where
     fn subscribe<'s>(
         &self,
         ctx: &ExtensionContext<'_>,
-        stream: BoxStream<'s, Response>,
+        stream: LocalBoxStream<'s, Response>,
         next: NextSubscribe<'_>,
-    ) -> BoxStream<'s, Response> {
+    ) -> LocalBoxStream<'s, Response> {
         Box::pin(
             next.run(ctx, stream)
                 .with_context(OpenTelemetryContext::current_with_span(

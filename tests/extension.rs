@@ -5,12 +5,15 @@ use async_graphql::{
         Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery,
         NextPrepareRequest, NextRequest, NextResolve, NextSubscribe, NextValidation, ResolveInfo,
     },
-    futures_util::stream::BoxStream,
     parser::types::ExecutableDocument,
     *,
 };
 use async_graphql_value::ConstValue;
-use futures_util::{lock::Mutex, stream::Stream, StreamExt};
+use futures_util::{
+    lock::Mutex,
+    stream::{LocalBoxStream, Stream},
+    StreamExt,
+};
 
 #[tokio::test]
 pub async fn test_extension_ctx() {
@@ -142,9 +145,9 @@ pub async fn test_extension_call_order() {
         fn subscribe<'s>(
             &self,
             ctx: &ExtensionContext<'_>,
-            mut stream: BoxStream<'s, Response>,
+            mut stream: LocalBoxStream<'s, Response>,
             next: NextSubscribe<'_>,
-        ) -> BoxStream<'s, Response> {
+        ) -> LocalBoxStream<'s, Response> {
             let calls = self.calls.clone();
             next.run(
                 ctx,
