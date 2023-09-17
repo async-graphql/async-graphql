@@ -409,6 +409,7 @@ pub fn generate(
                     keys: ::std::option::Option::None,
                     visible: #visible,
                     shareable: false,
+                    resolvable: true,
                     inaccessible: false,
                     interface_object: false,
                     tags: ::std::default::Default::default(),
