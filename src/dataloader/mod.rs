@@ -63,6 +63,7 @@ use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
     hash::Hash,
+    ops::DerefMut,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
@@ -75,6 +76,8 @@ use fnv::FnvHashMap;
 use futures_channel::oneshot;
 use futures_timer::Delay;
 use futures_util::future::BoxFuture;
+use tokio::select;
+use tokio_util::sync::CancellationToken;
 #[cfg(feature = "tracing")]
 use tracing::{info_span, instrument, Instrument};
 #[cfg(feature = "tracing")]
@@ -128,6 +131,7 @@ pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 's
 
 struct DataLoaderInner<T> {
     requests: Mutex<FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>>,
+    token: Mutex<CancellationToken>,
     loader: T,
 }
 
@@ -185,6 +189,7 @@ pub struct DataLoader<T, C = NoCache> {
     inner: Arc<DataLoaderInner<T>>,
     cache_factory: C,
     delay: Duration,
+    reset_delay_on_load: bool,
     max_batch_size: usize,
     disable_cache: AtomicBool,
     spawner: Box<dyn Fn(BoxFuture<'static, ()>) + Send + Sync>,
@@ -199,10 +204,12 @@ impl<T> DataLoader<T, NoCache> {
         Self {
             inner: Arc::new(DataLoaderInner {
                 requests: Mutex::new(Default::default()),
+                token: Mutex::new(CancellationToken::new()),
                 loader,
             }),
             cache_factory: NoCache,
             delay: Duration::from_millis(1),
+            reset_delay_on_load: false,
             max_batch_size: 1000,
             disable_cache: false.into(),
             spawner: Box::new(move |fut| {
@@ -221,10 +228,12 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         Self {
             inner: Arc::new(DataLoaderInner {
                 requests: Mutex::new(Default::default()),
+                token: Mutex::new(CancellationToken::new()),
                 loader,
             }),
             cache_factory,
             delay: Duration::from_millis(1),
+            reset_delay_on_load: false,
             max_batch_size: 1000,
             disable_cache: false.into(),
             spawner: Box::new(move |fut| {
@@ -237,6 +246,15 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     #[must_use]
     pub fn delay(self, delay: Duration) -> Self {
         Self { delay, ..self }
+    }
+
+    /// Specify whether to reset the delay on load, the default is `false`
+    #[must_use]
+    pub fn reset_delay_on_load(self, reset_delay_on_load: bool) -> Self {
+        Self {
+            reset_delay_on_load,
+            ..self
+        }
     }
 
     /// pub fn Specify the max batch size for loading data, the default is
@@ -301,6 +319,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         enum Action<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
             ImmediateLoad(KeysAndSender<K, T>),
             StartFetch,
+            RestartFetch(bool),
             Delay,
         }
 
@@ -350,10 +369,18 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 (Action::ImmediateLoad(typed_requests.take()), rx)
             } else {
                 (
-                    if !typed_requests.keys.is_empty() && prev_count == 0 {
-                        Action::StartFetch
+                    if self.reset_delay_on_load {
+                        if typed_requests.keys.is_empty() {
+                            Action::Delay
+                        } else {
+                            Action::RestartFetch(prev_count > 0)
+                        }
                     } else {
-                        Action::Delay
+                        if !typed_requests.keys.is_empty() && prev_count == 0 {
+                            Action::StartFetch
+                        } else {
+                            Action::Delay
+                        }
                     },
                     rx,
                 )
@@ -392,6 +419,45 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
                     if !keys.0.is_empty() {
                         inner.do_load(disable_cache, keys).await
+                    }
+                };
+                #[cfg(feature = "tracing")]
+                let task = task.instrument(info_span!("start_fetch")).in_current_span();
+                (self.spawner)(Box::pin(task))
+            }
+            Action::RestartFetch(restart) => {
+                let inner = self.inner.clone();
+                let disable_cache = self.disable_cache.load(Ordering::SeqCst);
+                let delay = self.delay;
+
+                let child_token = {
+                    let mut guard = self.inner.token.lock().unwrap();
+                    let token = guard.deref_mut();
+                    if restart {
+                        token.cancel();
+                        *token = CancellationToken::new();
+                    }
+                    token.child_token()
+                };
+
+                let task = async move {
+                    select! {
+                        _ = child_token.cancelled() => {}
+                        _ = Delay::new(delay) => {
+                            let keys = {
+                                let mut request = inner.requests.lock().unwrap();
+                                let typed_requests = request
+                                    .get_mut(&tid)
+                                    .unwrap()
+                                    .downcast_mut::<Requests<K, T>>()
+                                    .unwrap();
+                                typed_requests.take()
+                            };
+
+                            if !keys.0.is_empty() {
+                                inner.do_load(disable_cache, keys).await
+                            }
+                        }
                     }
                 };
                 #[cfg(feature = "tracing")]
