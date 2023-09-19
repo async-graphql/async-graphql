@@ -132,6 +132,50 @@ type Key {
 }
 ```
 
+### Creating unresolvable entities
+
+There are certain times when you need to reference an entity, but not add any fields to it. This is particularly useful when you want to link data from separate subgraphs together, but neither subgraph has all the data.
+
+If you wanted to implement the [products and reviews subgraphs example](https://www.apollographql.com/docs/federation/entities/#referencing-an-entity-without-contributing-fields) from the Apollo Docs, you would create the following types for the reviews subgraph:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[derive(SimpleObject)]
+struct Review {
+    product: Product,
+    score: u64,
+}
+
+#[derive(SimpleObject)]
+#[graphql(unresolvable)]
+struct Product {
+    id: u64,
+}
+```
+
+This will add the `@key(fields: "id", resolvable: false)` directive to the `Product` type in the reviews subgraph.
+
+For more complex entity keys, such as ones with nested fields in compound keys, you can override the fields in the directive as so:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[derive(SimpleObject)]
+#[graphql(unresolvable = "id organization { id }")]
+struct User {
+    id: u64,
+    organization: Organization,
+}
+
+#[derive(SimpleObject)]
+struct Organization {
+    id: u64,
+}
+```
+
+However, it is important to note that no validation will be done to check that these fields exist.
+
 ## `@shareable`
 
 Apply the [`@shareable` directive](https://www.apollographql.com/docs/federation/federated-types/federated-directives#shareable) to a type or field to indicate that multiple subgraphs can resolve it.
