@@ -2744,6 +2744,44 @@ type Key {
   b: Int!
 }
 </code></pre>
+<h3 id="creating-unresolvable-entities"><a class="header" href="#creating-unresolvable-entities">Creating unresolvable entities</a></h3>
+<p>There are certain times when you need to reference an entity, but not add any fields to it. This is particularly useful when you want to link data from separate subgraphs together, but neither subgraph has all the data.</p>
+<p>If you wanted to implement the <a href="https://www.apollographql.com/docs/federation/entities/#referencing-an-entity-without-contributing-fields">products and reviews subgraphs example</a> from the Apollo Docs, you would create the following types for the reviews subgraph:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(SimpleObject)]
+struct Review {
+    product: Product,
+    score: u64,
+}
+
+#[derive(SimpleObject)]
+#[graphql(unresolvable)]
+struct Product {
+    id: u64,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This will add the <code>@key(fields: &quot;id&quot;, resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
+<p>For more complex entity keys, such as ones with nested fields in compound keys, you can override the fields in the directive as so:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(SimpleObject)]
+#[graphql(unresolvable = &quot;id organization { id }&quot;)]
+struct User {
+    id: u64,
+    organization: Organization,
+}
+
+#[derive(SimpleObject)]
+struct Organization {
+    id: u64,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>However, it is important to note that no validation will be done to check that these fields exist.</p>
 <h2 id="shareable"><a class="header" href="#shareable"><code>@shareable</code></a></h2>
 <p>Apply the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#shareable"><code>@shareable</code> directive</a> to a type or field to indicate that multiple subgraphs can resolve it.</p>
 <h3 id="shareable-fields"><a class="header" href="#shareable-fields"><code>@shareable</code> fields</a></h3>
